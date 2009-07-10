@@ -1,0 +1,46 @@
+Matt's implementation notes.
+-----------------------------
+
+2009-JUL-10
+============
+
+Development is mostly test-driven.
+So I'm writing unit tests first for all the things that needs to function as expected.
+
+The first important part I finished is reading/writing transformations.
+Then I did database metadata.
+
+There I had the interesting challenge of creating objects that can cope with a rename.
+That was solved in the past by having the various steps and job entries that reference a database use a Repository method:
+  
+  	public void saveDatabaseMetaStepAttribute(ObjectId id_transformation, ObjectId id_step, String code, DatabaseMeta database) throws KettleException;
+  	public void saveDatabaseMetaJobEntryAttribute(ObjectId id_job, ObjectId id_jobentry, String code, DatabaseMeta database) throws KettleException;
+  
+Now, typically you save the ID of the database in there.  The classic Kettle database repository then has a link table R_TRANS_DATABASE that keeps track of all the transformation-databases relationships.
+The JCR has something better, it can save references.  It took me a while to figure that out but this is the best solution.
+Once this gnarly problem was out of the way I could delete the other trial code (using ID/ID relationship usage nodes).
+
+Initially I simply stored XML in the nodes but that's not an ideal solution.
+The thing is that things like Names and descriptions of PDI objects needs to be stored as attributes anyway if we want to get at them quickly.
+So I borrowed some code from the existing repository to save things into Node Properties all the time.
+This conversion is still going on but progressing nicely and brings me to the PartitionSchema objects (also a shared object).
+I basically had the same problems as with the DatabaseMeta objects so I'm converting that too.
+
+Finished are:
+- Creating / Deleting directories
+- Saving / Loading transformations
+- Creating / loading transformation versions
+- Retrieval of a list of versions
+- Retrieval of object IDs, optionally list deleted ones
+- Deleting / restoring transformations
+- Verify existence of a transformation
+- Rename of a database connection (without consequence for the transformation)
+
+TODO are:
+- Finish PartitionSchema save/load conversion to Node Properties
+- Save/Load SlaveServer
+- ClusterSchema
+- Make sure that logging database information is also references, not stored.
+- Jobs and job entries
+
+Fortunately those are easier now that the hard problems around the versioning of data are solved and tested.
