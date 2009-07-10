@@ -8,6 +8,10 @@ Development is mostly test-driven.
 So I'm writing unit tests first for all the things that needs to function as expected.
 
 The first important part I finished is reading/writing transformations.
+Then I created a workaround for a few problem with Locking.  
+  - Session specific problems : locks didn't survive a session
+  - Couldn't figure out a way to add lock dates, lock message or other future attributes
+  - This was solved by the creation of a new root level locking node where all the locks are stored in.  The name of the node is the GUID against the locked object.  
 Then I did database metadata.
 
 There I had the interesting challenge of creating objects that can cope with a rename.
