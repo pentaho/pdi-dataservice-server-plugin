@@ -1,0 +1,133 @@
+<project name="JCRRepository" default="default" basedir=".">
+
+	  <description>
+	  	JCRRepository plugin build file
+	    </description>
+
+	  <tstamp prefix="start"/>
+
+	  <!-- system properties to use -->
+	  <property name= "cr" value="${line.separator}"/> 
+		
+	  <!-- set global properties for this build -->
+	
+	  <property name="src"        			location="src"/> 
+	  <property name="classes"        		location="classes"/> 
+	  <property name="lib"        			location="lib"/>
+	  <property name="libext"     			location="libext"/>
+	  <property name="libswt"     			location="libswt"/>
+	  <property name="deploydir"     		location="JCRRepository"/>
+	
+	  <target name="init" description="create timestamp and directories">
+    	<echo>Init...</echo>
+	  	
+	    <tstamp/>
+	    <mkdir dir="${classes}"/>
+	    <mkdir dir="${lib}"/>
+	  </target>
+
+	  <!--
+	       ==========================
+	            Compile the code
+	       ==========================
+	  -->
+
+	  <target name="compile" depends="init" description="compile the source " >
+	  	<echo>Compiling JCRRepository Plugin...</echo>
+	    <javac srcdir="${src}" 
+	    	   destdir="${classes}">
+
+	    	<classpath id="cpath">
+				<fileset dir="${libext}" 		includes="*.jar"/>
+				<fileset dir="${libswt}" 		includes="*.jar"/>
+				<fileset dir="${libswt}/win32/" includes="*.jar"/>
+		  		</classpath>
+	    </javac>
+	  </target>
+	
+	  <!-- ==========================
+	          Copy additional files
+	       ==========================
+	  -->
+
+	  <target name="copy" depends="compile" description="copy images etc to classes directory" >
+	  	<echo>Copying images etc to classes directory...</echo>
+	    <copy todir="${classes}">
+	    	<fileset 
+	    		dir="${src}" 
+	    		includes="**/*.png,**/*.xml,**/*.properties"/>
+	  	    </copy>
+	  </target>
+			
+	  <!--
+	       ==========================
+	                library
+	       ==========================
+	  -->
+		
+	  <target name="lib" depends="compile, copy" description="generate the JCRRepository plugin library JCRRepository.jar">
+	  	<echo>Generating the JCR Repository library JCRRepository.jar ...</echo>
+	  	<jar 
+	    	jarfile="${lib}/JCRRepository.jar" 
+	    	basedir="${classes}" 
+	    	includes="**/*"/>	 
+	  </target>
+
+	  <!--
+	       ==========================
+	            deploy to Kettle
+	       ==========================
+	  -->
+
+	  <target name="deploy" depends="lib" description="Deploy plugin..." >
+	  	<echo>deploying plugin...</echo>
+	    <copy todir="${deploydir}">
+	    	<fileset file="plugin.xml"/>
+
+	    	<fileset file="${lib}/JCRRepository.jar"/>
+
+	    	<fileset file="${libext}/commons-collections-3.1.jar"/>
+	        <fileset file="${libext}/derby.jar"/>
+	        <fileset file="${libext}/lucene-core-2.4.1.jar"/>
+	        <fileset file="${libext}/slf4j-api-1.5.8.jar"/>
+	        <fileset file="${libext}/slf4j-log4j12-1.5.8.jar"/>
+	        <fileset file="${libext}/xercesImpl.jar"/>
+	        <fileset file="${libext}/xml-apis.jar"/>
+	        <fileset file="${libext}/jcr-1.0.jar"/>
+
+	        <fileset file="${libext}/jackrabbit-jcr-server-1.5.6.jar"/>
+	        <fileset file="${libext}/jackrabbit-jcr-rmi-1.5.0.jar"/>
+	        <fileset file="${libext}/jackrabbit-jcr-commons-1.5.5.jar"/>
+	        <fileset file="${libext}/jackrabbit-core-1.5.6.jar"/>
+	        <fileset file="${libext}/jackrabbit-api-1.5.0.jar"/>
+	        <fileset file="${libext}/jackrabbit-webdav-1.5.5.jar"/>
+	        <fileset file="${libext}/jackrabbit-text-extractors-1.5.0.jar"/>
+	        <fileset file="${libext}/jackrabbit-spi-commons-1.5.5.jar"/>
+	        <fileset file="${libext}/jackrabbit-spi-1.5.0.jar"/>
+	        <fileset file="${libext}/jackrabbit-jcr-servlet-1.5.2.jar"/>
+	        
+	        <fileset file="${libext}/concurrent-1.3.4.jar"/>
+	        <fileset file="${libext}/commons-io-1.3.1.jar"/>
+	    	
+	  	    </copy>
+	  </target>
+
+	<!--
+	       ==========================
+	          Default target: all
+	       ==========================
+	  -->
+	<target name="default" depends="deploy" description="default = build all"/>
+
+	<!--
+	       ==========================
+	              C L E A N
+	       ==========================
+	  -->
+
+	  <target name="clean"  description="clean up generated files" >
+	    <delete dir="${classes}"/>
+	    <delete dir="${lib}"/>
+	  </target>
+	
+</project>
