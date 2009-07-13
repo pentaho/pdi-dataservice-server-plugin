@@ -30,6 +30,7 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 
 	        // Save the cluster-partition relationships
 			//
+	        node.setProperty("NR_PARTITIONS", partitionSchema.getPartitionIDs().size());
 			for (int i=0;i<partitionSchema.getPartitionIDs().size();i++)
 			{
 				node.setProperty(PARTITION_PROPERTY_PREFIX+i, partitionSchema.getPartitionIDs().get(i));
@@ -41,6 +42,48 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 			
 		}catch(Exception e) {
 			throw new KettleException("Unable to save partition schema ["+element+"] in the repository", e);
+		}
+	}
+
+	public PartitionSchema loadPartitionSchema(ObjectId partitionSchemaId, String versionLabel) throws KettleException {
+		try {
+			
+			Node node = repository.getSession().getNodeByUUID(partitionSchemaId.getId());
+			Version version = repository.getVersion(node, versionLabel);
+			Node partitionNode = repository.getVersionNode(version);
+			
+			PartitionSchema partitionSchema = new PartitionSchema();
+			
+			partitionSchema.setName( repository.getObjectName(partitionNode));
+			partitionSchema.setDescription( repository.getObjectDescription(partitionNode));
+			
+			// Grab the Version comment...
+			//
+			partitionSchema.setObjectVersion( repository.getObjectVersion(version) );
+
+			// Get the unique ID
+			//
+			ObjectId objectId = new StringObjectId(node.getUUID());
+			partitionSchema.setObjectId(objectId);
+						
+			// The metadata...
+			//
+	        partitionSchema.setDynamicallyDefined( repository.getPropertyBoolean(partitionNode, "DYNAMIC_DEFINITION") );
+	        partitionSchema.setNumberOfPartitionsPerSlave( repository.getPropertyString(partitionNode, "PARTITIONS_PER_SLAVE") );
+
+	        // Save the cluster-partition relationships
+			//
+	        int nrPartitions = (int) repository.getPropertyLong(partitionNode, "NR_PARTITIONS");
+			for (int i=0;i<nrPartitions;i++)
+			{
+				String partitionId = partitionNode.getProperty(PARTITION_PROPERTY_PREFIX+i).getString();
+				partitionSchema.getPartitionIDs().add(partitionId);
+			}
+
+			return partitionSchema;
+		}
+		catch(Exception e) {
+			throw new KettleException("Unable to load database from object ["+partitionSchemaId+"]", e);
 		}
 	}
 }

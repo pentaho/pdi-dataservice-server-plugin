@@ -34,7 +34,6 @@ import org.pentaho.di.core.annotations.RepositoryPlugin;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
-import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
@@ -52,7 +51,6 @@ import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.jcr.util.JCRObjectVersion;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
-import org.w3c.dom.Document;
 
 
 @RepositoryPlugin(
@@ -135,14 +133,17 @@ public class JCRRepository implements Repository {
 
 	private Node	lockNodeFolder;
 
-	public JCRRepositoryTransDelegate transDelegate;
+	private JCRRepositoryTransDelegate transDelegate;
 	private JCRRepositoryDatabaseDelegate	databaseDelegate;
 	private JCRRepositoryPartitionDelegate	partitionDelegate;
+	private JCRRepositorySlaveDelegate	slaveDelegate;
+	private JCRRepositoryJobDelegate	jobDelegate;
 	
 	public JCRRepository() {
 		this.transDelegate = new JCRRepositoryTransDelegate(this);
 		this.databaseDelegate = new JCRRepositoryDatabaseDelegate(this);
 		this.partitionDelegate = new JCRRepositoryPartitionDelegate(this);
+		this.slaveDelegate = new JCRRepositorySlaveDelegate(this);
 	}
 	
 	public String getName() {
@@ -384,20 +385,16 @@ public class JCRRepository implements Repository {
 				transDelegate.saveTrans(element, versionComment, monitor);
 			} else
 			if (JobMeta.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-				// Save job to repository...
-				//
+				jobDelegate.saveJob(element, versionComment, monitor);
 			} else
 			if (DatabaseMeta.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
 				databaseDelegate.saveDatabaseMeta(element, versionComment, monitor);
 			} else
 			if (SlaveServer.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-				// TODO Save slave server to repository...
-				//
-				
+				slaveDelegate.saveSlaveServer(element, versionComment, monitor);
 			} else
 			if (ClusterSchema.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-				// TODO Save cluster schema to repository...
-				//
+				slaveDelegate.saveClusterSchema(element, versionComment, monitor);
 			} else
 			if (PartitionSchema.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
 				partitionDelegate.savePartitionSchema(element, versionComment, monitor);
@@ -555,8 +552,7 @@ public class JCRRepository implements Repository {
 	
 
 	public void deleteJob(ObjectId jobId) throws KettleException {
-		//	TODO
-		
+		jobDelegate.deleteJob(jobId);
 	}
 	
 	public void removeVersion(ObjectId id, String version) throws KettleException {
@@ -573,13 +569,16 @@ public class JCRRepository implements Repository {
 		transDelegate.deleteTransformation(transformationId);
 	}
 
-	public void deleteClusterSchema(ObjectId id_cluster) throws KettleException {
-	}
-
-	public void deleteCondition(ObjectId id_condition) throws KettleException {
+	public void deleteClusterSchema(ObjectId clusterId) throws KettleException {
+		slaveDelegate.deleteClusterSchema(clusterId);
 	}
 
 	public void deletePartitionSchema(ObjectId partitionSchemaId) throws KettleException {
+		try {
+			deleteObject(partitionSchemaId);
+		} catch(Exception e) {
+			throw new KettleException("Unable to delete partition schema with id ["+partitionSchemaId+"]", e);
+		}
 	}
 
 	public void deleteRepositoryDirectory(RepositoryDirectory dir) throws KettleException {
@@ -592,10 +591,12 @@ public class JCRRepository implements Repository {
 		}
 	}
 
-	public void deleteSlave(ObjectId id_slave) throws KettleException {
+	public void deleteSlave(ObjectId slaveServerId) throws KettleException {
+		slaveDelegate.deleteSlave(slaveServerId);
 	}
 
 	public void deleteDatabaseMeta(String databaseName) throws KettleException {
+		databaseDelegate.deleteDatabaseMeta(databaseName);
 	}
 
 	public ObjectId getClusterID(String name) throws KettleException {
@@ -608,18 +609,6 @@ public class JCRRepository implements Repository {
 
 	public String[] getClusterNames() throws KettleException {
 		return getObjectNames(null, EXT_CLUSTER_SCHEMA);
-	}
-
-	public ObjectId[] getClusterSlaveIDs(ObjectId clusterSchemaId) throws KettleException {
-		return null;
-	}
-
-	public String[] getClustersUsingSlave(ObjectId id_slave) throws KettleException {
-		return null;
-	}
-
-	public ObjectId[] getDatabaseAttributeIDs(ObjectId databaseId) throws KettleException {
-		return null;
 	}
 
 	public ObjectId getDatabaseID(String name) throws KettleException {
@@ -646,16 +635,8 @@ public class JCRRepository implements Repository {
 		return getObjectNames(id_directory, EXT_JOB);
 	}
 
-	public ObjectId[] getJobNoteIDs(ObjectId jobId) throws KettleException {
-		return null;
-	}
-
 	public List<RepositoryObject> getJobObjects(ObjectId id_directory, boolean includeDeleted) throws KettleException {
 		return getPdiObjects(id_directory, EXT_JOB, RepositoryObject.STRING_OBJECT_TYPE_JOB, includeDeleted);
-	}
-
-	public String[] getJobsUsingDatabase(ObjectId databaseId) throws KettleException {
-		return null;
 	}
 
 	public ObjectId getPartitionSchemaID(String name) throws KettleException {
@@ -691,28 +672,18 @@ public class JCRRepository implements Repository {
 	}
 
 	public List<SlaveServer> getSlaveServers() throws KettleException {
-		return null;
-	}
-
-
-	public ObjectId[] getSubConditionIDs(ObjectId id_condition) throws KettleException {
-		return null;
-	}
-
-	public ObjectId[] getTransNoteIDs(ObjectId transformationId) throws KettleException {
-		return null;
-	}
-
-	public ObjectId[] getTransformationClusterSchemaIDs(ObjectId transformationId) throws KettleException {
-		return null;
-	}
-
-	public ObjectId[] getTransformationConditionIDs(ObjectId transformationId) throws KettleException {
-		return null;
-	}
-
-	public ObjectId[] getTransformationDatabaseIDs(ObjectId transformationId) throws KettleException {
-		return null;
+		try {
+			List<SlaveServer> list = new ArrayList<SlaveServer>();
+			
+			ObjectId[] ids = getSlaveIDs(false);
+			for (ObjectId id : ids) {
+				list.add( loadSlaveServer(id, null) ); // the last version
+			}
+			
+			return list;
+		} catch(Exception e) {
+			throw new KettleException("Unable to load all slave servers from the repository", e);
+		}
 	}
 	
 	/**
@@ -890,7 +861,7 @@ public class JCRRepository implements Repository {
 					if (node.isNodeType(NODE_TYPE_UNSTRUCTURED)) {
 						String fullname = node.getName();
 						if (fullname.endsWith(extension)) {
-							names.add(fullname.substring(0, fullname.length() - extension.length()));
+							names.add( getObjectName(node) );
 						}
 					}
 				}
@@ -926,7 +897,7 @@ public class JCRRepository implements Repository {
 				Date dateCreated = version.getCreated().getTime();
 				String lockMessage = transNode.getProperty(PROPERTY_VERSION_COMMENT).getString();
 				
-				list.add(new RepositoryObject(name.substring(0, name.length()-extension.length()), userCreated, dateCreated, objectType, description, lockMessage)); // TODO : add the lock message
+				list.add(new RepositoryObject(name.substring(0, name.length()-extension.length()), userCreated, dateCreated, objectType, description, lockMessage));
 				
 			}
 			return list;
@@ -936,116 +907,39 @@ public class JCRRepository implements Repository {
 		}
 	}
 
-	public ObjectId[] getTransformationPartitionSchemaIDs(ObjectId transformationId) throws KettleException {
-		return null;
-	}
 
-	public String[] getTransformationsUsingCluster(ObjectId id_cluster) throws KettleException {
-		return null;
-	}
-
-	public String[] getTransformationsUsingDatabase(ObjectId databaseId) throws KettleException {
-		return null;
-	}
-
-	public String[] getTransformationsUsingPartitionSchema(ObjectId partitionSchemaId) throws KettleException {
-		return null;
-	}
-
-	public String[] getTransformationsUsingSlave(ObjectId id_slave) throws KettleException {
-		return null;
-	}
 
 	public UserInfo getUserInfo() {
 		return userInfo;
 	}
 
-	public ObjectId insertClusterSlave(ClusterSchema clusterSchema, SlaveServer slaveServer) throws KettleException {
-		return null;
-	}
-
 	public void insertJobEntryDatabase(ObjectId jobId, ObjectId jobEntryId, ObjectId databaseId) throws KettleException {
-	}
-
-	public void insertJobNote(ObjectId jobId, ObjectId id_note) throws KettleException {
+		try {
+			Node jobEntryNode = session.getNodeByUUID(jobEntryId.getId());
+			Node databaseNode = session.getNodeByUUID(databaseId.getId());
+			jobEntryNode.setProperty(databaseId.getId(), databaseNode);
+		} catch(Exception e) {
+			throw new KettleException("Unable to save step-database relationship!", e);
+		}
 	}
 
 	public ObjectId insertLogEntry(String description) throws KettleException {
-		return null;
+		return null; // TODO!
 	}
 
-	// Simply keep the relationship between transformation and database in this case...
-	// We're not that interested in the step-database relationship.
-	//
 	public void insertStepDatabase(ObjectId transformationId, ObjectId stepId, ObjectId databaseId) throws KettleException {
-		/* TODO Find a good implementation for these N:N relationships
-		 * 
-		 * Perhaps we simply have to store all the used transformation nodes in the Value[].
-		 * However, this might cause some mgt issues since we then have to figure out the transformations and jobs in the array as one gets deleted etc.
-		 * 
 		try {
-			Node transNode = session.getNodeByUUID(transformationId.getId());
-			Node dbNode = session.getNodeByUUID(databaseId.getId());
-			
-			// So we want to create a new node with type NODE_TYPE_REL_TRANS_DB
-			//
-			rootNode
-			
-			Value value = session.getValueFactory().createValue(document); //creates the reference value
-		} catch (Exception e) {
-			throw new KettleException("Unable to add reference between transformation ["+transformationId+"] and database ["+databaseId+"]", e);
+			Node stepNode = session.getNodeByUUID(stepId.getId());
+			Node databaseNode = session.getNodeByUUID(databaseId.getId());
+			stepNode.setProperty(databaseId.getId(), databaseNode);
+		} catch(Exception e) {
+			throw new KettleException("Unable to save step-database relationship!", e);
 		}
-		*/
 	}
 
-	public void insertTransNote(ObjectId transformationId, ObjectId id_note) throws KettleException {
-	}
-
-	public void insertTransStepCondition(ObjectId transformationId, ObjectId stepId, ObjectId id_condition) throws KettleException {
-	}
-
-	public ObjectId insertTransformationCluster(ObjectId transformationId, ObjectId id_cluster) throws KettleException {
-		return null;
-	}
-
-	public ObjectId insertTransformationPartitionSchema(ObjectId transformationId, ObjectId partitionSchemaId) throws KettleException {
-		return null;
-	}
-
-	public ObjectId insertTransformationSlave(ObjectId transformationId, ObjectId id_slave) throws KettleException {
-		return null;
-	}
 
 	public ClusterSchema loadClusterSchema(ObjectId clusterSchemaId, List<SlaveServer> slaveServers, String versionLabel) throws KettleException {
-		try {
-			Version version = getVersion(session.getNodeByUUID(clusterSchemaId.getId()), null); // TODO
-			Node node = getVersionNode(version);
-			
-			Document doc = XMLHandler.loadXMLString(  node.getProperty(PROPERTY_XML).getString() );
-			
-			ClusterSchema clusterSchema = new ClusterSchema( XMLHandler.getSubNode(doc, ClusterSchema.XML_TAG), slaveServers );
-			
-			// Grab the Version comment...
-			//
-			String versionComment = node.getProperty(PROPERTY_VERSION_COMMENT).getString();
-			String userCreated = node.getProperty(PROPERTY_USER_CREATED).getString();
-			
-			clusterSchema.setObjectVersion(new JCRObjectVersion(version, versionComment, userCreated));
-			clusterSchema.clearChanged();			
-			
-			return clusterSchema;
-		}
-		catch(Exception e) {
-			throw new KettleException("Unable to load cluster schema from object ["+clusterSchemaId+"]", e);
-		}
-	}
-
-	public Condition loadCondition(ObjectId id_condition) throws KettleException {
-		return null;
-	}
-
-	public Condition loadConditionFromStepAttribute(ObjectId stepId, String code) throws KettleException {
-		return null;
+		return slaveDelegate.loadClusterSchema(clusterSchemaId, slaveServers, versionLabel);
 	}
 
 	public DatabaseMeta loadDatabaseMeta(ObjectId databaseId, String versionLabel) throws KettleException {
@@ -1057,36 +951,11 @@ public class JCRRepository implements Repository {
 	}
 
 	public PartitionSchema loadPartitionSchema(ObjectId partitionSchemaId, String versionLabel) throws KettleException {
-		try {
-			Version version = getVersion(session.getNodeByUUID(partitionSchemaId.getId()), null);
-			Node node = getVersionNode(version);
-			
-			Document doc = XMLHandler.loadXMLString(node.getProperty(PROPERTY_XML).getString());
-			
-			PartitionSchema partitionSchema = new PartitionSchema( XMLHandler.getSubNode(doc, PartitionSchema.XML_TAG) );
-			
-			// Grab the Version comment...
-			//
-			String versionComment = node.getProperty(PROPERTY_VERSION_COMMENT).getString();
-			String userCreated = node.getProperty(PROPERTY_USER_CREATED).getString();
-
-			partitionSchema.setObjectId(partitionSchemaId);
-			partitionSchema.setObjectVersion(new JCRObjectVersion(version, versionComment, userCreated));
-			partitionSchema.clearChanged();			
-			
-			return partitionSchema;
-		}
-		catch(Exception e) {
-			throw new KettleException("Unable to load database from object ["+partitionSchemaId+"]", e);
-		}
+		return partitionDelegate.loadPartitionSchema(partitionSchemaId, versionLabel);
 	}
 	
-	public SlaveServer loadSlaveServer(ObjectId id_slave_server, String versionLabel) throws KettleException {
-		return null;
-	}
-
-	public ValueMetaAndData loadValueMetaAndData(ObjectId id_value) throws KettleException {
-		return null;
+	public SlaveServer loadSlaveServer(ObjectId slaveServerId, String versionLabel) throws KettleException {
+		return slaveDelegate.loadSlaveServer(slaveServerId, versionLabel);
 	}
 
 	public void lockJob(ObjectId jobId, String message) throws KettleException {
@@ -1120,22 +989,45 @@ public class JCRRepository implements Repository {
 	}
 
 	public ObjectId renameRepositoryDirectory(RepositoryDirectory dir) throws KettleException {
-		return null;
+		try {
+			Node folderNode = session.getNodeByUUID(dir.getObjectId().getId());
+			String parentPath = folderNode.getParent().getPath();
+			
+			session.move(folderNode.getPath(), parentPath+"/"+dir.getDirectoryName());
+			
+			return dir.getObjectId();
+		} catch(Exception e) {
+			throw new KettleException("Unable to rename directory with id ["+dir.getObjectId()+"] to ["+dir.getDirectoryName()+"]", e);
+		}
 	}
 
 	public ObjectId renameTransformation(ObjectId transformationId, RepositoryDirectory newDirectory, String newName) throws KettleException {
-		return null;
-	}
-
-	public ObjectId saveCondition(Condition condition) throws KettleException {
-		return null;
-	}
-
-	public ObjectId saveCondition(Condition condition, ObjectId id_condition_parent) throws KettleException {
-		return null;
+		return transDelegate.renameTransformation(transformationId, newDirectory, newName);
 	}
 
 	public void saveConditionStepAttribute(ObjectId transformationId, ObjectId stepId, String code, Condition condition) throws KettleException {
+		try {
+			Node stepNode = session.getNodeByUUID(stepId.getId());
+			
+			Node conditionNode = stepNode.addNode(code);
+			conditionNode.setProperty(PROPERTY_XML, condition.getXML());
+			
+			condition.setObjectId( new StringObjectId(conditionNode.getUUID()));
+		} catch(Exception e) {
+			throw new KettleException("Unable to save condition ["+condition+"] in the repository", e);
+		}
+	}
+
+	public Condition loadConditionFromStepAttribute(ObjectId stepId, String code) throws KettleException {
+		try {
+			Node stepNode = session.getNodeByUUID(stepId.getId());
+			Node conditionNode = stepNode.getNode(code);
+			String xml = conditionNode.getProperty(PROPERTY_XML).getString();
+			Condition condition = new Condition( XMLHandler.getSubNode(XMLHandler.loadXMLString(xml), Condition.XML_TAG) );
+			return condition;
+		} catch(Exception e) {
+			throw new KettleException("Unable to load condition from step id ["+stepId+"] with code ["+code+"]", e);
+		}
 	}
 
 	// Save/Load database from step/jobentry attribute
@@ -1556,7 +1448,27 @@ public class JCRRepository implements Repository {
 			throw new KettleException("It was not possible to get information from property ["+code+"] in node", e);
 		}
 	}
-	
+
+	public double getPropertyNumber(Node node, String code) throws KettleException {
+		try {
+			return node.getProperty(code).getDouble();
+		} catch (PathNotFoundException e) {
+			return 0.0; // property is not defined
+		} catch (RepositoryException e) {
+			throw new KettleException("It was not possible to get information from property ["+code+"] in node", e);
+		}
+	}
+
+	public Date getPropertyDate(Node node, String code) throws KettleException {
+		try {
+			Calendar calendar = node.getProperty(code).getDate();
+			return calendar.getTime();
+		} catch (PathNotFoundException e) {
+			return null; // property is not defined
+		} catch (RepositoryException e) {
+			throw new KettleException("It was not possible to get information from property ["+code+"] in node", e);
+		}
+	}
 	public boolean getPropertyBoolean(Node node, String code) throws KettleException {
 		try {
 			return node.getProperty(code).getBoolean();
@@ -1577,6 +1489,15 @@ public class JCRRepository implements Repository {
 		}
 	}
 
+	public Node getPropertyNode(Node node, String code) throws KettleException {
+		try {
+			return node.getProperty(code).getNode();
+		} catch (PathNotFoundException e) {
+			return null; // property is not defined
+		} catch (RepositoryException e) {
+			throw new KettleException("It was not possible to get information from property ["+code+"] in node", e);
+		}
+	}
 	
 	
 	
@@ -1739,65 +1660,6 @@ public class JCRRepository implements Repository {
 		}
 	}
 
-	/*
-	 * Saves a relationship in the JCR.
-	 * Please note that both parent and child nodes and elements have to be available and saved and versioned already.
-	 * 
-	 * @param parent
-	 * @param parentNode
-	 * @param child
-	 * @param childNode
-	 * @throws KettleException
-	 *
-	public Node saveRelationShip(RepositoryElementInterface parent, Node parentNode, RepositoryElementInterface child, Node childNode) throws KettleException {
-		try {
-			
-			if (parentNode.equals(childNode) || parentNode.getUUID().equals(childNode.getUUID())) {
-				throw new KettleException("Unable to create relationship between identical parent ["+parent+"] and child ["+child+"] (same UUID or same object)");
-			}
-
-			// We need references to the last version of parent and child!
-			//
-			Node lastParentNode = getVersionNode(getLastVersion(parentNode));
-			Node lastChildNode = getVersionNode(getLastVersion(childNode));
-			
-			// Dump all the references in a ".used" folder alongside the object itself...
-			//
-			Node folderNode = findFolderNode(parent.getRepositoryDirectory());
-			String nodeName = parent.getName()+calcExtension(parent)+".usage";
-			
-			// Create the node if it doesn't exist...
-			//
-			Node relFolderNode;
-			try {
-				relFolderNode = folderNode.getNode(nodeName);
-			} catch(PathNotFoundException e) {
-				relFolderNode = folderNode.addNode(nodeName, NODE_TYPE_UNSTRUCTURED);
-			}
-			
-			parentNode.checkout();
-			
-			// OK, now put a new relationship in there...
-			// The name of the relationship is the name of the child
-			// This will lead to duplicates so we might as well add a version here...
-			//
-			String name = child.getName();
-			name = name.replace(":", "_");
-			Node node = relFolderNode.addNode(name, NODE_TYPE_RELATION);
-			node.setProperty(PROPERTY_DESCRIPTION, "Relationship between parent ["+parent+"] and child ["+child+"]");
-			node.setProperty(PROPERTY_PARENT_OBJECT, parentNode);
-			node.setProperty(PROPERTY_CHILD_OBJECT, childNode);
-			
-			// Session is saved in the code calling this method!!
-			//
-			parentNode.save();
-			return node;
-		} catch(Exception e) {
-			throw new KettleException("Unable to save relationship between parent ["+parent+"] and child ["+child+"]", e);
-		}
-	}
-	*/
-
 	/**
 	 * An object is never deleted, simply marked as such!
 	 * 
@@ -1898,6 +1760,23 @@ public class JCRRepository implements Repository {
 			// 
 			node.checkout();
 			
+			// Remove all existing properties, they have to be provided for again
+			//
+			PropertyIterator properties = node.getProperties();
+			while (properties.hasNext()) {
+				Property property = properties.nextProperty();
+				if (!property.getName().startsWith("jcr:")) {
+					node.setProperty(property.getName(), (String)null);
+				}
+			}
+			
+			// Remove all sub-nodes, they have to be provided for again
+			//
+			NodeIterator nodes = node.getNodes();
+			while (nodes.hasNext()) {
+				Node child = nodes.nextNode();
+				child.remove();
+			}
 		} else {
 			// Create a new node
 			//
@@ -1913,5 +1792,5 @@ public class JCRRepository implements Repository {
 		node.setProperty(PROPERTY_USER_CREATED, userInfo.getLogin());
 
 		return node;
-	}	
+	}
 }

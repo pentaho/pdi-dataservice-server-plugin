@@ -48,3 +48,28 @@ TODO are:
 - Jobs and job entries
 
 Fortunately those are easier now that the hard problems around the versioning of data are solved and tested.
+
+
+2009-JUL-14
+============
+
+Finished are:
+- Creating / Deleting directories
+- Saving / Loading transformations
+- Creating / loading transformation versions
+- Retrieval of a list of versions
+- Retrieval of object IDs, optionally list deleted ones
+- Deleting / restoring transformations
+- Verify existence of a transformation
+- Rename of a database connection (without consequence for the transformation)
+- Save/Load/Delete/Rename SlaveServer
+- Save/Load/Delete/Rename ClusterSchema
+- Save/Load/Delete/Rename PartitionSchema
+- Make sure that logging database information is also references, not stored.
+- Rename/move of transformation
+- Rename of directory 
+
+TODO:
+- Adding more unit tests to test rename/delete and delete of used objects (finer points)
+- Jobs and job entries
+

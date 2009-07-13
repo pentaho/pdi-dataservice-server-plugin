@@ -15,18 +15,18 @@
         </parameter>
     </parameters>
     <log>
-      <read/>
-      <write/>
+      <read>CSV file input</read>
+      <write>Table output</write>
       <input/>
       <output/>
       <update/>
-      <rejected/>
-      <connection/>
-      <table/>
+      <rejected>Table output</rejected>
+      <connection>MySQL</connection>
+      <table>LOG_TABLE</table>
       <step_performance_table/>
       <use_batchid>Y</use_batchid>
-      <use_logfield>N</use_logfield>
-      <size_limit_lines/>
+      <use_logfield>Y</use_logfield>
+      <size_limit_lines>5000</size_limit_lines>
     </log>
     <maxdate>
       <connection/>
@@ -78,6 +78,13 @@
       <xloc>200</xloc>
       <yloc>200</yloc>
       <width>112</width>
+      <heigth>23</heigth>
+    </notepad>
+    <notepad>
+      <note>Another note</note>
+      <xloc>500</xloc>
+      <yloc>50</yloc>
+      <width>74</width>
       <heigth>23</heigth>
     </notepad>
   </notepads>

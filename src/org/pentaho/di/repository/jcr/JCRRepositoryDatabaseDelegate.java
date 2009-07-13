@@ -166,6 +166,16 @@ public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
 			throw new KettleException("Unable to rename database with id ["+databaseId+"] to ["+newname+"]", e);
 		}
 	}
+
+	public void deleteDatabaseMeta(String databaseName) throws KettleException {
+		try {
+			String path = repository.calcRelativeNodePath(null, databaseName, JCRRepository.EXT_DATABASE);
+			Node databaseNode = repository.getRootNode().getNode(path);
+			repository.deleteObject(new StringObjectId(databaseNode.getUUID()));
+		} catch(Exception e) {
+			throw new KettleException("Unable to delete database connection with name ["+databaseName+"]", e);
+		}
+	}
     
 	
 }

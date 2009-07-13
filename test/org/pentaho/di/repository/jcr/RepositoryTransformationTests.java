@@ -306,8 +306,11 @@ public class RepositoryTransformationTests extends TestCase {
 		TableOutputMeta meta = (TableOutputMeta) step.getStepMetaInterface();
 		DatabaseMeta databaseMeta = meta.getDatabaseMeta();
 		assertNotNull(databaseMeta);
-		
 		assertEquals("new MySQL", databaseMeta.getName());
+		
+		DatabaseMeta logDatabase = transMeta.getLogConnection();
+		assertNotNull(logDatabase);
+		assertEquals("new MySQL", logDatabase.getName());
 	}
 	
 	public void test99_deleteDirectory() throws Exception {
