@@ -23,7 +23,6 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 			PartitionSchema partitionSchema = (PartitionSchema) element;
 
 			Node node = repository.createOrVersionNode(element, versionComment);
-			ObjectId id = new StringObjectId(node.getUUID());
 	
 	        node.setProperty("DYNAMIC_DEFINITION", partitionSchema.isDynamicallyDefined());
 	        node.setProperty("PARTITIONS_PER_SLAVE", partitionSchema.getNumberOfPartitionsPerSlave());
@@ -36,9 +35,10 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 				node.setProperty(PARTITION_PROPERTY_PREFIX+i, partitionSchema.getPartitionIDs().get(i));
 			}
 	        
+			repository.getSession().save();
 			Version version = node.checkin();
-			partitionSchema.setObjectId(id);
 			partitionSchema.setObjectVersion(repository.getObjectVersion(version));
+			partitionSchema.setObjectId(new StringObjectId(node.getUUID()));
 			
 		}catch(Exception e) {
 			throw new KettleException("Unable to save partition schema ["+element+"] in the repository", e);

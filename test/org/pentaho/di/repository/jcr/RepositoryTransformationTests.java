@@ -11,6 +11,7 @@ import org.pentaho.di.repository.ObjectVersion;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryLock;
+import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.di.trans.TransMeta;
@@ -26,8 +27,10 @@ public class RepositoryTransformationTests extends TestCase {
 	private RepositoryDirectory	directoryTree;
 	
 	private static final String TEST_DIRECTORY_PATH = "/foo/bar/test/dir";
+	private static final String MOVE_DIRECTORY_PATH = "/another/path";
 	
 	private static final String TEST_TRANSFORMATION = "./testfiles/SunTest.ktr";
+	private static final String TRANS_NAME = "SunTest";
 	
 	private static final String DESCRIPTION_ONE   = "Description 1";
 	private static final String DESCRIPTION_TWO   = "Description 2";
@@ -110,7 +113,7 @@ public class RepositoryTransformationTests extends TestCase {
 
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 
-		TransMeta transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		TransMeta transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 
 		assertNotNull(transMeta);
 		
@@ -190,7 +193,7 @@ public class RepositoryTransformationTests extends TestCase {
 
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 
-		TransMeta transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, "1.1");  // Load the second version
+		TransMeta transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, "1.1");  // Load the second version
 		ObjectVersion version = transMeta.getObjectVersion();
 		assertEquals("1.1", version.getName());
 		assertEquals(VERSION_COMMENT_TWO, version.getComment());
@@ -198,7 +201,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(3, transMeta.nrSteps());
 		assertEquals(2, transMeta.nrTransHops());
 		
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, "1.0");  // Load the first version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, "1.0");  // Load the first version
 		version = transMeta.getObjectVersion();
 		assertEquals("1.0", version.getName());
 		assertEquals(VERSION_COMMENT_ONE, version.getComment());
@@ -206,7 +209,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(3, transMeta.nrSteps());
 		assertEquals(2, transMeta.nrTransHops());
 
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, "1.3");  // Load the fourth version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, "1.3");  // Load the fourth version
 		version = transMeta.getObjectVersion();
 		assertEquals("1.3", version.getName());
 		assertEquals(VERSION_COMMENT_FOUR, version.getComment());
@@ -214,7 +217,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(2, transMeta.nrSteps());
 		assertEquals(1, transMeta.nrTransHops());
 
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, "1.2");  // Load the third version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, "1.2");  // Load the third version
 		version = transMeta.getObjectVersion();
 		assertEquals("1.2", version.getName());
 		assertEquals(VERSION_COMMENT_THREE, version.getComment());
@@ -227,7 +230,7 @@ public class RepositoryTransformationTests extends TestCase {
 	public void test50_loadLastTransformationVersion() throws Exception {
 		
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		
 		assertNotNull(transMeta);
 		
@@ -239,7 +242,7 @@ public class RepositoryTransformationTests extends TestCase {
 	
 	public void test60_lockTransformation() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		repository.lockTransformation(transMeta.getObjectId(), "Locked by unit test");
 		
 		RepositoryLock lock = repository.getTransformationLock(transMeta.getObjectId());
@@ -249,42 +252,41 @@ public class RepositoryTransformationTests extends TestCase {
 	
 	public void test65_unlockTransformation() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		repository.unlockTransformation(transMeta.getObjectId());
 	}
 
 	public void test70_existsTransformation() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		
-		// ObjectId id = repository.getTransformationID(transMeta.getName(), transMeta.getRepositoryDirectory());
-		boolean exists = repository.exists(transMeta);
+		boolean exists = repository.exists(TRANS_NAME, fooDirectory, RepositoryObjectType.TRANSFORMATION);
 		
 		assertEquals("Transformation exists in the repository, test didn't find it", true, exists);
 	}
 
 	public void test75_deleteTransformation() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		
 		repository.deleteTransformation(transMeta.getObjectId());
 
-		boolean exists = repository.exists(transMeta);
+		boolean exists = repository.exists(TRANS_NAME, fooDirectory, RepositoryObjectType.TRANSFORMATION);
 		assertEquals("Transformation was not deleted", false, exists);
 	}
 
 	public void test77_restoreTransformation() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		
 		repository.undeleteObject(transMeta); // un-delete
 
-		boolean exists = repository.exists(transMeta);
+		boolean exists = repository.exists(TRANS_NAME, fooDirectory, RepositoryObjectType.TRANSFORMATION);
 		assertEquals("Transformation was not restored", true, exists);
 		
 		repository.undeleteObject(transMeta); // restore the second version...
 		
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		
 		ObjectVersion version = transMeta.getObjectVersion();
 		assertEquals("1.5", version.getName());
@@ -292,7 +294,7 @@ public class RepositoryTransformationTests extends TestCase {
 
 	public void test77_renameDatabase() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		
 		// Rename connection "MySQL", used in the transformation...
 		//
@@ -301,7 +303,7 @@ public class RepositoryTransformationTests extends TestCase {
 		
 		repository.renameDatabase(id, "new MySQL");
 
-		transMeta = repository.loadTransformation("SunTest", fooDirectory, null, true, null);  // Load the last version
+		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		StepMeta step = transMeta.findStep("Table Output");
 		TableOutputMeta meta = (TableOutputMeta) step.getStepMetaInterface();
 		DatabaseMeta databaseMeta = meta.getDatabaseMeta();
@@ -311,6 +313,33 @@ public class RepositoryTransformationTests extends TestCase {
 		DatabaseMeta logDatabase = transMeta.getLogConnection();
 		assertNotNull(logDatabase);
 		assertEquals("new MySQL", logDatabase.getName());
+	}
+	
+	public void test80_moveTransformation() throws Exception {
+
+		// Load the test transformation in the test directory...
+		//
+		RepositoryDirectory testDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
+		transMeta = repository.loadTransformation(TRANS_NAME, testDirectory, null, true, null);  // Load the last version
+
+		// Create another directory and move our transformation over there...
+		//
+		RepositoryDirectory moveDirectory = repository.createRepositoryDirectory(directoryTree, MOVE_DIRECTORY_PATH);
+		
+		// Move the transformation to the other directory...
+		//
+		repository.renameTransformation(transMeta.getObjectId(), moveDirectory, transMeta.getName());
+		
+		// See if the transformation now exists in the new location...
+		//
+		boolean oldExists = repository.exists(transMeta.getName(), testDirectory, RepositoryObjectType.TRANSFORMATION);
+		assertEquals(false, oldExists);
+		
+		boolean newExists = repository.exists(transMeta.getName(), moveDirectory, RepositoryObjectType.TRANSFORMATION);
+		assertEquals(true, newExists);
+		
+		transMeta = repository.loadTransformation(transMeta.getName(), moveDirectory, null, true, null);  // Load the last version anyway
+		assertNotNull(transMeta);
 	}
 	
 	public void test99_deleteDirectory() throws Exception {

@@ -42,9 +42,11 @@ import org.pentaho.di.repository.ObjectVersion;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.RepositoryElementLocationInterface;
 import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
+import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
@@ -60,7 +62,7 @@ import org.pentaho.di.trans.TransMeta;
 		name="JCRRepository.Name", 
 		metaClass="org.pentaho.di.repository.jcr.JCRRepositoryMeta",
 		dialogClass="org.pentaho.di.ui.repository.jcr.JCRRepositoryDialog",
-		versionBrowserClass="TODO" // TODO Implement a version browser class too...
+		versionBrowserClass="org.pentaho.di.ui.repository.jcr.JCRRepositoryVersionBrowserDialog"
 
 		)
 public class JCRRepository implements Repository {
@@ -80,13 +82,14 @@ public class JCRRepository implements Repository {
 
 
 	public static final String	EXT_TRANSFORMATION		= ".ktr";
-	public static final String EXT_JOB					= ".kjb";
+	public static final String  EXT_JOB					= ".kjb";
 	public static final String	EXT_DATABASE			= ".kdb";
 	public static final String	EXT_SLAVE_SERVER 		= ".ksl";
 	public static final String	EXT_CLUSTER_SCHEMA 		= ".kcs";
 	public static final String	EXT_PARTITION_SCHEMA	= ".kps";
 	public static final String	EXT_STEP				= ".kst";
 	public static final String	EXT_JOB_ENTRY			= ".kje";
+	public static final String	EXT_JOB_ENTRY_COPY		= ".kjc";
 
 	public static final String	PROPERTY_NAME       	= "Name";
 	public static final String	PROPERTY_DESCRIPTION	= "Description";
@@ -141,6 +144,7 @@ public class JCRRepository implements Repository {
 	
 	public JCRRepository() {
 		this.transDelegate = new JCRRepositoryTransDelegate(this);
+		this.jobDelegate = new JCRRepositoryJobDelegate(this);
 		this.databaseDelegate = new JCRRepositoryDatabaseDelegate(this);
 		this.partitionDelegate = new JCRRepositoryPartitionDelegate(this);
 		this.slaveDelegate = new JCRRepositorySlaveDelegate(this);
@@ -165,7 +169,7 @@ public class JCRRepository implements Repository {
 		try {
 			jcrRepository = new URLRemoteRepository(repositoryLocation.getUrl());
 			
-			session = jcrRepository.login(new SimpleCredentials(userInfo.getUsername(), userInfo.getPassword()!=null ? userInfo.getPassword().toCharArray() : null ));
+			session = jcrRepository.login(new SimpleCredentials(userInfo.getLogin(), userInfo.getPassword()!=null ? userInfo.getPassword().toCharArray() : "".toCharArray() ));
 			workspace = session.getWorkspace();
 			
 			rootNode = session.getRootNode();
@@ -346,62 +350,25 @@ public class JCRRepository implements Repository {
 	public String calcNodePath(RepositoryElementInterface element) {
 		RepositoryDirectory directory = element.getRepositoryDirectory();
 		String name = element.getName();
-		String extension = calcExtension(element);
+		String extension = element.getRepositoryElementType().getExtension();
 		
 		return calcNodePath(directory, name, extension);
 	}
-	
-	String calcExtension(RepositoryElementInterface element) {
-		if (TransMeta.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-			return EXT_TRANSFORMATION;
-		} else
-		if (JobMeta.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-			return EXT_JOB;
-		} else
-		if (DatabaseMeta.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-			return EXT_DATABASE;
-		} else
-		if (SlaveServer.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-			return EXT_SLAVE_SERVER;
-		} else
-		if (ClusterSchema.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-			return EXT_CLUSTER_SCHEMA;
-		} else
-		if (PartitionSchema.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-			return EXT_PARTITION_SCHEMA;
-		} else {
-			return ".xml";
-		}
-	}
-	
+		
 	// General 
 	//
 	public void save(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
 		try {
-			
-			if (TransMeta.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-				// Save transformation to repository...
-				//
-				transDelegate.saveTrans(element, versionComment, monitor);
-			} else
-			if (JobMeta.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-				jobDelegate.saveJob(element, versionComment, monitor);
-			} else
-			if (DatabaseMeta.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-				databaseDelegate.saveDatabaseMeta(element, versionComment, monitor);
-			} else
-			if (SlaveServer.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-				slaveDelegate.saveSlaveServer(element, versionComment, monitor);
-			} else
-			if (ClusterSchema.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-				slaveDelegate.saveClusterSchema(element, versionComment, monitor);
-			} else
-			if (PartitionSchema.REPOSITORY_ELEMENT_TYPE.equals(element.getRepositoryElementType())) {
-				partitionDelegate.savePartitionSchema(element, versionComment, monitor);
-			} else {
+			switch(element.getRepositoryElementType()) {
+			case TRANSFORMATION : transDelegate.saveTransMeta(element, versionComment, monitor); break;
+			case JOB: jobDelegate.saveJobMeta(element, versionComment, monitor); break;
+			case DATABASE : databaseDelegate.saveDatabaseMeta(element, versionComment, monitor); break;
+			case SLAVE_SERVER : slaveDelegate.saveSlaveServer(element, versionComment, monitor); break;
+			case CLUSTER_SCHEMA : slaveDelegate.saveClusterSchema(element, versionComment, monitor); break;
+			case PARTITION_SCHEMA : partitionDelegate.savePartitionSchema(element, versionComment, monitor); break;
+			default: 
 				throw new KettleException("It's not possible to save Class ["+element.getClass().getName()+"] to the JCR Repository");
 			}
-			
 		} catch(Exception e) {
 			throw new KettleException("Unable to save repository element ["+element+"]", e);
 		}
@@ -497,9 +464,9 @@ public class JCRRepository implements Repository {
 		}
 	}
 
-	public boolean exists(RepositoryElementInterface repositoryElement) throws KettleException {
+	public boolean exists(String name, RepositoryDirectory repositoryDirectory, RepositoryObjectType objectType) throws KettleException {
 		try {
-			Node node = getNode(repositoryElement.getName(), repositoryElement.getRepositoryDirectory(), calcExtension(repositoryElement));
+			Node node = getNode(name, repositoryDirectory, objectType.getExtension());
 			if (node==null) return false;
 			
 			if (getPropertyBoolean(node, PROPERTY_DELETED, false)) {
@@ -508,7 +475,7 @@ public class JCRRepository implements Repository {
 			
 			return true;
 		} catch(Exception e) {
-			throw new KettleException("Unable to verify if the repository element ["+repositoryElement.getName()+"] exists", e);
+			throw new KettleException("Unable to verify if the repository element ["+name+"] exists in ", e);
 		}
 	}
 
@@ -575,7 +542,7 @@ public class JCRRepository implements Repository {
 
 	public void deletePartitionSchema(ObjectId partitionSchemaId) throws KettleException {
 		try {
-			deleteObject(partitionSchemaId);
+			deleteObject(partitionSchemaId, RepositoryObjectType.PARTITION_SCHEMA);
 		} catch(Exception e) {
 			throw new KettleException("Unable to delete partition schema with id ["+partitionSchemaId+"]", e);
 		}
@@ -686,6 +653,10 @@ public class JCRRepository implements Repository {
 		}
 	}
 	
+	public ObjectId getObjectId(RepositoryElementLocationInterface element) throws KettleException {
+		return getObjectId(element.getName(), element.getRepositoryDirectory(), element.getRepositoryElementType().getExtension());
+	}
+	
 	/**
 	 * Find the object ID of an object.
 	 * 
@@ -699,11 +670,11 @@ public class JCRRepository implements Repository {
 	 */
 	public ObjectId getObjectId(String name, RepositoryDirectory repositoryDirectory, String extension) throws KettleException {
 		try {
-			Node node = getNode(name, repositoryDirectory, extension);
+			Node node = getNode(sanitizeNodeName(name), repositoryDirectory, extension);
 			if (node==null) return null;
 			return new StringObjectId(node.getUUID());
 		} catch(Exception e) {
-			throw new KettleException("Unable to get ID for object ["+name+"] + in directory ["+repositoryDirectory+"] with extension ["+extension+"]", e);
+			throw new KettleException("Unable to get ID for object ["+sanitizeNodeName(name)+"] + in directory ["+repositoryDirectory+"] with extension ["+extension+"]", e);
 		}
 	}
 	
@@ -895,7 +866,9 @@ public class JCRRepository implements Repository {
 				String description = transNode.getProperty(PROPERTY_DESCRIPTION).getString() + " - v"+version.getName();
 				String userCreated = transNode.getProperty(PROPERTY_USER_CREATED).getString();
 				Date dateCreated = version.getCreated().getTime();
-				String lockMessage = transNode.getProperty(PROPERTY_VERSION_COMMENT).getString();
+				
+				RepositoryLock lock = getLock(objectId);
+				String lockMessage = lock==null ? null : lock.getMessage()+" ("+lock.getLogin()+" since "+XMLHandler.date2string(lock.getLockDate())+")";
 				
 				list.add(new RepositoryObject(name.substring(0, name.length()-extension.length()), userCreated, dateCreated, objectType, description, lockMessage));
 				
@@ -928,6 +901,9 @@ public class JCRRepository implements Repository {
 	}
 
 	public void insertStepDatabase(ObjectId transformationId, ObjectId stepId, ObjectId databaseId) throws KettleException {
+		
+		if (databaseId==null) return; // Nothing to do here!
+		
 		try {
 			Node stepNode = session.getNodeByUUID(stepId.getId());
 			Node databaseNode = session.getNodeByUUID(databaseId.getId());
@@ -947,7 +923,7 @@ public class JCRRepository implements Repository {
 	}
 
 	public JobMeta loadJob(String jobname, RepositoryDirectory repdir, ProgressMonitorListener monitor, String versionLabel) throws KettleException {
-		return null;
+		return jobDelegate.loadJobMeta(jobname, repdir, monitor, versionLabel);
 	}
 
 	public PartitionSchema loadPartitionSchema(ObjectId partitionSchemaId, String versionLabel) throws KettleException {
@@ -1032,15 +1008,14 @@ public class JCRRepository implements Repository {
 
 	// Save/Load database from step/jobentry attribute
 	
-	
-	public void saveDatabaseMetaJobEntryAttribute(ObjectId jobId, ObjectId jobEntryId, String code, DatabaseMeta database) throws KettleException {
+	public void saveDatabaseMetaJobEntryAttribute(ObjectId jobId, ObjectId jobEntryId, String nameCode, String idCode, DatabaseMeta database) throws KettleException {
 		try {
 			if (database!=null && database.getObjectId()!=null) {
 				Node node = session.getNodeByUUID(database.getObjectId().getId());
-				saveStepAttribute(jobId, jobEntryId, code, node);
+				saveStepAttribute(jobId, jobEntryId, idCode, node);
 			}
 		} catch(Exception e) {
-			throw new KettleException("Unable to save database reference as a job entry attribute for job entry id ["+jobEntryId+"] and code ["+code+"]", e);
+			throw new KettleException("Unable to save database reference as a job entry attribute for job entry id ["+jobEntryId+"] and ID code ["+idCode+"]", e);
 		}
 	}
 
@@ -1055,20 +1030,30 @@ public class JCRRepository implements Repository {
 		}
 	}
 
-	public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId jobEntryId, String code, List<DatabaseMeta> databases) throws KettleException {
+	public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId jobEntryId, String nameCode, String idCode, List<DatabaseMeta> databases) throws KettleException {
 		try {
-			Node node = getJobEntryAttributeNode(jobEntryId, code);
-			ObjectId databaseId = new StringObjectId(node.getUUID());
 			
-			return DatabaseMeta.findDatabase(databases, databaseId);
+			// We only use links by reference here...
+			//
+			if (idCode!=null) {
+				Node node = getJobEntryAttributeNode(jobEntryId, idCode);
+				if (node!=null) {
+					ObjectId databaseId = new StringObjectId(node.getUUID());
+					return DatabaseMeta.findDatabase(databases, databaseId);
+				}
+			}
+			return null;
 		} catch(Exception e) {
-			throw new KettleException("Unable to load database reference from a job entry attribute for job entry id ["+jobEntryId+"] and code ["+code+"]", e);
+			throw new KettleException("Unable to load database reference from a job entry attribute for job entry id ["+jobEntryId+"] and id code ["+idCode+"], name code ["+nameCode+"]", e);
 		}
 	}
 	
 	public DatabaseMeta loadDatabaseMetaFromStepAttribute(ObjectId stepId, String code, List<DatabaseMeta> databases) throws KettleException {
 		try {
 			Node node = getStepAttributeNode(stepId, code);
+			if (node==null) {
+				return null;
+			}
 			ObjectId databaseId = new StringObjectId(node.getUUID());
 			
 			return DatabaseMeta.findDatabase(databases, databaseId);
@@ -1582,16 +1567,13 @@ public class JCRRepository implements Repository {
 		return session;
 	}
 	
-	public List<ObjectVersion> getVersions(RepositoryElementInterface element) throws KettleException {
+	public List<ObjectVersion> getVersions(RepositoryElementLocationInterface element) throws KettleException {
 		try {
 			List<ObjectVersion> list = new ArrayList<ObjectVersion>();
 			
-			ObjectId objectId = element.getObjectId();
+			ObjectId objectId = getObjectId(element);
 			if (objectId==null) {
-				objectId = getObjectId(element.getName(), element.getRepositoryDirectory(), calcExtension(element));
-				if (objectId==null) {
-					throw new KettleException("Unable to find repository element ["+element+"]");
-				}
+				throw new KettleException("Unable to find repository element ["+element+"]");
 			}
 					
 			Node node = session.getNodeByUUID(objectId.getId());
@@ -1610,14 +1592,10 @@ public class JCRRepository implements Repository {
 		}
 	}
 	
-	public void undeleteObject(RepositoryElementInterface element) throws KettleException {
+	public void undeleteObject(RepositoryElementLocationInterface element) throws KettleException {
 		try {
-			Node node;
-			if (element.getObjectId()==null) {
-				node = getNode(element.getName(), element.getRepositoryDirectory(), calcExtension(element));
-			} else {
-				node = session.getNodeByUUID(element.getObjectId().getId());
-			}
+			
+			Node node = getNode(element.getName(), element.getRepositoryDirectory(), element.getRepositoryElementType().getExtension());
 
 			boolean deleted = getPropertyBoolean(node, PROPERTY_DELETED, false);
 			if (deleted) {
@@ -1626,6 +1604,7 @@ public class JCRRepository implements Repository {
 				//
 				node.checkout();
 				node.setProperty(PROPERTY_DELETED, false);
+				node.setProperty(PROPERTY_VERSION_COMMENT, "Marked "+element.getRepositoryElementType()+" as no longer deleted");
 				node.save();
 				node.checkin();
 			}
@@ -1636,7 +1615,7 @@ public class JCRRepository implements Repository {
 	}
 
 	
-	ObjectVersion getObjectVersion(Version version) throws PathNotFoundException, RepositoryException {
+	public ObjectVersion getObjectVersion(Version version) throws PathNotFoundException, RepositoryException {
 		Node versionNode = getVersionNode(version);
 		
 		String comment = versionNode.getProperty(PROPERTY_VERSION_COMMENT).getString();
@@ -1666,7 +1645,7 @@ public class JCRRepository implements Repository {
 	 * @param id 
 	 * @throws KettleException
 	 */
-	public void deleteObject(ObjectId id) throws KettleException {
+	public void deleteObject(ObjectId id, RepositoryObjectType objectType) throws KettleException {
 		try {
 			// What is the main object node?
 			//
@@ -1679,7 +1658,7 @@ public class JCRRepository implements Repository {
 				return;
 			}
 			
-			deleteObject(node);
+			deleteObject(node, objectType);
 		}
 		catch(Exception e) {
 			throw new KettleException("Unable to mark object with ID ["+id+"] as deleted", e);
@@ -1694,10 +1673,11 @@ public class JCRRepository implements Repository {
 	 * @param node
 	 * @throws KettleException
 	 */
-	public void deleteObject(Node node) throws KettleException {
+	public void deleteObject(Node node, RepositoryObjectType objectType) throws KettleException {
 		try {
 			node.checkout();
 			node.setProperty(PROPERTY_DELETED, true);
+			node.setProperty(PROPERTY_VERSION_COMMENT, "Marked "+objectType+" as deleted");
 			session.save();
 			node.checkin();
 		} catch(Exception e) {
@@ -1733,8 +1713,8 @@ public class JCRRepository implements Repository {
 	}
 
 	public Node createOrVersionNode(RepositoryElementInterface element, String versionComment) throws Exception {
-		String ext = calcExtension(element);
-		String name = element.getName()+ext;
+		String ext = element.getRepositoryElementType().getExtension();
+		String name = sanitizeNodeName(element.getName())+ext;
 		Node folder = findFolderNode(element.getRepositoryDirectory());
 		
 		// First see if a node with the same name already exists...
@@ -1742,7 +1722,7 @@ public class JCRRepository implements Repository {
 		Node node = null;
 		RepositoryLock lock = null;
 		
-		ObjectId id = getObjectId(element.getName(), element.getRepositoryDirectory(), calcExtension(element));
+		ObjectId id = getObjectId(element);
 		if (id!=null) {
 			node = session.getNodeByUUID(id.getId());
 			
@@ -1783,6 +1763,8 @@ public class JCRRepository implements Repository {
 			node = folder.addNode(name, JCRRepository.NODE_TYPE_UNSTRUCTURED);
 			node.addMixin(JCRRepository.MIX_VERSIONABLE);
 			node.addMixin(JCRRepository.MIX_REFERENCEABLE);
+			
+			node.checkout();
 		}
 		
 		node.setProperty(PROPERTY_DELETED, false);
@@ -1792,5 +1774,25 @@ public class JCRRepository implements Repository {
 		node.setProperty(PROPERTY_USER_CREATED, userInfo.getLogin());
 
 		return node;
+	}
+	
+	/**
+	 * Sanitize the name of an object so we can use it as a node name...
+	 * Usually this means we can include any colons in it. 
+	 * 
+	 * @param name The name to clean up
+	 * @return the sanitized name
+	 */
+	public String sanitizeNodeName(String name) {
+		StringBuffer result = new StringBuffer(30);
+		
+		for (char c : name.toCharArray()) {
+			switch(c) {
+			case ':' : result.append('-'); break;
+			default : result.append(c); break;
+			}
+		}
+		
+		return result.toString();
 	}
 }

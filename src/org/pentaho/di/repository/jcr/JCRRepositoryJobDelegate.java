@@ -1,5 +1,9 @@
 package org.pentaho.di.repository.jcr;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.version.Version;
@@ -13,12 +17,16 @@ import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.job.JobEntryLoader;
 import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
+import org.pentaho.di.job.JobPlugin;
 import org.pentaho.di.job.entry.JobEntryCopy;
+import org.pentaho.di.job.entry.JobEntryInterface;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.jcr.util.JCRObjectVersion;
 import org.pentaho.di.shared.SharedObjects;
@@ -45,8 +53,8 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 		super(repository);
 	}
 
-	public JobMeta loadJob(String transname, RepositoryDirectory repdir, ProgressMonitorListener monitor, boolean setInternalVariables, String versionLabel) throws KettleException {
-		String path = repository.calcRelativeNodePath(repdir, transname, JCRRepository.EXT_JOB); 
+	public JobMeta loadJobMeta(String jobName, RepositoryDirectory repdir, ProgressMonitorListener monitor, String versionLabel) throws KettleException {
+		String path = repository.calcRelativeNodePath(repdir, jobName, JCRRepository.EXT_JOB); 
 		
 		try {
 			Node node = repository.getRootNode().getNode(path);
@@ -57,6 +65,7 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 			
 			jobMeta.setName( repository.getObjectName(jobNode));
 			jobMeta.setDescription( repository.getObjectDescription(jobNode));
+			jobMeta.setRepositoryDirectory(repdir);
 			
 			// Grab the Version comment...
 			//
@@ -68,71 +77,55 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 			jobMeta.setObjectId(objectId);
 						
 			// Read the shared objects from the repository, set the shared objects file, etc.
+			// !! make sure to set the shared objects file prior to loading the shared objects !!
 			//
-			jobMeta.setSharedObjects(readTransSharedObjects(jobMeta));
+			jobMeta.setSharedObjectsFile( repository.getPropertyString(jobNode, "SHARED_FILE") );
+			jobMeta.setSharedObjects(readSharedObjects(jobMeta));
 			jobMeta.setRepositoryLock( repository.getJobLock(objectId) );
 			
-			// read the steps...
+			// Keep a unique list of job entries to facilitate in the loading.
+			//
+			List<JobEntryInterface> jobentries = new ArrayList<JobEntryInterface>();
+
+			// Read the job entry copies
+			//
+			int nrCopies = (int) jobNode.getProperty("NR_JOB_ENTRY_COPIES").getLong();
+			
+			// read the copies...
 			//
 			NodeIterator nodes = jobNode.getNodes();
 			while (nodes.hasNext()) {
-				Node jobEntryNode = nodes.nextNode();
-				String name = jobEntryNode.getName();
-				if (name.endsWith(JCRRepository.EXT_JOB_ENTRY) && !name.startsWith(JOB_HOP_PREFIX)) {
-					// This is a job entry node...
+				Node copyNode = nodes.nextNode();
+				String name = copyNode.getName();
+				if (name.endsWith(JCRRepository.EXT_JOB_ENTRY_COPY) && !name.startsWith(JOB_HOP_PREFIX)) {
+					// This is a job entry copy node...
+					
+					// Read the entry...
 					//
-					// TODO read the job entry details from the node...
-					//
-					/*
-					JobEntryCopy jobEntryCopy = new JobEntryCopy();
-					jobEntryCopy.setObjectId(new StringObjectId(jobEntryNode.getUUID()));
+					JobEntryInterface jobEntry = readJobEntry(copyNode, jobMeta, jobentries);
 					
-					// Read the basics
-					//
-					jobEntryCopy.setName( repository.getObjectName(jobEntryNode) );
-					stepMeta.setDescription( repository.getObjectDescription(jobEntryNode) );
-					stepMeta.setDistributes( repository.getPropertyBoolean(jobEntryNode, "STEP_DISTRIBUTE")  );
-					stepMeta.setDraw( repository.getPropertyBoolean(jobEntryNode, "STEP_GUI_DRAW")  );
-					stepMeta.setCopies( (int) repository.getPropertyLong(jobEntryNode, "STEP_COPIES") );
-					
-					int x = (int)repository.getPropertyLong(jobEntryNode, "STEP_GUI_LOCATION_X");
-					int y = (int)repository.getPropertyLong(jobEntryNode, "STEP_GUI_LOCATION_Y");
-					stepMeta.setLocation(x, y);
-					
-					String stepType = repository.getPropertyString(jobEntryNode, "STEP_TYPE");
-					
-					// Create a new StepMetaInterface object...
-					//
-					StepPlugin sp = StepLoader.getInstance().findStepPluginWithID(stepType);
-					StepMetaInterface stepMetaInterface = null;
-		            if (sp!=null)
-		            {
-		                stepMetaInterface = BaseStep.getStepInfo(sp, StepLoader.getInstance());
-		                stepType=sp.getID()[0]; // revert to the default in case we loaded an alternate version
-		            }
-		            else
-		            {
-		                throw new KettleStepLoaderException(BaseMessages.getString(PKG, "StepMeta.Exception.UnableToLoadClass", stepType)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		            }
-					
-					stepMeta.setStepID(stepType);
-					
-					// Read the metadata from the repository too...
-					//
-					stepMetaInterface.readRep(repository, stepMeta.getObjectId(), jobMeta.getDatabases(), jobMeta.getCounters());
-					stepMeta.setStepMetaInterface(stepMetaInterface);
-					
-	                // Get the partitioning as well...
-					stepMeta.setStepPartitioningMeta( loadStepPartitioningMeta(stepMeta.getObjectId()) );
+					JobEntryCopy copy = new JobEntryCopy(jobEntry);
+
+					copy.setName( repository.getObjectName(copyNode));
+					copy.setDescription( repository.getObjectDescription(copyNode));
+					copy.setObjectId(new StringObjectId(copyNode.getUUID()));
+
+					copy.setNr( (int)repository.getPropertyLong(copyNode, "NR") );
+					int x = (int)repository.getPropertyLong(copyNode, "GUI_LOCATION_X");
+					int y = (int)repository.getPropertyLong(copyNode, "GUI_LOCATION_Y");
+					copy.setLocation(x, y);
+					copy.setDrawn( repository.getPropertyBoolean(copyNode, "GUI_DRAWN") );
+					copy.setLaunchingInParallel( repository.getPropertyBoolean(copyNode, "PARALLEL") );
 	                
-	                // Get the cluster schema name
-	                stepMeta.setClusterSchemaName( repository.getStepAttributeString(stepMeta.getObjectId(), "cluster_schema") );
-	                
-	                jobMeta.addStep(stepMeta);
-	                */
+	                jobMeta.getJobCopies().add(copy);
 				}
 			}
 
+			if (jobMeta.getJobCopies().size() != nrCopies) {
+				throw new KettleException("The number of job entry copies read ["+jobMeta.getJobCopies().size()+"] was not the number we expected ["+nrCopies+"]");
+			}
+			
+			
 			// Read the notes...
 			//
 			int nrNotes = (int)jobNode.getProperty("NR_NOTES").getLong();
@@ -178,20 +171,70 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 
 			// Load the details at the end, to make sure we reference the databases correctly, etc.
 			//
-			loadJobDetails(jobNode, jobMeta);
+			loadJobMetaDetails(jobNode, jobMeta);
 
 			loadRepParameters(jobNode, jobMeta);
 			
 			return jobMeta;
 		}
 		catch(Exception e) {
-			throw new KettleException("Unable to load transformation from JCR workspace path ["+path+"]", e);
+			throw new KettleException("Unable to load transformation from JCR workspace path ["+path+"], "+(versionLabel==null ? "the last version":"version "+versionLabel), e);
 		}	
 	}
 	
-	private void loadJobDetails(Node jobNode, JobMeta jobMeta) throws KettleException {
-		try {
+	private JobEntryInterface readJobEntry(Node entryNode, JobMeta jobMeta, List<JobEntryInterface> jobentries) throws KettleException {
+		try  {
+			String name = repository.getObjectName(entryNode);
+			for (JobEntryInterface entry : jobentries) {
+				if (entry.getName().equalsIgnoreCase(name)) {
+					return entry; // already loaded!
+				}
+			}
 			
+			// load the entry from the node
+			//
+			String typeId = entryNode.getProperty("JOBENTRY_TYPE").getString();
+			JobPlugin plugin = JobEntryLoader.getInstance().findJobPluginWithID(typeId);
+			JobEntryInterface entry = JobEntryLoader.getInstance().getJobEntryClass(plugin);
+			entry.setName( name );
+			entry.setDescription( repository.getObjectDescription(entryNode));
+			entry.setObjectId(new StringObjectId(entryNode.getUUID()));
+			entry.loadRep(repository, entry.getObjectId(), jobMeta.getDatabases(), jobMeta.getSlaveServers());
+            
+			jobentries.add(entry);
+            
+            return entry;
+		}
+		catch(Exception e) {
+			throw new KettleException("Unable to read job entry interface information from repository", e);
+		}
+	}
+
+	private void loadJobMetaDetails(Node jobNode, JobMeta jobMeta) throws KettleException {
+		try {
+			jobMeta.setName( repository.getObjectName(jobNode) );
+			jobMeta.setDescription( repository.getObjectDescription(jobNode) );
+			jobMeta.setExtendedDescription( repository.getPropertyString(jobNode, "EXTENDED_DESCRIPTION") ); //$NON-NLS-1$
+			jobMeta.setJobversion( repository.getPropertyString(jobNode, "JOB_VERSION") ); //$NON-NLS-1$
+			jobMeta.setJobstatus( (int) repository.getPropertyLong(jobNode, "JOB_STATUS") ); //$NON-NLS-1$
+			jobMeta.setLogTable( repository.getPropertyString(jobNode, "TABLE_NAME_LOG") ); //$NON-NLS-1$
+
+			jobMeta.setCreatedUser( repository.getPropertyString(jobNode, "CREATED_USER") ); //$NON-NLS-1$
+			jobMeta.setCreatedDate( repository.getPropertyDate(jobNode, "CREATED_DATE") ); //$NON-NLS-1$
+
+			jobMeta.setModifiedUser( repository.getPropertyString(jobNode, "MODIFIED_USER") ); //$NON-NLS-1$
+			jobMeta.setModifiedDate( repository.getPropertyDate(jobNode, "MODIFIED_DATE") ); //$NON-NLS-1$
+
+			Node logDbNode = repository.getPropertyNode(jobNode, "DATABASE_LOG");
+			if (logDbNode!=null) {
+				jobMeta.setLogConnection( DatabaseMeta.findDatabase(jobMeta.getDatabases(), new StringObjectId(logDbNode.getUUID())) );
+			}
+			jobMeta.setUseBatchId( repository.getPropertyBoolean(jobNode, "USE_BATCH_ID") ); //$NON-NLS-1$
+			jobMeta.setBatchIdPassed( repository.getPropertyBoolean(jobNode, "PASS_BATCH_ID") ); //$NON-NLS-1$
+			jobMeta.setLogfieldUsed( repository.getPropertyBoolean(jobNode, "USE_LOGFIELD") ); //$NON-NLS-1$
+			
+			jobMeta.setLogSizeLimit( repository.getPropertyString(jobNode, "LOG_SIZE_LIMIT") );
+
 		} catch(Exception e) {
 			throw new KettleException("Error loading job details", e);
 		}
@@ -215,7 +258,7 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 
 	}   
 
-	public SharedObjects readTransSharedObjects(JobMeta jobMeta) throws KettleException {
+	public SharedObjects readSharedObjects(JobMeta jobMeta) throws KettleException {
 		
     	jobMeta.setSharedObjects( jobMeta.readSharedObjects() );
     	
@@ -263,8 +306,8 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 	   }
 
 	   /**
-	    * Read the slave servers in the repository and add them to this transformation if they are not yet present.
-	    * @param JobMeta The transformation to load into.
+	    * Read the slave servers in the repository and add them to this job if they are not yet present.
+	    * @param JobMeta The job to load into.
 	    * @param overWriteShared if an object with the same name exists, overwrite
 	    * @throws KettleException 
 	    */
@@ -297,20 +340,16 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 	
 	public void deleteJob(ObjectId jobId) throws KettleException {
 		try {
-			repository.deleteObject(jobId);
+			repository.deleteObject(jobId, RepositoryObjectType.JOB);
 		} catch(Exception e) {
 			throw new KettleException("Unable to delete job with ID ["+jobId+"]", e);
 		}
 	}
 
-	public void saveJob(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
+	public void saveJobMeta(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
 		try {
 			JobMeta jobMeta = (JobMeta)element;
 
-			// Create or version a new job node
-			//
-			Node jobNode = repository.createOrVersionNode(element, versionComment);
-			
 			// Now store the databases in the job.
 			// Only store if the database has actually changed or doesn't have an object ID (imported)
 			//
@@ -324,61 +363,23 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 					}
 				}
 			}
-			
+
+			// Store the slave server
+			//
 			for (SlaveServer slaveServer : jobMeta.getSlaveServers()) {
 				if (slaveServer.hasChanged() || slaveServer.getObjectId()==null) {
-					repository.saveAsXML(slaveServer.getXML(), slaveServer, versionComment, monitor, true);
+					repository.save(slaveServer, versionComment, monitor);
 				}
 			}
-			
-			// Also save all the job entries in the transformation!
-			//
-			/*
-			for (StepMeta step : jobMeta.getSteps()) {
-				
-				Node stepNode = jobNode.addNode(step.getName()+JCRRepository.EXT_STEP, JCRRepository.NODE_TYPE_UNSTRUCTURED);
-				stepNode.addMixin(JCRRepository.MIX_REFERENCEABLE);
-				
-				stepNode.setProperty(JCRRepository.PROPERTY_DESCRIPTION, step.getDescription());
 
-				ObjectId id = new StringObjectId(stepNode.getUUID());
-				step.setObjectId( id );
-				
-				// Store the main data
-				//
-				stepNode.setProperty(JCRRepository.PROPERTY_NAME, step.getName());
-				stepNode.setProperty(JCRRepository.PROPERTY_DESCRIPTION, step.getDescription());
-				stepNode.setProperty("STEP_TYPE", step.getStepID());
-				stepNode.setProperty("STEP_DISTRIBUTE", step.isDistributes());
-				stepNode.setProperty("STEP_COPIES", step.getCopies());
-				stepNode.setProperty("STEP_GUI_LOCATION_X", step.getLocation().x);
-				stepNode.setProperty("STEP_GUI_LOCATION_Y", step.getLocation().y);
-				stepNode.setProperty("STEP_GUI_DRAW", step.isDrawn());
-				
-				// Save the step metadata using the repository save method, NOT XML
-				// That is because we want to keep the links to databases, conditions, etc by ID, not name.
-				//
-				StepMetaInterface stepMetaInterface = step.getStepMetaInterface();
-				stepMetaInterface.saveRep(repository, element.getObjectId(), step.getObjectId());
-				
-				// Save the partitioning information by reference as well...
-				//
-				StepPartitioningMeta partitioningMeta = step.getStepPartitioningMeta();
-				saveStepPartitioningMeta(partitioningMeta, jobMeta.getObjectId(), step.getObjectId());
-				
-				// Save the clustering information as well...
-				//
-	            repository.saveStepAttribute(jobMeta.getObjectId(), step.getObjectId(), "cluster_schema", step.getClusterSchema()==null?"":step.getClusterSchema().getName());
-			}
-			
-			for (StepMeta step : jobMeta.getSteps()) {
-				StepErrorMeta stepErrorMeta = step.getStepErrorMeta();
-				if (stepErrorMeta!=null) {
-					saveStepErrorMeta(stepErrorMeta, jobMeta.getObjectId(), step.getObjectId());
-				}
-			}
-			*/
-			
+			// Create or version a new job node to store all the information in...
+			//
+			Node jobNode = repository.createOrVersionNode(element, versionComment);
+
+			// Set the object ID on the job
+			//
+            jobMeta.setObjectId( new StringObjectId(jobNode.getUUID()));
+
 			// Save the notes
 			//
 			jobNode.setProperty("NR_NOTES", jobMeta.nrNotes());
@@ -387,6 +388,39 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 				Node noteNode = jobNode.addNode(NOTE_PREFIX+i, JCRRepository.NODE_TYPE_UNSTRUCTURED);
 				
 				noteNode.setProperty(JCRRepository.PROPERTY_XML, note.getXML());
+			}
+			
+			//
+			// Save the job entry copies
+			//
+			if(log.isDetailed()) log.logDetailed(toString(), "Saving " + jobMeta.nrJobEntries() + " Job enty copies to repository..."); //$NON-NLS-1$ //$NON-NLS-2$
+			jobNode.setProperty("NR_JOB_ENTRY_COPIES", jobMeta.nrJobEntries());
+			for (int i = 0; i < jobMeta.nrJobEntries(); i++) {
+
+				JobEntryCopy copy = jobMeta.getJobEntry(i);
+				JobEntryInterface entry = copy.getEntry();
+				
+				// Create a new node for each entry...
+				//
+				Node copyNode = jobNode.addNode(copy.getName()+JCRRepository.EXT_JOB_ENTRY_COPY, JCRRepository.NODE_TYPE_UNSTRUCTURED);
+				copyNode.addMixin(JCRRepository.MIX_REFERENCEABLE);
+				
+				copy.setObjectId( new StringObjectId(copyNode.getUUID()) );
+				entry.setObjectId( copy.getObjectId() );
+				
+				copyNode.setProperty(JCRRepository.PROPERTY_NAME, copy.getName());
+				copyNode.setProperty(JCRRepository.PROPERTY_DESCRIPTION, copy.getDescription());
+
+				copyNode.setProperty("NR", copy.getNr());
+				copyNode.setProperty("GUI_LOCATION_X", copy.getLocation().x);
+				copyNode.setProperty("GUI_LOCATION_Y", copy.getLocation().y);
+				copyNode.setProperty("GUI_DRAW", copy.isDrawn());
+				copyNode.setProperty("PARALLEL", copy.isLaunchingInParallel());
+				
+				// Save the entry information here as well, for completeness.  TODO: since this slightly stores duplicate information, figure out how to store this separately.
+				//
+				copyNode.setProperty("JOBENTRY_TYPE", entry.getTypeId());
+				entry.saveRep(repository, jobMeta.getObjectId());
 			}
 
 			// Finally, save the hops
@@ -408,23 +442,51 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 			// Let's not forget to save the details of the transformation itself.
 			// This includes logging information, parameters, etc.
 			//
-			saveTransformationDetails(jobNode, jobMeta, versionComment, monitor);
+			saveJobDetails(jobNode, jobMeta, versionComment, monitor);
 
 			// Save the changes to all the steps
 			//
             repository.getSession().save();
-            jobMeta.setObjectId( new StringObjectId(jobNode.getUUID()));
 			Version version = jobNode.checkin();
 			jobMeta.setObjectVersion(new JCRObjectVersion(version, versionComment, repository.getUserInfo().getLogin()));
+			
+			jobMeta.clearChanged();
 		} catch(Exception e) {
 			throw new KettleException("Unable to save job in the JCR repository", e);
 		}
 	}	
 	
-    private void saveTransformationDetails(Node jobNode, JobMeta jobMeta, String versionComment, ProgressMonitorListener monitor) {
-		// TODO Auto-generated method stub
-		
+    private void saveJobDetails(Node jobNode, JobMeta jobMeta, String versionComment, ProgressMonitorListener monitor) throws KettleException {
+    	try {
+	    	jobNode.setProperty(JCRRepository.PROPERTY_NAME, jobMeta.getName());
+	    	jobNode.setProperty(JCRRepository.PROPERTY_DESCRIPTION, jobMeta.getDescription());
+	    	
+	    	jobNode.setProperty("EXTENDED_DESCRIPTION", jobMeta.getExtendedDescription());
+	    	jobNode.setProperty("JOB_VERSION", jobMeta.getJobversion());
+	    	jobNode.setProperty("JOB_STATUS", jobMeta.getJobstatus()  <0 ? -1L : jobMeta.getJobstatus());
+	
+	    	Node logDbNode = jobMeta.getLogConnection()==null ? null : repository.getSession().getNodeByUUID(jobMeta.getLogConnection().getObjectId().getId());
+	    	jobNode.setProperty("DATABASE_LOG", logDbNode);
+	    	jobNode.setProperty("TABLE_NAME_LOG", jobMeta.getLogTable());
+	
+	    	jobNode.setProperty("CREATED_USER", jobMeta.getCreatedUser());
+	    	Calendar createdDate = Calendar.getInstance();
+	    	createdDate.setTime(jobMeta.getCreatedDate());
+	    	jobNode.setProperty("CREATED_DATE", createdDate);
+	    	jobNode.setProperty("MODIFIED_USER", jobMeta.getModifiedUser());
+	    	Calendar modifiedDate = Calendar.getInstance();
+	    	modifiedDate.setTime(jobMeta.getModifiedDate());
+	    	jobNode.setProperty("MODIFIED_DATE", modifiedDate);
+	    	jobNode.setProperty("USE_BATCH_ID", jobMeta.isBatchIdUsed());
+	    	jobNode.setProperty("PASS_BATCH_ID", jobMeta.isBatchIdPassed());
+	    	jobNode.setProperty("USE_LOGFIELD", jobMeta.isLogfieldUsed());
+	    	jobNode.setProperty("SHARED_FILE", jobMeta.getSharedObjectsFile());
+    	}
+    	catch(Exception e) {
+    		throw new KettleException("Unable to save job details to the repository for job ["+jobMeta.getName()+"]", e);
+    	}
 	}
+    
 
 	private void saveJobParameters(Node transNode, JobMeta jobMeta) throws KettleException
     {
@@ -446,4 +508,11 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
     	}
     }
 
+	
+	
+	
+	
+	
+	
+	
 }

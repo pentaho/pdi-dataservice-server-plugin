@@ -12,6 +12,7 @@ import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.jcr.util.JCRObjectVersion;
 
@@ -173,7 +174,7 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 
 	public void deleteClusterSchema(ObjectId clusterId) throws KettleException {
 		try {
-			repository.deleteObject(clusterId);
+			repository.deleteObject(clusterId, RepositoryObjectType.CLUSTER_SCHEMA);
 		} catch(Exception e) {
 			throw new KettleException("Unable to delete cluster schema with id ["+clusterId+"]", e);
 		}
@@ -181,7 +182,7 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 
 	public void deleteSlave(ObjectId slaveServerId) throws KettleException {
 		try {
-			repository.deleteObject(slaveServerId);
+			repository.deleteObject(slaveServerId, RepositoryObjectType.SLAVE_SERVER);
 		} catch(Exception e) {
 			throw new KettleException("Unable to delete slave server with id ["+slaveServerId+"]", e);
 		}

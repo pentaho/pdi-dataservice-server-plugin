@@ -18,6 +18,7 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 
 public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
@@ -171,7 +172,7 @@ public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
 		try {
 			String path = repository.calcRelativeNodePath(null, databaseName, JCRRepository.EXT_DATABASE);
 			Node databaseNode = repository.getRootNode().getNode(path);
-			repository.deleteObject(new StringObjectId(databaseNode.getUUID()));
+			repository.deleteObject(new StringObjectId(databaseNode.getUUID()), RepositoryObjectType.DATABASE);
 		} catch(Exception e) {
 			throw new KettleException("Unable to delete database connection with name ["+databaseName+"]", e);
 		}

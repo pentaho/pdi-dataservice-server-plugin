@@ -1,6 +1,7 @@
 package org.pentaho.di.repository.jcr;
 
 import java.util.Calendar;
+import java.util.List;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -16,12 +17,14 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepLoaderException;
+import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.jcr.util.JCRObjectVersion;
 import org.pentaho.di.shared.SharedObjects;
@@ -53,15 +56,14 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 		super(repository);
 	}
 
-	public void saveTrans(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
+	public void saveTransMeta(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
 		try {
 			TransMeta transMeta = (TransMeta)element;
 
-			// Create or version a new transformation node
-			//
-			Node transNode = repository.createOrVersionNode(element, versionComment);
 			
-			// Now store the databases in the transformation.
+			// First store the databases and other depending objects in the transformation.
+			//
+			
 			// Only store if the database has actually changed or doesn't have an object ID (imported)
 			//
 			for (DatabaseMeta databaseMeta : transMeta.getDatabases()) {
@@ -75,30 +77,40 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 				}
 			}
 			
+			// Store the slave servers...
+			//
 			for (SlaveServer slaveServer : transMeta.getSlaveServers()) {
 				if (slaveServer.hasChanged() || slaveServer.getObjectId()==null) {
 					if (transMeta.isUsingSlaveServer(slaveServer)) {
-						repository.saveAsXML(slaveServer.getXML(), slaveServer, versionComment, monitor, true);
+						repository.save(slaveServer, versionComment, monitor);
 					}
 				}
 			}
 
+			// Store the cluster schemas
+			//
 			for (ClusterSchema clusterSchema : transMeta.getClusterSchemas()) {
 				if (clusterSchema.hasChanged() || clusterSchema.getObjectId()==null) {
 					if (transMeta.isUsingClusterSchema(clusterSchema)) {
-						repository.saveAsXML(clusterSchema.getXML(), clusterSchema, versionComment, monitor, true);
+						repository.save(clusterSchema, versionComment, monitor);
 					}
 				}
 			}
 
+			// Save the partition schemas
+			//
 			for (PartitionSchema partitionSchema : transMeta.getPartitionSchemas()) {
 				if (partitionSchema.hasChanged() || partitionSchema.getObjectId()==null) {
 					if (transMeta.isUsingPartitionSchema(partitionSchema)) {
-						repository.saveAsXML(partitionSchema.getXML(), partitionSchema, versionComment, monitor, true);
+						repository.save(partitionSchema, versionComment, monitor);
 					}
 				}
 			}
 			
+			// Now create or version a new transformation node to place all the data in
+			//
+			Node transNode = repository.createOrVersionNode(element, versionComment);
+
 			// Also save all the steps in the transformation!
 			//
 			for (StepMeta step : transMeta.getSteps()) {
@@ -138,6 +150,8 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 	            repository.saveStepAttribute(transMeta.getObjectId(), step.getObjectId(), "cluster_schema", step.getClusterSchema()==null?"":step.getClusterSchema().getName());
 			}
 			
+			// Save the error hop metadata
+			//
 			for (StepMeta step : transMeta.getSteps()) {
 				StepErrorMeta stepErrorMeta = step.getStepErrorMeta();
 				if (stepErrorMeta!=null) {
@@ -162,8 +176,10 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 				TransHopMeta hop = transMeta.getTransHop(i);
 				Node hopNode = transNode.addNode(TRANS_HOP_PREFIX+i, JCRRepository.NODE_TYPE_UNSTRUCTURED);
 				
-				hopNode.setProperty(TRANS_HOP_FROM, hop.getFromStep().getObjectId().getId());
-				hopNode.setProperty(TRANS_HOP_TO, hop.getToStep().getObjectId().getId());
+				System.out.println("Hop #"+i+" : "+hop.getFromStep().getObjectId()+" --> "+hop.getToStep().getObjectId());
+				
+				hopNode.setProperty(TRANS_HOP_FROM, hop.getFromStep().getName());
+				hopNode.setProperty(TRANS_HOP_TO, hop.getToStep().getName());
 				hopNode.setProperty(TRANS_HOP_ENABLED, hop.isEnabled());
 			}
 
@@ -180,6 +196,8 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
             transMeta.setObjectId( new StringObjectId(transNode.getUUID()));
 			Version version = transNode.checkin();
 			transMeta.setObjectVersion(new JCRObjectVersion(version, versionComment, repository.getUserInfo().getLogin()));
+			
+			transMeta.clearChanged();
 		} catch(Exception e) {
 			throw new KettleException("Unable to save transformation in the JCR repository", e);
 		}
@@ -224,7 +242,6 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			node.setProperty("MODIFIED_DATE", modifiedDate);
 
 			node.setProperty("SIZE_ROWSET", transMeta.getSizeRowset());
-			node.setProperty("ID_DIRECTORY", transMeta.getRepositoryDirectory().getObjectId().getId());
 
 			node.setProperty("UNIQUE_CONNECTIONS", transMeta.isUsingUniqueConnections());
 			node.setProperty("FEEDBACK_SHOWN", transMeta.isFeedbackShown());
@@ -257,6 +274,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			
 			transMeta.setName( repository.getObjectName(transNode));
 			transMeta.setDescription( repository.getObjectDescription(transNode));
+			transMeta.setRepositoryDirectory(repdir);
 			
 			// Grab the Version comment...
 			//
@@ -321,6 +339,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 	                // Get the partitioning as well...
 					stepMeta.setStepPartitioningMeta( loadStepPartitioningMeta(stepMeta.getObjectId()) );
 	                
+					stepMeta.getStepPartitioningMeta().setPartitionSchemaAfterLoading(transMeta.getPartitionSchemas());
 	                // Get the cluster schema name
 	                stepMeta.setClusterSchemaName( repository.getStepAttributeString(stepMeta.getObjectId(), "cluster_schema") );
 	                
@@ -353,12 +372,14 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 				Node hopNode = nodes.nextNode();
 				String name = hopNode.getName();
 				if (!name.endsWith(JCRRepository.EXT_STEP) && name.startsWith(TRANS_HOP_PREFIX)) {
-					String stepFromId = repository.getPropertyString( hopNode, TRANS_HOP_FROM);
-					String stepToId = repository.getPropertyString( hopNode, TRANS_HOP_TO);
+					String stepFromName = repository.getPropertyString( hopNode, TRANS_HOP_FROM);
+					String stepToName = repository.getPropertyString( hopNode, TRANS_HOP_TO);
 					boolean enabled = repository.getPropertyBoolean( hopNode, TRANS_HOP_ENABLED, true);
 					
-					StepMeta stepFrom = StepMeta.findStep(transMeta.getSteps(), new StringObjectId(stepFromId));
-					StepMeta stepTo = StepMeta.findStep(transMeta.getSteps(), new StringObjectId(stepToId));
+					System.out.println("Read Hop from "+stepFromName+" --> "+stepToName);
+
+					StepMeta stepFrom = StepMeta.findStep(transMeta.getSteps(), stepFromName);
+					StepMeta stepTo = StepMeta.findStep(transMeta.getSteps(), stepToName);
 					
 					transMeta.addTransHop( new TransHopMeta(stepFrom, stepTo, enabled) );
 				}
@@ -367,6 +388,19 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			if (transMeta.nrTransHops() != nrHops) {
 				throw new KettleException("The number of hops read ["+transMeta.nrTransHops()+"] was not the number we expected ["+nrHops+"]");
 			}
+			
+            // Also load the step error handling metadata
+            //
+            for (int i=0;i<transMeta.nrSteps();i++)
+            {
+                StepMeta stepMeta = transMeta.getStep(i);
+                String sourceStep = repository.getStepAttributeString(stepMeta.getObjectId(), "step_error_handling_source_step");
+                if (sourceStep!=null)
+                {
+                    StepErrorMeta stepErrorMeta = loadStepErrorMeta(transMeta, stepMeta, transMeta.getSteps());
+                    stepErrorMeta.getSourceStep().setStepErrorMeta(stepErrorMeta); // a bit of a trick, I know.                        
+                }
+            }
 
 			// Load the details at the end, to make sure we reference the databases correctly, etc.
 			//
@@ -380,7 +414,24 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			throw new KettleException("Unable to load transformation from JCR workspace path ["+path+"]", e);
 		}
 	}
-	
+		
+    private StepErrorMeta loadStepErrorMeta(VariableSpace variables, StepMeta stepMeta, List<StepMeta> steps) throws KettleException
+    {
+    	StepErrorMeta meta = new StepErrorMeta(variables, stepMeta);
+    	
+    	meta.setTargetStep( StepMeta.findStep( steps, repository.getStepAttributeString(stepMeta.getObjectId(), "step_error_handling_target_step") ) );
+    	meta.setEnabled( repository.getStepAttributeBoolean(stepMeta.getObjectId(), "step_error_handling_is_enabled") );
+    	meta.setNrErrorsValuename( repository.getStepAttributeString(stepMeta.getObjectId(), "step_error_handling_nr_valuename") );
+    	meta.setErrorDescriptionsValuename(repository.getStepAttributeString(stepMeta.getObjectId(), "step_error_handling_descriptions_valuename") );
+    	meta.setErrorFieldsValuename( repository.getStepAttributeString(stepMeta.getObjectId(), "step_error_handling_fields_valuename") );
+    	meta.setErrorCodesValuename( repository.getStepAttributeString(stepMeta.getObjectId(), "step_error_handling_codes_valuename") );
+    	meta.setMaxErrors( repository.getStepAttributeInteger(stepMeta.getObjectId(), "step_error_handling_max_errors") );
+    	meta.setMaxPercentErrors( (int) repository.getStepAttributeInteger(stepMeta.getObjectId(), "step_error_handling_max_pct_errors") );
+    	meta.setMinPercentRows( repository.getStepAttributeInteger(stepMeta.getObjectId(), "step_error_handling_min_pct_rows") );
+    	
+    	return meta;
+    }
+
 	public void loadTransformationDetails(Node node, TransMeta transMeta) throws KettleException {
 		try {
             transMeta.setExtendedDescription( repository.getPropertyString(node, "EXTENDED_DESCRIPTION") );
@@ -661,7 +712,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
     public void saveStepPartitioningMeta(StepPartitioningMeta meta, ObjectId id_transformation, ObjectId stepId) throws KettleException
     {
     	try {
-    		if (meta.getPartitionSchema()!=null) {
+    		if (meta!=null && meta.getPartitionSchema()!=null && meta.isPartitioned()) {
 		    	Node partitionSchemaNode = repository.getSession().getNodeByUUID(meta.getPartitionSchema().getObjectId().getId());
 		    	
 		        repository.saveStepAttribute(id_transformation, stepId, "PARTITIONING_SCHEMA",    partitionSchemaNode);  // reference to selected schema node
@@ -706,7 +757,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
      */
 	public void deleteTransformation(ObjectId transformationId) throws KettleException {
 		try {
-			repository.deleteObject(transformationId);
+			repository.deleteObject(transformationId, RepositoryObjectType.TRANSFORMATION);
 		} catch(Exception e) {
 			throw new KettleException("Unable to delete transformation with ID ["+transformationId+"]", e);
 		}
