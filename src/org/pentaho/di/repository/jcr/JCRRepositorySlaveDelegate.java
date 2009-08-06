@@ -14,7 +14,7 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
-import org.pentaho.di.repository.jcr.util.JCRObjectVersion;
+import org.pentaho.di.repository.jcr.util.JCRObjectRevision;
 
 public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 	
@@ -43,7 +43,7 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 	        
 	        repository.getSession().save();
 	        Version version = slaveNode.checkin();
-	        slaveServer.setObjectVersion( new JCRObjectVersion(version, versionComment, repository.getUserInfo().getLogin()) );
+	        slaveServer.setObjectRevision( new JCRObjectRevision(version, versionComment, repository.getUserInfo().getLogin()) );
 	        slaveServer.setObjectId(new StringObjectId(slaveNode.getUUID()));
 
 		} catch(Exception e) {
@@ -64,7 +64,7 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 			
 			// Grab the Version comment...
 			//
-			slaveServer.setObjectVersion( repository.getObjectVersion(version) );
+			slaveServer.setObjectRevision( repository.getObjectRevision(version) );
 
 			// Get the unique ID
 			//
@@ -121,7 +121,7 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 			//
 			repository.getSession().save();
 	        Version version = clusterNode.checkin();
-	        clusterSchema.setObjectVersion( new JCRObjectVersion(version, versionComment, repository.getUserInfo().getLogin()) );
+	        clusterSchema.setObjectRevision( new JCRObjectRevision(version, versionComment, repository.getUserInfo().getLogin()) );
 	        clusterSchema.setObjectId(new StringObjectId(clusterNode.getUUID()));
 	
 		} catch(Exception e) {
@@ -142,7 +142,7 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 			
 			// Grab the Version comment...
 			//
-			clusterSchema.setObjectVersion( repository.getObjectVersion(version) );
+			clusterSchema.setObjectRevision( repository.getObjectRevision(version) );
 
 			// Get the unique ID
 			//

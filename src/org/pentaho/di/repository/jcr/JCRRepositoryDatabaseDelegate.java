@@ -78,7 +78,7 @@ public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
             repository.getSession().save();
             Version version = node.checkin();
             
-            databaseMeta.setObjectVersion(repository.getObjectVersion(version));
+            databaseMeta.setObjectRevision(repository.getObjectRevision(version));
             databaseMeta.setObjectId(id);
             
 		} catch (Exception e) {
@@ -119,7 +119,7 @@ public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
             }
 
             databaseMeta.setObjectId(databaseId);
-			databaseMeta.setObjectVersion(repository.getObjectVersion(version));
+			databaseMeta.setObjectRevision(repository.getObjectRevision(version));
 			databaseMeta.clearChanged();			
 			
 			return databaseMeta;

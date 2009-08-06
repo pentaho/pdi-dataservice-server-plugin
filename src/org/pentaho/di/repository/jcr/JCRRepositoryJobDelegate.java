@@ -28,14 +28,16 @@ import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
-import org.pentaho.di.repository.jcr.util.JCRObjectVersion;
+import org.pentaho.di.repository.jcr.util.JCRObjectRevision;
 import org.pentaho.di.shared.SharedObjects;
 
 public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 	private static Class<?> PKG = JCRRepository.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
 
 	private static final String	JOB_HOP_FROM	      = "JOB_HOP_FROM";
+	private static final String	JOB_HOP_FROM_NR	      = "JOB_HOP_FROM_NR";
 	private static final String	JOB_HOP_TO            = "JOB_HOP_TO";
+	private static final String	JOB_HOP_TO_NR         = "JOB_HOP_TO_NR";
 	private static final String	JOB_HOP_ENABLED       = "JOB_HOP_ENABLED";
 	private static final String	JOB_HOP_EVALUATION	  = "JOB_HOP_EVALUATION";
 	private static final String	JOB_HOP_UNCONDITIONAL = "JOB_HOP_UNCONDITIONAL";
@@ -61,6 +63,13 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 			Version version = repository.getVersion(node, versionLabel);
 			Node jobNode = repository.getVersionNode(version);
 			
+			boolean deleted = repository.getPropertyBoolean(jobNode, JCRRepository.PROPERTY_DELETED);
+			if (Const.isEmpty(versionLabel) && deleted) {
+				// The last version is not available : can't be found!
+				//
+				throw new KettleException("Job ["+jobName+"] in directory ["+repdir.getPath()+" can't be found because it's deleted!");
+			}
+			
 			JobMeta jobMeta = new JobMeta();
 			
 			jobMeta.setName( repository.getObjectName(jobNode));
@@ -69,7 +78,7 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 			
 			// Grab the Version comment...
 			//
-			jobMeta.setObjectVersion( repository.getObjectVersion(version) );
+			jobMeta.setObjectRevision( repository.getObjectRevision(version) );
 
 			// Get the unique ID
 			//
@@ -151,16 +160,21 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 				Node hopNode = nodes.nextNode();
 				String name = hopNode.getName();
 				if (!name.endsWith(JCRRepository.EXT_JOB_ENTRY) && name.startsWith(JOB_HOP_PREFIX)) {
-					String copyFromId = repository.getPropertyString( hopNode, JOB_HOP_FROM);
-					String copyToId = repository.getPropertyString( hopNode, JOB_HOP_TO);
+					String copyFromName = repository.getPropertyString( hopNode, JOB_HOP_FROM);
+					int copyFromNr = (int)repository.getPropertyLong( hopNode, JOB_HOP_FROM_NR);
+					String copyToName = repository.getPropertyString( hopNode, JOB_HOP_TO);
+					int copyToNr = (int)repository.getPropertyLong( hopNode, JOB_HOP_TO_NR);
 					boolean enabled = repository.getPropertyBoolean( hopNode, JOB_HOP_ENABLED, true);
+					boolean evaluation = repository.getPropertyBoolean( hopNode, JOB_HOP_EVALUATION, true);
+					boolean unconditional = repository.getPropertyBoolean( hopNode, JOB_HOP_UNCONDITIONAL, true);
 					
-					JobEntryCopy copyFrom = JobMeta.findJobEntryCopy(jobMeta.getJobCopies(), new StringObjectId(copyFromId));
-					JobEntryCopy copyTo = JobMeta.findJobEntryCopy(jobMeta.getJobCopies(), new StringObjectId(copyToId));
+					JobEntryCopy copyFrom = jobMeta.findJobEntry(copyFromName, copyFromNr, true);
+					JobEntryCopy copyTo   = jobMeta.findJobEntry(copyToName, copyToNr, true);
 					
 					JobHopMeta jobHopMeta = new JobHopMeta(copyFrom, copyTo);
 					jobHopMeta.setEnabled(enabled);
-					
+					jobHopMeta.setEvaluation(evaluation);
+					jobHopMeta.setUnconditional(unconditional);
 					jobMeta.addJobHop( jobHopMeta );
 				}
 
@@ -430,8 +444,10 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 				JobHopMeta hop = jobMeta.getJobHop(i);
 				Node hopNode = jobNode.addNode(JOB_HOP_PREFIX+i, JCRRepository.NODE_TYPE_UNSTRUCTURED);
 				
-				hopNode.setProperty(JOB_HOP_FROM, hop.getFromEntry().getObjectId().getId());
-				hopNode.setProperty(JOB_HOP_TO, hop.getToEntry().getObjectId().getId());
+				hopNode.setProperty(JOB_HOP_FROM, hop.getFromEntry().getName());
+				hopNode.setProperty(JOB_HOP_FROM_NR, hop.getFromEntry().getNr());
+				hopNode.setProperty(JOB_HOP_TO, hop.getToEntry().getName());
+				hopNode.setProperty(JOB_HOP_TO_NR, hop.getToEntry().getNr());
 				hopNode.setProperty(JOB_HOP_ENABLED, hop.isEnabled());
 				hopNode.setProperty(JOB_HOP_EVALUATION, hop.getEvaluation());
 				hopNode.setProperty(JOB_HOP_UNCONDITIONAL, hop.isUnconditional());
@@ -448,7 +464,7 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 			//
             repository.getSession().save();
 			Version version = jobNode.checkin();
-			jobMeta.setObjectVersion(new JCRObjectVersion(version, versionComment, repository.getUserInfo().getLogin()));
+			jobMeta.setObjectRevision(new JCRObjectRevision(version, versionComment, repository.getUserInfo().getLogin()));
 			
 			jobMeta.clearChanged();
 		} catch(Exception e) {
@@ -507,6 +523,30 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
     		throw new KettleException("Unable to store job parameters", e);
     	}
     }
+
+	public ObjectId renameJob(ObjectId jobId, RepositoryDirectory newDir, String newname) throws KettleException {
+		try { 
+			Node jobNode = repository.getSession().getNodeByUUID(jobId.getId());
+			
+			// Change the name in the properties...
+			//
+			jobNode.checkout();
+			jobNode.setProperty(JCRRepository.PROPERTY_NAME, newname);
+
+			// Now change the name of the node itself with a move
+			//
+			String oldPath = jobNode.getPath();
+			String newPath = repository.calcNodePath(newDir, newname, JCRRepository.EXT_JOB);
+			
+			repository.getSession().move(oldPath, newPath);
+			repository.getSession().save();
+			jobNode.checkin();
+			
+			return jobId; // same ID, nothing changed
+		} catch(Exception e) {
+			throw new KettleException("Unable to rename job with id ["+jobId+"] to ["+newname+"]", e);
+		}
+	}
 
 	
 	

@@ -73,3 +73,23 @@ TODO:
 - Adding more unit tests to test rename/delete and delete of used objects (finer points)
 - Jobs and job entries
 
+2009-JUL-17
+============
+The finer points of loading/saving transformations, versioning, loading versions, deleting, moving was tested through.
+I also created a basic version browser dialog, dynamically loaded from the repository plugin.
+
+Sent a mail to users@jackrabbit mailing list to ask clarification on version numbering schema "1.0" --> "1.1" --> "1.N" where 1 is always 1.
+I'm pondering removing the "1." part from the version name in PDI.
+
+It would be cool to have a general versioning system that you can maintain like we have in JIRA.
+So we would define a number of general version labels like 1.0-M1, 1.0-M2, 1.0-M3, etc.
+This could be applied as a blanket application to the last versions of all objects in the repository or against individual objects during save/commit.  
+
+2009-AUG-06
+============
+
+After long consideration, I'm changing the term "Object Version" to "Object Revision".
+This is a more correct naming.  Later we can create a version catalog.
+
+
+ 

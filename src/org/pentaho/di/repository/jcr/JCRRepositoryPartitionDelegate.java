@@ -37,7 +37,7 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 	        
 			repository.getSession().save();
 			Version version = node.checkin();
-			partitionSchema.setObjectVersion(repository.getObjectVersion(version));
+			partitionSchema.setObjectRevision(repository.getObjectRevision(version));
 			partitionSchema.setObjectId(new StringObjectId(node.getUUID()));
 			
 		}catch(Exception e) {
@@ -59,7 +59,7 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 			
 			// Grab the Version comment...
 			//
-			partitionSchema.setObjectVersion( repository.getObjectVersion(version) );
+			partitionSchema.setObjectRevision( repository.getObjectRevision(version) );
 
 			// Get the unique ID
 			//

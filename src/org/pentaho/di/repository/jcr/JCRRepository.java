@@ -38,7 +38,7 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.ObjectVersion;
+import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
@@ -50,7 +50,7 @@ import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
-import org.pentaho.di.repository.jcr.util.JCRObjectVersion;
+import org.pentaho.di.repository.jcr.util.JCRObjectRevision;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 
@@ -62,7 +62,7 @@ import org.pentaho.di.trans.TransMeta;
 		name="JCRRepository.Name", 
 		metaClass="org.pentaho.di.repository.jcr.JCRRepositoryMeta",
 		dialogClass="org.pentaho.di.ui.repository.jcr.JCRRepositoryDialog",
-		versionBrowserClass="org.pentaho.di.ui.repository.jcr.JCRRepositoryVersionBrowserDialog"
+		versionBrowserClass="org.pentaho.di.ui.repository.jcr.JCRRepositoryRevisionBrowserDialog"
 
 		)
 public class JCRRepository implements Repository {
@@ -311,7 +311,7 @@ public class JCRRepository implements Repository {
 	}
 	
 	public String[] getDirectoryNames(ObjectId id_directory) throws KettleException {
-		return getObjectNames(id_directory, null);
+		return getObjectNames(id_directory, null, true);
 	}
 
 
@@ -392,7 +392,7 @@ public class JCRRepository implements Repository {
 
 			if (checkIn) {
 				Version version = node.checkin();
-				element.setObjectVersion(new JCRObjectVersion(version, versionComment, userInfo.getLogin()));	
+				element.setObjectRevision(new JCRObjectRevision(version, versionComment, userInfo.getLogin()));	
 			}
 			
 			element.setObjectId(id);
@@ -574,8 +574,8 @@ public class JCRRepository implements Repository {
 		return getObjectIDs((ObjectId)null, EXT_CLUSTER_SCHEMA, includeDeleted);
 	}
 
-	public String[] getClusterNames() throws KettleException {
-		return getObjectNames(null, EXT_CLUSTER_SCHEMA);
+	public String[] getClusterNames(boolean includeDeleted) throws KettleException {
+		return getObjectNames(null, EXT_CLUSTER_SCHEMA, includeDeleted);
 	}
 
 	public ObjectId getDatabaseID(String name) throws KettleException {
@@ -586,20 +586,20 @@ public class JCRRepository implements Repository {
 		return getObjectIDs((ObjectId)null, EXT_DATABASE, includeDeleted);
 	}
 
-	public String[] getDatabaseNames() throws KettleException {
-		return getObjectNames(null, EXT_DATABASE);
+	public String[] getDatabaseNames(boolean includeDeleted) throws KettleException {
+		return getObjectNames(null, EXT_DATABASE, includeDeleted);
 	}
 
 	public ObjectId getJobId(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
-		return getObjectId(name, repositoryDirectory, EXT_TRANSFORMATION);
+		return getObjectId(name, repositoryDirectory, EXT_JOB);
 	}
 
 	public RepositoryLock getJobLock(ObjectId jobId) throws KettleException {
 		return getLock(jobId);
 	}
 
-	public String[] getJobNames(ObjectId id_directory) throws KettleException {
-		return getObjectNames(id_directory, EXT_JOB);
+	public String[] getJobNames(ObjectId id_directory, boolean includeDeleted) throws KettleException {
+		return getObjectNames(id_directory, EXT_JOB, includeDeleted);
 	}
 
 	public List<RepositoryObject> getJobObjects(ObjectId id_directory, boolean includeDeleted) throws KettleException {
@@ -614,8 +614,8 @@ public class JCRRepository implements Repository {
 		return getObjectIDs((ObjectId)null, EXT_PARTITION_SCHEMA, includeDeleted);
 	}
 
-	public String[] getPartitionSchemaNames() throws KettleException {
-		return getObjectNames(null, EXT_PARTITION_SCHEMA);
+	public String[] getPartitionSchemaNames(boolean includeDeleted) throws KettleException {
+		return getObjectNames(null, EXT_PARTITION_SCHEMA, includeDeleted);
 	}
 
 	public RepositoryMeta getRepositoryMeta() {
@@ -634,8 +634,8 @@ public class JCRRepository implements Repository {
 		return getObjectIDs((ObjectId)null, EXT_SLAVE_SERVER, includeDeleted);
 	}
 
-	public String[] getSlaveNames() throws KettleException {
-		return getObjectNames(null, EXT_SLAVE_SERVER);
+	public String[] getSlaveNames(boolean includeDeleted) throws KettleException {
+		return getObjectNames(null, EXT_SLAVE_SERVER, includeDeleted);
 	}
 
 	public List<SlaveServer> getSlaveServers() throws KettleException {
@@ -807,7 +807,7 @@ public class JCRRepository implements Repository {
 		}
 	}
 
-	private String[] getObjectNames(ObjectId id_directory, String extension) throws KettleException {
+	private String[] getObjectNames(ObjectId id_directory, String extension, boolean includeDeleted) throws KettleException {
 		try {
 			Node folderNode;
 			if (id_directory==null) {
@@ -830,9 +830,11 @@ public class JCRRepository implements Repository {
 					// Normal Objects
 					//
 					if (node.isNodeType(NODE_TYPE_UNSTRUCTURED)) {
-						String fullname = node.getName();
-						if (fullname.endsWith(extension)) {
-							names.add( getObjectName(node) );
+						if (includeDeleted || !getPropertyBoolean(node, PROPERTY_DELETED)) {
+							String fullname = node.getName();
+							if (fullname.endsWith(extension)) {
+								names.add( getObjectName(node) );
+							}
 						}
 					}
 				}
@@ -845,8 +847,8 @@ public class JCRRepository implements Repository {
 		}
 	}
 
-	public String[] getTransformationNames(ObjectId id_directory) throws KettleException {
-		return getObjectNames(id_directory, EXT_TRANSFORMATION);
+	public String[] getTransformationNames(ObjectId id_directory, boolean includeDeleted) throws KettleException {
+		return getObjectNames(id_directory, EXT_TRANSFORMATION, includeDeleted);
 	}
 
 	public List<RepositoryObject> getTransformationObjects(ObjectId id_directory, boolean includeDeleted) throws KettleException {
@@ -953,7 +955,7 @@ public class JCRRepository implements Repository {
 	}
 
 	public SharedObjects readJobMetaSharedObjects(JobMeta jobMeta) throws KettleException {
-		return null;
+		return jobDelegate.readSharedObjects(jobMeta);
 	}
 
 	public ObjectId renameDatabase(ObjectId databaseId, String newname) throws KettleException {
@@ -961,7 +963,7 @@ public class JCRRepository implements Repository {
 	}
 
 	public ObjectId renameJob(ObjectId jobId, RepositoryDirectory newDirectory, String newName) throws KettleException {
-		return null;
+		return jobDelegate.renameJob(jobId, newDirectory, newName);
 	}
 
 	public ObjectId renameRepositoryDirectory(RepositoryDirectory dir) throws KettleException {
@@ -1243,13 +1245,6 @@ public class JCRRepository implements Repository {
 		} catch (RepositoryException e) {
 			throw new KettleException("Unable to count the nr of step attributes for step with ID ["+stepId+"] and code ["+code+"]", e);
 		}
-	}
-
-	/**
-	 * We can ignore this one, it's only used for backward compatibility in the older KettleDatabaseRepository.
-	 */
-	public ObjectId findStepAttributeID(ObjectId stepId, int nr, String code) throws KettleException { 
-		return null; 
 	}
 
 	public void saveStepAttribute(ObjectId transformationId, ObjectId stepId, String code, String value) throws KettleException {
@@ -1567,9 +1562,9 @@ public class JCRRepository implements Repository {
 		return session;
 	}
 	
-	public List<ObjectVersion> getVersions(RepositoryElementLocationInterface element) throws KettleException {
+	public List<ObjectRevision> getRevisions(RepositoryElementLocationInterface element) throws KettleException {
 		try {
-			List<ObjectVersion> list = new ArrayList<ObjectVersion>();
+			List<ObjectRevision> list = new ArrayList<ObjectRevision>();
 			
 			ObjectId objectId = getObjectId(element);
 			if (objectId==null) {
@@ -1583,7 +1578,7 @@ public class JCRRepository implements Repository {
 			while (successors!=null && successors.length>0) {
 				version = successors[0];
 				successors = version.getSuccessors();
-				list.add( getObjectVersion(version) );
+				list.add( getObjectRevision(version) );
 			}
 			
 			return list;
@@ -1615,14 +1610,18 @@ public class JCRRepository implements Repository {
 	}
 
 	
-	public ObjectVersion getObjectVersion(Version version) throws PathNotFoundException, RepositoryException {
-		Node versionNode = getVersionNode(version);
-		
-		String comment = versionNode.getProperty(PROPERTY_VERSION_COMMENT).getString();
-		String userCreated = versionNode.getProperty(PROPERTY_USER_CREATED).getString();
-
-
-		return new JCRObjectVersion(version, comment, userCreated);
+	public ObjectRevision getObjectRevision(Version version) throws KettleException {
+		try {
+			Node versionNode = getVersionNode(version);
+			
+			String comment = getPropertyString(versionNode, PROPERTY_VERSION_COMMENT);
+			String userCreated = getPropertyString(versionNode, PROPERTY_USER_CREATED);
+	
+	
+			return new JCRObjectRevision(version, comment, userCreated);
+		} catch(Exception e) {
+			throw new KettleException("Unable to retrieve revision information from an object version", e);
+		}
 	}
 	
 	public Version getVersion(Node node, String versionLabel) throws KettleException {

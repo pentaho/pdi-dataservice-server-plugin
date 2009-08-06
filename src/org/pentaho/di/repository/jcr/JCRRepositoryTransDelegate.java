@@ -26,7 +26,7 @@ import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
-import org.pentaho.di.repository.jcr.util.JCRObjectVersion;
+import org.pentaho.di.repository.jcr.util.JCRObjectRevision;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.StepLoader;
 import org.pentaho.di.trans.StepPlugin;
@@ -195,7 +195,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
             repository.getSession().save();
             transMeta.setObjectId( new StringObjectId(transNode.getUUID()));
 			Version version = transNode.checkin();
-			transMeta.setObjectVersion(new JCRObjectVersion(version, versionComment, repository.getUserInfo().getLogin()));
+			transMeta.setObjectRevision(new JCRObjectRevision(version, versionComment, repository.getUserInfo().getLogin()));
 			
 			transMeta.clearChanged();
 		} catch(Exception e) {
@@ -270,6 +270,13 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			Version version = repository.getVersion(node, versionLabel);
 			Node transNode = repository.getVersionNode(version);
 			
+			boolean deleted = repository.getPropertyBoolean(transNode, JCRRepository.PROPERTY_DELETED);
+			if (Const.isEmpty(versionLabel) && deleted) {
+				// The last version is not available : can't be found!
+				//
+				throw new KettleException("Transformation ["+transname+"] in directory ["+repdir.getPath()+" can't be found because it's deleted!");
+			}
+			
 			TransMeta transMeta = new TransMeta();
 			
 			transMeta.setName( repository.getObjectName(transNode));
@@ -278,7 +285,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			
 			// Grab the Version comment...
 			//
-			transMeta.setObjectVersion( repository.getObjectVersion(version) );
+			transMeta.setObjectRevision( repository.getObjectRevision(version) );
 
 			// Get the unique ID
 			//
@@ -789,7 +796,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			// Now change the name of the node itself with a move
 			//
 			String oldPath = transNode.getPath();
-			String newPath = repository.calcNodePath(newDir, newname, JCRRepository.EXT_DATABASE);
+			String newPath = repository.calcNodePath(newDir, newname, JCRRepository.EXT_TRANSFORMATION);
 			
 			repository.getSession().move(oldPath, newPath);
 			repository.getSession().save();

@@ -30,6 +30,9 @@
 	<classpathentry kind="lib" path="libswt/common.jar"/>
 	<classpathentry kind="lib" path="libswt/jface.jar"/>
 	<classpathentry kind="lib" path="libswt/runtime.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/Kettle trunk"/>
+	<classpathentry kind="lib" path="libext/kettle-core.jar"/>
+	<classpathentry kind="lib" path="libext/kettle-db.jar"/>
+	<classpathentry kind="lib" path="libext/kettle-engine.jar"/>
+	<classpathentry kind="lib" path="libext/kettle-ui-swt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

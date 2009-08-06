@@ -7,7 +7,7 @@ import junit.framework.TestCase;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.ObjectVersion;
+import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryLock;
@@ -100,7 +100,7 @@ public class RepositoryTransformationTests extends TestCase {
 		
 		assertNotNull("Object ID needs to be set", transMeta.getObjectId());
 		
-		ObjectVersion version = transMeta.getObjectVersion();
+		ObjectRevision version = transMeta.getObjectRevision();
 		
 		assertNotNull("Object version needs to be set", version);
 		
@@ -119,7 +119,7 @@ public class RepositoryTransformationTests extends TestCase {
 		
 		// Verify general content
 		//
-		ObjectVersion version = transMeta.getObjectVersion();
+		ObjectRevision version = transMeta.getObjectRevision();
 		assertNotNull("Object version needs to be set", version);
 		assertEquals(VERSION_COMMENT_ONE, version.getComment());
 		assertEquals("1.0", version.getName());
@@ -137,7 +137,7 @@ public class RepositoryTransformationTests extends TestCase {
 
 	}
 	
-	public void test20_createTransformationVersions() throws Exception {
+	public void test20_createTransformationRevisions() throws Exception {
 	
 		// Change the description of the transformation & Save the transformation again..
 		//
@@ -145,7 +145,7 @@ public class RepositoryTransformationTests extends TestCase {
 		repository.save(transMeta, VERSION_COMMENT_TWO, null);
 		
 		String id = transMeta.getObjectId().getId();
-		assertEquals("1.1", transMeta.getObjectVersion().getName());
+		assertEquals("1.1", transMeta.getObjectRevision().getName());
 	
 		// Change the description of the transformation & Save the transformation again..
 		//
@@ -153,7 +153,7 @@ public class RepositoryTransformationTests extends TestCase {
 		transMeta.getStep(0).setName("NEW_NAME");
 		repository.save(transMeta, VERSION_COMMENT_THREE, null);
 
-		assertEquals("1.2", transMeta.getObjectVersion().getName());
+		assertEquals("1.2", transMeta.getObjectRevision().getName());
 		assertEquals(id, transMeta.getObjectId().getId());
 
 		// Change the description of the transformation & Save the transformation again..
@@ -162,39 +162,39 @@ public class RepositoryTransformationTests extends TestCase {
 		transMeta.removeTransHop(1);
 		transMeta.removeStep(2);
 		repository.save(transMeta, VERSION_COMMENT_FOUR, null);
-		assertEquals(VERSION_COMMENT_FOUR, transMeta.getObjectVersion().getComment());
-		assertEquals("1.3", transMeta.getObjectVersion().getName());
+		assertEquals(VERSION_COMMENT_FOUR, transMeta.getObjectRevision().getComment());
+		assertEquals("1.3", transMeta.getObjectRevision().getName());
 		assertEquals(id, transMeta.getObjectId().getId());
 	}
 	
-	public void test30_getTransformationVersionHistory() throws Exception {
+	public void test30_getTransformationRevisionHistory() throws Exception {
 		
-		List<ObjectVersion> versions = repository.getVersions(transMeta);
+		List<ObjectRevision> versions = repository.getRevisions(transMeta);
 		assertEquals(versions.size(), 4);
 		
-		ObjectVersion v1 = versions.get(0);
+		ObjectRevision v1 = versions.get(0);
 		assertEquals("1.0", v1.getName());
 		assertEquals(VERSION_COMMENT_ONE, v1.getComment());
 		
-		ObjectVersion v2 = versions.get(1);
+		ObjectRevision v2 = versions.get(1);
 		assertEquals("1.1", v2.getName());
 		assertEquals(VERSION_COMMENT_TWO, v2.getComment());
 
-		ObjectVersion v3 = versions.get(2);
+		ObjectRevision v3 = versions.get(2);
 		assertEquals("1.2", v3.getName());
 		assertEquals(VERSION_COMMENT_THREE, v3.getComment());
 
-		ObjectVersion v4 = versions.get(3);
+		ObjectRevision v4 = versions.get(3);
 		assertEquals("1.3", v4.getName());
 		assertEquals(VERSION_COMMENT_FOUR, v4.getComment());
 	}
 	
-	public void test40_loadTransformationVersions() throws Exception {
+	public void test40_loadTransformationRevisions() throws Exception {
 
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 
 		TransMeta transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, "1.1");  // Load the second version
-		ObjectVersion version = transMeta.getObjectVersion();
+		ObjectRevision version = transMeta.getObjectRevision();
 		assertEquals("1.1", version.getName());
 		assertEquals(VERSION_COMMENT_TWO, version.getComment());
 		assertEquals(DESCRIPTION_TWO, transMeta.getDescription());
@@ -202,7 +202,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(2, transMeta.nrTransHops());
 		
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, "1.0");  // Load the first version
-		version = transMeta.getObjectVersion();
+		version = transMeta.getObjectRevision();
 		assertEquals("1.0", version.getName());
 		assertEquals(VERSION_COMMENT_ONE, version.getComment());
 		assertEquals(DESCRIPTION_ONE, transMeta.getDescription());
@@ -210,7 +210,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(2, transMeta.nrTransHops());
 
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, "1.3");  // Load the fourth version
-		version = transMeta.getObjectVersion();
+		version = transMeta.getObjectRevision();
 		assertEquals("1.3", version.getName());
 		assertEquals(VERSION_COMMENT_FOUR, version.getComment());
 		assertEquals(DESCRIPTION_FOUR, transMeta.getDescription());
@@ -218,7 +218,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(1, transMeta.nrTransHops());
 
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, "1.2");  // Load the third version
-		version = transMeta.getObjectVersion();
+		version = transMeta.getObjectRevision();
 		assertEquals("1.2", version.getName());
 		assertEquals(VERSION_COMMENT_THREE, version.getComment());
 		assertEquals(DESCRIPTION_THREE, transMeta.getDescription());
@@ -227,14 +227,14 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals("NEW_NAME", transMeta.getStep(0).getName());
 	}
 
-	public void test50_loadLastTransformationVersion() throws Exception {
+	public void test50_loadLastTransformationRevision() throws Exception {
 		
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		
 		assertNotNull(transMeta);
 		
-		ObjectVersion version = transMeta.getObjectVersion();
+		ObjectRevision version = transMeta.getObjectRevision();
 		
 		assertEquals(VERSION_COMMENT_FOUR, version.getComment());
 		assertEquals("1.3", version.getName());
@@ -288,7 +288,7 @@ public class RepositoryTransformationTests extends TestCase {
 		
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		
-		ObjectVersion version = transMeta.getObjectVersion();
+		ObjectRevision version = transMeta.getObjectRevision();
 		assertEquals("1.5", version.getName());
 	}
 
