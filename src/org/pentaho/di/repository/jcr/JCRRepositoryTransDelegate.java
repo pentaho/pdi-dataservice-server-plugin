@@ -113,9 +113,10 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 
 			// Also save all the steps in the transformation!
 			//
+			int stepNr=0;
 			for (StepMeta step : transMeta.getSteps()) {
-				
-				Node stepNode = transNode.addNode(step.getName()+JCRRepository.EXT_STEP, JCRRepository.NODE_TYPE_UNSTRUCTURED);
+				stepNr++;
+				Node stepNode = transNode.addNode(repository.sanitizeNodeName(step.getName())+"_"+stepNr+JCRRepository.EXT_STEP, JCRRepository.NODE_TYPE_UNSTRUCTURED);
 				stepNode.addMixin(JCRRepository.MIX_REFERENCEABLE);
 				
 				stepNode.setProperty(JCRRepository.PROPERTY_DESCRIPTION, step.getDescription());

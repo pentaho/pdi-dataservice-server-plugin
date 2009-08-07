@@ -1788,6 +1788,7 @@ public class JCRRepository implements Repository {
 		for (char c : name.toCharArray()) {
 			switch(c) {
 			case ':' : result.append('-'); break;
+			case '/' : result.append("-"); break;
 			default : result.append(c); break;
 			}
 		}

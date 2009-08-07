@@ -416,7 +416,7 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 				
 				// Create a new node for each entry...
 				//
-				Node copyNode = jobNode.addNode(copy.getName()+JCRRepository.EXT_JOB_ENTRY_COPY, JCRRepository.NODE_TYPE_UNSTRUCTURED);
+				Node copyNode = jobNode.addNode(repository.sanitizeNodeName(copy.getName())+"_"+(i+1)+JCRRepository.EXT_JOB_ENTRY_COPY, JCRRepository.NODE_TYPE_UNSTRUCTURED);
 				copyNode.addMixin(JCRRepository.MIX_REFERENCEABLE);
 				
 				copy.setObjectId( new StringObjectId(copyNode.getUUID()) );
