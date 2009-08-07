@@ -54,7 +54,7 @@ public class JCRRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 
 	private String	elementDescription;
 	
-	private String selectedVersion;
+	private String selectedRevision;
 	
 	public JCRRepositoryRevisionBrowserDialog(Shell parent, int style, Repository repository, RepositoryElementLocationInterface element)
 	{
@@ -70,7 +70,7 @@ public class JCRRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 		this.elementDescription = name;
 		
 		shell = new Shell(display, style | SWT.DIALOG_TRIM | SWT.RESIZE | SWT.MAX | SWT.MIN );
-		shell.setText(BaseMessages.getString(PKG, "JCRRepositoryVersionBrowserDialog.Dialog.Main.Title")); //$NON-NLS-1$
+		shell.setText(BaseMessages.getString(PKG, "JCRRepositoryRevisionBrowserDialog.Dialog.Main.Title")); //$NON-NLS-1$
 	}
 
 	public String open()
@@ -93,14 +93,14 @@ public class JCRRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 	        // Mmm, if we don't get any rows in the buffer: show a dialog box.
 	        if (revisions == null || revisions.size() == 0)
 	        {
-	            ShowMessageDialog dialog = new ShowMessageDialog(shell, SWT.OK | SWT.ICON_WARNING, BaseMessages.getString(PKG, "JCRRepositoryVersionBrowserDialog.NoVersions.Text"), BaseMessages.getString(PKG, "JCRRepositoryVersionBrowserDialog.NoVersions.Message"));
+	            ShowMessageDialog dialog = new ShowMessageDialog(shell, SWT.OK | SWT.ICON_WARNING, BaseMessages.getString(PKG, "JCRRepositoryRevisionBrowserDialog.NoRevisions.Text"), BaseMessages.getString(PKG, "JCRRepositoryRevisionBrowserDialog.NoRevisions.Message"));
 	            dialog.open();
 	            shell.dispose();
 	            return null;
 	        }
 			
 	        wlFields = new Label(shell, SWT.LEFT);
-	        wlFields.setText("Version history of "+elementDescription);
+	        wlFields.setText("Revision history of "+elementDescription);
 	        props.setLook(wlFields);
 	        fdlFields = new FormData();
 	        fdlFields.left = new FormAttachment(0, 0);
@@ -109,10 +109,10 @@ public class JCRRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 	        wlFields.setLayoutData(fdlFields);
 	
 	        ColumnInfo[] colinf = new ColumnInfo[] {
-	        		new ColumnInfo(BaseMessages.getString(PKG, "JCRRepositoryVersionBrowserDialog.Columns.Version.Name"), ColumnInfo.COLUMN_TYPE_TEXT, false, true),
-	        		new ColumnInfo(BaseMessages.getString(PKG, "JCRRepositoryVersionBrowserDialog.Columns.Version.Comment"), ColumnInfo.COLUMN_TYPE_TEXT, false, true),
-	        		new ColumnInfo(BaseMessages.getString(PKG, "JCRRepositoryVersionBrowserDialog.Columns.Version.Date"), ColumnInfo.COLUMN_TYPE_TEXT, false, true),
-	        		new ColumnInfo(BaseMessages.getString(PKG, "JCRRepositoryVersionBrowserDialog.Columns.Version.Login"), ColumnInfo.COLUMN_TYPE_TEXT, false, true),
+	        		new ColumnInfo(BaseMessages.getString(PKG, "JCRRepositoryRevisionBrowserDialog.Columns.Revision.Name"), ColumnInfo.COLUMN_TYPE_TEXT, false, true),
+	        		new ColumnInfo(BaseMessages.getString(PKG, "JCRRepositoryRevisionBrowserDialog.Columns.Revision.Comment"), ColumnInfo.COLUMN_TYPE_TEXT, false, true),
+	        		new ColumnInfo(BaseMessages.getString(PKG, "JCRRepositoryRevisionBrowserDialog.Columns.Revision.Date"), ColumnInfo.COLUMN_TYPE_TEXT, false, true),
+	        		new ColumnInfo(BaseMessages.getString(PKG, "JCRRepositoryRevisionBrowserDialog.Columns.Revision.Login"), ColumnInfo.COLUMN_TYPE_TEXT, false, true),
 	        	};
 	
 	        wFields = new TableView(new Variables(), shell, SWT.BORDER | SWT.FULL_SELECTION | SWT.SINGLE, colinf, 0, null, props);
@@ -131,7 +131,7 @@ public class JCRRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 					if (index>=0) {
 						String[] item = wFields.getItem(index);
 						if (item!=null && item.length>0) {
-							selectedVersion = item[0];
+							selectedRevision = item[0];
 						}
 					}
 				}
@@ -164,7 +164,7 @@ public class JCRRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 			{
 					if (!display.readAndDispatch()) display.sleep();
 			}
-			return selectedVersion;
+			return selectedRevision;
 		}
 		catch(Exception e) {
 			new ErrorDialog(shell, "Error browsing versions", "There was an error browsing the version history of element "+element, e);
@@ -200,7 +200,7 @@ public class JCRRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 	
 	private void cancel()
 	{
-		selectedVersion = null;
+		selectedRevision = null;
 		dispose();
 	}
 		

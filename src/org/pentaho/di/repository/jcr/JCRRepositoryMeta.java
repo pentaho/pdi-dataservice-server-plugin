@@ -67,6 +67,7 @@ public class JCRRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
     		public boolean supportsRevisions() { return true; }
     		public boolean supportsMetadata() { return true; }
     		public boolean supportsLocking() { return true; }
+    		public boolean hasVersionRegistry() { return true; }
     	};
 	}
 

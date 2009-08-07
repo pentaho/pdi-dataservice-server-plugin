@@ -48,6 +48,7 @@ import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityProvider;
+import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.jcr.util.JCRObjectRevision;
@@ -142,12 +143,16 @@ public class JCRRepository implements Repository {
 	private JCRRepositorySlaveDelegate	slaveDelegate;
 	private JCRRepositoryJobDelegate	jobDelegate;
 	
+	private JCRRepositoryVersionRegistry versionRegistry;
+	
 	public JCRRepository() {
 		this.transDelegate = new JCRRepositoryTransDelegate(this);
 		this.jobDelegate = new JCRRepositoryJobDelegate(this);
 		this.databaseDelegate = new JCRRepositoryDatabaseDelegate(this);
 		this.partitionDelegate = new JCRRepositoryPartitionDelegate(this);
 		this.slaveDelegate = new JCRRepositorySlaveDelegate(this);
+		this.versionRegistry = new JCRRepositoryVersionRegistry(this);
+		
 	}
 	
 	public String getName() {
@@ -206,6 +211,10 @@ public class JCRRepository implements Repository {
 			if (lockNodeFolder==null) {
 				lockNodeFolder = rootNode.addNode(NODE_LOCK_NODE_NAME, "nt:unstructured");
 			}
+
+			// Create a folder, type unstructured in the root to store the versions...
+			//
+			versionRegistry.checkVersionsFolder();
 			
 		} catch(Exception e) {
 			session=null;
@@ -603,7 +612,7 @@ public class JCRRepository implements Repository {
 	}
 
 	public List<RepositoryObject> getJobObjects(ObjectId id_directory, boolean includeDeleted) throws KettleException {
-		return getPdiObjects(id_directory, EXT_JOB, RepositoryObject.STRING_OBJECT_TYPE_JOB, includeDeleted);
+		return getPdiObjects(id_directory, EXT_JOB, RepositoryObjectType.JOB, includeDeleted);
 	}
 
 	public ObjectId getPartitionSchemaID(String name) throws KettleException {
@@ -852,10 +861,12 @@ public class JCRRepository implements Repository {
 	}
 
 	public List<RepositoryObject> getTransformationObjects(ObjectId id_directory, boolean includeDeleted) throws KettleException {
-		return getPdiObjects(id_directory, EXT_TRANSFORMATION, RepositoryObject.STRING_OBJECT_TYPE_TRANSFORMATION, includeDeleted);
+		return getPdiObjects(id_directory, EXT_TRANSFORMATION, RepositoryObjectType.TRANSFORMATION, includeDeleted);
 	}
 
-	private List<RepositoryObject> getPdiObjects(ObjectId id_directory, String extension, String objectType, boolean includeDeleted) throws KettleException {
+	private List<RepositoryObject> getPdiObjects(ObjectId id_directory, String extension, RepositoryObjectType objectType, boolean includeDeleted) throws KettleException {
+		
+		RepositoryDirectory repdir = loadRepositoryDirectoryTree().findDirectory(id_directory);
 		
 		List<RepositoryObject> list = new ArrayList<RepositoryObject>();
 		try {
@@ -868,11 +879,12 @@ public class JCRRepository implements Repository {
 				String description = transNode.getProperty(PROPERTY_DESCRIPTION).getString() + " - v"+version.getName();
 				String userCreated = transNode.getProperty(PROPERTY_USER_CREATED).getString();
 				Date dateCreated = version.getCreated().getTime();
+				boolean deleted = transNode.getProperty(PROPERTY_DELETED).getBoolean();
 				
 				RepositoryLock lock = getLock(objectId);
 				String lockMessage = lock==null ? null : lock.getMessage()+" ("+lock.getLogin()+" since "+XMLHandler.date2string(lock.getLockDate())+")";
 				
-				list.add(new RepositoryObject(name.substring(0, name.length()-extension.length()), userCreated, dateCreated, objectType, description, lockMessage));
+				list.add(new RepositoryObject(objectId, name.substring(0, name.length()-extension.length()), repdir, userCreated, dateCreated, objectType, description, lockMessage, deleted));
 				
 			}
 			return list;
@@ -1794,5 +1806,9 @@ public class JCRRepository implements Repository {
 		}
 		
 		return result.toString();
+	}
+
+	public RepositoryVersionRegistry getVersionRegistry() throws KettleException {
+		return versionRegistry;
 	}
 }
