@@ -48,8 +48,19 @@ public class JCRRepositoryVersionRegistry implements RepositoryVersionRegistry {
 		try {
 			Node node = findNode(version.getLabel());
 			update(node, version);
+			repository.getSession().save();
 		} catch(Exception e) {
 			throw new KettleException("Unable to update version node ["+version+"]", e);
+		}
+	}
+	
+	public void removeVersion(String label) throws KettleException {
+		try {
+			Node node = findNode(label);
+			node.remove();
+			repository.getSession().save();
+		} catch(Exception e) {
+			throw new KettleException("Unable to remove version node ["+label+"]", e);
 		}
 	}
 	
