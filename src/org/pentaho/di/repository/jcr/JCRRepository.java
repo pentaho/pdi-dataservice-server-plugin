@@ -190,7 +190,6 @@ public class JCRRepository implements Repository {
 			if (!nodeTypeManager.hasNodeType(NODE_TYPE_PDI_LOCK)) {
 				nodeTypeManager.registerNodeTypes(new ByteArrayInputStream(CND_TYPE_PDI_LOCK.getBytes(Const.XML_ENCODING)), JackrabbitNodeTypeManager.TEXT_X_JCR_CND);
 			}
-			
 
 			String[] prefixes = session.getNamespacePrefixes();
 			if (Const.indexOfString(NS_PDI, prefixes)<0) {
@@ -792,14 +791,15 @@ public class JCRRepository implements Repository {
 	
 	RepositoryLock getLock(ObjectId objectId) throws KettleException {
 		try {
-			
+			// Grab info, Inuition, Georgio
+			//
 			Node lockNode = lockNodeFolder.getNode(objectId.getId());
-			String message = lockNode.getProperty(PROPERTY_LOCK_MESSAGE).getString();
-			String login = lockNode.getProperty(PROPERTY_LOCK_LOGIN).getString();
-			String username = lockNode.getProperty(PROPERTY_LOCK_USERNAME).getString();
-			String path = lockNode.getProperty(PROPERTY_LOCK_PATH).getString();
-			Date lockDate = lockNode.getProperty(PROPERTY_LOCK_DATE).getDate().getTime();
-			Node parent = lockNode.getProperty(PROPERTY_LOCK_OBJECT).getNode();
+			String message = getPropertyString(lockNode, PROPERTY_LOCK_MESSAGE);
+			String login = getPropertyString(lockNode, PROPERTY_LOCK_LOGIN);
+			String username = getPropertyString(lockNode, PROPERTY_LOCK_USERNAME);
+			String path = getPropertyString(lockNode, PROPERTY_LOCK_PATH);
+			Date lockDate = getPropertyDate(lockNode, PROPERTY_LOCK_DATE);
+			Node parent = getPropertyNode(lockNode, PROPERTY_LOCK_OBJECT);
 			
 			// verify node path with lock
 			//
