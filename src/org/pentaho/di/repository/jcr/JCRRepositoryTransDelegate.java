@@ -215,17 +215,19 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			node.setProperty("TRANS_VERSION", transMeta.getTransversion());
 			node.setProperty("TRANS_STATUS", transMeta.getTransstatus()  <0 ? -1L : transMeta.getTransstatus());
 			
-			node.setProperty("STEP_READ", transMeta.getReadStep()  ==null ? null : transMeta.getReadStep().getName());
-			node.setProperty("STEP_WRITE", transMeta.getWriteStep() ==null ? null : transMeta.getWriteStep().getName());
-			node.setProperty("STEP_INPUT", transMeta.getInputStep() ==null ? null : transMeta.getInputStep().getName());
-			node.setProperty("STEP_OUTPUT", transMeta.getOutputStep()==null ? null : transMeta.getOutputStep().getName());
-			node.setProperty("STEP_UPDATE", transMeta.getUpdateStep()==null ? null : transMeta.getUpdateStep().getName());
-			node.setProperty("STEP_REJECTED", transMeta.getRejectedStep()==null ?  null : transMeta.getRejectedStep().getName());
+			node.setProperty("STEP_READ", transMeta.getTransLogTable().getStepnameRead());
+			node.setProperty("STEP_WRITE", transMeta.getTransLogTable().getStepnameWritten());
+			node.setProperty("STEP_INPUT", transMeta.getTransLogTable().getStepnameInput());
+			node.setProperty("STEP_OUTPUT", transMeta.getTransLogTable().getStepnameOutput());
+			node.setProperty("STEP_UPDATE", transMeta.getTransLogTable().getStepnameUpdated());
+			node.setProperty("STEP_REJECTED", transMeta.getTransLogTable().getStepnameRejected());
 
-			node.setProperty("DATABASE_LOG", transMeta.getLogConnection()==null ? null : session.getNodeByUUID( transMeta.getLogConnection().getObjectId().getId()) );
-			node.setProperty("TABLE_NAME_LOG", transMeta.getLogTable());
-			node.setProperty("USE_BATCHID", Boolean.valueOf(transMeta.isBatchIdUsed()));
-			node.setProperty("USE_LOGFIELD", Boolean.valueOf(transMeta.isLogfieldUsed()));
+      Node logDbNode = transMeta.getTransLogTable().getDatabaseMeta()==null ? null : repository.getSession().getNodeByUUID(transMeta.getTransLogTable().getDatabaseMeta().getObjectId().getId());
+      node.setProperty("DATABASE_LOG", logDbNode);
+      node.setProperty("TABLE_NAME_LOG", transMeta.getTransLogTable().getTableName());
+			
+      node.setProperty("USE_BATCHID", Boolean.valueOf(transMeta.getTransLogTable().isBatchIdUsed()));
+			node.setProperty("USE_LOGFIELD", Boolean.valueOf(transMeta.getTransLogTable().isLogFieldUsed()));
 			node.setProperty("ID_DATABASE_MAXDATE", transMeta.getMaxDateConnection()==null ? null : session.getNodeByUUID( transMeta.getMaxDateConnection().getObjectId().getId()) );
 			node.setProperty("TABLE_NAME_MAXDATE", transMeta.getMaxDateTable());
 			node.setProperty("FIELD_NAME_MAXDATE", transMeta.getMaxDateField());
@@ -252,9 +254,9 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 	        
 	        node.setProperty("CAPTURE_STEP_PERFORMANCE", transMeta.isCapturingStepPerformanceSnapShots());
 	        node.setProperty("STEP_PERFORMANCE_CAPTURING_DELAY", transMeta.getStepPerformanceCapturingDelay());
-	        node.setProperty("STEP_PERFORMANCE_LOG_TABLE", transMeta.getStepPerformanceLogTable());
+	        node.setProperty("STEP_PERFORMANCE_LOG_TABLE", transMeta.getPerformanceLogTable().getTableName());
 
-	        node.setProperty("LOG_SIZE_LIMIT", transMeta.getLogSizeLimit());
+	        node.setProperty("LOG_SIZE_LIMIT", transMeta.getTransLogTable().getLogSizeLimit());
 
 			return node;
 		} catch(Exception e) {
@@ -275,7 +277,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			if (Const.isEmpty(versionLabel) && deleted) {
 				// The last version is not available : can't be found!
 				//
-				throw new KettleException("Transformation ["+transname+"] in directory ["+repdir.getPath()+" can't be found because it's deleted!");
+				//throw new KettleException("Transformation ["+transname+"] in directory ["+repdir.getPath()+" can't be found because it's deleted!");
 			}
 			
 			TransMeta transMeta = new TransMeta();
@@ -442,63 +444,68 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 
 	public void loadTransformationDetails(Node node, TransMeta transMeta) throws KettleException {
 		try {
-            transMeta.setExtendedDescription( repository.getPropertyString(node, "EXTENDED_DESCRIPTION") );
-            transMeta.setTransversion( repository.getPropertyString(node, "TRANS_VERSION") );
+      transMeta.setExtendedDescription( repository.getPropertyString(node, "EXTENDED_DESCRIPTION") );
+      transMeta.setTransversion( repository.getPropertyString(node, "TRANS_VERSION") );
 			transMeta.setTransstatus( (int)repository.getPropertyLong(node, "TRANS_STATUS") );
 
-			transMeta.setReadStep( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_READ")) );  //$NON-NLS-1$
-			transMeta.setWriteStep( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_WRITE")) ); //$NON-NLS-1$
-			transMeta.setInputStep( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_INPUT")) ); //$NON-NLS-1$
-			transMeta.setOutputStep( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_OUTPUT")) ); //$NON-NLS-1$
-			transMeta.setUpdateStep( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_UPDATE")) ); //$NON-NLS-1$
-			transMeta.setRejectedStep( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_REJECTED")) ); //$NON-NLS-1$
+			transMeta.getTransLogTable().setStepRead( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_READ")) );  //$NON-NLS-1$
+			transMeta.getTransLogTable().setStepWritten( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_WRITE")) ); //$NON-NLS-1$
+			transMeta.getTransLogTable().setStepInput( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_INPUT")) ); //$NON-NLS-1$
+			transMeta.getTransLogTable().setStepOutput( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_OUTPUT")) ); //$NON-NLS-1$
+			transMeta.getTransLogTable().setStepUpdate( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_UPDATE")) ); //$NON-NLS-1$
+			transMeta.getTransLogTable().setStepRejected( StepMeta.findStep(transMeta.getSteps(), repository.getPropertyString(node, "STEP_REJECTED")) ); //$NON-NLS-1$
 
 			Node logDatabaseNode = repository.getPropertyNode(node, "DATABASE_LOG");  //$NON-NLS-1$
-            transMeta.setLogConnection( logDatabaseNode==null ? null : DatabaseMeta.findDatabase(transMeta.getDatabases(), new StringObjectId(logDatabaseNode.getUUID())) );
-            transMeta.setLogTable( repository.getPropertyString(node, "TABLE_NAME_LOG") ); //$NON-NLS-1$
-            transMeta.setBatchIdUsed( repository.getPropertyBoolean(node, "USE_BATCHID") ); //$NON-NLS-1$
-            transMeta.setLogfieldUsed( repository.getPropertyBoolean(node, "USE_LOGFIELD") ); //$NON-NLS-1$
+      DatabaseMeta conn = ( logDatabaseNode==null ? null : DatabaseMeta.findDatabase(transMeta.getDatabases(), new StringObjectId(logDatabaseNode.getUUID())) );
+      if (conn != null){
+        transMeta.getTransLogTable().setConnectionName(conn.getName());
+      }
+      transMeta.getTransLogTable().setTableName( repository.getPropertyString(node, "TABLE_NAME_LOG") ); //$NON-NLS-1$
+      transMeta.getTransLogTable().setBatchIdUsed( repository.getPropertyBoolean(node, "USE_BATCHID") ); //$NON-NLS-1$
+      transMeta.getTransLogTable().setLogFieldUsed( repository.getPropertyBoolean(node, "USE_LOGFIELD") ); //$NON-NLS-1$
 
-            Node maxDatabaseNode = repository.getPropertyNode(node, "DATABASE_MAX"); //$NON-NLS-1$
-            transMeta.setMaxDateConnection( maxDatabaseNode==null ? null :  DatabaseMeta.findDatabase(transMeta.getDatabases(), new StringObjectId(maxDatabaseNode.getUUID())) ); 
-            transMeta.setMaxDateTable( repository.getPropertyString(node, "TABLE_NAME_MAXDATE") ); //$NON-NLS-1$
-            transMeta.setMaxDateField( repository.getPropertyString(node, "FIELD_NAME_MAXDATE") ); //$NON-NLS-1$
-            transMeta.setMaxDateOffset( repository.getPropertyNumber(node, "OFFSET_MAXDATE") ); //$NON-NLS-1$
-            transMeta.setMaxDateDifference( repository.getPropertyNumber(node, "DIFF_MAXDATE") ); //$NON-NLS-1$
+      Node maxDatabaseNode = repository.getPropertyNode(node, "DATABASE_MAX"); //$NON-NLS-1$
+      transMeta.setMaxDateConnection( maxDatabaseNode==null ? null :  DatabaseMeta.findDatabase(transMeta.getDatabases(), new StringObjectId(maxDatabaseNode.getUUID())) ); 
+      transMeta.setMaxDateTable( repository.getPropertyString(node, "TABLE_NAME_MAXDATE") ); //$NON-NLS-1$
+      transMeta.setMaxDateField( repository.getPropertyString(node, "FIELD_NAME_MAXDATE") ); //$NON-NLS-1$
+      transMeta.setMaxDateOffset( repository.getPropertyNumber(node, "OFFSET_MAXDATE") ); //$NON-NLS-1$
+      transMeta.setMaxDateDifference( repository.getPropertyNumber(node, "DIFF_MAXDATE") ); //$NON-NLS-1$
 
-            transMeta.setCreatedUser( repository.getPropertyString(node, "CREATED_USER") ); //$NON-NLS-1$
-            transMeta.setCreatedDate( repository.getPropertyDate(node, "CREATED_DATE") ); //$NON-NLS-1$
+      transMeta.setCreatedUser( repository.getPropertyString(node, "CREATED_USER") ); //$NON-NLS-1$
+      transMeta.setCreatedDate( repository.getPropertyDate(node, "CREATED_DATE") ); //$NON-NLS-1$
 
-            transMeta.setModifiedUser( repository.getPropertyString(node, "MODIFIED_USER") ); //$NON-NLS-1$
-            transMeta.setModifiedDate( repository.getPropertyDate(node, "MODIFIED_DATE") ); //$NON-NLS-1$
+      transMeta.setModifiedUser( repository.getPropertyString(node, "MODIFIED_USER") ); //$NON-NLS-1$
+      transMeta.setModifiedDate( repository.getPropertyDate(node, "MODIFIED_DATE") ); //$NON-NLS-1$
 
-            // Optional:
-            transMeta.setSizeRowset( Const.ROWS_IN_ROWSET );
-            long val_size_rowset = repository.getPropertyLong(node, "SIZE_ROWSET"); //$NON-NLS-1$
-            if (val_size_rowset > 0)
-            {
-            	transMeta.setSizeRowset( (int)val_size_rowset );
-            }
+      // Optional:
+      transMeta.setSizeRowset( Const.ROWS_IN_ROWSET );
+      long val_size_rowset = repository.getPropertyLong(node, "SIZE_ROWSET"); //$NON-NLS-1$
+      if (val_size_rowset > 0)
+      {
+      	transMeta.setSizeRowset( (int)val_size_rowset );
+      }
 
-            String id_directory = repository.getPropertyString(node,"ID_DIRECTORY"); //$NON-NLS-1$
-            if (id_directory != null)
-            {
-           	   if (log.isDetailed()) log.logDetailed(toString(), "ID_DIRECTORY=" + id_directory); //$NON-NLS-1$
-               // Set right directory...
-           	   transMeta.setRepositoryDirectory( repository.loadRepositoryDirectoryTree().findDirectory(new StringObjectId(id_directory)) ); // always reload the folder structure
-            }
-           
-            transMeta.setUsingUniqueConnections( repository.getPropertyBoolean(node, "UNIQUE_CONNECTIONS") );
-            transMeta.setFeedbackShown( repository.getPropertyBoolean(node, "FEEDBACK_SHOWN", true)  );
-            transMeta.setFeedbackSize( (int) repository.getPropertyLong(node, "FEEDBACK_SIZE") );
-            transMeta.setUsingThreadPriorityManagment( repository.getPropertyBoolean(node, "USING_THREAD_PRIORITIES", true) );    
-           
-            // Performance monitoring for steps...
-            //
-            transMeta.setCapturingStepPerformanceSnapShots( repository.getPropertyBoolean(node, "CAPTURE_STEP_PERFORMANCE", true) );
-            transMeta.setStepPerformanceCapturingDelay( repository.getPropertyLong(node, "STEP_PERFORMANCE_CAPTURING_DELAY") );
-            transMeta.setStepPerformanceLogTable( repository.getPropertyString(node, "STEP_PERFORMANCE_LOG_TABLE") );
-            transMeta.setLogSizeLimit( repository.getPropertyString(node, "LOG_SIZE_LIMIT") );
+      String id_directory = repository.getPropertyString(node,"ID_DIRECTORY"); //$NON-NLS-1$
+      if (id_directory != null)
+      {
+     	   if (log.isDetailed()) log.logDetailed(toString(), "ID_DIRECTORY=" + id_directory); //$NON-NLS-1$
+         // Set right directory...
+     	   transMeta.setRepositoryDirectory( repository.loadRepositoryDirectoryTree().findDirectory(new StringObjectId(id_directory)) ); // always reload the folder structure
+      }
+     
+      transMeta.setUsingUniqueConnections( repository.getPropertyBoolean(node, "UNIQUE_CONNECTIONS") );
+      transMeta.setFeedbackShown( repository.getPropertyBoolean(node, "FEEDBACK_SHOWN", true)  );
+      transMeta.setFeedbackSize( (int) repository.getPropertyLong(node, "FEEDBACK_SIZE") );
+      transMeta.setUsingThreadPriorityManagment( repository.getPropertyBoolean(node, "USING_THREAD_PRIORITIES", true) );    
+     
+      // Performance monitoring for steps...
+      //
+      transMeta.setCapturingStepPerformanceSnapShots( repository.getPropertyBoolean(node, "CAPTURE_STEP_PERFORMANCE", true) );
+      transMeta.setStepPerformanceCapturingDelay( repository.getPropertyLong(node, "STEP_PERFORMANCE_CAPTURING_DELAY") );
+      transMeta.getPerformanceLogTable().setTableName(repository.getPropertyString(node, "STEP_PERFORMANCE_LOG_TABLE"));
+      transMeta.getTransLogTable().setLogSizeLimit(repository.getPropertyString(node, "LOG_SIZE_LIMIT") );
+      //transMeta.setStepPerformanceLogTable( repository.getPropertyString(node, "STEP_PERFORMANCE_LOG_TABLE") );
+      //transMeta.setLogSizeLimit( repository.getPropertyString(node, "LOG_SIZE_LIMIT") );
 
 		} catch(Exception e) {
 			throw new KettleException("Error loading transformation details", e);

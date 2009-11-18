@@ -67,7 +67,7 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 			if (Const.isEmpty(versionLabel) && deleted) {
 				// The last version is not available : can't be found!
 				//
-				throw new KettleException("Job ["+jobName+"] in directory ["+repdir.getPath()+" can't be found because it's deleted!");
+				//throw new KettleException("Job ["+jobName+"] in directory ["+repdir.getPath()+" can't be found because it's deleted!");
 			}
 			
 			JobMeta jobMeta = new JobMeta();
@@ -231,7 +231,7 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 			jobMeta.setExtendedDescription( repository.getPropertyString(jobNode, "EXTENDED_DESCRIPTION") ); //$NON-NLS-1$
 			jobMeta.setJobversion( repository.getPropertyString(jobNode, "JOB_VERSION") ); //$NON-NLS-1$
 			jobMeta.setJobstatus( (int) repository.getPropertyLong(jobNode, "JOB_STATUS") ); //$NON-NLS-1$
-			jobMeta.setLogTable( repository.getPropertyString(jobNode, "TABLE_NAME_LOG") ); //$NON-NLS-1$
+			jobMeta.getJobLogTable().setTableName( repository.getPropertyString(jobNode, "TABLE_NAME_LOG") ); //$NON-NLS-1$
 
 			jobMeta.setCreatedUser( repository.getPropertyString(jobNode, "CREATED_USER") ); //$NON-NLS-1$
 			jobMeta.setCreatedDate( repository.getPropertyDate(jobNode, "CREATED_DATE") ); //$NON-NLS-1$
@@ -241,13 +241,14 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 
 			Node logDbNode = repository.getPropertyNode(jobNode, "DATABASE_LOG");
 			if (logDbNode!=null) {
-				jobMeta.setLogConnection( DatabaseMeta.findDatabase(jobMeta.getDatabases(), new StringObjectId(logDbNode.getUUID())) );
+				DatabaseMeta conn = ( DatabaseMeta.findDatabase(jobMeta.getDatabases(), new StringObjectId(logDbNode.getUUID())) );
+				jobMeta.getJobLogTable().setConnectionName(conn.getName());
 			}
-			jobMeta.setUseBatchId( repository.getPropertyBoolean(jobNode, "USE_BATCH_ID") ); //$NON-NLS-1$
+			jobMeta.getJobLogTable().setBatchIdUsed( repository.getPropertyBoolean(jobNode, "USE_BATCH_ID") ); //$NON-NLS-1$
 			jobMeta.setBatchIdPassed( repository.getPropertyBoolean(jobNode, "PASS_BATCH_ID") ); //$NON-NLS-1$
-			jobMeta.setLogfieldUsed( repository.getPropertyBoolean(jobNode, "USE_LOGFIELD") ); //$NON-NLS-1$
+			jobMeta.getJobLogTable().setLogFieldUsed( repository.getPropertyBoolean(jobNode, "USE_LOGFIELD") ); //$NON-NLS-1$
 			
-			jobMeta.setLogSizeLimit( repository.getPropertyString(jobNode, "LOG_SIZE_LIMIT") );
+			jobMeta.getJobLogTable().setLogSizeLimit( repository.getPropertyString(jobNode, "LOG_SIZE_LIMIT") );
 
 		} catch(Exception e) {
 			throw new KettleException("Error loading job details", e);
@@ -481,9 +482,9 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 	    	jobNode.setProperty("JOB_VERSION", jobMeta.getJobversion());
 	    	jobNode.setProperty("JOB_STATUS", jobMeta.getJobstatus()  <0 ? -1L : jobMeta.getJobstatus());
 	
-	    	Node logDbNode = jobMeta.getLogConnection()==null ? null : repository.getSession().getNodeByUUID(jobMeta.getLogConnection().getObjectId().getId());
+	    	Node logDbNode = jobMeta.getJobLogTable().getDatabaseMeta()==null ? null : repository.getSession().getNodeByUUID(jobMeta.getJobLogTable().getDatabaseMeta().getObjectId().getId());
 	    	jobNode.setProperty("DATABASE_LOG", logDbNode);
-	    	jobNode.setProperty("TABLE_NAME_LOG", jobMeta.getLogTable());
+	    	jobNode.setProperty("TABLE_NAME_LOG", jobMeta.getJobLogTable().getTableName());
 	
 	    	jobNode.setProperty("CREATED_USER", jobMeta.getCreatedUser());
 	    	Calendar createdDate = Calendar.getInstance();
@@ -493,9 +494,9 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 	    	Calendar modifiedDate = Calendar.getInstance();
 	    	modifiedDate.setTime(jobMeta.getModifiedDate());
 	    	jobNode.setProperty("MODIFIED_DATE", modifiedDate);
-	    	jobNode.setProperty("USE_BATCH_ID", jobMeta.isBatchIdUsed());
+	    	jobNode.setProperty("USE_BATCH_ID", jobMeta.getJobLogTable().isBatchIdUsed());
 	    	jobNode.setProperty("PASS_BATCH_ID", jobMeta.isBatchIdPassed());
-	    	jobNode.setProperty("USE_LOGFIELD", jobMeta.isLogfieldUsed());
+	    	jobNode.setProperty("USE_LOGFIELD", jobMeta.getJobLogTable().isLogFieldUsed());
 	    	jobNode.setProperty("SHARED_FILE", jobMeta.getSharedObjectsFile());
     	}
     	catch(Exception e) {

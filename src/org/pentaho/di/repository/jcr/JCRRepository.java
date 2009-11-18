@@ -34,6 +34,7 @@ import org.pentaho.di.core.annotations.RepositoryPlugin;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
@@ -912,6 +913,10 @@ public class JCRRepository implements Repository {
 
 	public ObjectId insertLogEntry(String description) throws KettleException {
 		return null; // TODO!
+	}
+	
+	public LogChannelInterface getLog(){
+	  return null;
 	}
 
 	public void insertStepDatabase(ObjectId transformationId, ObjectId stepId, ObjectId databaseId) throws KettleException {

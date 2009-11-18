@@ -312,7 +312,7 @@ public class RepositoryJobTests extends TestCase {
 		assertNotNull(databaseMeta);
 		assertEquals("new H2", databaseMeta.getName());
 		
-		DatabaseMeta logDatabase = jobMeta.getLogConnection();
+		DatabaseMeta logDatabase = jobMeta.getJobLogTable().getDatabaseMeta();
 		assertNotNull(logDatabase);
 		assertEquals("new H2", logDatabase.getName());
 	}

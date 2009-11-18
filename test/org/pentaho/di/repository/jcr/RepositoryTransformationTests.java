@@ -293,6 +293,7 @@ public class RepositoryTransformationTests extends TestCase {
 	}
 
 	public void test77_renameDatabase() throws Exception {
+	  
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		
@@ -310,9 +311,10 @@ public class RepositoryTransformationTests extends TestCase {
 		assertNotNull(databaseMeta);
 		assertEquals("new MySQL", databaseMeta.getName());
 		
-		DatabaseMeta logDatabase = transMeta.getLogConnection();
+		DatabaseMeta logDatabase = transMeta.getTransLogTable().getDatabaseMeta();
 		assertNotNull(logDatabase);
 		assertEquals("new MySQL", logDatabase.getName());
+		
 	}
 	
 	public void test80_moveTransformation() throws Exception {
