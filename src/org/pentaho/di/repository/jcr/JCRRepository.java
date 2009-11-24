@@ -269,7 +269,7 @@ public class JCRRepository implements Repository {
 				Node subNode = nodes.nextNode();
 				if (subNode.isNodeType(NODE_TYPE_PDI_FOLDER)) {
 					RepositoryDirectory dir = new RepositoryDirectory();
-					dir.setDirectoryName(subNode.getName());
+					dir.setName(subNode.getName());
 					dir.setObjectId(new StringObjectId(subNode.getUUID()));
 					root.addSubdirectory(dir);
 					
@@ -286,7 +286,7 @@ public class JCRRepository implements Repository {
 	public void saveRepositoryDirectory(RepositoryDirectory dir) throws KettleException {
 		try {
 			Node parentNode = findFolderNode(dir.getParent());
-			Node node = parentNode.addNode(dir.getDirectoryName(), NODE_TYPE_PDI_FOLDER);
+			Node node = parentNode.addNode(dir.getName(), NODE_TYPE_PDI_FOLDER);
 			node.addMixin(MIX_REFERENCEABLE);
 			node.addMixin(MIX_LOCKABLE);
 			session.save();
@@ -988,11 +988,11 @@ public class JCRRepository implements Repository {
 			Node folderNode = session.getNodeByUUID(dir.getObjectId().getId());
 			String parentPath = folderNode.getParent().getPath();
 			
-			session.move(folderNode.getPath(), parentPath+"/"+dir.getDirectoryName());
+			session.move(folderNode.getPath(), parentPath+"/"+dir.getName());
 			
 			return dir.getObjectId();
 		} catch(Exception e) {
-			throw new KettleException("Unable to rename directory with id ["+dir.getObjectId()+"] to ["+dir.getDirectoryName()+"]", e);
+			throw new KettleException("Unable to rename directory with id ["+dir.getObjectId()+"] to ["+dir.getName()+"]", e);
 		}
 	}
 
