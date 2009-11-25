@@ -1,16 +1,19 @@
 package org.pentaho.di.repositoryexplorer;
 
+import org.eclipse.swt.widgets.MessageBox;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.repository.Directory;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositoryDirectory;
+import org.pentaho.di.repository.RepositoryElementLocationInterface;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.di.repository.jcr.JCRRepository;
 import org.pentaho.di.repository.jcr.JCRRepositoryLocation;
 import org.pentaho.di.repository.jcr.JCRRepositoryMeta;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
+import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorerCallback;
 
 public class ExplorerHarness {
 
@@ -42,11 +45,22 @@ public class ExplorerHarness {
     repository = new JCRRepository();
     repository.init(repositoryMeta, userInfo);
     
+    RepositoryExplorerCallback cb = new RepositoryExplorerCallback() {
+
+        public boolean open(RepositoryElementLocationInterface element, String revision) {
+          System.out.println("Name: ".concat(element.getName()));
+          System.out.println("Type: ".concat(element.getRepositoryElementType().name()));
+          System.out.println("Directory: ".concat(element.getRepositoryDirectory().toString()));
+          System.out.println("Revision: ".concat(revision==null?"null":revision));
+          return false; // do not close explorer
+        }
+    };
+
+    
     try {
       repository.connect();
       Directory root = repository.loadRepositoryDirectoryTree();
-      root.setRepository(repository);
-      RepositoryExplorer explorer = new RepositoryExplorer(root);
+      RepositoryExplorer explorer = new RepositoryExplorer(root, repository, cb);
       explorer.show();
     } catch (KettleSecurityException e) {
       e.printStackTrace();
