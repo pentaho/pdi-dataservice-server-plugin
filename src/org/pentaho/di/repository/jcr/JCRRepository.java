@@ -989,6 +989,7 @@ public class JCRRepository implements Repository {
 			String parentPath = folderNode.getParent().getPath();
 			
 			session.move(folderNode.getPath(), parentPath+"/"+dir.getName());
+			session.save();
 			
 			return dir.getObjectId();
 		} catch(Exception e) {
