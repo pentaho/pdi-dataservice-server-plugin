@@ -18,14 +18,22 @@
     <fileset dir="${lib.dir}">
       <include name="*.jar" />
     </fileset>
+  	<!--
+    <fileset dir="../Kettle/lib">
+      <include name="*.jar" />
+    </fileset>
+    -->
   </path>
   
   <!-- Copy all jars over to the plugin zip, 
   except for pentaho platform jars which the platform provides -->
   <target name="assemble.copy-libs">
     <copy todir="${approot.stage.dir}">
-      <fileset dir="${lib.dir}" />
+      <fileset dir="${lib.dir}" >
+      	<exclude name="kettle-*.jar"/> 
+      </fileset>
       <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
+    
     </copy>
   </target>
   
