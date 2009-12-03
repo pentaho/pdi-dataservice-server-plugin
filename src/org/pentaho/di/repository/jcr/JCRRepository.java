@@ -56,6 +56,11 @@ import org.pentaho.di.repository.jcr.util.JCRObjectRevision;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 
+import com.pentaho.commons.dsc.PentahoDscContent;
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.params.KParam;
+import com.pentaho.commons.dsc.params.PParam;
+
 
 @RepositoryPlugin(
 		id="JCRRepository", 
@@ -147,12 +152,16 @@ public class JCRRepository implements Repository {
 	private JCRRepositoryVersionRegistry versionRegistry;
 	
 	public JCRRepository() {
-		this.transDelegate = new JCRRepositoryTransDelegate(this);
-		this.jobDelegate = new JCRRepositoryJobDelegate(this);
-		this.databaseDelegate = new JCRRepositoryDatabaseDelegate(this);
-		this.partitionDelegate = new JCRRepositoryPartitionDelegate(this);
-		this.slaveDelegate = new JCRRepositorySlaveDelegate(this);
-		this.versionRegistry = new JCRRepositoryVersionRegistry(this);
+	  PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+	  Object aa = dscContent.getIssuer();
+	  if( aa != null){
+	    this.transDelegate = new JCRRepositoryTransDelegate(this);
+	    this.jobDelegate = new JCRRepositoryJobDelegate(this);
+	    this.databaseDelegate = new JCRRepositoryDatabaseDelegate(this);
+	    this.partitionDelegate = new JCRRepositoryPartitionDelegate(this);
+	    this.slaveDelegate = new JCRRepositorySlaveDelegate(this);
+	    this.versionRegistry = new JCRRepositoryVersionRegistry(this);
+	  }
 		
 	}
 	
@@ -175,6 +184,11 @@ public class JCRRepository implements Repository {
 		try {
 			jcrRepository = new URLRemoteRepository(repositoryLocation.getUrl());
 			
+		  PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+		  if (dscContent.getHolder()==null){
+		    return;
+		  }
+
 			session = jcrRepository.login(new SimpleCredentials(userInfo.getLogin(), userInfo.getPassword()!=null ? userInfo.getPassword().toCharArray() : "".toCharArray() ));
 			workspace = session.getWorkspace();
 			
@@ -285,12 +299,17 @@ public class JCRRepository implements Repository {
 
 	public void saveRepositoryDirectory(RepositoryDirectory dir) throws KettleException {
 		try {
-			Node parentNode = findFolderNode(dir.getParent());
-			Node node = parentNode.addNode(dir.getName(), NODE_TYPE_PDI_FOLDER);
-			node.addMixin(MIX_REFERENCEABLE);
-			node.addMixin(MIX_LOCKABLE);
-			session.save();
-			dir.setObjectId(new StringObjectId(node.getUUID()));
+	    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+	    
+	    if (dscContent.getSubject()!=null){
+	      Node parentNode = findFolderNode(dir.getParent());
+	      Node node = parentNode.addNode(dir.getName(), NODE_TYPE_PDI_FOLDER);
+	      node.addMixin(MIX_REFERENCEABLE);
+	      node.addMixin(MIX_LOCKABLE);
+	      session.save();
+	      dir.setObjectId(new StringObjectId(node.getUUID()));
+	    }
+
 		} catch(Exception e) {
 			throw new KettleException("Unable to save repository directory with path ["+dir.getPath()+"]", e);
 		}
@@ -308,7 +327,10 @@ public class JCRRepository implements Repository {
 		    		// create this one
 		    		//
 		    		child = new RepositoryDirectory(follow, path[level]);
-		    		saveRepositoryDirectory(child);
+		        PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+		        if (dscContent.getHolder()!=null){
+	            saveRepositoryDirectory(child);
+		        }
 		    	} 
 		    	
 		    	follow = child;
@@ -323,13 +345,6 @@ public class JCRRepository implements Repository {
 		return getObjectNames(id_directory, null, true);
 	}
 
-
-	
-	
-	
-	
-	
-	
 	private String calcDirectoryPath(RepositoryDirectory dir) {
 		if (dir!=null) {
 			return dir.getPath();
@@ -367,7 +382,12 @@ public class JCRRepository implements Repository {
 	// General 
 	//
 	public void save(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
-		try {
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    if (dscContent.getSubject()==null){
+      return;
+    }
+	  
+	  try {
 			switch(element.getRepositoryElementType()) {
 			case TRANSFORMATION : transDelegate.saveTransMeta(element, versionComment, monitor); break;
 			case JOB: jobDelegate.saveJobMeta(element, versionComment, monitor); break;
@@ -517,16 +537,6 @@ public class JCRRepository implements Repository {
 		return version.getNode(JcrConstants.JCR_FROZENNODE);
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
 	public void deleteJob(ObjectId jobId) throws KettleException {
 		jobDelegate.deleteJob(jobId);
 	}

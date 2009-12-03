@@ -18,6 +18,9 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.tableoutput.TableOutputMeta;
 
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.util.TestLicenseStream;
+
 public class RepositoryTransformationTests extends TestCase {
 	
 	private JCRRepositoryMeta repositoryMeta;
@@ -43,19 +46,22 @@ public class RepositoryTransformationTests extends TestCase {
 	private static final String VERSION_COMMENT_FOUR = "This is a fourth test version comment";
 	
 	protected void setUp() throws Exception {
-		super.setUp();
+
+    PentahoLicenseVerifier.setStreamOpener( new TestLicenseStream( "pdi-ee=true" ) ); //$NON-NLS-1$
+	  
+	  super.setUp();
 		
 		KettleEnvironment.init();
 	
 		repositoryMeta = new JCRRepositoryMeta();
 		repositoryMeta.setName("JackRabbit");
 		repositoryMeta.setDescription("JackRabbit test repository");
-		repositoryMeta.setRepositoryLocation(new JCRRepositoryLocation("http://localhost:8181/jackrabbit/rmi"));
+		repositoryMeta.setRepositoryLocation(new JCRRepositoryLocation("http://localhost:8080/jackrabbit/rmi"));
 		
 		ProfileMeta adminProfile = new ProfileMeta("admin", "Administrator");
 		adminProfile.addPermission(Permission.ADMIN);
 		
-		userInfo = new UserInfo("tomcat", "tomcat", "Apache Tomcat", "Apache Tomcat user", true, adminProfile);
+		userInfo = new UserInfo("joe", "password", "Apache Tomcat", "Apache Tomcat user", true, adminProfile);
 		
 		repository = new JCRRepository();
 		repository.init(repositoryMeta, userInfo);
@@ -92,21 +98,31 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(fooDirectory.getPath(), TEST_DIRECTORY_PATH);
 	}
 	
-	public void test10_saveTransformations() throws Exception {
+  public void test05_renameDirectory() throws Exception {
+    RepositoryDirectory tree = repository.loadRepositoryDirectoryTree();
+    RepositoryDirectory fooDirectory = tree.findDirectory(TEST_DIRECTORY_PATH);
+    fooDirectory.setName("thimble");
+    repository.renameRepositoryDirectory(fooDirectory);
+    fooDirectory = tree.findDirectory("/foo/bar/test/thimble");
+    assertTrue(fooDirectory.getName()=="thimble");
+  }
+
+  public void test10_saveTransformations() throws Exception {
 		
-		// Save the transformation first...
-		//
-		repository.save(transMeta, VERSION_COMMENT_ONE, null);
-		
-		assertNotNull("Object ID needs to be set", transMeta.getObjectId());
-		
-		ObjectRevision version = transMeta.getObjectRevision();
-		
-		assertNotNull("Object version needs to be set", version);
-		
-		assertEquals(VERSION_COMMENT_ONE, version.getComment());
-		
-		assertEquals("1.0", version.getName());
+    // Save the transformation first...
+    //
+    repository.save(transMeta, VERSION_COMMENT_ONE, null);
+    
+    assertNotNull("Object ID needs to be set", transMeta.getObjectId());
+    
+    ObjectRevision version = transMeta.getObjectRevision();
+    
+    assertNotNull("Object version needs to be set", version);
+    
+    assertEquals(VERSION_COMMENT_ONE, version.getComment());
+    
+    assertEquals("1.0", version.getName());
+    
 	}
 	
 	public void test15_loadTransformaion() throws Exception {
@@ -123,7 +139,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertNotNull("Object version needs to be set", version);
 		assertEquals(VERSION_COMMENT_ONE, version.getComment());
 		assertEquals("1.0", version.getName());
-		assertEquals("tomcat", version.getLogin());
+		assertEquals("joe", version.getLogin());
 		
 		// Verify specific content
 		//
@@ -264,7 +280,7 @@ public class RepositoryTransformationTests extends TestCase {
 		
 		assertEquals("Transformation exists in the repository, test didn't find it", true, exists);
 	}
-
+/*
 	public void test75_deleteTransformation() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
@@ -354,4 +370,5 @@ public class RepositoryTransformationTests extends TestCase {
 		fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		assertNull(fooDirectory);
 	}
+	*/
 }

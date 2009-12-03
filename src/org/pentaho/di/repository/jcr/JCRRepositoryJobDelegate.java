@@ -31,6 +31,10 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.jcr.util.JCRObjectRevision;
 import org.pentaho.di.shared.SharedObjects;
 
+import com.pentaho.commons.dsc.PentahoDscContent;
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.params.KParam;
+
 public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 	private static Class<?> PKG = JCRRepository.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
 
@@ -56,7 +60,10 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 	}
 
 	public JobMeta loadJobMeta(String jobName, RepositoryDirectory repdir, ProgressMonitorListener monitor, String versionLabel) throws KettleException {
-		String path = repository.calcRelativeNodePath(repdir, jobName, JCRRepository.EXT_JOB); 
+
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+
+	  String path = repository.calcRelativeNodePath(repdir, jobName, JCRRepository.EXT_JOB); 
 		
 		try {
 			Node node = repository.getRootNode().getNode(path);
@@ -68,6 +75,10 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 				// The last version is not available : can't be found!
 				//
 				//throw new KettleException("Job ["+jobName+"] in directory ["+repdir.getPath()+" can't be found because it's deleted!");
+			}
+			
+			if (dscContent.getHolder()==null){
+			  return null;
 			}
 			
 			JobMeta jobMeta = new JobMeta();
@@ -364,6 +375,7 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 	public void saveJobMeta(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
 		try {
 			JobMeta jobMeta = (JobMeta)element;
+      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
 
 			// Now store the databases in the job.
 			// Only store if the database has actually changed or doesn't have an object ID (imported)
@@ -373,7 +385,7 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 					
 					// Only save the connection if it's actually used in the transformation...
 					//
-					if (jobMeta.isDatabaseConnectionUsed(databaseMeta)) {
+					if (jobMeta.isDatabaseConnectionUsed(databaseMeta) && (dscContent.getSubject()!=null)) {
 						repository.save(databaseMeta, versionComment, monitor);
 					}
 				}
@@ -382,9 +394,11 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 			// Store the slave server
 			//
 			for (SlaveServer slaveServer : jobMeta.getSlaveServers()) {
-				if (slaveServer.hasChanged() || slaveServer.getObjectId()==null) {
-					repository.save(slaveServer, versionComment, monitor);
-				}
+			  if (dscContent.getSubject()!=null){
+  				if (slaveServer.hasChanged() || slaveServer.getObjectId()==null) {
+  					repository.save(slaveServer, versionComment, monitor);
+  				}
+			  }
 			}
 
 			// Create or version a new job node to store all the information in...
@@ -454,7 +468,9 @@ public class JCRRepositoryJobDelegate extends JCRRepositoryBaseDelegate {
 				hopNode.setProperty(JOB_HOP_UNCONDITIONAL, hop.isUnconditional());
 			}
 
-			saveJobParameters(jobNode, jobMeta);
+			if (dscContent.getIssuer()!=null){
+	      saveJobParameters(jobNode, jobMeta);
+			}
 			
 			// Let's not forget to save the details of the transformation itself.
 			// This includes logging information, parameters, etc.

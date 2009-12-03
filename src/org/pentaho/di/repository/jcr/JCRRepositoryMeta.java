@@ -10,6 +10,10 @@ import org.pentaho.di.repository.RepositoryCapabilities;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.w3c.dom.Node;
 
+import com.pentaho.commons.dsc.PentahoDscContent;
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.params.KParam;
+
 public class JCRRepositoryMeta extends BaseRepositoryMeta implements RepositoryMeta {
 
 	/** The id as specified in the repository plugin meta, used for backward compatibility only */
@@ -32,7 +36,7 @@ public class JCRRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
 	
 	public String getXML()
 	{
-        StringBuffer retval = new StringBuffer(100);
+    StringBuffer retval = new StringBuffer(100);
 		
 		retval.append("  ").append(XMLHandler.openTag(XML_TAG));
 		retval.append(super.getXML());
@@ -60,15 +64,20 @@ public class JCRRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
 
 
 	public RepositoryCapabilities getRepositoryCapabilities() {
-    	return new RepositoryCapabilities() {
-    		public boolean supportsUsers() { return true; }
-    		public boolean managesUsers() { return false; }
-    		public boolean isReadOnly() { return false; }
-    		public boolean supportsRevisions() { return true; }
-    		public boolean supportsMetadata() { return true; }
-    		public boolean supportsLocking() { return true; }
-    		public boolean hasVersionRegistry() { return true; }
-    	};
+	  
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    if (dscContent.getSubject()==null){
+      return null;
+    }
+  	return new RepositoryCapabilities() {
+  		public boolean supportsUsers() { return true; }
+  		public boolean managesUsers() { return false; }
+  		public boolean isReadOnly() { return false; }
+  		public boolean supportsRevisions() { return true; }
+  		public boolean supportsMetadata() { return true; }
+  		public boolean supportsLocking() { return true; }
+  		public boolean hasVersionRegistry() { return true; }
+  	};
 	}
 
 	/**

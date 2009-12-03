@@ -21,6 +21,10 @@ import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 
+import com.pentaho.commons.dsc.PentahoDscContent;
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.params.KParam;
+
 public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
 
 	private static final String DB_ATTRIBUTE_PREFIX = "DB_ATTR_";
@@ -41,6 +45,8 @@ public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
 
 			// Then the basic db information
 			//
+      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+      
 			node.setProperty("TYPE", DatabaseMeta.getDatabaseTypeCode(databaseMeta.getDatabaseType()));
 			node.setProperty("CONTYPE", DatabaseMeta.getAccessTypeDesc(databaseMeta.getAccessType()));
 			node.setProperty("HOST_NAME", databaseMeta.getHostname());
@@ -61,25 +67,27 @@ public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
 				node.setProperty(property.getName(), (String)null); // removes
 			}
 						
-            // Now store all the attributes set on the database connection...
-            // 
-            Properties attributes = databaseMeta.getAttributes();
-            Enumeration<Object> keys = databaseMeta.getAttributes().keys();
-            while (keys.hasMoreElements())
-            {
-                String code = (String) keys.nextElement();
-                String attribute = (String)attributes.get(code);
-                
-                // Save this attribute
-                //
-                node.setProperty(DB_ATTRIBUTE_PREFIX+code, attribute);
-            }
+      // Now store all the attributes set on the database connection...
+      // 
+      Properties attributes = databaseMeta.getAttributes();
+      Enumeration<Object> keys = databaseMeta.getAttributes().keys();
+      while (keys.hasMoreElements())
+      {
+          String code = (String) keys.nextElement();
+          String attribute = (String)attributes.get(code);
+          
+          // Save this attribute
+          //
+          node.setProperty(DB_ATTRIBUTE_PREFIX+code, attribute);
+      }
 
-            repository.getSession().save();
-            Version version = node.checkin();
-            
-            databaseMeta.setObjectRevision(repository.getObjectRevision(version));
-            databaseMeta.setObjectId(id);
+      if (dscContent.getSubject()!=null){
+        repository.getSession().save();
+        Version version = node.checkin();
+        
+        databaseMeta.setObjectRevision(repository.getObjectRevision(version));
+        databaseMeta.setObjectId(id);
+      }
             
 		} catch (Exception e) {
 			throw new KettleException("Unable to save database connection ["+element+"] in the repository", e);
@@ -88,8 +96,13 @@ public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
 	}
 
 	public DatabaseMeta loadDatabaseMeta(ObjectId databaseId, String versionLabel) throws KettleException {
-		try {
-			Version version = repository.getVersion(repository.getSession().getNodeByUUID(databaseId.getId()), versionLabel);
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+
+    try {
+      Version version = null;
+      if (dscContent.getExtra()!=null){
+        version = repository.getVersion(repository.getSession().getNodeByUUID(databaseId.getId()), versionLabel);
+      }
 			Node node = repository.getVersionNode(version);
 			
 			DatabaseMeta databaseMeta = new DatabaseMeta();
@@ -118,11 +131,11 @@ public class JCRRepositoryDatabaseDelegate extends JCRRepositoryBaseDelegate {
                 databaseMeta.getAttributes().put(code, Const.NVL(attribute, ""));
             }
 
-            databaseMeta.setObjectId(databaseId);
+      databaseMeta.setObjectId(databaseId);
 			databaseMeta.setObjectRevision(repository.getObjectRevision(version));
 			databaseMeta.clearChanged();			
-			
-			return databaseMeta;
+
+			return (dscContent.getHolder()==null)? null:databaseMeta;
 		}
 		catch(Exception e) {
 			throw new KettleException("Unable to load database from object ["+databaseId+"]", e);

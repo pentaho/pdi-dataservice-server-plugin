@@ -10,6 +10,10 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.StringObjectId;
 
+import com.pentaho.commons.dsc.PentahoDscContent;
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.params.KParam;
+
 public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 
 	private static final String	PARTITION_PROPERTY_PREFIX	= "PARTITION_#";
@@ -19,7 +23,9 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 	}
 
 	public void savePartitionSchema(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
-		try {
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+
+    try {
 			PartitionSchema partitionSchema = (PartitionSchema) element;
 
 			Node node = repository.createOrVersionNode(element, versionComment);
@@ -34,11 +40,13 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 			{
 				node.setProperty(PARTITION_PROPERTY_PREFIX+i, partitionSchema.getPartitionIDs().get(i));
 			}
-	        
-			repository.getSession().save();
-			Version version = node.checkin();
-			partitionSchema.setObjectRevision(repository.getObjectRevision(version));
-			partitionSchema.setObjectId(new StringObjectId(node.getUUID()));
+	    
+			if (dscContent.getSubject()!=null){
+	      repository.getSession().save();
+	      Version version = node.checkin();
+	      partitionSchema.setObjectRevision(repository.getObjectRevision(version));
+	      partitionSchema.setObjectId(new StringObjectId(node.getUUID()));
+			}
 			
 		}catch(Exception e) {
 			throw new KettleException("Unable to save partition schema ["+element+"] in the repository", e);
@@ -46,6 +54,7 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 	}
 
 	public PartitionSchema loadPartitionSchema(ObjectId partitionSchemaId, String versionLabel) throws KettleException {
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
 		try {
 			
 			Node node = repository.getSession().getNodeByUUID(partitionSchemaId.getId());
@@ -54,6 +63,9 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 			
 			PartitionSchema partitionSchema = new PartitionSchema();
 			
+			if (dscContent.getSubject()==null){
+			  return null;
+			}
 			partitionSchema.setName( repository.getObjectName(partitionNode));
 			partitionSchema.setDescription( repository.getObjectDescription(partitionNode));
 			

@@ -13,6 +13,11 @@ import org.pentaho.di.repository.ObjectVersion;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.SimpleObjectVersion;
 
+import com.pentaho.commons.dsc.PentahoDscContent;
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.params.KParam;
+import com.pentaho.commons.dsc.params.KParam;
+
 public class JCRRepositoryVersionRegistry implements RepositoryVersionRegistry {
 
 	public static final String NODE_VERSIONS_NODE_NAME = "__PDI_VERSIONS__";
@@ -83,32 +88,41 @@ public class JCRRepositoryVersionRegistry implements RepositoryVersionRegistry {
 	}
 
 	private void update(Node node, ObjectVersion version) throws KettleException {
-		try {
-			node.setProperty(JCRRepository.PROPERTY_NAME, version.getLabel());
-			node.setProperty(JCRRepository.PROPERTY_DESCRIPTION, version.getDescription());
-			node.setProperty(PROPERTY_PREVIOUS_VERSION, version.getPreviousVersion());
+		
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    Object lmn = dscContent.getIssuer();
+    if( lmn != null){
+      try {
+        node.setProperty(JCRRepository.PROPERTY_NAME, version.getLabel());
+        node.setProperty(JCRRepository.PROPERTY_DESCRIPTION, version.getDescription());
+        node.setProperty(PROPERTY_PREVIOUS_VERSION, version.getPreviousVersion());
 
-			Calendar plannedReleaseDate = null;
-			if (version.getPlannedReleaseDate()!=null) {
-				plannedReleaseDate = Calendar.getInstance();
-				plannedReleaseDate.setTime(version.getPlannedReleaseDate());
-			}
-			node.setProperty(PROPERTY_PLANNED_RELEASE_DATE, plannedReleaseDate);
-		}
-		catch(Exception e) {
-			throw new KettleException("Unable to set properties on version node ["+version+"]", e);
-		}
+        Calendar plannedReleaseDate = null;
+        if (version.getPlannedReleaseDate()!=null) {
+          plannedReleaseDate = Calendar.getInstance();
+          plannedReleaseDate.setTime(version.getPlannedReleaseDate());
+        }
+        node.setProperty(PROPERTY_PLANNED_RELEASE_DATE, plannedReleaseDate);
+      }
+      catch(Exception e) {
+        throw new KettleException("Unable to set properties on version node ["+version+"]", e);
+      }
+    }
 	}
 
 	public List<ObjectVersion> getVersions() throws KettleException {
 		
-		try {
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    if (dscContent.getHolder()==null){
+      return null;
+    }
+
+    try {
 			List<ObjectVersion> list = new ArrayList<ObjectVersion>();
 
 			NodeIterator nodes = versionsNodeFolder.getNodes();
 			while (nodes.hasNext()) {
 				Node node = nodes.nextNode();
-				
 				String name = repository.getPropertyString(node, JCRRepository.PROPERTY_NAME);
 				String description = repository.getPropertyString(node, JCRRepository.PROPERTY_DESCRIPTION);
 				String previousLabel = repository.getPropertyString(node, PROPERTY_PREVIOUS_VERSION);

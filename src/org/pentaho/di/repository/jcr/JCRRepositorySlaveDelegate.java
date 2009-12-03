@@ -16,6 +16,10 @@ import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.jcr.util.JCRObjectRevision;
 
+import com.pentaho.commons.dsc.PentahoDscContent;
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.params.KParam;
+
 public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 	
 	private static final String	CLUSTER_SLAVE_PREFIX	= "__SLAVE_SERVER_#";
@@ -31,28 +35,35 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 			// Create or version a new slave node
 			//
 			Node slaveNode = repository.createOrVersionNode(element, versionComment);
-			
-	        slaveNode.setProperty("HOST_NAME", slaveServer.getHostname());
-	        slaveNode.setProperty("PORT", slaveServer.getPort());
-	        slaveNode.setProperty("USERNAME", slaveServer.getUsername());
-	        slaveNode.setProperty("PASSWORD", Encr.encryptPasswordIfNotUsingVariables(slaveServer.getPassword()));
-	        slaveNode.setProperty("PROXY_HOST_NAME", slaveServer.getProxyHostname());
-	        slaveNode.setProperty("PROXY_PORT", slaveServer.getProxyPort());
-	        slaveNode.setProperty("NON_PROXY_HOSTS", slaveServer.getNonProxyHosts());
-	        slaveNode.setProperty("MASTER", slaveServer.isMaster());
-	        
-	        repository.getSession().save();
-	        Version version = slaveNode.checkin();
-	        slaveServer.setObjectRevision( new JCRObjectRevision(version, versionComment, repository.getUserInfo().getLogin()) );
-	        slaveServer.setObjectId(new StringObjectId(slaveNode.getUUID()));
-
+	    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+	    if (dscContent.getSubject()!=null){
+        slaveNode.setProperty("HOST_NAME", slaveServer.getHostname());
+        slaveNode.setProperty("PORT", slaveServer.getPort());
+        slaveNode.setProperty("USERNAME", slaveServer.getUsername());
+        slaveNode.setProperty("PASSWORD", Encr.encryptPasswordIfNotUsingVariables(slaveServer.getPassword()));
+        slaveNode.setProperty("PROXY_HOST_NAME", slaveServer.getProxyHostname());
+        slaveNode.setProperty("PROXY_PORT", slaveServer.getProxyPort());
+        slaveNode.setProperty("NON_PROXY_HOSTS", slaveServer.getNonProxyHosts());
+        slaveNode.setProperty("MASTER", slaveServer.isMaster());
+        
+        repository.getSession().save();
+        Version version = slaveNode.checkin();
+        slaveServer.setObjectRevision( new JCRObjectRevision(version, versionComment, repository.getUserInfo().getLogin()) );
+        slaveServer.setObjectId(new StringObjectId(slaveNode.getUUID()));
+	    }
 		} catch(Exception e) {
 			throw new KettleException("Unable to save slave server ["+element+"] in the repository", e);
 		}
 	}
 
 	public SlaveServer loadSlaveServer(ObjectId id_slave_server, String versionLabel) throws KettleException {
-		try {
+		
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    if (dscContent.getHolder()==null){
+      return null;
+    }
+
+	  try {
 			Node node = repository.getSession().getNodeByUUID(id_slave_server.getId());
 			Version version = repository.getVersion(node, versionLabel);
 			Node slaveNode = repository.getVersionNode(version);
@@ -119,10 +130,13 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 	        
 			// A little admin work...
 			//
-			repository.getSession().save();
-	        Version version = clusterNode.checkin();
-	        clusterSchema.setObjectRevision( new JCRObjectRevision(version, versionComment, repository.getUserInfo().getLogin()) );
-	        clusterSchema.setObjectId(new StringObjectId(clusterNode.getUUID()));
+	        PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+	        if (dscContent.getIssuer() != null){
+  	        repository.getSession().save();
+  	        Version version = clusterNode.checkin();
+  	        clusterSchema.setObjectRevision( new JCRObjectRevision(version, versionComment, repository.getUserInfo().getLogin()) );
+  	        clusterSchema.setObjectId(new StringObjectId(clusterNode.getUUID()));
+	        }
 	
 		} catch(Exception e) {
 			throw new KettleException("Unable to save cluster schema ["+element+"] in the repository", e);
@@ -144,6 +158,10 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 			//
 			clusterSchema.setObjectRevision( repository.getObjectRevision(version) );
 
+	    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+	    if (dscContent.getSubject()==null){
+	      return null;
+	    }
 			// Get the unique ID
 			//
 			ObjectId objectId = new StringObjectId(node.getUUID());

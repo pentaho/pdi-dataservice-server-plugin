@@ -36,7 +36,82 @@
     
     </copy>
   </target>
+ 
+  <!-- Release process calls this target. -->
   
+	
+	
+	<!-- 
+	
+	-applymapping ${dist.dir}/proguard-biserver-ee-${dependency.bi-platform.revision}.map 
+	-applymapping ${dist.dir}/proguard-biserver-ee-${dependency.bi-platform.revision}.map 
+	-injars      ${lib.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar	
+	-outjars     ${dist.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}-obf.jar
+	
+	-->
+
+	<target name="obfuscate">
+    <taskdef resource="proguard/ant/task.properties" classpath="obf-lib/proguard-4.3.jar" />
+    <proguard>
+      <![CDATA[
+      -useuniqueclassmembernames
+      -dontoptimize
+      -dontshrink
+      -dontnote
+      -printmapping ${dist.dir}/proguard-${ivy.artifact.id}-${project.revision}.map
+      -renamesourcefileattribute SourceFile
+      -keepattributes SourceFile,LineNumberTable
+      -printseeds
+
+      -libraryjars ${java.home}/lib/rt.jar
+      -libraryjars ${java.home}/lib/jsse.jar
+      -libraryjars ${java.home}/lib/jce.jar
+      -libraryjars ${lib.dir}
+      -libraryjars ${devlib.dir}
+      
+      -injars      ${dist.dir}/${ivy.artifact.id}-${project.revision}.jar
+      -outjars     ${dist.dir}/${ivy.artifact.id}-${project.revision}-obf.jar
+ 
+      
+	  -keepclasseswithmembernames class * implements org.pentaho.di.repository.Repository {
+		  public protected *;
+	  }
+  	  -keepclasseswithmembernames class * implements org.pentaho.di.repository.RepositorySecurityProvider {
+  		  public protected *;
+  	  }
+	  -keepclasseswithmembernames class * implements ObjectRevision {
+		  public protected *;
+	  }
+	  -keepclasseswithmembernames class * implements org.pentaho.di.repository.RepositoryMeta {
+		  public protected *;
+	  }
+	  -keepclasseswithmembernames class * implements org.pentaho.di.repository.RepositorySecurityProvider {
+		  public protected *;
+	  }
+  	  -keepclasseswithmembernames class * implements org.pentaho.di.repository.RepositorySecurityProvider {
+  		  public protected *;
+  	  }
+  	  -keepclasseswithmembernames class * implements  org.pentaho.di.repository.RepositoryVersionRegistry {
+  		  public protected *;
+  	  }
+      -keepnames class org.pentaho.di.repository.jcr.JCRRepositoryLocation
+    	
+      -keepattributes Exceptions, InnerClasses, *Annotation*
+    
+      ]]></proguard>
+
+		<!--
+		
+    <delete>
+      <fileset dir="${dist.dir}">
+        <include name="**/pdi-ee-*.jar" />
+        <exclude name="**/*-obf.jar" />
+      </fileset>
+	</delete>
+	
+	-->
+  </target>
+	
   
   <!-- 
   The following overrides are in place to suppress IVY dependency management.  If you
