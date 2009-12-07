@@ -34,7 +34,7 @@
       	<exclude name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar"/>
       </fileset>
       <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
-      <!-- <fileset file="${dist.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" /> -->
+      <fileset file="${dist.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" /> 
     </copy>
   </target>
  
