@@ -27,7 +27,7 @@
   
   <!-- Copy all jars over to the plugin zip, 
   except for kettle, licensing jars -->
-  <target name="assemble.copy-libs">
+  <target name="assemble.copy-libs" depends="install-antcontrib">
   	
   	<copy todir="${approot.stage.dir}">
       <fileset dir="${lib.dir}" >
