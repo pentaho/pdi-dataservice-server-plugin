@@ -28,6 +28,7 @@
   <!-- Copy all jars over to the plugin zip, 
   except for kettle, licensing jars -->
   <target name="assemble.copy-libs">
+  	
   	<copy todir="${approot.stage.dir}">
       <fileset dir="${lib.dir}" >
       	<exclude name="kettle-*.jar"/>
@@ -40,7 +41,7 @@
       <available file="${dist.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
       <then>
         <!-- copy the obfuscated license jar to the plugin dist lib folder -->
-        <copy todir="${approot.stage.dir}/lib">
+        <copy todir="${approot.stage.dir}">
           <fileset dir="${dist.dir}">
             <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
           </fileset>
@@ -48,7 +49,7 @@
       </then>
       <else>
         <!-- copy the license jar to the plugin dist lib folder -->
-        <copy todir="${approot.stage.dir}/lib">
+        <copy todir="${approot.stage.dir}">
           <fileset dir="${lib.dir}">
             <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
           </fileset>
