@@ -84,6 +84,29 @@ public class JCRRepositoryDialog implements RepositoryDialogInterface {
 		// Add the connection buttons :
 		wbURL = new Button(shell, SWT.PUSH);  wbURL.setText(BaseMessages.getString(PKG, "System.Button.Test")); //$NON-NLS-1$
 
+		FormData fdbBaseDir = new FormData();		
+		fdbBaseDir.right = new FormAttachment(100, 0);
+		fdbBaseDir.top   = new FormAttachment(0, margin);
+		wbURL.setLayoutData(fdbBaseDir);
+
+		wURL=new Text(shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+ 		props.setLook(wURL);
+		FormData fdBaseDir = new FormData();
+		fdBaseDir.left = new FormAttachment(middle, 0);
+		fdBaseDir.top  = new FormAttachment(wbURL, 0, SWT.CENTER);
+		fdBaseDir.right= new FormAttachment(wbURL, -margin);
+		wURL.setLayoutData(fdBaseDir);	
+
+        // Base directory line
+        wlURL=new Label(shell, SWT.RIGHT);
+        wlURL.setText(BaseMessages.getString(PKG, "JCRRepositoryDialog.Label.URL")); //$NON-NLS-1$
+        props.setLook(wlURL);
+        FormData fdlBaseDir = new FormData();
+        fdlBaseDir.left = new FormAttachment(0, 0);
+        fdlBaseDir.right= new FormAttachment(middle, -margin);
+        fdlBaseDir.top  = new FormAttachment(wbURL, 0, SWT.CENTER);
+        wlURL.setLayoutData(fdlBaseDir);
+
 
 		// ManditoryComments line
 		wlManditoryComments=new Label(shell, SWT.RIGHT);
@@ -201,7 +224,7 @@ public class JCRRepositoryDialog implements RepositoryDialogInterface {
 			wURL.setText(Const.NVL(location.getUrl(), ""));
 		}else{
       wURL.setText("http://localhost:8585/jackrabbit/rmi"); // default jack rabbit URL
-		}
+    }
 		wManditoryComments.setSelection(input.isVersionCommentMandatory());
 	}
 	
