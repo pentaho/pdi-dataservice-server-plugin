@@ -586,7 +586,7 @@ public class JCRRepository implements Repository {
 	}
 
 	public ObjectId getClusterID(String name) throws KettleException {
-		return getObjectId(name, null, EXT_SLAVE_SERVER);
+		return getObjectId(name, null, EXT_CLUSTER_SCHEMA);
 	}
 
 	public ObjectId[] getClusterIDs(boolean includeDeleted) throws KettleException {
@@ -1749,8 +1749,12 @@ public class JCRRepository implements Repository {
 		Node node = null;
 		RepositoryLock lock = null;
 		
-		ObjectId id = getObjectId(element);
-		if (id!=null) {
+		ObjectId id = element.getObjectId();
+		if(id == null) {
+		  id = getObjectId(element);
+		}
+		 
+		if (id != null) {
 			node = session.getNodeByUUID(id.getId());
 			
 			lock = getLock(id);
