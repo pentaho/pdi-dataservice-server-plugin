@@ -31,6 +31,13 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 	public void saveSlaveServer(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
 		try {
 			SlaveServer slaveServer = (SlaveServer)element;
+			
+			// Check for naming collision
+			ObjectId slaveId = repository.getSlaveID(slaveServer.getName());
+			if(slaveId != null && !slaveServer.getObjectId().equals(slaveId)) {
+			  // We have a naming collision, abort the save
+			  throw new KettleException("Failed to save object to repository. Object [" + slaveServer.getName() + "] already exists.");
+			}
 
 			// Create or version a new slave node
 			//
@@ -102,6 +109,13 @@ public class JCRRepositorySlaveDelegate extends JCRRepositoryBaseDelegate {
 	public void saveClusterSchema(RepositoryElementInterface element, String versionComment, ProgressMonitorListener monitor) throws KettleException {
 		try {
 			ClusterSchema clusterSchema = (ClusterSchema)element;
+			
+      // Check for naming collision
+      ObjectId clusterId = repository.getClusterID(clusterSchema.getName());
+      if(clusterId != null && !clusterSchema.getObjectId().equals(clusterId)) {
+        // We have a naming collision, abort the save
+        throw new KettleException("Failed to save object to repository. Object [" + clusterSchema.getName() + "] already exists.");
+      }
 	
 			// Create or version a new slave node
 			//

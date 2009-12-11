@@ -27,6 +27,13 @@ public class JCRRepositoryPartitionDelegate extends JCRRepositoryBaseDelegate {
 
     try {
 			PartitionSchema partitionSchema = (PartitionSchema) element;
+			
+			// Check for naming collision
+      ObjectId partitionId = repository.getPartitionSchemaID(partitionSchema.getName());
+      if(partitionId != null && !partitionSchema.getObjectId().equals(partitionId)) {
+        // We have a naming collision, abort the save
+        throw new KettleException("Failed to save object to repository. Object [" + partitionSchema.getName() + "] already exists.");
+      }
 
 			Node node = repository.createOrVersionNode(element, versionComment);
 	
