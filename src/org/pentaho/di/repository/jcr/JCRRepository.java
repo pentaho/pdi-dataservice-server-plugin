@@ -24,6 +24,7 @@ import javax.jcr.version.VersionHistory;
 
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.api.JackrabbitNodeTypeManager;
+import org.apache.jackrabbit.core.TransientRepository;
 import org.apache.jackrabbit.rmi.repository.URLRemoteRepository;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
@@ -135,7 +136,7 @@ public class JCRRepository implements Repository {
 	private JCRRepositorySecurityProvider	securityProvider;
 	
 	private JCRRepositoryLocation	repositoryLocation;
-	private URLRemoteRepository	jcrRepository;
+	private javax.jcr.Repository  jcrRepository;
 	private Session	session;
 	private Workspace	workspace;
 	private JackrabbitNodeTypeManager nodeTypeManager;
@@ -182,13 +183,13 @@ public class JCRRepository implements Repository {
 
 	public void connect() throws KettleException, KettleSecurityException {
 		try {
-			jcrRepository = new URLRemoteRepository(repositoryLocation.getUrl());
-			
-		  PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
-		  if (dscContent.getHolder()==null){
-		    return;
-		  }
-
+		  if (jcrRepository == null) {
+			  jcrRepository = new URLRemoteRepository(repositoryLocation.getUrl()); 
+      }			
+      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+      if (dscContent.getHolder()==null){
+        return;
+      }
 			session = jcrRepository.login(new SimpleCredentials(userInfo.getLogin(), userInfo.getPassword()!=null ? userInfo.getPassword().toCharArray() : "".toCharArray() ));
 			workspace = session.getWorkspace();
 			
@@ -1537,14 +1538,14 @@ public class JCRRepository implements Repository {
 	/**
 	 * @return the jcrRepository
 	 */
-	public URLRemoteRepository getJcrRepository() {
+	public javax.jcr.Repository getJcrRepository() {
 		return jcrRepository;
 	}
 
 	/**
 	 * @param jcrRepository the jcrRepository to set
 	 */
-	public void setJcrRepository(URLRemoteRepository jcrRepository) {
+	public void setJcrRepository(javax.jcr.Repository jcrRepository) {
 		this.jcrRepository = jcrRepository;
 	}
 
