@@ -9,8 +9,8 @@
    versionbrowserclassname="TODO"
   >
    <libraries>
-    <library name="jackrabbit-repository-plugin-TRUNK-SNAPSHOT.jar"/>
-    <library name="pentaho-ee-dsc-core-TRUNK-SNAPSHOT.jar"/>
+    <library name="jackrabbit-repository-plugin-@jcr-repository-plugin-version@.jar"/>
+    <library name="pentaho-ee-dsc-core-@pentaho-dsc-version@.jar"/>
     <library name="commons-collections-3.1.jar"/>
     <library name="slf4j-api-1.5.8.jar"/>
     <library name="slf4j-log4j12-1.5.8.jar"/>
@@ -19,12 +19,12 @@
     <library name="jcr-1.0.jar"/>
 
     <library name="jackrabbit-jcr-rmi-1.5.0.jar"/>
-    <library name="jackrabbit-jcr-commons-1.6.0.jar"/>
-    <library name="jackrabbit-core-1.6.0.jar"/>
-    <library name="jackrabbit-api-1.6.0.jar"/>
-    <library name="jackrabbit-text-extractors-1.6.0.jar"/>
-    <library name="jackrabbit-spi-commons-1.6.0.jar"/>
-    <library name="jackrabbit-spi-1.6.0.jar"/>
+    <library name="jackrabbit-jcr-commons-@jack-rabbit-version@.jar"/>
+    <library name="jackrabbit-core-@jack-rabbit-version@.jar"/>
+    <library name="jackrabbit-api-@jack-rabbit-version@.jar"/>
+    <library name="jackrabbit-text-extractors-@jack-rabbit-version@.jar"/>
+    <library name="jackrabbit-spi-commons-@jack-rabbit-version@.jar"/>
+    <library name="jackrabbit-spi-@jack-rabbit-version@.jar"/>
     <library name="jackrabbit-jcr-servlet-1.5.2.jar"/>
     <library name="jackrabbit-jcr-server-1.5.6.jar"/>
     

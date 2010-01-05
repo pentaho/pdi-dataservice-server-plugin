@@ -25,6 +25,23 @@
     -->
   </path>
   
+  <!-- Override assemble to build plugin.xml afterwards -->
+  <target name="assemble" depends="subfloor-pkg.assemble, update-plugin-xml" />
+	
+  <target name="update-plugin-xml">
+  	<replace file="${approot.stage.dir}/plugin.xml">
+  	  <replacefilter 
+  	    token="@jack-rabbit-version@"
+  	    value="${dependency.jackrabbit.revision}"/>
+  	  <replacefilter 
+  	    token="@jcr-repository-plugin-version@" 
+  	    value="${project.revision}"/>
+  	  <replacefilter 
+  	    token="@pentaho-dsc-version@"
+  	    value="${dependency.pentaho-ee-dsc.revision}"/>
+  	</replace>
+  </target>
+	
   <!-- Copy all jars over to the plugin zip, 
   except for kettle, licensing jars -->
   <target name="assemble.copy-libs" depends="install-antcontrib">
