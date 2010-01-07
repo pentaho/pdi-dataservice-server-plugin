@@ -241,7 +241,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 			
 			node.setProperty("MODIFIED_USER", transMeta.getModifiedUser());
 			Calendar modifiedDate = Calendar.getInstance();
-			createdDate.setTime(transMeta.getModifiedDate());
+			modifiedDate.setTime(transMeta.getModifiedDate());
 			node.setProperty("MODIFIED_DATE", modifiedDate);
 
 			node.setProperty("SIZE_ROWSET", transMeta.getSizeRowset());

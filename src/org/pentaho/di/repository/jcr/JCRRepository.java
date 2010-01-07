@@ -1545,7 +1545,7 @@ public class JCRRepository implements Repository {
 	/**
 	 * @param jcrRepository the jcrRepository to set
 	 */
-	public void setJcrRepository(javax.jcr.Repository jcrRepository) {
+	protected void setJcrRepository(javax.jcr.Repository jcrRepository) {
 		this.jcrRepository = jcrRepository;
 	}
 
