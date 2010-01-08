@@ -11,6 +11,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -22,22 +24,31 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
+import org.pentaho.di.core.CheckResultInterface;
+import org.pentaho.di.core.Const;
+import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.NotePadMeta;
+import org.pentaho.di.core.Result;
+import org.pentaho.di.core.annotations.Job;
+import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.logging.ChannelLogTable;
 import org.pentaho.di.core.logging.JobEntryLogTable;
 import org.pentaho.di.core.logging.JobLogTable;
 import org.pentaho.di.core.logging.PerformanceLogTable;
 import org.pentaho.di.core.logging.StepLogTable;
 import org.pentaho.di.core.logging.TransLogTable;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
-import org.pentaho.di.job.entries.createfile.JobEntryCreateFile;
-import org.pentaho.di.job.entries.deletefile.JobEntryDeleteFile;
+import org.pentaho.di.job.entry.JobEntryBase;
 import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.Repository;
@@ -47,8 +58,17 @@ import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
+import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransDependency;
+import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.BaseStepMeta;
+import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.steps.tableexists.TableExistsMeta;
+import org.w3c.dom.Node;
 
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
@@ -287,6 +307,10 @@ public class RepositoryTest {
 
   private static final String EXP_CLUSTER_SCHEMA_BASE_PORT_V2 = "12457";
 
+  private static final String EXP_TRANS_STEP_1_NAME = "transStep1";
+
+  private static final String EXP_TRANS_STEP_2_NAME = "transStep2";
+
   // ~ Instance fields =================================================================================================
 
   protected RepositoryMeta repositoryMeta;
@@ -301,6 +325,9 @@ public class RepositoryTest {
 
   @Before
   public void setUp() throws Exception {
+    // tell kettle to look for plugins in this package (because custom plugins are defined in this class)
+    System.setProperty(Const.KETTLE_PLUGIN_PACKAGES, this.getClass().getPackage().getName());
+
     PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("pdi-ee=true")); //$NON-NLS-1$
     KettleEnvironment.init();
     repositoryMeta = new JCRRepositoryMeta();
@@ -382,6 +409,7 @@ public class RepositoryTest {
    * loadRepositoryTree()
    * deleteRepositoryDirectory()
    * getDirectoryNames()
+   * saveRepositoryDirectory()
    */
   @Test
   public void testDirectories() throws Exception {
@@ -392,7 +420,7 @@ public class RepositoryTest {
     assertEquals(RepositoryDirectory.DIRECTORY_SEPARATOR + DIR_CONNECTIONS, connDir.getPath());
     repository.createRepositoryDirectory(rootDir, DIR_SCHEMAS);
     repository.createRepositoryDirectory(rootDir, DIR_SLAVES);
-    repository.createRepositoryDirectory(rootDir, DIR_CLUSTERS);
+    repository.saveRepositoryDirectory(new RepositoryDirectory(rootDir, DIR_CLUSTERS));
     repository.createRepositoryDirectory(rootDir, DIR_TRANSFORMATIONS);
     repository.createRepositoryDirectory(rootDir, DIR_JOBS);
     rootDir = repository.loadRepositoryDirectoryTree();
@@ -479,15 +507,17 @@ public class RepositoryTest {
     assertEquals(EXP_JOB_BATCH_ID_PASSED, fetchedJob.isBatchIdPassed());
     assertEquals(EXP_JOB_SHARED_OBJECTS_FILE, fetchedJob.getSharedObjectsFile());
     assertEquals(2, fetchedJob.getJobCopies().size());
-    assertEquals("CREATE_FILE", fetchedJob.getJobEntry(0).getEntry().getTypeId());
+    assertEquals("JobEntryAttributeTester", fetchedJob.getJobEntry(0).getEntry().getTypeId());
     assertEquals(EXP_JOB_ENTRY_1_COPY_X_LOC, fetchedJob.getJobEntry(0).getLocation().x);
     assertEquals(EXP_JOB_ENTRY_1_COPY_Y_LOC, fetchedJob.getJobEntry(0).getLocation().y);
-    assertEquals("DELETE_FILE", fetchedJob.getJobEntry(1).getEntry().getTypeId());
+    assertEquals("JobEntryAttributeTester", fetchedJob.getJobEntry(1).getEntry().getTypeId());
     assertEquals(EXP_JOB_ENTRY_2_COPY_X_LOC, fetchedJob.getJobEntry(1).getLocation().x);
     assertEquals(EXP_JOB_ENTRY_2_COPY_Y_LOC, fetchedJob.getJobEntry(1).getLocation().y);
     assertEquals(1, fetchedJob.getJobhops().size());
-    assertEquals("CREATE_FILE", fetchedJob.getJobHop(0).getFromEntry().getEntry().getTypeId());
-    assertEquals("DELETE_FILE", fetchedJob.getJobHop(0).getToEntry().getEntry().getTypeId());
+    assertEquals(EXP_JOB_ENTRY_1_NAME, fetchedJob.getJobHop(0).getFromEntry().getEntry().getName());
+    assertEquals("JobEntryAttributeTester", fetchedJob.getJobHop(0).getFromEntry().getEntry().getTypeId());
+    assertEquals(EXP_JOB_ENTRY_2_NAME, fetchedJob.getJobHop(0).getToEntry().getEntry().getName());
+    assertEquals("JobEntryAttributeTester", fetchedJob.getJobHop(0).getToEntry().getEntry().getTypeId());
     assertEquals(1, fetchedJob.getNotes().size());
     assertEquals(EXP_NOTEPAD_NOTE, fetchedJob.getNote(0).getNote());
     assertEquals(EXP_NOTEPAD_X, fetchedJob.getNote(0).getLocation().x);
@@ -657,6 +687,13 @@ public class RepositoryTest {
     //    assertEquals(EXP_DBMETA_NAME, fetchedTrans.getDependency(0).getDatabase().getName());
     //    assertEquals(EXP_TRANS_DEP_TABLE_NAME, fetchedTrans.getDependency(0).getTablename());
     //    assertEquals(EXP_TRANS_DEP_FIELD_NAME, fetchedTrans.getDependency(0).getFieldname());
+    
+    assertEquals(2, fetchedTrans.getSteps().size());
+    assertEquals(EXP_TRANS_STEP_1_NAME, fetchedTrans.getStep(0).getName());
+    assertEquals(EXP_TRANS_STEP_2_NAME, fetchedTrans.getStep(1).getName());
+    
+    assertEquals(EXP_TRANS_STEP_1_NAME, fetchedTrans.getTransHop(0).getFromStep().getName());
+    assertEquals(EXP_TRANS_STEP_2_NAME, fetchedTrans.getTransHop(0).getToStep().getName());
   }
 
   private TransMeta createTransMeta() throws Exception {
@@ -725,6 +762,11 @@ public class RepositoryTest {
     transMeta.setStepPerformanceCapturingDelay(EXP_TRANS_STEP_PERF_CAP_DELAY);
     transMeta.addDependency(new TransDependency(dbMeta, EXP_TRANS_DEP_TABLE_NAME, EXP_TRANS_DEP_FIELD_NAME));
 
+    StepMeta step1 = createStepMeta1();
+    transMeta.addStep(step1);
+    StepMeta step2 = createStepMeta2();
+    transMeta.addStep(step2);
+    transMeta.addTransHop(createTransHopMeta(step1, step2));
     return transMeta;
   }
 
@@ -838,11 +880,13 @@ public class RepositoryTest {
     clusterSchema.setBasePort(EXP_CLUSTER_SCHEMA_BASE_PORT_V2);
     repository.save(clusterSchema, VERSION_COMMENT_V2, null);
     assertEquals(VERSION_COMMENT_V2, clusterSchema.getObjectRevision().getComment());
-    fetchedClusterSchema = repository.loadClusterSchema(clusterSchema.getObjectId(), repository.getSlaveServers(), null);
+    fetchedClusterSchema = repository
+        .loadClusterSchema(clusterSchema.getObjectId(), repository.getSlaveServers(), null);
     assertEquals(EXP_CLUSTER_SCHEMA_BASE_PORT_V2, fetchedClusterSchema.getBasePort());
-    fetchedClusterSchema = repository.loadClusterSchema(clusterSchema.getObjectId(), repository.getSlaveServers(), VERSION_LABEL_V1);
+    fetchedClusterSchema = repository.loadClusterSchema(clusterSchema.getObjectId(), repository.getSlaveServers(),
+        VERSION_LABEL_V1);
     assertEquals(EXP_CLUSTER_SCHEMA_BASE_PORT, fetchedClusterSchema.getBasePort());
-    
+
     assertEquals(clusterSchema.getObjectId(), repository.getClusterID(EXP_CLUSTER_SCHEMA_NAME));
 
     assertEquals(1, repository.getClusterIDs(false).length);
@@ -882,17 +926,11 @@ public class RepositoryTest {
   }
 
   private JobEntryInterface createJobEntry1() throws Exception {
-    JobEntryCreateFile jobEntry1 = new JobEntryCreateFile(EXP_JOB_ENTRY_1_NAME);
-    // how does spoon know which class to instantiate??
-    jobEntry1.setFilename(EXP_JOB_ENTRY_1_FILENAME);
-    return jobEntry1;
+    return new JobEntryAttributeTesterJobEntry(EXP_JOB_ENTRY_1_NAME);
   }
 
   private JobEntryInterface createJobEntry2() throws Exception {
-    JobEntryDeleteFile jobEntry2 = new JobEntryDeleteFile(EXP_JOB_ENTRY_2_NAME);
-    // how does spoon know which class to instantiate??
-    jobEntry2.setFilename(EXP_JOB_ENTRY_2_FILENAME);
-    return jobEntry2;
+    return new JobEntryAttributeTesterJobEntry(EXP_JOB_ENTRY_2_NAME);
   }
 
   private JobEntryCopy createJobEntry1Copy() throws Exception {
@@ -906,6 +944,20 @@ public class RepositoryTest {
     copy.setLocation(EXP_JOB_ENTRY_2_COPY_X_LOC, EXP_JOB_ENTRY_2_COPY_Y_LOC);
     return copy;
   }
+
+  private StepMeta createStepMeta1() throws Exception {
+    return new StepMeta(EXP_TRANS_STEP_1_NAME, new TransStepAttributeTesterTransStep());
+  }
+
+  private StepMeta createStepMeta2() throws Exception {
+    return new StepMeta(EXP_TRANS_STEP_2_NAME, new TransStepAttributeTesterTransStep());
+  }
+
+
+  
+    private TransHopMeta createTransHopMeta(final StepMeta stepMeta1, final StepMeta stepMeta2) throws Exception {
+      return new TransHopMeta(stepMeta1, stepMeta2);
+    }
 
   private NotePadMeta createNotePadMeta() throws Exception {
     return new NotePadMeta(EXP_NOTEPAD_NOTE, EXP_NOTEPAD_X, EXP_NOTEPAD_Y, EXP_NOTEPAD_WIDTH, EXP_NOTEPAD_HEIGHT);
@@ -1108,48 +1160,6 @@ public class RepositoryTest {
   @Test
   @Ignore
   public void testDeleteTransformation() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetJobEntryAttributeBooleanObjectIdString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetJobEntryAttributeBooleanObjectIdIntString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetJobEntryAttributeBooleanObjectIdStringBoolean() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetJobEntryAttributeIntegerObjectIdString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetJobEntryAttributeIntegerObjectIdIntString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetJobEntryAttributeStringObjectIdString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetJobEntryAttributeStringObjectIdIntString() throws Exception {
     fail("Not yet implemented");
   }
 
@@ -1359,48 +1369,6 @@ public class RepositoryTest {
 
   @Test
   @Ignore
-  public void testSaveJobEntryAttributeObjectIdObjectIdStringString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveJobEntryAttributeObjectIdObjectIdStringBoolean() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveJobEntryAttributeObjectIdObjectIdStringLong() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveJobEntryAttributeObjectIdObjectIdIntStringString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveJobEntryAttributeObjectIdObjectIdIntStringBoolean() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveJobEntryAttributeObjectIdObjectIdIntStringLong() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveRepositoryDirectory() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
   public void testSaveStepAttributeObjectIdObjectIdStringString() throws Exception {
     fail("Not yet implemented");
   }
@@ -1465,4 +1433,150 @@ public class RepositoryTest {
     fail("Not yet implemented");
   }
 
+  public static interface EntryAndStepConstants {
+
+    String ATTR_BOOL = "KDF";
+
+    boolean VALUE_BOOL = true;
+
+    String ATTR_BOOL_MULTI = "DFS";
+
+    boolean VALUE_BOOL_MULTI_0 = true;
+
+    boolean VALUE_BOOL_MULTI_1 = false;
+
+    String ATTR_BOOL_NOEXIST = "IXS";
+
+    boolean VALUE_BOOL_NOEXIST_DEF = true;
+
+    String ATTR_INT = "TAS";
+
+    int VALUE_INT = 4;
+
+    String ATTR_INT_MULTI = "EZA";
+
+    int VALUE_INT_MULTI_0 = 13;
+
+    int VALUE_INT_MULTI_1 = 42;
+
+    String ATTR_STRING = "YAZ";
+
+    String VALUE_STRING = "sdfsdfsdfswe2222";
+
+    String ATTR_STRING_MULTI = "LKS";
+
+    String VALUE_STRING_MULTI_0 = "LKS";
+
+    String VALUE_STRING_MULTI_1 = "LKS";
+  }
+
+  /**
+   * Does assertions on all repository.getJobEntryAttribute* and repository.saveJobEntryAttribute* methods.
+   */
+  @Job(id = "JobEntryAttributeTester", image = "")
+  public static class JobEntryAttributeTesterJobEntry extends JobEntryBase implements Cloneable, JobEntryInterface,
+      EntryAndStepConstants {
+
+    public JobEntryAttributeTesterJobEntry() {
+      this("");
+    }
+
+    public JobEntryAttributeTesterJobEntry(final String name) {
+      super(name, "");
+    }
+
+    @Override
+    public void loadRep(final Repository rep, final ObjectId idJobentry, final List<DatabaseMeta> databases,
+        final List<SlaveServer> slaveServers) throws KettleException {
+      assertEquals(VALUE_BOOL, rep.getJobEntryAttributeBoolean(idJobentry, ATTR_BOOL));
+      assertEquals(VALUE_BOOL_MULTI_0, rep.getJobEntryAttributeBoolean(idJobentry, 0, ATTR_BOOL_MULTI));
+      assertEquals(VALUE_BOOL_MULTI_1, rep.getJobEntryAttributeBoolean(idJobentry, 1, ATTR_BOOL_MULTI));
+      assertEquals(VALUE_BOOL_NOEXIST_DEF, rep.getJobEntryAttributeBoolean(idJobentry, ATTR_BOOL_NOEXIST,
+          VALUE_BOOL_NOEXIST_DEF));
+      assertEquals(VALUE_INT, rep.getJobEntryAttributeInteger(idJobentry, ATTR_INT));
+      assertEquals(VALUE_INT_MULTI_0, rep.getJobEntryAttributeInteger(idJobentry, 0, ATTR_INT_MULTI));
+      assertEquals(VALUE_INT_MULTI_1, rep.getJobEntryAttributeInteger(idJobentry, 1, ATTR_INT_MULTI));
+      assertEquals(VALUE_STRING, rep.getJobEntryAttributeString(idJobentry, ATTR_STRING));
+      assertEquals(VALUE_STRING_MULTI_0, rep.getJobEntryAttributeString(idJobentry, 0, ATTR_STRING_MULTI));
+      assertEquals(VALUE_STRING_MULTI_1, rep.getJobEntryAttributeString(idJobentry, 1, ATTR_STRING_MULTI));
+    }
+
+    @Override
+    public void saveRep(final Repository rep, final ObjectId idJob) throws KettleException {
+      rep.saveJobEntryAttribute(idJob, getObjectId(), ATTR_BOOL, VALUE_BOOL);
+      rep.saveJobEntryAttribute(idJob, getObjectId(), 0, ATTR_BOOL_MULTI, VALUE_BOOL_MULTI_0);
+      rep.saveJobEntryAttribute(idJob, getObjectId(), 1, ATTR_BOOL_MULTI, VALUE_BOOL_MULTI_1);
+      rep.saveJobEntryAttribute(idJob, getObjectId(), ATTR_INT, VALUE_INT);
+      rep.saveJobEntryAttribute(idJob, getObjectId(), 0, ATTR_INT_MULTI, VALUE_INT_MULTI_0);
+      rep.saveJobEntryAttribute(idJob, getObjectId(), 1, ATTR_INT_MULTI, VALUE_INT_MULTI_1);
+      rep.saveJobEntryAttribute(idJob, getObjectId(), ATTR_STRING, VALUE_STRING);
+      rep.saveJobEntryAttribute(idJob, getObjectId(), 0, ATTR_STRING_MULTI, VALUE_STRING_MULTI_0);
+      rep.saveJobEntryAttribute(idJob, getObjectId(), 1, ATTR_STRING_MULTI, VALUE_STRING_MULTI_1);
+    }
+
+    public Result execute(final Result prevResult, final int nr) throws KettleException {
+      throw new UnsupportedOperationException();
+    }
+
+    public void loadXML(final Node entrynode, final List<DatabaseMeta> databases, final List<SlaveServer> slaveServers,
+        final Repository rep) throws KettleXMLException {
+      throw new UnsupportedOperationException();
+    }
+
+  }
+
+  @Step(name = "StepAttributeTester", image = "")
+  public static class TransStepAttributeTesterTransStep extends BaseStepMeta implements StepMetaInterface,
+      EntryAndStepConstants {
+
+    public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
+        RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
+    }
+
+    public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
+        TransMeta transMeta, Trans trans) {
+      return null;
+
+    }
+
+    public StepDataInterface getStepData() {
+      return null;
+
+    }
+
+    public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
+        throws KettleXMLException {
+    }
+
+    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases, Map<String, Counter> counters)
+        throws KettleException {
+      assertEquals(VALUE_BOOL, rep.getStepAttributeBoolean(idStep, ATTR_BOOL));
+      assertEquals(VALUE_BOOL_MULTI_0, rep.getStepAttributeBoolean(idStep, 0, ATTR_BOOL_MULTI));
+      assertEquals(VALUE_BOOL_MULTI_1, rep.getStepAttributeBoolean(idStep, 1, ATTR_BOOL_MULTI));
+      assertEquals(VALUE_BOOL_NOEXIST_DEF, rep.getStepAttributeBoolean(idStep, 0, ATTR_BOOL_NOEXIST,
+          VALUE_BOOL_NOEXIST_DEF));
+      assertEquals(VALUE_INT, rep.getStepAttributeInteger(idStep, ATTR_INT));
+      assertEquals(VALUE_INT_MULTI_0, rep.getStepAttributeInteger(idStep, 0, ATTR_INT_MULTI));
+      assertEquals(VALUE_INT_MULTI_1, rep.getStepAttributeInteger(idStep, 1, ATTR_INT_MULTI));
+      assertEquals(VALUE_STRING, rep.getStepAttributeString(idStep, ATTR_STRING));
+      assertEquals(VALUE_STRING_MULTI_0, rep.getStepAttributeString(idStep, 0, ATTR_STRING_MULTI));
+      assertEquals(VALUE_STRING_MULTI_1, rep.getStepAttributeString(idStep, 1, ATTR_STRING_MULTI));
+    }
+
+    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep) throws KettleException {
+      rep.saveStepAttribute(idTransformation, idStep, ATTR_BOOL, VALUE_BOOL);
+      rep.saveStepAttribute(idTransformation, idStep, 0, ATTR_BOOL_MULTI, VALUE_BOOL_MULTI_0);
+      rep.saveStepAttribute(idTransformation, idStep, 1, ATTR_BOOL_MULTI, VALUE_BOOL_MULTI_1);
+      rep.saveStepAttribute(idTransformation, idStep, ATTR_INT, VALUE_INT);
+      rep.saveStepAttribute(idTransformation, idStep, 0, ATTR_INT_MULTI, VALUE_INT_MULTI_0);
+      rep.saveStepAttribute(idTransformation, idStep, 1, ATTR_INT_MULTI, VALUE_INT_MULTI_1);
+      rep.saveStepAttribute(idTransformation, idStep, ATTR_STRING, VALUE_STRING);
+      rep.saveStepAttribute(idTransformation, idStep, 0, ATTR_STRING_MULTI, VALUE_STRING_MULTI_0);
+      rep.saveStepAttribute(idTransformation, idStep, 1, ATTR_STRING_MULTI, VALUE_STRING_MULTI_1);
+    }
+
+    public void setDefault() {
+    }
+
+  }
 }
