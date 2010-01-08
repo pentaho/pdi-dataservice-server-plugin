@@ -464,7 +464,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
       transMeta.getTransLogTable().setBatchIdUsed( repository.getPropertyBoolean(node, "USE_BATCHID") ); //$NON-NLS-1$
       transMeta.getTransLogTable().setLogFieldUsed( repository.getPropertyBoolean(node, "USE_LOGFIELD") ); //$NON-NLS-1$
 
-      Node maxDatabaseNode = repository.getPropertyNode(node, "DATABASE_MAX"); //$NON-NLS-1$
+      Node maxDatabaseNode = repository.getPropertyNode(node, "ID_DATABASE_MAXDATE"); //$NON-NLS-1$
       transMeta.setMaxDateConnection( maxDatabaseNode==null ? null :  DatabaseMeta.findDatabase(transMeta.getDatabases(), new StringObjectId(maxDatabaseNode.getUUID())) ); 
       transMeta.setMaxDateTable( repository.getPropertyString(node, "TABLE_NAME_MAXDATE") ); //$NON-NLS-1$
       transMeta.setMaxDateField( repository.getPropertyString(node, "FIELD_NAME_MAXDATE") ); //$NON-NLS-1$
@@ -496,7 +496,8 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
       transMeta.setUsingUniqueConnections( repository.getPropertyBoolean(node, "UNIQUE_CONNECTIONS") );
       transMeta.setFeedbackShown( repository.getPropertyBoolean(node, "FEEDBACK_SHOWN", true)  );
       transMeta.setFeedbackSize( (int) repository.getPropertyLong(node, "FEEDBACK_SIZE") );
-      transMeta.setUsingThreadPriorityManagment( repository.getPropertyBoolean(node, "USING_THREAD_PRIORITIES", true) );    
+      transMeta.setUsingThreadPriorityManagment( repository.getPropertyBoolean(node, "USING_THREAD_PRIORITIES", true) );  
+      transMeta.setSharedObjectsFile( repository.getPropertyString(node, "SHARED_FILE"));
      
       // Performance monitoring for steps...
       //

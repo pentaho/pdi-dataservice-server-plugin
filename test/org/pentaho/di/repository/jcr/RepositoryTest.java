@@ -8,6 +8,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 
 import org.apache.commons.io.FileUtils;
@@ -18,6 +20,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.NotePadMeta;
@@ -25,12 +28,16 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.logging.ChannelLogTable;
 import org.pentaho.di.core.logging.JobEntryLogTable;
 import org.pentaho.di.core.logging.JobLogTable;
+import org.pentaho.di.core.logging.PerformanceLogTable;
+import org.pentaho.di.core.logging.StepLogTable;
+import org.pentaho.di.core.logging.TransLogTable;
 import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.job.entries.createfile.JobEntryCreateFile;
 import org.pentaho.di.job.entries.deletefile.JobEntryDeleteFile;
 import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
+import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.Repository;
@@ -40,6 +47,7 @@ import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
+import org.pentaho.di.trans.TransDependency;
 import org.pentaho.di.trans.TransMeta;
 
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
@@ -95,15 +103,15 @@ public class RepositoryTest {
 
   private static final String EXP_JOB_LOG_TABLE_INTERVAL = "15";
 
-  private static final String EXP_LOG_TABLE_CONN_NAME = "connName";
+  private static final String EXP_JOB_LOG_TABLE_CONN_NAME = "connName";
 
-  private static final String EXP_LOG_TABLE_SCHEMA_NAME = "schemaName";
+  private static final String EXP_JOB_LOG_TABLE_SCHEMA_NAME = "schemaName";
 
-  private static final String EXP_LOG_TABLE_TABLE_NAME = "tableName";
+  private static final String EXP_JOB_LOG_TABLE_TABLE_NAME = "tableName";
 
-  private static final String EXP_LOG_TABLE_TIMEOUT_IN_DAYS = "2";
+  private static final String EXP_JOB_LOG_TABLE_TIMEOUT_IN_DAYS = "2";
 
-  private static final String EXP_LOG_TABLE_SIZE_LIMIT = "250";
+  private static final String EXP_JOB_LOG_TABLE_SIZE_LIMIT = "250";
 
   private static final boolean EXP_JOB_BATCH_ID_PASSED = true;
 
@@ -206,6 +214,78 @@ public class RepositoryTest {
   private static final String EXP_TRANS_MOD_USER = "banya";
 
   private static final Date EXP_TRANS_MOD_DATE = new Date();
+
+  private static final String EXP_TRANS_LOG_TABLE_CONN_NAME = "transLogTableConnName";
+
+  private static final String EXP_TRANS_LOG_TABLE_INTERVAL = "34";
+
+  private static final String EXP_TRANS_LOG_TABLE_SCHEMA_NAME = "transLogTableSchemaName";
+
+  private static final String EXP_TRANS_LOG_TABLE_SIZE_LIMIT = "600";
+
+  private static final String EXP_TRANS_LOG_TABLE_TABLE_NAME = "transLogTableTableName";
+
+  private static final String EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS = "5";
+
+  private static final String EXP_TRANS_MAX_DATE_TABLE = "transMaxDateTable";
+
+  private static final String EXP_TRANS_MAX_DATE_FIELD = "transMaxDateField";
+
+  private static final double EXP_TRANS_MAX_DATE_OFFSET = 55;
+
+  private static final double EXP_TRANS_MAX_DATE_DIFF = 70;
+
+  private static final int EXP_TRANS_SIZE_ROWSET = 833;
+
+  private static final int EXP_TRANS_SLEEP_TIME_EMPTY = 4;
+
+  private static final int EXP_TRANS_SLEEP_TIME_FULL = 9;
+
+  private static final boolean EXP_TRANS_USING_UNIQUE_CONN = true;
+
+  private static final boolean EXP_TRANS_FEEDBACK_SHOWN = true;
+
+  private static final int EXP_TRANS_FEEDBACK_SIZE = 222;
+
+  private static final boolean EXP_TRANS_USING_THREAD_PRIORITY_MGMT = true;
+
+  private static final String EXP_TRANS_SHARED_OBJECTS_FILE = "transSharedObjectsFile";
+
+  private static final boolean EXP_TRANS_CAPTURE_STEP_PERF_SNAPSHOTS = true;
+
+  private static final long EXP_TRANS_STEP_PERF_CAP_DELAY = 81;
+
+  private static final String EXP_TRANS_DEP_TABLE_NAME = "KLKJSDF";
+
+  private static final String EXP_TRANS_DEP_FIELD_NAME = "lkjsdfflll11";
+
+  private static final String EXP_PART_SCHEMA_NAME = "partitionSchemaName";
+
+  private static final String EXP_PART_SCHEMA_PARTID_2 = "partitionSchemaId2";
+
+  private static final boolean EXP_PART_SCHEMA_DYN_DEF = true;
+
+  private static final String EXP_PART_SCHEMA_PART_PER_SLAVE_COUNT = "562";
+
+  private static final String EXP_PART_SCHEMA_PARTID_1 = "partitionSchemaId1";
+
+  private static final String EXP_PART_SCHEMA_DESC = "partitionSchemaDesc";
+
+  private static final String EXP_PART_SCHEMA_PART_PER_SLAVE_COUNT_V2 = "563";
+
+  private static final String EXP_CLUSTER_SCHEMA_NAME = "clusterSchemaName";
+
+  private static final String EXP_CLUSTER_SCHEMA_SOCKETS_BUFFER_SIZE = "2048";
+
+  private static final String EXP_CLUSTER_SCHEMA_BASE_PORT = "12456";
+
+  private static final String EXP_CLUSTER_SCHEMA_SOCKETS_FLUSH_INTERVAL = "1500";
+
+  private static final boolean EXP_CLUSTER_SCHEMA_SOCKETS_COMPRESSED = true;
+
+  private static final boolean EXP_CLUSTER_SCHEMA_DYN = true;
+
+  private static final String EXP_CLUSTER_SCHEMA_BASE_PORT_V2 = "12457";
 
   // ~ Instance fields =================================================================================================
 
@@ -436,6 +516,8 @@ public class RepositoryTest {
     repository.deleteJob(jobMeta.getObjectId());
     assertFalse(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
 
+    assertEquals(jobMeta.getObjectId(), repository.getJobId(EXP_JOB_NAME, jobsDir));
+
     assertEquals(0, repository.getJobObjects(jobsDir.getObjectId(), false).size());
     assertEquals(1, repository.getJobObjects(jobsDir.getObjectId(), true).size());
     assertEquals(jobMeta.getName(), repository.getJobObjects(jobsDir.getObjectId(), true).get(0).getName());
@@ -461,26 +543,26 @@ public class RepositoryTest {
     jobMeta.addParameterDefinition(EXP_JOB_PARAM_1_NAME, EXP_JOB_PARAM_1_DEF, EXP_JOB_PARAM_1_DESC);
     // TODO mlowery other jobLogTable fields could be set for testing here    
     JobLogTable jobLogTable = JobLogTable.getDefault(jobMeta, jobMeta);
-    jobLogTable.setConnectionName(EXP_LOG_TABLE_CONN_NAME);
+    jobLogTable.setConnectionName(EXP_JOB_LOG_TABLE_CONN_NAME);
     jobLogTable.setLogInterval(EXP_JOB_LOG_TABLE_INTERVAL);
-    jobLogTable.setSchemaName(EXP_LOG_TABLE_SCHEMA_NAME);
-    jobLogTable.setLogSizeLimit(EXP_LOG_TABLE_SIZE_LIMIT);
-    jobLogTable.setTableName(EXP_LOG_TABLE_TABLE_NAME);
-    jobLogTable.setTimeoutInDays(EXP_LOG_TABLE_TIMEOUT_IN_DAYS);
+    jobLogTable.setSchemaName(EXP_JOB_LOG_TABLE_SCHEMA_NAME);
+    jobLogTable.setLogSizeLimit(EXP_JOB_LOG_TABLE_SIZE_LIMIT);
+    jobLogTable.setTableName(EXP_JOB_LOG_TABLE_TABLE_NAME);
+    jobLogTable.setTimeoutInDays(EXP_JOB_LOG_TABLE_TIMEOUT_IN_DAYS);
     jobMeta.setJobLogTable(jobLogTable);
     // TODO mlowery other jobEntryLogTable fields could be set for testing here    
     JobEntryLogTable jobEntryLogTable = JobEntryLogTable.getDefault(jobMeta, jobMeta);
-    jobEntryLogTable.setConnectionName(EXP_LOG_TABLE_CONN_NAME);
-    jobEntryLogTable.setSchemaName(EXP_LOG_TABLE_SCHEMA_NAME);
-    jobEntryLogTable.setTableName(EXP_LOG_TABLE_TABLE_NAME);
-    jobEntryLogTable.setTimeoutInDays(EXP_LOG_TABLE_TIMEOUT_IN_DAYS);
+    jobEntryLogTable.setConnectionName(EXP_JOB_LOG_TABLE_CONN_NAME);
+    jobEntryLogTable.setSchemaName(EXP_JOB_LOG_TABLE_SCHEMA_NAME);
+    jobEntryLogTable.setTableName(EXP_JOB_LOG_TABLE_TABLE_NAME);
+    jobEntryLogTable.setTimeoutInDays(EXP_JOB_LOG_TABLE_TIMEOUT_IN_DAYS);
     jobMeta.setJobEntryLogTable(jobEntryLogTable);
     // TODO mlowery other channelLogTable fields could be set for testing here    
     ChannelLogTable channelLogTable = ChannelLogTable.getDefault(jobMeta, jobMeta);
-    channelLogTable.setConnectionName(EXP_LOG_TABLE_CONN_NAME);
-    channelLogTable.setSchemaName(EXP_LOG_TABLE_SCHEMA_NAME);
-    channelLogTable.setTableName(EXP_LOG_TABLE_TABLE_NAME);
-    channelLogTable.setTimeoutInDays(EXP_LOG_TABLE_TIMEOUT_IN_DAYS);
+    channelLogTable.setConnectionName(EXP_JOB_LOG_TABLE_CONN_NAME);
+    channelLogTable.setSchemaName(EXP_JOB_LOG_TABLE_SCHEMA_NAME);
+    channelLogTable.setTableName(EXP_JOB_LOG_TABLE_TABLE_NAME);
+    channelLogTable.setTimeoutInDays(EXP_JOB_LOG_TABLE_TIMEOUT_IN_DAYS);
     jobMeta.setChannelLogTable(channelLogTable);
     jobMeta.setBatchIdPassed(EXP_JOB_BATCH_ID_PASSED);
     jobMeta.setSharedObjectsFile(EXP_JOB_SHARED_OBJECTS_FILE);
@@ -526,9 +608,57 @@ public class RepositoryTest {
     assertEquals(1, fetchedTrans.listParameters().length);
     assertEquals(EXP_TRANS_PARAM_1_DEF, fetchedTrans.getParameterDefault(EXP_TRANS_PARAM_1_NAME));
     assertEquals(EXP_TRANS_PARAM_1_DESC, fetchedTrans.getParameterDescription(EXP_TRANS_PARAM_1_NAME));
+    TransLogTable transLogTable = fetchedTrans.getTransLogTable();
+    // TODO mlowery why doesn't this work?
+    //    assertEquals(EXP_TRANS_LOG_TABLE_CONN_NAME, transLogTable.getConnectionName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_INTERVAL, transLogTable.getLogInterval());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_SCHEMA_NAME, transLogTable.getSchemaName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_SIZE_LIMIT, transLogTable.getLogSizeLimit());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_TABLE_NAME, transLogTable.getTableName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS, transLogTable.getTimeoutInDays());
+    PerformanceLogTable perfLogTable = fetchedTrans.getPerformanceLogTable();
+    // TODO mlowery why doesn't this work?
+    //    assertEquals(EXP_TRANS_LOG_TABLE_CONN_NAME, perfLogTable.getConnectionName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_INTERVAL, perfLogTable.getLogInterval());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_SCHEMA_NAME, perfLogTable.getSchemaName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_TABLE_NAME, perfLogTable.getTableName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS, perfLogTable.getTimeoutInDays());
+    ChannelLogTable channelLogTable = fetchedTrans.getChannelLogTable();
+    // TODO mlowery why doesn't this work?
+    //    assertEquals(EXP_TRANS_LOG_TABLE_CONN_NAME, channelLogTable.getConnectionName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_SCHEMA_NAME, channelLogTable.getSchemaName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_TABLE_NAME, channelLogTable.getTableName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS, channelLogTable.getTimeoutInDays());
+    StepLogTable stepLogTable = fetchedTrans.getStepLogTable();
+    // TODO mlowery why doesn't this work?
+    //    assertEquals(EXP_TRANS_LOG_TABLE_CONN_NAME, stepLogTable.getConnectionName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_SCHEMA_NAME, stepLogTable.getSchemaName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_TABLE_NAME, stepLogTable.getTableName());
+    //    assertEquals(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS, stepLogTable.getTimeoutInDays());
+    assertEquals(EXP_DBMETA_NAME, fetchedTrans.getMaxDateConnection().getName());
+    assertEquals(EXP_TRANS_MAX_DATE_TABLE, fetchedTrans.getMaxDateTable());
+    assertEquals(EXP_TRANS_MAX_DATE_FIELD, fetchedTrans.getMaxDateField());
+    assertEquals(EXP_TRANS_MAX_DATE_OFFSET, fetchedTrans.getMaxDateOffset(), 0);
+    assertEquals(EXP_TRANS_MAX_DATE_DIFF, fetchedTrans.getMaxDateDifference(), 0);
 
+    assertEquals(EXP_TRANS_SIZE_ROWSET, fetchedTrans.getSizeRowset());
+    // TODO mlowery why don't next two sleep fields work?
+    //    assertEquals(EXP_TRANS_SLEEP_TIME_EMPTY, fetchedTrans.getSleepTimeEmpty());
+    //    assertEquals(EXP_TRANS_SLEEP_TIME_FULL, fetchedTrans.getSleepTimeFull());
+    assertEquals(EXP_TRANS_USING_UNIQUE_CONN, fetchedTrans.isUsingUniqueConnections());
+    assertEquals(EXP_TRANS_FEEDBACK_SHOWN, fetchedTrans.isFeedbackShown());
+    assertEquals(EXP_TRANS_FEEDBACK_SIZE, fetchedTrans.getFeedbackSize());
+    assertEquals(EXP_TRANS_USING_THREAD_PRIORITY_MGMT, fetchedTrans.isUsingThreadPriorityManagment());
+    assertEquals(EXP_TRANS_SHARED_OBJECTS_FILE, fetchedTrans.getSharedObjectsFile());
+    assertEquals(EXP_TRANS_CAPTURE_STEP_PERF_SNAPSHOTS, fetchedTrans.isCapturingStepPerformanceSnapShots());
+    assertEquals(EXP_TRANS_STEP_PERF_CAP_DELAY, fetchedTrans.getStepPerformanceCapturingDelay());
+    // TODO mlowery why doesn't this work?
+    //    assertEquals(1, fetchedTrans.getDependencies().size());
+    //    assertEquals(EXP_DBMETA_NAME, fetchedTrans.getDependency(0).getDatabase().getName());
+    //    assertEquals(EXP_TRANS_DEP_TABLE_NAME, fetchedTrans.getDependency(0).getTablename());
+    //    assertEquals(EXP_TRANS_DEP_FIELD_NAME, fetchedTrans.getDependency(0).getFieldname());
   }
-  
+
   private TransMeta createTransMeta() throws Exception {
     RepositoryDirectory rootDir = initRepo();
     TransMeta transMeta = new TransMeta();
@@ -543,10 +673,214 @@ public class RepositoryTest {
     transMeta.setModifiedUser(EXP_TRANS_MOD_USER);
     transMeta.setModifiedDate(EXP_TRANS_MOD_DATE);
     transMeta.addParameterDefinition(EXP_TRANS_PARAM_1_NAME, EXP_TRANS_PARAM_1_DEF, EXP_TRANS_PARAM_1_DESC);
-    
+
+    // TODO mlowery other transLogTable fields could be set for testing here  
+    TransLogTable transLogTable = TransLogTable.getDefault(transMeta, transMeta);
+    transLogTable.setConnectionName(EXP_TRANS_LOG_TABLE_CONN_NAME);
+    transLogTable.setLogInterval(EXP_TRANS_LOG_TABLE_INTERVAL);
+    transLogTable.setSchemaName(EXP_TRANS_LOG_TABLE_SCHEMA_NAME);
+    transLogTable.setLogSizeLimit(EXP_TRANS_LOG_TABLE_SIZE_LIMIT);
+    transLogTable.setTableName(EXP_TRANS_LOG_TABLE_TABLE_NAME);
+    transLogTable.setTimeoutInDays(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS);
+    transMeta.setTransLogTable(transLogTable);
+    // TODO mlowery other perfLogTable fields could be set for testing here  
+    PerformanceLogTable perfLogTable = PerformanceLogTable.getDefault(transMeta, transMeta);
+    perfLogTable.setConnectionName(EXP_TRANS_LOG_TABLE_CONN_NAME);
+    perfLogTable.setLogInterval(EXP_TRANS_LOG_TABLE_INTERVAL);
+    perfLogTable.setSchemaName(EXP_TRANS_LOG_TABLE_SCHEMA_NAME);
+    perfLogTable.setTableName(EXP_TRANS_LOG_TABLE_TABLE_NAME);
+    perfLogTable.setTimeoutInDays(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS);
+    transMeta.setPerformanceLogTable(perfLogTable);
+    // TODO mlowery other channelLogTable fields could be set for testing here    
+    ChannelLogTable channelLogTable = ChannelLogTable.getDefault(transMeta, transMeta);
+    channelLogTable.setConnectionName(EXP_TRANS_LOG_TABLE_CONN_NAME);
+    channelLogTable.setSchemaName(EXP_TRANS_LOG_TABLE_SCHEMA_NAME);
+    channelLogTable.setTableName(EXP_TRANS_LOG_TABLE_TABLE_NAME);
+    channelLogTable.setTimeoutInDays(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS);
+    transMeta.setChannelLogTable(channelLogTable);
+    // TODO mlowery other stepLogTable fields could be set for testing here
+    StepLogTable stepLogTable = StepLogTable.getDefault(transMeta, transMeta);
+    stepLogTable.setConnectionName(EXP_TRANS_LOG_TABLE_CONN_NAME);
+    stepLogTable.setSchemaName(EXP_TRANS_LOG_TABLE_SCHEMA_NAME);
+    stepLogTable.setTableName(EXP_TRANS_LOG_TABLE_TABLE_NAME);
+    stepLogTable.setTimeoutInDays(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS);
+    transMeta.setStepLogTable(stepLogTable);
+    DatabaseMeta dbMeta = createDatabaseMeta();
+    // dbMeta must be saved so that it gets an ID
+    repository.save(dbMeta, VERSION_COMMENT_V1, null);
+    transMeta.setMaxDateConnection(dbMeta);
+    transMeta.setMaxDateTable(EXP_TRANS_MAX_DATE_TABLE);
+    transMeta.setMaxDateField(EXP_TRANS_MAX_DATE_FIELD);
+    transMeta.setMaxDateOffset(EXP_TRANS_MAX_DATE_OFFSET);
+    transMeta.setMaxDateDifference(EXP_TRANS_MAX_DATE_DIFF);
+    transMeta.setSizeRowset(EXP_TRANS_SIZE_ROWSET);
+    transMeta.setSleepTimeEmpty(EXP_TRANS_SLEEP_TIME_EMPTY);
+    transMeta.setSleepTimeFull(EXP_TRANS_SLEEP_TIME_FULL);
+    transMeta.setUsingUniqueConnections(EXP_TRANS_USING_UNIQUE_CONN);
+    transMeta.setFeedbackShown(EXP_TRANS_FEEDBACK_SHOWN);
+    transMeta.setFeedbackSize(EXP_TRANS_FEEDBACK_SIZE);
+    transMeta.setUsingThreadPriorityManagment(EXP_TRANS_USING_THREAD_PRIORITY_MGMT);
+    transMeta.setSharedObjectsFile(EXP_TRANS_SHARED_OBJECTS_FILE);
+    transMeta.setCapturingStepPerformanceSnapShots(EXP_TRANS_CAPTURE_STEP_PERF_SNAPSHOTS);
+    transMeta.setStepPerformanceCapturingDelay(EXP_TRANS_STEP_PERF_CAP_DELAY);
+    transMeta.addDependency(new TransDependency(dbMeta, EXP_TRANS_DEP_TABLE_NAME, EXP_TRANS_DEP_FIELD_NAME));
+
     return transMeta;
   }
-  
+
+  private PartitionSchema createPartitionSchema() throws Exception {
+    PartitionSchema partSchema = new PartitionSchema();
+    partSchema.setName(EXP_PART_SCHEMA_NAME);
+    partSchema.setDescription(EXP_PART_SCHEMA_DESC);
+    partSchema.setPartitionIDs(Arrays.asList(new String[] { EXP_PART_SCHEMA_PARTID_1, EXP_PART_SCHEMA_PARTID_2 }));
+    partSchema.setDynamicallyDefined(EXP_PART_SCHEMA_DYN_DEF);
+    partSchema.setNumberOfPartitionsPerSlave(EXP_PART_SCHEMA_PART_PER_SLAVE_COUNT);
+    return partSchema;
+  }
+
+  /**
+   * save(partitionSchema)
+   * exists()
+   * loadPartitionSchema()
+   * getPartitionSchemaID()
+   * getPartitionSchemaIDs()
+   * getPartitionSchemaNames()
+   */
+  @Test
+  public void testPartitionSchemas() throws Exception {
+    RepositoryDirectory rootDir = initRepo();
+    PartitionSchema partSchema = createPartitionSchema();
+    repository.save(partSchema, VERSION_COMMENT_V1, null);
+    assertNotNull(partSchema.getObjectId());
+    ObjectRevision version = partSchema.getObjectRevision();
+    assertNotNull(version);
+    assertEquals(VERSION_COMMENT_V1, version.getComment());
+    assertEquals(VERSION_LABEL_V1, version.getName());
+    assertTrue(repository.exists(EXP_PART_SCHEMA_NAME, null, RepositoryObjectType.PARTITION_SCHEMA));
+
+    PartitionSchema fetchedPartSchema = repository.loadPartitionSchema(partSchema.getObjectId(), null);
+    assertEquals(EXP_PART_SCHEMA_NAME, fetchedPartSchema.getName());
+    // TODO mlowery partitionSchema.getXML doesn't output desc either; should it?
+    //    assertEquals(EXP_PART_SCHEMA_DESC, fetchedPartSchema.getDescription());
+
+    assertEquals(Arrays.asList(new String[] { EXP_PART_SCHEMA_PARTID_1, EXP_PART_SCHEMA_PARTID_2 }), fetchedPartSchema
+        .getPartitionIDs());
+    assertEquals(EXP_PART_SCHEMA_DYN_DEF, fetchedPartSchema.isDynamicallyDefined());
+    assertEquals(EXP_PART_SCHEMA_PART_PER_SLAVE_COUNT, fetchedPartSchema.getNumberOfPartitionsPerSlave());
+
+    partSchema.setNumberOfPartitionsPerSlave(EXP_PART_SCHEMA_PART_PER_SLAVE_COUNT_V2);
+    repository.save(partSchema, VERSION_COMMENT_V2, null);
+    assertEquals(VERSION_COMMENT_V2, partSchema.getObjectRevision().getComment());
+    fetchedPartSchema = repository.loadPartitionSchema(partSchema.getObjectId(), null);
+    assertEquals(EXP_PART_SCHEMA_PART_PER_SLAVE_COUNT_V2, fetchedPartSchema.getNumberOfPartitionsPerSlave());
+    fetchedPartSchema = repository.loadPartitionSchema(partSchema.getObjectId(), VERSION_LABEL_V1);
+    assertEquals(EXP_PART_SCHEMA_PART_PER_SLAVE_COUNT, fetchedPartSchema.getNumberOfPartitionsPerSlave());
+
+    assertEquals(partSchema.getObjectId(), repository.getPartitionSchemaID(EXP_PART_SCHEMA_NAME));
+
+    assertEquals(1, repository.getPartitionSchemaIDs(false).length);
+    assertEquals(1, repository.getPartitionSchemaIDs(true).length);
+    assertEquals(partSchema.getObjectId(), repository.getPartitionSchemaIDs(false)[0]);
+
+    assertEquals(1, repository.getPartitionSchemaNames(false).length);
+    assertEquals(1, repository.getPartitionSchemaNames(true).length);
+    assertEquals(EXP_PART_SCHEMA_NAME, repository.getPartitionSchemaNames(false)[0]);
+
+    repository.deletePartitionSchema(partSchema.getObjectId());
+    assertFalse(repository.exists(EXP_PART_SCHEMA_NAME, null, RepositoryObjectType.PARTITION_SCHEMA));
+
+    assertEquals(partSchema.getObjectId(), repository.getPartitionSchemaID(EXP_PART_SCHEMA_NAME));
+
+    assertEquals(0, repository.getPartitionSchemaIDs(false).length);
+    assertEquals(1, repository.getPartitionSchemaIDs(true).length);
+    assertEquals(partSchema.getObjectId(), repository.getPartitionSchemaIDs(true)[0]);
+
+    assertEquals(0, repository.getPartitionSchemaNames(false).length);
+    assertEquals(1, repository.getPartitionSchemaNames(true).length);
+    assertEquals(EXP_PART_SCHEMA_NAME, repository.getPartitionSchemaNames(true)[0]);
+  }
+
+  /**
+   * save(clusterSchema)
+   * exists()
+   * loadClusterSchema()
+   * getClusterID()
+   * getClusterIDs()
+   * getClusterNames()
+   */
+  @Test
+  public void testClusterSchemas() throws Exception {
+    RepositoryDirectory rootDir = initRepo();
+    ClusterSchema clusterSchema = createClusterSchema();
+    repository.save(clusterSchema, VERSION_COMMENT_V1, null);
+    assertNotNull(clusterSchema.getObjectId());
+    ObjectRevision version = clusterSchema.getObjectRevision();
+    assertNotNull(version);
+    assertEquals(VERSION_COMMENT_V1, version.getComment());
+    assertEquals(VERSION_LABEL_V1, version.getName());
+    assertTrue(repository.exists(EXP_CLUSTER_SCHEMA_NAME, null, RepositoryObjectType.CLUSTER_SCHEMA));
+
+    ClusterSchema fetchedClusterSchema = repository.loadClusterSchema(clusterSchema.getObjectId(), repository
+        .getSlaveServers(), null);
+    assertEquals(EXP_CLUSTER_SCHEMA_NAME, fetchedClusterSchema.getName());
+    // TODO mlowery clusterSchema.getXML doesn't output desc either; should it?
+    //    assertEquals(EXP_CLUSTER_SCHEMA_DESC, fetchedClusterSchema.getDescription());
+
+    assertEquals(EXP_CLUSTER_SCHEMA_BASE_PORT, fetchedClusterSchema.getBasePort());
+    assertEquals(EXP_CLUSTER_SCHEMA_SOCKETS_BUFFER_SIZE, fetchedClusterSchema.getSocketsBufferSize());
+    assertEquals(EXP_CLUSTER_SCHEMA_SOCKETS_FLUSH_INTERVAL, fetchedClusterSchema.getSocketsFlushInterval());
+    assertEquals(EXP_CLUSTER_SCHEMA_SOCKETS_COMPRESSED, fetchedClusterSchema.isSocketsCompressed());
+    assertEquals(EXP_CLUSTER_SCHEMA_DYN, fetchedClusterSchema.isDynamic());
+    assertEquals(1, fetchedClusterSchema.getSlaveServers().size());
+    assertEquals(EXP_SLAVE_NAME, fetchedClusterSchema.getSlaveServers().get(0).getName());
+
+    // versioning test
+    clusterSchema.setBasePort(EXP_CLUSTER_SCHEMA_BASE_PORT_V2);
+    repository.save(clusterSchema, VERSION_COMMENT_V2, null);
+    assertEquals(VERSION_COMMENT_V2, clusterSchema.getObjectRevision().getComment());
+    fetchedClusterSchema = repository.loadClusterSchema(clusterSchema.getObjectId(), repository.getSlaveServers(), null);
+    assertEquals(EXP_CLUSTER_SCHEMA_BASE_PORT_V2, fetchedClusterSchema.getBasePort());
+    fetchedClusterSchema = repository.loadClusterSchema(clusterSchema.getObjectId(), repository.getSlaveServers(), VERSION_LABEL_V1);
+    assertEquals(EXP_CLUSTER_SCHEMA_BASE_PORT, fetchedClusterSchema.getBasePort());
+    
+    assertEquals(clusterSchema.getObjectId(), repository.getClusterID(EXP_CLUSTER_SCHEMA_NAME));
+
+    assertEquals(1, repository.getClusterIDs(false).length);
+    assertEquals(1, repository.getClusterIDs(true).length);
+    assertEquals(clusterSchema.getObjectId(), repository.getClusterIDs(false)[0]);
+
+    assertEquals(1, repository.getClusterNames(false).length);
+    assertEquals(1, repository.getClusterNames(true).length);
+    assertEquals(EXP_CLUSTER_SCHEMA_NAME, repository.getClusterNames(false)[0]);
+
+    repository.deleteClusterSchema(clusterSchema.getObjectId());
+    assertFalse(repository.exists(EXP_CLUSTER_SCHEMA_NAME, null, RepositoryObjectType.CLUSTER_SCHEMA));
+
+    assertEquals(clusterSchema.getObjectId(), repository.getClusterID(EXP_CLUSTER_SCHEMA_NAME));
+
+    assertEquals(0, repository.getClusterIDs(false).length);
+    assertEquals(1, repository.getClusterIDs(true).length);
+    assertEquals(clusterSchema.getObjectId(), repository.getClusterIDs(true)[0]);
+
+    assertEquals(0, repository.getClusterNames(false).length);
+    assertEquals(1, repository.getClusterNames(true).length);
+    assertEquals(EXP_CLUSTER_SCHEMA_NAME, repository.getClusterNames(true)[0]);
+  }
+
+  private ClusterSchema createClusterSchema() throws Exception {
+    ClusterSchema clusterSchema = new ClusterSchema();
+    clusterSchema.setName(EXP_CLUSTER_SCHEMA_NAME);
+    clusterSchema.setBasePort(EXP_CLUSTER_SCHEMA_BASE_PORT);
+    clusterSchema.setSocketsBufferSize(EXP_CLUSTER_SCHEMA_SOCKETS_BUFFER_SIZE);
+    clusterSchema.setSocketsFlushInterval(EXP_CLUSTER_SCHEMA_SOCKETS_FLUSH_INTERVAL);
+    clusterSchema.setSocketsCompressed(EXP_CLUSTER_SCHEMA_SOCKETS_COMPRESSED);
+    clusterSchema.setDynamic(EXP_CLUSTER_SCHEMA_DYN);
+    SlaveServer slaveServer = createSlaveServer();
+    repository.save(slaveServer, VERSION_COMMENT_V1, null);
+    clusterSchema.setSlaveServers(Collections.singletonList(slaveServer));
+    return clusterSchema;
+  }
+
   private JobEntryInterface createJobEntry1() throws Exception {
     JobEntryCreateFile jobEntry1 = new JobEntryCreateFile(EXP_JOB_ENTRY_1_NAME);
     // how does spoon know which class to instantiate??
@@ -652,6 +986,8 @@ public class RepositoryTest {
     repository.deleteDatabaseMeta(EXP_DBMETA_NAME);
     assertFalse(repository.exists(EXP_DBMETA_NAME, null, RepositoryObjectType.DATABASE));
 
+    assertEquals(dbMeta.getObjectId(), repository.getDatabaseID(EXP_DBMETA_NAME));
+
     assertEquals(0, repository.getDatabaseIDs(false).length);
     assertEquals(1, repository.getDatabaseIDs(true).length);
     assertEquals(dbMeta.getObjectId(), repository.getDatabaseIDs(true)[0]);
@@ -703,6 +1039,7 @@ public class RepositoryTest {
     assertEquals(EXP_SLAVE_HOSTNAME, fetchedSlave.getHostname());
 
     assertEquals(slave.getObjectId(), repository.getSlaveID(EXP_SLAVE_NAME));
+
     assertEquals(1, repository.getSlaveIDs(false).length);
     assertEquals(1, repository.getSlaveIDs(true).length);
     assertEquals(slave.getObjectId(), repository.getSlaveIDs(false)[0]);
@@ -716,6 +1053,8 @@ public class RepositoryTest {
 
     repository.deleteSlave(slave.getObjectId());
     assertFalse(repository.exists(EXP_SLAVE_NAME, null, RepositoryObjectType.SLAVE_SERVER));
+
+    assertEquals(slave.getObjectId(), repository.getSlaveID(EXP_SLAVE_NAME));
 
     assertEquals(0, repository.getSlaveIDs(false).length);
     assertEquals(1, repository.getSlaveIDs(true).length);
@@ -774,24 +1113,6 @@ public class RepositoryTest {
 
   @Test
   @Ignore
-  public void testGetClusterID() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetClusterIDs() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetClusterNames() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
   public void testGetJobEntryAttributeBooleanObjectIdString() throws Exception {
     fail("Not yet implemented");
   }
@@ -835,24 +1156,6 @@ public class RepositoryTest {
   @Test
   @Ignore
   public void testGetJobLock() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetPartitionSchemaID() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetPartitionSchemaIDs() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetPartitionSchemaNames() throws Exception {
     fail("Not yet implemented");
   }
 
@@ -966,12 +1269,6 @@ public class RepositoryTest {
 
   @Test
   @Ignore
-  public void testLoadClusterSchema() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
   public void testLoadConditionFromStepAttribute() throws Exception {
     fail("Not yet implemented");
   }
@@ -985,18 +1282,6 @@ public class RepositoryTest {
   @Test
   @Ignore
   public void testLoadDatabaseMetaFromStepAttribute() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testLoadPartitionSchema() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testLoadTransformation() throws Exception {
     fail("Not yet implemented");
   }
 
