@@ -14,7 +14,10 @@
   <dependencies defaultconf="default->default">
 
     <dependency org="org.apache.jackrabbit"   name="jackrabbit-core"        rev="1.6.0" />
-    <dependency org="org.apache.jackrabbit"   name="jackrabbit-jcr-rmi"     rev="1.5.0" />
+    <!-- public repo has Maven packaging element as "bundle"; even publishing it to external Pentaho repo doesn't fix
+    problem; so the ultimate solution is to use a version that doesn't exist in the public repo; THIS JAR HAS NO PENTAHO
+    CHANGES TO IT -->
+    <dependency org="org.apache.jackrabbit"   name="jackrabbit-jcr-rmi"     rev="1.5.0-PENTAHO" />
   
     <dependency org="pentaho.kettle" name="kettle-core" rev="${dependency.kettle.revision}" transitive="true" changing="true" />
     <dependency org="pentaho.kettle" name="kettle-db" rev="${dependency.kettle.revision}" transitive="true" changing="true" />
