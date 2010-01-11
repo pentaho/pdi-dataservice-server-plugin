@@ -61,7 +61,7 @@ public class RepositoryTransformationTest {
 		repositoryMeta = new JCRRepositoryMeta();
 		repositoryMeta.setName("JackRabbit");
 		repositoryMeta.setDescription("JackRabbit test repository");
-		repositoryMeta.setRepositoryLocation(new JCRRepositoryLocation("http://localhost:8080/jackrabbit/rmi"));
+//		repositoryMeta.setRepositoryLocation(new JCRRepositoryLocation("http://localhost:8080/jackrabbit/rmi"));
 		
 		ProfileMeta adminProfile = new ProfileMeta("admin", "Administrator");
 		adminProfile.addPermission(Permission.ADMIN);
