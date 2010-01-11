@@ -1,12 +1,17 @@
 package org.pentaho.di.repository.jcr;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
 
-import junit.framework.TestCase;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.database.DatabaseMeta;
-import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositoryDirectory;
@@ -21,7 +26,8 @@ import org.pentaho.di.trans.steps.tableoutput.TableOutputMeta;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
 
-public class RepositoryTransformationTests extends TestCase {
+@Ignore
+public class RepositoryTransformationTest {
 	
 	private JCRRepositoryMeta repositoryMeta;
 	private JCRRepository repository;
@@ -45,12 +51,11 @@ public class RepositoryTransformationTests extends TestCase {
 	private static final String VERSION_COMMENT_THREE = "This is a third test version comment";
 	private static final String VERSION_COMMENT_FOUR = "This is a fourth test version comment";
 	
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 
     PentahoLicenseVerifier.setStreamOpener( new TestLicenseStream( "pdi-ee=true" ) ); //$NON-NLS-1$
 	  
-	  super.setUp();
-		
 		KettleEnvironment.init();
 	
 		repositoryMeta = new JCRRepositoryMeta();
@@ -80,11 +85,12 @@ public class RepositoryTransformationTests extends TestCase {
 		}
 	}
 	
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		repository.disconnect();
-		super.tearDown();
 	}
 	
+	@Test
 	public void test01_createDirectory() throws Exception {
 		RepositoryDirectory tree = repository.loadRepositoryDirectoryTree();
 		RepositoryDirectory fooDirectory = tree.findDirectory(TEST_DIRECTORY_PATH);
@@ -98,6 +104,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(fooDirectory.getPath(), TEST_DIRECTORY_PATH);
 	}
 	
+	@Test
   public void test05_renameDirectory() throws Exception {
     RepositoryDirectory tree = repository.loadRepositoryDirectoryTree();
     RepositoryDirectory fooDirectory = tree.findDirectory(TEST_DIRECTORY_PATH);
@@ -106,7 +113,8 @@ public class RepositoryTransformationTests extends TestCase {
     fooDirectory = tree.findDirectory("/foo/bar/test/thimble");
     assertTrue(fooDirectory.getName()=="thimble");
   }
-
+	
+	@Test
   public void test10_saveTransformations() throws Exception {
 		
     // Save the transformation first...
@@ -125,6 +133,7 @@ public class RepositoryTransformationTests extends TestCase {
     
 	}
 	
+	@Test
 	public void test15_loadTransformaion() throws Exception {
 
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
@@ -153,6 +162,7 @@ public class RepositoryTransformationTests extends TestCase {
 
 	}
 	
+	@Test
 	public void test20_createTransformationRevisions() throws Exception {
 	
 		// Change the description of the transformation & Save the transformation again..
@@ -183,6 +193,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(id, transMeta.getObjectId().getId());
 	}
 	
+	@Test
 	public void test30_getTransformationRevisionHistory() throws Exception {
 		
 		List<ObjectRevision> versions = repository.getRevisions(transMeta);
@@ -205,6 +216,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(VERSION_COMMENT_FOUR, v4.getComment());
 	}
 	
+	@Test
 	public void test40_loadTransformationRevisions() throws Exception {
 
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
@@ -242,7 +254,8 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals(2, transMeta.nrTransHops());
 		assertEquals("NEW_NAME", transMeta.getStep(0).getName());
 	}
-
+	
+	@Test
 	public void test50_loadLastTransformationRevision() throws Exception {
 		
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
@@ -256,6 +269,7 @@ public class RepositoryTransformationTests extends TestCase {
 		assertEquals("1.3", version.getName());
 	}
 	
+	@Test
 	public void test60_lockTransformation() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
@@ -266,12 +280,14 @@ public class RepositoryTransformationTests extends TestCase {
 		assertNotNull(lock);
 	}
 	
+	@Test
 	public void test65_unlockTransformation() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version
 		repository.unlockTransformation(transMeta.getObjectId());
 	}
-
+	
+	@Test
 	public void test70_existsTransformation() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		transMeta = repository.loadTransformation(TRANS_NAME, fooDirectory, null, true, null);  // Load the last version

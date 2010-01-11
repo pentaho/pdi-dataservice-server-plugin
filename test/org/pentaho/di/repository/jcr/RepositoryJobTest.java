@@ -1,9 +1,18 @@
 package org.pentaho.di.repository.jcr;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
 import java.util.List;
 
-import junit.framework.TestCase;
-
+import org.apache.commons.io.FileUtils;
+import org.apache.jackrabbit.core.TransientRepository;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.job.JobMeta;
@@ -20,7 +29,8 @@ import org.pentaho.di.repository.ProfileMeta.Permission;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
 
-public class RepositoryJobTests extends TestCase {
+@Ignore
+public class RepositoryJobTest {
 	
 	private JCRRepositoryMeta repositoryMeta;
 	private JCRRepository repository;
@@ -44,18 +54,18 @@ public class RepositoryJobTests extends TestCase {
 	private static final String VERSION_COMMENT_THREE = "This is a third test version comment";
 	private static final String VERSION_COMMENT_FOUR = "This is a fourth test version comment";
 	
-	protected void setUp() throws Exception {
+  @Before
+	public void setUp() throws Exception {
 		
     PentahoLicenseVerifier.setStreamOpener( new TestLicenseStream( "pdi-ee=true" ) ); //$NON-NLS-1$
 
-	  super.setUp();
 		
 		KettleEnvironment.init();
 	
 		repositoryMeta = new JCRRepositoryMeta();
 		repositoryMeta.setName("JackRabbit");
 		repositoryMeta.setDescription("JackRabbit test repository");
-		repositoryMeta.setRepositoryLocation(new JCRRepositoryLocation("http://localhost:8080/jackrabbit/rmi"));
+//		repositoryMeta.setRepositoryLocation(new JCRRepositoryLocation("http://localhost:8080/jackrabbit/rmi"));
 		
 		ProfileMeta adminProfile = new ProfileMeta("admin", "Administrator");
 		adminProfile.addPermission(Permission.ADMIN);
@@ -63,6 +73,13 @@ public class RepositoryJobTests extends TestCase {
 		userInfo = new UserInfo("joe", "password", "Apache Tomcat", "Apache Tomcat user", true, adminProfile);
 		
 		repository = new JCRRepository();
+		
+    File repoDir = new File("/tmp/pdi_jcr_repo_unit_test");
+    FileUtils.deleteDirectory(repoDir);
+    assertTrue(repoDir.mkdir());
+    javax.jcr.Repository jcrRepository = new TransientRepository(repoDir);
+    ((JCRRepository) repository).setJcrRepository(jcrRepository);
+		
 		repository.init(repositoryMeta, userInfo);
 		
 		repository.connect();
@@ -79,11 +96,13 @@ public class RepositoryJobTests extends TestCase {
 		}
 	}
 	
-	protected void tearDown() throws Exception {
+  @After
+	public void tearDown() throws Exception {  
 		repository.disconnect();
-		super.tearDown();
+    FileUtils.deleteDirectory(new File("/tmp/pdi_jcr_repo_unit_test"));
 	}
-	
+  
+  @Test
 	public void test01_createDirectory() throws Exception {
 		RepositoryDirectory tree = repository.loadRepositoryDirectoryTree();
 		RepositoryDirectory fooDirectory = tree.findDirectory(TEST_DIRECTORY_PATH);
@@ -96,7 +115,8 @@ public class RepositoryJobTests extends TestCase {
 		assertNotNull(fooDirectory.getObjectId());
 		assertEquals(fooDirectory.getPath(), TEST_DIRECTORY_PATH_OK);
 	}
-	
+  
+  @Test
 	public void test10_saveJob() throws Exception {
 		
 		// Save the job first...
@@ -113,7 +133,8 @@ public class RepositoryJobTests extends TestCase {
 		
 		assertEquals("1.0", version.getName());
 	}
-	
+  
+  @Test
 	public void test15_loadJob() throws Exception {
 
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
@@ -140,7 +161,8 @@ public class RepositoryJobTests extends TestCase {
 		DatabaseMeta databaseMeta = meta.getDatabase();
 		assertNotNull(databaseMeta);
 	}
-	
+  
+  @Test
 	public void test20_createJobRevisions() throws Exception {
 	
 		// Change the description of the job & save it again..
@@ -172,7 +194,8 @@ public class RepositoryJobTests extends TestCase {
 		assertEquals("1.3", jobMeta.getObjectRevision().getName());
 		assertEquals(id, jobMeta.getObjectId().getId());
 	}
-	
+  
+  @Test
 	public void test30_getJobRevisionHistory() throws Exception {
 		
 		List<ObjectRevision> versions = repository.getRevisions(jobMeta);
@@ -194,7 +217,8 @@ public class RepositoryJobTests extends TestCase {
 		assertEquals("1.3", v4.getName());
 		assertEquals(VERSION_COMMENT_FOUR, v4.getComment());
 	}
-	
+  
+  @Test
 	public void test40_loadJobRevisions() throws Exception {
 
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
@@ -232,7 +256,8 @@ public class RepositoryJobTests extends TestCase {
 		assertEquals(6, jobMeta.nrJobHops());
 		assertNotNull(jobMeta.findJobEntry("NEW_NAME"));
 	}
-
+  
+  @Test
 	public void test50_loadLastJobRevision() throws Exception {
 		
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
@@ -245,7 +270,8 @@ public class RepositoryJobTests extends TestCase {
 		assertEquals(VERSION_COMMENT_FOUR, version.getComment());
 		assertEquals("1.3", version.getName());
 	}
-	
+  
+  @Test
 	public void test60_lockJob() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		jobMeta = repository.loadJob(JOB_NAME, fooDirectory, null, null);  // Load the last version
@@ -255,13 +281,15 @@ public class RepositoryJobTests extends TestCase {
 		
 		assertNotNull(lock);
 	}
-	
+  
+  @Test
 	public void test65_unlockJob() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		jobMeta = repository.loadJob(JOB_NAME, fooDirectory, null, null);  // Load the last version
 		repository.unlockJob(jobMeta.getObjectId());
 	}
-
+  
+  @Test
 	public void test70_existsJob() throws Exception {
 		RepositoryDirectory fooDirectory = directoryTree.findDirectory(TEST_DIRECTORY_PATH);
 		jobMeta = repository.loadJob(JOB_NAME, fooDirectory, null, null);  // Load the last version

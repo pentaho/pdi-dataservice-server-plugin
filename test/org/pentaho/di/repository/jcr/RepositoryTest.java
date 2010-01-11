@@ -57,7 +57,6 @@ import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
-import org.pentaho.di.repository.SimpleObjectVersion;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.di.trans.SlaveStepCopyPartitionDistribution;
@@ -381,6 +380,7 @@ public class RepositoryTest {
     userInfo = new UserInfo(EXP_LOGIN, "password", EXP_USERNAME, "Apache Tomcat user", true, adminProfile);
     repository = new JCRRepository();
     File repoDir = new File("/tmp/pdi_jcr_repo_unit_test");
+    FileUtils.deleteDirectory(repoDir);
     assertTrue(repoDir.mkdir());
     javax.jcr.Repository jcrRepository = new TransientRepository(repoDir);
     ((JCRRepository) repository).setJcrRepository(jcrRepository);

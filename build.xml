@@ -2,7 +2,7 @@
 
   <!-- Import the subfloor-pkg.xml file which contains all the default tasks -->
   <import file="build-res/subfloor-pkg.xml" />
-  
+
   <target name="install">
     <unzip src="${dist.dir}/${package.basename}.zip" dest="${kettle.plugin.dir}" overwrite="true">
     </unzip>
@@ -18,43 +18,52 @@
     <fileset dir="${lib.dir}">
       <include name="*.jar" />
     </fileset>
-  	<!--
+    <!--
     <fileset dir="../Kettle/lib">
       <include name="*.jar" />
     </fileset>
     -->
   </path>
-  
+
+  <!-- Override to put mock license JAR first -->
+  <path id="test.classpath">
+    <fileset dir="${devlib.dir}">
+      <include name="*.jar" />
+    </fileset>
+    <fileset dir="${testlib.dir}">
+      <include name="*.jar" />
+    </fileset>
+    <fileset dir="${lib.dir}">
+      <include name="*.jar" />
+    </fileset>
+    <dirset dir="${classes.dir}" />
+    <dirset dir="${testclasses.dir}" />
+  </path>
+
   <!-- Override assemble to build plugin.xml afterwards -->
   <target name="assemble" depends="subfloor-pkg.assemble, update-plugin-xml" />
-	
+
   <target name="update-plugin-xml">
-  	<replace file="${approot.stage.dir}/plugin.xml">
-  	  <replacefilter 
-  	    token="@jack-rabbit-version@"
-  	    value="${dependency.jackrabbit.revision}"/>
-  	  <replacefilter 
-  	    token="@jcr-repository-plugin-version@" 
-  	    value="${project.revision}"/>
-  	  <replacefilter 
-  	    token="@pentaho-dsc-version@"
-  	    value="${dependency.pentaho-ee-dsc.revision}"/>
-  	</replace>
+    <replace file="${approot.stage.dir}/plugin.xml">
+      <replacefilter token="@jack-rabbit-version@" value="${dependency.jackrabbit.revision}" />
+      <replacefilter token="@jcr-repository-plugin-version@" value="${project.revision}" />
+      <replacefilter token="@pentaho-dsc-version@" value="${dependency.pentaho-ee-dsc.revision}" />
+    </replace>
   </target>
-	
+
   <!-- Copy all jars over to the plugin zip, 
   except for kettle, licensing jars -->
   <target name="assemble.copy-libs" depends="install-antcontrib">
-  	
-  	<copy todir="${approot.stage.dir}">
-      <fileset dir="${lib.dir}" >
-      	<exclude name="kettle-*.jar"/>
-      	<exclude name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar"/>
+
+    <copy todir="${approot.stage.dir}">
+      <fileset dir="${lib.dir}">
+        <exclude name="kettle-*.jar" />
+        <exclude name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
       </fileset>
       <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
     </copy>
 
-	<if>
+    <if>
       <available file="${dist.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
       <then>
         <!-- copy the obfuscated license jar to the plugin dist lib folder -->
@@ -75,25 +84,25 @@
     </if>
 
   </target>
- 
+
   <!-- Release process calls this target. -->
 
-	<!-- 
+  <!-- 
 	
 	-->
 
-	<target name="obfuscate">
+  <target name="obfuscate">
 
     <move todir="${dist.dir}">
       <fileset dir="${dist.dir}">
         <include name="**/*.jar" />
-      	<exclude name="**/*-orig.jar" />
+        <exclude name="**/*-orig.jar" />
       </fileset>
-    	<mapper type="glob" from="*.jar" to="*-orig.jar"/>
-	</move>
-		
-		
-	<taskdef resource="proguard/ant/task.properties" classpath="obf-lib/proguard-4.3.jar" />
+      <mapper type="glob" from="*.jar" to="*-orig.jar" />
+    </move>
+
+
+    <taskdef resource="proguard/ant/task.properties" classpath="obf-lib/proguard-4.3.jar" />
     <proguard>
       <![CDATA[
       -useuniqueclassmembernames
@@ -147,17 +156,18 @@
     	
       -keepattributes Exceptions, InnerClasses, *Annotation*
     
-      ]]></proguard>
+      ]]>
+    </proguard>
 
     <delete>
       <fileset dir="${dist.dir}">
         <include name="**/*-orig.jar" />
       </fileset>
-	</delete>
+    </delete>
 
   </target>
-	
-  
+
+
   <!-- 
   The following overrides are in place to suppress IVY dependency management.  If you
   want to turn IVY off, you can uncomment these overrides. 
@@ -165,7 +175,7 @@
 
   <!-- Set default target to skip the ivy "resolve" step -->
   <!--target name="default" depends="clean-all,dist,package" /-->
-  
+
   <!-- Set the clean-all target to skip the "clean-jars" step.  We do not want our build
   process to delete the "lib" dir -->
   <!--target name="clean-all" depends="clean"/-->
