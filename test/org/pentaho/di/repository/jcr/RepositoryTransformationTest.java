@@ -4,8 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -88,6 +90,7 @@ public class RepositoryTransformationTest {
 	@After
 	public void tearDown() throws Exception {
 		repository.disconnect();
+    FileUtils.deleteDirectory(new File("/tmp/pdi_jcr_repo_unit_test"));
 	}
 	
 	@Test
