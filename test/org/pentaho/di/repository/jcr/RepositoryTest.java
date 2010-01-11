@@ -56,24 +56,31 @@ import org.pentaho.di.repository.RepositoryCapabilities;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObjectType;
+import org.pentaho.di.repository.RepositoryVersionRegistry;
+import org.pentaho.di.repository.SimpleObjectVersion;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
+import org.pentaho.di.trans.SlaveStepCopyPartitionDistribution;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransDependency;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.di.trans.step.StepErrorMeta;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
-import org.pentaho.di.trans.steps.tableexists.TableExistsMeta;
 import org.w3c.dom.Node;
 
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
 
 public class RepositoryTest {
+
+  private static final String EXP_USERNAME = "Apache Tomcat";
+
+  private static final String EXP_LOGIN = "joe";
 
   // ~ Static fields/initializers ======================================================================================
 
@@ -311,6 +318,40 @@ public class RepositoryTest {
 
   private static final String EXP_TRANS_STEP_2_NAME = "transStep2";
 
+  private static final boolean EXP_TRANS_STEP_ERROR_META_1_ENABLED = true;
+
+  private static final String EXP_TRANS_STEP_ERROR_META_1_NR_ERRORS_VALUE_NAME = "ihwefmcd";
+
+  private static final String EXP_TRANS_STEP_ERROR_META_1_DESC_VALUE_NAME = "lxeslsdff";
+
+  private static final String EXP_TRANS_STEP_ERROR_META_1_FIELDS_VALUE_NAME = "uiwcm";
+
+  private static final String EXP_TRANS_STEP_ERROR_META_1_CODES_VALUE_NAME = "wedsse";
+
+  private static final long EXP_TRANS_STEP_ERROR_META_1_MAX_ERRORS = 2000;
+
+  private static final int EXP_TRANS_STEP_ERROR_META_1_MAX_PERCENT_ERRORS = 29;
+
+  private static final long EXP_TRANS_STEP_ERROR_META_1_MIN_PERCENT_ROWS = 12;
+
+  private static final boolean EXP_TRANS_SLAVE_TRANSFORMATION = true;
+
+  private static final String EXP_TRANS_DESC_V2 = "transMetaDesc2";
+
+  private static final String EXP_TRANS_LOCK_MSG = "98u344jerfnsdmklfe";
+
+  private static final String EXP_JOB_LOCK_MSG = "ihesfdnmsdm348iesdm";
+
+  private static final String DIR_TMP2_NEW_NAME = "tmp2_new";
+
+  private static final String DIR_TMP2 = "tmp2";
+
+  private static final String EXP_JOB_NAME_NEW = "job98u34u5";
+
+  private static final String EXP_TRANS_NAME_NEW = "trans98jksdf32";
+
+  private static final String EXP_DBMETA_NAME_NEW = "database983kdaerer";
+
   // ~ Instance fields =================================================================================================
 
   protected RepositoryMeta repositoryMeta;
@@ -337,7 +378,7 @@ public class RepositoryTest {
         "http://localhost:8080/jackrabbit/rmi"));
     ProfileMeta adminProfile = new ProfileMeta("admin", "Administrator");
     adminProfile.addPermission(Permission.ADMIN);
-    userInfo = new UserInfo("joe", "password", "Apache Tomcat", "Apache Tomcat user", true, adminProfile);
+    userInfo = new UserInfo(EXP_LOGIN, "password", EXP_USERNAME, "Apache Tomcat user", true, adminProfile);
     repository = new JCRRepository();
     File repoDir = new File("/tmp/pdi_jcr_repo_unit_test");
     assertTrue(repoDir.mkdir());
@@ -368,9 +409,9 @@ public class RepositoryTest {
   public void testVarious() throws Exception {
     UserInfo userInfo = repository.getUserInfo();
     // unfortunately UserInfo doesn't override equals()
-    assertEquals("joe", userInfo.getName());
+    assertEquals(EXP_LOGIN, userInfo.getName());
     assertEquals("password", userInfo.getPassword());
-    assertEquals("Apache Tomcat", userInfo.getUsername());
+    assertEquals(EXP_USERNAME, userInfo.getUsername());
     assertEquals("Apache Tomcat user", userInfo.getDescription());
     assertTrue(userInfo.isEnabled());
     assertEquals("admin", userInfo.getProfile().getName());
@@ -436,16 +477,26 @@ public class RepositoryTest {
     rootDir = repository.loadRepositoryDirectoryTree();
     assertNull(rootDir.findDirectory(DIR_TMP));
 
+    RepositoryDirectory tmp2Dir = repository.createRepositoryDirectory(rootDir, DIR_TMP2);
+    tmp2Dir.setName(DIR_TMP2_NEW_NAME);
+    repository.renameRepositoryDirectory(tmp2Dir);
+    
+    rootDir = repository.loadRepositoryDirectoryTree();
+    assertNull(rootDir.findDirectory(DIR_TMP2));
+    assertNotNull(rootDir.findDirectory(DIR_TMP2_NEW_NAME));
+    
     String[] dirs = repository.getDirectoryNames(rootDir.getObjectId());
-    assertEquals(6, dirs.length);
+    assertEquals(7, dirs.length);
     boolean foundDir = false;
     for (String dir : dirs) {
-      if (dir.equals(DIR_CONNECTIONS)) {
+      if (dir.equals(DIR_CONNECTIONS)) { // spot check
         foundDir = true;
         break;
       }
     }
     assertTrue(foundDir);
+    
+
   }
 
   /**
@@ -456,6 +507,9 @@ public class RepositoryTest {
    * getJobNames()
    * getJobObjects()
    * getJobId()
+   * getJobLock()
+   * lockJob()
+   * unlockJob()
    */
   @Test
   public void testJobs() throws Exception {
@@ -524,6 +578,16 @@ public class RepositoryTest {
     assertEquals(EXP_NOTEPAD_Y, fetchedJob.getNote(0).getLocation().y);
     assertEquals(EXP_NOTEPAD_WIDTH, fetchedJob.getNote(0).getWidth());
     assertEquals(EXP_NOTEPAD_HEIGHT, fetchedJob.getNote(0).getHeight());
+
+    assertNull(repository.getJobLock(jobMeta.getObjectId()));
+    repository.lockJob(jobMeta.getObjectId(), EXP_JOB_LOCK_MSG);
+    assertEquals(EXP_JOB_LOCK_MSG, repository.getJobLock(jobMeta.getObjectId()).getMessage());
+    assertEquals(new Date().getDate(), repository.getJobLock(jobMeta.getObjectId()).getLockDate().getDate());
+    assertEquals(EXP_LOGIN, repository.getJobLock(jobMeta.getObjectId()).getLogin());
+    assertEquals(EXP_USERNAME, repository.getJobLock(jobMeta.getObjectId()).getUsername());
+    assertEquals(jobMeta.getObjectId(), repository.getJobLock(jobMeta.getObjectId()).getObjectId());
+    repository.unlockJob(jobMeta.getObjectId());
+    assertNull(repository.getJobLock(jobMeta.getObjectId()));
 
     jobMeta.setDescription(EXP_JOB_DESC_V2);
     repository.save(jobMeta, VERSION_COMMENT_V2, null);
@@ -609,7 +673,12 @@ public class RepositoryTest {
    * save(trans)
    * loadTransformation()
    * exists()
-
+   * getTransformationLock()
+   * lockTransformation()
+   * unlockTransformation()
+   * getTransformationID()
+   * getTransformationObjects()
+   * getTransformationNames()
    */
   @Test
   public void testTransformations() throws Exception {
@@ -687,13 +756,80 @@ public class RepositoryTest {
     //    assertEquals(EXP_DBMETA_NAME, fetchedTrans.getDependency(0).getDatabase().getName());
     //    assertEquals(EXP_TRANS_DEP_TABLE_NAME, fetchedTrans.getDependency(0).getTablename());
     //    assertEquals(EXP_TRANS_DEP_FIELD_NAME, fetchedTrans.getDependency(0).getFieldname());
-    
+
     assertEquals(2, fetchedTrans.getSteps().size());
     assertEquals(EXP_TRANS_STEP_1_NAME, fetchedTrans.getStep(0).getName());
+    assertEquals(EXP_TRANS_STEP_ERROR_META_1_ENABLED, fetchedTrans.getStep(0).getStepErrorMeta().isEnabled());
+    assertEquals(EXP_TRANS_STEP_ERROR_META_1_NR_ERRORS_VALUE_NAME, fetchedTrans.getStep(0).getStepErrorMeta()
+        .getNrErrorsValuename());
+    assertEquals(EXP_TRANS_STEP_ERROR_META_1_DESC_VALUE_NAME, fetchedTrans.getStep(0).getStepErrorMeta()
+        .getErrorDescriptionsValuename());
+    assertEquals(EXP_TRANS_STEP_ERROR_META_1_FIELDS_VALUE_NAME, fetchedTrans.getStep(0).getStepErrorMeta()
+        .getErrorFieldsValuename());
+    assertEquals(EXP_TRANS_STEP_ERROR_META_1_CODES_VALUE_NAME, fetchedTrans.getStep(0).getStepErrorMeta()
+        .getErrorCodesValuename());
+    assertEquals(EXP_TRANS_STEP_ERROR_META_1_MAX_ERRORS, fetchedTrans.getStep(0).getStepErrorMeta().getMaxErrors());
+    assertEquals(EXP_TRANS_STEP_ERROR_META_1_MAX_PERCENT_ERRORS, fetchedTrans.getStep(0).getStepErrorMeta()
+        .getMaxPercentErrors());
+    assertEquals(EXP_TRANS_STEP_ERROR_META_1_MIN_PERCENT_ROWS, fetchedTrans.getStep(0).getStepErrorMeta()
+        .getMinPercentRows());
+
     assertEquals(EXP_TRANS_STEP_2_NAME, fetchedTrans.getStep(1).getName());
-    
+
     assertEquals(EXP_TRANS_STEP_1_NAME, fetchedTrans.getTransHop(0).getFromStep().getName());
     assertEquals(EXP_TRANS_STEP_2_NAME, fetchedTrans.getTransHop(0).getToStep().getName());
+
+    assertEquals(1, transMeta.getSlaveStepCopyPartitionDistribution().getOriginalPartitionSchemas().size());
+    assertEquals(EXP_PART_SCHEMA_NAME, transMeta.getSlaveStepCopyPartitionDistribution().getOriginalPartitionSchemas()
+        .get(0).getName());
+
+    assertTrue(-1 != transMeta.getSlaveStepCopyPartitionDistribution().getPartition(EXP_SLAVE_NAME,
+        EXP_PART_SCHEMA_NAME, 0));
+    assertEquals(EXP_TRANS_SLAVE_TRANSFORMATION, transMeta.isSlaveTransformation());
+
+    assertNull(repository.getTransformationLock(transMeta.getObjectId()));
+    repository.lockTransformation(transMeta.getObjectId(), EXP_TRANS_LOCK_MSG);
+    assertEquals(EXP_TRANS_LOCK_MSG, repository.getTransformationLock(transMeta.getObjectId()).getMessage());
+    assertEquals(new Date().getDate(), repository.getTransformationLock(transMeta.getObjectId()).getLockDate()
+        .getDate());
+    assertEquals(EXP_LOGIN, repository.getTransformationLock(transMeta.getObjectId()).getLogin());
+    assertEquals(EXP_USERNAME, repository.getTransformationLock(transMeta.getObjectId()).getUsername());
+    assertEquals(transMeta.getObjectId(), repository.getTransformationLock(transMeta.getObjectId()).getObjectId());
+    repository.unlockTransformation(transMeta.getObjectId());
+    assertNull(repository.getTransformationLock(transMeta.getObjectId()));
+
+    transMeta.setDescription(EXP_TRANS_DESC_V2);
+    repository.save(transMeta, VERSION_COMMENT_V2, null);
+    assertEquals(VERSION_COMMENT_V2, transMeta.getObjectRevision().getComment());
+    fetchedTrans = repository.loadTransformation(EXP_TRANS_NAME, transDir, null, false, null);
+    assertEquals(EXP_TRANS_DESC_V2, fetchedTrans.getDescription());
+    fetchedTrans = repository.loadTransformation(EXP_TRANS_NAME, transDir, null, false, VERSION_LABEL_V1);
+    assertEquals(EXP_TRANS_DESC, fetchedTrans.getDescription());
+
+    assertEquals(transMeta.getObjectId(), repository.getTransformationID(EXP_TRANS_NAME, transDir));
+
+    assertEquals(1, repository.getTransformationObjects(transDir.getObjectId(), false).size());
+    assertEquals(1, repository.getTransformationObjects(transDir.getObjectId(), true).size());
+    assertEquals(transMeta.getName(), repository.getTransformationObjects(transDir.getObjectId(), false).get(0)
+        .getName());
+
+    assertEquals(1, repository.getTransformationNames(transDir.getObjectId(), false).length);
+    assertEquals(1, repository.getTransformationNames(transDir.getObjectId(), true).length);
+    assertEquals(transMeta.getName(), repository.getTransformationNames(transDir.getObjectId(), false)[0]);
+
+    repository.deleteTransformation(transMeta.getObjectId());
+    assertFalse(repository.exists(EXP_TRANS_NAME, transDir, RepositoryObjectType.TRANSFORMATION));
+
+    assertEquals(transMeta.getObjectId(), repository.getTransformationID(EXP_TRANS_NAME, transDir));
+
+    assertEquals(0, repository.getTransformationObjects(transDir.getObjectId(), false).size());
+    assertEquals(1, repository.getTransformationObjects(transDir.getObjectId(), true).size());
+    assertEquals(transMeta.getName(), repository.getTransformationObjects(transDir.getObjectId(), true).get(0)
+        .getName());
+
+    assertEquals(0, repository.getTransformationNames(transDir.getObjectId(), false).length);
+    assertEquals(1, repository.getTransformationNames(transDir.getObjectId(), true).length);
+    assertEquals(transMeta.getName(), repository.getTransformationNames(transDir.getObjectId(), true)[0]);
   }
 
   private TransMeta createTransMeta() throws Exception {
@@ -761,12 +897,23 @@ public class RepositoryTest {
     transMeta.setCapturingStepPerformanceSnapShots(EXP_TRANS_CAPTURE_STEP_PERF_SNAPSHOTS);
     transMeta.setStepPerformanceCapturingDelay(EXP_TRANS_STEP_PERF_CAP_DELAY);
     transMeta.addDependency(new TransDependency(dbMeta, EXP_TRANS_DEP_TABLE_NAME, EXP_TRANS_DEP_FIELD_NAME));
-
-    StepMeta step1 = createStepMeta1();
+    StepMeta step1 = createStepMeta1(transMeta);
     transMeta.addStep(step1);
     StepMeta step2 = createStepMeta2();
     transMeta.addStep(step2);
     transMeta.addTransHop(createTransHopMeta(step1, step2));
+
+    SlaveServer slaveServer = createSlaveServer();
+    PartitionSchema partSchema = createPartitionSchema();
+    // slaveServer, partSchema must be saved so that they get IDs
+    repository.save(slaveServer, VERSION_COMMENT_V1, null);
+    repository.save(partSchema, VERSION_COMMENT_V1, null);
+
+    SlaveStepCopyPartitionDistribution slaveStepCopyPartitionDistribution = new SlaveStepCopyPartitionDistribution();
+    slaveStepCopyPartitionDistribution.addPartition(EXP_SLAVE_NAME, EXP_PART_SCHEMA_NAME, 0);
+    slaveStepCopyPartitionDistribution.setOriginalPartitionSchemas(Arrays.asList(new PartitionSchema[] { partSchema }));
+    transMeta.setSlaveStepCopyPartitionDistribution(slaveStepCopyPartitionDistribution);
+    transMeta.setSlaveTransformation(EXP_TRANS_SLAVE_TRANSFORMATION);
     return transMeta;
   }
 
@@ -784,6 +931,7 @@ public class RepositoryTest {
    * save(partitionSchema)
    * exists()
    * loadPartitionSchema()
+   * deletePartitionSchema()
    * getPartitionSchemaID()
    * getPartitionSchemaIDs()
    * getPartitionSchemaNames()
@@ -846,6 +994,7 @@ public class RepositoryTest {
    * save(clusterSchema)
    * exists()
    * loadClusterSchema()
+   * deleteClusterSchema()
    * getClusterID()
    * getClusterIDs()
    * getClusterNames()
@@ -945,19 +1094,28 @@ public class RepositoryTest {
     return copy;
   }
 
-  private StepMeta createStepMeta1() throws Exception {
-    return new StepMeta(EXP_TRANS_STEP_1_NAME, new TransStepAttributeTesterTransStep());
+  private StepMeta createStepMeta1(final TransMeta transMeta) throws Exception {
+    StepMeta stepMeta1 = new StepMeta(EXP_TRANS_STEP_1_NAME, new TransStepAttributeTesterTransStep());
+    StepErrorMeta stepErrorMeta1 = new StepErrorMeta(transMeta, stepMeta1);
+    stepErrorMeta1.setEnabled(EXP_TRANS_STEP_ERROR_META_1_ENABLED);
+    stepErrorMeta1.setNrErrorsValuename(EXP_TRANS_STEP_ERROR_META_1_NR_ERRORS_VALUE_NAME);
+    stepErrorMeta1.setErrorDescriptionsValuename(EXP_TRANS_STEP_ERROR_META_1_DESC_VALUE_NAME);
+    stepErrorMeta1.setErrorFieldsValuename(EXP_TRANS_STEP_ERROR_META_1_FIELDS_VALUE_NAME);
+    stepErrorMeta1.setErrorCodesValuename(EXP_TRANS_STEP_ERROR_META_1_CODES_VALUE_NAME);
+    stepErrorMeta1.setMaxErrors(EXP_TRANS_STEP_ERROR_META_1_MAX_ERRORS);
+    stepErrorMeta1.setMaxPercentErrors(EXP_TRANS_STEP_ERROR_META_1_MAX_PERCENT_ERRORS);
+    stepErrorMeta1.setMinPercentRows(EXP_TRANS_STEP_ERROR_META_1_MIN_PERCENT_ROWS);
+    stepMeta1.setStepErrorMeta(stepErrorMeta1);
+    return stepMeta1;
   }
 
   private StepMeta createStepMeta2() throws Exception {
     return new StepMeta(EXP_TRANS_STEP_2_NAME, new TransStepAttributeTesterTransStep());
   }
 
-
-  
-    private TransHopMeta createTransHopMeta(final StepMeta stepMeta1, final StepMeta stepMeta2) throws Exception {
-      return new TransHopMeta(stepMeta1, stepMeta2);
-    }
+  private TransHopMeta createTransHopMeta(final StepMeta stepMeta1, final StepMeta stepMeta2) throws Exception {
+    return new TransHopMeta(stepMeta1, stepMeta2);
+  }
 
   private NotePadMeta createNotePadMeta() throws Exception {
     return new NotePadMeta(EXP_NOTEPAD_NOTE, EXP_NOTEPAD_X, EXP_NOTEPAD_Y, EXP_NOTEPAD_WIDTH, EXP_NOTEPAD_HEIGHT);
@@ -992,6 +1150,7 @@ public class RepositoryTest {
    * getDatabaseID()
    * getDatabaseIDs()
    * getDatabaseNames()
+   * readDatabases()
    */
   @Test
   public void testDatabases() throws Exception {
@@ -1027,6 +1186,7 @@ public class RepositoryTest {
     assertEquals(EXP_DBMETA_HOSTNAME, fetchedDatabase.getHostname());
 
     assertEquals(dbMeta.getObjectId(), repository.getDatabaseID(EXP_DBMETA_NAME));
+    
     assertEquals(1, repository.getDatabaseIDs(false).length);
     assertEquals(1, repository.getDatabaseIDs(true).length);
     assertEquals(dbMeta.getObjectId(), repository.getDatabaseIDs(false)[0]);
@@ -1034,6 +1194,8 @@ public class RepositoryTest {
     assertEquals(1, repository.getDatabaseNames(false).length);
     assertEquals(1, repository.getDatabaseNames(true).length);
     assertEquals(EXP_DBMETA_NAME, repository.getDatabaseNames(false)[0]);
+    
+    assertEquals(1, repository.readDatabases().size());
 
     repository.deleteDatabaseMeta(EXP_DBMETA_NAME);
     assertFalse(repository.exists(EXP_DBMETA_NAME, null, RepositoryObjectType.DATABASE));
@@ -1047,6 +1209,8 @@ public class RepositoryTest {
     assertEquals(0, repository.getDatabaseNames(false).length);
     assertEquals(1, repository.getDatabaseNames(true).length);
     assertEquals(EXP_DBMETA_NAME, repository.getDatabaseNames(true)[0]);
+    
+    assertEquals(0, repository.readDatabases().size());
   }
 
   /**
@@ -1134,45 +1298,54 @@ public class RepositoryTest {
   }
 
   @Test
-  @Ignore
-  public void testCountNrJobEntryAttributes() throws Exception {
-    fail("Not yet implemented");
+  public void testRenameAndUndelete() throws Exception {
+    RepositoryDirectory rootDir = initRepo();
+    JobMeta jobMeta = createJobMeta();
+    RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
+    repository.save(jobMeta, VERSION_COMMENT_V1, null);
+    
+    repository.deleteJob(jobMeta.getObjectId());
+    assertFalse(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
+    repository.undeleteObject(jobMeta);
+    assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
+    
+    repository.renameJob(jobMeta.getObjectId(), jobsDir, EXP_JOB_NAME_NEW);
+    assertFalse(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
+    assertTrue(repository.exists(EXP_JOB_NAME_NEW, jobsDir, RepositoryObjectType.JOB));
+    
+    TransMeta transMeta = createTransMeta();
+    RepositoryDirectory transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
+    repository.save(transMeta, VERSION_COMMENT_V1, null);
+    repository.renameTransformation(transMeta.getObjectId(), transDir, EXP_TRANS_NAME_NEW);
+    assertFalse(repository.exists(EXP_TRANS_NAME, transDir, RepositoryObjectType.TRANSFORMATION));
+    assertTrue(repository.exists(EXP_TRANS_NAME_NEW, transDir, RepositoryObjectType.TRANSFORMATION));
+    
+    DatabaseMeta dbMeta = createDatabaseMeta();
+    repository.save(dbMeta, VERSION_COMMENT_V1, null);
+    repository.renameDatabase(dbMeta.getObjectId(), EXP_DBMETA_NAME_NEW);
+    assertFalse(repository.exists(EXP_DBMETA_NAME, null, RepositoryObjectType.DATABASE));
+    assertTrue(repository.exists(EXP_DBMETA_NAME_NEW, null, RepositoryObjectType.DATABASE));
   }
-
+  
   @Test
-  @Ignore
-  public void testCountNrStepAttributes() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testDeleteClusterSchema() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testDeletePartitionSchema() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testDeleteTransformation() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetJobLock() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetRevisions() throws Exception {
-    fail("Not yet implemented");
+  public void testVersions() throws Exception {
+    DatabaseMeta dbMeta = createDatabaseMeta();
+    repository.save(dbMeta, VERSION_COMMENT_V1, null);
+    List<ObjectRevision> revs = repository.getRevisions(dbMeta);
+    assertEquals(1, revs.size());
+    dbMeta.setHostname(EXP_DBMETA_HOSTNAME_V2);
+    repository.save(dbMeta, VERSION_COMMENT_V2, null);
+    revs = repository.getRevisions(dbMeta);
+    assertEquals(2, revs.size());
+    
+    RepositoryVersionRegistry vReg = repository.getVersionRegistry();
+    assertEquals(0, vReg.getVersions().size());
+//    vReg.addVersion(new SimpleObjectVersion(EXP_OBJECT_VERSION_LABEL, null, null, null));
+//    assertEquals(2, versions.size());
+//    assertEquals("1.0", versions.get(0).getLabel());
+//    assertEquals("1.1", versions.get(1).getLabel());
+    
+    // TODO mlowery finish me
   }
 
   @Test
@@ -1183,79 +1356,7 @@ public class RepositoryTest {
 
   @Test
   @Ignore
-  public void testGetStepAttributeBooleanObjectIdString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetStepAttributeBooleanObjectIdIntString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetStepAttributeBooleanObjectIdIntStringBoolean() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetStepAttributeIntegerObjectIdString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetStepAttributeIntegerObjectIdIntString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetStepAttributeStringObjectIdString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetStepAttributeStringObjectIdIntString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetTransformationID() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetTransformationLock() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetTransformationNames() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testGetTransformationObjects() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
   public void testGetVersionRegistry() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testInit() throws Exception {
     fail("Not yet implemented");
   }
 
@@ -1297,24 +1398,6 @@ public class RepositoryTest {
 
   @Test
   @Ignore
-  public void testLockJob() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testLockTransformation() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testReadDatabases() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
   public void testReadJobMetaSharedObjects() throws Exception {
     fail("Not yet implemented");
   }
@@ -1322,30 +1405,6 @@ public class RepositoryTest {
   @Test
   @Ignore
   public void testReadTransSharedObjects() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testRenameDatabase() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testRenameJob() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testRenameRepositoryDirectory() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testRenameTransformation() throws Exception {
     fail("Not yet implemented");
   }
 
@@ -1364,72 +1423,6 @@ public class RepositoryTest {
   @Test
   @Ignore
   public void testSaveDatabaseMetaStepAttribute() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveStepAttributeObjectIdObjectIdStringString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveStepAttributeObjectIdObjectIdStringBoolean() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveStepAttributeObjectIdObjectIdStringLong() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveStepAttributeObjectIdObjectIdStringDouble() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveStepAttributeObjectIdObjectIdIntStringString() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveStepAttributeObjectIdObjectIdIntStringBoolean() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveStepAttributeObjectIdObjectIdIntStringLong() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testSaveStepAttributeObjectIdObjectIdIntStringDouble() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testUndeleteObject() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testUnlockJob() throws Exception {
-    fail("Not yet implemented");
-  }
-
-  @Test
-  @Ignore
-  public void testUnlockTransformation() throws Exception {
     fail("Not yet implemented");
   }
 
@@ -1488,6 +1481,7 @@ public class RepositoryTest {
     @Override
     public void loadRep(final Repository rep, final ObjectId idJobentry, final List<DatabaseMeta> databases,
         final List<SlaveServer> slaveServers) throws KettleException {
+      assertEquals(2, rep.countNrJobEntryAttributes(idJobentry, ATTR_BOOL_MULTI));
       assertEquals(VALUE_BOOL, rep.getJobEntryAttributeBoolean(idJobentry, ATTR_BOOL));
       assertEquals(VALUE_BOOL_MULTI_0, rep.getJobEntryAttributeBoolean(idJobentry, 0, ATTR_BOOL_MULTI));
       assertEquals(VALUE_BOOL_MULTI_1, rep.getJobEntryAttributeBoolean(idJobentry, 1, ATTR_BOOL_MULTI));
@@ -1525,6 +1519,9 @@ public class RepositoryTest {
 
   }
 
+  /**
+   * Does assertions on all repository.getStepAttribute* and repository.saveStepAttribute* methods.
+   */
   @Step(name = "StepAttributeTester", image = "")
   public static class TransStepAttributeTesterTransStep extends BaseStepMeta implements StepMetaInterface,
       EntryAndStepConstants {
@@ -1550,6 +1547,7 @@ public class RepositoryTest {
 
     public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases, Map<String, Counter> counters)
         throws KettleException {
+      assertEquals(2, rep.countNrStepAttributes(idStep, ATTR_BOOL_MULTI));
       assertEquals(VALUE_BOOL, rep.getStepAttributeBoolean(idStep, ATTR_BOOL));
       assertEquals(VALUE_BOOL_MULTI_0, rep.getStepAttributeBoolean(idStep, 0, ATTR_BOOL_MULTI));
       assertEquals(VALUE_BOOL_MULTI_1, rep.getStepAttributeBoolean(idStep, 1, ATTR_BOOL_MULTI));
