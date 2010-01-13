@@ -1008,6 +1008,32 @@ public class JCRRepository implements Repository {
 			throw new KettleException("Unable to rename directory with id ["+dir.getObjectId()+"] to ["+dir.getName()+"]", e);
 		}
 	}
+	
+	public ObjectId renameRepositoryDirectory(ObjectId id, RepositoryDirectory newParentDir, String newName) throws KettleException {
+	  if(newParentDir != null || newName != null) {
+      try {
+        Node folderNode = session.getNodeByUUID(id.getId());
+        String parentPath = null;
+        
+        if(newParentDir != null) {
+          Node newParentFolderNode = session.getNodeByUUID(newParentDir.getObjectId().getId());
+          parentPath = newParentFolderNode.getPath();
+        } else {
+          parentPath = folderNode.getParent().getPath();
+        }
+        
+        newName = (newName != null) ? newName : folderNode.getName();
+        
+        String destAbsPath = ("/".equals(parentPath) ? "/" : parentPath+"/") + newName;
+        session.move(folderNode.getPath(), destAbsPath);
+        session.save();
+
+      } catch(Exception e) {
+        throw new KettleException("Unable to rename directory with id ["+id+"] to ["+newName+"]", e);
+      }
+	  }
+	  return id;
+  }
 
 	public ObjectId renameTransformation(ObjectId transformationId, RepositoryDirectory newDirectory, String newName) throws KettleException {
 		return transDelegate.renameTransformation(transformationId, newDirectory, newName);
