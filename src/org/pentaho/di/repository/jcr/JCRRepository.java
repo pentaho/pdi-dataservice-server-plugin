@@ -24,7 +24,6 @@ import javax.jcr.version.VersionHistory;
 
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.api.JackrabbitNodeTypeManager;
-import org.apache.jackrabbit.core.TransientRepository;
 import org.apache.jackrabbit.rmi.repository.URLRemoteRepository;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
@@ -45,7 +44,6 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryElementLocationInterface;
-import org.pentaho.di.repository.RepositoryEventListener;
 import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
@@ -61,7 +59,6 @@ import org.pentaho.di.trans.TransMeta;
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
-import com.pentaho.commons.dsc.params.PParam;
 
 
 @RepositoryPlugin(
