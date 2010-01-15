@@ -45,6 +45,7 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryElementLocationInterface;
+import org.pentaho.di.repository.RepositoryEventListener;
 import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
@@ -1859,4 +1860,12 @@ public class JCRRepository implements Repository {
 	public RepositoryVersionRegistry getVersionRegistry() throws KettleException {
 		return versionRegistry;
 	}
+
+  public void addEventListener(RepositoryEventListener listener) {
+    // NOT IMPLEMENTED   
+  }
+
+  public void removeEventListener(RepositoryEventListener listener) {
+    // NOT IMPLEMENTED
+  }
 }
