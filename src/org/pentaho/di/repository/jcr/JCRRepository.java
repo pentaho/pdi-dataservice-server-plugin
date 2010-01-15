@@ -1860,12 +1860,4 @@ public class JCRRepository implements Repository {
 	public RepositoryVersionRegistry getVersionRegistry() throws KettleException {
 		return versionRegistry;
 	}
-
-  public void addEventListener(RepositoryEventListener listener) {
-    // NOT IMPLEMENTED   
-  }
-
-  public void removeEventListener(RepositoryEventListener listener) {
-    // NOT IMPLEMENTED
-  }
 }
