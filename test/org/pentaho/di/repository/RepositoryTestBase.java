@@ -478,7 +478,6 @@ public abstract class RepositoryTestBase {
    * unlockJob()
    */
   @Test
-  @Ignore // TODO mlowery stop ignoring
   public void testJobs() throws Exception {
     RepositoryDirectory rootDir = initRepo();
     JobMeta jobMeta = createJobMeta();
@@ -487,8 +486,7 @@ public abstract class RepositoryTestBase {
     assertNotNull(jobMeta.getObjectId());
     ObjectRevision version = jobMeta.getObjectRevision();
     assertNotNull(version);
-    assertEquals(VERSION_COMMENT_V1, version.getComment());
-    assertEquals(VERSION_LABEL_V1, version.getName());
+    assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
     assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
 
     JobMeta fetchedJob = repository.loadJob(EXP_JOB_NAME, jobsDir, null, null);
@@ -874,6 +872,7 @@ public abstract class RepositoryTestBase {
     SlaveServer slaveServer = createSlaveServer();
     PartitionSchema partSchema = createPartitionSchema();
     // slaveServer, partSchema must be saved so that they get IDs
+    // TODO mlowery uncomment when slaves and partSchemas can be persisted
 //    repository.save(slaveServer, VERSION_COMMENT_V1, null);
 //    repository.save(partSchema, VERSION_COMMENT_V1, null);
 
@@ -913,8 +912,7 @@ public abstract class RepositoryTestBase {
     assertNotNull(partSchema.getObjectId());
     ObjectRevision version = partSchema.getObjectRevision();
     assertNotNull(version);
-    assertEquals(VERSION_COMMENT_V1, version.getComment());
-    assertEquals(VERSION_LABEL_V1, version.getName());
+    assertTrue(hasVersionWithComment(partSchema, VERSION_COMMENT_V1));
     assertTrue(repository.exists(EXP_PART_SCHEMA_NAME, null, RepositoryObjectType.PARTITION_SCHEMA));
 
     PartitionSchema fetchedPartSchema = repository.loadPartitionSchema(partSchema.getObjectId(), null);
@@ -977,8 +975,7 @@ public abstract class RepositoryTestBase {
     assertNotNull(clusterSchema.getObjectId());
     ObjectRevision version = clusterSchema.getObjectRevision();
     assertNotNull(version);
-    assertEquals(VERSION_COMMENT_V1, version.getComment());
-    assertEquals(VERSION_LABEL_V1, version.getName());
+    assertTrue(hasVersionWithComment(clusterSchema, VERSION_COMMENT_V1));
     assertTrue(repository.exists(EXP_CLUSTER_SCHEMA_NAME, null, RepositoryObjectType.CLUSTER_SCHEMA));
 
     ClusterSchema fetchedClusterSchema = repository.loadClusterSchema(clusterSchema.getObjectId(), repository
@@ -1220,8 +1217,7 @@ public abstract class RepositoryTestBase {
     assertNotNull(slave.getObjectId());
     ObjectRevision version = slave.getObjectRevision();
     assertNotNull(version);
-    assertEquals(VERSION_COMMENT_V1, version.getComment());
-    assertEquals(VERSION_LABEL_V1, version.getName());
+    assertTrue(hasVersionWithComment(slave, VERSION_COMMENT_V1));
     // setting repository directory on slave is not supported; use null parent directory
     assertTrue(repository.exists(EXP_SLAVE_NAME, null, RepositoryObjectType.SLAVE_SERVER));
 
