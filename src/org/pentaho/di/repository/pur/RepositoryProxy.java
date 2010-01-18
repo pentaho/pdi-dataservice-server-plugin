@@ -52,10 +52,10 @@ public class RepositoryProxy implements Repository {
   }
 
   public int countNrJobEntryAttributes(ObjectId idJobentry, String code) throws KettleException {
-    throw new UnsupportedOperationException();
+    return getPropertyCount(idJobentry, code);
   }
 
-  public int countNrStepAttributes(ObjectId idStep, String code) throws KettleException {
+  protected int getPropertyCount(final ObjectId idStep, final String code) throws KettleException {
     int count = 0;
     for (DataProperty prop : node.getProperties()) {
       if (prop.getName().startsWith(code + PROP_CODE_NR_SEPARATOR)) {
@@ -65,7 +65,11 @@ public class RepositoryProxy implements Repository {
     return count;
   }
 
-  public RepositoryDirectory createRepositoryDirectory(RepositoryDirectory parentDirectory, String directoryPath)
+  public int countNrStepAttributes(final ObjectId idStep, final String code) throws KettleException {
+    return getPropertyCount(idStep, code);
+  }
+
+  public RepositoryDirectory createRepositoryDirectory(final RepositoryDirectory parentDirectory, final String directoryPath)
       throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -136,31 +140,35 @@ public class RepositoryProxy implements Repository {
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, String code) throws KettleException {
-    throw new UnsupportedOperationException();
+    return node.getProperty(code).getBoolean();
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, int nr, String code) throws KettleException {
-    throw new UnsupportedOperationException();
+    return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getBoolean();
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, String code, boolean def) throws KettleException {
-    throw new UnsupportedOperationException();
+    if (node.hasProperty(code)) {
+      return node.getProperty(code).getBoolean();
+    } else {
+      return def;
+    }
   }
 
   public long getJobEntryAttributeInteger(ObjectId idJobentry, String code) throws KettleException {
-    throw new UnsupportedOperationException();
+    return node.getProperty(code).getLong();
   }
 
   public long getJobEntryAttributeInteger(ObjectId idJobentry, int nr, String code) throws KettleException {
-    throw new UnsupportedOperationException();
+    return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getLong();
   }
 
   public String getJobEntryAttributeString(ObjectId idJobentry, String code) throws KettleException {
-    throw new UnsupportedOperationException();
+    return node.getProperty(code).getString();
   }
 
   public String getJobEntryAttributeString(ObjectId idJobentry, int nr, String code) throws KettleException {
-    throw new UnsupportedOperationException();
+    return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getString();
   }
 
   public ObjectId getJobId(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
@@ -418,32 +426,32 @@ public class RepositoryProxy implements Repository {
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, String value)
       throws KettleException {
-    throw new UnsupportedOperationException();
+    node.setProperty(code, value);
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, boolean value)
       throws KettleException {
-    throw new UnsupportedOperationException();
+    node.setProperty(code, value);
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, long value)
       throws KettleException {
-    throw new UnsupportedOperationException();
+    node.setProperty(code, value);
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, String value)
       throws KettleException {
-    throw new UnsupportedOperationException();
+    node.setProperty(code + PROP_CODE_NR_SEPARATOR + nr, value);
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, boolean value)
       throws KettleException {
-    throw new UnsupportedOperationException();
+    node.setProperty(code + PROP_CODE_NR_SEPARATOR + nr, value);
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, long value)
       throws KettleException {
-    throw new UnsupportedOperationException();
+    node.setProperty(code + PROP_CODE_NR_SEPARATOR + nr, value);
   }
 
   public void saveRepositoryDirectory(RepositoryDirectory dir) throws KettleException {

@@ -2,11 +2,7 @@ package org.pentaho.di.repository.pur;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-
-import javax.jcr.Node;
-import javax.jcr.version.Version;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -278,9 +274,16 @@ public class PurRepository implements Repository {
   }
 
   public void deleteJob(ObjectId idJob) throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    deleteFileById(idJob);
+  }
+  
+  public void deleteFileById(final ObjectId id) throws KettleException {
+  try {
+    RepositoryFile fileToDelete = pur.getFileById(id.getId());
+    pur.deleteFile(fileToDelete.getId());
+  } catch (Exception e) {
+    throw new KettleException("Unable to delete object with id [" + id + "]", e);
+  }
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
@@ -296,12 +299,7 @@ public class PurRepository implements Repository {
   }
 
   public void deleteTransformation(ObjectId idTransformation) throws KettleException {
-    try {
-      RepositoryFile fileToDelete = pur.getFileById(idTransformation.getId());
-      pur.deleteFile(fileToDelete.getId());
-    } catch (Exception e) {
-      throw new KettleException("Unable to delete transformation with id [" + idTransformation + "]", e);
-    }
+    deleteFileById(idTransformation);
   }
 
   public boolean exists(final String name, final RepositoryDirectory repositoryDirectory,
@@ -325,10 +323,13 @@ public class PurRepository implements Repository {
         return repositoryDirectory.getPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.TRANSFORMATION.getExtension();
       }
+      case JOB: {
+        return repositoryDirectory.getPath() + RepositoryFile.SEPARATOR + name
+            + RepositoryObjectType.JOB.getExtension();
+      }
       default: {
         throw new UnsupportedOperationException("not implemented");
       }
-
     }
   }
 
@@ -394,6 +395,17 @@ public class PurRepository implements Repository {
             return null;
           }
         }
+        case JOB: {
+          // file either never existed or has been deleted
+          RepositoryFile jobParentFolder = pur.getFile(dir.getPath());
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(jobParentFolder.getId(), name
+              + RepositoryObjectType.JOB.getExtension());
+          if (!deletedChildren.isEmpty()) {
+            return new StringObjectId(deletedChildren.get(0).getId().toString());
+          } else {
+            return null;
+          }
+        }
         default: {
           throw new UnsupportedOperationException("not implemented");
         }
@@ -443,6 +455,11 @@ public class PurRepository implements Repository {
         filter = "*" + RepositoryObjectType.TRANSFORMATION.getExtension(); //$NON-NLS-1$
         break;
       }
+      case JOB: {
+        parentFolder = pur.getFile(dir.getPath());
+        filter = "*" + RepositoryObjectType.JOB.getExtension(); //$NON-NLS-1$
+        break;
+      }
       default: {
         throw new UnsupportedOperationException("not implemented");
       }
@@ -463,6 +480,11 @@ public class PurRepository implements Repository {
       case TRANSFORMATION: {
         parentFolder = pur.getFile(dir.getPath());
         filter = "*" + RepositoryObjectType.TRANSFORMATION.getExtension(); //$NON-NLS-1$
+        break;
+      }
+      case JOB: {
+        parentFolder = pur.getFile(dir.getPath());
+        filter = "*" + RepositoryObjectType.JOB.getExtension(); //$NON-NLS-1$
         break;
       }
       default: {
@@ -559,32 +581,36 @@ public class PurRepository implements Repository {
 
   }
 
-  public ObjectId getJobId(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+  public ObjectId getJobId(final String name, final RepositoryDirectory repositoryDirectory) throws KettleException {
+    try {
+      return getObjectId(name, repositoryDirectory, RepositoryObjectType.JOB);
+    } catch (Exception e) {
+      throw new KettleException("Unable to get ID for job [" + name + "]", e);
+    }
   }
 
   public RepositoryLock getJobLock(ObjectId idJob) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    return getLockById(idJob);
   }
 
   public String[] getJobNames(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    try {
+      RepositoryDirectory dir = loadRepositoryDirectoryTree().findDirectory(idDirectory);
+      List<RepositoryFile> children = getAllFilesOfType(dir, RepositoryObjectType.JOB, includeDeleted);
+      List<String> names = new ArrayList<String>();
+      for (RepositoryFile file : children) {
+        // strip off extension
+        names.add(file.getName().substring(0,
+            file.getName().length() - RepositoryObjectType.JOB.getExtension().length()));
+      }
+      return names.toArray(new String[0]);
+    } catch (Exception e) {
+      throw new KettleException("Unable to get all job names", e);
+    }
   }
 
   public List<RepositoryObject> getJobObjects(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    return getPdiObjects(idDirectory, RepositoryObjectType.JOB, includeDeleted);
   }
 
   public LogChannelInterface getLog() {
@@ -737,7 +763,11 @@ public class PurRepository implements Repository {
   }
 
   public RepositoryLock getTransformationLock(ObjectId idTransformation) throws KettleException {
-    RepositoryFile file = pur.getFileById(idTransformation.getId());
+    return getLockById(idTransformation);
+  }
+
+  protected RepositoryLock getLockById(final ObjectId id) throws KettleException {
+    RepositoryFile file = pur.getFileById(id.getId());
     return getLock(file);
   }
 
@@ -864,14 +894,6 @@ public class PurRepository implements Repository {
 
   }
 
-  public JobMeta loadJob(String jobname, RepositoryDirectory repdir, ProgressMonitorListener monitor, String revision)
-      throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
-  }
-
   public PartitionSchema loadPartitionSchema(ObjectId idPartitionSchema, String versionLabel) throws KettleException {
 
     // TODO Auto-generated method stub 
@@ -886,14 +908,16 @@ public class PurRepository implements Repository {
 
   }
 
-  public void lockJob(ObjectId idJob, String message) throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+  public void lockJob(final ObjectId idJob, final String message) throws KettleException {
+    lockFileById(idJob, message);
   }
 
-  public void lockTransformation(ObjectId idTransformation, String message) throws KettleException {
-    pur.lockFile(idTransformation.getId(), message);
+  public void lockTransformation(final ObjectId idTransformation, final String message) throws KettleException {
+    lockFileById(idTransformation, message);
+  }
+
+  protected void lockFileById(final ObjectId id, final String message) throws KettleException {
+    pur.lockFile(id.getId(), message);
   }
 
   public SharedObjects readJobMetaSharedObjects(JobMeta jobMeta) throws KettleException {
@@ -1070,7 +1094,27 @@ public class PurRepository implements Repository {
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
     }
+  }
 
+  public JobMeta loadJob(String jobname, RepositoryDirectory parentDir, ProgressMonitorListener monitor,
+      String versionId) throws KettleException {
+    String absPath = null;
+    try {
+      absPath = getPath(jobname, parentDir, RepositoryObjectType.JOB);
+      RepositoryFile file = pur.getFile(absPath);
+      JobMeta jobMeta = new JobMeta();
+      jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
+      jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
+      jobMeta.setRepositoryDirectory(parentDir);
+      jobMeta.setRepositoryLock(getLock(file));
+      jobDelegate.loadSharedObjects(jobMeta);
+      jobDelegate.dataNodeToElement(
+          pur.getDataForRead(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), jobMeta);
+      jobMeta.clearChanged();
+      return jobMeta;
+    } catch (Exception e) {
+      throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
+    }
   }
 
   protected RepositoryLock getLock(final RepositoryFile file) throws KettleException {
@@ -1222,13 +1266,15 @@ public class PurRepository implements Repository {
   }
 
   public void unlockJob(ObjectId idJob) throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    unlockFileById(idJob);
   }
 
   public void unlockTransformation(ObjectId idTransformation) throws KettleException {
-    pur.unlockFile(idTransformation.getId());
+    unlockFileById(idTransformation);
+  }
+
+  protected void unlockFileById(ObjectId id) throws KettleException {
+    pur.unlockFile(id.getId());
   }
 
 }

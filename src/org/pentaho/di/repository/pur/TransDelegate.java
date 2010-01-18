@@ -86,7 +86,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
   private static final String PROP_TABLE_NAME_MAXDATE = "TABLE_NAME_MAXDATE";
 
-  private static final String NODE_ID_DATABASE_MAXDATE = "ID_DATABASE_MAXDATE";
+  private static final String PROP_ID_DATABASE_MAXDATE = "ID_DATABASE_MAXDATE";
 
   private static final String PROP_USE_LOGFIELD = "USE_LOGFIELD";
 
@@ -94,7 +94,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
   private static final String PROP_TABLE_NAME_LOG = "TABLE_NAME_LOG";
 
-  private static final String NODE_DATABASE_LOG = "DATABASE_LOG";
+  private static final String PROP_DATABASE_LOG = "DATABASE_LOG";
 
   private static final String PROP_STEP_REJECTED = "STEP_REJECTED";
 
@@ -158,7 +158,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
   private static final String NODE_STEPS = "steps";
 
-  public static final String PROP_XML = "XML";
+  private static final String PROP_XML = "XML";
 
   private static final String NOTE_PREFIX = "__NOTE__#";
 
@@ -354,8 +354,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     transMeta.getTransLogTable().setStepRejected(
         StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_REJECTED).getString()));
 
-    if (rootNode.hasProperty(NODE_DATABASE_LOG)) {
-      String id = rootNode.getProperty(NODE_DATABASE_LOG).getRef().getId().toString();
+    if (rootNode.hasProperty(PROP_DATABASE_LOG)) {
+      String id = rootNode.getProperty(PROP_DATABASE_LOG).getRef().getId().toString();
       DatabaseMeta conn = DatabaseMeta.findDatabase(transMeta.getDatabases(), new StringObjectId(id));
       transMeta.getTransLogTable().setConnectionName(conn.getName());
     }
@@ -363,8 +363,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     transMeta.getTransLogTable().setBatchIdUsed(rootNode.getProperty(PROP_USE_BATCHID).getBoolean());
     transMeta.getTransLogTable().setLogFieldUsed(rootNode.getProperty(PROP_USE_LOGFIELD).getBoolean());
 
-    if (rootNode.hasProperty(NODE_ID_DATABASE_MAXDATE)) {
-      String id = rootNode.getProperty(NODE_ID_DATABASE_MAXDATE).getRef().getId().toString();
+    if (rootNode.hasProperty(PROP_ID_DATABASE_MAXDATE)) {
+      String id = rootNode.getProperty(PROP_ID_DATABASE_MAXDATE).getRef().getId().toString();
       transMeta.setMaxDateConnection(DatabaseMeta.findDatabase(transMeta.getDatabases(), new StringObjectId(id)));
     }
     transMeta.setMaxDateTable(rootNode.getProperty(PROP_TABLE_NAME_MAXDATE).getString());
@@ -564,7 +564,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
     if (transMeta.getTransLogTable().getDatabaseMeta() != null) {
       DataNodeRef ref = new DataNodeRef(transMeta.getTransLogTable().getDatabaseMeta().getObjectId().getId());
-      rootNode.setProperty(NODE_DATABASE_LOG, ref);
+      rootNode.setProperty(PROP_DATABASE_LOG, ref);
     }
 
     rootNode.setProperty(PROP_TABLE_NAME_LOG, transMeta.getTransLogTable().getTableName());
@@ -574,7 +574,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
     if (transMeta.getMaxDateConnection() != null) {
       DataNodeRef ref = new DataNodeRef(transMeta.getMaxDateConnection().getObjectId().getId());
-      rootNode.setProperty(NODE_ID_DATABASE_MAXDATE, ref);
+      rootNode.setProperty(PROP_ID_DATABASE_MAXDATE, ref);
     }
 
     rootNode.setProperty(PROP_TABLE_NAME_MAXDATE, transMeta.getMaxDateTable());
@@ -603,7 +603,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     rootNode.setProperty(PROP_LOG_SIZE_LIMIT, transMeta.getTransLogTable().getLogSizeLimit());
   }
 
-  public void loadSharedObjects(final RepositoryElementInterface element) throws KettleException {
+  public SharedObjects loadSharedObjects(final RepositoryElementInterface element) throws KettleException {
     TransMeta transMeta = (TransMeta) element;
     transMeta.setSharedObjects(transMeta.readSharedObjects());
 
@@ -613,6 +613,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     readPartitionSchemas(transMeta, true);
     readSlaves(transMeta, true);
     readClusters(transMeta, true);
+    
+    return transMeta.getSharedObjects();
   }
 
   /**
