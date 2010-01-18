@@ -11,19 +11,19 @@ import org.junit.Before;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.repository.ProfileMeta;
-import org.pentaho.di.repository.AbstractRepositoryTest;
+import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
 
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
 
-public class JCRRepositoryTest extends AbstractRepositoryTest {
+public class JCRRepositoryTest extends RepositoryTestBase {
 
   @Before
   public void setUp() throws Exception {
     // tell kettle to look for plugins in this package (because custom plugins are defined in this class)
-    System.setProperty(Const.KETTLE_PLUGIN_PACKAGES, AbstractRepositoryTest.class.getPackage().getName());
+    System.setProperty(Const.KETTLE_PLUGIN_PACKAGES, RepositoryTestBase.class.getPackage().getName());
 
     PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("pdi-ee=true")); //$NON-NLS-1$
     KettleEnvironment.init();

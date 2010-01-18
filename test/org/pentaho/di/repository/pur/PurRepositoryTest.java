@@ -13,7 +13,7 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.KettleEnvironment;
-import org.pentaho.di.repository.AbstractRepositoryTest;
+import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositoryDirectory;
@@ -37,7 +37,7 @@ import com.pentaho.commons.dsc.util.TestLicenseStream;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/sample-repository.spring.xml",
     "classpath:/sample-repository-test-override.spring.xml" })
-public class PurRepositoryTest extends AbstractRepositoryTest implements ApplicationContextAware {
+public class PurRepositoryTest extends RepositoryTestBase implements ApplicationContextAware {
 
   private IRepositoryService pur;
 
@@ -55,7 +55,7 @@ public class PurRepositoryTest extends AbstractRepositoryTest implements Applica
     SecurityContextHolder.getContext().setAuthentication(null);
 
     // tell kettle to look for plugins in this package (because custom plugins are defined in this class)
-    System.setProperty(Const.KETTLE_PLUGIN_PACKAGES, AbstractRepositoryTest.class.getPackage().getName());
+    System.setProperty(Const.KETTLE_PLUGIN_PACKAGES, RepositoryTestBase.class.getPackage().getName());
 
     PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("pdi-ee=true")); //$NON-NLS-1$
     KettleEnvironment.init();

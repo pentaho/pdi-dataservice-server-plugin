@@ -56,7 +56,7 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.w3c.dom.Node;
 
-public abstract class AbstractRepositoryTest {
+public abstract class RepositoryTestBase {
 
   // ~ Static fields/initializers ======================================================================================
 
@@ -68,7 +68,7 @@ public abstract class AbstractRepositoryTest {
 
   protected static final String VERSION_LABEL_V1 = "1.0";
 
-  protected static final Log logger = LogFactory.getLog(AbstractRepositoryTest.class);
+  protected static final Log logger = LogFactory.getLog(RepositoryTestBase.class);
 
   protected static final String DIR_CONNECTIONS = "connections";
 
