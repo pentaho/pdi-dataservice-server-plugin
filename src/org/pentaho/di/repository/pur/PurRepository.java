@@ -82,9 +82,11 @@ public class PurRepository implements Repository {
 
   private RepositoryMeta repositoryMeta;
 
-  private ITransformer databaseMetaTransformer = new DatabaseMetaTransformer(this);
+  private ITransformer databaseMetaTransformer = new DatabaseDelegate(this);
 
-  private ISharedObjectsHelper transDelegate = new TransDelegate(this);
+  private ISharedObjectsTransformer transDelegate = new TransDelegate(this);
+
+  private ISharedObjectsTransformer jobDelegate = new JobDelegate(this);
 
   // ~ Constructors ====================================================================================================
 
@@ -940,13 +942,11 @@ public class PurRepository implements Repository {
     try {
       switch (element.getRepositoryElementType()) {
         case TRANSFORMATION:
-          // get dir from obj
           saveTrans(element, versionComment);
           break;
-        //        case JOB:
-        // get dir from obj
-        //          jobDelegate.saveJobMeta(element, versionComment, monitor);
-        //          break;
+        case JOB:
+          saveJob(element, versionComment);
+          break;
         case DATABASE:
           saveDatabaseMeta(element, versionComment);
           break;
@@ -966,6 +966,29 @@ public class PurRepository implements Repository {
     } catch (Exception e) {
       throw new KettleException("Unable to save repository element [" + element + "]", e);
     }
+  }
+
+  private void saveJob(final RepositoryElementInterface element, final String versionComment) throws KettleException {
+    jobDelegate.saveSharedObjects(element, versionComment);
+
+    boolean isUpdate = element.getObjectId() != null;
+    RepositoryFile file = null;
+    if (isUpdate) {
+      file = pur.getFileById(element.getObjectId().getId());
+      // update description
+      file = new RepositoryFile.Builder(file).description(element.getDescription()).build();
+      file = pur.updateFile(file, new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), versionComment);
+    } else {
+      file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.JOB.getExtension()).versioned(true)
+          .description(element.getDescription()).build();
+      file = pur.createFile(pur.getFileById(element.getRepositoryDirectory().getObjectId().getId()).getId(), file,
+          new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), versionComment);
+    }
+    // side effects
+    ObjectId objectId = new StringObjectId(file.getId().toString());
+    element.setObjectId(objectId);
+    element.setObjectRevision(getObjectRevision(objectId, null));
+    element.clearChanged();
   }
 
   protected void saveTrans(final RepositoryElementInterface element, final String versionComment)

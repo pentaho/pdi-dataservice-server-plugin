@@ -28,7 +28,7 @@ import org.pentaho.di.trans.step.StepPartitioningMeta;
 import org.pentaho.platform.repository.pcr.data.node.DataNode;
 import org.pentaho.platform.repository.pcr.data.node.DataNodeRef;
 
-public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsHelper {
+public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer {
 
   private static final String PROP_STEP_ERROR_HANDLING_MIN_PCT_ROWS = "step_error_handling_min_pct_rows";
 

@@ -15,7 +15,7 @@ import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
 
-public class DatabaseMetaTransformer extends AbstractDelegate implements ITransformer {
+public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
 
   // ~ Static fields/initializers ======================================================================================
 
@@ -43,13 +43,13 @@ public class DatabaseMetaTransformer extends AbstractDelegate implements ITransf
 
   private static final String NODE_ATTRIBUTES = "attributes"; //$NON-NLS-1$
 
-  private Repository repo;
-
   // ~ Instance fields =================================================================================================
-
+  
+  private Repository repo;
+  
   // ~ Constructors ====================================================================================================
 
-  public DatabaseMetaTransformer(final Repository repo) {
+  public DatabaseDelegate(final Repository repo) {
     super();
     this.repo = repo;
   }
