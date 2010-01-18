@@ -905,7 +905,6 @@ public abstract class RepositoryTestBase {
    * getPartitionSchemaNames()
    */
   @Test
-  @Ignore // TODO mlowery stop ignoring
   public void testPartitionSchemas() throws Exception {
     RepositoryDirectory rootDir = initRepo();
     PartitionSchema partSchema = createPartitionSchema();

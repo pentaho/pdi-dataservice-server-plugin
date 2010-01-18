@@ -80,6 +80,8 @@ public class PurRepository implements Repository {
 
   private ITransformer databaseMetaTransformer = new DatabaseDelegate(this);
 
+  private ITransformer partitionSchemaTransformer = new PartitionSchemaDelegate(this);
+
   private ISharedObjectsTransformer transDelegate = new TransDelegate(this);
 
   private ISharedObjectsTransformer jobDelegate = new JobDelegate(this);
@@ -287,9 +289,12 @@ public class PurRepository implements Repository {
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    try {
+      RepositoryFile fileToDelete = pur.getFileById(idPartitionSchema.getId());
+      pur.deleteFile(fileToDelete.getId());
+    } catch (Exception e) {
+      throw new KettleException("Unable to delete partition schema with name [" + idPartitionSchema + "]", e);
+    }
   }
 
   public void deleteSlave(ObjectId idSlave) throws KettleException {
@@ -322,6 +327,10 @@ public class PurRepository implements Repository {
       case TRANSFORMATION: {
         return repositoryDirectory.getPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.TRANSFORMATION.getExtension();
+      }
+      case PARTITION_SCHEMA: {
+        return getPartitionSchemaParentFolderPath() + RepositoryFile.SEPARATOR + name
+            + RepositoryObjectType.PARTITION_SCHEMA.getExtension();
       }
       case JOB: {
         return repositoryDirectory.getPath() + RepositoryFile.SEPARATOR + name
@@ -395,6 +404,17 @@ public class PurRepository implements Repository {
             return null;
           }
         }
+        case PARTITION_SCHEMA: {
+          // file either never existed or has been deleted
+          RepositoryFile partitionParentFolder = pur.getFile(getPartitionSchemaParentFolderPath());
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(partitionParentFolder.getId(), name
+              + RepositoryObjectType.PARTITION_SCHEMA.getExtension());
+          if (!deletedChildren.isEmpty()) {
+            return new StringObjectId(deletedChildren.get(0).getId().toString());
+          } else {
+            return null;
+          }
+        }
         case JOB: {
           // file either never existed or has been deleted
           RepositoryFile jobParentFolder = pur.getFile(dir.getPath());
@@ -455,6 +475,11 @@ public class PurRepository implements Repository {
         filter = "*" + RepositoryObjectType.TRANSFORMATION.getExtension(); //$NON-NLS-1$
         break;
       }
+      case PARTITION_SCHEMA: {
+        parentFolder = pur.getFile(getPartitionSchemaParentFolderPath());
+        filter = "*" + RepositoryObjectType.PARTITION_SCHEMA.getExtension(); //$NON-NLS-1$
+        break;
+      }
       case JOB: {
         parentFolder = pur.getFile(dir.getPath());
         filter = "*" + RepositoryObjectType.JOB.getExtension(); //$NON-NLS-1$
@@ -480,6 +505,11 @@ public class PurRepository implements Repository {
       case TRANSFORMATION: {
         parentFolder = pur.getFile(dir.getPath());
         filter = "*" + RepositoryObjectType.TRANSFORMATION.getExtension(); //$NON-NLS-1$
+        break;
+      }
+      case PARTITION_SCHEMA: {
+        parentFolder = pur.getFile(getPartitionSchemaParentFolderPath());
+        filter = "*" + RepositoryObjectType.PARTITION_SCHEMA.getExtension(); //$NON-NLS-1$
         break;
       }
       case JOB: {
@@ -625,24 +655,39 @@ public class PurRepository implements Repository {
   }
 
   public ObjectId getPartitionSchemaID(String name) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    try {
+      return getObjectId(name, null, RepositoryObjectType.PARTITION_SCHEMA);
+    } catch (Exception e) {
+      throw new KettleException("Unable to get ID for partition schema [" + name + "]", e);
+    }
   }
 
   public ObjectId[] getPartitionSchemaIDs(boolean includeDeleted) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return new ObjectId[0];
-
+    try {
+      List<RepositoryFile> children = getAllFilesOfType(null, RepositoryObjectType.PARTITION_SCHEMA, includeDeleted);
+      List<ObjectId> ids = new ArrayList<ObjectId>();
+      for (RepositoryFile file : children) {
+        ids.add(new StringObjectId(file.getId().toString()));
+      }
+      return ids.toArray(new ObjectId[0]);
+    } catch (Exception e) {
+      throw new KettleException("Unable to get all partition schema IDs", e);
+    }
   }
 
   public String[] getPartitionSchemaNames(boolean includeDeleted) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    try {
+      List<RepositoryFile> children = getAllFilesOfType(null, RepositoryObjectType.PARTITION_SCHEMA, includeDeleted);
+      List<String> names = new ArrayList<String>();
+      for (RepositoryFile file : children) {
+        // strip off extension
+        names.add(file.getName().substring(0,
+            file.getName().length() - RepositoryObjectType.PARTITION_SCHEMA.getExtension().length()));
+      }
+      return names.toArray(new String[0]);
+    } catch (Exception e) {
+      throw new KettleException("Unable to get all partition schema names", e);
+    }
   }
 
   public RepositoryMeta getRepositoryMeta() {
@@ -894,11 +939,18 @@ public class PurRepository implements Repository {
 
   }
 
-  public PartitionSchema loadPartitionSchema(ObjectId idPartitionSchema, String versionLabel) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+  public PartitionSchema loadPartitionSchema(ObjectId partitionSchemaId, String versionId) throws KettleException {
+    try {
+      PartitionSchema partitionSchema = new PartitionSchema();
+      partitionSchemaTransformer.dataNodeToElement(pur.getDataForRead(partitionSchemaId.getId(), versionId,
+          NodeRepositoryFileData.class).getNode(), partitionSchema);
+      partitionSchema.setObjectId(new StringObjectId(partitionSchemaId));
+      partitionSchema.setObjectRevision(getObjectRevision(partitionSchemaId, versionId));
+      partitionSchema.clearChanged();
+      return partitionSchema;
+    } catch (Exception e) {
+      throw new KettleException("Unable to load partition schema with id [" + partitionSchemaId + "]", e);
+    }
   }
 
   public SlaveServer loadSlaveServer(ObjectId idSlaveServer, String versionLabel) throws KettleException {
@@ -980,9 +1032,9 @@ public class PurRepository implements Repository {
         //        case CLUSTER_SCHEMA:
         //          slaveDelegate.saveClusterSchema(element, versionComment, monitor);
         //          break;
-        //        case PARTITION_SCHEMA:
-        //          partitionDelegate.savePartitionSchema(element, versionComment, monitor);
-        //          break;
+        case PARTITION_SCHEMA:
+          savePartitionSchema(element, versionComment);
+          break;
         default:
           throw new KettleException("It's not possible to save Class [" + element.getClass().getName()
               + "] to the repository");
@@ -1126,6 +1178,30 @@ public class PurRepository implements Repository {
     }
   }
 
+  protected void savePartitionSchema(final RepositoryElementInterface element, final String versionComment) {
+    boolean isUpdate = element.getObjectId() != null;
+    RepositoryFile file = null;
+    try {
+      if (isUpdate) {
+        file = pur.getFileById(element.getObjectId().getId());
+        file = pur.updateFile(file, new NodeRepositoryFileData(partitionSchemaTransformer.elementToDataNode(element)),
+            versionComment);
+      } else {
+        file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.PARTITION_SCHEMA.getExtension())
+            .versioned(VERSION_SHARED_OBJECTS).build();
+        file = pur.createFile(pur.getFile(getPartitionSchemaParentFolderPath()).getId(), file,
+            new NodeRepositoryFileData(partitionSchemaTransformer.elementToDataNode(element)), versionComment);
+      }
+      // side effects
+      ObjectId objectId = new StringObjectId(file.getId().toString());
+      element.setObjectId(objectId);
+      element.setObjectRevision(getObjectRevision(objectId, null));
+      element.clearChanged();
+    } catch (KettleException ke) {
+      ke.printStackTrace();
+    }
+  }
+
   //  private RepositoryDirectory getRepositoryDirectory(final ObjectId elementId) throws KettleException {
   //    RepositoryFile file = pur.getFileById(elementId.getId());
   //    RepositoryFile parentFolder = pur.getFileById(file.getParentId());
@@ -1139,6 +1215,10 @@ public class PurRepository implements Repository {
   }
 
   private String getDatabaseMetaParentFolderPath() {
+    return RepositoryPaths.getTenantPublicFolderPath();
+  }
+
+  private String getPartitionSchemaParentFolderPath() {
     return RepositoryPaths.getTenantPublicFolderPath();
   }
 
