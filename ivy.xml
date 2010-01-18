@@ -13,6 +13,9 @@
 
   <dependencies defaultconf="default->default">
 
+    <dependency org="pentaho" name="pentaho-bi-platform-engine-core" rev="TRUNK-SNAPSHOT" changing="true" transitive="false" conf="default->default" />
+    <dependency org="pentaho" name="pentaho-bi-platform-api" rev="TRUNK-SNAPSHOT" changing="true" transitive="false" conf="default->default"/>
+
     <dependency org="org.apache.jackrabbit"   name="jackrabbit-core"        rev="1.6.0" />
     <!-- public repo has Maven packaging element as "bundle"; even publishing it to external Pentaho repo doesn't fix
     problem; so the ultimate solution is to use a version that doesn't exist in the public repo; THIS JAR HAS NO PENTAHO
@@ -41,17 +44,24 @@
    <!--   <dependency org="org.apache.derby" name="derby" rev="10.2.2.0"/>  -->
 
     <!--  test dependencies -->
-    <dependency org="junit"           		name="junit"              	rev="4.4" 	conf="test->default"/>
-    <dependency org="commons-logging"   	name="commons-logging"   	rev="1.1" 	conf="test->default"/>
-    <dependency org="commons-digester"  	name="commons-digester"    	rev="1.8" 	conf="test->default"/>
-    <dependency org="commons-vfs"   		name="commons-vfs"    		rev="1.0" 	conf="test->default"/>
-    <dependency org="commons-lang"   		name="commons-lang"    		rev="2.4" 	conf="test->default"/>
-    <dependency org="commons-httpclient"   	name="commons-httpclient"   rev="3.0.1" conf="test->default"/>
-    <dependency org="ognl"    				name="ognl"       			rev="2.6.9" conf="test->default"/>
-    <dependency org="org.springframework"   name="spring-core"       	rev="2.5.6" conf="test->default"/>
+    <dependency org="junit"               name="junit"                rev="4.4"   conf="test->default"/>
+    <dependency org="commons-logging"     name="commons-logging"    rev="1.1"   conf="test->default"/>
+    <dependency org="commons-digester"    name="commons-digester"     rev="1.8"   conf="test->default"/>
+    <dependency org="commons-vfs"       name="commons-vfs"        rev="1.0"   conf="test->default"/>
+    <dependency org="commons-lang"      name="commons-lang"       rev="2.4"   conf="test->default"/>
+    <dependency org="commons-httpclient"    name="commons-httpclient"   rev="3.0.1" conf="test->default"/>
+    <dependency org="ognl"            name="ognl"             rev="2.6.9" conf="test->default"/>
+    <dependency org="org.springframework"   name="spring-core"        rev="2.5.6" conf="test->default"/>
     <dependency org="pentaho"               name="pentaho-ee-mock-dsc"  rev="${dependency.pentaho-ee-dsc.revision}" changing="true" conf="test->default" transitive="true"/>
-
-
-
+    <dependency org="org.springframework" name="spring-test"              rev="2.5.6"   conf="test->default"/>
+    <dependency org="pentaho" name="pentaho-bi-platform-repository" rev="TRUNK-SNAPSHOT" changing="true" transitive="false" conf="test->default"/>
+    <dependency org="org.springframework" name="spring"              rev="2.5.6"   transitive="false" conf="test->default"/>
+    <dependency org="org.springframework.security"   name="spring-security-core"      rev="2.0.5.RELEASE" transitive="false" conf="test->default"/>
+    <dependency org="org.springframework"    name="se-jcr"       rev="0.9" transitive="false" conf="test->default"/>
+    <dependency org="pentaho" name="pentaho-third-party-security" rev="TRUNK-SNAPSHOT" conf="test->default" changing="true" transitive="false"/>
+    <dependency org="com.google.collections" name="google-collections" rev="1.0-rc5" conf="test->default" />
+    <dependency org="pentaho" name="pentaho-bi-platform-engine-security" rev="TRUNK-SNAPSHOT" changing="true" conf="test->default"/>
+    <dependency org="org.aspectj"   name="aspectjrt"        rev="1.6.6" conf="test->default" />
+    <dependency org="jta" name="jta" rev="1.0.1b" conf="test->default" />
   </dependencies>
 </ivy-module>
