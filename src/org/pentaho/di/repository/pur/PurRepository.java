@@ -138,17 +138,11 @@ public class PurRepository implements Repository {
   }
 
   public int countNrJobEntryAttributes(ObjectId idJobentry, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return 0;
-
+    throw new UnsupportedOperationException();
   }
 
   public int countNrStepAttributes(ObjectId idStep, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return 0;
-
+    throw new UnsupportedOperationException();
   }
 
   public RepositoryDirectory createRepositoryDirectory(final RepositoryDirectory parentDirectory,
@@ -278,14 +272,14 @@ public class PurRepository implements Repository {
   public void deleteJob(ObjectId idJob) throws KettleException {
     deleteFileById(idJob);
   }
-  
+
   public void deleteFileById(final ObjectId id) throws KettleException {
-  try {
-    RepositoryFile fileToDelete = pur.getFileById(id.getId());
-    pur.deleteFile(fileToDelete.getId());
-  } catch (Exception e) {
-    throw new KettleException("Unable to delete object with id [" + id + "]", e);
-  }
+    try {
+      RepositoryFile fileToDelete = pur.getFileById(id.getId());
+      pur.deleteFile(fileToDelete.getId());
+    } catch (Exception e) {
+      throw new KettleException("Unable to delete object with id [" + id + "]", e);
+    }
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
@@ -563,52 +557,31 @@ public class PurRepository implements Repository {
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return false;
-
+    throw new UnsupportedOperationException();
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, int nr, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return false;
-
+    throw new UnsupportedOperationException();
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, String code, boolean def) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return false;
-
+    throw new UnsupportedOperationException();
   }
 
   public long getJobEntryAttributeInteger(ObjectId idJobentry, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return 0;
-
+    throw new UnsupportedOperationException();
   }
 
   public long getJobEntryAttributeInteger(ObjectId idJobentry, int nr, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return 0;
-
+    throw new UnsupportedOperationException();
   }
 
   public String getJobEntryAttributeString(ObjectId idJobentry, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    throw new UnsupportedOperationException();
   }
 
   public String getJobEntryAttributeString(ObjectId idJobentry, int nr, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    throw new UnsupportedOperationException();
   }
 
   public ObjectId getJobId(final String name, final RepositoryDirectory repositoryDirectory) throws KettleException {
@@ -751,52 +724,31 @@ public class PurRepository implements Repository {
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return false;
-
+    throw new UnsupportedOperationException();
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, int nr, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return false;
-
+    throw new UnsupportedOperationException();
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, int nr, String code, boolean def) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return false;
-
+    throw new UnsupportedOperationException();
   }
 
   public long getStepAttributeInteger(ObjectId idStep, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return 0;
-
+    throw new UnsupportedOperationException();
   }
 
   public long getStepAttributeInteger(ObjectId idStep, int nr, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return 0;
-
+    throw new UnsupportedOperationException();
   }
 
   public String getStepAttributeString(ObjectId idStep, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    throw new UnsupportedOperationException();
   }
 
   public String getStepAttributeString(ObjectId idStep, int nr, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    throw new UnsupportedOperationException();
   }
 
   public ObjectId getTransformationID(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
@@ -1243,100 +1195,72 @@ public class PurRepository implements Repository {
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, String value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, boolean value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, long value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, String value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, boolean value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, long value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, String value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, boolean value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, long value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, double value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, int nr, String code, String value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, int nr, String code, boolean value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, int nr, String code, long value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, int nr, String code, double value)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    throw new UnsupportedOperationException();
   }
 
   public void undeleteObject(RepositoryElementLocationInterface element) throws KettleException {
