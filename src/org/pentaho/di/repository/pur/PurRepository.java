@@ -83,6 +83,8 @@ public class PurRepository implements Repository {
   private ITransformer partitionSchemaTransformer = new PartitionDelegate(this);
   
   private ITransformer slaveTransformer = new SlaveDelegate(this);
+  
+  private ITransformer clusterTransformer = new ClusterDelegate(this);
 
   private ISharedObjectsTransformer transDelegate = new TransDelegate(this);
 
@@ -266,9 +268,12 @@ public class PurRepository implements Repository {
   }
 
   public void deleteClusterSchema(ObjectId idCluster) throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    try {
+      RepositoryFile fileToDelete = pur.getFileById(idCluster.getId());
+      pur.deleteFile(fileToDelete.getId(), null);
+    } catch (Exception e) {
+      throw new KettleException("Unable to delete cluster schema with name [" + idCluster + "]", e);
+    }
   }
 
   public void deleteJob(ObjectId idJob) throws KettleException {
@@ -335,7 +340,10 @@ public class PurRepository implements Repository {
         return getSlaveParentFolderPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.SLAVE_SERVER.getExtension();
       }      
-
+      case CLUSTER_SCHEMA: {
+        return getSlaveParentFolderPath() + RepositoryFile.SEPARATOR + name
+            + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
+      }      
       case JOB: {
         return repositoryDirectory.getPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.JOB.getExtension();
@@ -347,25 +355,38 @@ public class PurRepository implements Repository {
   }
 
   public ObjectId getClusterID(String name) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    try {
+      return getObjectId(name, null, RepositoryObjectType.CLUSTER_SCHEMA);
+    } catch (Exception e) {
+      throw new KettleException("Unable to get ID for cluster schema [" + name + "]", e);
+    }
   }
 
   public ObjectId[] getClusterIDs(boolean includeDeleted) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return new ObjectId[0];
-
-  }
+    try {
+      List<RepositoryFile> children = getAllFilesOfType(null, RepositoryObjectType.CLUSTER_SCHEMA, includeDeleted);
+      List<ObjectId> ids = new ArrayList<ObjectId>();
+      for (RepositoryFile file : children) {
+        ids.add(new StringObjectId(file.getId().toString()));
+      }
+      return ids.toArray(new ObjectId[0]);
+    } catch (Exception e) {
+      throw new KettleException("Unable to get all cluster schema IDs", e);
+    }  }
 
   public String[] getClusterNames(boolean includeDeleted) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
-  }
+    try {
+      List<RepositoryFile> children = getAllFilesOfType(null, RepositoryObjectType.CLUSTER_SCHEMA, includeDeleted);
+      List<String> names = new ArrayList<String>();
+      for (RepositoryFile file : children) {
+        // strip off extension
+        names.add(file.getName().substring(0,
+            file.getName().length() - RepositoryObjectType.CLUSTER_SCHEMA.getExtension().length()));
+      }
+      return names.toArray(new String[0]);
+    } catch (Exception e) {
+      throw new KettleException("Unable to get all cluster schema names", e);
+    }  }
 
   public ObjectId getDatabaseID(final String name) throws KettleException {
     try {
@@ -430,6 +451,17 @@ public class PurRepository implements Repository {
             return null;
           }
         }        
+        case CLUSTER_SCHEMA: {
+          // file either never existed or has been deleted
+          RepositoryFile clusterParentFolder = pur.getFile(getClusterParentFolderPath());
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(clusterParentFolder.getId(), name
+              + RepositoryObjectType.CLUSTER_SCHEMA.getExtension());
+          if (!deletedChildren.isEmpty()) {
+            return new StringObjectId(deletedChildren.get(0).getId().toString());
+          } else {
+            return null;
+          }
+        }
         case JOB: {
           // file either never existed or has been deleted
           RepositoryFile jobParentFolder = pur.getFile(dir.getPath());
@@ -499,6 +531,11 @@ public class PurRepository implements Repository {
         parentFolder = pur.getFile(getSlaveParentFolderPath());
         filter = "*" + RepositoryObjectType.SLAVE_SERVER.getExtension(); //$NON-NLS-1$
         break;
+      }     
+      case CLUSTER_SCHEMA: {
+        parentFolder = pur.getFile(getClusterParentFolderPath());
+        filter = "*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension(); //$NON-NLS-1$
+        break;
       }      
       case JOB: {
         parentFolder = pur.getFile(dir.getPath());
@@ -536,7 +573,12 @@ public class PurRepository implements Repository {
         parentFolder = pur.getFile(getSlaveParentFolderPath());
         filter = "*" + RepositoryObjectType.SLAVE_SERVER.getExtension(); //$NON-NLS-1$
         break;
-      }      
+      }  
+      case CLUSTER_SCHEMA: {
+        parentFolder = pur.getFile(getClusterParentFolderPath());
+        filter = "*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension(); //$NON-NLS-1$
+        break;
+      }        
       case JOB: {
         parentFolder = pur.getFile(dir.getPath());
         filter = "*" + RepositoryObjectType.JOB.getExtension(); //$NON-NLS-1$
@@ -913,12 +955,20 @@ public class PurRepository implements Repository {
 
   }
 
-  public ClusterSchema loadClusterSchema(ObjectId idClusterSchema, List<SlaveServer> slaveServers, String versionLabel)
+  public ClusterSchema loadClusterSchema(ObjectId idClusterSchema, List<SlaveServer> slaveServers, String versionId)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    try {
+      // We dont need to use slaveServer variable as the dataNoteToElement method finds the server from the repository
+      ClusterSchema clusterSchema = new ClusterSchema();
+      clusterTransformer.dataNodeToElement(pur.getDataForRead(idClusterSchema.getId(), versionId,
+          NodeRepositoryFileData.class).getNode(), clusterSchema);
+      clusterSchema.setObjectId(new StringObjectId(idClusterSchema));
+      clusterSchema.setObjectRevision(getObjectRevision(idClusterSchema, versionId));
+      clusterSchema.clearChanged();
+      return clusterSchema;
+    } catch (Exception e) {
+      throw new KettleException("Unable to load cluster schema with id [" + idClusterSchema + "]", e);
+    }
   }
 
   public Condition loadConditionFromStepAttribute(ObjectId idStep, String code) throws KettleException {
@@ -1041,9 +1091,9 @@ public class PurRepository implements Repository {
         case SLAVE_SERVER:
           saveSlaveServer(element, versionComment);
           break;
-        //        case CLUSTER_SCHEMA:
-        //          slaveDelegate.saveClusterSchema(element, versionComment, monitor);
-        //          break;
+        case CLUSTER_SCHEMA:
+         saveClusterSchema(element, versionComment);
+         break;
         case PARTITION_SCHEMA:
           savePartitionSchema(element, versionComment);
           break;
@@ -1238,6 +1288,30 @@ public class PurRepository implements Repository {
     }
     
   }
+  protected void saveClusterSchema(final RepositoryElementInterface element, final String versionComment) {
+    boolean isUpdate = element.getObjectId() != null;
+    RepositoryFile file = null;
+    try {
+      if (isUpdate) {
+        file = pur.getFileById(element.getObjectId().getId());
+        file = pur.updateFile(file, new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)),
+            versionComment);
+      } else {
+        file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.CLUSTER_SCHEMA.getExtension())
+            .versioned(VERSION_SHARED_OBJECTS).build();
+        file = pur.createFile(pur.getFile(getSlaveParentFolderPath()).getId(), file,
+            new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)), versionComment);
+      }
+      // side effects
+      ObjectId objectId = new StringObjectId(file.getId().toString());
+      element.setObjectId(objectId);
+      element.setObjectRevision(getObjectRevision(objectId, null));
+      element.clearChanged();
+    } catch (KettleException ke) {
+      ke.printStackTrace();
+    }
+    
+  }
   //  private RepositoryDirectory getRepositoryDirectory(final ObjectId elementId) throws KettleException {
   //    RepositoryFile file = pur.getFileById(elementId.getId());
   //    RepositoryFile parentFolder = pur.getFileById(file.getParentId());
@@ -1261,7 +1335,9 @@ public class PurRepository implements Repository {
   private String getSlaveParentFolderPath() {
     return RepositoryPaths.getTenantPublicFolderPath();
   }
-  
+  private String getClusterParentFolderPath() {
+    return RepositoryPaths.getTenantPublicFolderPath();
+  }
   public void saveConditionStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, Condition condition)
       throws KettleException {
 

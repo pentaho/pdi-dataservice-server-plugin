@@ -967,7 +967,6 @@ public abstract class RepositoryTestBase {
    * getClusterNames()
    */
   @Test
-  @Ignore // TODO mlowery stop ignoring
   public void testClusterSchemas() throws Exception {
     RepositoryDirectory rootDir = initRepo();
     ClusterSchema clusterSchema = createClusterSchema();
@@ -1210,7 +1209,6 @@ public abstract class RepositoryTestBase {
    * getSlaveServers()
    */
   @Test
-  @Ignore // TODO mlowery stop ignoring
   public void testSlaves() throws Exception {
     SlaveServer slave = createSlaveServer();
     repository.save(slave, VERSION_COMMENT_V1, null);

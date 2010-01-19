@@ -23,6 +23,7 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
 
   private static final String NODE_ATTRIBUTES = "attributes"; //$NON-NLS-1$
 
+  private static final String PROP_NB_PARTITION_SCHEMA = "NB_PARTITION_SCHEMA"; //$NON-NLS-1$
   // ~ Instance fields =================================================================================================
 
   private Repository repo;
@@ -55,13 +56,9 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
     // Also, load all the properties we can find...
 
     DataNode attrNode = rootNode.getNode(NODE_ATTRIBUTES);
-    int size = 0;
+    long partitionSchemaSize = attrNode.getProperty(PROP_NB_PARTITION_SCHEMA).getLong();
 
-    for (DataProperty property : attrNode.getProperties()) {
-      size++;
-    }
-
-    for(int i = 0; i < size;i++) {
+    for(int i = 0; i < partitionSchemaSize;i++) {
       DataProperty property = attrNode.getProperty(String.valueOf(i));
       partitionSchema.getPartitionIDs().add(Const.NVL(property.getString(), ""));
     }
@@ -87,6 +84,7 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
 
     // Save the cluster-partition relationships
     DataNode attrNode = rootNode.addNode(NODE_ATTRIBUTES);
+    attrNode.setProperty(PROP_NB_PARTITION_SCHEMA, partitionSchema.getPartitionIDs().size());
     if (dscContent.getSubject() != null) {
       for (int i = 0; i < partitionSchema.getPartitionIDs().size(); i++) {
         attrNode.setProperty(String.valueOf(i), partitionSchema.getPartitionIDs().get(i));
