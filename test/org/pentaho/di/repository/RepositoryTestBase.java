@@ -340,6 +340,8 @@ public abstract class RepositoryTestBase {
 
   private static final String EXP_DBMETA_ATTR2_VALUE = "POYIUPOUI";
 
+  private static final String EXP_DBMETA2_NAME = "abc_db2";
+
   // ~ Instance fields =================================================================================================
 
   protected RepositoryMeta repositoryMeta;
@@ -649,7 +651,7 @@ public abstract class RepositoryTestBase {
   @Test
   public void testTransformations() throws Exception {
     RepositoryDirectory rootDir = initRepo();
-    TransMeta transMeta = createTransMeta();
+    TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
     RepositoryDirectory transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     repository.save(transMeta, VERSION_COMMENT_V1, null);
     assertNotNull(transMeta.getObjectId());
@@ -799,7 +801,7 @@ public abstract class RepositoryTestBase {
     assertEquals(transMeta.getName(), repository.getTransformationNames(transDir.getObjectId(), true)[0]);
   }
 
-  protected TransMeta createTransMeta() throws Exception {
+  protected TransMeta createTransMeta(final String dbName) throws Exception {
     RepositoryDirectory rootDir = initRepo();
     TransMeta transMeta = new TransMeta();
     transMeta.setName(EXP_TRANS_NAME);
@@ -845,7 +847,7 @@ public abstract class RepositoryTestBase {
     stepLogTable.setTableName(EXP_TRANS_LOG_TABLE_TABLE_NAME);
     stepLogTable.setTimeoutInDays(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS);
     transMeta.setStepLogTable(stepLogTable);
-    DatabaseMeta dbMeta = createDatabaseMeta();
+    DatabaseMeta dbMeta = createDatabaseMeta(dbName);
     // dbMeta must be saved so that it gets an ID
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
     transMeta.setMaxDateConnection(dbMeta);
@@ -1091,9 +1093,9 @@ public abstract class RepositoryTestBase {
     return new JobHopMeta(from, to);
   }
 
-  protected DatabaseMeta createDatabaseMeta() throws Exception {
+  protected DatabaseMeta createDatabaseMeta(final String dbName) throws Exception {
     DatabaseMeta dbMeta = new DatabaseMeta();
-    dbMeta.setName(EXP_DBMETA_NAME);
+    dbMeta.setName(dbName);
     dbMeta.setHostname(EXP_DBMETA_HOSTNAME);
     dbMeta.setDatabaseType(EXP_DBMETA_TYPE);
     dbMeta.setAccessType(EXP_DBMETA_ACCESS);
@@ -1124,7 +1126,7 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testDatabases() throws Exception {
-    DatabaseMeta dbMeta = createDatabaseMeta();
+    DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
     assertNotNull(dbMeta.getObjectId());
     ObjectRevision v1 = dbMeta.getObjectRevision();
@@ -1282,7 +1284,6 @@ public abstract class RepositoryTestBase {
   }
 
   @Test
-  @Ignore // TODO mlowery stop ignoring
   public void testRenameAndUndelete() throws Exception {
     RepositoryDirectory rootDir = initRepo();
     JobMeta jobMeta = createJobMeta();
@@ -1298,34 +1299,33 @@ public abstract class RepositoryTestBase {
     assertFalse(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
     assertTrue(repository.exists(EXP_JOB_NAME_NEW, jobsDir, RepositoryObjectType.JOB));
 
-    TransMeta transMeta = createTransMeta();
+    TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
     RepositoryDirectory transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     repository.save(transMeta, VERSION_COMMENT_V1, null);
     repository.renameTransformation(transMeta.getObjectId(), transDir, EXP_TRANS_NAME_NEW);
     assertFalse(repository.exists(EXP_TRANS_NAME, transDir, RepositoryObjectType.TRANSFORMATION));
     assertTrue(repository.exists(EXP_TRANS_NAME_NEW, transDir, RepositoryObjectType.TRANSFORMATION));
 
-    DatabaseMeta dbMeta = createDatabaseMeta();
+    DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA2_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
     repository.renameDatabase(dbMeta.getObjectId(), EXP_DBMETA_NAME_NEW);
-    assertFalse(repository.exists(EXP_DBMETA_NAME, null, RepositoryObjectType.DATABASE));
+    assertFalse(repository.exists(EXP_DBMETA2_NAME, null, RepositoryObjectType.DATABASE));
     assertTrue(repository.exists(EXP_DBMETA_NAME_NEW, null, RepositoryObjectType.DATABASE));
   }
 
   @Test
-  @Ignore // TODO mlowery stop ignoring
   public void testVersions() throws Exception {
-    DatabaseMeta dbMeta = createDatabaseMeta();
+    DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
     List<ObjectRevision> revs = repository.getRevisions(dbMeta);
-    assertEquals(1, revs.size());
+    assertTrue(revs.size() > 1);
     dbMeta.setHostname(EXP_DBMETA_HOSTNAME_V2);
     repository.save(dbMeta, VERSION_COMMENT_V2, null);
     revs = repository.getRevisions(dbMeta);
-    assertEquals(2, revs.size());
+    assertTrue(revs.size() > 2);
 
-    RepositoryVersionRegistry vReg = repository.getVersionRegistry();
-    assertEquals(0, vReg.getVersions().size());
+//    RepositoryVersionRegistry vReg = repository.getVersionRegistry();
+//    assertEquals(0, vReg.getVersions().size());
     //    vReg.addVersion(new SimpleObjectVersion(EXP_OBJECT_VERSION_LABEL, null, null, null));
     //    assertEquals(2, versions.size());
     //    assertEquals("1.0", versions.get(0).getLabel());

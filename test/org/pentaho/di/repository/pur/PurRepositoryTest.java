@@ -83,6 +83,15 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     try {
       // clean up after test
       // delete in correct order to prevent ref integrity exceptions
+      // jobs
+      RepositoryFile jobsParentFolder = pur.getFile("/pentaho/acme/public/jobs");
+      if (jobsParentFolder != null) {
+        List<RepositoryObject> files = repository.getJobObjects(new StringObjectId(jobsParentFolder.getId()
+            .toString()), true);
+        for (RepositoryObject file : files) {
+          pur.deleteFile(file.getObjectId().getId(), true, null);
+        }
+      }
       // transformations
       RepositoryFile transParentFolder = pur.getFile("/pentaho/acme/public/transformations");
       if (transParentFolder != null) {
@@ -91,6 +100,24 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
         for (RepositoryObject file : files) {
           pur.deleteFile(file.getObjectId().getId(), true, null);
         }
+      }
+      // partition schemas
+      ObjectId[] psIds = repository.getPartitionSchemaIDs(true);
+
+      for (ObjectId psId : psIds) {
+        pur.deleteFile(psId.getId(), true, null);
+      }
+      // cluster schemas
+      ObjectId[] csIds = repository.getClusterIDs(true);
+
+      for (ObjectId csId : csIds) {
+        pur.deleteFile(csId.getId(), true, null);
+      }
+      // slave servers
+      ObjectId[] ssIds = repository.getSlaveIDs(true);
+
+      for (ObjectId ssId : ssIds) {
+        pur.deleteFile(ssId.getId(), true, null);
       }
       // databases
       ObjectId[] dbIds = repository.getDatabaseIDs(true);
