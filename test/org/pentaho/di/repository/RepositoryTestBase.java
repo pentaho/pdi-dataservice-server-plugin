@@ -875,9 +875,8 @@ public abstract class RepositoryTestBase {
     SlaveServer slaveServer = createSlaveServer();
     PartitionSchema partSchema = createPartitionSchema();
     // slaveServer, partSchema must be saved so that they get IDs
-    // TODO mlowery uncomment when slaves and partSchemas can be persisted
-//    repository.save(slaveServer, VERSION_COMMENT_V1, null);
-//    repository.save(partSchema, VERSION_COMMENT_V1, null);
+    repository.save(slaveServer, VERSION_COMMENT_V1, null);
+    repository.save(partSchema, VERSION_COMMENT_V1, null);
 
     SlaveStepCopyPartitionDistribution slaveStepCopyPartitionDistribution = new SlaveStepCopyPartitionDistribution();
     slaveStepCopyPartitionDistribution.addPartition(EXP_SLAVE_NAME, EXP_PART_SCHEMA_NAME, 0);
@@ -1318,11 +1317,11 @@ public abstract class RepositoryTestBase {
     DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
     List<ObjectRevision> revs = repository.getRevisions(dbMeta);
-    assertTrue(revs.size() > 1);
+    assertTrue(revs.size() >= 1);
     dbMeta.setHostname(EXP_DBMETA_HOSTNAME_V2);
     repository.save(dbMeta, VERSION_COMMENT_V2, null);
     revs = repository.getRevisions(dbMeta);
-    assertTrue(revs.size() > 2);
+    assertTrue(revs.size() >= 2);
 
 //    RepositoryVersionRegistry vReg = repository.getVersionRegistry();
 //    assertEquals(0, vReg.getVersions().size());
