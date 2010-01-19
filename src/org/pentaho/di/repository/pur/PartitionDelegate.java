@@ -13,7 +13,7 @@ import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
 
-public class PartitionSchemaDelegate extends AbstractDelegate implements ITransformer {
+public class PartitionDelegate extends AbstractDelegate implements ITransformer {
 
   private static final String NODE_ROOT = "partitionSchema"; //$NON-NLS-1$
 
@@ -29,7 +29,7 @@ public class PartitionSchemaDelegate extends AbstractDelegate implements ITransf
 
   // ~ Constructors ====================================================================================================
 
-  public PartitionSchemaDelegate(final Repository repo) {
+  public PartitionDelegate(final Repository repo) {
     super();
     this.repo = repo;
   }
@@ -55,9 +55,15 @@ public class PartitionSchemaDelegate extends AbstractDelegate implements ITransf
     // Also, load all the properties we can find...
 
     DataNode attrNode = rootNode.getNode(NODE_ATTRIBUTES);
+    int size = 0;
+
     for (DataProperty property : attrNode.getProperties()) {
-      String attribute = property.getString();
-      partitionSchema.getPartitionIDs().add(Const.NVL(attribute, ""));
+      size++;
+    }
+
+    for(int i = 0; i < size;i++) {
+      DataProperty property = attrNode.getProperty(String.valueOf(i));
+      partitionSchema.getPartitionIDs().add(Const.NVL(property.getString(), ""));
     }
 
   }
