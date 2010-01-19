@@ -13,15 +13,15 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.KettleEnvironment;
-import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryObject;
+import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
-import org.pentaho.platform.api.repository.IRepositoryService;
+import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.springframework.beans.BeansException;
@@ -39,7 +39,7 @@ import com.pentaho.commons.dsc.util.TestLicenseStream;
     "classpath:/sample-repository-test-override.spring.xml" })
 public class PurRepositoryTest extends RepositoryTestBase implements ApplicationContextAware {
 
-  private IRepositoryService pur;
+  private IUnifiedRepository pur;
 
   @BeforeClass
   public static void setUpClass() throws Exception {
@@ -89,19 +89,19 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
         List<RepositoryObject> files = repository.getTransformationObjects(new StringObjectId(transParentFolder.getId()
             .toString()), true);
         for (RepositoryObject file : files) {
-          pur.permanentlyDeleteFile(file.getObjectId().getId());
+          pur.deleteFile(file.getObjectId().getId(), true, null);
         }
       }
       // databases
       ObjectId[] dbIds = repository.getDatabaseIDs(true);
 
       for (ObjectId dbId : dbIds) {
-        pur.permanentlyDeleteFile(dbId.getId());
+        pur.deleteFile(dbId.getId(), true, null);
       }
       // dirs
       List<RepositoryFile> dirs = pur.getChildren(pur.getFile("/pentaho/acme/public").getId());
       for (RepositoryFile file : dirs) {
-        pur.permanentlyDeleteFile(file.getId());
+        pur.deleteFile(file.getId(), true, null);
       }
 
     } catch (Exception e) {
@@ -118,8 +118,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   }
 
   public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-    pur = (IRepositoryService) applicationContext.getBean("repositoryService");
-    pur.getRepositoryEventHandler().onStartup();
+    pur = (IUnifiedRepository) applicationContext.getBean("unifiedRepository");
+    pur.getRepositoryLifecycleManager().startup();
   }
 
   @Override

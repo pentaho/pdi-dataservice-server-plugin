@@ -35,7 +35,7 @@ import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.platform.api.engine.IPentahoSession;
-import org.pentaho.platform.api.repository.IRepositoryService;
+import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;
 import org.pentaho.platform.api.repository.VersionSummary;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
@@ -72,7 +72,7 @@ public class PurRepository implements Repository {
 
   // ~ Instance fields =================================================================================================
 
-  private IRepositoryService pur;
+  private IUnifiedRepository pur;
 
   private UserInfo userInfo;
 
@@ -96,7 +96,7 @@ public class PurRepository implements Repository {
 
   // ~ Methods =========================================================================================================
 
-  public void setPur(final IRepositoryService pur) {
+  public void setPur(final IUnifiedRepository pur) {
     this.pur = pur;
   }
 
@@ -127,8 +127,8 @@ public class PurRepository implements Repository {
     pentahoSession.setAttribute("SECURITY_PRINCIPAL", authentication);
     PentahoSessionHolder.setSession(pentahoSession);
     SecurityContextHolder.getContext().setAuthentication(authentication);
-    pur.getRepositoryEventHandler().onNewTenant();
-    pur.getRepositoryEventHandler().onNewUser();
+    pur.getRepositoryLifecycleManager().newTenant();
+    pur.getRepositoryLifecycleManager().newUser();
   }
 
   public boolean isConnected() {
@@ -179,7 +179,7 @@ public class PurRepository implements Repository {
       if (dscContent.getSubject() != null) {
         // id of root dir is null--check for it
         RepositoryFile newFolder = pur.createFolder(dir.getParent().getObjectId() != null ? dir.getParent()
-            .getObjectId().getId() : null, new RepositoryFile.Builder(dir.getName()).folder(true).build());
+            .getObjectId().getId() : null, new RepositoryFile.Builder(dir.getName()).folder(true).build(), null);
         dir.setObjectId(new StringObjectId(newFolder.getId().toString()));
       }
     } catch (Exception e) {
@@ -189,7 +189,7 @@ public class PurRepository implements Repository {
 
   public void deleteRepositoryDirectory(final RepositoryDirectory dir) throws KettleException {
     try {
-      pur.permanentlyDeleteFile(dir.getObjectId().getId());
+      pur.deleteFile(dir.getObjectId().getId(), true, null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete directory with path [" + dir.getPath() + "]", e);
     }
@@ -198,7 +198,7 @@ public class PurRepository implements Repository {
   public ObjectId renameRepositoryDirectory(final RepositoryDirectory dir) throws KettleException {
     // dir ID is used to find orig obj; dir name is new name of obj; dir is not moved from its original loc
     try {
-      pur.moveFile(dir.getObjectId().getId(), dir.getParent().getPath() + RepositoryFile.SEPARATOR + dir.getName());
+      pur.moveFile(dir.getObjectId().getId(), dir.getParent().getPath() + RepositoryFile.SEPARATOR + dir.getName(), null);
       return dir.getObjectId();
     } catch (Exception e) {
       throw new KettleException("Unable to rename directory with id [" + dir.getObjectId() + "] to [" + dir.getName()
@@ -216,7 +216,7 @@ public class PurRepository implements Repository {
       RepositoryFile folder = pur.getFileById(dirId.getId());
       finalName = (newName != null ? newName : folder.getName());
       finalParentPath = (newParent != null ? newParent.getPath() : folder.getAbsolutePath());
-      pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName);
+      pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName, null);
       return dirId;
     } catch (Exception e) {
       throw new KettleException("Unable to move/rename directory with id [" + dirId + "] to new parent ["
@@ -278,7 +278,7 @@ public class PurRepository implements Repository {
   public void deleteFileById(final ObjectId id) throws KettleException {
     try {
       RepositoryFile fileToDelete = pur.getFileById(id.getId());
-      pur.deleteFile(fileToDelete.getId());
+      pur.deleteFile(fileToDelete.getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete object with id [" + id + "]", e);
     }
@@ -287,7 +287,7 @@ public class PurRepository implements Repository {
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
     try {
       RepositoryFile fileToDelete = pur.getFileById(idPartitionSchema.getId());
-      pur.deleteFile(fileToDelete.getId());
+      pur.deleteFile(fileToDelete.getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete partition schema with name [" + idPartitionSchema + "]", e);
     }
@@ -296,7 +296,7 @@ public class PurRepository implements Repository {
   public void deleteSlave(ObjectId idSlave) throws KettleException {
     try {
       RepositoryFile fileToDelete = pur.getFileById(idSlave.getId());
-      pur.deleteFile(fileToDelete.getId());
+      pur.deleteFile(fileToDelete.getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete slave with name [" + idSlave + "]", e);
     }
@@ -581,7 +581,7 @@ public class PurRepository implements Repository {
   public void deleteDatabaseMeta(final String databaseName) throws KettleException {
     try {
       RepositoryFile fileToDelete = pur.getFile(getPath(databaseName, null, RepositoryObjectType.DATABASE));
-      pur.deleteFile(fileToDelete.getId());
+      pur.deleteFile(fileToDelete.getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete database with name [" + databaseName + "]", e);
     }
