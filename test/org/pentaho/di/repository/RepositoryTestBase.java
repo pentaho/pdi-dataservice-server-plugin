@@ -1401,7 +1401,8 @@ public abstract class RepositoryTestBase {
   public void testSaveConditionStepAttribute() throws Exception {
     fail("Not yet implemented");
   }
-
+  @Test
+  @Ignore
   public void testGetAcl() throws Exception{
     RepositoryDirectory rootDir = initRepo();
     JobMeta jobMeta = createJobMeta();
@@ -1415,7 +1416,8 @@ public abstract class RepositoryTestBase {
     ObjectAcl acl = repository.getAcl(jobMeta.getObjectId());
     assertNotNull(acl);    
   }
-  @Test    
+  @Test
+  @Ignore   
   public void testSetAcl() throws Exception{
     RepositoryDirectory rootDir = initRepo();
     JobMeta jobMeta = createJobMeta();
