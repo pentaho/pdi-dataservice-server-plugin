@@ -7,9 +7,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -42,6 +44,7 @@ import org.pentaho.di.job.entry.JobEntryBase;
 import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.di.trans.SlaveStepCopyPartitionDistribution;
 import org.pentaho.di.trans.Trans;
@@ -1399,6 +1402,49 @@ public abstract class RepositoryTestBase {
     fail("Not yet implemented");
   }
 
+  public void testGetAcl() throws Exception{
+    RepositoryDirectory rootDir = initRepo();
+    JobMeta jobMeta = createJobMeta();
+    RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
+    repository.save(jobMeta, VERSION_COMMENT_V1, null);
+    assertNotNull(jobMeta.getObjectId());
+    ObjectRevision version = jobMeta.getObjectRevision();
+    assertNotNull(version);
+    assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
+    assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
+    ObjectAcl acl = repository.getAcl(jobMeta.getObjectId());
+    assertNotNull(acl);    
+  }
+  @Test    
+  public void testSetAcl() throws Exception{
+    RepositoryDirectory rootDir = initRepo();
+    JobMeta jobMeta = createJobMeta();
+    RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
+    repository.save(jobMeta, VERSION_COMMENT_V1, null);
+    assertNotNull(jobMeta.getObjectId());
+    ObjectRevision version = jobMeta.getObjectRevision();
+    assertNotNull(version);
+    assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
+    assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
+    ObjectAcl acl = repository.getAcl(jobMeta.getObjectId());
+    assertNotNull(acl);
+    acl.setEntriesInheriting(false);
+    ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER),EnumSet.of(ObjectPermission.DELETE, ObjectPermission.DELETE_CHILD, ObjectPermission.READ, ObjectPermission.READ_ACL));
+    List<ObjectAce> aceList = new ArrayList<ObjectAce>();
+    aceList.add(ace);
+    acl.setAces(aceList);
+    repository.setAcl(jobMeta.getObjectId(), acl);
+    ObjectAcl acl1 = repository.getAcl(jobMeta.getObjectId());
+    assertEquals(Boolean.FALSE, acl1.isEntriesInheriting());
+    assertEquals(1, acl1.getAces().size());
+    ObjectAce ace1 = acl1.getAces().get(0);
+    assertEquals(ace1.getRecipient().getName(), "suzy");
+    assertTrue(ace1.getPermissions().contains(ObjectPermission.DELETE_CHILD));
+    assertTrue(ace1.getPermissions().contains(ObjectPermission.DELETE));
+    assertTrue(ace1.getPermissions().contains(ObjectPermission.READ));
+    assertTrue(ace1.getPermissions().contains(ObjectPermission.READ_ACL));
+  }
+  
   @Test
   @Ignore
   public void testSaveDatabaseMetaJobEntryAttribute() throws Exception {
