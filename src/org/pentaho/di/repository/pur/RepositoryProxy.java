@@ -12,6 +12,7 @@ import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.ObjectAcl;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
@@ -507,6 +508,18 @@ public class RepositoryProxy implements Repository {
   }
 
   public void unlockTransformation(ObjectId idTransformation) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public ObjectAcl getAcl(ObjectId arg0) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public List<ObjectRevision> getRevisions(ObjectId arg0) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public void setAcl(ObjectId arg0, ObjectAcl arg1) throws KettleException {
     throw new UnsupportedOperationException();
   }
 

@@ -71,12 +71,13 @@ public class JCRRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
     }
   	return new RepositoryCapabilities() {
   		public boolean supportsUsers() { return true; }
-  		public boolean managesUsers() { return false; }
+  		public boolean managesUsers() { return true; }
   		public boolean isReadOnly() { return false; }
   		public boolean supportsRevisions() { return true; }
   		public boolean supportsMetadata() { return true; }
   		public boolean supportsLocking() { return true; }
   		public boolean hasVersionRegistry() { return true; }
+		public boolean supportsAcls() { return true; }
   	};
 	}
 

@@ -1,8 +1,6 @@
-package org.pentaho.di.repository.jcr;
+package org.pentaho.di.repository.pur;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.BaseRepositorySecurityProvider;
@@ -14,30 +12,31 @@ import org.pentaho.di.repository.RoleInfo;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
 
-public class JCRRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider {
+public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider {
 
-	private JCRRepository	repository;
-	private JCRRepositoryUserRoleDelegate	userRoleDelegate;
+	private PurRepository	repository;
+	private UserRoleDelegate	userRoleDelegate;
 
-	public JCRRepositorySecurityProvider(JCRRepository repository, RepositoryMeta repositoryMeta, UserInfo userInfo) {
+	public PurRepositorySecurityProvider(PurRepository repository, RepositoryMeta repositoryMeta, UserInfo userInfo) {
 		super(repositoryMeta, userInfo);
 		this.repository = repository;		
 	}
 
-	public JCRRepositoryUserRoleDelegate getUserRoleDelegate() {
+	public UserRoleDelegate getUserRoleDelegate() {
 		return userRoleDelegate;
 	}
 
-	public void setUserRoleDelegate(JCRRepositoryUserRoleDelegate userRoleDelegate) {
+	public void setUserRoleDelegate(UserRoleDelegate userRoleDelegate) {
 		this.userRoleDelegate = userRoleDelegate;
 	}
 
-	public JCRRepository getRepository() {
+	public PurRepository getRepository() {
 		return repository;
 	}
 	
 	public boolean isVersionCommentMandatory() {
-		return repository.getJcrRepositoryMeta().isVersionCommentMandatory();
+	  PurRepositoryMeta meta = (PurRepositoryMeta) repository.getRepositoryMeta();
+	  return meta.isVersionCommentMandatory();
 	}
 
 	public boolean isLockingPossible() {

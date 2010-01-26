@@ -38,6 +38,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.ObjectAcl;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
@@ -141,6 +142,7 @@ public class JCRRepository implements Repository {
 	private Node	rootNode;
 
 	private Node	lockNodeFolder;
+	public JCRRepositoryUserRoleDelegate	userRoleDelegate;
 
 	private JCRRepositoryTransDelegate transDelegate;
 	private JCRRepositoryDatabaseDelegate	databaseDelegate;
@@ -154,6 +156,7 @@ public class JCRRepository implements Repository {
 	  PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
 	  Object aa = dscContent.getIssuer();
 	  if( aa != null){
+		this.userRoleDelegate = new JCRRepositoryUserRoleDelegate(this);
 	    this.transDelegate = new JCRRepositoryTransDelegate(this);
 	    this.jobDelegate = new JCRRepositoryJobDelegate(this);
 	    this.databaseDelegate = new JCRRepositoryDatabaseDelegate(this);
@@ -177,6 +180,7 @@ public class JCRRepository implements Repository {
 		this.userInfo = userInfo;
 		this.repositoryLocation = jcrRepositoryMeta.getRepositoryLocation();		
 		this.securityProvider = new JCRRepositorySecurityProvider(this, repositoryMeta, userInfo);
+		this.securityProvider.setUserRoleDelegate(userRoleDelegate);
 	}
 
 	public void connect() throws KettleException, KettleSecurityException {
@@ -1857,4 +1861,32 @@ public class JCRRepository implements Repository {
 	public RepositoryVersionRegistry getVersionRegistry() throws KettleException {
 		return versionRegistry;
 	}
+
+  public ObjectAcl getAcl(ObjectId objectId) throws KettleException {
+    return null;
+   }
+
+  public List<ObjectRevision> getRevisions(ObjectId objectId) throws KettleException {
+    try {
+      List<ObjectRevision> list = new ArrayList<ObjectRevision>();
+      Node node = session.getNodeByUUID(objectId.getId());
+      VersionHistory versionHistory = node.getVersionHistory();
+      Version version = versionHistory.getRootVersion();
+      Version[] successors = version.getSuccessors();
+      while (successors!=null && successors.length>0) {
+        version = successors[0];
+        successors = version.getSuccessors();
+        list.add( getObjectRevision(version) );
+      }
+      
+      return list;
+    } catch(Exception e) {
+      throw new KettleException("Could not retrieve version history of object with id ["+objectId+"]",e );
+    }
+  }
+
+  public void setAcl(ObjectId arg0, ObjectAcl arg1) throws KettleException {
+    // TODO Auto-generated method stub
+    
+  }
 }

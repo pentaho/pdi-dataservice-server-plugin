@@ -2,6 +2,7 @@ package org.pentaho.di.repository.pur;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -18,7 +19,11 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.ObjectAce;
+import org.pentaho.di.repository.ObjectAcl;
 import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.ObjectPermission;
+import org.pentaho.di.repository.ObjectRecipient;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
@@ -27,21 +32,30 @@ import org.pentaho.di.repository.RepositoryElementLocationInterface;
 import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
+import org.pentaho.di.repository.RepositoryObjectAce;
+import org.pentaho.di.repository.RepositoryObjectAcl;
+import org.pentaho.di.repository.RepositoryObjectRecipient;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
+import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;
+import org.pentaho.platform.api.repository.RepositoryFileAce;
+import org.pentaho.platform.api.repository.RepositoryFileAcl;
+import org.pentaho.platform.api.repository.RepositoryFilePermission;
+import org.pentaho.platform.api.repository.RepositoryFileSid;
 import org.pentaho.platform.api.repository.VersionSummary;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.StandaloneSession;
 import org.pentaho.platform.repository.pcr.RepositoryPaths;
 import org.pentaho.platform.repository.pcr.data.node.NodeRepositoryFileData;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.security.Authentication;
 import org.springframework.security.GrantedAuthority;
 import org.springframework.security.GrantedAuthorityImpl;
@@ -90,6 +104,13 @@ public class PurRepository implements Repository {
 
   private ISharedObjectsTransformer jobDelegate = new JobDelegate(this);
 
+  // TODO mlowery hack for UI team to start using PUR
+  private ClassPathXmlApplicationContext ctx;
+
+  private PurRepositorySecurityProvider securityProvider;
+  
+  private UserRoleDelegate userRoleDelegate = new UserRoleDelegate();
+
   // ~ Constructors ====================================================================================================
 
   public PurRepository() {
@@ -105,9 +126,23 @@ public class PurRepository implements Repository {
   public void init(final RepositoryMeta repositoryMeta, final UserInfo userInfo) {
     this.repositoryMeta = repositoryMeta;
     this.userInfo = userInfo;
+    securityProvider = new PurRepositorySecurityProvider(this, repositoryMeta, userInfo);
+    securityProvider.setUserRoleDelegate(userRoleDelegate);
   }
 
   public void connect() throws KettleException, KettleSecurityException {
+
+    // TODO mlowery hack for UI team to start using PUR
+    if (pur == null) {
+
+      ctx = new ClassPathXmlApplicationContext(new String[] { "classpath:/sample-repository.spring.xml",
+          "classpath:/sample-repository-test-override.spring.xml" });
+      pur = (IUnifiedRepository) ctx.getBean("unifiedRepository");
+
+      pur.getRepositoryLifecycleManager().startup();
+
+    }
+
     setupUser();
   }
 
@@ -128,6 +163,7 @@ public class PurRepository implements Repository {
     // next line is copy of SecurityHelper.setPrincipal
     pentahoSession.setAttribute("SECURITY_PRINCIPAL", authentication);
     PentahoSessionHolder.setSession(pentahoSession);
+    SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_GLOBAL);
     SecurityContextHolder.getContext().setAuthentication(authentication);
     pur.getRepositoryLifecycleManager().newTenant();
     pur.getRepositoryLifecycleManager().newUser();
@@ -139,6 +175,8 @@ public class PurRepository implements Repository {
 
   public void disconnect() {
     PentahoSessionHolder.removeSession();
+    // TODO mlowery hack for UI team to start using PUR
+    ctx.close();
   }
 
   public int countNrJobEntryAttributes(ObjectId idJobentry, String code) throws KettleException {
@@ -340,11 +378,11 @@ public class PurRepository implements Repository {
       case SLAVE_SERVER: {
         return getSlaveParentFolderPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.SLAVE_SERVER.getExtension();
-      }      
+      }
       case CLUSTER_SCHEMA: {
         return getSlaveParentFolderPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
-      }      
+      }
       case JOB: {
         return repositoryDirectory.getPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.JOB.getExtension();
@@ -373,7 +411,8 @@ public class PurRepository implements Repository {
       return ids.toArray(new ObjectId[0]);
     } catch (Exception e) {
       throw new KettleException("Unable to get all cluster schema IDs", e);
-    }  }
+    }
+  }
 
   public String[] getClusterNames(boolean includeDeleted) throws KettleException {
     try {
@@ -387,7 +426,8 @@ public class PurRepository implements Repository {
       return names.toArray(new String[0]);
     } catch (Exception e) {
       throw new KettleException("Unable to get all cluster schema names", e);
-    }  }
+    }
+  }
 
   public ObjectId getDatabaseID(final String name) throws KettleException {
     try {
@@ -537,7 +577,7 @@ public class PurRepository implements Repository {
         parentFolder = pur.getFile(getClusterParentFolderPath());
         filter = "*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension(); //$NON-NLS-1$
         break;
-      }      
+      }
       case JOB: {
         parentFolder = pur.getFile(dir.getPath());
         filter = "*" + RepositoryObjectType.JOB.getExtension(); //$NON-NLS-1$
@@ -575,11 +615,11 @@ public class PurRepository implements Repository {
         filter = "*" + RepositoryObjectType.SLAVE_SERVER.getExtension(); //$NON-NLS-1$
         break;
       }
-            case CLUSTER_SCHEMA: {
+      case CLUSTER_SCHEMA: {
         parentFolder = pur.getFile(getClusterParentFolderPath());
         filter = "*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension(); //$NON-NLS-1$
         break;
-      } 
+      }
       case JOB: {
         parentFolder = pur.getFile(dir.getPath());
         filter = "*" + RepositoryObjectType.JOB.getExtension(); //$NON-NLS-1$
@@ -762,11 +802,9 @@ public class PurRepository implements Repository {
     }
   }
 
+  // TODO mlowery hack for UI team to start using PUR
   public RepositorySecurityProvider getSecurityProvider() {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    return securityProvider;
   }
 
   public ObjectId getSlaveID(String name) throws KettleException {
@@ -1036,18 +1074,12 @@ public class PurRepository implements Repository {
     pur.lockFile(id.getId(), message);
   }
 
-  public SharedObjects readJobMetaSharedObjects(JobMeta jobMeta) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+  public SharedObjects readJobMetaSharedObjects(final JobMeta jobMeta) throws KettleException {
+    return jobDelegate.loadSharedObjects(jobMeta);
   }
 
-  public SharedObjects readTransSharedObjects(TransMeta transMeta) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+  public SharedObjects readTransSharedObjects(final TransMeta transMeta) throws KettleException {
+    return transDelegate.loadSharedObjects(transMeta);
   }
 
   public ObjectId renameDatabase(ObjectId idDatabase, String newName) throws KettleException {
@@ -1071,16 +1103,18 @@ public class PurRepository implements Repository {
 
   public ObjectId renameTransformation(final ObjectId idTransformation, final RepositoryDirectory newDirectory,
       final String newName) throws KettleException {
-    pur.moveFile(idTransformation.getId(), calcDestAbsPath(idTransformation, newDirectory, newName, RepositoryObjectType.TRANSFORMATION), null);
+    pur.moveFile(idTransformation.getId(), calcDestAbsPath(idTransformation, newDirectory, newName,
+        RepositoryObjectType.TRANSFORMATION), null);
     return idTransformation;
   }
-  
+
   protected String getParentPath(final String absPath) {
     int lastSlashIndex = absPath.lastIndexOf(RepositoryFile.SEPARATOR);
     return absPath.substring(0, lastSlashIndex);
   }
 
-  protected String calcDestAbsPath(final ObjectId id, final RepositoryDirectory newDirectory, final String newName, final RepositoryObjectType objectType) {
+  protected String calcDestAbsPath(final ObjectId id, final RepositoryDirectory newDirectory, final String newName,
+      final RepositoryObjectType objectType) {
     RepositoryFile file = pur.getFileById(id.getId());
     StringBuilder buf = new StringBuilder(file.getAbsolutePath().length());
     if (newDirectory != null) {
@@ -1122,8 +1156,8 @@ public class PurRepository implements Repository {
           saveSlaveServer(element, versionComment);
           break;
         case CLUSTER_SCHEMA:
-         saveClusterSchema(element, versionComment);
-         break;
+          saveClusterSchema(element, versionComment);
+          break;
         case PARTITION_SCHEMA:
           savePartitionSchema(element, versionComment);
           break;
@@ -1330,8 +1364,8 @@ public class PurRepository implements Repository {
       } else {
         file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.CLUSTER_SCHEMA.getExtension())
             .versioned(VERSION_SHARED_OBJECTS).build();
-        file = pur.createFile(pur.getFile(getSlaveParentFolderPath()).getId(), file,
-            new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)), versionComment);
+        file = pur.createFile(pur.getFile(getSlaveParentFolderPath()).getId(), file, new NodeRepositoryFileData(
+            clusterTransformer.elementToDataNode(element)), versionComment);
       }
       // side effects
       ObjectId objectId = new StringObjectId(file.getId().toString());
@@ -1341,9 +1375,8 @@ public class PurRepository implements Repository {
     } catch (KettleException ke) {
       ke.printStackTrace();
     }
-    
-  }
 
+  }
 
   //  private RepositoryDirectory getRepositoryDirectory(final ObjectId elementId) throws KettleException {
   //    RepositoryFile file = pur.getFileById(elementId.getId());
@@ -1372,7 +1405,7 @@ public class PurRepository implements Repository {
   private String getClusterParentFolderPath() {
     return RepositoryPaths.getTenantPublicFolderPath();
   }
-  
+
   public void saveConditionStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, Condition condition)
       throws KettleException {
 
@@ -1481,6 +1514,123 @@ public class PurRepository implements Repository {
 
   protected void unlockFileById(ObjectId id) throws KettleException {
     pur.unlockFile(id.getId());
+  }
+
+  public ObjectAcl getAcl(ObjectId fileId) throws KettleException {
+    RepositoryFileAcl acl = null;
+    try {
+      acl = pur.getAcl(fileId.getId());
+    } catch(Exception drfe) {
+      // The user does not have rights to view the acl information. 
+      throw new KettleException(drfe);
+    }
+    RepositoryFileSid sid = acl.getOwner();
+    ObjectRecipient owner = new RepositoryObjectRecipient(sid.getName());
+    if(sid.getType().equals(RepositoryFileSid.Type.USER)){
+      owner.setType(Type.USER);
+    } else {
+      owner.setType(Type.ROLE);  
+    }
+    
+    ObjectAcl objectAcl = new RepositoryObjectAcl(owner);
+    objectAcl.setEntriesInheriting(acl.isEntriesInheriting());
+    List<RepositoryFileAce> aces = acl.getAces();
+    List<ObjectAce> objectAces = new ArrayList<ObjectAce>();
+    for(RepositoryFileAce ace:aces) {
+      EnumSet<RepositoryFilePermission> permissions =  ace.getPermissions();
+      EnumSet<ObjectPermission> permissionSet = EnumSet.noneOf(ObjectPermission.class);
+      RepositoryFileSid aceSid = ace.getSid();
+      ObjectRecipient recipient = new RepositoryObjectRecipient(aceSid.getName());
+      if(aceSid.getType().equals(RepositoryFileSid.Type.USER)){
+        recipient.setType(Type.USER);
+      } else {
+        recipient.setType(Type.ROLE);  
+      }
+      for(RepositoryFilePermission perm:permissions) {
+          if(perm.equals(RepositoryFilePermission.READ)) {
+            permissionSet.add(ObjectPermission.READ);
+          } else if(perm.equals(RepositoryFilePermission.DELETE)) {
+              permissionSet.add(ObjectPermission.DELETE);
+          } else if(perm.equals(RepositoryFilePermission.DELETE_CHILD)) {
+              permissionSet.add(ObjectPermission.DELETE_CHILD);
+          }  else if(perm.equals(RepositoryFilePermission.EXECUTE)) {
+              permissionSet.add(ObjectPermission.EXECUTE);
+          }  else if(perm.equals(RepositoryFilePermission.READ_ACL)) {
+              permissionSet.add(ObjectPermission.READ_ACL);
+          } else if(perm.equals(RepositoryFilePermission.WRITE)) {
+              permissionSet.add(ObjectPermission.WRITE);
+          }  else if(perm.equals(RepositoryFilePermission.WRITE_ACL)) {
+              permissionSet.add(ObjectPermission.WRITE_ACL);
+          } else {
+              permissionSet.add(ObjectPermission.ALL);
+          }
+        }
+      
+      objectAces.add(new RepositoryObjectAce(recipient, permissionSet));
+      
+    }
+    objectAcl.setAces(objectAces);
+    return objectAcl;
+  }
+
+  public List<ObjectRevision> getRevisions(ObjectId file) throws KettleException {
+    String absPath = null;
+    try {
+      List<ObjectRevision> versions = new ArrayList<ObjectRevision>();
+      List<VersionSummary> versionSummaries = pur.getVersionSummaries(file.getId());
+      for (VersionSummary versionSummary : versionSummaries) {
+        versions.add(new PurObjectRevision(versionSummary.getId(), versionSummary.getAuthor(),
+            versionSummary.getDate(), versionSummary.getMessage()));
+      }
+      return versions;
+    } catch (Exception e) {
+      throw new KettleException("Could not retrieve version history of object with path [" + absPath + "]", e);
+    }
+  }
+
+  public void setAcl(ObjectId file, ObjectAcl objectAcl) throws KettleException {
+    try {
+    RepositoryFileAcl acl = pur.getAcl(file.getId());
+    RepositoryFileAcl newAcl = new RepositoryFileAcl.Builder(acl).entriesInheriting(objectAcl.isEntriesInheriting()).clearAces().build();
+    List<ObjectAce> aces = objectAcl.getAces();
+    for(ObjectAce objectAce:aces) {
+        
+      EnumSet<ObjectPermission> permissions =  objectAce.getPermissions();
+      EnumSet<RepositoryFilePermission> permissionSet = EnumSet.noneOf(RepositoryFilePermission.class);
+      ObjectRecipient recipient = objectAce.getRecipient();
+      RepositoryFileSid sid;
+      if(recipient.getType().equals(Type.ROLE)) {
+        sid = new RepositoryFileSid(recipient.getName(), RepositoryFileSid.Type.ROLE);
+      } else {
+        sid = new RepositoryFileSid(recipient.getName());
+      }
+      
+      for(ObjectPermission perm:permissions) {
+        if(perm.equals(ObjectPermission.READ)) {
+          permissionSet.add(RepositoryFilePermission.READ);
+        } else if(perm.equals(ObjectPermission.DELETE)) {
+            permissionSet.add(RepositoryFilePermission.DELETE);
+        } else if(perm.equals(ObjectPermission.DELETE_CHILD)) {
+            permissionSet.add(RepositoryFilePermission.DELETE_CHILD);
+        }  else if(perm.equals(ObjectPermission.EXECUTE)) {
+            permissionSet.add(RepositoryFilePermission.EXECUTE);
+        }  else if(perm.equals(ObjectPermission.READ_ACL)) {
+            permissionSet.add(RepositoryFilePermission.READ_ACL);
+        } else if(perm.equals(ObjectPermission.WRITE)) {
+            permissionSet.add(RepositoryFilePermission.WRITE);
+        }  else if(perm.equals(ObjectPermission.WRITE_ACL)) {
+            permissionSet.add(RepositoryFilePermission.WRITE_ACL);
+        } else if (perm.equals(ObjectPermission.ALL)) {
+            permissionSet.add(RepositoryFilePermission.ALL);
+        }
+      }
+      newAcl = new RepositoryFileAcl.Builder(newAcl).ace(sid, permissionSet).build();
+    }
+    pur.updateAcl(newAcl);
+    } catch(Exception drfe) {
+      // The user does not have rights to view or set the acl information. 
+      throw new KettleException(drfe);
+    }
   }
 
 }
