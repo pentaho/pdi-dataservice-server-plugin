@@ -104,9 +104,6 @@ public class PurRepository implements Repository {
 
   private ISharedObjectsTransformer jobDelegate = new JobDelegate(this);
 
-  // TODO mlowery hack for UI team to start using PUR
-  private ClassPathXmlApplicationContext ctx;
-
   private PurRepositorySecurityProvider securityProvider;
   
   private UserRoleDelegate userRoleDelegate = new UserRoleDelegate();
@@ -131,18 +128,6 @@ public class PurRepository implements Repository {
   }
 
   public void connect() throws KettleException, KettleSecurityException {
-
-    // TODO mlowery hack for UI team to start using PUR
-    if (pur == null) {
-
-      ctx = new ClassPathXmlApplicationContext(new String[] { "classpath:/sample-repository.spring.xml",
-          "classpath:/sample-repository-test-override.spring.xml" });
-      pur = (IUnifiedRepository) ctx.getBean("unifiedRepository");
-
-      pur.getRepositoryLifecycleManager().startup();
-
-    }
-
     setupUser();
   }
 
@@ -175,8 +160,6 @@ public class PurRepository implements Repository {
 
   public void disconnect() {
     PentahoSessionHolder.removeSession();
-    // TODO mlowery hack for UI team to start using PUR
-    ctx.close();
   }
 
   public int countNrJobEntryAttributes(ObjectId idJobentry, String code) throws KettleException {
