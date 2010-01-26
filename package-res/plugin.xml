@@ -1,45 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin
-   id="JCRRepository"
-   name="JCR Repository"
-   description="Repository on a compliant JCR server"
-   classname="org.pentaho.di.repository.jcr.JCRRepository"
-   metaclassname="org.pentaho.di.repository.jcr.JCRRepositoryMeta"
-   dialogclassname="org.pentaho.di.ui.repository.jcr.JCRRepositoryDialog"
-   versionbrowserclassname="TODO"
-  >
-   <libraries>
-    <library name="jackrabbit-repository-plugin-@jcr-repository-plugin-version@.jar"/>
-    <library name="pentaho-ee-dsc-core-@pentaho-dsc-version@.jar"/>
-    <library name="commons-collections-3.1.jar"/>
-    <library name="slf4j-api-1.5.8.jar"/>
-    <library name="slf4j-log4j12-1.5.8.jar"/>
-    <library name="xercesImpl.jar"/>
-    <library name="xml-apis.jar"/>
-    <library name="jcr-1.0.jar"/>
+<plugin id="PurRepository" name="PUR Repository" description="Repository backed by Pentaho Unified Repository (PUR)"
+  classname="org.pentaho.di.repository.pur.PurRepository" metaclassname="org.pentaho.di.repository.pur.PurRepositoryMeta"
+  dialogclassname="org.pentaho.di.ui.repository.jcr.JCRRepositoryDialog" versionbrowserclassname="TODO">
+  <libraries>
+    <library name="commons-codec-1.3.jar" />
+    <library name="commons-collections-3.2.jar" />
+    <library name="commons-io-1.4.jar" />
+    <library name="commons-lang-2.4.jar" />
+    <library name="commons-logging-1.1.jar" />
+    <library name="concurrent-1.3.4.jar" />
+    <library name="derby-10.2.1.6.jar" />
+    <library name="fontbox-0.1.0.jar" />
+    <library name="jackrabbit-api-1.6.0.jar" />
+    <library name="jackrabbit-core-1.6.0.jar" />
+    <library name="jackrabbit-jcr-commons-1.6.0.jar" />
+    <library name="jackrabbit-jcr-rmi-1.5.0-PENTAHO.jar" />
+    <library name="jackrabbit-spi-1.6.0.jar" />
+    <library name="jackrabbit-spi-commons-1.6.0.jar" />
+    <library name="jackrabbit-text-extractors-1.6.0.jar" />
+    <library name="jcr-1.0.jar" />
+    <library name="jempbox-0.2.0.jar" />
+    <library name="log4j-1.2.14.jar" />
+    <library name="lucene-core-2.4.1.jar" />
+    <library name="nekohtml-1.9.7.jar" />
+    <library name="pdfbox-0.7.3.jar" />
+    <library name="pentaho-ee-dsc-core-TRUNK-SNAPSHOT.jar" />
+    <library name="poi-3.2-FINAL.jar" />
+    <library name="poi-scratchpad-3.2-FINAL.jar" />
+    <library name="slf4j-api-1.5.8.jar" />
+    <library name="slf4j-log4j12-1.5.8.jar" />
+    <library name="xercesImpl-2.8.1.jar" />
+    <library name="xml-apis-1.3.03.jar" />
+    <library name="activation-1.0.2.jar" />
+    <library name="aspectjrt-1.6.6.jar" />
+    <library name="commons-beanutils-1.7.0.jar" />
+    <library name="commons-digester-1.8.jar" />
+    <library name="commons-httpclient-3.0.1.jar" />
+    <library name="commons-vfs-1.0.jar" />
+    <library name="dom4j-1.6.1.jar" />
+    <library name="google-collections-1.0-rc5.jar" />
+    <library name="jaxen-1.1.jar" />
+    <library name="jta-1.0.1B.jar" />
+    <library name="jug-lgpl-2.0.0.jar" />
+    <library name="ognl-2.6.9.jar" />
+    <library name="pentaho-actionsequence-dom-TRUNK-SNAPSHOT.jar" />
+    <library name="pentaho-connections-2.2.0.jar" />
+    <library name="pentaho-third-party-security-TRUNK-SNAPSHOT.jar" />
+    <library name="pentaho-xul-core-TRUNK-SNAPSHOT.jar" />
+    <library name="se-jcr-0.9.jar" />
+    <library name="spring-security-acl-2.0.5.RELEASE.jar" />
+    <library name="jackrabbit-repository-plugin-TRUNK-SNAPSHOT.jar" />
+  </libraries>
 
-    <library name="jackrabbit-jcr-rmi-1.5.0-PENTAHO.jar"/>
-    <library name="jackrabbit-jcr-commons-@jack-rabbit-version@.jar"/>
-    <library name="jackrabbit-core-@jack-rabbit-version@.jar"/>
-    <library name="jackrabbit-api-@jack-rabbit-version@.jar"/>
-    <library name="jackrabbit-text-extractors-@jack-rabbit-version@.jar"/>
-    <library name="jackrabbit-spi-commons-@jack-rabbit-version@.jar"/>
-    <library name="jackrabbit-spi-@jack-rabbit-version@.jar"/>
-    <library name="jackrabbit-jcr-servlet-1.5.2.jar"/>
-    <library name="jackrabbit-jcr-server-1.5.6.jar"/>
-    
-    <library name="concurrent-1.3.4.jar"/>
-    <library name="commons-io-1.4.jar"/>
-   </libraries>
-   
-   <!-- PART BELOW IS NO USED YET -->
-   
-   <localized_name>
-     <name locale="en_US">JCR Repository</name>
-   </localized_name>
-   
-   <localized_description>
-     <description locale="en_US">Repository on a compliant JCR server</description>
-   </localized_description>
+  <!-- PART BELOW IS NO USED YET -->
+
+  <localized_name>
+    <name locale="en_US">Pentaho Unified Repository</name>
+  </localized_name>
+
+  <localized_description>
+    <description locale="en_US">Repository backed by Pentaho Unified Repository</description>
+  </localized_description>
 
 </plugin>

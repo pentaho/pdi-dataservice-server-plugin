@@ -385,7 +385,7 @@ public abstract class RepositoryTestBase {
     assertEquals("JackRabbit test repository", repoMeta.getDescription());
     RepositoryCapabilities caps = repoMeta.getRepositoryCapabilities();
     assertTrue(caps.supportsUsers());
-    assertFalse(caps.managesUsers());
+    assertTrue(caps.managesUsers());
     assertFalse(caps.isReadOnly());
     assertTrue(caps.supportsRevisions());
     assertTrue(caps.supportsMetadata());
