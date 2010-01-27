@@ -44,6 +44,7 @@ import org.pentaho.di.repository.RepositoryObjectRecipient;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
+//import org.pentaho.di.repository.RevisionRepository;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ObjectRecipient.Type;
@@ -83,7 +84,9 @@ import com.pentaho.commons.dsc.params.KParam;
     dialogClass="org.pentaho.di.ui.repository.pur.PurRepositoryDialog",
     versionBrowserClass="org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog"
     )
-public class PurRepository implements Repository {
+public class PurRepository implements Repository 
+// , RevisionRepository 
+{
 
   // ~ Static fields/initializers ======================================================================================
 
@@ -311,6 +314,11 @@ public class PurRepository implements Repository {
   public void deleteJob(ObjectId idJob) throws KettleException {
     deleteFileById(idJob);
   }
+  
+  public void deleteJob(ObjectId jobId, String versionId) throws KettleException {
+    RepositoryFile jobToDelete = pur.getFileById(jobId.getId());
+    pur.deleteFileAtVersion(jobToDelete.getId(), versionId);
+  }
 
   public void deleteFileById(final ObjectId id) throws KettleException {
     try {
@@ -319,6 +327,10 @@ public class PurRepository implements Repository {
     } catch (Exception e) {
       throw new KettleException("Unable to delete object with id [" + id + "]", e);
     }
+  }
+  
+  public void restoreJob(ObjectId jobId, String versionId) {
+    throw new UnsupportedOperationException();    
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
@@ -993,7 +1005,7 @@ public class PurRepository implements Repository {
     try {
       // We dont need to use slaveServer variable as the dataNoteToElement method finds the server from the repository
       ClusterSchema clusterSchema = new ClusterSchema();
-      clusterTransformer.dataNodeToElement(pur.getDataForRead(idClusterSchema.getId(), versionId,
+      clusterTransformer.dataNodeToElement(pur.getDataForReadAtVersion(idClusterSchema.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), clusterSchema);
       clusterSchema.setObjectId(new StringObjectId(idClusterSchema));
       clusterSchema.setObjectRevision(getObjectRevision(idClusterSchema, versionId));
@@ -1030,7 +1042,7 @@ public class PurRepository implements Repository {
   public PartitionSchema loadPartitionSchema(ObjectId partitionSchemaId, String versionId) throws KettleException {
     try {
       PartitionSchema partitionSchema = new PartitionSchema();
-      partitionSchemaTransformer.dataNodeToElement(pur.getDataForRead(partitionSchemaId.getId(), versionId,
+      partitionSchemaTransformer.dataNodeToElement(pur.getDataForReadAtVersion(partitionSchemaId.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), partitionSchema);
       partitionSchema.setObjectId(new StringObjectId(partitionSchemaId));
       partitionSchema.setObjectRevision(getObjectRevision(partitionSchemaId, versionId));
@@ -1044,7 +1056,7 @@ public class PurRepository implements Repository {
   public SlaveServer loadSlaveServer(ObjectId idSlaveServer, String versionId) throws KettleException {
     try {
       SlaveServer slaveServer = new SlaveServer();
-      slaveTransformer.dataNodeToElement(pur.getDataForRead(idSlaveServer.getId(), versionId,
+      slaveTransformer.dataNodeToElement(pur.getDataForReadAtVersion(idSlaveServer.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), slaveServer);
       slaveServer.setObjectId(new StringObjectId(idSlaveServer));
       slaveServer.setObjectRevision(getObjectRevision(idSlaveServer, versionId));
@@ -1234,7 +1246,7 @@ public class PurRepository implements Repository {
   public DatabaseMeta loadDatabaseMeta(final ObjectId databaseId, final String versionId) throws KettleException {
     try {
       DatabaseMeta databaseMeta = new DatabaseMeta();
-      databaseMetaTransformer.dataNodeToElement(pur.getDataForRead(databaseId.getId(), versionId,
+      databaseMetaTransformer.dataNodeToElement(pur.getDataForReadAtVersion(databaseId.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), databaseMeta);
       databaseMeta.setObjectId(new StringObjectId(databaseId));
       databaseMeta.setObjectRevision(getObjectRevision(databaseId, versionId));
@@ -1258,7 +1270,7 @@ public class PurRepository implements Repository {
       transMeta.setRepositoryDirectory(parentDir);
       transMeta.setRepositoryLock(getLock(file));
       transDelegate.loadSharedObjects(transMeta);
-      transDelegate.dataNodeToElement(pur.getDataForRead(file.getId(), versionId, NodeRepositoryFileData.class)
+      transDelegate.dataNodeToElement(pur.getDataForReadAtVersion(file.getId(), versionId, NodeRepositoryFileData.class)
           .getNode(), transMeta);
       transMeta.clearChanged();
       return transMeta;
@@ -1280,7 +1292,7 @@ public class PurRepository implements Repository {
       jobMeta.setRepositoryLock(getLock(file));
       jobDelegate.loadSharedObjects(jobMeta);
       jobDelegate.dataNodeToElement(
-          pur.getDataForRead(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), jobMeta);
+          pur.getDataForReadAtVersion(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), jobMeta);
       jobMeta.clearChanged();
       return jobMeta;
     } catch (Exception e) {
