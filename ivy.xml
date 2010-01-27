@@ -12,10 +12,19 @@
   </publications>
 
   <dependencies defaultconf="default->default">
+  
+      <!-- metro -->
+    <dependency org="metro" name="metro-jsr173" rev="2.0" />
+    <dependency org="metro" name="metro-webservices-api" rev="2.0" />
+    <dependency org="metro" name="metro-webservices-extra" rev="2.0" />
+    <dependency org="metro" name="metro-webservices-extra-api" rev="2.0" />
+    <dependency org="metro" name="metro-webservices-rt" rev="2.0" />
+    <dependency org="metro" name="metro-webservices-tools" rev="2.0" />
 
     <dependency org="pentaho" name="pentaho-bi-platform-engine-core" rev="TRUNK-SNAPSHOT" changing="true" transitive="false" conf="default->default" />
     <dependency org="pentaho" name="pentaho-bi-platform-api" rev="TRUNK-SNAPSHOT" changing="true" transitive="false" conf="default->default"/>
     <dependency org="pentaho" name="pentaho-bi-platform-repository" rev="TRUNK-SNAPSHOT" changing="true" transitive="false" conf="default->default"/>
+    <dependency org="pentaho" name="pentaho-bi-platform-util" rev="TRUNK-SNAPSHOT" changing="true" transitive="false" conf="default->default"/>
 
 
     <dependency org="org.apache.jackrabbit"   name="jackrabbit-core"        rev="1.6.0" />
@@ -55,7 +64,6 @@
     <dependency org="commons-lang"      name="commons-lang"       rev="2.4"   conf="test->default"/>
     <dependency org="commons-httpclient"    name="commons-httpclient"   rev="3.0.1" conf="test->default"/>
     <dependency org="ognl"            name="ognl"             rev="2.6.9" conf="test->default"/>
-    <dependency org="org.springframework"   name="spring-core"        rev="2.5.6" conf="test->default"/>
     <dependency org="pentaho"               name="pentaho-ee-mock-dsc"  rev="${dependency.pentaho-ee-dsc.revision}" changing="true" conf="test->default" transitive="true"/>
     <dependency org="org.springframework" name="spring-test"              rev="2.5.6"   conf="test->default"/>
     <dependency org="org.springframework" name="spring"              rev="2.5.6"   transitive="false" conf="test->default"/>

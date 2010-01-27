@@ -1,9 +1,14 @@
 package org.pentaho.di.repository.pur;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+
+import javax.xml.namespace.QName;
+import javax.xml.ws.BindingProvider;
+import javax.xml.ws.Service;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -12,6 +17,7 @@ import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.ProgressMonitorListener;
+import org.pentaho.di.core.annotations.RepositoryPlugin;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
@@ -43,7 +49,6 @@ import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;
 import org.pentaho.platform.api.repository.RepositoryFileAce;
@@ -55,24 +60,29 @@ import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.StandaloneSession;
 import org.pentaho.platform.repository.pcr.RepositoryPaths;
 import org.pentaho.platform.repository.pcr.data.node.NodeRepositoryFileData;
-import org.springframework.security.Authentication;
-import org.springframework.security.GrantedAuthority;
-import org.springframework.security.GrantedAuthorityImpl;
-import org.springframework.security.context.SecurityContextHolder;
-import org.springframework.security.providers.UsernamePasswordAuthenticationToken;
-import org.springframework.security.userdetails.User;
-import org.springframework.security.userdetails.UserDetails;
+import org.pentaho.platform.repository.pcr.ws.IUnifiedRepositoryWebService;
+import org.pentaho.platform.repository.pcr.ws.UnifiedRepositoryToWebServiceAdapter;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
 
 /**
- * Implementation of {@link Repository} that delegates to an {@link IRepositoryService} instance.
+ * Implementation of {@link Repository} that delegates to the Pentaho unified repository (PUR), an instance of
+ * {@link IUnifiedRepository}.
  * 
  * @author Matt
  * @author mlowery
  */
+@RepositoryPlugin(
+    id="PurRepository", 
+    i18nPackageName="org.pentaho.di.repository.pur",
+    description="PurRepository.Description", 
+    name="PurRepository.Name", 
+    metaClass="org.pentaho.di.repository.pur.PurRepositoryMeta",
+    dialogClass="org.pentaho.di.ui.repository.pur.PurRepositoryDialog",
+    versionBrowserClass="org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog"
+    )
 public class PurRepository implements Repository {
 
   // ~ Static fields/initializers ======================================================================================
@@ -89,14 +99,14 @@ public class PurRepository implements Repository {
 
   private UserInfo userInfo;
 
-  private RepositoryMeta repositoryMeta;
+  private PurRepositoryMeta repositoryMeta;
 
   private ITransformer databaseMetaTransformer = new DatabaseDelegate(this);
 
   private ITransformer partitionSchemaTransformer = new PartitionDelegate(this);
 
   private ITransformer slaveTransformer = new SlaveDelegate(this);
-  
+
   private ITransformer clusterTransformer = new ClusterDelegate(this);
 
   private ISharedObjectsTransformer transDelegate = new TransDelegate(this);
@@ -104,7 +114,7 @@ public class PurRepository implements Repository {
   private ISharedObjectsTransformer jobDelegate = new JobDelegate(this);
 
   private PurRepositorySecurityProvider securityProvider;
-  
+
   private UserRoleDelegate userRoleDelegate = new UserRoleDelegate();
 
   // ~ Constructors ====================================================================================================
@@ -120,37 +130,36 @@ public class PurRepository implements Repository {
   }
 
   public void init(final RepositoryMeta repositoryMeta, final UserInfo userInfo) {
-    this.repositoryMeta = repositoryMeta;
+    this.repositoryMeta = (PurRepositoryMeta) repositoryMeta;
     this.userInfo = userInfo;
     securityProvider = new PurRepositorySecurityProvider(this, repositoryMeta, userInfo);
     securityProvider.setUserRoleDelegate(userRoleDelegate);
   }
 
   public void connect() throws KettleException, KettleSecurityException {
-    setupUser();
+    populatePentahoSessionHolder();
+    
+    try {
+      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "?wsdl";
+      Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0",
+          "DefaultUnifiedRepositoryWebServiceService"));
+
+      IUnifiedRepositoryWebService repoWebService = service.getPort(IUnifiedRepositoryWebService.class);
+
+      // http basic authentication
+      ((BindingProvider) repoWebService).getRequestContext()
+          .put(BindingProvider.USERNAME_PROPERTY, userInfo.getLogin());
+      ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY,
+          userInfo.getPassword());
+      pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
+    } catch (Exception e) {
+      throw new KettleException(e);
+    }
   }
 
-  /**
-   * Creates {@link IPentahoSession} and sets it using {@link PentahoSessionHolder}. Creates {@link Authentication} and 
-   * sets it using {@link SecurityContextHolder}. Finally, kicks off PUR events.
-   */
-  private void setupUser() {
-    StandaloneSession pentahoSession = new StandaloneSession(userInfo.getLogin());
-    pentahoSession.setAuthenticated(userInfo.getLogin());
-    pentahoSession.setAttribute(IPentahoSession.TENANT_ID_KEY, "acme");
-    final GrantedAuthority[] authorities = new GrantedAuthority[2];
-    authorities[0] = new GrantedAuthorityImpl("Authenticated");
-    authorities[1] = new GrantedAuthorityImpl("acme_Authenticated");
-    final String password = "ignored"; //$NON-NLS-1$
-    UserDetails userDetails = new User(userInfo.getLogin(), password, true, true, true, true, authorities);
-    Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, password, authorities);
-    // next line is copy of SecurityHelper.setPrincipal
-    pentahoSession.setAttribute("SECURITY_PRINCIPAL", authentication);
-    PentahoSessionHolder.setSession(pentahoSession);
-    SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_GLOBAL);
-    SecurityContextHolder.getContext().setAuthentication(authentication);
-    pur.getRepositoryLifecycleManager().newTenant();
-    pur.getRepositoryLifecycleManager().newUser();
+  protected void populatePentahoSessionHolder() {
+    // only necessary for RepositoryPaths calls; server also uses PentahoSessionHolder but that is in a different JVM
+    PentahoSessionHolder.setSession(new StandaloneSession(userInfo.getLogin()));  
   }
 
   public boolean isConnected() {
@@ -263,10 +272,10 @@ public class PurRepository implements Repository {
     try {
       List<RepositoryFile> children = pur.getChildren(folder.getId());
       for (RepositoryFile child : children) {
-        RepositoryDirectory dir = new RepositoryDirectory(parentDir, child.getName());
-        dir.setObjectId(new StringObjectId(child.getId().toString()));
-        parentDir.addSubdirectory(dir);
         if (child.isFolder()) {
+          RepositoryDirectory dir = new RepositoryDirectory(parentDir, child.getName());
+          dir.setObjectId(new StringObjectId(child.getId().toString()));
+          parentDir.addSubdirectory(dir);
           loadRepositoryDirectory(dir, child);
         }
       }
@@ -280,7 +289,9 @@ public class PurRepository implements Repository {
       List<RepositoryFile> children = pur.getChildren(idDirectory.getId());
       List<String> childNames = new ArrayList<String>();
       for (RepositoryFile child : children) {
-        childNames.add(child.getName());
+        if (child.isFolder()) {
+          childNames.add(child.getName());
+        }
       }
       return childNames.toArray(new String[0]);
     } catch (Exception e) {
@@ -1502,54 +1513,54 @@ public class PurRepository implements Repository {
     RepositoryFileAcl acl = null;
     try {
       acl = pur.getAcl(fileId.getId());
-    } catch(Exception drfe) {
+    } catch (Exception drfe) {
       // The user does not have rights to view the acl information. 
       throw new KettleException(drfe);
     }
     RepositoryFileSid sid = acl.getOwner();
     ObjectRecipient owner = new RepositoryObjectRecipient(sid.getName());
-    if(sid.getType().equals(RepositoryFileSid.Type.USER)){
+    if (sid.getType().equals(RepositoryFileSid.Type.USER)) {
       owner.setType(Type.USER);
     } else {
-      owner.setType(Type.ROLE);  
+      owner.setType(Type.ROLE);
     }
-    
+
     ObjectAcl objectAcl = new RepositoryObjectAcl(owner);
     objectAcl.setEntriesInheriting(acl.isEntriesInheriting());
     List<RepositoryFileAce> aces = acl.getAces();
     List<ObjectAce> objectAces = new ArrayList<ObjectAce>();
-    for(RepositoryFileAce ace:aces) {
-      EnumSet<RepositoryFilePermission> permissions =  ace.getPermissions();
+    for (RepositoryFileAce ace : aces) {
+      EnumSet<RepositoryFilePermission> permissions = ace.getPermissions();
       EnumSet<ObjectPermission> permissionSet = EnumSet.noneOf(ObjectPermission.class);
       RepositoryFileSid aceSid = ace.getSid();
       ObjectRecipient recipient = new RepositoryObjectRecipient(aceSid.getName());
-      if(aceSid.getType().equals(RepositoryFileSid.Type.USER)){
+      if (aceSid.getType().equals(RepositoryFileSid.Type.USER)) {
         recipient.setType(Type.USER);
       } else {
-        recipient.setType(Type.ROLE);  
+        recipient.setType(Type.ROLE);
       }
-      for(RepositoryFilePermission perm:permissions) {
-          if(perm.equals(RepositoryFilePermission.READ)) {
-            permissionSet.add(ObjectPermission.READ);
-          } else if(perm.equals(RepositoryFilePermission.DELETE)) {
-              permissionSet.add(ObjectPermission.DELETE);
-          } else if(perm.equals(RepositoryFilePermission.DELETE_CHILD)) {
-              permissionSet.add(ObjectPermission.DELETE_CHILD);
-          }  else if(perm.equals(RepositoryFilePermission.EXECUTE)) {
-              permissionSet.add(ObjectPermission.EXECUTE);
-          }  else if(perm.equals(RepositoryFilePermission.READ_ACL)) {
-              permissionSet.add(ObjectPermission.READ_ACL);
-          } else if(perm.equals(RepositoryFilePermission.WRITE)) {
-              permissionSet.add(ObjectPermission.WRITE);
-          }  else if(perm.equals(RepositoryFilePermission.WRITE_ACL)) {
-              permissionSet.add(ObjectPermission.WRITE_ACL);
-          } else {
-              permissionSet.add(ObjectPermission.ALL);
-          }
+      for (RepositoryFilePermission perm : permissions) {
+        if (perm.equals(RepositoryFilePermission.READ)) {
+          permissionSet.add(ObjectPermission.READ);
+        } else if (perm.equals(RepositoryFilePermission.DELETE)) {
+          permissionSet.add(ObjectPermission.DELETE);
+        } else if (perm.equals(RepositoryFilePermission.DELETE_CHILD)) {
+          permissionSet.add(ObjectPermission.DELETE_CHILD);
+        } else if (perm.equals(RepositoryFilePermission.EXECUTE)) {
+          permissionSet.add(ObjectPermission.EXECUTE);
+        } else if (perm.equals(RepositoryFilePermission.READ_ACL)) {
+          permissionSet.add(ObjectPermission.READ_ACL);
+        } else if (perm.equals(RepositoryFilePermission.WRITE)) {
+          permissionSet.add(ObjectPermission.WRITE);
+        } else if (perm.equals(RepositoryFilePermission.WRITE_ACL)) {
+          permissionSet.add(ObjectPermission.WRITE_ACL);
+        } else {
+          permissionSet.add(ObjectPermission.ALL);
         }
-      
+      }
+
       objectAces.add(new RepositoryObjectAce(recipient, permissionSet));
-      
+
     }
     objectAcl.setAces(objectAces);
     return objectAcl;
@@ -1572,44 +1583,45 @@ public class PurRepository implements Repository {
 
   public void setAcl(ObjectId file, ObjectAcl objectAcl) throws KettleException {
     try {
-    RepositoryFileAcl acl = pur.getAcl(file.getId());
-    RepositoryFileAcl newAcl = new RepositoryFileAcl.Builder(acl).entriesInheriting(objectAcl.isEntriesInheriting()).clearAces().build();
-    List<ObjectAce> aces = objectAcl.getAces();
-    for(ObjectAce objectAce:aces) {
-        
-      EnumSet<ObjectPermission> permissions =  objectAce.getPermissions();
-      EnumSet<RepositoryFilePermission> permissionSet = EnumSet.noneOf(RepositoryFilePermission.class);
-      ObjectRecipient recipient = objectAce.getRecipient();
-      RepositoryFileSid sid;
-      if(recipient.getType().equals(Type.ROLE)) {
-        sid = new RepositoryFileSid(recipient.getName(), RepositoryFileSid.Type.ROLE);
-      } else {
-        sid = new RepositoryFileSid(recipient.getName());
-      }
-      
-      for(ObjectPermission perm:permissions) {
-        if(perm.equals(ObjectPermission.READ)) {
-          permissionSet.add(RepositoryFilePermission.READ);
-        } else if(perm.equals(ObjectPermission.DELETE)) {
-            permissionSet.add(RepositoryFilePermission.DELETE);
-        } else if(perm.equals(ObjectPermission.DELETE_CHILD)) {
-            permissionSet.add(RepositoryFilePermission.DELETE_CHILD);
-        }  else if(perm.equals(ObjectPermission.EXECUTE)) {
-            permissionSet.add(RepositoryFilePermission.EXECUTE);
-        }  else if(perm.equals(ObjectPermission.READ_ACL)) {
-            permissionSet.add(RepositoryFilePermission.READ_ACL);
-        } else if(perm.equals(ObjectPermission.WRITE)) {
-            permissionSet.add(RepositoryFilePermission.WRITE);
-        }  else if(perm.equals(ObjectPermission.WRITE_ACL)) {
-            permissionSet.add(RepositoryFilePermission.WRITE_ACL);
-        } else if (perm.equals(ObjectPermission.ALL)) {
-            permissionSet.add(RepositoryFilePermission.ALL);
+      RepositoryFileAcl acl = pur.getAcl(file.getId());
+      RepositoryFileAcl newAcl = new RepositoryFileAcl.Builder(acl).entriesInheriting(objectAcl.isEntriesInheriting())
+          .clearAces().build();
+      List<ObjectAce> aces = objectAcl.getAces();
+      for (ObjectAce objectAce : aces) {
+
+        EnumSet<ObjectPermission> permissions = objectAce.getPermissions();
+        EnumSet<RepositoryFilePermission> permissionSet = EnumSet.noneOf(RepositoryFilePermission.class);
+        ObjectRecipient recipient = objectAce.getRecipient();
+        RepositoryFileSid sid;
+        if (recipient.getType().equals(Type.ROLE)) {
+          sid = new RepositoryFileSid(recipient.getName(), RepositoryFileSid.Type.ROLE);
+        } else {
+          sid = new RepositoryFileSid(recipient.getName());
         }
+
+        for (ObjectPermission perm : permissions) {
+          if (perm.equals(ObjectPermission.READ)) {
+            permissionSet.add(RepositoryFilePermission.READ);
+          } else if (perm.equals(ObjectPermission.DELETE)) {
+            permissionSet.add(RepositoryFilePermission.DELETE);
+          } else if (perm.equals(ObjectPermission.DELETE_CHILD)) {
+            permissionSet.add(RepositoryFilePermission.DELETE_CHILD);
+          } else if (perm.equals(ObjectPermission.EXECUTE)) {
+            permissionSet.add(RepositoryFilePermission.EXECUTE);
+          } else if (perm.equals(ObjectPermission.READ_ACL)) {
+            permissionSet.add(RepositoryFilePermission.READ_ACL);
+          } else if (perm.equals(ObjectPermission.WRITE)) {
+            permissionSet.add(RepositoryFilePermission.WRITE);
+          } else if (perm.equals(ObjectPermission.WRITE_ACL)) {
+            permissionSet.add(RepositoryFilePermission.WRITE_ACL);
+          } else if (perm.equals(ObjectPermission.ALL)) {
+            permissionSet.add(RepositoryFilePermission.ALL);
+          }
+        }
+        newAcl = new RepositoryFileAcl.Builder(newAcl).ace(sid, permissionSet).build();
       }
-      newAcl = new RepositoryFileAcl.Builder(newAcl).ace(sid, permissionSet).build();
-    }
-    pur.updateAcl(newAcl);
-    } catch(Exception drfe) {
+      pur.updateAcl(newAcl);
+    } catch (Exception drfe) {
       // The user does not have rights to view or set the acl information. 
       throw new KettleException(drfe);
     }

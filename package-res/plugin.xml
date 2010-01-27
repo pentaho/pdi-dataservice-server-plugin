@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin id="PurRepository" name="PUR Repository" description="Repository backed by Pentaho Unified Repository (PUR)"
   classname="org.pentaho.di.repository.pur.PurRepository" metaclassname="org.pentaho.di.repository.pur.PurRepositoryMeta"
-  dialogclassname="org.pentaho.di.ui.repository.jcr.JCRRepositoryDialog" versionbrowserclassname="TODO">
+  dialogclassname="org.pentaho.di.ui.repository.pur.PurRepositoryDialog" versionbrowserclassname="TODO">
   <libraries>
     <library name="commons-codec-1.3.jar" />
     <library name="commons-collections-3.2.jar" />

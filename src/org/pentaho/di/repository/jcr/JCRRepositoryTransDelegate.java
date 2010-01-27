@@ -32,7 +32,6 @@ import org.pentaho.di.trans.StepLoader;
 import org.pentaho.di.trans.StepPlugin;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.BaseStep;
 import org.pentaho.di.trans.step.StepErrorMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
@@ -331,7 +330,7 @@ public class JCRRepositoryTransDelegate extends JCRRepositoryBaseDelegate {
 					StepMetaInterface stepMetaInterface = null;
 		            if (sp!=null)
 		            {
-		                stepMetaInterface = BaseStep.getStepInfo(sp, StepLoader.getInstance());
+		                stepMetaInterface = StepLoader.getInstance().getStepClass(sp);
 		                stepType=sp.getID()[0]; // revert to the default in case we loaded an alternate version
 		            }
 		            else
