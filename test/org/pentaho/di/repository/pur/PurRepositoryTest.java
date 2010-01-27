@@ -21,13 +21,21 @@ import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
+import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.core.system.StandaloneSession;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.security.Authentication;
+import org.springframework.security.GrantedAuthority;
+import org.springframework.security.GrantedAuthorityImpl;
 import org.springframework.security.context.SecurityContextHolder;
+import org.springframework.security.providers.UsernamePasswordAuthenticationToken;
+import org.springframework.security.userdetails.User;
+import org.springframework.security.userdetails.UserDetails;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -71,10 +79,34 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     ((PurRepository) repository).setPur(pur);
 
     repository.init(repositoryMeta, userInfo);
-    repository.connect();
+    // connect is not called as it is only applicable in the "real" deployment
+    //repository.connect();
 
+    // call must come after connect; PurRepository sets its own value in PentahoSessionHolder; in the real deployment,
+    // PurRepository and PUR would be in two different JVMs
+    setUpUser();
+    
     List<RepositoryFile> files = pur.getChildren(pur.getFile("/pentaho/acme/public").getId());
     assertTrue("files not deleted: " + files.toString(), files.isEmpty());
+  }
+  
+  protected void setUpUser() {
+    StandaloneSession pentahoSession = new StandaloneSession(userInfo.getLogin());
+    pentahoSession.setAuthenticated(userInfo.getLogin());
+    pentahoSession.setAttribute(IPentahoSession.TENANT_ID_KEY, "acme");
+    final GrantedAuthority[] authorities = new GrantedAuthority[2];
+    authorities[0] = new GrantedAuthorityImpl("Authenticated");
+    authorities[1] = new GrantedAuthorityImpl("acme_Authenticated");
+    final String password = "ignored"; //$NON-NLS-1$
+    UserDetails userDetails = new User(userInfo.getLogin(), password, true, true, true, true, authorities);
+    Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, password, authorities);
+    // next line is copy of SecurityHelper.setPrincipal
+    pentahoSession.setAttribute("SECURITY_PRINCIPAL", authentication);
+    PentahoSessionHolder.setSession(pentahoSession);
+    SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_GLOBAL);
+    SecurityContextHolder.getContext().setAuthentication(authentication);
+    pur.getRepositoryLifecycleManager().newTenant();
+    pur.getRepositoryLifecycleManager().newUser();
   }
 
   @After

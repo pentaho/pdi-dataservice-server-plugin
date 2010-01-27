@@ -60,7 +60,9 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
     ClusterSchema clusterSchema = (ClusterSchema) element;
     if (dscContent.getExtra() != null) {
       clusterSchema.setName(rootNode.getProperty(PROP_NAME).getString());
-      clusterSchema.setDescription(rootNode.getProperty(PROP_DESCRIPTION).getString());
+      if (rootNode.hasProperty(PROP_DESCRIPTION)) {
+        clusterSchema.setDescription(rootNode.getProperty(PROP_DESCRIPTION).getString());
+      }
     }
     // The metadata...
     clusterSchema.setBasePort(rootNode.getProperty(PROP_BASE_PORT).getString());

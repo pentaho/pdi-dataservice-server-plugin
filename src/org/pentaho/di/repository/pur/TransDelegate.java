@@ -190,8 +190,9 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     dataNodeToElement(rootNode, transMeta);
     return transMeta;
   }
-  
-  public void dataNodeToElement(final DataNode rootNode, final RepositoryElementInterface element) throws KettleException {
+
+  public void dataNodeToElement(final DataNode rootNode, final RepositoryElementInterface element)
+      throws KettleException {
     TransMeta transMeta = (TransMeta) element;
 
     transMeta.setName(rootNode.getProperty(PROP_NAME).getString());
@@ -201,13 +202,15 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     DataNode stepsNode = rootNode.getNode(NODE_STEPS);
     for (DataNode stepNode : stepsNode.getNodes()) {
-      
+
       StepMeta stepMeta = new StepMeta(new StringObjectId(stepNode.getId().toString()));
 
       // Read the basics
       //
       stepMeta.setName(stepNode.getProperty(PROP_NAME).getString());
-      stepMeta.setDescription(stepNode.getProperty(PROP_DESCRIPTION).getString());
+      if (stepNode.hasProperty(PROP_DESCRIPTION)) {
+        stepMeta.setDescription(stepNode.getProperty(PROP_DESCRIPTION).getString());
+      }
       stepMeta.setDistributes(stepNode.getProperty(PROP_STEP_DISTRIBUTE).getBoolean());
       stepMeta.setDraw(stepNode.getProperty(PROP_STEP_GUI_DRAW).getBoolean());
       stepMeta.setCopies((int) stepNode.getProperty(PROP_STEP_COPIES).getLong());
@@ -341,18 +344,30 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     transMeta.setTransversion(rootNode.getProperty(PROP_TRANS_VERSION).getString());
     transMeta.setTransstatus((int) rootNode.getProperty(PROP_TRANS_STATUS).getLong());
 
-    transMeta.getTransLogTable().setStepRead(
-        StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_READ).getString()));
-    transMeta.getTransLogTable().setStepWritten(
-        StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_WRITE).getString()));
-    transMeta.getTransLogTable().setStepInput(
-        StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_INPUT).getString()));
-    transMeta.getTransLogTable().setStepOutput(
-        StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_OUTPUT).getString()));
-    transMeta.getTransLogTable().setStepUpdate(
-        StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_UPDATE).getString()));
-    transMeta.getTransLogTable().setStepRejected(
-        StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_REJECTED).getString()));
+    if (rootNode.hasProperty(PROP_STEP_READ)) {
+      transMeta.getTransLogTable().setStepRead(
+          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_READ).getString()));
+    }
+    if (rootNode.hasProperty(PROP_STEP_WRITE)) {
+      transMeta.getTransLogTable().setStepWritten(
+          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_WRITE).getString()));
+    }
+    if (rootNode.hasProperty(PROP_STEP_INPUT)) {
+      transMeta.getTransLogTable().setStepInput(
+          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_INPUT).getString()));
+    }
+    if (rootNode.hasProperty(PROP_STEP_OUTPUT)) {
+      transMeta.getTransLogTable().setStepOutput(
+          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_OUTPUT).getString()));
+    }
+    if (rootNode.hasProperty(PROP_STEP_UPDATE)) {
+      transMeta.getTransLogTable().setStepUpdate(
+          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_UPDATE).getString()));
+    }
+    if (rootNode.hasProperty(PROP_STEP_REJECTED)) {
+      transMeta.getTransLogTable().setStepRejected(
+          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_REJECTED).getString()));
+    }
 
     if (rootNode.hasProperty(PROP_DATABASE_LOG)) {
       String id = rootNode.getProperty(PROP_DATABASE_LOG).getRef().getId().toString();
@@ -613,7 +628,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     readPartitionSchemas(transMeta, true);
     readSlaves(transMeta, true);
     readClusters(transMeta, true);
-    
+
     return transMeta.getSharedObjects();
   }
 
@@ -728,16 +743,17 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     }
   }
 
-  public void saveSharedObjects(final RepositoryElementInterface element, final String versionComment) throws KettleException {
+  public void saveSharedObjects(final RepositoryElementInterface element, final String versionComment)
+      throws KettleException {
     TransMeta transMeta = (TransMeta) element;
     // First store the databases and other depending objects in the transformation.
     //
-    
+
     // Only store if the database has actually changed or doesn't have an object ID (imported)
     //
     for (DatabaseMeta databaseMeta : transMeta.getDatabases()) {
-      if (databaseMeta.hasChanged() || databaseMeta.getObjectId()==null) {
-        
+      if (databaseMeta.hasChanged() || databaseMeta.getObjectId() == null) {
+
         // Only save the connection if it's actually used in the transformation...
         //
         if (transMeta.isDatabaseConnectionUsed(databaseMeta)) {
@@ -745,11 +761,11 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         }
       }
     }
-    
+
     // Store the slave servers...
     //
     for (SlaveServer slaveServer : transMeta.getSlaveServers()) {
-      if (slaveServer.hasChanged() || slaveServer.getObjectId()==null) {
+      if (slaveServer.hasChanged() || slaveServer.getObjectId() == null) {
         if (transMeta.isUsingSlaveServer(slaveServer)) {
           repo.save(slaveServer, versionComment, null);
         }
@@ -759,7 +775,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     // Store the cluster schemas
     //
     for (ClusterSchema clusterSchema : transMeta.getClusterSchemas()) {
-      if (clusterSchema.hasChanged() || clusterSchema.getObjectId()==null) {
+      if (clusterSchema.hasChanged() || clusterSchema.getObjectId() == null) {
         if (transMeta.isUsingClusterSchema(clusterSchema)) {
           repo.save(clusterSchema, versionComment, null);
         }
@@ -769,7 +785,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     // Save the partition schemas
     //
     for (PartitionSchema partitionSchema : transMeta.getPartitionSchemas()) {
-      if (partitionSchema.hasChanged() || partitionSchema.getObjectId()==null) {
+      if (partitionSchema.hasChanged() || partitionSchema.getObjectId() == null) {
         if (transMeta.isUsingPartitionSchema(partitionSchema)) {
           repo.save(partitionSchema, versionComment, null);
         }

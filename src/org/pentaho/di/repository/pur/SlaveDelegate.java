@@ -55,7 +55,9 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
     SlaveServer slaveServer = (SlaveServer) element;
     if (dscContent.getExtra() != null) {
       slaveServer.setName(rootNode.getProperty(PROP_NAME).getString());
-      slaveServer.setDescription(rootNode.getProperty(PROP_DESCRIPTION).getString());
+      if (rootNode.hasProperty(PROP_DESCRIPTION)) {
+        slaveServer.setDescription(rootNode.getProperty(PROP_DESCRIPTION).getString());
+      }
     }
     slaveServer.setHostname(rootNode.getProperty(PROP_HOST_NAME).getString());
     slaveServer.setPort(rootNode.getProperty(PROP_PORT).getString());
