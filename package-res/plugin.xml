@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin id="PurRepository" name="PUR Repository" description="Repository backed by Pentaho Unified Repository (PUR)"
+<plugin id="PurRepository" name="Enterprise Repository" description="Enterprise Repository"
   classname="org.pentaho.di.repository.pur.PurRepository" metaclassname="org.pentaho.di.repository.pur.PurRepositoryMeta"
   dialogclassname="org.pentaho.di.ui.repository.pur.PurRepositoryDialog" versionbrowserclassname="org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog">
   <libraries>
@@ -25,11 +25,11 @@
   <!-- PART BELOW IS NO USED YET -->
 
   <localized_name>
-    <name locale="en_US">Pentaho Unified Repository</name>
+    <name locale="en_US">Enterprise Repository</name>
   </localized_name>
 
   <localized_description>
-    <description locale="en_US">Pentaho Unified Repository</description>
+    <description locale="en_US">Enterprise Repository</description>
   </localized_description>
 
 </plugin>
