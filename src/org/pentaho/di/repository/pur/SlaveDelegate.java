@@ -54,18 +54,18 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
     SlaveServer slaveServer = (SlaveServer) element;
     if (dscContent.getExtra() != null) {
-      slaveServer.setName(rootNode.getProperty(PROP_NAME).getString());
+      slaveServer.setName(getString(rootNode, PROP_NAME));
       if (rootNode.hasProperty(PROP_DESCRIPTION)) {
-        slaveServer.setDescription(rootNode.getProperty(PROP_DESCRIPTION).getString());
+        slaveServer.setDescription(getString(rootNode, PROP_DESCRIPTION));
       }
     }
-    slaveServer.setHostname(rootNode.getProperty(PROP_HOST_NAME).getString());
-    slaveServer.setPort(rootNode.getProperty(PROP_PORT).getString());
-    slaveServer.setUsername(rootNode.getProperty(PROP_USERNAME).getString());
-    slaveServer.setPassword(Encr.decryptPasswordOptionallyEncrypted(rootNode.getProperty(PROP_PASSWORD).getString()));
-    slaveServer.setProxyHostname(rootNode.getProperty(PROP_PROXY_HOST_NAME).getString());
-    slaveServer.setProxyPort(rootNode.getProperty(PROP_PROXY_PORT).getString());
-    slaveServer.setNonProxyHosts(rootNode.getProperty(PROP_NON_PROXY_HOSTS).getString());
+    slaveServer.setHostname(getString(rootNode, PROP_HOST_NAME));
+    slaveServer.setPort(getString(rootNode, PROP_PORT));
+    slaveServer.setUsername(getString(rootNode, PROP_USERNAME));
+    slaveServer.setPassword(Encr.decryptPasswordOptionallyEncrypted(getString(rootNode, PROP_PASSWORD)));
+    slaveServer.setProxyHostname(getString(rootNode, PROP_PROXY_HOST_NAME));
+    slaveServer.setProxyPort(getString(rootNode, PROP_PROXY_PORT));
+    slaveServer.setNonProxyHosts(getString(rootNode, PROP_NON_PROXY_HOSTS));
     slaveServer.setMaster(rootNode.getProperty(PROP_MASTER).getBoolean());
 
   }

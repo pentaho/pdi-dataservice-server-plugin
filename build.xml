@@ -1,4 +1,4 @@
-<project name="JackRabbit Repository Plugin" basedir="." default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="PUR Repository Plugin" basedir="." default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
 
   <!-- Import the subfloor-pkg.xml file which contains all the default tasks -->
   <import file="build-res/subfloor-pkg.xml" />
@@ -45,9 +45,9 @@
 
   <target name="update-plugin-xml">
     <replace file="${approot.stage.dir}/plugin.xml">
-      <replacefilter token="@jack-rabbit-version@" value="${dependency.jackrabbit.revision}" />
-      <replacefilter token="@jcr-repository-plugin-version@" value="${project.revision}" />
-      <replacefilter token="@pentaho-dsc-version@" value="${dependency.pentaho-ee-dsc.revision}" />
+      <replacefilter token="@project.revision@" value="${project.revision}" />
+      <replacefilter token="@dependency.bi-platform.revision@" value="${dependency.bi-platform.revision}" />
+      <replacefilter token="@dependency.pentaho-ee-dsc.revision@" value="${dependency.pentaho-ee-dsc.revision}" />
     </replace>
   </target>
 

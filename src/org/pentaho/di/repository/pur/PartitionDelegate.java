@@ -48,10 +48,10 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
 
     PartitionSchema partitionSchema = (PartitionSchema) element;
     if (dscContent.getExtra() != null) {
-      partitionSchema.setName(rootNode.getProperty(PROP_NAME).getString());
+      partitionSchema.setName(getString(rootNode, PROP_NAME));
     }
     partitionSchema.setDynamicallyDefined(rootNode.getProperty(PROP_DYNAMIC_DEFINITION).getBoolean());
-    partitionSchema.setNumberOfPartitionsPerSlave(rootNode.getProperty(PROP_PARTITIONS_PER_SLAVE).getString());
+    partitionSchema.setNumberOfPartitionsPerSlave(getString(rootNode, PROP_PARTITIONS_PER_SLAVE));
 
     // Also, load all the properties we can find...
 

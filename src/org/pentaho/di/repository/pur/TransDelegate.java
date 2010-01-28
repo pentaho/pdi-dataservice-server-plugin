@@ -195,8 +195,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       throws KettleException {
     TransMeta transMeta = (TransMeta) element;
 
-    transMeta.setName(rootNode.getProperty(PROP_NAME).getString());
-    transMeta.setDescription(rootNode.getProperty(PROP_DESCRIPTION).getString());
+    transMeta.setName(getString(rootNode, PROP_NAME));
+    transMeta.setDescription(getString(rootNode, PROP_DESCRIPTION));
 
     // read the steps...
     //
@@ -207,9 +207,9 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
       // Read the basics
       //
-      stepMeta.setName(stepNode.getProperty(PROP_NAME).getString());
+      stepMeta.setName(getString(stepNode, PROP_NAME));
       if (stepNode.hasProperty(PROP_DESCRIPTION)) {
-        stepMeta.setDescription(stepNode.getProperty(PROP_DESCRIPTION).getString());
+        stepMeta.setDescription(getString(stepNode, PROP_DESCRIPTION));
       }
       stepMeta.setDistributes(stepNode.getProperty(PROP_STEP_DISTRIBUTE).getBoolean());
       stepMeta.setDraw(stepNode.getProperty(PROP_STEP_GUI_DRAW).getBoolean());
@@ -219,7 +219,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       int y = (int) stepNode.getProperty(PROP_STEP_GUI_LOCATION_Y).getLong();
       stepMeta.setLocation(x, y);
 
-      String stepType = stepNode.getProperty(PROP_STEP_TYPE).getString();
+      String stepType = getString(stepNode, PROP_STEP_TYPE);
 
       // Create a new StepMetaInterface object...
       //
@@ -248,7 +248,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         String schemaName = repo.loadPartitionSchema(new StringObjectId(partSchemaId), null).getName();
 
         stepPartitioningMeta.setPartitionSchemaName(schemaName);
-        String methodCode = stepNode.getProperty(PROP_PARTITIONING_METHOD).getString();
+        String methodCode = getString(stepNode, PROP_PARTITIONING_METHOD);
         stepPartitioningMeta.setMethod(StepPartitioningMeta.getMethod(methodCode));
         if (stepPartitioningMeta.getPartitioner() != null) {
           proxy = new RepositoryProxy(stepNode.getNode(NODE_PARTITIONER_CUSTOM));
@@ -260,7 +260,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
       stepMeta.getStepPartitioningMeta().setPartitionSchemaAfterLoading(transMeta.getPartitionSchemas());
       // Get the cluster schema name
-      stepMeta.setClusterSchemaName(stepNode.getProperty(PROP_CLUSTER_SCHEMA).getString());
+      stepMeta.setClusterSchemaName(getString(stepNode, PROP_CLUSTER_SCHEMA));
 
       transMeta.addStep(stepMeta);
 
@@ -271,11 +271,11 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         meta.setTargetStep(StepMeta.findStep(transMeta.getSteps(), stepNode.getProperty(
             PROP_STEP_ERROR_HANDLING_TARGET_STEP).getString()));
         meta.setEnabled(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_IS_ENABLED).getBoolean());
-        meta.setNrErrorsValuename(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_NR_VALUENAME).getString());
+        meta.setNrErrorsValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_NR_VALUENAME));
         meta.setErrorDescriptionsValuename(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_DESCRIPTIONS_VALUENAME)
             .getString());
-        meta.setErrorFieldsValuename(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_FIELDS_VALUENAME).getString());
-        meta.setErrorCodesValuename(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_CODES_VALUENAME).getString());
+        meta.setErrorFieldsValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_FIELDS_VALUENAME));
+        meta.setErrorCodesValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_CODES_VALUENAME));
         meta.setMaxErrors(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_MAX_ERRORS).getLong());
         meta.setMaxPercentErrors((int) stepNode.getProperty(PROP_STEP_ERROR_HANDLING_MAX_PCT_ERRORS).getLong());
         meta.setMinPercentRows(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_MIN_PCT_ROWS).getLong());
@@ -288,7 +288,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     DataNode notesNode = rootNode.getNode(NODE_NOTES);
     int nrNotes = (int) notesNode.getProperty(PROP_NR_NOTES).getLong();
     for (DataNode noteNode : notesNode.getNodes()) {
-      String xml = noteNode.getProperty(PROP_XML).getString();
+      String xml = getString(noteNode, PROP_XML);
       transMeta.addNote(new NotePadMeta(XMLHandler.getSubNode(XMLHandler.loadXMLString(xml), NotePadMeta.XML_TAG)));
     }
     if (transMeta.nrNotes() != nrNotes) {
@@ -301,8 +301,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     DataNode hopsNode = rootNode.getNode(NODE_HOPS);
     int nrHops = (int) hopsNode.getProperty(PROP_NR_HOPS).getLong();
     for (DataNode hopNode : hopsNode.getNodes()) {
-      String stepFromName = hopNode.getProperty(TRANS_HOP_FROM).getString();
-      String stepToName = hopNode.getProperty(TRANS_HOP_TO).getString();
+      String stepFromName = getString(hopNode, TRANS_HOP_FROM);
+      String stepToName = getString(hopNode, TRANS_HOP_TO);
       boolean enabled = true;
       if (hopNode.hasProperty(TRANS_HOP_ENABLED)) {
         enabled = hopNode.getProperty(TRANS_HOP_ENABLED).getBoolean();
@@ -332,41 +332,41 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     int count = (int) paramsNode.getProperty(PROP_NR_PARAMETERS).getLong();
     for (int idx = 0; idx < count; idx++) {
       DataNode paramNode = paramsNode.getNode(TRANS_PARAM_PREFIX + idx);
-      String key = paramNode.getProperty(PARAM_KEY).getString();
-      String def = paramNode.getProperty(PARAM_DEFAULT).getString();
-      String desc = paramNode.getProperty(PARAM_DESC).getString();
+      String key = getString(paramNode, PARAM_KEY);
+      String def = getString(paramNode, PARAM_DEFAULT);
+      String desc = getString(paramNode, PARAM_DESC);
       transMeta.addParameterDefinition(key, def, desc);
     }
   }
 
   protected void loadTransformationDetails(final DataNode rootNode, final TransMeta transMeta) throws KettleException {
-    transMeta.setExtendedDescription(rootNode.getProperty(PROP_EXTENDED_DESCRIPTION).getString());
-    transMeta.setTransversion(rootNode.getProperty(PROP_TRANS_VERSION).getString());
+    transMeta.setExtendedDescription(getString(rootNode, PROP_EXTENDED_DESCRIPTION));
+    transMeta.setTransversion(getString(rootNode, PROP_TRANS_VERSION));
     transMeta.setTransstatus((int) rootNode.getProperty(PROP_TRANS_STATUS).getLong());
 
     if (rootNode.hasProperty(PROP_STEP_READ)) {
       transMeta.getTransLogTable().setStepRead(
-          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_READ).getString()));
+          StepMeta.findStep(transMeta.getSteps(), getString(rootNode, PROP_STEP_READ)));
     }
     if (rootNode.hasProperty(PROP_STEP_WRITE)) {
       transMeta.getTransLogTable().setStepWritten(
-          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_WRITE).getString()));
+          StepMeta.findStep(transMeta.getSteps(), getString(rootNode, PROP_STEP_WRITE)));
     }
     if (rootNode.hasProperty(PROP_STEP_INPUT)) {
       transMeta.getTransLogTable().setStepInput(
-          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_INPUT).getString()));
+          StepMeta.findStep(transMeta.getSteps(), getString(rootNode, PROP_STEP_INPUT)));
     }
     if (rootNode.hasProperty(PROP_STEP_OUTPUT)) {
       transMeta.getTransLogTable().setStepOutput(
-          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_OUTPUT).getString()));
+          StepMeta.findStep(transMeta.getSteps(), getString(rootNode, PROP_STEP_OUTPUT)));
     }
     if (rootNode.hasProperty(PROP_STEP_UPDATE)) {
       transMeta.getTransLogTable().setStepUpdate(
-          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_UPDATE).getString()));
+          StepMeta.findStep(transMeta.getSteps(), getString(rootNode, PROP_STEP_UPDATE)));
     }
     if (rootNode.hasProperty(PROP_STEP_REJECTED)) {
       transMeta.getTransLogTable().setStepRejected(
-          StepMeta.findStep(transMeta.getSteps(), rootNode.getProperty(PROP_STEP_REJECTED).getString()));
+          StepMeta.findStep(transMeta.getSteps(), getString(rootNode, PROP_STEP_REJECTED)));
     }
 
     if (rootNode.hasProperty(PROP_DATABASE_LOG)) {
@@ -374,7 +374,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       DatabaseMeta conn = DatabaseMeta.findDatabase(transMeta.getDatabases(), new StringObjectId(id));
       transMeta.getTransLogTable().setConnectionName(conn.getName());
     }
-    transMeta.getTransLogTable().setTableName(rootNode.getProperty(PROP_TABLE_NAME_LOG).getString());
+    transMeta.getTransLogTable().setTableName(getString(rootNode, PROP_TABLE_NAME_LOG));
     transMeta.getTransLogTable().setBatchIdUsed(rootNode.getProperty(PROP_USE_BATCHID).getBoolean());
     transMeta.getTransLogTable().setLogFieldUsed(rootNode.getProperty(PROP_USE_LOGFIELD).getBoolean());
 
@@ -382,15 +382,15 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       String id = rootNode.getProperty(PROP_ID_DATABASE_MAXDATE).getRef().getId().toString();
       transMeta.setMaxDateConnection(DatabaseMeta.findDatabase(transMeta.getDatabases(), new StringObjectId(id)));
     }
-    transMeta.setMaxDateTable(rootNode.getProperty(PROP_TABLE_NAME_MAXDATE).getString());
-    transMeta.setMaxDateField(rootNode.getProperty(PROP_FIELD_NAME_MAXDATE).getString());
+    transMeta.setMaxDateTable(getString(rootNode, PROP_TABLE_NAME_MAXDATE));
+    transMeta.setMaxDateField(getString(rootNode, PROP_FIELD_NAME_MAXDATE));
     transMeta.setMaxDateOffset(rootNode.getProperty(PROP_OFFSET_MAXDATE).getDouble());
     transMeta.setMaxDateDifference(rootNode.getProperty(PROP_DIFF_MAXDATE).getDouble());
 
-    transMeta.setCreatedUser(rootNode.getProperty(PROP_CREATED_USER).getString());
+    transMeta.setCreatedUser(getString(rootNode, PROP_CREATED_USER));
     transMeta.setCreatedDate(rootNode.getProperty(PROP_CREATED_DATE).getDate());
 
-    transMeta.setModifiedUser(rootNode.getProperty(PROP_MODIFIED_USER).getString());
+    transMeta.setModifiedUser(getString(rootNode, PROP_MODIFIED_USER));
     transMeta.setModifiedDate(rootNode.getProperty(PROP_MODIFIED_DATE).getDate());
 
     // Optional:
@@ -401,7 +401,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     }
 
     if (rootNode.hasProperty(PROP_ID_DIRECTORY)) {
-      String id_directory = rootNode.getProperty(PROP_ID_DIRECTORY).getString();
+      String id_directory = getString(rootNode, PROP_ID_DIRECTORY);
       if (log.isDetailed())
         log.logDetailed(toString(), PROP_ID_DIRECTORY + "=" + id_directory); //$NON-NLS-1$
       // Set right directory...
@@ -421,7 +421,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       usingThreadPriorityManagement = rootNode.getProperty(PROP_USING_THREAD_PRIORITIES).getBoolean();
     }
     transMeta.setUsingThreadPriorityManagment(usingThreadPriorityManagement);
-    transMeta.setSharedObjectsFile(rootNode.getProperty(PROP_SHARED_FILE).getString());
+    transMeta.setSharedObjectsFile(getString(rootNode, PROP_SHARED_FILE));
 
     // Performance monitoring for steps...
     //
@@ -431,8 +431,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     }
     transMeta.setCapturingStepPerformanceSnapShots(capturingStepPerformanceSnapShots);
     transMeta.setStepPerformanceCapturingDelay(rootNode.getProperty(PROP_STEP_PERFORMANCE_CAPTURING_DELAY).getLong());
-    transMeta.getPerformanceLogTable().setTableName(rootNode.getProperty(PROP_STEP_PERFORMANCE_LOG_TABLE).getString());
-    transMeta.getTransLogTable().setLogSizeLimit(rootNode.getProperty(PROP_LOG_SIZE_LIMIT).getString());
+    transMeta.getPerformanceLogTable().setTableName(getString(rootNode, PROP_STEP_PERFORMANCE_LOG_TABLE));
+    transMeta.getTransLogTable().setLogSizeLimit(getString(rootNode, PROP_LOG_SIZE_LIMIT));
     //transMeta.setStepPerformanceLogTable( repository.getPropertyString(rootNode, "STEP_PERFORMANCE_LOG_TABLE") );
     //transMeta.setLogSizeLimit( repository.getPropertyString(rootNode, "LOG_SIZE_LIMIT") );
 

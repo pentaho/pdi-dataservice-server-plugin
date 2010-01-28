@@ -109,21 +109,21 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
 
     DatabaseMeta databaseMeta = (DatabaseMeta) element;
     if (dscContent.getExtra() != null) {
-      databaseMeta.setName(rootNode.getProperty(PROP_NAME).getString());
+      databaseMeta.setName(getString(rootNode, PROP_NAME));
     }
 
     if (dscContent.getHolder() != null) {
-      databaseMeta.setDatabaseType(rootNode.getProperty(PROP_TYPE).getString());
+      databaseMeta.setDatabaseType(getString(rootNode, PROP_TYPE));
     }
-    databaseMeta.setAccessType(DatabaseMeta.getAccessType(rootNode.getProperty(PROP_CONTYPE).getString()));
-    databaseMeta.setHostname(rootNode.getProperty(PROP_HOST_NAME).getString());
-    databaseMeta.setDBName(rootNode.getProperty(PROP_DATABASE_NAME).getString());
-    databaseMeta.setDBPort(rootNode.getProperty(PROP_PORT).getString());
-    databaseMeta.setUsername(rootNode.getProperty(PROP_USERNAME).getString());
-    databaseMeta.setPassword(rootNode.getProperty(PROP_PASSWORD).getString());
-    databaseMeta.setServername(rootNode.getProperty(PROP_SERVERNAME).getString());
-    databaseMeta.setDataTablespace(rootNode.getProperty(PROP_DATA_TBS).getString());
-    databaseMeta.setIndexTablespace(rootNode.getProperty(PROP_INDEX_TBS).getString());
+    databaseMeta.setAccessType(DatabaseMeta.getAccessType(getString(rootNode, PROP_CONTYPE)));
+    databaseMeta.setHostname(getString(rootNode, PROP_HOST_NAME));
+    databaseMeta.setDBName(getString(rootNode, PROP_DATABASE_NAME));
+    databaseMeta.setDBPort(getString(rootNode, PROP_PORT));
+    databaseMeta.setUsername(getString(rootNode, PROP_USERNAME));
+    databaseMeta.setPassword(getString(rootNode, PROP_PASSWORD));
+    databaseMeta.setServername(getString(rootNode, PROP_SERVERNAME));
+    databaseMeta.setDataTablespace(getString(rootNode, PROP_DATA_TBS));
+    databaseMeta.setIndexTablespace(getString(rootNode, PROP_INDEX_TBS));
 
     // Also, load all the properties we can find...
 

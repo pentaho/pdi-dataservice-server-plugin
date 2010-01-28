@@ -195,10 +195,10 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     }
     JobMeta jobMeta = (JobMeta) element;
 
-    jobMeta.setName(rootNode.getProperty(PROP_NAME).getString());
-    jobMeta.setDescription(rootNode.getProperty(PROP_DESCRIPTION).getString());
+    jobMeta.setName(getString(rootNode, PROP_NAME));
+    jobMeta.setDescription(getString(rootNode, PROP_DESCRIPTION));
 
-    jobMeta.setSharedObjectsFile(rootNode.getProperty("SHARED_FILE").getString());
+    jobMeta.setSharedObjectsFile(getString(rootNode, "SHARED_FILE"));
     jobMeta.setSharedObjects(loadSharedObjects(jobMeta));
 
     // Keep a unique list of job entries to facilitate in the loading.
@@ -221,8 +221,8 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
       JobEntryCopy copy = new JobEntryCopy(jobEntry);
 
-      copy.setName(copyNode.getProperty(PROP_NAME).getString());
-      copy.setDescription(copyNode.getProperty(PROP_DESCRIPTION).getString());
+      copy.setName(getString(copyNode, PROP_NAME));
+      copy.setDescription(getString(copyNode, PROP_DESCRIPTION));
       copy.setObjectId(new StringObjectId(copyNode.getId().toString()));
 
       copy.setNr((int) copyNode.getProperty(PROP_NR).getLong());
@@ -247,7 +247,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     int nrNotes = (int) notesNode.getProperty(PROP_NR_NOTES).getLong();
     for (DataNode noteNode : notesNode.getNodes()) {
       String name = noteNode.getName();
-      String xml = noteNode.getProperty(PROP_XML).getString();
+      String xml = getString(noteNode, PROP_XML);
       jobMeta.addNote(new NotePadMeta(XMLHandler.getSubNode(XMLHandler.loadXMLString(xml), NotePadMeta.XML_TAG)));
     }
     if (jobMeta.nrNotes() != nrNotes) {
@@ -261,9 +261,9 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     int nrHops = (int) hopsNode.getProperty(PROP_NR_HOPS).getLong();
     for (DataNode hopNode : hopsNode.getNodes()) {
       String name = hopNode.getName();
-      String copyFromName = hopNode.getProperty(JOB_HOP_FROM).getString();
+      String copyFromName = getString(hopNode, JOB_HOP_FROM);
       int copyFromNr = (int) hopNode.getProperty(JOB_HOP_FROM_NR).getLong();
-      String copyToName = hopNode.getProperty(JOB_HOP_TO).getString();
+      String copyToName = getString(hopNode, JOB_HOP_TO);
       int copyToNr = (int) hopNode.getProperty(JOB_HOP_TO_NR).getLong();
 
       boolean enabled = true;
@@ -305,26 +305,26 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     int count = (int) paramsNode.getProperty(PROP_NR_PARAMETERS).getLong();
     for (int idx = 0; idx < count; idx++) {
       DataNode paramNode = paramsNode.getNode(PARAM_PREFIX + idx);
-      String key = paramNode.getProperty(PARAM_KEY).getString();
-      String def = paramNode.getProperty(PARAM_DEFAULT).getString();
-      String desc = paramNode.getProperty(PARAM_DESC).getString();
+      String key = getString(paramNode, PARAM_KEY);
+      String def = getString(paramNode, PARAM_DEFAULT);
+      String desc = getString(paramNode, PARAM_DESC);
       jobMeta.addParameterDefinition(key, def, desc);
     }
   }
 
   protected void loadJobMetaDetails(DataNode rootNode, JobMeta jobMeta) throws KettleException {
     try {
-      jobMeta.setName(rootNode.getProperty(PROP_NAME).getString());
-      jobMeta.setDescription(rootNode.getProperty(PROP_DESCRIPTION).getString());
-      jobMeta.setExtendedDescription(rootNode.getProperty(PROP_EXTENDED_DESCRIPTION).getString());
-      jobMeta.setJobversion(rootNode.getProperty(PROP_JOB_VERSION).getString());
+      jobMeta.setName(getString(rootNode, PROP_NAME));
+      jobMeta.setDescription(getString(rootNode, PROP_DESCRIPTION));
+      jobMeta.setExtendedDescription(getString(rootNode, PROP_EXTENDED_DESCRIPTION));
+      jobMeta.setJobversion(getString(rootNode, PROP_JOB_VERSION));
       jobMeta.setJobstatus((int) rootNode.getProperty(PROP_JOB_STATUS).getLong());
-      jobMeta.getJobLogTable().setTableName(rootNode.getProperty(PROP_TABLE_NAME_LOG).getString());
+      jobMeta.getJobLogTable().setTableName(getString(rootNode, PROP_TABLE_NAME_LOG));
 
-      jobMeta.setCreatedUser(rootNode.getProperty(PROP_CREATED_USER).getString());
+      jobMeta.setCreatedUser(getString(rootNode, PROP_CREATED_USER));
       jobMeta.setCreatedDate(rootNode.getProperty(PROP_CREATED_DATE).getDate());
 
-      jobMeta.setModifiedUser(rootNode.getProperty(PROP_MODIFIED_USER).getString());
+      jobMeta.setModifiedUser(getString(rootNode, PROP_MODIFIED_USER));
       jobMeta.setModifiedDate(rootNode.getProperty(PROP_MODIFIED_DATE).getDate());
 
       if (rootNode.hasProperty(PROP_DATABASE_LOG)) {
@@ -337,7 +337,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       jobMeta.setBatchIdPassed(rootNode.getProperty(PROP_PASS_BATCH_ID).getBoolean());
       jobMeta.getJobLogTable().setLogFieldUsed(rootNode.getProperty(PROP_USE_LOGFIELD).getBoolean());
 
-      jobMeta.getJobLogTable().setLogSizeLimit(rootNode.getProperty(PROP_LOG_SIZE_LIMIT).getString());
+      jobMeta.getJobLogTable().setLogSizeLimit(getString(rootNode, PROP_LOG_SIZE_LIMIT));
 
     } catch (Exception e) {
       throw new KettleException("Error loading job details", e);
@@ -348,7 +348,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   protected JobEntryInterface readJobEntry(DataNode copyNode, JobMeta jobMeta, List<JobEntryInterface> jobentries)
       throws KettleException {
     try {
-      String name = copyNode.getProperty(PROP_NAME).getString();
+      String name = getString(copyNode, PROP_NAME);
       for (JobEntryInterface entry : jobentries) {
         if (entry.getName().equalsIgnoreCase(name)) {
           return entry; // already loaded!
@@ -357,11 +357,11 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
       // load the entry from the node
       //
-      String typeId = copyNode.getProperty("JOBENTRY_TYPE").getString();
+      String typeId = getString(copyNode, "JOBENTRY_TYPE");
       JobPlugin plugin = JobEntryLoader.getInstance().findJobPluginWithID(typeId);
       JobEntryInterface entry = JobEntryLoader.getInstance().getJobEntryClass(plugin);
       entry.setName(name);
-      entry.setDescription(copyNode.getProperty(PROP_DESCRIPTION).getString());
+      entry.setDescription(getString(copyNode, PROP_DESCRIPTION));
       entry.setObjectId(new StringObjectId(copyNode.getId().toString()));
       RepositoryProxy proxy = new RepositoryProxy(copyNode.getNode(NODE_CUSTOM));
       entry.loadRep(proxy, null, jobMeta.getDatabases(), jobMeta.getSlaveServers());

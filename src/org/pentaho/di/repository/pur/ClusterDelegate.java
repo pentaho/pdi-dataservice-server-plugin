@@ -2,9 +2,6 @@ package org.pentaho.di.repository.pur;
 
 import java.util.List;
 
-import javax.jcr.Node;
-import javax.jcr.version.Version;
-
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.exception.KettleException;
@@ -12,7 +9,6 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.StringObjectId;
-import org.pentaho.di.repository.jcr.util.JCRObjectRevision;
 import org.pentaho.platform.repository.pcr.data.node.DataNode;
 import org.pentaho.platform.repository.pcr.data.node.DataNodeRef;
 
@@ -59,15 +55,15 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
     ClusterSchema clusterSchema = (ClusterSchema) element;
     if (dscContent.getExtra() != null) {
-      clusterSchema.setName(rootNode.getProperty(PROP_NAME).getString());
+      clusterSchema.setName(getString(rootNode, PROP_NAME));
       if (rootNode.hasProperty(PROP_DESCRIPTION)) {
-        clusterSchema.setDescription(rootNode.getProperty(PROP_DESCRIPTION).getString());
+        clusterSchema.setDescription(getString(rootNode, PROP_DESCRIPTION));
       }
     }
     // The metadata...
-    clusterSchema.setBasePort(rootNode.getProperty(PROP_BASE_PORT).getString());
-    clusterSchema.setSocketsBufferSize(rootNode.getProperty(PROP_SOCKETS_BUFFER_SIZE).getString());
-    clusterSchema.setSocketsFlushInterval(rootNode.getProperty(PROP_SOCKETS_FLUSH_INTERVAL).getString());
+    clusterSchema.setBasePort(getString(rootNode, PROP_BASE_PORT));
+    clusterSchema.setSocketsBufferSize(getString(rootNode, PROP_SOCKETS_BUFFER_SIZE));
+    clusterSchema.setSocketsFlushInterval(getString(rootNode, PROP_SOCKETS_FLUSH_INTERVAL));
     clusterSchema.setSocketsCompressed(rootNode.getProperty(PROP_SOCKETS_COMPRESSED).getBoolean());
     clusterSchema.setDynamic(rootNode.getProperty(PROP_DYNAMIC).getBoolean());
     DataNode attrNode = rootNode.getNode(NODE_ATTRIBUTES);

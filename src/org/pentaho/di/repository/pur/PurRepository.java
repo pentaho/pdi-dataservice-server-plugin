@@ -17,7 +17,6 @@ import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.ProgressMonitorListener;
-import org.pentaho.di.core.annotations.RepositoryPlugin;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
@@ -44,7 +43,6 @@ import org.pentaho.di.repository.RepositoryObjectRecipient;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
-//import org.pentaho.di.repository.RevisionRepository;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ObjectRecipient.Type;
@@ -75,16 +73,7 @@ import com.pentaho.commons.dsc.params.KParam;
  * @author Matt
  * @author mlowery
  */
-@RepositoryPlugin(
-    id="PurRepository", 
-    i18nPackageName="org.pentaho.di.repository.pur",
-    description="PurRepository.Description", 
-    name="PurRepository.Name", 
-    metaClass="org.pentaho.di.repository.pur.PurRepositoryMeta",
-    dialogClass="org.pentaho.di.ui.repository.pur.PurRepositoryDialog",
-    versionBrowserClass="org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog"
-    )
-public class PurRepository implements Repository 
+public class PurRepository implements Repository
 // , RevisionRepository 
 {
 
@@ -141,7 +130,7 @@ public class PurRepository implements Repository
 
   public void connect() throws KettleException, KettleSecurityException {
     populatePentahoSessionHolder();
-    
+
     try {
       final String url = repositoryMeta.getRepositoryLocation().getUrl() + "?wsdl";
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0",
@@ -162,7 +151,7 @@ public class PurRepository implements Repository
 
   protected void populatePentahoSessionHolder() {
     // only necessary for RepositoryPaths calls; server also uses PentahoSessionHolder but that is in a different JVM
-    PentahoSessionHolder.setSession(new StandaloneSession(userInfo.getLogin()));  
+    PentahoSessionHolder.setSession(new StandaloneSession(userInfo.getLogin()));
   }
 
   public boolean isConnected() {
@@ -314,7 +303,7 @@ public class PurRepository implements Repository
   public void deleteJob(ObjectId idJob) throws KettleException {
     deleteFileById(idJob);
   }
-  
+
   public void deleteJob(ObjectId jobId, String versionId) throws KettleException {
     RepositoryFile jobToDelete = pur.getFileById(jobId.getId());
     pur.deleteFileAtVersion(jobToDelete.getId(), versionId);
@@ -328,9 +317,9 @@ public class PurRepository implements Repository
       throw new KettleException("Unable to delete object with id [" + id + "]", e);
     }
   }
-  
+
   public void restoreJob(ObjectId jobId, String versionId) {
-    throw new UnsupportedOperationException();    
+    throw new UnsupportedOperationException();
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
@@ -1270,8 +1259,8 @@ public class PurRepository implements Repository
       transMeta.setRepositoryDirectory(parentDir);
       transMeta.setRepositoryLock(getLock(file));
       transDelegate.loadSharedObjects(transMeta);
-      transDelegate.dataNodeToElement(pur.getDataForReadAtVersion(file.getId(), versionId, NodeRepositoryFileData.class)
-          .getNode(), transMeta);
+      transDelegate.dataNodeToElement(pur
+          .getDataForReadAtVersion(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), transMeta);
       transMeta.clearChanged();
       return transMeta;
     } catch (Exception e) {
@@ -1291,8 +1280,8 @@ public class PurRepository implements Repository
       jobMeta.setRepositoryDirectory(parentDir);
       jobMeta.setRepositoryLock(getLock(file));
       jobDelegate.loadSharedObjects(jobMeta);
-      jobDelegate.dataNodeToElement(
-          pur.getDataForReadAtVersion(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), jobMeta);
+      jobDelegate.dataNodeToElement(pur.getDataForReadAtVersion(file.getId(), versionId, NodeRepositoryFileData.class)
+          .getNode(), jobMeta);
       jobMeta.clearChanged();
       return jobMeta;
     } catch (Exception e) {

@@ -1,6 +1,7 @@
 package org.pentaho.di.repository.pur;
 
 import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.platform.repository.pcr.data.node.DataNode;
 
 public abstract class AbstractDelegate {
 
@@ -32,5 +33,21 @@ public abstract class AbstractDelegate {
     }
 
     return result.toString();
+  }
+  
+  protected String getString(DataNode node, String name) {
+    if (node.hasProperty(name)) {
+      return node.getProperty(name).getString();
+    } else {
+      return null;
+    }
+  }
+  
+  protected Long getLong(DataNode node, String name) {
+    if (node.hasProperty(name)) {
+      return node.getProperty(name).getLong();
+    } else {
+      return null;
+    }
   }
 }
