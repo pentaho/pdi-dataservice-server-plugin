@@ -987,7 +987,8 @@ public class PurRepository implements Repository
     }
 
   public ObjectId insertLogEntry(String description) throws KettleException {
-    throw new UnsupportedOperationException();
+    // We are not presently logging
+    return null;
   }
 
   public void insertStepDatabase(ObjectId idTransformation, ObjectId idStep, ObjectId idDatabase)
