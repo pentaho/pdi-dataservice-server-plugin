@@ -70,8 +70,10 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
     // The slaves...
     long nrSlaves = attrNode.getProperty(PROP_NB_SLAVE_SERVERS).getLong();
     for (int i = 0; i < nrSlaves; i++) {
-      DataNodeRef slaveNodeRef = attrNode.getProperty(String.valueOf(i)).getRef();
-      clusterSchema.getSlaveServers().add(findSlaveServer(new StringObjectId(slaveNodeRef.toString())));
+      if (attrNode.hasProperty(String.valueOf(i))) {
+        DataNodeRef slaveNodeRef = attrNode.getProperty(String.valueOf(i)).getRef();
+        clusterSchema.getSlaveServers().add(findSlaveServer(new StringObjectId(slaveNodeRef.toString())));
+      }
     }
   }
 

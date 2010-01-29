@@ -322,10 +322,10 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       jobMeta.getJobLogTable().setTableName(getString(rootNode, PROP_TABLE_NAME_LOG));
 
       jobMeta.setCreatedUser(getString(rootNode, PROP_CREATED_USER));
-      jobMeta.setCreatedDate(rootNode.getProperty(PROP_CREATED_DATE).getDate());
+      jobMeta.setCreatedDate(getDate(rootNode, PROP_CREATED_DATE));
 
       jobMeta.setModifiedUser(getString(rootNode, PROP_MODIFIED_USER));
-      jobMeta.setModifiedDate(rootNode.getProperty(PROP_MODIFIED_DATE).getDate());
+      jobMeta.setModifiedDate(getDate(rootNode, PROP_MODIFIED_DATE));
 
       if (rootNode.hasProperty(PROP_DATABASE_LOG)) {
         String id = rootNode.getProperty(PROP_DATABASE_LOG).getRef().getId().toString();

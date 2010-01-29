@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.CheckResultInterface;
+import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.NotePadMeta;
 import org.pentaho.di.core.Result;
@@ -345,6 +346,10 @@ public abstract class RepositoryTestBase {
 
   private static final String EXP_DBMETA2_NAME = "abc_db2";
 
+  private static final String EXP_DBMETA_NAME_STEP = "khdfsghk438";
+
+  private static final String EXP_DBMETA_NAME_JOB = "KLJSDFJKL2";
+
   // ~ Instance fields =================================================================================================
 
   protected RepositoryMeta repositoryMeta;
@@ -391,7 +396,7 @@ public abstract class RepositoryTestBase {
     assertTrue(caps.supportsMetadata());
     assertTrue(caps.supportsLocking());
     assertTrue(caps.hasVersionRegistry());
-    assertNull(repository.getLog());
+    assertNotNull(repository.getLog());
   }
 
   protected RepositoryDirectory initRepo() throws Exception {
@@ -555,7 +560,7 @@ public abstract class RepositoryTestBase {
     assertEquals(new Date().getDate(), repository.getJobLock(jobMeta.getObjectId()).getLockDate().getDate());
     assertEquals(EXP_LOGIN, repository.getJobLock(jobMeta.getObjectId()).getLogin());
     // TODO mlowery currently PUR lock only stores "login"; why do we need username too? 
-//    assertEquals(EXP_USERNAME, repository.getJobLock(jobMeta.getObjectId()).getUsername());
+    //    assertEquals(EXP_USERNAME, repository.getJobLock(jobMeta.getObjectId()).getUsername());
     assertEquals(jobMeta.getObjectId(), repository.getJobLock(jobMeta.getObjectId()).getObjectId());
     repository.unlockJob(jobMeta.getObjectId());
     assertNull(repository.getJobLock(jobMeta.getObjectId()));
@@ -631,9 +636,11 @@ public abstract class RepositoryTestBase {
     jobMeta.setChannelLogTable(channelLogTable);
     jobMeta.setBatchIdPassed(EXP_JOB_BATCH_ID_PASSED);
     jobMeta.setSharedObjectsFile(EXP_JOB_SHARED_OBJECTS_FILE);
-    JobEntryCopy jobEntryCopy1 = createJobEntry1Copy();
+    DatabaseMeta entryDbMeta = createDatabaseMeta(EXP_DBMETA_NAME_JOB);
+    repository.save(entryDbMeta, VERSION_COMMENT_V1, null);
+    JobEntryCopy jobEntryCopy1 = createJobEntry1Copy(entryDbMeta);
     jobMeta.addJobEntry(jobEntryCopy1);
-    JobEntryCopy jobEntryCopy2 = createJobEntry2Copy();
+    JobEntryCopy jobEntryCopy2 = createJobEntry2Copy(entryDbMeta);
     jobMeta.addJobEntry(jobEntryCopy2);
     jobMeta.addJobHop(createJobHopMeta(jobEntryCopy1, jobEntryCopy2));
     jobMeta.addNote(createNotePadMeta());
@@ -765,7 +772,7 @@ public abstract class RepositoryTestBase {
         .getDate());
     assertEquals(EXP_LOGIN, repository.getTransformationLock(transMeta.getObjectId()).getLogin());
     // TODO mlowery currently PUR lock only stores "login"; why do we need username too? 
-//    assertEquals(EXP_USERNAME, repository.getTransformationLock(transMeta.getObjectId()).getUsername());
+    //    assertEquals(EXP_USERNAME, repository.getTransformationLock(transMeta.getObjectId()).getUsername());
     assertEquals(transMeta.getObjectId(), repository.getTransformationLock(transMeta.getObjectId()).getObjectId());
     repository.unlockTransformation(transMeta.getObjectId());
     assertNull(repository.getTransformationLock(transMeta.getObjectId()));
@@ -869,9 +876,12 @@ public abstract class RepositoryTestBase {
     transMeta.setCapturingStepPerformanceSnapShots(EXP_TRANS_CAPTURE_STEP_PERF_SNAPSHOTS);
     transMeta.setStepPerformanceCapturingDelay(EXP_TRANS_STEP_PERF_CAP_DELAY);
     transMeta.addDependency(new TransDependency(dbMeta, EXP_TRANS_DEP_TABLE_NAME, EXP_TRANS_DEP_FIELD_NAME));
-    StepMeta step1 = createStepMeta1(transMeta);
+    DatabaseMeta stepDbMeta = createDatabaseMeta(EXP_DBMETA_NAME_STEP);
+    repository.save(stepDbMeta, VERSION_COMMENT_V1, null);
+    Condition cond = new Condition();
+    StepMeta step1 = createStepMeta1(transMeta, stepDbMeta, cond);
     transMeta.addStep(step1);
-    StepMeta step2 = createStepMeta2();
+    StepMeta step2 = createStepMeta2(stepDbMeta, cond);
     transMeta.addStep(step2);
     transMeta.addTransHop(createTransHopMeta(step1, step2));
 
@@ -1044,28 +1054,37 @@ public abstract class RepositoryTestBase {
     return clusterSchema;
   }
 
-  protected JobEntryInterface createJobEntry1() throws Exception {
-    return new JobEntryAttributeTesterJobEntry(EXP_JOB_ENTRY_1_NAME);
+  protected JobEntryInterface createJobEntry1(final DatabaseMeta dbMeta) throws Exception {
+    JobEntryAttributeTesterJobEntry entry1 = new JobEntryAttributeTesterJobEntry(EXP_JOB_ENTRY_1_NAME);
+    entry1.setDatabaseMeta(dbMeta);
+    return entry1;
+
   }
 
-  protected JobEntryInterface createJobEntry2() throws Exception {
-    return new JobEntryAttributeTesterJobEntry(EXP_JOB_ENTRY_2_NAME);
+  protected JobEntryInterface createJobEntry2(final DatabaseMeta dbMeta) throws Exception {
+    JobEntryAttributeTesterJobEntry entry2 = new JobEntryAttributeTesterJobEntry(EXP_JOB_ENTRY_2_NAME);
+    entry2.setDatabaseMeta(dbMeta);
+    return entry2;
   }
 
-  protected JobEntryCopy createJobEntry1Copy() throws Exception {
-    JobEntryCopy copy = new JobEntryCopy(createJobEntry1());
+  protected JobEntryCopy createJobEntry1Copy(final DatabaseMeta dbMeta) throws Exception {
+    JobEntryCopy copy = new JobEntryCopy(createJobEntry1(dbMeta));
     copy.setLocation(EXP_JOB_ENTRY_1_COPY_X_LOC, EXP_JOB_ENTRY_1_COPY_Y_LOC);
     return copy;
   }
 
-  protected JobEntryCopy createJobEntry2Copy() throws Exception {
-    JobEntryCopy copy = new JobEntryCopy(createJobEntry2());
+  protected JobEntryCopy createJobEntry2Copy(final DatabaseMeta dbMeta) throws Exception {
+    JobEntryCopy copy = new JobEntryCopy(createJobEntry2(dbMeta));
     copy.setLocation(EXP_JOB_ENTRY_2_COPY_X_LOC, EXP_JOB_ENTRY_2_COPY_Y_LOC);
     return copy;
   }
 
-  protected StepMeta createStepMeta1(final TransMeta transMeta) throws Exception {
-    StepMeta stepMeta1 = new StepMeta(EXP_TRANS_STEP_1_NAME, new TransStepAttributeTesterTransStep());
+  protected StepMeta createStepMeta1(final TransMeta transMeta, final DatabaseMeta dbMeta, final Condition condition)
+      throws Exception {
+    TransStepAttributeTesterTransStep step1 = new TransStepAttributeTesterTransStep();
+    step1.setDatabaseMeta(dbMeta);
+    step1.setCondition(condition);
+    StepMeta stepMeta1 = new StepMeta(EXP_TRANS_STEP_1_NAME, step1);
     StepErrorMeta stepErrorMeta1 = new StepErrorMeta(transMeta, stepMeta1);
     stepErrorMeta1.setEnabled(EXP_TRANS_STEP_ERROR_META_1_ENABLED);
     stepErrorMeta1.setNrErrorsValuename(EXP_TRANS_STEP_ERROR_META_1_NR_ERRORS_VALUE_NAME);
@@ -1079,8 +1098,11 @@ public abstract class RepositoryTestBase {
     return stepMeta1;
   }
 
-  protected StepMeta createStepMeta2() throws Exception {
-    return new StepMeta(EXP_TRANS_STEP_2_NAME, new TransStepAttributeTesterTransStep());
+  protected StepMeta createStepMeta2(final DatabaseMeta dbMeta, final Condition condition) throws Exception {
+    TransStepAttributeTesterTransStep step2 = new TransStepAttributeTesterTransStep();
+    step2.setDatabaseMeta(dbMeta);
+    step2.setCondition(condition);
+    return new StepMeta(EXP_TRANS_STEP_2_NAME, step2);
   }
 
   protected TransHopMeta createTransHopMeta(final StepMeta stepMeta1, final StepMeta stepMeta2) throws Exception {
@@ -1326,8 +1348,8 @@ public abstract class RepositoryTestBase {
     revs = repository.getRevisions(dbMeta);
     assertTrue(revs.size() >= 2);
 
-//    RepositoryVersionRegistry vReg = repository.getVersionRegistry();
-//    assertEquals(0, vReg.getVersions().size());
+    //    RepositoryVersionRegistry vReg = repository.getVersionRegistry();
+    //    assertEquals(0, vReg.getVersions().size());
     //    vReg.addVersion(new SimpleObjectVersion(EXP_OBJECT_VERSION_LABEL, null, null, null));
     //    assertEquals(2, versions.size());
     //    assertEquals("1.0", versions.get(0).getLabel());
@@ -1401,9 +1423,10 @@ public abstract class RepositoryTestBase {
   public void testSaveConditionStepAttribute() throws Exception {
     fail("Not yet implemented");
   }
+
   @Test
   @Ignore
-  public void testGetAcl() throws Exception{
+  public void testGetAcl() throws Exception {
     RepositoryDirectory rootDir = initRepo();
     JobMeta jobMeta = createJobMeta();
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
@@ -1414,11 +1437,12 @@ public abstract class RepositoryTestBase {
     assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
     assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
     ObjectAcl acl = repository.getAcl(jobMeta.getObjectId());
-    assertNotNull(acl);    
+    assertNotNull(acl);
   }
+
   @Test
-  @Ignore   
-  public void testSetAcl() throws Exception{
+  @Ignore
+  public void testSetAcl() throws Exception {
     RepositoryDirectory rootDir = initRepo();
     JobMeta jobMeta = createJobMeta();
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
@@ -1431,7 +1455,8 @@ public abstract class RepositoryTestBase {
     ObjectAcl acl = repository.getAcl(jobMeta.getObjectId());
     assertNotNull(acl);
     acl.setEntriesInheriting(false);
-    ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER),EnumSet.of(ObjectPermission.DELETE, ObjectPermission.DELETE_CHILD, ObjectPermission.READ, ObjectPermission.READ_ACL));
+    ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER), EnumSet.of(
+        ObjectPermission.DELETE, ObjectPermission.DELETE_CHILD, ObjectPermission.READ, ObjectPermission.READ_ACL));
     List<ObjectAce> aceList = new ArrayList<ObjectAce>();
     aceList.add(ace);
     acl.setAces(aceList);
@@ -1446,7 +1471,7 @@ public abstract class RepositoryTestBase {
     assertTrue(ace1.getPermissions().contains(ObjectPermission.READ));
     assertTrue(ace1.getPermissions().contains(ObjectPermission.READ_ACL));
   }
-  
+
   @Test
   @Ignore
   public void testSaveDatabaseMetaJobEntryAttribute() throws Exception {
@@ -1494,6 +1519,10 @@ public abstract class RepositoryTestBase {
     String VALUE_STRING_MULTI_0 = "LKS";
 
     String VALUE_STRING_MULTI_1 = "LKS";
+
+    String ATTR_DB = "dbMeta1";
+
+    String ATTR_COND = "cond1";
   }
 
   /**
@@ -1502,6 +1531,8 @@ public abstract class RepositoryTestBase {
   @Job(id = "JobEntryAttributeTester", image = "")
   public static class JobEntryAttributeTesterJobEntry extends JobEntryBase implements Cloneable, JobEntryInterface,
       EntryAndStepConstants {
+
+    private DatabaseMeta databaseMeta;
 
     public JobEntryAttributeTesterJobEntry() {
       this("");
@@ -1526,6 +1557,7 @@ public abstract class RepositoryTestBase {
       assertEquals(VALUE_STRING, rep.getJobEntryAttributeString(idJobentry, ATTR_STRING));
       assertEquals(VALUE_STRING_MULTI_0, rep.getJobEntryAttributeString(idJobentry, 0, ATTR_STRING_MULTI));
       assertEquals(VALUE_STRING_MULTI_1, rep.getJobEntryAttributeString(idJobentry, 1, ATTR_STRING_MULTI));
+      assertNotNull(rep.loadDatabaseMetaFromJobEntryAttribute(idJobentry, null, ATTR_DB, databases));
     }
 
     @Override
@@ -1539,6 +1571,8 @@ public abstract class RepositoryTestBase {
       rep.saveJobEntryAttribute(idJob, getObjectId(), ATTR_STRING, VALUE_STRING);
       rep.saveJobEntryAttribute(idJob, getObjectId(), 0, ATTR_STRING_MULTI, VALUE_STRING_MULTI_0);
       rep.saveJobEntryAttribute(idJob, getObjectId(), 1, ATTR_STRING_MULTI, VALUE_STRING_MULTI_1);
+      rep.saveDatabaseMetaJobEntryAttribute(idJob, getObjectId(), null, ATTR_DB, databaseMeta);
+      rep.insertJobEntryDatabase(idJob, getObjectId(), databaseMeta.getObjectId());
     }
 
     public Result execute(final Result prevResult, final int nr) throws KettleException {
@@ -1550,6 +1584,10 @@ public abstract class RepositoryTestBase {
       throw new UnsupportedOperationException();
     }
 
+    public void setDatabaseMeta(DatabaseMeta databaseMeta) {
+      this.databaseMeta = databaseMeta;
+    }
+
   }
 
   /**
@@ -1558,6 +1596,10 @@ public abstract class RepositoryTestBase {
   @Step(name = "StepAttributeTester", image = "")
   public static class TransStepAttributeTesterTransStep extends BaseStepMeta implements StepMetaInterface,
       EntryAndStepConstants {
+
+    private DatabaseMeta databaseMeta;
+
+    private Condition condition;
 
     public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
         RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
@@ -1592,6 +1634,8 @@ public abstract class RepositoryTestBase {
       assertEquals(VALUE_STRING, rep.getStepAttributeString(idStep, ATTR_STRING));
       assertEquals(VALUE_STRING_MULTI_0, rep.getStepAttributeString(idStep, 0, ATTR_STRING_MULTI));
       assertEquals(VALUE_STRING_MULTI_1, rep.getStepAttributeString(idStep, 1, ATTR_STRING_MULTI));
+      assertNotNull(rep.loadDatabaseMetaFromStepAttribute(idStep, ATTR_DB, databases));
+      assertNotNull(rep.loadConditionFromStepAttribute(idStep, ATTR_COND));
     }
 
     public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep) throws KettleException {
@@ -1604,9 +1648,20 @@ public abstract class RepositoryTestBase {
       rep.saveStepAttribute(idTransformation, idStep, ATTR_STRING, VALUE_STRING);
       rep.saveStepAttribute(idTransformation, idStep, 0, ATTR_STRING_MULTI, VALUE_STRING_MULTI_0);
       rep.saveStepAttribute(idTransformation, idStep, 1, ATTR_STRING_MULTI, VALUE_STRING_MULTI_1);
+      rep.saveDatabaseMetaStepAttribute(idTransformation, idStep, ATTR_DB, databaseMeta);
+      rep.insertStepDatabase(idTransformation, idStep, databaseMeta.getObjectId());
+      rep.saveConditionStepAttribute(idTransformation, idStep, ATTR_COND, condition);
     }
 
     public void setDefault() {
+    }
+
+    public void setDatabaseMeta(final DatabaseMeta databaseMeta) {
+      this.databaseMeta = databaseMeta;
+    }
+
+    public void setCondition(final Condition condition) {
+      this.condition = condition;
     }
 
   }

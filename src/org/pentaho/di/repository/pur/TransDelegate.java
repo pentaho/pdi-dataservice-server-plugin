@@ -388,10 +388,10 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     transMeta.setMaxDateDifference(rootNode.getProperty(PROP_DIFF_MAXDATE).getDouble());
 
     transMeta.setCreatedUser(getString(rootNode, PROP_CREATED_USER));
-    transMeta.setCreatedDate(rootNode.getProperty(PROP_CREATED_DATE).getDate());
+    transMeta.setCreatedDate(getDate(rootNode, PROP_CREATED_DATE));
 
     transMeta.setModifiedUser(getString(rootNode, PROP_MODIFIED_USER));
-    transMeta.setModifiedDate(rootNode.getProperty(PROP_MODIFIED_DATE).getDate());
+    transMeta.setModifiedDate(getDate(rootNode, PROP_MODIFIED_DATE));
 
     // Optional:
     transMeta.setSizeRowset(Const.ROWS_IN_ROWSET);

@@ -1,3 +1,29 @@
+This repository plugin for Kettle makes web service calls to the Pentaho unified repository (PUR).
+
+Building and Installing the Plugin
+------------------------------------
+
+The easiest way to build and deploy the plugin is to use the Ivy settings for the project. 
+In the build.properties file, set the kettle.plugin.dir variable to the Kettle repositories plugin directory. 
+Run the following targets in order: clean, resolve, dist, install
+
+Project Directory Overview
+-----------------------------
+/bin  			All compiled and staging classes/resources end up here.
+/build-res  	These are the core subfloor files, used as common build targets.
+/classes 		Java classes get compiled to this directory. 
+/dist			Two artifacts end up here - the jar for the repository classes, and the zip file that contains all resources for  
+				the plugin.
+/lib			When an ant 'resolve' target is run, this dir is populated with all necessary default conf libraries.
+/libswt			The OS specific SWT jars needed for the UI pieces of the plugin. These today are not checked into an artifactory. 
+/package-res	The configuration file for the plugin lives here. (plugin.xml) Any other files here are copied to the root of 
+				the plugin distribution artifact. 
+/src			The source code. 
+/test			The JUnit test source code. 
+/test-lib		When an ant 'resolve' target is run, this dir is populated with all necessary test conf libraries.
+/testfiles		Resources needed by the JUnit tests.
+
+*** BEGIN OLD DOC ***
 
 Eclipse JackrabbitRepository
 ============================
@@ -29,28 +55,5 @@ Unzip in your eclipse plugins directory, restart Eclipse, Preferences / JCR Brow
 - Port : 8181/jackrabbit
 
 Then you can connect to the repository described above and browse it.
-
-Building and Installing the Plugin
-------------------------------------
-
-The easiest way to build and deploy the plugin is to use the Ivy settings for the project. 
-In the build.properties file, set the kettle.plugin.dir variable to the Kettle repositories plugin directory. 
-Run the following targets in order: clean, resolve, dist, install
-
-Project Directory Overview
------------------------------
-/bin  			All compiled and staging classes/resources end up here.
-/build-res  	These are the core subfloor files, used as common build targets.
-/classes 		Java classes get compiled to this directory. 
-/dist			Two artifacts end up here - the jar for the repository classes, and the zip file that contains all resources for  
-				the plugin.
-/lib			When an ant 'resolve' target is run, this dir is populated with all necessary default conf libraries.
-/libswt			The OS specific SWT jars needed for the UI pieces of the plugin. These today are not checked into an artifactory. 
-/package-res	The configuration file for the plugin lives here. (plugin.xml) Any other files here are copied to the root of 
-				the plugin distribution artifact. 
-/src			The source code. 
-/test			The JUnit test source code. 
-/test-lib		When an ant 'resolve' target is run, this dir is populated with all necessary test conf libraries.
-/testfiles		Resources needed by the JUnit tests.
-
  
+*** END OLD DOC ***

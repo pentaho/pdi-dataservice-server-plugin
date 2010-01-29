@@ -10,6 +10,7 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectAcl;
@@ -25,10 +26,12 @@ import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
+import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.platform.repository.pcr.data.node.DataNode;
+import org.pentaho.platform.repository.pcr.data.node.DataNodeRef;
 import org.pentaho.platform.repository.pcr.data.node.DataProperty;
 
 /**
@@ -37,9 +40,9 @@ import org.pentaho.platform.repository.pcr.data.node.DataProperty;
  */
 public class RepositoryProxy implements Repository {
 
-  private static final String NODE_CUSTOM = "custom";
+  public static final String PROP_CODE_NR_SEPARATOR = "_#_"; //$NON-NLS-1$
 
-  public static final String PROP_CODE_NR_SEPARATOR = "_#_";
+  private static final String PROPERTY_XML = "XML"; //$NON-NLS-1$
 
   private DataNode node;
 
@@ -70,8 +73,8 @@ public class RepositoryProxy implements Repository {
     return getPropertyCount(idStep, code);
   }
 
-  public RepositoryDirectory createRepositoryDirectory(final RepositoryDirectory parentDirectory, final String directoryPath)
-      throws KettleException {
+  public RepositoryDirectory createRepositoryDirectory(final RepositoryDirectory parentDirectory,
+      final String directoryPath) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -165,11 +168,20 @@ public class RepositoryProxy implements Repository {
   }
 
   public String getJobEntryAttributeString(ObjectId idJobentry, String code) throws KettleException {
-    return node.getProperty(code).getString();
+    if (node.hasProperty(code)) {
+      return node.getProperty(code).getString();
+    } else {
+      return null;
+    }
   }
 
   public String getJobEntryAttributeString(ObjectId idJobentry, int nr, String code) throws KettleException {
-    return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getString();
+    String propName = code + PROP_CODE_NR_SEPARATOR + nr;
+    if (node.hasProperty(propName)) {
+      return node.getProperty(propName).getString();
+    } else {
+      return null;
+    }
   }
 
   public ObjectId getJobId(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
@@ -261,11 +273,20 @@ public class RepositoryProxy implements Repository {
   }
 
   public String getStepAttributeString(ObjectId idStep, String code) throws KettleException {
-    return node.getProperty(code).getString();
+    if (node.hasProperty(code)) {
+      return node.getProperty(code).getString();
+    } else {
+      return null;
+    }
   }
 
   public String getStepAttributeString(ObjectId idStep, int nr, String code) throws KettleException {
-    return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getString();
+    String propName = code + PROP_CODE_NR_SEPARATOR + nr;
+    if (node.hasProperty(propName)) {
+      return node.getProperty(propName).getString();
+    } else {
+      return null;
+    }
   }
 
   public ObjectId getTransformationID(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
@@ -302,7 +323,8 @@ public class RepositoryProxy implements Repository {
   }
 
   public void insertJobEntryDatabase(ObjectId idJob, ObjectId idJobentry, ObjectId idDatabase) throws KettleException {
-    throw new UnsupportedOperationException();
+    DataNodeRef ref = new DataNodeRef(idDatabase.getId());
+    node.setProperty(idDatabase.getId(), ref);
   }
 
   public ObjectId insertLogEntry(String description) throws KettleException {
@@ -311,7 +333,8 @@ public class RepositoryProxy implements Repository {
 
   public void insertStepDatabase(ObjectId idTransformation, ObjectId idStep, ObjectId idDatabase)
       throws KettleException {
-    throw new UnsupportedOperationException();
+    DataNodeRef ref = new DataNodeRef(idDatabase.getId());
+    node.setProperty(idDatabase.getId(), ref);
   }
 
   public boolean isConnected() {
@@ -324,21 +347,36 @@ public class RepositoryProxy implements Repository {
   }
 
   public Condition loadConditionFromStepAttribute(ObjectId idStep, String code) throws KettleException {
-    throw new UnsupportedOperationException();
+    DataNode conditionNode = node.getNode(code);
+    if (conditionNode.hasProperty(PROPERTY_XML)) {
+      String xml = conditionNode.getProperty(PROPERTY_XML).getString();
+      Condition condition = new Condition(XMLHandler.getSubNode(XMLHandler.loadXMLString(xml), Condition.XML_TAG));
+      return condition;
+    } else {
+      return null;
+    }
   }
 
   public DatabaseMeta loadDatabaseMeta(ObjectId idDatabase, String revision) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
-  public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId idJobentry, String nameCode, String idCode,
+  public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId idJobentry, String nameCode, String code,
       List<DatabaseMeta> databases) throws KettleException {
-    throw new UnsupportedOperationException();
+    if (code != null && node.hasProperty(code)) {
+      ObjectId databaseId = new StringObjectId(node.getProperty(code).getRef().getId().toString());
+      return DatabaseMeta.findDatabase(databases, databaseId);
+    }
+    return null;
   }
 
   public DatabaseMeta loadDatabaseMetaFromStepAttribute(ObjectId idStep, String code, List<DatabaseMeta> databases)
       throws KettleException {
-    throw new UnsupportedOperationException();
+    if (code != null && node.hasProperty(code)) {
+      ObjectId databaseId = new StringObjectId(node.getProperty(code).getRef().getId().toString());
+      return DatabaseMeta.findDatabase(databases, databaseId);
+    }
+    return null;
   }
 
   public JobMeta loadJob(String jobname, RepositoryDirectory repdir, ProgressMonitorListener monitor, String revision)
@@ -412,17 +450,24 @@ public class RepositoryProxy implements Repository {
 
   public void saveConditionStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, Condition condition)
       throws KettleException {
-    throw new UnsupportedOperationException();
+    DataNode conditionNode = node.addNode(code);
+    conditionNode.setProperty(PROPERTY_XML, condition.getXML());
   }
 
-  public void saveDatabaseMetaJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String nameCode, String idCode,
+  public void saveDatabaseMetaJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String nameCode, String code,
       DatabaseMeta database) throws KettleException {
-    throw new UnsupportedOperationException();
+    if (database != null && database.getObjectId() != null) {
+      DataNodeRef ref = new DataNodeRef(database.getObjectId().getId());
+      node.setProperty(code, ref);
+    }
   }
 
   public void saveDatabaseMetaStepAttribute(ObjectId idTransformation, ObjectId idStep, String code,
       DatabaseMeta database) throws KettleException {
-    throw new UnsupportedOperationException();
+    if (database != null && database.getObjectId() != null) {
+      DataNodeRef ref = new DataNodeRef(database.getObjectId().getId());
+      node.setProperty(code, ref);
+    }
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, String value)

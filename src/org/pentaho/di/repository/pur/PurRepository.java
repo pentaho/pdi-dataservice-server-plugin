@@ -20,6 +20,7 @@ import org.pentaho.di.core.ProgressMonitorListener;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
+import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
@@ -108,6 +109,8 @@ public class PurRepository implements Repository
   private PurRepositorySecurityProvider securityProvider;
 
   private UserRoleDelegate userRoleDelegate = new UserRoleDelegate();
+  
+  protected LogChannelInterface log;
 
   // ~ Constructors ====================================================================================================
 
@@ -122,6 +125,7 @@ public class PurRepository implements Repository
   }
 
   public void init(final RepositoryMeta repositoryMeta, final UserInfo userInfo) {
+    this.log = new LogChannel(this);
     this.repositoryMeta = (PurRepositoryMeta) repositoryMeta;
     this.userInfo = userInfo;
     securityProvider = new PurRepositorySecurityProvider(this, repositoryMeta, userInfo);
@@ -163,10 +167,12 @@ public class PurRepository implements Repository
   }
 
   public int countNrJobEntryAttributes(ObjectId idJobentry, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public int countNrStepAttributes(ObjectId idStep, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
@@ -665,30 +671,37 @@ public class PurRepository implements Repository
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, int nr, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, String code, boolean def) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public long getJobEntryAttributeInteger(ObjectId idJobentry, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public long getJobEntryAttributeInteger(ObjectId idJobentry, int nr, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public String getJobEntryAttributeString(ObjectId idJobentry, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public String getJobEntryAttributeString(ObjectId idJobentry, int nr, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
@@ -725,10 +738,7 @@ public class PurRepository implements Repository
   }
 
   public LogChannelInterface getLog() {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    return log;
   }
 
   public String getName() {
@@ -796,7 +806,6 @@ public class PurRepository implements Repository
     }
   }
 
-  // TODO mlowery hack for UI team to start using PUR
   public RepositorySecurityProvider getSecurityProvider() {
     return securityProvider;
   }
@@ -853,30 +862,37 @@ public class PurRepository implements Repository
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, int nr, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, int nr, String code, boolean def) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public long getStepAttributeInteger(ObjectId idStep, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public long getStepAttributeInteger(ObjectId idStep, int nr, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public String getStepAttributeString(ObjectId idStep, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public String getStepAttributeString(ObjectId idStep, int nr, String code) throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
@@ -963,31 +979,21 @@ public class PurRepository implements Repository
   }
 
   public RepositoryVersionRegistry getVersionRegistry() throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    throw new UnsupportedOperationException();
   }
 
   public void insertJobEntryDatabase(ObjectId idJob, ObjectId idJobentry, ObjectId idDatabase) throws KettleException {
-
-    // TODO Auto-generated method stub 
-
-  }
+    throw new UnsupportedOperationException();
+    }
 
   public ObjectId insertLogEntry(String description) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    throw new UnsupportedOperationException();
   }
 
   public void insertStepDatabase(ObjectId idTransformation, ObjectId idStep, ObjectId idDatabase)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-
-  }
+    throw new UnsupportedOperationException();
+    }
 
   public ClusterSchema loadClusterSchema(ObjectId idClusterSchema, List<SlaveServer> slaveServers, String versionId)
       throws KettleException {
@@ -1014,18 +1020,14 @@ public class PurRepository implements Repository
 
   public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId idJobentry, String nameCode, String idCode,
       List<DatabaseMeta> databases) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    // implemented by RepositoryProxy
+    throw new UnsupportedOperationException();
   }
 
   public DatabaseMeta loadDatabaseMetaFromStepAttribute(ObjectId idStep, String code, List<DatabaseMeta> databases)
       throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    // implemented by RepositoryProxy
+    throw new UnsupportedOperationException();
   }
 
   public PartitionSchema loadPartitionSchema(ObjectId partitionSchemaId, String versionId) throws KettleException {
@@ -1402,90 +1404,102 @@ public class PurRepository implements Repository
 
   public void saveConditionStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, Condition condition)
       throws KettleException {
-
+    // TODO
   }
 
   public void saveDatabaseMetaJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String nameCode, String idCode,
       DatabaseMeta database) throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    // implemented by RepositoryProxy
+    throw new UnsupportedOperationException();
   }
 
   public void saveDatabaseMetaStepAttribute(ObjectId idTransformation, ObjectId idStep, String code,
       DatabaseMeta database) throws KettleException {
-
-    // TODO Auto-generated method stub 
-
+    // implemented by RepositoryProxy
+    throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, String value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, boolean value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, long value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, String value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, boolean value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, long value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, String value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, boolean value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, long value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, double value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, int nr, String code, String value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, int nr, String code, boolean value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, int nr, String code, long value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, int nr, String code, double value)
       throws KettleException {
+    // implemented by RepositoryProxy
     throw new UnsupportedOperationException();
   }
 
