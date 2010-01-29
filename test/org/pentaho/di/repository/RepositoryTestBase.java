@@ -473,6 +473,7 @@ public abstract class RepositoryTestBase {
 
   protected RepositoryDirectory loadStartDirectory() throws Exception {
     return repository.loadRepositoryDirectoryTree();
+    
   }
 
   /**
@@ -490,7 +491,7 @@ public abstract class RepositoryTestBase {
   @Test
   public void testJobs() throws Exception {
     RepositoryDirectory rootDir = initRepo();
-    JobMeta jobMeta = createJobMeta();
+    JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
     assertNotNull(jobMeta.getObjectId());
@@ -597,10 +598,10 @@ public abstract class RepositoryTestBase {
     assertEquals(jobMeta.getName(), repository.getJobNames(jobsDir.getObjectId(), true)[0]);
   }
 
-  protected JobMeta createJobMeta() throws Exception {
-    RepositoryDirectory rootDir = initRepo();
+  protected JobMeta createJobMeta(String jobName) throws Exception {
+    RepositoryDirectory rootDir = loadStartDirectory();
     JobMeta jobMeta = new JobMeta();
-    jobMeta.setName(EXP_JOB_NAME);
+    jobMeta.setName(jobName);
     jobMeta.setDescription(EXP_JOB_DESC);
     jobMeta.setExtendedDescription(EXP_JOB_EXTENDED_DESC);
     jobMeta.setRepositoryDirectory(rootDir.findDirectory(DIR_JOBS));
@@ -636,14 +637,14 @@ public abstract class RepositoryTestBase {
     jobMeta.setChannelLogTable(channelLogTable);
     jobMeta.setBatchIdPassed(EXP_JOB_BATCH_ID_PASSED);
     jobMeta.setSharedObjectsFile(EXP_JOB_SHARED_OBJECTS_FILE);
-    DatabaseMeta entryDbMeta = createDatabaseMeta(EXP_DBMETA_NAME_JOB);
+    DatabaseMeta entryDbMeta = createDatabaseMeta(EXP_DBMETA_NAME_JOB.concat(jobName));
     repository.save(entryDbMeta, VERSION_COMMENT_V1, null);
     JobEntryCopy jobEntryCopy1 = createJobEntry1Copy(entryDbMeta);
     jobMeta.addJobEntry(jobEntryCopy1);
     JobEntryCopy jobEntryCopy2 = createJobEntry2Copy(entryDbMeta);
     jobMeta.addJobEntry(jobEntryCopy2);
     jobMeta.addJobHop(createJobHopMeta(jobEntryCopy1, jobEntryCopy2));
-    jobMeta.addNote(createNotePadMeta());
+    jobMeta.addNote(createNotePadMeta(jobName));
     return jobMeta;
   }
 
@@ -812,9 +813,9 @@ public abstract class RepositoryTestBase {
   }
 
   protected TransMeta createTransMeta(final String dbName) throws Exception {
-    RepositoryDirectory rootDir = initRepo();
+    RepositoryDirectory rootDir = loadStartDirectory();
     TransMeta transMeta = new TransMeta();
-    transMeta.setName(EXP_TRANS_NAME);
+    transMeta.setName(EXP_TRANS_NAME.concat(dbName));
     transMeta.setDescription(EXP_TRANS_DESC);
     transMeta.setExtendedDescription(EXP_TRANS_EXTENDED_DESC);
     transMeta.setRepositoryDirectory(rootDir.findDirectory(DIR_TRANSFORMATIONS));
@@ -876,7 +877,7 @@ public abstract class RepositoryTestBase {
     transMeta.setCapturingStepPerformanceSnapShots(EXP_TRANS_CAPTURE_STEP_PERF_SNAPSHOTS);
     transMeta.setStepPerformanceCapturingDelay(EXP_TRANS_STEP_PERF_CAP_DELAY);
     transMeta.addDependency(new TransDependency(dbMeta, EXP_TRANS_DEP_TABLE_NAME, EXP_TRANS_DEP_FIELD_NAME));
-    DatabaseMeta stepDbMeta = createDatabaseMeta(EXP_DBMETA_NAME_STEP);
+    DatabaseMeta stepDbMeta = createDatabaseMeta(EXP_DBMETA_NAME_STEP.concat(dbName));
     repository.save(stepDbMeta, VERSION_COMMENT_V1, null);
     Condition cond = new Condition();
     StepMeta step1 = createStepMeta1(transMeta, stepDbMeta, cond);
@@ -885,8 +886,8 @@ public abstract class RepositoryTestBase {
     transMeta.addStep(step2);
     transMeta.addTransHop(createTransHopMeta(step1, step2));
 
-    SlaveServer slaveServer = createSlaveServer();
-    PartitionSchema partSchema = createPartitionSchema();
+    SlaveServer slaveServer = createSlaveServer(dbName);
+    PartitionSchema partSchema = createPartitionSchema(dbName);
     // slaveServer, partSchema must be saved so that they get IDs
     repository.save(slaveServer, VERSION_COMMENT_V1, null);
     repository.save(partSchema, VERSION_COMMENT_V1, null);
@@ -899,9 +900,9 @@ public abstract class RepositoryTestBase {
     return transMeta;
   }
 
-  protected PartitionSchema createPartitionSchema() throws Exception {
+  protected PartitionSchema createPartitionSchema(String partName) throws Exception {
     PartitionSchema partSchema = new PartitionSchema();
-    partSchema.setName(EXP_PART_SCHEMA_NAME);
+    partSchema.setName(partName);
     partSchema.setDescription(EXP_PART_SCHEMA_DESC);
     partSchema.setPartitionIDs(Arrays.asList(new String[] { EXP_PART_SCHEMA_PARTID_1, EXP_PART_SCHEMA_PARTID_2 }));
     partSchema.setDynamicallyDefined(EXP_PART_SCHEMA_DYN_DEF);
@@ -921,7 +922,7 @@ public abstract class RepositoryTestBase {
   @Test
   public void testPartitionSchemas() throws Exception {
     RepositoryDirectory rootDir = initRepo();
-    PartitionSchema partSchema = createPartitionSchema();
+    PartitionSchema partSchema = createPartitionSchema(EXP_PART_SCHEMA_NAME);
     repository.save(partSchema, VERSION_COMMENT_V1, null);
     assertNotNull(partSchema.getObjectId());
     ObjectRevision version = partSchema.getObjectRevision();
@@ -983,7 +984,7 @@ public abstract class RepositoryTestBase {
   @Test
   public void testClusterSchemas() throws Exception {
     RepositoryDirectory rootDir = initRepo();
-    ClusterSchema clusterSchema = createClusterSchema();
+    ClusterSchema clusterSchema = createClusterSchema(EXP_CLUSTER_SCHEMA_NAME);
     repository.save(clusterSchema, VERSION_COMMENT_V1, null);
     assertNotNull(clusterSchema.getObjectId());
     ObjectRevision version = clusterSchema.getObjectRevision();
@@ -1040,15 +1041,15 @@ public abstract class RepositoryTestBase {
     assertEquals(EXP_CLUSTER_SCHEMA_NAME, repository.getClusterNames(true)[0]);
   }
 
-  protected ClusterSchema createClusterSchema() throws Exception {
+  protected ClusterSchema createClusterSchema(String clusterName) throws Exception {
     ClusterSchema clusterSchema = new ClusterSchema();
-    clusterSchema.setName(EXP_CLUSTER_SCHEMA_NAME);
+    clusterSchema.setName(clusterName);
     clusterSchema.setBasePort(EXP_CLUSTER_SCHEMA_BASE_PORT);
     clusterSchema.setSocketsBufferSize(EXP_CLUSTER_SCHEMA_SOCKETS_BUFFER_SIZE);
     clusterSchema.setSocketsFlushInterval(EXP_CLUSTER_SCHEMA_SOCKETS_FLUSH_INTERVAL);
     clusterSchema.setSocketsCompressed(EXP_CLUSTER_SCHEMA_SOCKETS_COMPRESSED);
     clusterSchema.setDynamic(EXP_CLUSTER_SCHEMA_DYN);
-    SlaveServer slaveServer = createSlaveServer();
+    SlaveServer slaveServer = createSlaveServer(clusterName);
     repository.save(slaveServer, VERSION_COMMENT_V1, null);
     clusterSchema.setSlaveServers(Collections.singletonList(slaveServer));
     return clusterSchema;
@@ -1109,8 +1110,8 @@ public abstract class RepositoryTestBase {
     return new TransHopMeta(stepMeta1, stepMeta2);
   }
 
-  protected NotePadMeta createNotePadMeta() throws Exception {
-    return new NotePadMeta(EXP_NOTEPAD_NOTE, EXP_NOTEPAD_X, EXP_NOTEPAD_Y, EXP_NOTEPAD_WIDTH, EXP_NOTEPAD_HEIGHT);
+  protected NotePadMeta createNotePadMeta(String note) throws Exception {
+    return new NotePadMeta(note, EXP_NOTEPAD_X, EXP_NOTEPAD_Y, EXP_NOTEPAD_WIDTH, EXP_NOTEPAD_HEIGHT);
   }
 
   protected JobHopMeta createJobHopMeta(final JobEntryCopy from, final JobEntryCopy to) throws Exception {
@@ -1236,7 +1237,7 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testSlaves() throws Exception {
-    SlaveServer slave = createSlaveServer();
+    SlaveServer slave = createSlaveServer(EXP_SLAVE_NAME);
     repository.save(slave, VERSION_COMMENT_V1, null);
     assertNotNull(slave.getObjectId());
     ObjectRevision version = slave.getObjectRevision();
@@ -1293,9 +1294,9 @@ public abstract class RepositoryTestBase {
     assertEquals(0, repository.getSlaveServers().size());
   }
 
-  protected SlaveServer createSlaveServer() throws Exception {
+  protected SlaveServer createSlaveServer(String slaveName) throws Exception {
     SlaveServer slaveServer = new SlaveServer();
-    slaveServer.setName(EXP_SLAVE_NAME);
+    slaveServer.setName(slaveName);
     slaveServer.setHostname(EXP_SLAVE_HOSTNAME);
     slaveServer.setPort(EXP_SLAVE_PORT);
     slaveServer.setUsername(EXP_SLAVE_USERNAME);
@@ -1310,7 +1311,7 @@ public abstract class RepositoryTestBase {
   @Test
   public void testRenameAndUndelete() throws Exception {
     RepositoryDirectory rootDir = initRepo();
-    JobMeta jobMeta = createJobMeta();
+    JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
 
@@ -1423,12 +1424,11 @@ public abstract class RepositoryTestBase {
   public void testSaveConditionStepAttribute() throws Exception {
     fail("Not yet implemented");
   }
-
   @Test
   @Ignore
-  public void testGetAcl() throws Exception {
+  public void testGetAcl() throws Exception{
     RepositoryDirectory rootDir = initRepo();
-    JobMeta jobMeta = createJobMeta();
+    JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
     assertNotNull(jobMeta.getObjectId());
@@ -1437,14 +1437,13 @@ public abstract class RepositoryTestBase {
     assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
     assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
     ObjectAcl acl = repository.getAcl(jobMeta.getObjectId());
-    assertNotNull(acl);
+    assertNotNull(acl);    
   }
-
   @Test
-  @Ignore
-  public void testSetAcl() throws Exception {
+  @Ignore   
+  public void testSetAcl() throws Exception{
     RepositoryDirectory rootDir = initRepo();
-    JobMeta jobMeta = createJobMeta();
+    JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
     assertNotNull(jobMeta.getObjectId());
@@ -1455,8 +1454,7 @@ public abstract class RepositoryTestBase {
     ObjectAcl acl = repository.getAcl(jobMeta.getObjectId());
     assertNotNull(acl);
     acl.setEntriesInheriting(false);
-    ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER), EnumSet.of(
-        ObjectPermission.DELETE, ObjectPermission.DELETE_CHILD, ObjectPermission.READ, ObjectPermission.READ_ACL));
+    ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER),EnumSet.of(ObjectPermission.DELETE, ObjectPermission.DELETE_CHILD, ObjectPermission.READ, ObjectPermission.READ_ACL));
     List<ObjectAce> aceList = new ArrayList<ObjectAce>();
     aceList.add(ace);
     acl.setAces(aceList);
@@ -1471,7 +1469,7 @@ public abstract class RepositoryTestBase {
     assertTrue(ace1.getPermissions().contains(ObjectPermission.READ));
     assertTrue(ace1.getPermissions().contains(ObjectPermission.READ_ACL));
   }
-
+  
   @Test
   @Ignore
   public void testSaveDatabaseMetaJobEntryAttribute() throws Exception {
