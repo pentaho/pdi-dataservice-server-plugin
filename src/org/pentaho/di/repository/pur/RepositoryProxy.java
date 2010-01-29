@@ -168,7 +168,7 @@ public class RepositoryProxy implements Repository {
   }
 
   public long getJobEntryAttributeInteger(ObjectId idJobentry, int nr, String code) throws KettleException {
-    if(node.hasProperty(code)) {
+    if(node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getLong();
     } else {
       return 0;
@@ -285,7 +285,7 @@ public class RepositoryProxy implements Repository {
   }
 
   public long getStepAttributeInteger(ObjectId idStep, int nr, String code) throws KettleException {
-    if(node.hasProperty(code)) {
+    if(node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getLong();
     } else {
       return 0;
