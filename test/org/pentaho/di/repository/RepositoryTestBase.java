@@ -549,7 +549,7 @@ public abstract class RepositoryTestBase {
     assertEquals(EXP_JOB_ENTRY_2_NAME, fetchedJob.getJobHop(0).getToEntry().getEntry().getName());
     assertEquals("JobEntryAttributeTester", fetchedJob.getJobHop(0).getToEntry().getEntry().getTypeId());
     assertEquals(1, fetchedJob.getNotes().size());
-    assertEquals(EXP_NOTEPAD_NOTE, fetchedJob.getNote(0).getNote());
+    assertTrue(fetchedJob.getNote(0).getNote().startsWith(EXP_NOTEPAD_NOTE));
     assertEquals(EXP_NOTEPAD_X, fetchedJob.getNote(0).getLocation().x);
     assertEquals(EXP_NOTEPAD_Y, fetchedJob.getNote(0).getLocation().y);
     assertEquals(EXP_NOTEPAD_WIDTH, fetchedJob.getNote(0).getWidth());
@@ -662,6 +662,7 @@ public abstract class RepositoryTestBase {
   @Test
   public void testTransformations() throws Exception {
     RepositoryDirectory rootDir = initRepo();
+    String uniqueTransName = EXP_TRANS_NAME.concat(EXP_DBMETA_NAME);
     TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
     RepositoryDirectory transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     repository.save(transMeta, VERSION_COMMENT_V1, null);
@@ -670,10 +671,10 @@ public abstract class RepositoryTestBase {
     assertNotNull(version);
     assertTrue(hasVersionWithComment(transMeta, VERSION_COMMENT_V1));
 
-    assertTrue(repository.exists(EXP_TRANS_NAME, transDir, RepositoryObjectType.TRANSFORMATION));
+    assertTrue(repository.exists(uniqueTransName, transDir, RepositoryObjectType.TRANSFORMATION));
 
-    TransMeta fetchedTrans = repository.loadTransformation(EXP_TRANS_NAME, transDir, null, false, null);
-    assertEquals(EXP_TRANS_NAME, fetchedTrans.getName());
+    TransMeta fetchedTrans = repository.loadTransformation(uniqueTransName, transDir, null, false, null);
+    assertEquals(uniqueTransName, fetchedTrans.getName());
     assertEquals(EXP_TRANS_DESC, fetchedTrans.getDescription());
     assertEquals(EXP_TRANS_EXTENDED_DESC, fetchedTrans.getExtendedDescription());
     assertEquals(transDir.getPath(), fetchedTrans.getRepositoryDirectory().getPath());
@@ -759,8 +760,8 @@ public abstract class RepositoryTestBase {
     assertEquals(EXP_TRANS_STEP_2_NAME, fetchedTrans.getTransHop(0).getToStep().getName());
 
     assertEquals(1, transMeta.getSlaveStepCopyPartitionDistribution().getOriginalPartitionSchemas().size());
-    assertEquals(EXP_PART_SCHEMA_NAME, transMeta.getSlaveStepCopyPartitionDistribution().getOriginalPartitionSchemas()
-        .get(0).getName());
+    assertTrue(transMeta.getSlaveStepCopyPartitionDistribution().getOriginalPartitionSchemas()
+        .get(0).getName().startsWith(EXP_PART_SCHEMA_NAME));
 
     assertTrue(-1 != transMeta.getSlaveStepCopyPartitionDistribution().getPartition(EXP_SLAVE_NAME,
         EXP_PART_SCHEMA_NAME, 0));
@@ -781,12 +782,12 @@ public abstract class RepositoryTestBase {
     transMeta.setDescription(EXP_TRANS_DESC_V2);
     repository.save(transMeta, VERSION_COMMENT_V2, null);
     assertTrue(hasVersionWithComment(transMeta, VERSION_COMMENT_V2));
-    fetchedTrans = repository.loadTransformation(EXP_TRANS_NAME, transDir, null, false, null);
+    fetchedTrans = repository.loadTransformation(uniqueTransName, transDir, null, false, null);
     assertEquals(EXP_TRANS_DESC_V2, fetchedTrans.getDescription());
-    fetchedTrans = repository.loadTransformation(EXP_TRANS_NAME, transDir, null, false, VERSION_LABEL_V1);
+    fetchedTrans = repository.loadTransformation(uniqueTransName, transDir, null, false, VERSION_LABEL_V1);
     assertEquals(EXP_TRANS_DESC, fetchedTrans.getDescription());
 
-    assertEquals(transMeta.getObjectId(), repository.getTransformationID(EXP_TRANS_NAME, transDir));
+    assertEquals(transMeta.getObjectId(), repository.getTransformationID(uniqueTransName, transDir));
 
     assertEquals(1, repository.getTransformationObjects(transDir.getObjectId(), false).size());
     assertEquals(1, repository.getTransformationObjects(transDir.getObjectId(), true).size());
@@ -798,9 +799,9 @@ public abstract class RepositoryTestBase {
     assertEquals(transMeta.getName(), repository.getTransformationNames(transDir.getObjectId(), false)[0]);
 
     repository.deleteTransformation(transMeta.getObjectId());
-    assertFalse(repository.exists(EXP_TRANS_NAME, transDir, RepositoryObjectType.TRANSFORMATION));
+    assertFalse(repository.exists(uniqueTransName, transDir, RepositoryObjectType.TRANSFORMATION));
 
-    assertEquals(transMeta.getObjectId(), repository.getTransformationID(EXP_TRANS_NAME, transDir));
+    assertEquals(transMeta.getObjectId(), repository.getTransformationID(uniqueTransName, transDir));
 
     assertEquals(0, repository.getTransformationObjects(transDir.getObjectId(), false).size());
     assertEquals(1, repository.getTransformationObjects(transDir.getObjectId(), true).size());
@@ -902,7 +903,7 @@ public abstract class RepositoryTestBase {
 
   protected PartitionSchema createPartitionSchema(String partName) throws Exception {
     PartitionSchema partSchema = new PartitionSchema();
-    partSchema.setName(partName);
+    partSchema.setName(EXP_PART_SCHEMA_NAME.concat(partName));
     partSchema.setDescription(EXP_PART_SCHEMA_DESC);
     partSchema.setPartitionIDs(Arrays.asList(new String[] { EXP_PART_SCHEMA_PARTID_1, EXP_PART_SCHEMA_PARTID_2 }));
     partSchema.setDynamicallyDefined(EXP_PART_SCHEMA_DYN_DEF);
@@ -922,7 +923,7 @@ public abstract class RepositoryTestBase {
   @Test
   public void testPartitionSchemas() throws Exception {
     RepositoryDirectory rootDir = initRepo();
-    PartitionSchema partSchema = createPartitionSchema(EXP_PART_SCHEMA_NAME);
+    PartitionSchema partSchema = createPartitionSchema("");
     repository.save(partSchema, VERSION_COMMENT_V1, null);
     assertNotNull(partSchema.getObjectId());
     ObjectRevision version = partSchema.getObjectRevision();
@@ -1004,7 +1005,7 @@ public abstract class RepositoryTestBase {
     assertEquals(EXP_CLUSTER_SCHEMA_SOCKETS_COMPRESSED, fetchedClusterSchema.isSocketsCompressed());
     assertEquals(EXP_CLUSTER_SCHEMA_DYN, fetchedClusterSchema.isDynamic());
     assertEquals(1, fetchedClusterSchema.getSlaveServers().size());
-    assertEquals(EXP_SLAVE_NAME, fetchedClusterSchema.getSlaveServers().get(0).getName());
+    assertTrue(fetchedClusterSchema.getSlaveServers().get(0).getName().startsWith(EXP_SLAVE_NAME));
 
     // versioning test
     clusterSchema.setBasePort(EXP_CLUSTER_SCHEMA_BASE_PORT_V2);
@@ -1111,7 +1112,7 @@ public abstract class RepositoryTestBase {
   }
 
   protected NotePadMeta createNotePadMeta(String note) throws Exception {
-    return new NotePadMeta(note, EXP_NOTEPAD_X, EXP_NOTEPAD_Y, EXP_NOTEPAD_WIDTH, EXP_NOTEPAD_HEIGHT);
+    return new NotePadMeta(EXP_NOTEPAD_NOTE.concat(note), EXP_NOTEPAD_X, EXP_NOTEPAD_Y, EXP_NOTEPAD_WIDTH, EXP_NOTEPAD_HEIGHT);
   }
 
   protected JobHopMeta createJobHopMeta(final JobEntryCopy from, final JobEntryCopy to) throws Exception {
@@ -1237,7 +1238,7 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testSlaves() throws Exception {
-    SlaveServer slave = createSlaveServer(EXP_SLAVE_NAME);
+    SlaveServer slave = createSlaveServer("");
     repository.save(slave, VERSION_COMMENT_V1, null);
     assertNotNull(slave.getObjectId());
     ObjectRevision version = slave.getObjectRevision();
@@ -1296,7 +1297,7 @@ public abstract class RepositoryTestBase {
 
   protected SlaveServer createSlaveServer(String slaveName) throws Exception {
     SlaveServer slaveServer = new SlaveServer();
-    slaveServer.setName(slaveName);
+    slaveServer.setName(EXP_SLAVE_NAME.concat(slaveName));
     slaveServer.setHostname(EXP_SLAVE_HOSTNAME);
     slaveServer.setPort(EXP_SLAVE_PORT);
     slaveServer.setUsername(EXP_SLAVE_USERNAME);
@@ -1328,7 +1329,7 @@ public abstract class RepositoryTestBase {
     RepositoryDirectory transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     repository.save(transMeta, VERSION_COMMENT_V1, null);
     repository.renameTransformation(transMeta.getObjectId(), transDir, EXP_TRANS_NAME_NEW);
-    assertFalse(repository.exists(EXP_TRANS_NAME, transDir, RepositoryObjectType.TRANSFORMATION));
+    assertFalse(repository.exists(EXP_TRANS_NAME.concat(EXP_DBMETA_NAME), transDir, RepositoryObjectType.TRANSFORMATION));
     assertTrue(repository.exists(EXP_TRANS_NAME_NEW, transDir, RepositoryObjectType.TRANSFORMATION));
 
     DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA2_NAME);
