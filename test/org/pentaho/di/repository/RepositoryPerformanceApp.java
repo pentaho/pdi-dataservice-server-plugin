@@ -27,9 +27,9 @@ import com.pentaho.commons.dsc.util.TestLicenseStream;
  * @author GMoran
  *
  */
-public class RepositoryPerformanceTest extends RepositoryTestBase {
+public class RepositoryPerformanceApp extends RepositoryTestBase {
   
-  public RepositoryPerformanceTest(String url) {
+  public RepositoryPerformanceApp(String url) {
     super();
     setRepositoryLocation(url);
   }
@@ -49,7 +49,7 @@ public class RepositoryPerformanceTest extends RepositoryTestBase {
     if (args.length>0){
       url = args[0];
     }
-    RepositoryPerformanceTest test = new RepositoryPerformanceTest(url);
+    RepositoryPerformanceApp test = new RepositoryPerformanceApp(url);
     try {
       test.startupRepository();
       test.testLightLoad();
