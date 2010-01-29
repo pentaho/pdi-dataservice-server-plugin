@@ -12,6 +12,21 @@ import org.pentaho.di.trans.TransMeta;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
 
+/**
+ * This test class is not meant to be run automated. It provides two simple purposes:
+ * 1. to bulk load a PUR repository
+ * 2. to give simple stats on the performance of the load.
+ * 
+ * Simple pass a repository URL either on the command line as an argument, or set it
+ * in the code, and run the main method. The repository should be empty on initial
+ * execution, and you cannot run this utility against the same repo twice without first emptying the repo, 
+ * as the execution will throw duplicate entry exceptions. 
+ * 
+ * The class can be improved by passing a load parameter as well. 
+ * 
+ * @author GMoran
+ *
+ */
 public class RepositoryPerformanceTest extends RepositoryTestBase {
   
   public RepositoryPerformanceTest(String url) {
@@ -25,14 +40,16 @@ public class RepositoryPerformanceTest extends RepositoryTestBase {
   private static int contentLoadMax = 5;
 
   private static String testFolder = "test_directory";
-  private static String testTrans = "test_transformation";
-  private static String testJob = "test_job";
   
   private String repositoryLocation = null;
 
   public static void main(String[] args){
-    RepositoryPerformanceTest test = 
-          new RepositoryPerformanceTest("http://localhost:8080/pentaho/webservices/repo");
+    
+    String url = "http://localhost:8080/pentaho/webservices/repo";
+    if (args.length>0){
+      url = args[0];
+    }
+    RepositoryPerformanceTest test = new RepositoryPerformanceTest(url);
     try {
       test.startupRepository();
       test.testLightLoad();
@@ -73,8 +90,9 @@ public class RepositoryPerformanceTest extends RepositoryTestBase {
     testLoad(heavyLoadMax);
   }
 
-  private void testLoad(int max) throws Exception{
+  private Long testLoad(int max) throws Exception{
     
+    Long timeInMillis = System.currentTimeMillis();
     RepositoryDirectory rootDir = loadStartDirectory();
 
     for (int i = 0; i < max; i++) {
@@ -84,6 +102,13 @@ public class RepositoryPerformanceTest extends RepositoryTestBase {
       createContent(contentLoadMax, childDir);
       createDirectories(contentLoadMax, childDir);
     }
+    Long endTimeInMillis = System.currentTimeMillis();
+    Long exec = endTimeInMillis - timeInMillis;
+    
+    System.out.println("Execution time in seconds: ".concat(String.valueOf(exec*0.001)).concat("s"));
+    System.out.println("Created ".concat(String.valueOf(max * ((contentLoadMax*2) + 1))).concat(" primary PDI objects. "));
+
+    return exec;
   }
 
   private void createContent(int loadMax, RepositoryDirectory createHere) throws Exception{
