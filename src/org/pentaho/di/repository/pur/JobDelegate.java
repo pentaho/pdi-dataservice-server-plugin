@@ -22,12 +22,12 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjects;
-import org.pentaho.platform.repository.pcr.data.node.DataNode;
-import org.pentaho.platform.repository.pcr.data.node.DataNodeRef;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
+import com.pentaho.repository.pur.data.node.DataNode;
+import com.pentaho.repository.pur.data.node.DataNodeRef;
 
 public class JobDelegate extends AbstractDelegate implements ISharedObjectsTransformer {
 

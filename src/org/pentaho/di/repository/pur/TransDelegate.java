@@ -20,13 +20,13 @@ import org.pentaho.di.trans.StepLoader;
 import org.pentaho.di.trans.StepPlugin;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.BaseStep;
 import org.pentaho.di.trans.step.StepErrorMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.step.StepPartitioningMeta;
-import org.pentaho.platform.repository.pcr.data.node.DataNode;
-import org.pentaho.platform.repository.pcr.data.node.DataNodeRef;
+
+import com.pentaho.repository.pur.data.node.DataNode;
+import com.pentaho.repository.pur.data.node.DataNodeRef;
 
 public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer {
 

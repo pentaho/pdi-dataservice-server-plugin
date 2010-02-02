@@ -5,11 +5,8 @@ import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RoleInfo;
 import org.pentaho.di.repository.UserInfo;
-import org.pentaho.platform.api.repository.IUnifiedRepository;
-import org.pentaho.platform.repository.pcr.data.node.DataNode;
 
 public class UserRoleDelegate {
 

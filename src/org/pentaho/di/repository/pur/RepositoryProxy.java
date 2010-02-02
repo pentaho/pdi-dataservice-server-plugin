@@ -30,9 +30,10 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.platform.repository.pcr.data.node.DataNode;
-import org.pentaho.platform.repository.pcr.data.node.DataNodeRef;
-import org.pentaho.platform.repository.pcr.data.node.DataProperty;
+
+import com.pentaho.repository.pur.data.node.DataNode;
+import com.pentaho.repository.pur.data.node.DataNodeRef;
+import com.pentaho.repository.pur.data.node.DataProperty;
 
 /**
  * A {@link Repository} that stands in for the real repository, collecting entry and step attributes and loading or

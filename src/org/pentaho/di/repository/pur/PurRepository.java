@@ -58,14 +58,14 @@ import org.pentaho.platform.api.repository.RepositoryFileSid;
 import org.pentaho.platform.api.repository.VersionSummary;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.StandaloneSession;
-import org.pentaho.platform.repository.pcr.RepositoryPaths;
-import org.pentaho.platform.repository.pcr.data.node.NodeRepositoryFileData;
-import org.pentaho.platform.repository.pcr.ws.IUnifiedRepositoryWebService;
-import org.pentaho.platform.repository.pcr.ws.UnifiedRepositoryToWebServiceAdapter;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
+import com.pentaho.repository.pur.RepositoryPaths;
+import com.pentaho.repository.pur.data.node.NodeRepositoryFileData;
+import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
+import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
 
 /**
  * Implementation of {@link Repository} that delegates to the Pentaho unified repository (PUR), an instance of
@@ -109,7 +109,7 @@ public class PurRepository implements Repository
   private PurRepositorySecurityProvider securityProvider;
 
   private UserRoleDelegate userRoleDelegate = new UserRoleDelegate();
-  
+
   protected LogChannelInterface log;
 
   // ~ Constructors ====================================================================================================
@@ -984,7 +984,7 @@ public class PurRepository implements Repository
 
   public void insertJobEntryDatabase(ObjectId idJob, ObjectId idJobentry, ObjectId idDatabase) throws KettleException {
     throw new UnsupportedOperationException();
-    }
+  }
 
   public ObjectId insertLogEntry(String description) throws KettleException {
     // We are not presently logging
@@ -994,7 +994,7 @@ public class PurRepository implements Repository
   public void insertStepDatabase(ObjectId idTransformation, ObjectId idStep, ObjectId idDatabase)
       throws KettleException {
     throw new UnsupportedOperationException();
-    }
+  }
 
   public ClusterSchema loadClusterSchema(ObjectId idClusterSchema, List<SlaveServer> slaveServers, String versionId)
       throws KettleException {

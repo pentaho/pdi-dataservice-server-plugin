@@ -2,7 +2,8 @@ package org.pentaho.di.repository.pur;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.RepositoryElementInterface;
-import org.pentaho.platform.repository.pcr.data.node.DataNode;
+
+import com.pentaho.repository.pur.data.node.DataNode;
 
 public interface ITransformer {
 
