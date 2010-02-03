@@ -17,7 +17,7 @@
     <library name="metro-webservices-tools-2.0.jar" />
     <library name="pentaho-bi-platform-api-@dependency.bi-platform.revision@.jar" />
     <library name="pentaho-bi-platform-engine-core-@dependency.bi-platform.revision@.jar" />
-    <library name="pentaho-bi-platform-repository-@dependency.bi-platform.revision@.jar" />
+    <library name="pentaho-bi-platform-ee-@dependency.bi-platform.revision@.jar" />
     <library name="pentaho-bi-platform-util-@dependency.bi-platform.revision@.jar" />
     <library name="pentaho-ee-dsc-core-@dependency.pentaho-ee-dsc.revision@.jar" />
   </libraries>
