@@ -110,6 +110,7 @@ public class PurRepository implements Repository
 
   private UserRoleDelegate userRoleDelegate = new UserRoleDelegate();
 
+  private UserRoleListDelegate userRoleListDelegate;
   protected LogChannelInterface log;
 
   // ~ Constructors ====================================================================================================
@@ -128,15 +129,17 @@ public class PurRepository implements Repository
     this.log = new LogChannel(this);
     this.repositoryMeta = (PurRepositoryMeta) repositoryMeta;
     this.userInfo = userInfo;
-    securityProvider = new PurRepositorySecurityProvider(this, repositoryMeta, userInfo);
+    this.userRoleListDelegate = new UserRoleListDelegate(this.repositoryMeta, userInfo);
+    securityProvider = new PurRepositorySecurityProvider(this, this.repositoryMeta, userInfo);
     securityProvider.setUserRoleDelegate(userRoleDelegate);
+    securityProvider.setUserRoleListDelegate(userRoleListDelegate);
   }
 
   public void connect() throws KettleException, KettleSecurityException {
     populatePentahoSessionHolder();
 
     try {
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "?wsdl";
+      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/repo?wsdl";
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0",
           "DefaultUnifiedRepositoryWebServiceService"));
 

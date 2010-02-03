@@ -223,7 +223,7 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
 		if (location!=null) {
 			wURL.setText(Const.NVL(location.getUrl(), ""));
 		}else{
-      wURL.setText("http://localhost:8080/pentaho/webservices/repo"); // default repo web service URL
+      wURL.setText("http://localhost:8080/pentaho/webservices"); // default repo web service URL
     }
 		wManditoryComments.setSelection(input.isVersionCommentMandatory());
 	}

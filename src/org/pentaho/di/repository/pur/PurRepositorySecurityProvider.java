@@ -16,8 +16,10 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 
 	private PurRepository	repository;
 	private UserRoleDelegate	userRoleDelegate;
+	private UserRoleListDelegate userRoleListDelegate;
+	private PurRepositoryMeta repositoryMeta;
 
-	public PurRepositorySecurityProvider(PurRepository repository, RepositoryMeta repositoryMeta, UserInfo userInfo) {
+	public PurRepositorySecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
 		super(repositoryMeta, userInfo);
 		this.repository = repository;		
 	}
@@ -35,8 +37,7 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	}
 	
 	public boolean isVersionCommentMandatory() {
-	  PurRepositoryMeta meta = (PurRepositoryMeta) repository.getRepositoryMeta();
-	  return meta.isVersionCommentMandatory();
+	  return repositoryMeta.isVersionCommentMandatory();
 	}
 
 	public boolean isLockingPossible() {
@@ -97,7 +98,13 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	}
 
 	public String[] getUserLogins() throws KettleException {
-		return null;
+	  List<String> users = userRoleListDelegate.getAllUsers();
+	  if(users != null && users.size() > 0) {
+	    String[] returnValue = new String[users.size()];
+	    users.toArray(returnValue);
+	    return returnValue;
+	  }
+	  return null;
 	}
 
 	public Permission loadPermission(ObjectId id_permission) throws KettleException {
@@ -174,5 +181,30 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 
 	public void setUsers(List<UserInfo> users) throws KettleException {
 		userRoleDelegate.setUsers(users);
-	}	
+	}
+
+  public List<String> getAllRoles() throws KettleException {
+    return userRoleListDelegate.getAllRoles();
+  }
+
+  public List<String> getAllUsers() throws KettleException {
+    return userRoleListDelegate.getAllUsers();
+  }
+
+  public List<String> getAllUsersInRole(String role) throws KettleException {
+    return userRoleListDelegate.getAllUsersInRole(role);
+  }
+
+  public List<String> getRolesForUser(String userName) throws KettleException {
+    return userRoleListDelegate.getRolesForUser(userName);
+  }
+
+  public void setUserRoleListDelegate(UserRoleListDelegate userRoleListDelegate) {
+    this.userRoleListDelegate = userRoleListDelegate;
+  }
+
+  public UserRoleListDelegate getUserRoleListDelegate() {
+    return userRoleListDelegate;
+  }
+	
 }
