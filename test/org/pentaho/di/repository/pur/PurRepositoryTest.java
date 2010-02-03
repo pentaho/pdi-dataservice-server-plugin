@@ -65,7 +65,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     // tell kettle to look for plugins in this package (because custom plugins are defined in this class)
     System.setProperty(Const.KETTLE_PLUGIN_PACKAGES, RepositoryTestBase.class.getPackage().getName());
 
-    PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("pdi-ee=true")); //$NON-NLS-1$
+    // test calls into local "unified" repository which requires biserver-ee license
+    PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
     KettleEnvironment.init();
 
     repositoryMeta = new PurRepositoryMeta();

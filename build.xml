@@ -148,11 +148,11 @@
   	  -keepclasseswithmembernames class * implements  org.pentaho.di.repository.RepositoryVersionRegistry {
   		  public protected *;
   	  }
-  	  -keep class org.pentaho.di.ui.repository.jcr.JCRRepositoryDialog {
+  	  -keep class org.pentaho.di.ui.repository.pur.PurRepositoryDialog {
     		  public protected *;
       }
     	
-      -keepnames class org.pentaho.di.repository.jcr.JCRRepositoryLocation
+      -keepnames class org.pentaho.di.repository.pur.PurRepositoryLocation
     	
       -keepattributes Exceptions, InnerClasses, *Annotation*
     
