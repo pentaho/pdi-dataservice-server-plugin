@@ -18,7 +18,7 @@ public class UserRoleListDelegate {
   
   public UserRoleListDelegate(PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
     try {
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/userDetailsRoleListService?wsdl";
+      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/userrolelist?wsdl";
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0",
           "DefaultUserDetailsRoleListWebServiceService"));
 
