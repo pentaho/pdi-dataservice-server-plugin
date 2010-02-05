@@ -6,7 +6,6 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.BaseRepositorySecurityProvider;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ProfileMeta;
-import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RoleInfo;
 import org.pentaho.di.repository.UserInfo;
@@ -17,7 +16,6 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	private PurRepository	repository;
 	private UserRoleDelegate	userRoleDelegate;
 	private UserRoleListDelegate userRoleListDelegate;
-	private PurRepositoryMeta repositoryMeta;
 
 	public PurRepositorySecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
 		super(repositoryMeta, userInfo);
@@ -37,7 +35,7 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	}
 	
 	public boolean isVersionCommentMandatory() {
-	  return repositoryMeta.isVersionCommentMandatory();
+	  return  ((PurRepositoryMeta) repositoryMeta).isVersionCommentMandatory();
 	}
 
 	public boolean isLockingPossible() {
