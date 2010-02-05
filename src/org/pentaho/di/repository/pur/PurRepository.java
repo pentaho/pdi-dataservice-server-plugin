@@ -108,7 +108,7 @@ public class PurRepository implements Repository
 
   private PurRepositorySecurityProvider securityProvider;
 
-  private UserRoleDelegate userRoleDelegate = new UserRoleDelegate();
+  private UserRoleDelegate userRoleDelegate;
 
   private UserRoleListDelegate userRoleListDelegate;
   protected LogChannelInterface log;
@@ -130,6 +130,7 @@ public class PurRepository implements Repository
     this.repositoryMeta = (PurRepositoryMeta) repositoryMeta;
     this.userInfo = userInfo;
     this.userRoleListDelegate = new UserRoleListDelegate(this.repositoryMeta, userInfo);
+    this.userRoleDelegate = new UserRoleDelegate(this.repositoryMeta, userInfo);
     securityProvider = new PurRepositorySecurityProvider(this, this.repositoryMeta, userInfo);
     securityProvider.setUserRoleDelegate(userRoleDelegate);
     securityProvider.setUserRoleListDelegate(userRoleListDelegate);

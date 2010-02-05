@@ -22,6 +22,8 @@
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-engine-security" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
+    <dependency org="pentaho" name="pentaho-bi-platform-security-userroledao" rev="${dependency.bi-platform.revision}"
+      changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-util" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-ee-dsc-core" rev="${dependency.pentaho-ee-dsc.revision}"

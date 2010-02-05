@@ -120,7 +120,7 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	}
 
 	public UserInfo loadUserInfo(String login, String password) throws KettleException {
-		return userRoleDelegate.getUser(login, password);
+		return userRoleDelegate.getUser(login);
 	}
 
 	public void renameProfile(ObjectId id_profile, String newname) throws KettleException {
@@ -140,9 +140,13 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 		userRoleDelegate.createRole(newRole);
 	}
 
-	public void deleteRole(RoleInfo role) throws KettleException {
-		userRoleDelegate.deleteRole(role);
+	public void deleteRoles(List<RoleInfo> roles) throws KettleException {
+		userRoleDelegate.deleteRoles(roles);
 	}
+
+	 public void deleteUsers(List<UserInfo> users) throws KettleException {
+	    userRoleDelegate.deleteUsers(users);
+	  }
 
 	public RoleInfo getRole(String name) throws KettleException {
 		return userRoleDelegate.getRole(name);
