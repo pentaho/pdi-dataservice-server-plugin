@@ -86,6 +86,16 @@ public class PurRepository implements Repository
 
   private static final boolean VERSION_SHARED_OBJECTS = true;
 
+  private static final String FOLDER_PDI = "pdi"; //$NON-NLS-1$
+
+  private static final String FOLDER_PARTITION_SCHEMAS = "partitionSchemas"; //$NON-NLS-1$
+
+  private static final String FOLDER_CLUSTER_SCHEMAS = "clusterSchemas"; //$NON-NLS-1$
+
+  private static final String FOLDER_SLAVE_SERVERS = "slaveServers"; //$NON-NLS-1$
+
+  private static final String FOLDER_DATABASES = "databases"; //$NON-NLS-1$
+
   // ~ Instance fields =================================================================================================
 
   private IUnifiedRepository pur;
@@ -111,8 +121,9 @@ public class PurRepository implements Repository
   private UserRoleDelegate userRoleDelegate;
 
   private UserRoleListDelegate userRoleListDelegate;
-  protected LogChannelInterface log;
 
+  protected LogChannelInterface log;
+  
   // ~ Constructors ====================================================================================================
 
   public PurRepository() {
@@ -268,7 +279,7 @@ public class PurRepository implements Repository
     rootDir.setObjectId(null);
     return rootDir;
   }
-
+  
   private void loadRepositoryDirectory(final RepositoryDirectory parentDir, final RepositoryFile folder)
       throws KettleException {
     try {
@@ -1017,10 +1028,8 @@ public class PurRepository implements Repository
   }
 
   public Condition loadConditionFromStepAttribute(ObjectId idStep, String code) throws KettleException {
-
-    // TODO Auto-generated method stub 
-    return null;
-
+    // implemented by RepositoryProxy
+    throw new UnsupportedOperationException();
   }
 
   public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId idJobentry, String nameCode, String idCode,
@@ -1392,24 +1401,29 @@ public class PurRepository implements Repository
   }
 
   private String getDatabaseMetaParentFolderPath() {
-    return RepositoryPaths.getTenantPublicFolderPath();
+    return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
+        + FOLDER_DATABASES;
   }
 
   private String getPartitionSchemaParentFolderPath() {
-    return RepositoryPaths.getTenantPublicFolderPath();
+    return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
+        + FOLDER_PARTITION_SCHEMAS;
   }
 
   private String getSlaveParentFolderPath() {
-    return RepositoryPaths.getTenantPublicFolderPath();
+    return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
+        + FOLDER_SLAVE_SERVERS;
   }
 
   private String getClusterParentFolderPath() {
-    return RepositoryPaths.getTenantPublicFolderPath();
+    return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
+        + FOLDER_CLUSTER_SCHEMAS;
   }
 
   public void saveConditionStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, Condition condition)
       throws KettleException {
-    // TODO
+    // implemented by RepositoryProxy
+    throw new UnsupportedOperationException();
   }
 
   public void saveDatabaseMetaJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String nameCode, String idCode,
