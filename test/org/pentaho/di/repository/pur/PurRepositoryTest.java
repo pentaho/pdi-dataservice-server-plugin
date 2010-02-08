@@ -4,6 +4,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -59,6 +60,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
   @Before
   public void setUp() throws Exception {
+    super.setUp();
     PentahoSessionHolder.removeSession();
     SecurityContextHolder.getContext().setAuthentication(null);
 
@@ -86,11 +88,11 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     // call must come after connect; PurRepository sets its own value in PentahoSessionHolder; in the real deployment,
     // PurRepository and PUR would be in two different JVMs
     setUpUser();
-    
+
     List<RepositoryFile> files = pur.getChildren(pur.getFile("/pentaho/acme/public").getId());
     assertTrue("files not deleted: " + files.toString(), files.isEmpty());
   }
-  
+
   protected void setUpUser() {
     StandaloneSession pentahoSession = new StandaloneSession(userInfo.getLogin());
     pentahoSession.setAuthenticated(userInfo.getLogin());
@@ -112,69 +114,74 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
   @After
   public void tearDown() throws Exception {
-
+    super.tearDown();
     try {
       // clean up after test
-      // delete in correct order to prevent ref integrity exceptions
-      // jobs
-      RepositoryFile jobsParentFolder = pur.getFile("/pentaho/acme/public/jobs");
-      if (jobsParentFolder != null) {
-        List<RepositoryObject> files = repository.getJobObjects(new StringObjectId(jobsParentFolder.getId()
-            .toString()), true);
-        for (RepositoryObject file : files) {
-          pur.deleteFile(file.getObjectId().getId(), true, null);
-        }
-      }
-      // transformations
-      RepositoryFile transParentFolder = pur.getFile("/pentaho/acme/public/transformations");
-      if (transParentFolder != null) {
-        List<RepositoryObject> files = repository.getTransformationObjects(new StringObjectId(transParentFolder.getId()
-            .toString()), true);
-        for (RepositoryObject file : files) {
-          pur.deleteFile(file.getObjectId().getId(), true, null);
-        }
-      }
-      // partition schemas
-      ObjectId[] psIds = repository.getPartitionSchemaIDs(true);
-
-      for (ObjectId psId : psIds) {
-        pur.deleteFile(psId.getId(), true, null);
-      }
-      // cluster schemas
-      ObjectId[] csIds = repository.getClusterIDs(true);
-
-      for (ObjectId csId : csIds) {
-        pur.deleteFile(csId.getId(), true, null);
-      }
-      // slave servers
-      ObjectId[] ssIds = repository.getSlaveIDs(true);
-
-      for (ObjectId ssId : ssIds) {
-        pur.deleteFile(ssId.getId(), true, null);
-      }
-      // databases
-      ObjectId[] dbIds = repository.getDatabaseIDs(true);
-
-      for (ObjectId dbId : dbIds) {
-        pur.deleteFile(dbId.getId(), true, null);
-      }
-      // dirs
       List<RepositoryFile> dirs = pur.getChildren(pur.getFile("/pentaho/acme/public").getId());
       for (RepositoryFile file : dirs) {
         pur.deleteFile(file.getId(), true, null);
       }
-
     } catch (Exception e) {
       e.printStackTrace();
       throw e;
     }
-
     repository.disconnect();
+  }
 
-    //    repositoryMeta = null;
-    //    repository = null;
-    //    userInfo = null;
-    //    FileUtils.deleteDirectory(new File("/tmp/pdi_jcr_repo_unit_test"));
+  @Override
+  protected void delete(ObjectId id) {
+    pur.deleteFile(id.getId(), true, null);
+  }
+
+  /**
+   * Tries twice to delete files. By not failing outright on the first pass, we hopefully eliminate files that are 
+   * holding references to the files we cannot delete.
+   */
+  protected void safelyDeleteAll(final ObjectId[] ids) throws Exception {
+    Exception firstException = null;
+
+    List<String> frozenIds = new ArrayList<String>();
+    for (ObjectId id : ids) {
+      frozenIds.add(id.getId());
+    }
+
+    List<String> remainingIds = new ArrayList<String>();
+    for (ObjectId id : ids) {
+      remainingIds.add(id.getId());
+    }
+
+    try {
+      for (int i = 0; i < frozenIds.size(); i++) {
+        pur.deleteFile(frozenIds.get(i), true, null);
+        remainingIds.remove(frozenIds.get(i));
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    if (!remainingIds.isEmpty()) {
+
+      List<String> frozenIds2 = remainingIds;
+
+      List<String> remainingIds2 = new ArrayList<String>();
+      for (String id : frozenIds2) {
+        remainingIds2.add(id);
+      }
+
+      try {
+        for (int i = 0; i < frozenIds2.size(); i++) {
+          pur.deleteFile(frozenIds2.get(i), true, null);
+          remainingIds2.remove(frozenIds2.get(i));
+        }
+      } catch (Exception e) {
+        if (firstException == null) {
+          firstException = e;
+        }
+      }
+      if (!remainingIds2.isEmpty()) {
+        throw firstException;
+      }
+    }
   }
 
   public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
@@ -189,4 +196,5 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     assertNotNull(startDir);
     return startDir;
   }
+
 }

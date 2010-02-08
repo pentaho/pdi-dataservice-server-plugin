@@ -138,6 +138,11 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
       RepositoryDirectory dir = super.loadStartDirectory();
       return dir.findDirectory("pentaho/tenant0/home/joe");
     }
+
+    @Override
+    protected void delete(ObjectId id) {
+      // nothing to do
+    }
     
 
 }

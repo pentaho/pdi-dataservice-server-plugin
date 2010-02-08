@@ -395,7 +395,7 @@ public class PurRepository implements Repository
             + RepositoryObjectType.SLAVE_SERVER.getExtension();
       }
       case CLUSTER_SCHEMA: {
-        return getSlaveParentFolderPath() + RepositoryFile.SEPARATOR + name
+        return getClusterParentFolderPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
       }
       case JOB: {
@@ -1374,7 +1374,7 @@ public class PurRepository implements Repository
       } else {
         file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.CLUSTER_SCHEMA.getExtension())
             .versioned(VERSION_SHARED_OBJECTS).build();
-        file = pur.createFile(pur.getFile(getSlaveParentFolderPath()).getId(), file, new NodeRepositoryFileData(
+        file = pur.createFile(pur.getFile(getClusterParentFolderPath()).getId(), file, new NodeRepositoryFileData(
             clusterTransformer.elementToDataNode(element)), versionComment);
       }
       // side effects

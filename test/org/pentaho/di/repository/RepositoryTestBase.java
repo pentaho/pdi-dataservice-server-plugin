@@ -15,6 +15,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Stack;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -357,11 +358,26 @@ public abstract class RepositoryTestBase {
   protected Repository repository;
 
   protected UserInfo userInfo;
+  
+  // necessary to delete in the correct order to avoid referential integrity problems
+  protected Stack<RepositoryElementInterface> deleteStack;
 
   // ~ Constructors ====================================================================================================
 
   // ~ Methods =========================================================================================================
 
+  public void setUp() throws Exception {
+    deleteStack = new Stack<RepositoryElementInterface>();
+  }
+  
+  public void tearDown() throws Exception {
+    while (!deleteStack.empty()) {
+      delete(deleteStack.pop().getObjectId());
+    }
+  }
+  
+  protected abstract void delete(ObjectId id);
+  
   /**
    * getUserInfo()
    * getVersion()
@@ -494,6 +510,7 @@ public abstract class RepositoryTestBase {
     JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(jobMeta);
     assertNotNull(jobMeta.getObjectId());
     ObjectRevision version = jobMeta.getObjectRevision();
     assertNotNull(version);
@@ -639,6 +656,7 @@ public abstract class RepositoryTestBase {
     jobMeta.setSharedObjectsFile(EXP_JOB_SHARED_OBJECTS_FILE);
     DatabaseMeta entryDbMeta = createDatabaseMeta(EXP_DBMETA_NAME_JOB.concat(jobName));
     repository.save(entryDbMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(entryDbMeta);
     JobEntryCopy jobEntryCopy1 = createJobEntry1Copy(entryDbMeta);
     jobMeta.addJobEntry(jobEntryCopy1);
     JobEntryCopy jobEntryCopy2 = createJobEntry2Copy(entryDbMeta);
@@ -666,6 +684,7 @@ public abstract class RepositoryTestBase {
     TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
     RepositoryDirectory transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     repository.save(transMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(transMeta);
     assertNotNull(transMeta.getObjectId());
     ObjectRevision version = transMeta.getObjectRevision();
     assertNotNull(version);
@@ -862,6 +881,7 @@ public abstract class RepositoryTestBase {
     DatabaseMeta dbMeta = createDatabaseMeta(dbName);
     // dbMeta must be saved so that it gets an ID
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(dbMeta);
     transMeta.setMaxDateConnection(dbMeta);
     transMeta.setMaxDateTable(EXP_TRANS_MAX_DATE_TABLE);
     transMeta.setMaxDateField(EXP_TRANS_MAX_DATE_FIELD);
@@ -880,6 +900,7 @@ public abstract class RepositoryTestBase {
     transMeta.addDependency(new TransDependency(dbMeta, EXP_TRANS_DEP_TABLE_NAME, EXP_TRANS_DEP_FIELD_NAME));
     DatabaseMeta stepDbMeta = createDatabaseMeta(EXP_DBMETA_NAME_STEP.concat(dbName));
     repository.save(stepDbMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(stepDbMeta);
     Condition cond = new Condition();
     StepMeta step1 = createStepMeta1(transMeta, stepDbMeta, cond);
     transMeta.addStep(step1);
@@ -891,7 +912,9 @@ public abstract class RepositoryTestBase {
     PartitionSchema partSchema = createPartitionSchema(dbName);
     // slaveServer, partSchema must be saved so that they get IDs
     repository.save(slaveServer, VERSION_COMMENT_V1, null);
+    deleteStack.push(slaveServer);
     repository.save(partSchema, VERSION_COMMENT_V1, null);
+    deleteStack.push(partSchema);
 
     SlaveStepCopyPartitionDistribution slaveStepCopyPartitionDistribution = new SlaveStepCopyPartitionDistribution();
     slaveStepCopyPartitionDistribution.addPartition(EXP_SLAVE_NAME, EXP_PART_SCHEMA_NAME, 0);
@@ -925,6 +948,7 @@ public abstract class RepositoryTestBase {
     RepositoryDirectory rootDir = initRepo();
     PartitionSchema partSchema = createPartitionSchema("");
     repository.save(partSchema, VERSION_COMMENT_V1, null);
+    deleteStack.push(partSchema);
     assertNotNull(partSchema.getObjectId());
     ObjectRevision version = partSchema.getObjectRevision();
     assertNotNull(version);
@@ -987,6 +1011,7 @@ public abstract class RepositoryTestBase {
     RepositoryDirectory rootDir = initRepo();
     ClusterSchema clusterSchema = createClusterSchema(EXP_CLUSTER_SCHEMA_NAME);
     repository.save(clusterSchema, VERSION_COMMENT_V1, null);
+    deleteStack.push(clusterSchema);
     assertNotNull(clusterSchema.getObjectId());
     ObjectRevision version = clusterSchema.getObjectRevision();
     assertNotNull(version);
@@ -1052,6 +1077,7 @@ public abstract class RepositoryTestBase {
     clusterSchema.setDynamic(EXP_CLUSTER_SCHEMA_DYN);
     SlaveServer slaveServer = createSlaveServer(clusterName);
     repository.save(slaveServer, VERSION_COMMENT_V1, null);
+    deleteStack.push(slaveServer);
     clusterSchema.setSlaveServers(Collections.singletonList(slaveServer));
     return clusterSchema;
   }
@@ -1154,6 +1180,7 @@ public abstract class RepositoryTestBase {
   public void testDatabases() throws Exception {
     DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(dbMeta);
     assertNotNull(dbMeta.getObjectId());
     ObjectRevision v1 = dbMeta.getObjectRevision();
     assertNotNull(v1);
@@ -1240,6 +1267,7 @@ public abstract class RepositoryTestBase {
   public void testSlaves() throws Exception {
     SlaveServer slave = createSlaveServer("");
     repository.save(slave, VERSION_COMMENT_V1, null);
+    deleteStack.push(slave);
     assertNotNull(slave.getObjectId());
     ObjectRevision version = slave.getObjectRevision();
     assertNotNull(version);
@@ -1315,6 +1343,7 @@ public abstract class RepositoryTestBase {
     JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(jobMeta);
 
     repository.deleteJob(jobMeta.getObjectId());
     assertFalse(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
@@ -1328,12 +1357,14 @@ public abstract class RepositoryTestBase {
     TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
     RepositoryDirectory transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     repository.save(transMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(transMeta);
     repository.renameTransformation(transMeta.getObjectId(), transDir, EXP_TRANS_NAME_NEW);
     assertFalse(repository.exists(EXP_TRANS_NAME.concat(EXP_DBMETA_NAME), transDir, RepositoryObjectType.TRANSFORMATION));
     assertTrue(repository.exists(EXP_TRANS_NAME_NEW, transDir, RepositoryObjectType.TRANSFORMATION));
 
     DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA2_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(dbMeta);
     repository.renameDatabase(dbMeta.getObjectId(), EXP_DBMETA_NAME_NEW);
     assertFalse(repository.exists(EXP_DBMETA2_NAME, null, RepositoryObjectType.DATABASE));
     assertTrue(repository.exists(EXP_DBMETA_NAME_NEW, null, RepositoryObjectType.DATABASE));
@@ -1343,6 +1374,7 @@ public abstract class RepositoryTestBase {
   public void testVersions() throws Exception {
     DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(dbMeta);
     List<ObjectRevision> revs = repository.getRevisions(dbMeta);
     assertTrue(revs.size() >= 1);
     dbMeta.setHostname(EXP_DBMETA_HOSTNAME_V2);
@@ -1432,6 +1464,7 @@ public abstract class RepositoryTestBase {
     JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(jobMeta);
     assertNotNull(jobMeta.getObjectId());
     ObjectRevision version = jobMeta.getObjectRevision();
     assertNotNull(version);
@@ -1447,6 +1480,7 @@ public abstract class RepositoryTestBase {
     JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(jobMeta);
     assertNotNull(jobMeta.getObjectId());
     ObjectRevision version = jobMeta.getObjectRevision();
     assertNotNull(version);
