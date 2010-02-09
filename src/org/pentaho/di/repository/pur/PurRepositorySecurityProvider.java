@@ -65,14 +65,6 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	public boolean allowsVersionComments() {
 		return true;
 	}
-
-
-	
-	
-	
-	
-	
-	
 	public void delProfile(ObjectId id_profile) throws KettleException {
 	}
 
@@ -118,8 +110,11 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	}
 
 	public UserInfo loadUserInfo(String login) throws KettleException {
+	  // Get User's roles
 	  List<String> roles = userRoleListDelegate.getRolesForUser(login);
+	  // Create Set of RoleInfo from string roles
     Set<RoleInfo> roleInfoSet = new HashSet<RoleInfo>();
+    // Create a UserInfo object
 	  if(roles != null) {
       UserInfo user = new UserInfo(login);
       user.setName(login);
@@ -130,16 +125,20 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	    return new UserInfo(login);
 	    
 	  } else {
+      // No roles exist for this user. This user must not exist ?	    
 	    return null;  
 	  }	  
 	}
 
 	public UserInfo loadUserInfo(String login, String password) throws KettleException {
+	   // Get User's roles
     List<String> roles = userRoleListDelegate.getRolesForUser(login);
+    // Create Set of RoleInfo from string roles
     Set<RoleInfo> roleInfoSet = new HashSet<RoleInfo>();
+    // Create a UserInfo object
     if(roles != null) {
       UserInfo user = new UserInfo(login);
-      user.setPassword(login);
+      user.setPassword(password);
       user.setName(login);
       for(String rolename:roles) {
         roleInfoSet.add(new RoleInfo(rolename));
@@ -147,6 +146,7 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
       user.setRoles(roleInfoSet);
       return user;
     } else {
+      // No roles exist for this user. This user must not exist ?
       return null;  
     }
 
