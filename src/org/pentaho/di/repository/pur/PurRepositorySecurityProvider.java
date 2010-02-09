@@ -1,8 +1,10 @@
 package org.pentaho.di.repository.pur;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.ActionPermission;
 import org.pentaho.di.repository.BaseRepositorySecurityProvider;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ProfileMeta;
@@ -114,11 +116,25 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	}
 
 	public UserInfo loadUserInfo(String login) throws KettleException {
-		return userRoleDelegate.getUser(login);
+	  List<String> roles = userRoleListDelegate.getRolesForUser(login);
+	  if(roles != null) {
+	    return new UserInfo(login);
+	  } else {
+	    return null;  
+	  }	  
 	}
 
 	public UserInfo loadUserInfo(String login, String password) throws KettleException {
-		return userRoleDelegate.getUser(login);
+    List<String> roles = userRoleListDelegate.getRolesForUser(login);
+    if(roles != null) {
+      UserInfo user = new UserInfo(login);
+      user.setPassword(login);
+      user.setName(login);
+      return user;
+    } else {
+      return null;  
+    }
+
 	}
 
 	public void renameProfile(ObjectId id_profile, String newname) throws KettleException {
@@ -207,6 +223,11 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 
   public UserRoleListDelegate getUserRoleListDelegate() {
     return userRoleListDelegate;
+  }
+
+  public void setActionPermissions(String rolename, EnumSet<ActionPermission> permissions) throws KettleException {
+    userRoleDelegate.setActionPermissions(rolename, permissions);
+    
   }
 	
 }
