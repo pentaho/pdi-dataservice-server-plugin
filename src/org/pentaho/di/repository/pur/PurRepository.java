@@ -25,6 +25,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.Directory;
 import org.pentaho.di.repository.ObjectAce;
 import org.pentaho.di.repository.ObjectAcl;
 import org.pentaho.di.repository.ObjectId;
@@ -257,18 +258,19 @@ public class PurRepository implements Repository
     // new name is used as new file name (might be null meaning no change in name)
     String finalName = null;
     String finalParentPath = null;
+    String interimFolderPath = null;
     try {
       RepositoryFile folder = pur.getFileById(dirId.getId());
       finalName = (newName != null ? newName : folder.getName());
-      finalParentPath = (newParent != null ? newParent.getPath() : folder.getAbsolutePath());
+      interimFolderPath = folder.getAbsolutePath().replace(RepositoryFile.SEPARATOR + folder.getName(), ""); 
+      finalParentPath = (newParent != null ? newParent.getPath() : interimFolderPath);
       pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName, null);
       return dirId;
     } catch (Exception e) {
       throw new KettleException("Unable to move/rename directory with id [" + dirId + "] to new parent ["
-          + finalParentPath + "] and new name [" + finalName + "]", e);
+          + finalParentPath + "] and new name [nant" + finalName + "]", e);
     }
   }
-
   public RepositoryDirectory loadRepositoryDirectoryTree() throws KettleException {
     RepositoryDirectory rootDir = new RepositoryDirectory();
     RepositoryFile pentahoRootFolder = pur.getFile(RepositoryPaths.getPentahoRootFolderPath());
@@ -277,7 +279,112 @@ public class PurRepository implements Repository
     rootDir.addSubdirectory(dir);
     loadRepositoryDirectory(dir, pentahoRootFolder);
     rootDir.setObjectId(null);
-    return rootDir;
+    
+      /** HACK AND SLASH HERE ***/
+      /**
+      * This code accomodates the following parenting logic for display and navigation
+      * of the Enterprise repository:
+      * 
+      * 1. Spoon's Repository Explorer should not be tenant aware. This means that the Repository Explorer will only show one tenant's content at a time. (Jake approved) 
+      * 2. Management of multiple tenants shouldn't be dome in the design tools. A super admin tool is needed for multi-tenant administration. 
+      * 3. Admin's perspective in Repository Explorer:
+      *   a. The admin will see all folders in the tenant root folder as siblings, with an unnamed root. One of these folders will be the physical path from the tenant folder to the root of all users home folders. Under this node, the admin can see and access all users' home folders (dictated by ACLs, not business logic). 
+        
+      *   EXAMPLE: Admin logs in...
+      *   ===================
+      *   /
+      *   /home/user2
+      *   /home/user3
+      *   /home/admin
+      *   /public
+      *   /extra1
+      *   /extra2
+      
+      *   b. The admin will not see the protected physical multi-tenant structure (ie., the actual physical root of the repository to the tenant folder). This physical path to the tenant folder is also configurable and fetched from the server.
+      
+      *   EXAMPLE:
+      *   ===================
+      *   getRootFolder() returns "pentaho/acme", or whatever is in the configuration server-side. "pentaho/acme" is never shown in the UI, nor does the client code ever have to have knowledge of this structure. 
+      
+      * 4. User's perspective in Repository Explorer:
+      *   a. The user should see a "home" folder, and a "public" folder. The home folder will appear as the user's login, aliased from it's actual physical path. The physical structure of the path to the home folder from the tenant folder will be fetched from the server by the client code, so as to be configurable. 
+      
+      *   EXAMPLE: Suzy logs in...
+        ===================
+      *   /
+      *   /public
+      *   /suzy (physically stored as /home/suzy)
+        
+      
+      *   b. In the case where the admin has created a folder with the same name as the "home" folder alias, the "home" folder will appear as it's physical path and name.
+      
+      *   EXAMPLE: Admin logs in... and creates /suzy folder...
+      *   ===================
+      *   /
+      *   /home/user2
+      *   /home/suzy
+      *   /home/admin
+      *   /public
+      *   /suzy
+      *   /extra2
+      
+      *   ... then suzy logs in ...
+      *   ===================
+      *   /
+      *   /public
+      *   /suzy (the folder admin created)
+      *   /home/suzy (suzy's home folder)
+
+      * Pseudo-code:
+      * ==============================================
+      
+      * Call 1: getTenant() ==> /tenant0
+      * Call 2: get children down 2 levels
+      * Call 3: getHomeFolder() ==> /home/me
+      * BizLogic 1: chop off tenant node
+      * BizLogic 2: if write() on home folder, skip;
+      *   if sibling folder same name as alias ("me"), skip;
+      *   alias /home/me to "me"  
+
+      **********************************************************************************************/
+    RepositoryDirectory tenantRoot = rootDir.findDirectory(RepositoryPaths.getTenantRootFolderPath());
+    RepositoryDirectory tenantHome = rootDir.findDirectory(RepositoryPaths.getTenantHomeFolderPath());
+    RepositoryDirectory userHome = rootDir.findDirectory(RepositoryPaths.getUserHomeFolderPath());
+    RepositoryDirectory etcHome = rootDir.findDirectory(RepositoryPaths.getTenantEtcFolderPath());
+
+    boolean hasHomeWriteAccess = pur.hasAccess(RepositoryPaths.getTenantHomeFolderPath(), EnumSet.of(RepositoryFilePermission.WRITE));
+    String userHomeAlias = userHome.getName();
+    
+    // Skip aliasing the home directory if:
+    // a. the user has write access to the home directory (signifying admin access)
+    // b. an admin has inadvertently created a sibling folder with the same name as the alias we want to use. 
+    
+    boolean skipAlias = hasHomeWriteAccess || (tenantRoot.findChild(userHomeAlias)!=null);
+    List<Directory> children = new ArrayList<Directory>();
+    RepositoryDirectory newRoot = new RepositoryDirectory();
+    newRoot.setObjectId(tenantRoot.getObjectId());
+    
+    for (int i = 0; i < tenantRoot.getNrSubdirectories(); i++) {
+      RepositoryDirectory tenantChild = tenantRoot.getSubdirectory(i);
+      boolean isEtcChild = tenantChild.equals(etcHome);
+      if (isEtcChild){
+        continue;
+      }
+      boolean isHomeChild = tenantChild.equals(tenantHome);
+      // We INTENTIONALLY do not re-parent here... If we need to re-parent these nodes,
+      // then a virtual parent to actual parent map will need to be introduced. 
+      if (isHomeChild && (!skipAlias)){
+          //newRoot.addSubdirectory(userHome);
+        children.add(0,userHome);
+      }else{
+        //newRoot.addSubdirectory(tenantChild);
+        children.add(tenantChild);
+      }
+    }
+    newRoot.setChildren(children);
+    
+    /** END HACK AND SLASH HERE ***/
+    return newRoot;
   }
   
   private void loadRepositoryDirectory(final RepositoryDirectory parentDir, final RepositoryFile folder)
