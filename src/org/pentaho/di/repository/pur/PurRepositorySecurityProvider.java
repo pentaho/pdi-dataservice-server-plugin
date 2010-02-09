@@ -1,7 +1,9 @@
 package org.pentaho.di.repository.pur;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ActionPermission;
@@ -117,8 +119,16 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 
 	public UserInfo loadUserInfo(String login) throws KettleException {
 	  List<String> roles = userRoleListDelegate.getRolesForUser(login);
+    Set<RoleInfo> roleInfoSet = new HashSet<RoleInfo>();
 	  if(roles != null) {
+      UserInfo user = new UserInfo(login);
+      user.setName(login);
+      for(String rolename:roles) {
+        roleInfoSet.add(new RoleInfo(rolename));
+      }
+      user.setRoles(roleInfoSet);
 	    return new UserInfo(login);
+	    
 	  } else {
 	    return null;  
 	  }	  
@@ -126,10 +136,15 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 
 	public UserInfo loadUserInfo(String login, String password) throws KettleException {
     List<String> roles = userRoleListDelegate.getRolesForUser(login);
+    Set<RoleInfo> roleInfoSet = new HashSet<RoleInfo>();
     if(roles != null) {
       UserInfo user = new UserInfo(login);
       user.setPassword(login);
       user.setName(login);
+      for(String rolename:roles) {
+        roleInfoSet.add(new RoleInfo(rolename));
+      }
+      user.setRoles(roleInfoSet);
       return user;
     } else {
       return null;  
