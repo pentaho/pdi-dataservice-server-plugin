@@ -17,12 +17,11 @@ import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositoryDirectory;
-import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryTestBase;
-import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.repository.IBackingRepositoryLifecycleManager;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
@@ -49,6 +48,8 @@ import com.pentaho.commons.dsc.util.TestLicenseStream;
 public class PurRepositoryTest extends RepositoryTestBase implements ApplicationContextAware {
 
   private IUnifiedRepository pur;
+  
+  private IBackingRepositoryLifecycleManager manager;
 
   @BeforeClass
   public static void setUpClass() throws Exception {
@@ -108,8 +109,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     PentahoSessionHolder.setSession(pentahoSession);
     SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_GLOBAL);
     SecurityContextHolder.getContext().setAuthentication(authentication);
-    pur.getRepositoryLifecycleManager().newTenant();
-    pur.getRepositoryLifecycleManager().newUser();
+    manager.newTenant();
+    manager.newUser();
   }
 
   @After
@@ -186,13 +187,14 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
   public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
     pur = (IUnifiedRepository) applicationContext.getBean("unifiedRepository");
-    pur.getRepositoryLifecycleManager().startup();
+    manager = (IBackingRepositoryLifecycleManager) applicationContext.getBean("backingRepositoryLifecycleManager");
+    manager.startup();
   }
 
   @Override
   protected RepositoryDirectory loadStartDirectory() throws Exception {
     RepositoryDirectory rootDir = repository.loadRepositoryDirectoryTree();
-    RepositoryDirectory startDir = rootDir.findDirectory("pentaho/acme/public");
+    RepositoryDirectory startDir = rootDir.findDirectory("public");
     assertNotNull(startDir);
     return startDir;
   }
