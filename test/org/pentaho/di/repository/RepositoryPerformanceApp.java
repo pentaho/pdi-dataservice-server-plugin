@@ -45,14 +45,15 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
 
   public static void main(String[] args){
     
-    String url = "http://localhost:8080/pentaho/webservices/repo";
+    String url = "http://localhost:8080/pentaho/webservices";
     if (args.length>0){
       url = args[0];
     }
     RepositoryPerformanceApp test = new RepositoryPerformanceApp(url);
     try {
+      test.setUp();
       test.startupRepository();
-      test.testLightLoad();
+      test.testModerateLoad();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -115,11 +116,17 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
       for (int ix = 0; ix < loadMax; ix++) {
         TransMeta transMeta = createTransMeta(createHere.getName().concat(EXP_DBMETA_NAME.concat(String.valueOf(ix))));
         transMeta.setRepositoryDirectory(createHere);
-        repository.save(transMeta, VERSION_COMMENT_V1.concat(String.valueOf(ix)), null);
+        try{
+          repository.save(transMeta, VERSION_COMMENT_V1.concat(String.valueOf(ix)), null);
+        }catch(Exception e){
+        }
 
         JobMeta jobMeta = createJobMeta("JOB_".concat(createHere.getName()).concat(EXP_DBMETA_NAME.concat(String.valueOf(ix))));
         jobMeta.setRepositoryDirectory(createHere);
-        repository.save(jobMeta, VERSION_COMMENT_V1.concat(String.valueOf(ix)), null);
+        try{
+          repository.save(jobMeta, VERSION_COMMENT_V1.concat(String.valueOf(ix)), null);
+        }catch(Exception e){
+        }
       }
     }
     
@@ -136,7 +143,7 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
     @Override
     protected RepositoryDirectory loadStartDirectory() throws Exception {
       RepositoryDirectory dir = super.loadStartDirectory();
-      return dir.findDirectory("pentaho/tenant0/home/joe");
+      return dir.findDirectory("home/joe");
     }
 
     @Override

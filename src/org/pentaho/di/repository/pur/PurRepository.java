@@ -129,6 +129,7 @@ public class PurRepository implements Repository
 
   protected LogChannelInterface log;
 
+
   protected Serializable cachedSlaveServerParentFolderId;
 
   protected Serializable cachedPartitionSchemaParentFolderId;
@@ -136,7 +137,8 @@ public class PurRepository implements Repository
   protected Serializable cachedClusterSchemaParentFolderId;
 
   protected Serializable cachedDatabaseMetaParentFolderId;
-
+    
+  RepositoryDirectory root = null;  
   // ~ Constructors ====================================================================================================
 
   public PurRepository() {
@@ -274,7 +276,7 @@ public class PurRepository implements Repository
     try {
       RepositoryFile folder = pur.getFileById(dirId.getId());
       finalName = (newName != null ? newName : folder.getName());
-      interimFolderPath = folder.getAbsolutePath().replace(RepositoryFile.SEPARATOR + folder.getName(), "");
+      interimFolderPath = folder.getAbsolutePath().replace(RepositoryFile.SEPARATOR + folder.getName(), ""); 
       finalParentPath = (newParent != null ? newParent.getPath() : interimFolderPath);
       pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName, null);
       return dirId;
@@ -283,124 +285,123 @@ public class PurRepository implements Repository
           + finalParentPath + "] and new name [nant" + finalName + "]", e);
     }
   }
-
   public RepositoryDirectory loadRepositoryDirectoryTree() throws KettleException {
     RepositoryDirectory rootDir = new RepositoryDirectory();
     RepositoryFile pentahoRootFolder = pur.getFile(RepositoryPaths.getPentahoRootFolderPath());
     RepositoryDirectory dir = new RepositoryDirectory(rootDir, pentahoRootFolder.getName());
     dir.setObjectId(new StringObjectId(pentahoRootFolder.getId().toString()));
+    this.root = rootDir;
     rootDir.addSubdirectory(dir);
     loadRepositoryDirectory(dir, pentahoRootFolder);
     rootDir.setObjectId(null);
-
-    /** HACK AND SLASH HERE ***/
-    /**
-    * This code accomodates the following parenting logic for display and navigation
-    * of the Enterprise repository:
-    * 
-    * 1. Spoon's Repository Explorer should not be tenant aware. This means that the Repository Explorer will only show one tenant's content at a time. (Jake approved) 
-    * 2. Management of multiple tenants shouldn't be dome in the design tools. A super admin tool is needed for multi-tenant administration. 
-    * 3. Admin's perspective in Repository Explorer:
-    *   a. The admin will see all folders in the tenant root folder as siblings, with an unnamed root. One of these folders will be the physical path from the tenant folder to the root of all users home folders. Under this node, the admin can see and access all users' home folders (dictated by ACLs, not business logic). 
+    
+      /** HACK AND SLASH HERE ***/
+      /**
+      * This code accomodates the following parenting logic for display and navigation
+      * of the Enterprise repository:
+      * 
+      * 1. Spoon's Repository Explorer should not be tenant aware. This means that the Repository Explorer will only show one tenant's content at a time. (Jake approved) 
+      * 2. Management of multiple tenants shouldn't be dome in the design tools. A super admin tool is needed for multi-tenant administration. 
+      * 3. Admin's perspective in Repository Explorer:
+      *   a. The admin will see all folders in the tenant root folder as siblings, with an unnamed root. One of these folders will be the physical path from the tenant folder to the root of all users home folders. Under this node, the admin can see and access all users' home folders (dictated by ACLs, not business logic). 
+        
+      *   EXAMPLE: Admin logs in...
+      *   ===================
+      *   /
+      *   /home/user2
+      *   /home/user3
+      *   /home/admin
+      *   /public
+      *   /extra1
+      *   /extra2
       
-    *   EXAMPLE: Admin logs in...
-    *   ===================
-    *   /
-    *   /home/user2
-    *   /home/user3
-    *   /home/admin
-    *   /public
-    *   /extra1
-    *   /extra2
-    
-    *   b. The admin will not see the protected physical multi-tenant structure (ie., the actual physical root of the repository to the tenant folder). This physical path to the tenant folder is also configurable and fetched from the server.
-    
-    *   EXAMPLE:
-    *   ===================
-    *   getRootFolder() returns "pentaho/acme", or whatever is in the configuration server-side. "pentaho/acme" is never shown in the UI, nor does the client code ever have to have knowledge of this structure. 
-    
-    * 4. User's perspective in Repository Explorer:
-    *   a. The user should see a "home" folder, and a "public" folder. The home folder will appear as the user's login, aliased from it's actual physical path. The physical structure of the path to the home folder from the tenant folder will be fetched from the server by the client code, so as to be configurable. 
-    
-    *   EXAMPLE: Suzy logs in...
-      ===================
-    *   /
-    *   /public
-    *   /suzy (physically stored as /home/suzy)
+      *   b. The admin will not see the protected physical multi-tenant structure (ie., the actual physical root of the repository to the tenant folder). This physical path to the tenant folder is also configurable and fetched from the server.
       
-    
-    *   b. In the case where the admin has created a folder with the same name as the "home" folder alias, the "home" folder will appear as it's physical path and name.
-    
-    *   EXAMPLE: Admin logs in... and creates /suzy folder...
-    *   ===================
-    *   /
-    *   /home/user2
-    *   /home/suzy
-    *   /home/admin
-    *   /public
-    *   /suzy
-    *   /extra2
-    
-    *   ... then suzy logs in ...
-    *   ===================
-    *   /
-    *   /public
-    *   /suzy (the folder admin created)
-    *   /home/suzy (suzy's home folder)
+      *   EXAMPLE:
+      *   ===================
+      *   getRootFolder() returns "pentaho/acme", or whatever is in the configuration server-side. "pentaho/acme" is never shown in the UI, nor does the client code ever have to have knowledge of this structure. 
+      
+      * 4. User's perspective in Repository Explorer:
+      *   a. The user should see a "home" folder, and a "public" folder. The home folder will appear as the user's login, aliased from it's actual physical path. The physical structure of the path to the home folder from the tenant folder will be fetched from the server by the client code, so as to be configurable. 
+      
+      *   EXAMPLE: Suzy logs in...
+        ===================
+      *   /
+      *   /public
+      *   /suzy (physically stored as /home/suzy)
+        
+      
+      *   b. In the case where the admin has created a folder with the same name as the "home" folder alias, the "home" folder will appear as it's physical path and name.
+      
+      *   EXAMPLE: Admin logs in... and creates /suzy folder...
+      *   ===================
+      *   /
+      *   /home/user2
+      *   /home/suzy
+      *   /home/admin
+      *   /public
+      *   /suzy
+      *   /extra2
+      
+      *   ... then suzy logs in ...
+      *   ===================
+      *   /
+      *   /public
+      *   /suzy (the folder admin created)
+      *   /home/suzy (suzy's home folder)
 
-    * Pseudo-code:
-    * ==============================================
-    
-    * Call 1: getTenant() ==> /tenant0
-    * Call 2: get children down 2 levels
-    * Call 3: getHomeFolder() ==> /home/me
-    * BizLogic 1: chop off tenant node
-    * BizLogic 2: if write() on home folder, skip;
-    *   if sibling folder same name as alias ("me"), skip;
-    *   alias /home/me to "me"  
+      * Pseudo-code:
+      * ==============================================
+      
+      * Call 1: getTenant() ==> /tenant0
+      * Call 2: get children down 2 levels
+      * Call 3: getHomeFolder() ==> /home/me
+      * BizLogic 1: chop off tenant node
+      * BizLogic 2: if write() on home folder, skip;
+      *   if sibling folder same name as alias ("me"), skip;
+      *   alias /home/me to "me"  
 
-    **********************************************************************************************/
+      **********************************************************************************************/
     RepositoryDirectory tenantRoot = rootDir.findDirectory(RepositoryPaths.getTenantRootFolderPath());
     RepositoryDirectory tenantHome = rootDir.findDirectory(RepositoryPaths.getTenantHomeFolderPath());
     RepositoryDirectory userHome = rootDir.findDirectory(RepositoryPaths.getUserHomeFolderPath());
     RepositoryDirectory etcHome = rootDir.findDirectory(RepositoryPaths.getTenantEtcFolderPath());
 
-    boolean hasHomeWriteAccess = pur.hasAccess(RepositoryPaths.getTenantHomeFolderPath(), EnumSet
-        .of(RepositoryFilePermission.WRITE));
+    boolean hasHomeWriteAccess = pur.hasAccess(RepositoryPaths.getTenantHomeFolderPath(), EnumSet.of(RepositoryFilePermission.WRITE));
     String userHomeAlias = userHome.getName();
-
+    
     // Skip aliasing the home directory if:
     // a. the user has write access to the home directory (signifying admin access)
     // b. an admin has inadvertently created a sibling folder with the same name as the alias we want to use. 
-
-    boolean skipAlias = hasHomeWriteAccess || (tenantRoot.findChild(userHomeAlias) != null);
+    
+    boolean skipAlias = hasHomeWriteAccess || (tenantRoot.findChild(userHomeAlias)!=null);
     List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
     newRoot.setObjectId(tenantRoot.getObjectId());
-
+    
     for (int i = 0; i < tenantRoot.getNrSubdirectories(); i++) {
       RepositoryDirectory tenantChild = tenantRoot.getSubdirectory(i);
       boolean isEtcChild = tenantChild.equals(etcHome);
-      if (isEtcChild) {
+      if (isEtcChild){
         continue;
       }
       boolean isHomeChild = tenantChild.equals(tenantHome);
       // We INTENTIONALLY do not re-parent here... If we need to re-parent these nodes,
       // then a virtual parent to actual parent map will need to be introduced. 
-      if (isHomeChild && (!skipAlias)) {
-        //newRoot.addSubdirectory(userHome);
-        children.add(0, userHome);
-      } else {
+      if (isHomeChild && (!skipAlias)){
+          //newRoot.addSubdirectory(userHome);
+        children.add(0,userHome);
+      }else{
         //newRoot.addSubdirectory(tenantChild);
         children.add(tenantChild);
       }
     }
     newRoot.setChildren(children);
-
+    
     /** END HACK AND SLASH HERE ***/
     return newRoot;
   }
-
+  
   private void loadRepositoryDirectory(final RepositoryDirectory parentDir, final RepositoryFile folder)
       throws KettleException {
     try {
@@ -683,42 +684,42 @@ public class PurRepository implements Repository
     List<Serializable> parentFolderIds = new ArrayList<Serializable>();
     List<String> filters = new ArrayList<String>();
     for (RepositoryObjectType objectType : objectTypes) {
-      switch (objectType) {
-        case DATABASE: {
+    switch (objectType) {
+      case DATABASE: {
           parentFolderIds.add(getDatabaseMetaParentFolderId());
           filters.add("*" + RepositoryObjectType.DATABASE.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case TRANSFORMATION: {
+        break;
+      }
+      case TRANSFORMATION: {
           parentFolderIds.add(dir.getObjectId().getId());
           filters.add("*" + RepositoryObjectType.TRANSFORMATION.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case PARTITION_SCHEMA: {
+        break;
+      }
+      case PARTITION_SCHEMA: {
           parentFolderIds.add(getPartitionSchemaParentFolderId());
           filters.add("*" + RepositoryObjectType.PARTITION_SCHEMA.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case SLAVE_SERVER: {
+        break;
+      }
+      case SLAVE_SERVER: {
           parentFolderIds.add(getSlaveServerParentFolderId());
           filters.add("*" + RepositoryObjectType.SLAVE_SERVER.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case CLUSTER_SCHEMA: {
+        break;
+      }
+      case CLUSTER_SCHEMA: {
           parentFolderIds.add(getClusterSchemaParentFolderId());
           filters.add("*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case JOB: {
+        break;
+      }
+      case JOB: {
           parentFolderIds.add(dir.getObjectId().getId());
           filters.add("*" + RepositoryObjectType.JOB.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        default: {
-          throw new UnsupportedOperationException("not implemented");
-        }
+        break;
+      }
+      default: {
+        throw new UnsupportedOperationException("not implemented");
       }
     }
+  }
     StringBuilder mergedFilterBuf = new StringBuilder();
     // build filter
     int i = 0;
@@ -741,38 +742,38 @@ public class PurRepository implements Repository
     Set<Serializable> parentFolderIds = new HashSet<Serializable>();
     List<String> filters = new ArrayList<String>();
     for (RepositoryObjectType objectType : objectTypes) {
-      switch (objectType) {
-        case DATABASE: {
+    switch (objectType) {
+      case DATABASE: {
           parentFolderIds.add(getDatabaseMetaParentFolderId());
           filters.add("*" + RepositoryObjectType.DATABASE.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case TRANSFORMATION: {
+        break;
+      }
+      case TRANSFORMATION: {
           parentFolderIds.add(dir.getObjectId().getId());
           filters.add("*" + RepositoryObjectType.TRANSFORMATION.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case PARTITION_SCHEMA: {
+        break;
+      }
+      case PARTITION_SCHEMA: {
           parentFolderIds.add(getPartitionSchemaParentFolderId());
           filters.add("*" + RepositoryObjectType.PARTITION_SCHEMA.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case SLAVE_SERVER: {
+        break;
+      }
+      case SLAVE_SERVER: {
           parentFolderIds.add(getSlaveServerParentFolderId());
           filters.add("*" + RepositoryObjectType.SLAVE_SERVER.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case CLUSTER_SCHEMA: {
+        break;
+      }
+      case CLUSTER_SCHEMA: {
           parentFolderIds.add(getClusterSchemaParentFolderId());
           filters.add("*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        case JOB: {
+        break;
+      }
+      case JOB: {
           parentFolderIds.add(dir.getObjectId().getId());
           filters.add("*" + RepositoryObjectType.JOB.getExtension()); //$NON-NLS-1$
-          break;
-        }
-        default: {
+        break;
+      }
+      default: {
           throw new UnsupportedOperationException();
         }
       }
@@ -881,7 +882,8 @@ public class PurRepository implements Repository
 
   public String[] getJobNames(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
     try {
-      RepositoryDirectory dir = loadRepositoryDirectoryTree().findDirectory(idDirectory);
+      //RepositoryDirectory dir = loadRepositoryDirectoryTree().findDirectory(idDirectory);
+      RepositoryDirectory dir = root.findDirectory(idDirectory);
       List<RepositoryFile> children = getAllFilesOfType(dir, RepositoryObjectType.JOB, includeDeleted);
       List<String> names = new ArrayList<String>();
       for (RepositoryFile file : children) {
@@ -1072,7 +1074,8 @@ public class PurRepository implements Repository
 
   public String[] getTransformationNames(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
     try {
-      RepositoryDirectory dir = loadRepositoryDirectoryTree().findDirectory(idDirectory);
+      //RepositoryDirectory repDir = loadRepositoryDirectoryTree().findDirectory(id_directory);
+      RepositoryDirectory dir = root.findDirectory(idDirectory);
       List<RepositoryFile> children = getAllFilesOfType(dir, RepositoryObjectType.TRANSFORMATION, includeDeleted);
       List<String> names = new ArrayList<String>();
       for (RepositoryFile file : children) {
@@ -1095,7 +1098,8 @@ public class PurRepository implements Repository
   protected List<RepositoryObject> getPdiObjects(ObjectId id_directory, List<RepositoryObjectType> objectTypes,
       boolean includeDeleted) throws KettleException {
     try {
-      RepositoryDirectory repDir = loadRepositoryDirectoryTree().findDirectory(id_directory);
+      //RepositoryDirectory repDir = loadRepositoryDirectoryTree().findDirectory(id_directory);
+      RepositoryDirectory repDir = root.findDirectory(id_directory);
 
       List<RepositoryObject> list = new ArrayList<RepositoryObject>();
       List<RepositoryFile> nonDeletedChildren = getAllFilesOfType(repDir, objectTypes);
@@ -1546,6 +1550,7 @@ public class PurRepository implements Repository
     }
 
   }
+
 
   private ObjectRevision getObjectRevision(final ObjectId elementId, final String versionId) {
     VersionSummary versionSummary = pur.getVersionSummary(elementId.getId(), versionId);
