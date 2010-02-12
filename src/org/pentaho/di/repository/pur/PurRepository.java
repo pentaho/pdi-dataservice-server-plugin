@@ -1,10 +1,14 @@
 package org.pentaho.di.repository.pur;
 
+import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
@@ -124,7 +128,15 @@ public class PurRepository implements Repository
   private UserRoleListDelegate userRoleListDelegate;
 
   protected LogChannelInterface log;
-  
+
+  protected Serializable cachedSlaveServerParentFolderId;
+
+  protected Serializable cachedPartitionSchemaParentFolderId;
+
+  protected Serializable cachedClusterSchemaParentFolderId;
+
+  protected Serializable cachedDatabaseMetaParentFolderId;
+
   // ~ Constructors ====================================================================================================
 
   public PurRepository() {
@@ -262,7 +274,7 @@ public class PurRepository implements Repository
     try {
       RepositoryFile folder = pur.getFileById(dirId.getId());
       finalName = (newName != null ? newName : folder.getName());
-      interimFolderPath = folder.getAbsolutePath().replace(RepositoryFile.SEPARATOR + folder.getName(), ""); 
+      interimFolderPath = folder.getAbsolutePath().replace(RepositoryFile.SEPARATOR + folder.getName(), "");
       finalParentPath = (newParent != null ? newParent.getPath() : interimFolderPath);
       pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName, null);
       return dirId;
@@ -271,6 +283,7 @@ public class PurRepository implements Repository
           + finalParentPath + "] and new name [nant" + finalName + "]", e);
     }
   }
+
   public RepositoryDirectory loadRepositoryDirectoryTree() throws KettleException {
     RepositoryDirectory rootDir = new RepositoryDirectory();
     RepositoryFile pentahoRootFolder = pur.getFile(RepositoryPaths.getPentahoRootFolderPath());
@@ -279,114 +292,115 @@ public class PurRepository implements Repository
     rootDir.addSubdirectory(dir);
     loadRepositoryDirectory(dir, pentahoRootFolder);
     rootDir.setObjectId(null);
+
+    /** HACK AND SLASH HERE ***/
+    /**
+    * This code accomodates the following parenting logic for display and navigation
+    * of the Enterprise repository:
+    * 
+    * 1. Spoon's Repository Explorer should not be tenant aware. This means that the Repository Explorer will only show one tenant's content at a time. (Jake approved) 
+    * 2. Management of multiple tenants shouldn't be dome in the design tools. A super admin tool is needed for multi-tenant administration. 
+    * 3. Admin's perspective in Repository Explorer:
+    *   a. The admin will see all folders in the tenant root folder as siblings, with an unnamed root. One of these folders will be the physical path from the tenant folder to the root of all users home folders. Under this node, the admin can see and access all users' home folders (dictated by ACLs, not business logic). 
+      
+    *   EXAMPLE: Admin logs in...
+    *   ===================
+    *   /
+    *   /home/user2
+    *   /home/user3
+    *   /home/admin
+    *   /public
+    *   /extra1
+    *   /extra2
     
-      /** HACK AND SLASH HERE ***/
-      /**
-      * This code accomodates the following parenting logic for display and navigation
-      * of the Enterprise repository:
-      * 
-      * 1. Spoon's Repository Explorer should not be tenant aware. This means that the Repository Explorer will only show one tenant's content at a time. (Jake approved) 
-      * 2. Management of multiple tenants shouldn't be dome in the design tools. A super admin tool is needed for multi-tenant administration. 
-      * 3. Admin's perspective in Repository Explorer:
-      *   a. The admin will see all folders in the tenant root folder as siblings, with an unnamed root. One of these folders will be the physical path from the tenant folder to the root of all users home folders. Under this node, the admin can see and access all users' home folders (dictated by ACLs, not business logic). 
-        
-      *   EXAMPLE: Admin logs in...
-      *   ===================
-      *   /
-      *   /home/user2
-      *   /home/user3
-      *   /home/admin
-      *   /public
-      *   /extra1
-      *   /extra2
+    *   b. The admin will not see the protected physical multi-tenant structure (ie., the actual physical root of the repository to the tenant folder). This physical path to the tenant folder is also configurable and fetched from the server.
+    
+    *   EXAMPLE:
+    *   ===================
+    *   getRootFolder() returns "pentaho/acme", or whatever is in the configuration server-side. "pentaho/acme" is never shown in the UI, nor does the client code ever have to have knowledge of this structure. 
+    
+    * 4. User's perspective in Repository Explorer:
+    *   a. The user should see a "home" folder, and a "public" folder. The home folder will appear as the user's login, aliased from it's actual physical path. The physical structure of the path to the home folder from the tenant folder will be fetched from the server by the client code, so as to be configurable. 
+    
+    *   EXAMPLE: Suzy logs in...
+      ===================
+    *   /
+    *   /public
+    *   /suzy (physically stored as /home/suzy)
       
-      *   b. The admin will not see the protected physical multi-tenant structure (ie., the actual physical root of the repository to the tenant folder). This physical path to the tenant folder is also configurable and fetched from the server.
-      
-      *   EXAMPLE:
-      *   ===================
-      *   getRootFolder() returns "pentaho/acme", or whatever is in the configuration server-side. "pentaho/acme" is never shown in the UI, nor does the client code ever have to have knowledge of this structure. 
-      
-      * 4. User's perspective in Repository Explorer:
-      *   a. The user should see a "home" folder, and a "public" folder. The home folder will appear as the user's login, aliased from it's actual physical path. The physical structure of the path to the home folder from the tenant folder will be fetched from the server by the client code, so as to be configurable. 
-      
-      *   EXAMPLE: Suzy logs in...
-        ===================
-      *   /
-      *   /public
-      *   /suzy (physically stored as /home/suzy)
-        
-      
-      *   b. In the case where the admin has created a folder with the same name as the "home" folder alias, the "home" folder will appear as it's physical path and name.
-      
-      *   EXAMPLE: Admin logs in... and creates /suzy folder...
-      *   ===================
-      *   /
-      *   /home/user2
-      *   /home/suzy
-      *   /home/admin
-      *   /public
-      *   /suzy
-      *   /extra2
-      
-      *   ... then suzy logs in ...
-      *   ===================
-      *   /
-      *   /public
-      *   /suzy (the folder admin created)
-      *   /home/suzy (suzy's home folder)
+    
+    *   b. In the case where the admin has created a folder with the same name as the "home" folder alias, the "home" folder will appear as it's physical path and name.
+    
+    *   EXAMPLE: Admin logs in... and creates /suzy folder...
+    *   ===================
+    *   /
+    *   /home/user2
+    *   /home/suzy
+    *   /home/admin
+    *   /public
+    *   /suzy
+    *   /extra2
+    
+    *   ... then suzy logs in ...
+    *   ===================
+    *   /
+    *   /public
+    *   /suzy (the folder admin created)
+    *   /home/suzy (suzy's home folder)
 
-      * Pseudo-code:
-      * ==============================================
-      
-      * Call 1: getTenant() ==> /tenant0
-      * Call 2: get children down 2 levels
-      * Call 3: getHomeFolder() ==> /home/me
-      * BizLogic 1: chop off tenant node
-      * BizLogic 2: if write() on home folder, skip;
-      *   if sibling folder same name as alias ("me"), skip;
-      *   alias /home/me to "me"  
+    * Pseudo-code:
+    * ==============================================
+    
+    * Call 1: getTenant() ==> /tenant0
+    * Call 2: get children down 2 levels
+    * Call 3: getHomeFolder() ==> /home/me
+    * BizLogic 1: chop off tenant node
+    * BizLogic 2: if write() on home folder, skip;
+    *   if sibling folder same name as alias ("me"), skip;
+    *   alias /home/me to "me"  
 
-      **********************************************************************************************/
+    **********************************************************************************************/
     RepositoryDirectory tenantRoot = rootDir.findDirectory(RepositoryPaths.getTenantRootFolderPath());
     RepositoryDirectory tenantHome = rootDir.findDirectory(RepositoryPaths.getTenantHomeFolderPath());
     RepositoryDirectory userHome = rootDir.findDirectory(RepositoryPaths.getUserHomeFolderPath());
     RepositoryDirectory etcHome = rootDir.findDirectory(RepositoryPaths.getTenantEtcFolderPath());
 
-    boolean hasHomeWriteAccess = pur.hasAccess(RepositoryPaths.getTenantHomeFolderPath(), EnumSet.of(RepositoryFilePermission.WRITE));
+    boolean hasHomeWriteAccess = pur.hasAccess(RepositoryPaths.getTenantHomeFolderPath(), EnumSet
+        .of(RepositoryFilePermission.WRITE));
     String userHomeAlias = userHome.getName();
-    
+
     // Skip aliasing the home directory if:
     // a. the user has write access to the home directory (signifying admin access)
     // b. an admin has inadvertently created a sibling folder with the same name as the alias we want to use. 
-    
-    boolean skipAlias = hasHomeWriteAccess || (tenantRoot.findChild(userHomeAlias)!=null);
+
+    boolean skipAlias = hasHomeWriteAccess || (tenantRoot.findChild(userHomeAlias) != null);
     List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
     newRoot.setObjectId(tenantRoot.getObjectId());
-    
+
     for (int i = 0; i < tenantRoot.getNrSubdirectories(); i++) {
       RepositoryDirectory tenantChild = tenantRoot.getSubdirectory(i);
       boolean isEtcChild = tenantChild.equals(etcHome);
-      if (isEtcChild){
+      if (isEtcChild) {
         continue;
       }
       boolean isHomeChild = tenantChild.equals(tenantHome);
       // We INTENTIONALLY do not re-parent here... If we need to re-parent these nodes,
       // then a virtual parent to actual parent map will need to be introduced. 
-      if (isHomeChild && (!skipAlias)){
-          //newRoot.addSubdirectory(userHome);
-        children.add(0,userHome);
-      }else{
+      if (isHomeChild && (!skipAlias)) {
+        //newRoot.addSubdirectory(userHome);
+        children.add(0, userHome);
+      } else {
         //newRoot.addSubdirectory(tenantChild);
         children.add(tenantChild);
       }
     }
     newRoot.setChildren(children);
-    
+
     /** END HACK AND SLASH HERE ***/
     return newRoot;
   }
-  
+
   private void loadRepositoryDirectory(final RepositoryDirectory parentDir, final RepositoryFile folder)
       throws KettleException {
     try {
@@ -421,8 +435,7 @@ public class PurRepository implements Repository
 
   public void deleteClusterSchema(ObjectId idCluster) throws KettleException {
     try {
-      RepositoryFile fileToDelete = pur.getFileById(idCluster.getId());
-      pur.deleteFile(fileToDelete.getId(), null);
+      pur.deleteFile(idCluster.getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete cluster schema with name [" + idCluster + "]", e);
     }
@@ -433,14 +446,12 @@ public class PurRepository implements Repository
   }
 
   public void deleteJob(ObjectId jobId, String versionId) throws KettleException {
-    RepositoryFile jobToDelete = pur.getFileById(jobId.getId());
-    pur.deleteFileAtVersion(jobToDelete.getId(), versionId);
+    pur.deleteFileAtVersion(jobId.getId(), versionId);
   }
 
   public void deleteFileById(final ObjectId id) throws KettleException {
     try {
-      RepositoryFile fileToDelete = pur.getFileById(id.getId());
-      pur.deleteFile(fileToDelete.getId(), null);
+      pur.deleteFile(id.getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete object with id [" + id + "]", e);
     }
@@ -452,8 +463,7 @@ public class PurRepository implements Repository
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
     try {
-      RepositoryFile fileToDelete = pur.getFileById(idPartitionSchema.getId());
-      pur.deleteFile(fileToDelete.getId(), null);
+      pur.deleteFile(idPartitionSchema.getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete partition schema with name [" + idPartitionSchema + "]", e);
     }
@@ -461,8 +471,7 @@ public class PurRepository implements Repository
 
   public void deleteSlave(ObjectId idSlave) throws KettleException {
     try {
-      RepositoryFile fileToDelete = pur.getFileById(idSlave.getId());
-      pur.deleteFile(fileToDelete.getId(), null);
+      pur.deleteFile(idSlave.getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete slave with name [" + idSlave + "]", e);
     }
@@ -498,11 +507,11 @@ public class PurRepository implements Repository
             + RepositoryObjectType.PARTITION_SCHEMA.getExtension();
       }
       case SLAVE_SERVER: {
-        return getSlaveParentFolderPath() + RepositoryFile.SEPARATOR + name
+        return getSlaveServerParentFolderPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.SLAVE_SERVER.getExtension();
       }
       case CLUSTER_SCHEMA: {
-        return getClusterParentFolderPath() + RepositoryFile.SEPARATOR + name
+        return getClusterSchemaParentFolderPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
       }
       case JOB: {
@@ -572,8 +581,7 @@ public class PurRepository implements Repository
       switch (objectType) {
         case DATABASE: {
           // file either never existed or has been deleted
-          RepositoryFile databaseMetaParentFolder = pur.getFile(getDatabaseMetaParentFolderPath());
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(databaseMetaParentFolder.getId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getDatabaseMetaParentFolderId(), name
               + RepositoryObjectType.DATABASE.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -583,8 +591,7 @@ public class PurRepository implements Repository
         }
         case TRANSFORMATION: {
           // file either never existed or has been deleted
-          RepositoryFile transParentFolder = pur.getFile(dir.getPath());
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(transParentFolder.getId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(dir.getObjectId().getId(), name
               + RepositoryObjectType.TRANSFORMATION.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -594,8 +601,7 @@ public class PurRepository implements Repository
         }
         case PARTITION_SCHEMA: {
           // file either never existed or has been deleted
-          RepositoryFile partitionParentFolder = pur.getFile(getPartitionSchemaParentFolderPath());
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(partitionParentFolder.getId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getPartitionSchemaParentFolderId(), name
               + RepositoryObjectType.PARTITION_SCHEMA.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -605,8 +611,7 @@ public class PurRepository implements Repository
         }
         case SLAVE_SERVER: {
           // file either never existed or has been deleted
-          RepositoryFile slaveParentFolder = pur.getFile(getSlaveParentFolderPath());
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(slaveParentFolder.getId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getSlaveServerParentFolderId(), name
               + RepositoryObjectType.SLAVE_SERVER.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -616,8 +621,7 @@ public class PurRepository implements Repository
         }
         case CLUSTER_SCHEMA: {
           // file either never existed or has been deleted
-          RepositoryFile clusterParentFolder = pur.getFile(getClusterParentFolderPath());
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(clusterParentFolder.getId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getClusterSchemaParentFolderId(), name
               + RepositoryObjectType.CLUSTER_SCHEMA.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -627,8 +631,7 @@ public class PurRepository implements Repository
         }
         case JOB: {
           // file either never existed or has been deleted
-          RepositoryFile jobParentFolder = pur.getFile(dir.getPath());
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(jobParentFolder.getId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(dir.getObjectId().getId(), name
               + RepositoryObjectType.JOB.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -658,100 +661,137 @@ public class PurRepository implements Repository
 
   protected List<RepositoryFile> getAllFilesOfType(final RepositoryDirectory dir,
       final RepositoryObjectType objectType, final boolean includeDeleted) throws KettleException {
+    return getAllFilesOfType(dir, Arrays.asList(new RepositoryObjectType[] { objectType }), includeDeleted);
+  }
+
+  protected List<RepositoryFile> getAllFilesOfType(final RepositoryDirectory dir,
+      final List<RepositoryObjectType> objectTypes, final boolean includeDeleted) throws KettleException {
 
     List<RepositoryFile> allChildren = new ArrayList<RepositoryFile>();
-    List<RepositoryFile> children = getAllFilesOfType(dir, objectType);
+    List<RepositoryFile> children = getAllFilesOfType(dir, objectTypes);
     allChildren.addAll(children);
     if (includeDeleted) {
-      List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(dir, objectType);
+      List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(dir, objectTypes);
       allChildren.addAll(deletedChildren);
       Collections.sort(allChildren);
     }
     return allChildren;
   }
 
-  protected List<RepositoryFile> getAllFilesOfType(final RepositoryDirectory dir, final RepositoryObjectType objectType)
-      throws KettleException {
-    RepositoryFile parentFolder = null;
-    String filter = null;
-    switch (objectType) {
-      case DATABASE: {
-        parentFolder = pur.getFile(getDatabaseMetaParentFolderPath());
-        filter = "*" + RepositoryObjectType.DATABASE.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case TRANSFORMATION: {
-        parentFolder = pur.getFile(dir.getPath());
-        filter = "*" + RepositoryObjectType.TRANSFORMATION.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case PARTITION_SCHEMA: {
-        parentFolder = pur.getFile(getPartitionSchemaParentFolderPath());
-        filter = "*" + RepositoryObjectType.PARTITION_SCHEMA.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case SLAVE_SERVER: {
-        parentFolder = pur.getFile(getSlaveParentFolderPath());
-        filter = "*" + RepositoryObjectType.SLAVE_SERVER.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case CLUSTER_SCHEMA: {
-        parentFolder = pur.getFile(getClusterParentFolderPath());
-        filter = "*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case JOB: {
-        parentFolder = pur.getFile(dir.getPath());
-        filter = "*" + RepositoryObjectType.JOB.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      default: {
-        throw new UnsupportedOperationException("not implemented");
+  protected List<RepositoryFile> getAllFilesOfType(final RepositoryDirectory dir,
+      final List<RepositoryObjectType> objectTypes) throws KettleException {
+    List<Serializable> parentFolderIds = new ArrayList<Serializable>();
+    List<String> filters = new ArrayList<String>();
+    for (RepositoryObjectType objectType : objectTypes) {
+      switch (objectType) {
+        case DATABASE: {
+          parentFolderIds.add(getDatabaseMetaParentFolderId());
+          filters.add("*" + RepositoryObjectType.DATABASE.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case TRANSFORMATION: {
+          parentFolderIds.add(dir.getObjectId().getId());
+          filters.add("*" + RepositoryObjectType.TRANSFORMATION.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case PARTITION_SCHEMA: {
+          parentFolderIds.add(getPartitionSchemaParentFolderId());
+          filters.add("*" + RepositoryObjectType.PARTITION_SCHEMA.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case SLAVE_SERVER: {
+          parentFolderIds.add(getSlaveServerParentFolderId());
+          filters.add("*" + RepositoryObjectType.SLAVE_SERVER.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case CLUSTER_SCHEMA: {
+          parentFolderIds.add(getClusterSchemaParentFolderId());
+          filters.add("*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case JOB: {
+          parentFolderIds.add(dir.getObjectId().getId());
+          filters.add("*" + RepositoryObjectType.JOB.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        default: {
+          throw new UnsupportedOperationException("not implemented");
+        }
       }
     }
-    return pur.getChildren(parentFolder.getId(), filter);
+    StringBuilder mergedFilterBuf = new StringBuilder();
+    // build filter
+    int i = 0;
+    for (String filter : filters) {
+      if (i++ > 0) {
+        mergedFilterBuf.append(" | "); //$NON-NLS-1$
+      }
+      mergedFilterBuf.append(filter);
+    }
+    List<RepositoryFile> allFiles = new ArrayList<RepositoryFile>();
+    for (Serializable parentFolderId : parentFolderIds) {
+      allFiles.addAll(pur.getChildren(parentFolderId, mergedFilterBuf.toString()));
+    }
+    Collections.sort(allFiles);
+    return allFiles;
   }
 
   protected List<RepositoryFile> getAllDeletedFilesOfType(final RepositoryDirectory dir,
-      final RepositoryObjectType objectType) throws KettleException {
-    RepositoryFile parentFolder = null;
-    String filter = null;
-    switch (objectType) {
-      case DATABASE: {
-        parentFolder = pur.getFile(getDatabaseMetaParentFolderPath());
-        filter = "*" + RepositoryObjectType.DATABASE.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case TRANSFORMATION: {
-        parentFolder = pur.getFile(dir.getPath());
-        filter = "*" + RepositoryObjectType.TRANSFORMATION.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case PARTITION_SCHEMA: {
-        parentFolder = pur.getFile(getPartitionSchemaParentFolderPath());
-        filter = "*" + RepositoryObjectType.PARTITION_SCHEMA.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case SLAVE_SERVER: {
-        parentFolder = pur.getFile(getSlaveParentFolderPath());
-        filter = "*" + RepositoryObjectType.SLAVE_SERVER.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case CLUSTER_SCHEMA: {
-        parentFolder = pur.getFile(getClusterParentFolderPath());
-        filter = "*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      case JOB: {
-        parentFolder = pur.getFile(dir.getPath());
-        filter = "*" + RepositoryObjectType.JOB.getExtension(); //$NON-NLS-1$
-        break;
-      }
-      default: {
-        throw new UnsupportedOperationException("not implemented");
+      final List<RepositoryObjectType> objectTypes) throws KettleException {
+    Set<Serializable> parentFolderIds = new HashSet<Serializable>();
+    List<String> filters = new ArrayList<String>();
+    for (RepositoryObjectType objectType : objectTypes) {
+      switch (objectType) {
+        case DATABASE: {
+          parentFolderIds.add(getDatabaseMetaParentFolderId());
+          filters.add("*" + RepositoryObjectType.DATABASE.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case TRANSFORMATION: {
+          parentFolderIds.add(dir.getObjectId().getId());
+          filters.add("*" + RepositoryObjectType.TRANSFORMATION.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case PARTITION_SCHEMA: {
+          parentFolderIds.add(getPartitionSchemaParentFolderId());
+          filters.add("*" + RepositoryObjectType.PARTITION_SCHEMA.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case SLAVE_SERVER: {
+          parentFolderIds.add(getSlaveServerParentFolderId());
+          filters.add("*" + RepositoryObjectType.SLAVE_SERVER.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case CLUSTER_SCHEMA: {
+          parentFolderIds.add(getClusterSchemaParentFolderId());
+          filters.add("*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case JOB: {
+          parentFolderIds.add(dir.getObjectId().getId());
+          filters.add("*" + RepositoryObjectType.JOB.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        default: {
+          throw new UnsupportedOperationException();
+        }
       }
     }
-    return pur.getDeletedFiles(parentFolder.getId(), filter);
+    StringBuilder mergedFilterBuf = new StringBuilder();
+    // build filter
+    int i = 0;
+    for (String filter : filters) {
+      if (i++ > 0) {
+        mergedFilterBuf.append(" | "); //$NON-NLS-1$
+      }
+      mergedFilterBuf.append(filter);
+    }
+    List<RepositoryFile> allFiles = new ArrayList<RepositoryFile>();
+    for (Serializable parentFolderId : parentFolderIds) {
+      allFiles.addAll(pur.getDeletedFiles(parentFolderId, mergedFilterBuf.toString()));
+    }
+    Collections.sort(allFiles);
+    return allFiles;
   }
 
   public String[] getDatabaseNames(boolean includeDeleted) throws KettleException {
@@ -856,7 +896,8 @@ public class PurRepository implements Repository
   }
 
   public List<RepositoryObject> getJobObjects(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
-    return getPdiObjects(idDirectory, RepositoryObjectType.JOB, includeDeleted);
+    return getPdiObjects(idDirectory, Arrays.asList(new RepositoryObjectType[] { RepositoryObjectType.JOB }),
+        includeDeleted);
   }
 
   public LogChannelInterface getLog() {
@@ -914,15 +955,9 @@ public class PurRepository implements Repository
   public List<ObjectRevision> getRevisions(final RepositoryElementLocationInterface element) throws KettleException {
     String absPath = null;
     try {
-      List<ObjectRevision> versions = new ArrayList<ObjectRevision>();
       absPath = getPath(element.getName(), element.getRepositoryDirectory(), element.getRepositoryElementType());
       RepositoryFile file = pur.getFile(absPath);
-      List<VersionSummary> versionSummaries = pur.getVersionSummaries(file.getId());
-      for (VersionSummary versionSummary : versionSummaries) {
-        versions.add(new PurObjectRevision(versionSummary.getId(), versionSummary.getAuthor(),
-            versionSummary.getDate(), versionSummary.getMessage()));
-      }
-      return versions;
+      return getRevisions(new StringObjectId(file.getId().toString()));
     } catch (Exception e) {
       throw new KettleException("Could not retrieve version history of object with path [" + absPath + "]", e);
     }
@@ -1053,42 +1088,59 @@ public class PurRepository implements Repository
 
   public List<RepositoryObject> getTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
       throws KettleException {
-    return getPdiObjects(idDirectory, RepositoryObjectType.TRANSFORMATION, includeDeleted);
+    return getPdiObjects(idDirectory,
+        Arrays.asList(new RepositoryObjectType[] { RepositoryObjectType.TRANSFORMATION }), includeDeleted);
   }
 
-  protected List<RepositoryObject> getPdiObjects(ObjectId id_directory, RepositoryObjectType objectType,
+  protected List<RepositoryObject> getPdiObjects(ObjectId id_directory, List<RepositoryObjectType> objectTypes,
       boolean includeDeleted) throws KettleException {
     try {
       RepositoryDirectory repDir = loadRepositoryDirectoryTree().findDirectory(id_directory);
 
       List<RepositoryObject> list = new ArrayList<RepositoryObject>();
-      List<RepositoryFile> nonDeletedChildren = getAllFilesOfType(repDir, objectType);
+      List<RepositoryFile> nonDeletedChildren = getAllFilesOfType(repDir, objectTypes);
       for (RepositoryFile file : nonDeletedChildren) {
-        VersionSummary v = pur.getVersionSummary(file.getId(), file.getVersionId());
-        String description = file.getDescription() + " - v" + v.getId();
         RepositoryLock lock = getLock(file);
         String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
             + XMLHandler.date2string(lock.getLockDate()) + ")";
+        RepositoryObjectType objectType = getObjectType(file.getName());
         list.add(new RepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
-            file.getName().length() - objectType.getExtension().length()), repDir, v.getAuthor(), v.getDate(),
-            objectType, description, lockMessage, false));
+            file.getName().length() - objectType.getExtension().length()), repDir, null, null,
+            objectType, null, lockMessage, false));
       }
       if (includeDeleted) {
-        List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(repDir, objectType);
+        List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(repDir, objectTypes);
         for (RepositoryFile file : deletedChildren) {
-          VersionSummary v = pur.getVersionSummary(file.getId(), file.getVersionId());
-          String description = file.getDescription() + " - v" + v.getId();
           RepositoryLock lock = getLock(file);
           String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
               + XMLHandler.date2string(lock.getLockDate()) + ")";
+          RepositoryObjectType objectType = getObjectType(file.getName());
           list.add(new RepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
-              file.getName().length() - objectType.getExtension().length()), repDir, v.getAuthor(), v.getDate(),
-              objectType, description, lockMessage, true));
+              file.getName().length() - objectType.getExtension().length()), repDir, null, null,
+              objectType, null, lockMessage, true));
         }
       }
       return list;
     } catch (Exception e) {
       throw new KettleException("Unable to get list of objects from directory [" + id_directory + "]", e);
+    }
+  }
+
+  protected RepositoryObjectType getObjectType(final String filename) throws KettleException {
+    if (filename.endsWith(RepositoryObjectType.TRANSFORMATION.getExtension())) {
+      return RepositoryObjectType.TRANSFORMATION;
+    } else if (filename.endsWith(RepositoryObjectType.JOB.getExtension())) {
+      return RepositoryObjectType.JOB;
+    } else if (filename.endsWith(RepositoryObjectType.DATABASE.getExtension())) {
+      return RepositoryObjectType.DATABASE;
+    } else if (filename.endsWith(RepositoryObjectType.SLAVE_SERVER.getExtension())) {
+      return RepositoryObjectType.SLAVE_SERVER;
+    } else if (filename.endsWith(RepositoryObjectType.CLUSTER_SCHEMA.getExtension())) {
+      return RepositoryObjectType.CLUSTER_SCHEMA;
+    } else if (filename.endsWith(RepositoryObjectType.PARTITION_SCHEMA.getExtension())) {
+      return RepositoryObjectType.PARTITION_SCHEMA;
+    } else {
+      throw new KettleException("Unable to get object type");
     }
   }
 
@@ -1345,8 +1397,8 @@ public class PurRepository implements Repository
     } else {
       file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.DATABASE.getExtension()).versioned(
           VERSION_SHARED_OBJECTS).build();
-      file = pur.createFile(pur.getFile(getDatabaseMetaParentFolderPath()).getId(), file, new NodeRepositoryFileData(
-          databaseMetaTransformer.elementToDataNode(element)), versionComment);
+      file = pur.createFile(getDatabaseMetaParentFolderId(), file, new NodeRepositoryFileData(databaseMetaTransformer
+          .elementToDataNode(element)), versionComment);
     }
     // side effects
     ObjectId objectId = new StringObjectId(file.getId().toString());
@@ -1432,8 +1484,8 @@ public class PurRepository implements Repository
       } else {
         file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.PARTITION_SCHEMA.getExtension())
             .versioned(VERSION_SHARED_OBJECTS).build();
-        file = pur.createFile(pur.getFile(getPartitionSchemaParentFolderPath()).getId(), file,
-            new NodeRepositoryFileData(partitionSchemaTransformer.elementToDataNode(element)), versionComment);
+        file = pur.createFile(getPartitionSchemaParentFolderId(), file, new NodeRepositoryFileData(
+            partitionSchemaTransformer.elementToDataNode(element)), versionComment);
       }
       // side effects
       ObjectId objectId = new StringObjectId(file.getId().toString());
@@ -1456,8 +1508,8 @@ public class PurRepository implements Repository
       } else {
         file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.SLAVE_SERVER.getExtension())
             .versioned(VERSION_SHARED_OBJECTS).build();
-        file = pur.createFile(pur.getFile(getSlaveParentFolderPath()).getId(), file, new NodeRepositoryFileData(
-            slaveTransformer.elementToDataNode(element)), versionComment);
+        file = pur.createFile(getSlaveServerParentFolderId(), file, new NodeRepositoryFileData(slaveTransformer
+            .elementToDataNode(element)), versionComment);
       }
       // side effects
       ObjectId objectId = new StringObjectId(file.getId().toString());
@@ -1481,8 +1533,8 @@ public class PurRepository implements Repository
       } else {
         file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.CLUSTER_SCHEMA.getExtension())
             .versioned(VERSION_SHARED_OBJECTS).build();
-        file = pur.createFile(pur.getFile(getClusterParentFolderPath()).getId(), file, new NodeRepositoryFileData(
-            clusterTransformer.elementToDataNode(element)), versionComment);
+        file = pur.createFile(getClusterSchemaParentFolderId(), file, new NodeRepositoryFileData(clusterTransformer
+            .elementToDataNode(element)), versionComment);
       }
       // side effects
       ObjectId objectId = new StringObjectId(file.getId().toString());
@@ -1495,12 +1547,6 @@ public class PurRepository implements Repository
 
   }
 
-  //  private RepositoryDirectory getRepositoryDirectory(final ObjectId elementId) throws KettleException {
-  //    RepositoryFile file = pur.getFileById(elementId.getId());
-  //    RepositoryFile parentFolder = pur.getFileById(file.getParentId());
-  //    return loadRepositoryDirectoryTree().findDirectory(parentFolder.getAbsolutePath());
-  //  }
-
   private ObjectRevision getObjectRevision(final ObjectId elementId, final String versionId) {
     VersionSummary versionSummary = pur.getVersionSummary(elementId.getId(), versionId);
     return new PurObjectRevision(versionSummary.getId(), versionSummary.getAuthor(), versionSummary.getDate(),
@@ -1512,19 +1558,51 @@ public class PurRepository implements Repository
         + FOLDER_DATABASES;
   }
 
+  private Serializable getDatabaseMetaParentFolderId() {
+    if (cachedDatabaseMetaParentFolderId == null) {
+      RepositoryFile f = pur.getFile(getDatabaseMetaParentFolderPath());
+      cachedDatabaseMetaParentFolderId = f.getId();
+    }
+    return cachedDatabaseMetaParentFolderId;
+  }
+
   private String getPartitionSchemaParentFolderPath() {
     return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
         + FOLDER_PARTITION_SCHEMAS;
   }
 
-  private String getSlaveParentFolderPath() {
+  private Serializable getPartitionSchemaParentFolderId() {
+    if (cachedPartitionSchemaParentFolderId == null) {
+      RepositoryFile f = pur.getFile(getPartitionSchemaParentFolderPath());
+      cachedPartitionSchemaParentFolderId = f.getId();
+    }
+    return cachedPartitionSchemaParentFolderId;
+  }
+
+  private String getSlaveServerParentFolderPath() {
     return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
         + FOLDER_SLAVE_SERVERS;
   }
 
-  private String getClusterParentFolderPath() {
+  private Serializable getSlaveServerParentFolderId() {
+    if (cachedSlaveServerParentFolderId == null) {
+      RepositoryFile f = pur.getFile(getSlaveServerParentFolderPath());
+      cachedSlaveServerParentFolderId = f.getId();
+    }
+    return cachedSlaveServerParentFolderId;
+  }
+
+  private String getClusterSchemaParentFolderPath() {
     return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
         + FOLDER_CLUSTER_SCHEMAS;
+  }
+
+  private Serializable getClusterSchemaParentFolderId() {
+    if (cachedClusterSchemaParentFolderId == null) {
+      RepositoryFile f = pur.getFile(getClusterSchemaParentFolderPath());
+      cachedClusterSchemaParentFolderId = f.getId();
+    }
+    return cachedClusterSchemaParentFolderId;
   }
 
   public void saveConditionStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, Condition condition)
@@ -1707,11 +1785,11 @@ public class PurRepository implements Repository
     return objectAcl;
   }
 
-  public List<ObjectRevision> getRevisions(ObjectId file) throws KettleException {
+  public List<ObjectRevision> getRevisions(ObjectId fileId) throws KettleException {
     String absPath = null;
     try {
       List<ObjectRevision> versions = new ArrayList<ObjectRevision>();
-      List<VersionSummary> versionSummaries = pur.getVersionSummaries(file.getId());
+      List<VersionSummary> versionSummaries = pur.getVersionSummaries(fileId.getId());
       for (VersionSummary versionSummary : versionSummaries) {
         versions.add(new PurObjectRevision(versionSummary.getId(), versionSummary.getAuthor(),
             versionSummary.getDate(), versionSummary.getMessage()));
@@ -1722,9 +1800,9 @@ public class PurRepository implements Repository
     }
   }
 
-  public void setAcl(ObjectId file, ObjectAcl objectAcl) throws KettleException {
+  public void setAcl(ObjectId fileId, ObjectAcl objectAcl) throws KettleException {
     try {
-      RepositoryFileAcl acl = pur.getAcl(file.getId());
+      RepositoryFileAcl acl = pur.getAcl(fileId.getId());
       RepositoryFileAcl newAcl = new RepositoryFileAcl.Builder(acl).entriesInheriting(objectAcl.isEntriesInheriting())
           .clearAces().build();
       List<ObjectAce> aces = objectAcl.getAces();
@@ -1766,6 +1844,12 @@ public class PurRepository implements Repository
       // The user does not have rights to view or set the acl information. 
       throw new KettleException(drfe);
     }
+  }
+
+  public List<RepositoryObject> getJobAndTransformationObjects(ObjectId id_directory, boolean includeDeleted)
+      throws KettleException {
+    return getPdiObjects(id_directory, Arrays.asList(new RepositoryObjectType[] { RepositoryObjectType.JOB,
+        RepositoryObjectType.TRANSFORMATION }), includeDeleted);
   }
 
 }
