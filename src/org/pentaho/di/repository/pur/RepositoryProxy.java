@@ -161,7 +161,7 @@ public class RepositoryProxy implements Repository {
   }
 
   public long getJobEntryAttributeInteger(ObjectId idJobentry, String code) throws KettleException {
-    if(node.hasProperty(code)) {
+    if (node.hasProperty(code)) {
       return node.getProperty(code).getLong();
     } else {
       return 0;
@@ -169,7 +169,7 @@ public class RepositoryProxy implements Repository {
   }
 
   public long getJobEntryAttributeInteger(ObjectId idJobentry, int nr, String code) throws KettleException {
-    if(node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
+    if (node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getLong();
     } else {
       return 0;
@@ -258,7 +258,7 @@ public class RepositoryProxy implements Repository {
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, String code) throws KettleException {
-    if(node.hasProperty(code)) {
+    if (node.hasProperty(code)) {
       return node.getProperty(code).getBoolean();
     } else {
       return false;
@@ -266,7 +266,7 @@ public class RepositoryProxy implements Repository {
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, int nr, String code) throws KettleException {
-      return getStepAttributeBoolean(idStep, nr, code, false);
+    return getStepAttributeBoolean(idStep, nr, code, false);
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, int nr, String code, boolean def) throws KettleException {
@@ -278,7 +278,7 @@ public class RepositoryProxy implements Repository {
   }
 
   public long getStepAttributeInteger(ObjectId idStep, String code) throws KettleException {
-    if(node.hasProperty(code)) {
+    if (node.hasProperty(code)) {
       return node.getProperty(code).getLong();
     } else {
       return 0;
@@ -286,7 +286,7 @@ public class RepositoryProxy implements Repository {
   }
 
   public long getStepAttributeInteger(ObjectId idStep, int nr, String code) throws KettleException {
-    if(node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
+    if (node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getLong();
     } else {
       return 0;
@@ -586,6 +586,11 @@ public class RepositoryProxy implements Repository {
   }
 
   public void setAcl(ObjectId arg0, ObjectAcl arg1) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public List<RepositoryObject> getJobAndTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
+      throws KettleException {
     throw new UnsupportedOperationException();
   }
 
