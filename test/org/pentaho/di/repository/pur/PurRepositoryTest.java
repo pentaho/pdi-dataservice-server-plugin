@@ -4,7 +4,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -26,6 +28,7 @@ import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.StandaloneSession;
+import org.pentaho.platform.engine.security.SecurityHelper;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -41,6 +44,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
+import com.pentaho.security.policy.rolebased.IRoleAuthorizationPolicyRoleBindingDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/sample-repository.spring.xml",
@@ -48,8 +52,10 @@ import com.pentaho.commons.dsc.util.TestLicenseStream;
 public class PurRepositoryTest extends RepositoryTestBase implements ApplicationContextAware {
 
   private IUnifiedRepository pur;
-  
+
   private IBackingRepositoryLifecycleManager manager;
+  
+  private IRoleAuthorizationPolicyRoleBindingDao roleBindingDao;
 
   @BeforeClass
   public static void setUpClass() throws Exception {
@@ -83,17 +89,51 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     ((PurRepository) repository).setPur(pur);
 
     repository.init(repositoryMeta, userInfo);
+    
     // connect is not called as it is only applicable in the "real" deployment
     //repository.connect();
 
-    // call must come after connect; PurRepository sets its own value in PentahoSessionHolder; in the real deployment,
-    // PurRepository and PUR would be in two different JVMs
+    setUpRoleBindings();
+    
     setUpUser();
-
+    
     List<RepositoryFile> files = pur.getChildren(pur.getFile("/pentaho/acme/public").getId());
     assertTrue("files not deleted: " + files.toString(), files.isEmpty());
   }
 
+  private void setUpRoleBindings() {
+    loginAsTenantAdmin();
+    final String RUNTIME_ROLE_ACME_ADMIN = "acme_Admin";
+    final String RUNTIME_ROLE_ACME_AUTHENTICATED = "acme_Authenticated";
+    final String LOGICAL_ROLE_SECURITY_ADMINISTRATOR = "org.pentaho.di.securityAdministrator";
+    final String LOGICAL_ROLE_CREATOR = "org.pentaho.di.creator";
+    final String LOGICAL_ROLE_READER = "org.pentaho.di.reader";
+    roleBindingDao.setRoleBindings(RUNTIME_ROLE_ACME_AUTHENTICATED, Arrays.asList(new String[] { LOGICAL_ROLE_READER,
+        LOGICAL_ROLE_CREATOR }));
+    roleBindingDao.setRoleBindings(RUNTIME_ROLE_ACME_ADMIN, Arrays.asList(new String[] { LOGICAL_ROLE_READER,
+        LOGICAL_ROLE_CREATOR, LOGICAL_ROLE_SECURITY_ADMINISTRATOR }));
+  }
+
+  protected void loginAsTenantAdmin() {
+    StandaloneSession pentahoSession = new StandaloneSession("joe");
+    pentahoSession.setAuthenticated("joe");
+    pentahoSession.setAttribute(IPentahoSession.TENANT_ID_KEY, "acme");
+    final String password = "password";
+    List<GrantedAuthority> authList = new ArrayList<GrantedAuthority>();
+    authList.add(new GrantedAuthorityImpl("Authenticated"));
+    authList.add(new GrantedAuthorityImpl("acme_Authenticated"));
+    authList.add(new GrantedAuthorityImpl("acme_Admin"));
+    GrantedAuthority[] authorities = authList.toArray(new GrantedAuthority[0]);
+    UserDetails userDetails = new User("joe", password, true, true, true, true, authorities);
+    Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, password, authorities);
+    SecurityHelper.setPrincipal(auth, pentahoSession);
+    PentahoSessionHolder.setSession(pentahoSession);
+    // this line necessary for Spring Security's MethodSecurityInterceptor
+    SecurityContextHolder.getContext().setAuthentication(auth);
+    manager.newTenant();
+    manager.newUser();
+  }
+  
   protected void setUpUser() {
     StandaloneSession pentahoSession = new StandaloneSession(userInfo.getLogin());
     pentahoSession.setAuthenticated(userInfo.getLogin());
@@ -188,6 +228,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
     pur = (IUnifiedRepository) applicationContext.getBean("unifiedRepository");
     manager = (IBackingRepositoryLifecycleManager) applicationContext.getBean("backingRepositoryLifecycleManager");
+    roleBindingDao = (IRoleAuthorizationPolicyRoleBindingDao) applicationContext
+        .getBean("roleAuthorizationPolicyRoleBindingDao");
     manager.startup();
   }
 
