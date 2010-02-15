@@ -17,12 +17,10 @@
 package org.pentaho.di.ui.repository.repositoryexplorer.abs;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import org.pentaho.di.repository.AbsSecurityAdmin;
-import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositorySecurityProvider;
-import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsController;
 import org.pentaho.di.ui.spoon.Spoon;
@@ -40,7 +38,7 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
     RepositoryExplorer.setSecurityControllerClass(AbsController.class);
   }
   public Map<String, XulEventHandler> getEventHandlers() {
-    return null;
+    return new HashMap<String, XulEventHandler>();
   }
 
   public Map<String, XulOverlay> getOverlays() {
