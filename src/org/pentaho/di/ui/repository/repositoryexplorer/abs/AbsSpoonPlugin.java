@@ -16,8 +16,9 @@
  */
 package org.pentaho.di.ui.repository.repositoryexplorer.abs;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import org.pentaho.di.repository.AbsSecurityAdmin;
@@ -37,15 +38,17 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   public AbsSpoonPlugin() {
     RepositoryExplorer.setSecurityControllerClass(AbsController.class);
   }
-  public Map<String, XulEventHandler> getEventHandlers() {
-    return new HashMap<String, XulEventHandler>();
+  public Map<String, List<XulEventHandler>> getEventHandlers() {
+    return null;
   }
 
-  public Map<String, XulOverlay> getOverlays() {
-  	HashMap<String, XulOverlay> hash = new HashMap<String, XulOverlay>();
+  public Map<String, List<XulOverlay>> getOverlays() {
+  	HashMap<String, List<XulOverlay>> hash = new HashMap<String, List<XulOverlay>>();
   	
-  	XulOverlay overlay = new DefaultXulOverlay("org/pentaho/di/ui/repository/repositoryexplorer/abs/xul/abs-layout-overlay.xul"); //$NON-NLS-1$ 
-    hash.put("action-based-security", overlay); //$NON-NLS-1$
+  	XulOverlay overlay = new DefaultXulOverlay("org/pentaho/di/ui/repository/repositoryexplorer/abs/xul/abs-layout-overlay.xul"); //$NON-NLS-1$
+  	List<XulOverlay> overlays = new ArrayList<XulOverlay>();
+  	overlays.add(overlay);
+    hash.put("action-based-security", overlays); //$NON-NLS-1$
     return hash;
   }
 
