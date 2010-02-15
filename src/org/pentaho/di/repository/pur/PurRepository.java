@@ -67,7 +67,7 @@ import org.pentaho.platform.engine.core.system.StandaloneSession;
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
-import com.pentaho.repository.pur.RepositoryPaths;
+import com.pentaho.repository.RepositoryPaths;
 import com.pentaho.repository.pur.data.node.NodeRepositoryFileData;
 import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
 import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
