@@ -4,6 +4,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang.StringUtils;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.IRole;
+import org.pentaho.di.repository.RepositoryUserInterface;
 import org.pentaho.di.repository.RoleInfo;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
@@ -14,15 +17,18 @@ import org.pentaho.platform.engine.security.userroledao.ws.UserRoleException;
 public class UserRoleLookupCache {
   Set<UserInfo> userInfoSet;
 
-  Set<RoleInfo> roleInfoSet;
-
-  public UserRoleLookupCache(IUserRoleWebService userRoleWebService) {
+  Set<IRole> roleInfoSet;
+  
+  RepositoryUserInterface rui;
+  
+  public UserRoleLookupCache(IUserRoleWebService userRoleWebService, RepositoryUserInterface rui) {
     try {
+      this.rui = rui;
       userInfoSet = new HashSet<UserInfo>();
       for (ProxyPentahoUser user : userRoleWebService.getUsers()) {
         userInfoSet.add(createUserInfo(user));
       }
-      roleInfoSet = new HashSet<RoleInfo>();
+      roleInfoSet = new HashSet<IRole>();
       for (ProxyPentahoRole role : userRoleWebService.getRoles()) {
         roleInfoSet.add(createRoleInfo(role));
       }
@@ -40,8 +46,8 @@ public class UserRoleLookupCache {
     return addUserToLookupSet(proxyUser);
   }
 
-  public RoleInfo lookupRole(ProxyPentahoRole proxyRole) {
-    for (RoleInfo role : roleInfoSet) {
+  public IRole lookupRole(ProxyPentahoRole proxyRole) {
+    for (IRole role : roleInfoSet) {
       if (role.getName().equals(proxyRole.getName())) {
         return role;
       }
@@ -63,9 +69,9 @@ public class UserRoleLookupCache {
     }
   }
 
-  public void updateRoleInLookupSet(RoleInfo role) {
-    RoleInfo roleInfoToUpdate = null;
-    for (RoleInfo roleInfo : roleInfoSet) {
+  public void updateRoleInLookupSet(IRole role) {
+    IRole roleInfoToUpdate = null;
+    for (IRole roleInfo : roleInfoSet) {
       if (roleInfo.getName().equals(role.getName())) {
         roleInfoToUpdate = roleInfo;
         break;
@@ -81,8 +87,8 @@ public class UserRoleLookupCache {
     }
   }
 
-  public void removeRolesFromLookupSet(List<RoleInfo> roles) {
-    for (RoleInfo role : roles) {
+  public void removeRolesFromLookupSet(List<IRole> roles) {
+    for (IRole role : roles) {
       removeRoleFromLookupSet(role);
     }
   }
@@ -98,9 +104,9 @@ public class UserRoleLookupCache {
     }
   }
 
-  private void removeRoleFromLookupSet(RoleInfo role) {
-    RoleInfo roleToRemove = null;
-    for (RoleInfo roleInfo : roleInfoSet) {
+  private void removeRoleFromLookupSet(IRole role) {
+    IRole roleToRemove = null;
+    for (IRole roleInfo : roleInfoSet) {
       if (roleInfo.getName().equals(role.getName())) {
         roleToRemove = roleInfo;
         break;
@@ -115,8 +121,8 @@ public class UserRoleLookupCache {
     return userInfo;
   }
 
-  private RoleInfo addRoleToLookupSet(ProxyPentahoRole role) {
-    RoleInfo roleInfo = createRoleInfo(role);
+  private IRole addRoleToLookupSet(ProxyPentahoRole role) {
+    IRole roleInfo = createRoleInfo(role);
     roleInfoSet.add(roleInfo);
     return roleInfo;
   }
@@ -130,8 +136,14 @@ public class UserRoleLookupCache {
     return userInfo;
   }
 
-  private RoleInfo createRoleInfo(ProxyPentahoRole role) {
-    RoleInfo roleInfo = new RoleInfo();
+  private IRole createRoleInfo(ProxyPentahoRole role) {
+    IRole roleInfo = null;
+    try {
+      roleInfo = rui.constructRole();
+    } catch (KettleException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
     roleInfo.setDescription(role.getDescription());
     roleInfo.setName(role.getName());
     return roleInfo;

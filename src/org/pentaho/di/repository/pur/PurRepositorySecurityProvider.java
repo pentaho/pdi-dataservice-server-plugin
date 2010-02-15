@@ -1,13 +1,10 @@
 package org.pentaho.di.repository.pur;
 
-import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.repository.ActionPermission;
 import org.pentaho.di.repository.BaseRepositorySecurityProvider;
+import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositorySecurityProvider;
@@ -15,7 +12,7 @@ import org.pentaho.di.repository.RoleInfo;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
 
-public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider {
+public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider{
 
 	private PurRepository	repository;
 	private UserRoleDelegate	userRoleDelegate;
@@ -23,7 +20,11 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 
 	public PurRepositorySecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
 		super(repositoryMeta, userInfo);
-		this.repository = repository;		
+		this.repository = repository;
+    this.userRoleListDelegate = new UserRoleListDelegate(repositoryMeta, userInfo);
+    this.userRoleDelegate = new UserRoleDelegate(this, repositoryMeta, userInfo);
+    this.setUserRoleDelegate(userRoleDelegate);
+    this.setUserRoleListDelegate(userRoleListDelegate);
 	}
 
 	public UserRoleDelegate getUserRoleDelegate() {
@@ -110,46 +111,18 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	}
 
 	public UserInfo loadUserInfo(String login) throws KettleException {
-	  // Get User's roles
-	  List<String> roles = userRoleListDelegate.getRolesForUser(login);
-	  // Create Set of RoleInfo from string roles
-    Set<RoleInfo> roleInfoSet = new HashSet<RoleInfo>();
     // Create a UserInfo object
-	  if(roles != null) {
-      UserInfo user = new UserInfo(login);
-      user.setName(login);
-      for(String rolename:roles) {
-        roleInfoSet.add(new RoleInfo(rolename));
-      }
-      user.setRoles(roleInfoSet);
-	    return new UserInfo(login);
-	    
-	  } else {
-      // No roles exist for this user. This user must not exist ?	    
-	    return null;  
-	  }	  
+    UserInfo user = new UserInfo(login);
+    user.setName(login);
+    return user;
 	}
 
 	public UserInfo loadUserInfo(String login, String password) throws KettleException {
-	   // Get User's roles
-    List<String> roles = userRoleListDelegate.getRolesForUser(login);
-    // Create Set of RoleInfo from string roles
-    Set<RoleInfo> roleInfoSet = new HashSet<RoleInfo>();
     // Create a UserInfo object
-    if(roles != null) {
       UserInfo user = new UserInfo(login);
       user.setPassword(password);
       user.setName(login);
-      for(String rolename:roles) {
-        roleInfoSet.add(new RoleInfo(rolename));
-      }
-      user.setRoles(roleInfoSet);
       return user;
-    } else {
-      // No roles exist for this user. This user must not exist ?
-      return null;  
-    }
-
 	}
 
 	public void renameProfile(ObjectId id_profile, String newname) throws KettleException {
@@ -165,11 +138,11 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 		userRoleDelegate.createUser(userInfo);
 	}
 
-	public void createRole(RoleInfo newRole) throws KettleException {
+	public void createRole(IRole newRole) throws KettleException {
 		userRoleDelegate.createRole(newRole);
 	}
 
-	public void deleteRoles(List<RoleInfo> roles) throws KettleException {
+	public void deleteRoles(List<IRole> roles) throws KettleException {
 		userRoleDelegate.deleteRoles(roles);
 	}
 
@@ -177,16 +150,16 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	    userRoleDelegate.deleteUsers(users);
 	  }
 
-	public RoleInfo getRole(String name) throws KettleException {
+	public IRole getRole(String name) throws KettleException {
 		return userRoleDelegate.getRole(name);
 	}
 
 
-	public List<RoleInfo> getRoles() throws KettleException {
+	public List<IRole> getRoles() throws KettleException {
 		return userRoleDelegate.getRoles();
 	}
 
-	public void updateRole(RoleInfo role) throws KettleException {
+	public void updateRole(IRole role) throws KettleException {
 		userRoleDelegate.updateRole(role);		
 	}
 
@@ -207,7 +180,7 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 		return userRoleDelegate.getUsers();
 	}
 
-	public void setRoles(List<RoleInfo> roles) throws KettleException {
+	public void setRoles(List<IRole> roles) throws KettleException {
 		userRoleDelegate.setRoles(roles);
 		
 	}
@@ -224,14 +197,6 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
     return userRoleListDelegate.getAllUsers();
   }
 
-  public List<String> getAllUsersInRole(String role) throws KettleException {
-    return userRoleListDelegate.getAllUsersInRole(role);
-  }
-
-  public List<String> getRolesForUser(String userName) throws KettleException {
-    return userRoleListDelegate.getRolesForUser(userName);
-  }
-
   public void setUserRoleListDelegate(UserRoleListDelegate userRoleListDelegate) {
     this.userRoleListDelegate = userRoleListDelegate;
   }
@@ -240,9 +205,7 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
     return userRoleListDelegate;
   }
 
-  public void setActionPermissions(String rolename, EnumSet<ActionPermission> permissions) throws KettleException {
-    userRoleDelegate.setActionPermissions(rolename, permissions);
-    
+  public IRole constructRole() throws KettleException {
+    return new RoleInfo();
   }
-	
 }

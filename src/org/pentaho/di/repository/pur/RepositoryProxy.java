@@ -588,10 +588,8 @@ public class RepositoryProxy implements Repository {
   public void setAcl(ObjectId arg0, ObjectAcl arg1) throws KettleException {
     throw new UnsupportedOperationException();
   }
-
   public List<RepositoryObject> getJobAndTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
       throws KettleException {
     throw new UnsupportedOperationException();
   }
-
 }

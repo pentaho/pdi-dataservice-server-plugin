@@ -2,6 +2,9 @@
 
   <!-- Import the subfloor-pkg.xml file which contains all the default tasks -->
   <import file="build-res/subfloor-pkg.xml" />
+  <!-- Defining the folder names for pur and abs plugin -->
+  <property name="pur.stage.dir" value="${stage.dir}/${ivy.artifact.id}"/>
+  <property name="abs.stage.dir" value="${stage.dir}/${abs.artifact.id}"/>
 
   <target name="install">
     <unzip src="${dist.dir}/${package.basename}.zip" dest="${kettle.plugin.dir}" overwrite="true">
@@ -41,9 +44,14 @@
   </path>
 
   <!-- Override assemble to build plugin.xml afterwards -->
-  <target name="assemble" depends="subfloor-pkg.assemble, update-plugin-xml" />
-
-  <target name="update-plugin-xml">
+  <target name="assemble" depends="assemble.init,assemble.copy-libs">
+    <copy todir="${pur.stage.dir}">
+      <fileset file="${package.resdir}/${ivy.artifact.id}/plugin.xml" />
+    </copy>
+    <copy todir="${abs.stage.dir}">
+      <fileset file="${package.resdir}/${abs.artifact.id}/plugin.xml" />
+    </copy>
+    <chmod perm="a+x" dir="${stage.dir}" includes="**/*.sh" />
     <replace file="${approot.stage.dir}/plugin.xml">
       <replacefilter token="@project.revision@" value="${project.revision}" />
       <replacefilter token="@dependency.bi-platform.revision@" value="${dependency.bi-platform.revision}" />
@@ -51,11 +59,28 @@
     </replace>
   </target>
 
+  <target name="package-zip">
+  	<!-- Defining the jar names for pur and abs plugin -->
+  	<property name="pur.package.name" value="${ivy.artifact.id}-${project.revision}" />
+  	<property name="abs.package.name" value="${abs.artifact.id}-${project.revision}" />
+	  <zip destfile="${dist.dir}/${pur.package.name}.zip">
+	    <zipfileset dir="${stage.dir}" includes="${ivy.artifact.id}/**"/>
+    	
+	  </zip>
+	  <zip destfile="${dist.dir}/${abs.package.name}.zip">
+	    <zipfileset dir="${stage.dir}"  includes="${abs.artifact.id}/**"/>
+	  </zip>  	
+  </target>
+	
   <!-- Copy all jars over to the plugin zip, 
   except for kettle, licensing jars -->
+  <target name="assemble.init">
+  	<!-- Creating stage folders for pur and abs -->
+  	<mkdir dir="${pur.stage.dir}" />
+  	<mkdir dir="${abs.stage.dir}" />
+  </target>
   <target name="assemble.copy-libs" depends="install-antcontrib">
-
-    <copy todir="${approot.stage.dir}">
+    <copy todir="${pur.stage.dir}">
       <fileset dir="${lib.dir}">
         <exclude name="kettle-*.jar" />
         <exclude name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
@@ -67,7 +92,7 @@
       <available file="${dist.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
       <then>
         <!-- copy the obfuscated license jar to the plugin dist lib folder -->
-        <copy todir="${approot.stage.dir}">
+        <copy todir="${pur.stage.dir}">
           <fileset dir="${dist.dir}">
             <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
           </fileset>
@@ -75,22 +100,25 @@
       </then>
       <else>
         <!-- copy the license jar to the plugin dist lib folder -->
-        <copy todir="${approot.stage.dir}">
+        <copy todir="${pur.stage.dir}">
           <fileset dir="${lib.dir}">
             <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
           </fileset>
         </copy>
       </else>
     </if>
-
+    <copy todir="${abs.stage.dir}/lib">
+      <fileset dir="${lib.dir}" />
+      <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
+    </copy>
   </target>
 
+ <target name="dist" depends="jar,package"/>
   <!-- Release process calls this target. -->
 
   <!-- 
 	
 	-->
-
   <target name="obfuscate">
 
     <move todir="${dist.dir}">
@@ -158,6 +186,8 @@
     
       ]]>
     </proguard>
+  	
+  
 
     <delete>
       <fileset dir="${dist.dir}">

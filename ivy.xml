@@ -28,6 +28,8 @@
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-ee-dsc-core" rev="${dependency.pentaho-ee-dsc.revision}"
       changing="true" transitive="true" />
+    <dependency org="pentaho" name="pentaho-xul-core" rev="${dependency.pentaho-xul.revision}" conf="default->default"
+      changing="true" />
 
     <!-- kettle -->
     <dependency org="pentaho.kettle" name="kettle-core" rev="${dependency.kettle.revision}" transitive="true"

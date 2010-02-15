@@ -123,10 +123,6 @@ public class PurRepository implements Repository
 
   private PurRepositorySecurityProvider securityProvider;
 
-  private UserRoleDelegate userRoleDelegate;
-
-  private UserRoleListDelegate userRoleListDelegate;
-
   protected LogChannelInterface log;
 
 
@@ -155,11 +151,7 @@ public class PurRepository implements Repository
     this.log = new LogChannel(this);
     this.repositoryMeta = (PurRepositoryMeta) repositoryMeta;
     this.userInfo = userInfo;
-    this.userRoleListDelegate = new UserRoleListDelegate(this.repositoryMeta, userInfo);
-    this.userRoleDelegate = new UserRoleDelegate(this.repositoryMeta, userInfo);
-    securityProvider = new PurRepositorySecurityProvider(this, this.repositoryMeta, userInfo);
-    securityProvider.setUserRoleDelegate(userRoleDelegate);
-    securityProvider.setUserRoleListDelegate(userRoleListDelegate);
+    this.securityProvider = new PurRepositorySecurityProvider(this, this.repositoryMeta, userInfo);
   }
 
   public void connect() throws KettleException, KettleSecurityException {
@@ -968,6 +960,7 @@ public class PurRepository implements Repository
   public RepositorySecurityProvider getSecurityProvider() {
     return securityProvider;
   }
+  
 
   public ObjectId getSlaveID(String name) throws KettleException {
     try {
@@ -1850,11 +1843,9 @@ public class PurRepository implements Repository
       throw new KettleException(drfe);
     }
   }
-
   public List<RepositoryObject> getJobAndTransformationObjects(ObjectId id_directory, boolean includeDeleted)
       throws KettleException {
     return getPdiObjects(id_directory, Arrays.asList(new RepositoryObjectType[] { RepositoryObjectType.JOB,
         RepositoryObjectType.TRANSFORMATION }), includeDeleted);
   }
-
 }
