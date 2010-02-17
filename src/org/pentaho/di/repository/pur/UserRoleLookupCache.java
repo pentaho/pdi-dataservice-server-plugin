@@ -3,11 +3,11 @@ package org.pentaho.di.repository.pur;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.RepositoryUserInterface;
-import org.pentaho.di.repository.RoleInfo;
+import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
@@ -19,11 +19,11 @@ public class UserRoleLookupCache {
 
   Set<IRole> roleInfoSet;
   
-  RepositoryUserInterface rui;
+  RepositorySecurityManager rsm;
   
-  public UserRoleLookupCache(IUserRoleWebService userRoleWebService, RepositoryUserInterface rui) {
+  public UserRoleLookupCache(IUserRoleWebService userRoleWebService, RepositorySecurityManager rsm) {
     try {
-      this.rui = rui;
+      this.rsm = rsm;
       userInfoSet = new HashSet<UserInfo>();
       for (ProxyPentahoUser user : userRoleWebService.getUsers()) {
         userInfoSet.add(createUserInfo(user));
@@ -139,7 +139,7 @@ public class UserRoleLookupCache {
   private IRole createRoleInfo(ProxyPentahoRole role) {
     IRole roleInfo = null;
     try {
-      roleInfo = rui.constructRole();
+      roleInfo = rsm.constructRole();
     } catch (KettleException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();

@@ -36,6 +36,7 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectPermission;
 import org.pentaho.di.repository.ObjectRecipient;
 import org.pentaho.di.repository.ObjectRevision;
+import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
@@ -47,11 +48,13 @@ import org.pentaho.di.repository.RepositoryObjectAce;
 import org.pentaho.di.repository.RepositoryObjectAcl;
 import org.pentaho.di.repository.RepositoryObjectRecipient;
 import org.pentaho.di.repository.RepositoryObjectType;
+import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ObjectRecipient.Type;
+import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
@@ -147,14 +150,22 @@ public class PurRepository implements Repository
     this.pur = pur;
   }
 
-  public void init(final RepositoryMeta repositoryMeta, final UserInfo userInfo) {
+  public void init(final RepositoryMeta repositoryMeta) {
     this.log = new LogChannel(this);
     this.repositoryMeta = (PurRepositoryMeta) repositoryMeta;
-    this.userInfo = userInfo;
-    this.securityProvider = new PurRepositorySecurityProvider(this, this.repositoryMeta, userInfo);
   }
 
-  public void connect() throws KettleException, KettleSecurityException {
+  public void connect(String username, String password) throws KettleException, KettleSecurityException {
+    userInfo = new UserInfo(username);
+    userInfo.setPassword(password);
+    
+    // TODO: phase out profiles
+    ProfileMeta adminProfile = new ProfileMeta("Administrator", "Administrator"); //$NON-NLS-1$//$NON-NLS-2$
+    adminProfile.addPermission(Permission.ADMIN);
+    userInfo.setProfile(adminProfile);
+
+    // TODO: is this necessary in client side code? this could 
+    //       cause problems when embedded in the platform.
     populatePentahoSessionHolder();
 
     try {
@@ -166,10 +177,11 @@ public class PurRepository implements Repository
 
       // http basic authentication
       ((BindingProvider) repoWebService).getRequestContext()
-          .put(BindingProvider.USERNAME_PROPERTY, userInfo.getLogin());
+          .put(BindingProvider.USERNAME_PROPERTY, username);
       ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY,
-          userInfo.getPassword());
+          password);
       pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
+      securityProvider = new PurRepositorySecurityProvider(this, this.repositoryMeta, userInfo);
     } catch (Exception e) {
       throw new KettleException(e);
     }
@@ -960,7 +972,10 @@ public class PurRepository implements Repository
   public RepositorySecurityProvider getSecurityProvider() {
     return securityProvider;
   }
-  
+
+  public RepositorySecurityManager getSecurityManager() {
+    return securityProvider;
+  }
 
   public ObjectId getSlaveID(String name) throws KettleException {
     try {

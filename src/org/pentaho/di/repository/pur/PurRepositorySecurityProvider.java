@@ -7,12 +7,13 @@ import org.pentaho.di.repository.BaseRepositorySecurityProvider;
 import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ProfileMeta;
+import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RoleInfo;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
 
-public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider{
+public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider, RepositorySecurityManager {
 
 	private PurRepository	repository;
 	private UserRoleDelegate	userRoleDelegate;

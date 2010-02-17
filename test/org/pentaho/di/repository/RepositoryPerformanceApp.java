@@ -75,8 +75,8 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
     userInfo = new UserInfo(EXP_LOGIN, "password", EXP_USERNAME, "Apache Tomcat user", true, adminProfile);
     repository = new PurRepository();
     
-    repository.init(repositoryMeta, userInfo);
-    repository.connect();
+    repository.init(repositoryMeta);
+    repository.connect(EXP_LOGIN, "password");
   }
   
   public void testLightLoad() throws Exception{

@@ -24,6 +24,7 @@ import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
+import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
@@ -52,7 +53,7 @@ public class RepositoryProxy implements Repository {
     this.node = node;
   }
 
-  public void connect() throws KettleException, KettleSecurityException {
+  public void connect(String username, String password) throws KettleException, KettleSecurityException {
     throw new UnsupportedOperationException();
   }
 
@@ -241,6 +242,10 @@ public class RepositoryProxy implements Repository {
     throw new UnsupportedOperationException();
   }
 
+  public RepositorySecurityManager getSecurityManager() {
+    throw new UnsupportedOperationException();
+  }
+
   public ObjectId getSlaveID(String name) throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -339,7 +344,7 @@ public class RepositoryProxy implements Repository {
     throw new UnsupportedOperationException();
   }
 
-  public void init(RepositoryMeta repositoryMeta, UserInfo userInfo) {
+  public void init(RepositoryMeta repositoryMeta) {
     throw new UnsupportedOperationException();
   }
 

@@ -16,7 +16,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ILogicalRole;
 import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.RepositoryUserInterface;
+import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
@@ -26,12 +26,12 @@ import org.pentaho.platform.engine.security.userroledao.ws.UserRoleSecurityInfo;
 public class UserRoleDelegate {
 
   IUserRoleWebService userRoleWebService = null;
-  RepositoryUserInterface rui = null;
+  RepositorySecurityManager rsm = null;
   private static final Log logger = LogFactory.getLog(UserRoleDelegate.class);
   UserRoleLookupCache lookupCache = null;
   UserRoleSecurityInfo userRoleSecurityInfo;
   Map<String, List<String>> logicalRoleMap = new HashMap<String, List<String>>();
-  public UserRoleDelegate(RepositoryUserInterface rui, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
+  public UserRoleDelegate(RepositorySecurityManager rsm, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
     try {
       final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/userroleadmin?wsdl"; //$NON-NLS-1$
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
@@ -41,7 +41,7 @@ public class UserRoleDelegate {
           userInfo.getLogin());
       ((BindingProvider) userRoleWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY,
           userInfo.getPassword());
-      this.rui = rui;
+      this.rsm = rsm;
       userRoleSecurityInfo = userRoleWebService.getUserRoleSecurityInfo();
       initializeLookupCache();
     } catch (Exception e) {
@@ -50,7 +50,7 @@ public class UserRoleDelegate {
   }
 
   public void initializeLookupCache() {
-    lookupCache = new UserRoleLookupCache(userRoleWebService, rui);
+    lookupCache = new UserRoleLookupCache(userRoleWebService, rsm);
   }
   public void createUser(UserInfo newUser) throws KettleException {
     try {
@@ -95,7 +95,7 @@ public class UserRoleDelegate {
     try {
       ProxyPentahoUser user = userRoleWebService.getUser(name);
       if (user != null && user.getName().equals(name) && user.getPassword().equals(password)) {
-        userInfo = UserRoleHelper.convertToUserInfo(user, userRoleWebService.getRolesForUser(user), rui);
+        userInfo = UserRoleHelper.convertToUserInfo(user, userRoleWebService.getRolesForUser(user), rsm);
       }
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString("UserRoleDelegate.ERROR_0005_UNABLE_TO_GET_USER", name), e); //$NON-NLS-1$
@@ -108,7 +108,7 @@ public class UserRoleDelegate {
     try {
       ProxyPentahoUser user = userRoleWebService.getUser(name);
       if (user != null && user.getName().equals(name)) {
-        userInfo = UserRoleHelper.convertToUserInfo(user, userRoleWebService.getRolesForUser(user), rui);
+        userInfo = UserRoleHelper.convertToUserInfo(user, userRoleWebService.getRolesForUser(user), rsm);
       }
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString("UserRoleDelegate.ERROR_0005_UNABLE_TO_GET_USER", name), e); //$NON-NLS-1$
@@ -118,7 +118,7 @@ public class UserRoleDelegate {
 
   public List<UserInfo> getUsers() throws KettleException {
     try {
-      return UserRoleHelper.convertFromProxyPentahoUsers(userRoleSecurityInfo, rui);
+      return UserRoleHelper.convertFromProxyPentahoUsers(userRoleSecurityInfo, rsm);
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString("UserRoleDelegate.ERROR_0006_UNABLE_TO_GET_USERS"), e); //$NON-NLS-1$
     }
@@ -158,7 +158,7 @@ public class UserRoleDelegate {
   public IRole getRole(String name) throws KettleException {
     try {
       IRole roleInfo = UserRoleHelper.convertFromProxyPentahoRole(userRoleWebService, UserRoleHelper.getProxyPentahoRole(
-          userRoleWebService, name), lookupCache, rui);
+          userRoleWebService, name), lookupCache, rsm);
       if(roleInfo instanceof ILogicalRole) {
         ((ILogicalRole) roleInfo).setLogicalRoles(getLogicalRoles(roleInfo.getName()));
       }
@@ -170,7 +170,7 @@ public class UserRoleDelegate {
 
   public List<IRole> getRoles() throws KettleException {
     try {
-      List<IRole> roles = UserRoleHelper.convertToListFromProxyPentahoRoles(userRoleSecurityInfo, rui);
+      List<IRole> roles = UserRoleHelper.convertToListFromProxyPentahoRoles(userRoleSecurityInfo, rsm);
       for(IRole role:roles) {
         if(role instanceof ILogicalRole) {
           ((ILogicalRole) role).setLogicalRoles(getLogicalRoles(role.getName()));  

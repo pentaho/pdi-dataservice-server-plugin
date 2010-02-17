@@ -88,7 +88,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     repository = new PurRepository();
     ((PurRepository) repository).setPur(pur);
 
-    repository.init(repositoryMeta, userInfo);
+    repository.init(repositoryMeta);
     
     // connect is not called as it is only applicable in the "real" deployment
     //repository.connect();
