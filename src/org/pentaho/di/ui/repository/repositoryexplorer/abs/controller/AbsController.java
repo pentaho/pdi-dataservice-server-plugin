@@ -27,9 +27,6 @@ import java.util.Map.Entry;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.AbsSecurityAdmin;
-import org.pentaho.di.repository.IAbsAdmin;
-import org.pentaho.di.repository.pur.PurRepository;
-import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsRepositoryRole;
@@ -85,14 +82,14 @@ import org.pentaho.ui.xul.containers.XulVbox;
     
     public void init() {
       super.init();
-      absAdmin  = (AbsSecurityAdmin) this.getRepositoryUserInterface();
+      absAdmin  = (AbsSecurityAdmin) this.getRepositorySecurityManager();
       initializeLogicalRolesUI();
     }
 
     
     @Override
     protected void createModel() {
-      security = new UIAbsSecurity(getRepositoryUserInterface());
+      security = new UIAbsSecurity(getRepositorySecurityManager());
     }
 
 
