@@ -137,7 +137,22 @@ public class PurRepository implements Repository
 
   protected Serializable cachedDatabaseMetaParentFolderId;
     
-  RepositoryDirectory root = null;  
+  /**
+   * We cache the root directory of hte loaded tree, to save retrievals when the findDirectory() method 
+   * is called.
+   */
+  private RepositoryDirectory root = null;
+  
+  /** 
+   * We need to cache the fact that the user home is aliased, in order to properly map back to a fully
+   * qualified repository path for use in repository functions. This arises specifically because of the use case where a 
+   * folder the same name as a user home folder can be created at the tenant root level; if that happens, then we 
+   * don't alias the user's home directory, but we still have a folder at the tenant root level that LOOKS like and 
+   * aliased user home folder. 
+   */
+  private boolean isUserHomeDirectoryAliased = false;
+  private String  userHomeAlias = null;
+  
   // ~ Constructors ====================================================================================================
 
   public PurRepository() {
@@ -290,14 +305,15 @@ public class PurRepository implements Repository
     }
   }
   public RepositoryDirectory loadRepositoryDirectoryTree() throws KettleException {
-    RepositoryDirectory rootDir = new RepositoryDirectory();
+
     RepositoryFile pentahoRootFolder = pur.getFile(RepositoryPaths.getPentahoRootFolderPath());
-    RepositoryDirectory dir = new RepositoryDirectory(rootDir, pentahoRootFolder.getName());
+
+    root = new RepositoryDirectory();
+    root.setObjectId(null);
+    RepositoryDirectory dir = new RepositoryDirectory(root, pentahoRootFolder.getName());
     dir.setObjectId(new StringObjectId(pentahoRootFolder.getId().toString()));
-    this.root = rootDir;
-    rootDir.addSubdirectory(dir);
+    root.addSubdirectory(dir);
     loadRepositoryDirectory(dir, pentahoRootFolder);
-    rootDir.setObjectId(null);
     
       /** HACK AND SLASH HERE ***/
       /**
@@ -366,19 +382,25 @@ public class PurRepository implements Repository
       *   alias /home/me to "me"  
 
       **********************************************************************************************/
-    RepositoryDirectory tenantRoot = rootDir.findDirectory(RepositoryPaths.getTenantRootFolderPath());
-    RepositoryDirectory tenantHome = rootDir.findDirectory(RepositoryPaths.getTenantHomeFolderPath());
-    RepositoryDirectory userHome = rootDir.findDirectory(RepositoryPaths.getUserHomeFolderPath());
-    RepositoryDirectory etcHome = rootDir.findDirectory(RepositoryPaths.getTenantEtcFolderPath());
+    
+    // Example: /pentaho/tenant0
+    RepositoryDirectory tenantRoot = root.findDirectory(RepositoryPaths.getTenantRootFolderPath());
+    // Example: /pentaho/tenant0/home
+    RepositoryDirectory tenantHome = root.findDirectory(RepositoryPaths.getTenantHomeFolderPath());
+    // Example: /pentaho/tenant0/home/suzy
+    RepositoryDirectory userHome = root.findDirectory(RepositoryPaths.getUserHomeFolderPath());
+    // Example: /pentaho/tenant0/etc
+    RepositoryDirectory etcHome = root.findDirectory(RepositoryPaths.getTenantEtcFolderPath());
+    
 
     boolean hasHomeWriteAccess = pur.hasAccess(RepositoryPaths.getTenantHomeFolderPath(), EnumSet.of(RepositoryFilePermission.WRITE));
-    String userHomeAlias = userHome.getName();
+    String alias = userHome.getName();
     
     // Skip aliasing the home directory if:
     // a. the user has write access to the home directory (signifying admin access)
     // b. an admin has inadvertently created a sibling folder with the same name as the alias we want to use. 
     
-    boolean skipAlias = hasHomeWriteAccess || (tenantRoot.findChild(userHomeAlias)!=null);
+    isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (tenantRoot.findChild(alias)!=null));
     List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
     newRoot.setObjectId(tenantRoot.getObjectId());
@@ -390,18 +412,16 @@ public class PurRepository implements Repository
         continue;
       }
       boolean isHomeChild = tenantChild.equals(tenantHome);
-      // We INTENTIONALLY do not re-parent here... If we need to re-parent these nodes,
-      // then a virtual parent to actual parent map will need to be introduced. 
-      if (isHomeChild && (!skipAlias)){
-          //newRoot.addSubdirectory(userHome);
-        children.add(0,userHome);
+      // We are now re-parenting to serve up the view that the UI would like to display...
+      // We revert to the absolute paths need for repo functions in the getPath() method....
+      if (isHomeChild && isUserHomeDirectoryAliased){
+        userHomeAlias = alias;
+        newRoot.addSubdirectory(userHome);
       }else{
-        //newRoot.addSubdirectory(tenantChild);
-        children.add(tenantChild);
+        userHomeAlias = null;
+        newRoot.addSubdirectory(tenantChild);
       }
     }
-    newRoot.setChildren(children);
-    
     /** END HACK AND SLASH HERE ***/
     return newRoot;
   }
@@ -498,13 +518,25 @@ public class PurRepository implements Repository
 
   private String getPath(final String name, final RepositoryDirectory repositoryDirectory,
       final RepositoryObjectType objectType) {
+    
+    String absolutePath = repositoryDirectory.getPath();
+    if (isUserHomeDirectoryAliased){
+      if (absolutePath.startsWith(userHomeAlias)){
+        absolutePath = RepositoryPaths.getTenantHomeFolderPath()
+                                          .concat(absolutePath);
+      }
+    }else{
+      absolutePath = RepositoryPaths.getTenantRootFolderPath()
+                                        .concat(absolutePath);
+      
+    }
     switch (objectType) {
       case DATABASE: {
         return getDatabaseMetaParentFolderPath() + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.DATABASE.getExtension();
       }
       case TRANSFORMATION: {
-        return repositoryDirectory.getPath() + RepositoryFile.SEPARATOR + name
+        return absolutePath + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.TRANSFORMATION.getExtension();
       }
       case PARTITION_SCHEMA: {
@@ -520,7 +552,7 @@ public class PurRepository implements Repository
             + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
       }
       case JOB: {
-        return repositoryDirectory.getPath() + RepositoryFile.SEPARATOR + name
+        return absolutePath + RepositoryFile.SEPARATOR + name
             + RepositoryObjectType.JOB.getExtension();
       }
       default: {
