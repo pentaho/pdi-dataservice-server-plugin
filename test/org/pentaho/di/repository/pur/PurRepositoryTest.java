@@ -171,7 +171,9 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
   @Override
   protected void delete(ObjectId id) {
-    pur.deleteFile(id.getId(), true, null);
+    if (id != null){
+      pur.deleteFile(id.getId(), true, null);
+    }
   }
 
   /**

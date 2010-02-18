@@ -261,7 +261,7 @@ public class PurRepository implements Repository
         dir.setObjectId(new StringObjectId(newFolder.getId().toString()));
       }
     } catch (Exception e) {
-      throw new KettleException("Unable to save repository directory with path [" + dir.getPath() + "]", e);
+      throw new KettleException("Unable to save repository directory with path [" + getPath(null, dir, null) + "]", e);
     }
   }
 
@@ -269,14 +269,15 @@ public class PurRepository implements Repository
     try {
       pur.deleteFile(dir.getObjectId().getId(), true, null);
     } catch (Exception e) {
-      throw new KettleException("Unable to delete directory with path [" + dir.getPath() + "]", e);
+      throw new KettleException("Unable to delete directory with path [" + getPath(null, dir, null) + "]", e);
     }
   }
 
   public ObjectId renameRepositoryDirectory(final RepositoryDirectory dir) throws KettleException {
     // dir ID is used to find orig obj; dir name is new name of obj; dir is not moved from its original loc
     try {
-      pur.moveFile(dir.getObjectId().getId(), dir.getParent().getPath() + RepositoryFile.SEPARATOR + dir.getName(),
+      String absPath = getPath(null, dir.getParent(), null);
+      pur.moveFile(dir.getObjectId().getId(), absPath + RepositoryFile.SEPARATOR + dir.getName(),
           null);
       return dir.getObjectId();
     } catch (Exception e) {
@@ -296,7 +297,7 @@ public class PurRepository implements Repository
       RepositoryFile folder = pur.getFileById(dirId.getId());
       finalName = (newName != null ? newName : folder.getName());
       interimFolderPath = folder.getAbsolutePath().replace(RepositoryFile.SEPARATOR + folder.getName(), ""); 
-      finalParentPath = (newParent != null ? newParent.getPath() : interimFolderPath);
+      finalParentPath = (newParent != null ? getPath(null, newParent, null) : interimFolderPath);
       pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName, null);
       return dirId;
     } catch (Exception e) {
@@ -519,17 +520,25 @@ public class PurRepository implements Repository
   private String getPath(final String name, final RepositoryDirectory repositoryDirectory,
       final RepositoryObjectType objectType) {
     
-    String absolutePath = repositoryDirectory.getPath();
-    if (isUserHomeDirectoryAliased){
-      if (absolutePath.startsWith(userHomeAlias)){
-        absolutePath = RepositoryPaths.getTenantHomeFolderPath()
-                                          .concat(absolutePath);
-      }
-    }else{
-      absolutePath = RepositoryPaths.getTenantRootFolderPath()
-                                        .concat(absolutePath);
-      
+    String absolutePath = null;
+    
+    if (repositoryDirectory != null){
+      absolutePath = repositoryDirectory.getPath();
+      if ((isUserHomeDirectoryAliased) && 
+          (absolutePath.startsWith(userHomeAlias))){
+       absolutePath = RepositoryPaths.getTenantHomeFolderPath()
+                                         .concat(absolutePath);
+       }else{
+         absolutePath = RepositoryPaths.getTenantRootFolderPath()
+                                           .concat(absolutePath);
+       }
     }
+    
+    // return the directory path
+    if (objectType == null){
+      return absolutePath;
+    }
+    
     switch (objectType) {
       case DATABASE: {
         return getDatabaseMetaParentFolderPath() + RepositoryFile.SEPARATOR + name
@@ -1328,10 +1337,11 @@ public class PurRepository implements Repository
 
   protected String calcDestAbsPath(final ObjectId id, final RepositoryDirectory newDirectory, final String newName,
       final RepositoryObjectType objectType) {
+    String newDirectoryPath = getPath(null, newDirectory, null);
     RepositoryFile file = pur.getFileById(id.getId());
     StringBuilder buf = new StringBuilder(file.getAbsolutePath().length());
     if (newDirectory != null) {
-      buf.append(newDirectory.getPath());
+      buf.append(newDirectoryPath);
     } else {
       buf.append(getParentPath(file.getAbsolutePath()));
     }
@@ -1753,7 +1763,8 @@ public class PurRepository implements Repository
   }
 
   public void undeleteObject(final RepositoryElementLocationInterface element) throws KettleException {
-    RepositoryFile originalParentFolder = pur.getFile(element.getRepositoryDirectory().getPath());
+    
+    RepositoryFile originalParentFolder = pur.getFile(getPath(null, element.getRepositoryDirectory(), null));
     List<RepositoryFile> deletedChildren = pur.getDeletedFiles(originalParentFolder.getId(), element.getName()
         + element.getRepositoryElementType().getExtension());
     if (!deletedChildren.isEmpty()) {
