@@ -6,6 +6,7 @@ public interface ILogicalRole {
 
   public void addLogicalRole(String logicalRole);
   public void removeLogicalRole(String logicalRole);
+  public boolean containsLogicalRole(String logicalRole);
   public void setLogicalRoles(List<String> logicalRoles);
   public List<String> getLogicalRoles();
 }

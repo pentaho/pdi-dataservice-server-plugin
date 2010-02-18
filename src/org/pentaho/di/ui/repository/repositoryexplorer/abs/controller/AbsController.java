@@ -19,19 +19,21 @@ package org.pentaho.di.ui.repository.repositoryexplorer.abs.controller;
 
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Map.Entry;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.i18n.GlobalMessages;
 import org.pentaho.di.repository.AbsSecurityAdmin;
+import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsSecurity;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.SecurityController;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
@@ -80,10 +82,15 @@ import org.pentaho.ui.xul.containers.XulVbox;
     }
 
     
-    public void init() {
-      super.init();
-      absAdmin  = (AbsSecurityAdmin) this.getRepositorySecurityManager();
-      initializeLogicalRolesUI();
+    public void init() throws ControllerInitializationException{
+      try {
+        absAdmin  = (AbsSecurityAdmin) this.getRepositorySecurityManager();
+        absAdmin.initialize(GlobalMessages.getLocale().getDisplayName());
+        super.init();
+        initializeLogicalRolesUI();
+      } catch (Exception e) {
+        throw new ControllerInitializationException(e);
+      }
     }
 
     
@@ -145,10 +152,10 @@ import org.pentaho.ui.xul.containers.XulVbox;
      */
     public void applyRoleActionPermission() {
       XulMessageBox messageBox = this.getMessageBox();
-      String rolename = null;
+      IUIRole role = null;
       try {
-        rolename = getSecurity().getSelectedRole().getName();
-        absAdmin.setLogicalRoles(rolename, ((UIAbsRepositoryRole) getSecurity()
+        role = getSecurity().getSelectedRole();
+        absAdmin.setLogicalRoles(role.getName(), ((UIAbsRepositoryRole) getSecurity()
             .getSelectedRole()).getLogicalRoles());
         messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
         messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
@@ -159,7 +166,7 @@ import org.pentaho.ui.xul.containers.XulVbox;
         messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
         messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
         messageBox.setMessage(BaseMessages.getString(RepositoryExplorer.class,
-            "AbsController.RoleActionPermission.UnableToApplyPermissions", rolename, e.getLocalizedMessage()));//$NON-NLS-1$
+            "AbsController.RoleActionPermission.UnableToApplyPermissions", role.getName(), e.getLocalizedMessage()));//$NON-NLS-1$
         messageBox.open();
       }
     }
@@ -195,17 +202,17 @@ import org.pentaho.ui.xul.containers.XulVbox;
     private void initializeLogicalRolesUI() {
       logicalRoleChecboxMap = new HashMap<XulCheckbox, String>();
       try {
-        List<String> logicalRoles = absAdmin.getLogicalRolesToDisplay("EN");//$NON-NLS-1$
-        for (String logicalRole:logicalRoles) {
+        Map<String, String> logicalRoles = absAdmin.getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
+        for (Entry<String, String> logicalRole:logicalRoles.entrySet()) {
           XulCheckbox logicalRoleCheckbox;
           logicalRoleCheckbox = (XulCheckbox) document.createElement("checkbox");//$NON-NLS-1$
-          logicalRoleCheckbox.setLabel(logicalRole);
-          logicalRoleCheckbox.setId(logicalRole);
+          logicalRoleCheckbox.setLabel(logicalRole.getValue());
+          logicalRoleCheckbox.setId(logicalRole.getValue());
           logicalRoleCheckbox.setCommand("iSecurityController.updateRoleActionPermission()");//$NON-NLS-1$
           logicalRoleCheckbox.setFlex(1);
           logicalRoleCheckbox.setDisabled(true);
           logicalRolesBox.addChild(logicalRoleCheckbox);
-          logicalRoleChecboxMap.put(logicalRoleCheckbox,logicalRole);
+          logicalRoleChecboxMap.put(logicalRoleCheckbox,logicalRole.getKey());
           this.getBindingFactory().setBindingType(Binding.Type.ONE_WAY);
           this.getBindingFactory().createBinding(roleListBox, "selectedIndex", logicalRoleCheckbox, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
         }

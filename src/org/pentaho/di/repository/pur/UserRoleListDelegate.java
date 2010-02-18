@@ -7,17 +7,20 @@ import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Service;
 
+import org.apache.commons.logging.Log;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.platform.engine.security.userrole.ws.IUserDetailsRoleListWebService;
 import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
 
 public class UserRoleListDelegate {
-  IUserDetailsRoleListWebService userDetailsRoleListWebService = null;
-  UserRoleInfo userRoleInfo = null;
-  
-  public UserRoleListDelegate(PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
+  IUserDetailsRoleListWebService userDetailsRoleListWebService;
+  UserRoleInfo userRoleInfo;
+  Log logger;
+  public UserRoleListDelegate(PurRepositoryMeta repositoryMeta, UserInfo userInfo, Log logger) {
     try {
+      this.logger = logger;
       final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/userrolelist?wsdl"; //$NON-NLS-1$
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
           "DefaultUserDetailsRoleListWebServiceService")); //$NON-NLS-1$
@@ -28,9 +31,9 @@ public class UserRoleListDelegate {
           .put(BindingProvider.USERNAME_PROPERTY, userInfo.getLogin());
       ((BindingProvider) userDetailsRoleListWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY,
           userInfo.getPassword());
-      userRoleInfo = userDetailsRoleListWebService.getUserRoleInfo();
+      updateUserRoleList();
     } catch (Exception e) {
-
+      this.logger.error(BaseMessages.getString("UserRoleListDelegate.ERROR_0001_UNABLE_TO_INITIALIZE_USER_ROLE_LIST_WEBSVC"), e); //$NON-NLS-1$
     }
 
   }
@@ -41,5 +44,8 @@ public class UserRoleListDelegate {
   
   public List<String> getAllUsers() throws KettleException {
     return userRoleInfo.getUsers();
+  }
+  public void updateUserRoleList() {
+    userRoleInfo = userDetailsRoleListWebService.getUserRoleInfo();
   }
 }

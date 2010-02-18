@@ -30,13 +30,24 @@ public class UIAbsRepositoryRole extends UIRepositoryRole implements ILogicalRol
 
   public void addLogicalRole(String logicalRole) {
     if(getRole() instanceof ILogicalRole) {
-      ((ILogicalRole) this.getRole()).addLogicalRole(logicalRole);
+      if(!containsLogicalRole(logicalRole)) {
+        ((ILogicalRole) this.getRole()).addLogicalRole(logicalRole);
+      }
     }
   }
 
   public void removeLogicalRole(String logicalRole) {
     if(getRole() instanceof ILogicalRole) {
-      ((ILogicalRole) this.getRole()).removeLogicalRole(logicalRole);
+      if(containsLogicalRole(logicalRole)) {
+        ((ILogicalRole) this.getRole()).removeLogicalRole(logicalRole);
+      }
     }
+  }
+
+  public boolean containsLogicalRole(String logicalRole) {
+    if(getRole() instanceof ILogicalRole) {
+      return ((ILogicalRole) this.getRole()).containsLogicalRole(logicalRole);
+    }
+    return false;
   }
 }

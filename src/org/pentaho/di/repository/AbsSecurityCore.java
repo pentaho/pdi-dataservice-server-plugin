@@ -1,31 +1,69 @@
 package org.pentaho.di.repository;
 
-import java.util.ArrayList;
+import java.net.URL;
 import java.util.List;
 
+import javax.xml.namespace.QName;
+import javax.xml.ws.BindingProvider;
+import javax.xml.ws.Service;
+
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositorySecurityProvider;
+import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 
-public class AbsSecurityCore extends PurRepositorySecurityProvider implements IAbsCore{
+import com.pentaho.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
+
+public class AbsSecurityCore extends PurRepositorySecurityProvider implements IAbsCore {
+  private IAuthorizationPolicyWebService authorizationPolicyWebService = null;
 
   public AbsSecurityCore(PurRepository repository, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
     super(repository, repositoryMeta, userInfo);
-    // TODO Auto-generated constructor stub
+    try {
+      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/authorizationPolicy?wsdl"; //$NON-NLS-1$
+      Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
+          "DefaultAuthorizationPolicyWebServiceService"));//$NON-NLS-1$
+      authorizationPolicyWebService = service.getPort(IAuthorizationPolicyWebService.class);
+      ((BindingProvider) authorizationPolicyWebService).getRequestContext().put(BindingProvider.USERNAME_PROPERTY,
+          userInfo.getLogin());
+      ((BindingProvider) authorizationPolicyWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY,
+          userInfo.getPassword());
+      if (authorizationPolicyWebService == null) {
+        getLogger().error(
+            BaseMessages.getString(AbsSpoonPlugin.class,
+                "AbsSecurityCore.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC")); //$NON-NLS-1$
+      }
+
+    } catch (Exception e) {
+      getLogger().error(
+          BaseMessages.getString(AbsSpoonPlugin.class,
+              "AbsSecurityCore.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC"), e); //$NON-NLS-1$
+    }
   }
 
-  public List<String> getAllowedActions() {
-    // TODO Auto-generated method stub
-    List<String> allowedAction = new ArrayList<String>();
-    allowedAction.add("Create Content");
-    allowedAction.add("Read Content");
-    allowedAction.add("Administer Security");
-    return allowedAction;
+  public List<String> getAllowedActions(String nameSpace) throws KettleException {
+    try {
+      return authorizationPolicyWebService.getAllowedActions(nameSpace);
+    } catch (Exception e) {
+      throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
+          "AbsSecurityCore.ERROR_0003_UNABLE_TO_ACCESS_GET_ALLOWED_ACTIONS"), e); //$NON-NLS-1$
+    }
   }
 
-  public boolean isAllowed(String action) {
-    // TODO Auto-generated method stub
-    return true;
+  public boolean isAllowed(String actionName) throws KettleException {
+    try {
+      return authorizationPolicyWebService.isAllowed(actionName);
+    } catch (Exception e) {
+      throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
+          "AbsSecurityCore.ERROR_0002_UNABLE_TO_ACCESS_IS_ALLOWED"), e);//$NON-NLS-1$
+    }
+  }
+
+  @Override
+  public IRole constructRole() throws KettleException {
+    return new AbsRoleInfo();
   }
 
 }

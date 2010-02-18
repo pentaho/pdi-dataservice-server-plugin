@@ -4,7 +4,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.UserInfo;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurity;
 
@@ -31,21 +31,14 @@ public class UIAbsSecurity extends UISecurity {
     }
   }
   
-  public UIRepositoryRole getSelectedRole() {
-    return selectedRole;
-  }
-  public void setSelectedRole(UIRepositoryRole selectedRole) {
-    this.selectedRole = new UIAbsRepositoryRole(selectedRole.getRole());
-    this.firePropertyChange("selectedRole", null, selectedRole); //$NON-NLS-1$
-    setSelectedRoleIndex(getIndexOfRole(selectedRole));       
-  }
-  
   public void addLogicalRole(String logicalRole) {
-    ((UIAbsRepositoryRole) getSelectedRole()).addLogicalRole(logicalRole);
+    IUIRole role = getSelectedRole();
+    ((UIAbsRepositoryRole) role).addLogicalRole(logicalRole);
   }
 
   public void removeLogicalRole(String logicalRole) {
-    ((UIAbsRepositoryRole) getSelectedRole()).removeLogicalRole(logicalRole);
+    IUIRole role = getSelectedRole();
+    ((UIAbsRepositoryRole) role).removeLogicalRole(logicalRole);
   }
 
 }

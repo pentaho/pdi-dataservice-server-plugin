@@ -2,6 +2,8 @@ package org.pentaho.di.repository.pur;
 
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.BaseRepositorySecurityProvider;
 import org.pentaho.di.repository.IRole;
@@ -12,18 +14,21 @@ import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RoleInfo;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ProfileMeta.Permission;
+import org.pentaho.platform.engine.security.userroledao.ws.UserRoleException;
 
-public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider, RepositorySecurityManager {
+public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider, RepositorySecurityManager, IUserRoleListChangeListener {
 
 	private PurRepository	repository;
 	private UserRoleDelegate	userRoleDelegate;
 	private UserRoleListDelegate userRoleListDelegate;
-
-	public PurRepositorySecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
+	private static final Log logger = LogFactory.getLog(UserRoleDelegate.class);
+	
+  public PurRepositorySecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
 		super(repositoryMeta, userInfo);
 		this.repository = repository;
-    this.userRoleListDelegate = new UserRoleListDelegate(repositoryMeta, userInfo);
-    this.userRoleDelegate = new UserRoleDelegate(this, repositoryMeta, userInfo);
+    this.userRoleListDelegate = new UserRoleListDelegate(repositoryMeta, userInfo, logger);
+    this.userRoleDelegate = new UserRoleDelegate(this, repositoryMeta, userInfo, logger);
+    userRoleDelegate.addUserRoleListChangeListener(this);
     this.setUserRoleDelegate(userRoleDelegate);
     this.setUserRoleListDelegate(userRoleListDelegate);
 	}
@@ -209,4 +214,19 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
   public IRole constructRole() throws KettleException {
     return new RoleInfo();
   }
+
+  public void onChange() {
+    
+    try {
+      userRoleListDelegate.updateUserRoleList();
+      userRoleDelegate.updateUserRoleInfo();
+    } catch (UserRoleException e) {
+      e.printStackTrace();
+    }
+  }
+  public static Log getLogger() {
+    return logger;
+  }
+
+
 }

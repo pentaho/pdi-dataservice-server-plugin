@@ -55,6 +55,14 @@ public class UserRoleLookupCache {
     return addRoleToLookupSet(proxyRole);
   }
 
+  public void insertUserToLookupSet(UserInfo user) {
+    userInfoSet.add(user);
+  }
+
+  public void insertRoleToLookupSet(IRole role) {
+    roleInfoSet.add(role);
+  }
+
   public void updateUserInLookupSet(UserInfo user) {
     UserInfo userInfoToUpdate = null;
     for (UserInfo userInfo : userInfoSet) {
@@ -67,6 +75,7 @@ public class UserRoleLookupCache {
     if(!StringUtils.isEmpty(user.getPassword())) {
       userInfoToUpdate.setPassword(user.getPassword());        
     }
+    userInfoToUpdate.setRoles(user.getRoles());
   }
 
   public void updateRoleInLookupSet(IRole role) {
@@ -78,7 +87,7 @@ public class UserRoleLookupCache {
       }
     }
     roleInfoToUpdate.setDescription(role.getDescription());
-    roleInfoSet.remove(roleInfoToUpdate);
+    roleInfoToUpdate.setUsers(role.getUsers());
   }
 
   public void removeUsersFromLookupSet(List<UserInfo> users) {
