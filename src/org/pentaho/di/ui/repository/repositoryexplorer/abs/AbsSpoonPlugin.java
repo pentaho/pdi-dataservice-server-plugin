@@ -51,7 +51,7 @@ import org.pentaho.ui.xul.impl.XulEventHandler;
 public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   
   private XulDomContainer spoonXulContainer = null;
-  private RepositoryExplorerController respositoryExplorerEventHandler = new RepositoryExplorerController();
+  private RepositoryExplorerController repositoryExplorerEventHandler = new RepositoryExplorerController();
   private ChangedWarningController changedWarningEventHandler = new ChangedWarningController();
   
   private ResourceBundle messages = new ResourceBundle() {
@@ -73,7 +73,7 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   }
   public Map<String, List<XulEventHandler>> getEventHandlers() {
     HashMap<String, List<XulEventHandler>> handlerMap = new HashMap<String, List<XulEventHandler>>();
-    handlerMap.put("repository-explorer", Collections.singletonList((XulEventHandler) respositoryExplorerEventHandler)); //$NON-NLS-1$
+    handlerMap.put("repository-explorer", Collections.singletonList((XulEventHandler) repositoryExplorerEventHandler)); //$NON-NLS-1$
     
     handlerMap.put("trans-graph-changed-warning-dialog", Collections.singletonList((XulEventHandler) changedWarningEventHandler)); //$NON-NLS-1$
     return handlerMap;
@@ -183,11 +183,12 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
     ((XulMenuitem) doc.getElementById("file-close")).setDisabled(!createPermitted); //$NON-NLS-1$
     
     // Update repository explorer
-    respositoryExplorerEventHandler.setCreatePermissionGranted(createPermitted);
+    repositoryExplorerEventHandler.setCreatePermissionGranted(createPermitted);
+    changedWarningEventHandler.setSavePermitted(createPermitted);
   }
   
   private void enableReadPermission(boolean readPermitted) {
-    respositoryExplorerEventHandler.setReadPermissionGranted(readPermitted);
+    repositoryExplorerEventHandler.setReadPermissionGranted(readPermitted);
   }
   
   private void enableAdminPermission(boolean adminPermitted) {
