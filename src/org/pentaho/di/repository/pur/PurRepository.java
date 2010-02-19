@@ -195,6 +195,9 @@ public class PurRepository implements Repository
           .put(BindingProvider.USERNAME_PROPERTY, username);
       ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY,
           password);
+      // accept cookies to maintain session on server
+      ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
+
       pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
       userHomeAlias = pur.getFile(RepositoryPaths.getUserHomeFolderPath()).getId();
       securityProvider = new PurRepositorySecurityProvider(this, this.repositoryMeta, userInfo);
