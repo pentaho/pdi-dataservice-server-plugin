@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.i18n.GlobalMessages;
-import org.pentaho.di.repository.AbsSecurityAdmin;
+import org.pentaho.di.repository.AbsSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
@@ -76,7 +76,7 @@ import org.pentaho.ui.xul.containers.XulVbox;
     Map<XulCheckbox, String> logicalRoleChecboxMap;
 
     private BindingConvertor<Integer, Boolean> buttonConverter = null;
-    private AbsSecurityAdmin absAdmin  = null; 
+    private AbsSecurityManager absAdmin  = null; 
     public AbsController() {
 
     }
@@ -84,7 +84,7 @@ import org.pentaho.ui.xul.containers.XulVbox;
     
     public void init() throws ControllerInitializationException{
       try {
-        absAdmin  = (AbsSecurityAdmin) this.getRepositorySecurityManager();
+        absAdmin  = (AbsSecurityManager) this.getRepositorySecurityManager();
         absAdmin.initialize(GlobalMessages.getLocale().getDisplayName());
         super.init();
         initializeLogicalRolesUI();

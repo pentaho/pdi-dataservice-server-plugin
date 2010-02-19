@@ -16,10 +16,10 @@ import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 
 import com.pentaho.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 
-public class AbsSecurityCore extends PurRepositorySecurityProvider implements IAbsCore {
+public class AbsSecurityProvider extends PurRepositorySecurityProvider implements IAbsSecurityProvider {
   private IAuthorizationPolicyWebService authorizationPolicyWebService = null;
 
-  public AbsSecurityCore(PurRepository repository, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
+  public AbsSecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
     super(repository, repositoryMeta, userInfo);
     try {
       final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/authorizationPolicy?wsdl"; //$NON-NLS-1$
@@ -33,13 +33,13 @@ public class AbsSecurityCore extends PurRepositorySecurityProvider implements IA
       if (authorizationPolicyWebService == null) {
         getLogger().error(
             BaseMessages.getString(AbsSpoonPlugin.class,
-                "AbsSecurityCore.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC")); //$NON-NLS-1$
+                "AbsSecurityProvider.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC")); //$NON-NLS-1$
       }
 
     } catch (Exception e) {
       getLogger().error(
           BaseMessages.getString(AbsSpoonPlugin.class,
-              "AbsSecurityCore.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC"), e); //$NON-NLS-1$
+              "AbsSecurityProvider.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC"), e); //$NON-NLS-1$
     }
   }
 
@@ -48,7 +48,7 @@ public class AbsSecurityCore extends PurRepositorySecurityProvider implements IA
       return authorizationPolicyWebService.getAllowedActions(nameSpace);
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityCore.ERROR_0003_UNABLE_TO_ACCESS_GET_ALLOWED_ACTIONS"), e); //$NON-NLS-1$
+          "AbsSecurityProvider.ERROR_0003_UNABLE_TO_ACCESS_GET_ALLOWED_ACTIONS"), e); //$NON-NLS-1$
     }
   }
 
@@ -57,7 +57,7 @@ public class AbsSecurityCore extends PurRepositorySecurityProvider implements IA
       return authorizationPolicyWebService.isAllowed(actionName);
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityCore.ERROR_0002_UNABLE_TO_ACCESS_IS_ALLOWED"), e);//$NON-NLS-1$
+          "AbsSecurityProvider.ERROR_0002_UNABLE_TO_ACCESS_IS_ALLOWED"), e);//$NON-NLS-1$
     }
   }
 

@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.pentaho.di.repository.AbsSecurityAdmin;
+import org.pentaho.di.repository.AbsSecurityManager;
 import org.pentaho.di.repository.SecurityManagerRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsController;
@@ -73,7 +73,7 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   }
   
   private void doOnStartup() {
-    SecurityManagerRegistery.getInstance().registerSecurityManager(AbsSecurityAdmin.class);
+    SecurityManagerRegistery.getInstance().registerSecurityManager(AbsSecurityManager.class);
     UIObjectRegistery.getInstance().registerUIRepositoryRoleClass(UIAbsRepositoryRole.class);
   }
   private void doOnShutdown() {

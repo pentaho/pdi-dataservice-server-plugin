@@ -13,7 +13,7 @@ import org.pentaho.di.core.exception.KettleException;
  * @author rmansoor
  */
 
-public interface IAbsCore {
+public interface IAbsSecurityProvider {
   
   /**
   * Returns {@code true} if the the action should be allowed.
