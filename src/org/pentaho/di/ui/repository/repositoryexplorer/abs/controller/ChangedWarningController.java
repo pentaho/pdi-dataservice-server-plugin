@@ -1,6 +1,7 @@
 package org.pentaho.di.ui.repository.repositoryexplorer.abs.controller;
 
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 import org.pentaho.di.ui.spoon.AbstractChangedWarningDialog;
 import org.pentaho.di.ui.spoon.XulSpoonResourceBundle;
 import org.pentaho.ui.xul.XulDomContainer;
@@ -9,7 +10,7 @@ import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.dom.Document;
 
 public class ChangedWarningController extends AbstractChangedWarningDialog {
-  private static Class<?> PKG = ChangedWarningController.class;
+  private static Class<?> PKG = AbsSpoonPlugin.class;
   
   @Override
   public String getName() {
@@ -26,6 +27,8 @@ public class ChangedWarningController extends AbstractChangedWarningDialog {
     Document doc = getXulDomContainer().getDocumentRoot();
     XulDialog dialog = (XulDialog)doc.getElementById(getXulDialogId());
     dialog.setButtons("extra1,cancel"); //$NON-NLS-1$
+    dialog.setButtonlabelextra1(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.Yes")); //$NON-NLS-1$
+    dialog.setButtonlabelcancel(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.No")); //$NON-NLS-1$
     dialog.setButtonlabelaccept(null);
     dialog.setOndialogaccept(null);
     
