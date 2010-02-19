@@ -151,7 +151,7 @@ public class PurRepository implements Repository
    * aliased user home folder. 
    */
   private boolean isUserHomeDirectoryAliased = false;
-  private String  userHomeAlias = null;
+  protected Serializable  userHomeAlias = null;
   
   // ~ Constructors ====================================================================================================
 
@@ -196,7 +196,9 @@ public class PurRepository implements Repository
       ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY,
           password);
       pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
+      userHomeAlias = pur.getFile(RepositoryPaths.getUserHomeFolderPath()).getId();
       securityProvider = new PurRepositorySecurityProvider(this, this.repositoryMeta, userInfo);
+
     } catch (Exception e) {
       throw new KettleException(e);
     }
@@ -392,16 +394,16 @@ public class PurRepository implements Repository
     RepositoryDirectory userHome = root.findDirectory(RepositoryPaths.getUserHomeFolderPath());
     // Example: /pentaho/tenant0/etc
     RepositoryDirectory etcHome = root.findDirectory(RepositoryPaths.getTenantEtcFolderPath());
-    
+    String alias = userHome.getName();
 
     boolean hasHomeWriteAccess = pur.hasAccess(RepositoryPaths.getTenantHomeFolderPath(), EnumSet.of(RepositoryFilePermission.WRITE));
-    String alias = userHome.getName();
     
     // Skip aliasing the home directory if:
     // a. the user has write access to the home directory (signifying admin access)
     // b. an admin has inadvertently created a sibling folder with the same name as the alias we want to use. 
     
     isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (tenantRoot.findChild(alias)!=null));
+    
     List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
     newRoot.setObjectId(tenantRoot.getObjectId());
@@ -416,10 +418,8 @@ public class PurRepository implements Repository
       // We are now re-parenting to serve up the view that the UI would like to display...
       // We revert to the absolute paths need for repo functions in the getPath() method....
       if (isHomeChild && isUserHomeDirectoryAliased){
-        userHomeAlias = alias;
         newRoot.addSubdirectory(userHome);
       }else{
-        userHomeAlias = null;
         newRoot.addSubdirectory(tenantChild);
       }
     }
@@ -523,9 +523,10 @@ public class PurRepository implements Repository
     String absolutePath = null;
     
     if (repositoryDirectory != null){
+      ObjectId id = repositoryDirectory.getObjectId();
       absolutePath = repositoryDirectory.getPath();
       if ((isUserHomeDirectoryAliased) && 
-          (absolutePath.startsWith(userHomeAlias))){
+          (id.getId().equals(userHomeAlias.toString()))){
        absolutePath = RepositoryPaths.getTenantHomeFolderPath()
                                          .concat(absolutePath);
        }else{
