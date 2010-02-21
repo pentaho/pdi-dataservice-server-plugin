@@ -52,7 +52,19 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   
   private XulDomContainer spoonXulContainer = null;
   private RepositoryExplorerController repositoryExplorerEventHandler = new RepositoryExplorerController();
-  private ChangedWarningController changedWarningEventHandler = new ChangedWarningController();
+  private ChangedWarningController transChangedWarningEventHandler = new ChangedWarningController() {
+    @Override
+    public String getXulDialogId() {
+      return "trans-graph-changed-warning-dialog"; //$NON-NLS-1$
+    }
+  };
+  
+  private ChangedWarningController jobChangedWarningEventHandler = new ChangedWarningController() {
+    @Override
+    public String getXulDialogId() {
+      return "changed-warning-dialog"; //$NON-NLS-1$
+    }
+  };
   
   private ResourceBundle messages = new ResourceBundle() {
 
@@ -75,7 +87,9 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
     HashMap<String, List<XulEventHandler>> handlerMap = new HashMap<String, List<XulEventHandler>>();
     handlerMap.put("repository-explorer", Collections.singletonList((XulEventHandler) repositoryExplorerEventHandler)); //$NON-NLS-1$
     
-    handlerMap.put("trans-graph-changed-warning-dialog", Collections.singletonList((XulEventHandler) changedWarningEventHandler)); //$NON-NLS-1$
+    handlerMap.put("trans-graph-changed-warning-dialog", Collections.singletonList((XulEventHandler) transChangedWarningEventHandler)); //$NON-NLS-1$
+    
+    handlerMap.put("job-graph-changed-warning-dialog", Collections.singletonList((XulEventHandler) jobChangedWarningEventHandler)); //$NON-NLS-1$
     return handlerMap;
   }
 
@@ -184,7 +198,8 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
     
     // Update repository explorer
     repositoryExplorerEventHandler.setCreatePermissionGranted(createPermitted);
-    changedWarningEventHandler.setSavePermitted(createPermitted);
+    transChangedWarningEventHandler.setSavePermitted(createPermitted);
+    jobChangedWarningEventHandler.setSavePermitted(createPermitted);
   }
   
   private void enableReadPermission(boolean readPermitted) {

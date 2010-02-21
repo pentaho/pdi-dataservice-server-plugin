@@ -9,7 +9,7 @@ import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.dom.Document;
 
-public class ChangedWarningController extends AbstractChangedWarningDialog {
+public abstract class ChangedWarningController extends AbstractChangedWarningDialog {
   private static Class<?> PKG = AbsSpoonPlugin.class;
   private boolean savePermitted = true;
   
@@ -38,11 +38,6 @@ public class ChangedWarningController extends AbstractChangedWarningDialog {
       message.setValue(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.NoSavePermission")); //$NON-NLS-1$
     }
     
-  }
-
-  @Override
-  public String getXulDialogId() {
-    return "trans-graph-changed-warning-dialog"; //$NON-NLS-1$
   }
 
   @Override
