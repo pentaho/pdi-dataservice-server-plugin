@@ -47,7 +47,6 @@ import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectRecipient.Type;
-import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.di.trans.SlaveStepCopyPartitionDistribution;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransDependency;
@@ -399,9 +398,6 @@ public abstract class RepositoryTestBase {
     // assertEquals(EXP_USERNAME, userInfo.getUsername());
     // assertEquals("Apache Tomcat user", userInfo.getDescription());
     // assertTrue(userInfo.isEnabled());
-    // assertEquals("admin", userInfo.getProfile().getName());
-    // assertEquals("Administrator", userInfo.getProfile().getDescription());
-    // assertEquals(Permission.ADMIN, userInfo.getProfile().getPermission(0));
     
     assertEquals(VERSION_LABEL_V1, repository.getVersion());
     assertEquals("JackRabbit", repository.getName());

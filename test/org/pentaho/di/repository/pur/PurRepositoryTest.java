@@ -17,11 +17,9 @@ import org.junit.runner.RunWith;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.UserInfo;
-import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository.IBackingRepositoryLifecycleManager;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
@@ -81,9 +79,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     repositoryMeta = new PurRepositoryMeta();
     repositoryMeta.setName("JackRabbit");
     repositoryMeta.setDescription("JackRabbit test repository");
-    ProfileMeta adminProfile = new ProfileMeta("admin", "Administrator");
-    adminProfile.addPermission(Permission.ADMIN);
-    userInfo = new UserInfo(EXP_LOGIN, "password", EXP_USERNAME, "Apache Tomcat user", true, adminProfile);
+    userInfo = new UserInfo(EXP_LOGIN, "password", EXP_USERNAME, "Apache Tomcat user", true);
 
     repository = new PurRepository();
     ((PurRepository) repository).setPur(pur);

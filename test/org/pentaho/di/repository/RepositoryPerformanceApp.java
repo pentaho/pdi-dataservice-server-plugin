@@ -3,7 +3,6 @@ package org.pentaho.di.repository;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.job.JobMeta;
-import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryLocation;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
@@ -70,9 +69,7 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
     repositoryMeta.setDescription("JackRabbit test repository");
     ((PurRepositoryMeta) repositoryMeta).setRepositoryLocation(new PurRepositoryLocation(
         repositoryLocation));
-    ProfileMeta adminProfile = new ProfileMeta("admin", "Administrator");
-    adminProfile.addPermission(Permission.ADMIN);
-    userInfo = new UserInfo(EXP_LOGIN, "password", EXP_USERNAME, "Apache Tomcat user", true, adminProfile);
+    userInfo = new UserInfo(EXP_LOGIN, "password", EXP_USERNAME, "Apache Tomcat user", true);
     repository = new PurRepository();
     
     repository.init(repositoryMeta);

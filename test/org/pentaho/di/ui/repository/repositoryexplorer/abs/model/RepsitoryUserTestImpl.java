@@ -7,10 +7,8 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.AbsRoleInfo;
 import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.UserInfo;
-import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
@@ -113,11 +111,6 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     
   }
 
-  public void delProfile(ObjectId arg0) throws KettleException {
-    // TODO Auto-generated method stub
-    
-  }
-
   public void delUser(ObjectId arg0) throws KettleException {
     // TODO Auto-generated method stub
     
@@ -149,21 +142,6 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
   }
 
   public List<String> getAllUsers() throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public ObjectId[] getPermissionIDs(ObjectId arg0) throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public ObjectId getProfileID(String arg0) throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public String[] getProfiles() throws KettleException {
     // TODO Auto-generated method stub
     return null;
   }
@@ -203,16 +181,6 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     return users;
   }
 
-  public Permission loadPermission(ObjectId arg0) throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public ProfileMeta loadProfileMeta(ObjectId arg0) throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
   public UserInfo loadUserInfo(String arg0) throws KettleException {
     // TODO Auto-generated method stub
     return null;
@@ -223,17 +191,7 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     return null;
   }
 
-  public void renameProfile(ObjectId arg0, String arg1) throws KettleException {
-    // TODO Auto-generated method stub
-    
-  }
-
   public void renameUser(ObjectId arg0, String arg1) throws KettleException {
-    // TODO Auto-generated method stub
-    
-  }
-
-  public void saveProfile(ProfileMeta arg0) throws KettleException {
     // TODO Auto-generated method stub
     
   }
