@@ -8,12 +8,10 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.BaseRepositorySecurityProvider;
 import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RoleInfo;
 import org.pentaho.di.repository.UserInfo;
-import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.platform.engine.security.userroledao.ws.UserRoleException;
 
 public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider, RepositorySecurityManager, IUserRoleListChangeListener {
@@ -72,22 +70,8 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	public boolean allowsVersionComments() {
 		return true;
 	}
-	public void delProfile(ObjectId id_profile) throws KettleException {
-	}
 
 	public void delUser(ObjectId id_user) throws KettleException {
-	}
-
-	public ObjectId[] getPermissionIDs(ObjectId id_profile) throws KettleException {
-		return null;
-	}
-
-	public ObjectId getProfileID(String profilename) throws KettleException {
-		return null;
-	}
-
-	public String[] getProfiles() throws KettleException {
-		return null;
 	}
 
 	public ObjectId getUserID(String login) throws KettleException {
@@ -108,14 +92,6 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	  return null;
 	}
 
-	public Permission loadPermission(ObjectId id_permission) throws KettleException {
-		return null;
-	}
-
-	public ProfileMeta loadProfileMeta(ObjectId id_profile) throws KettleException {
-		return null;
-	}
-
 	public UserInfo loadUserInfo(String login) throws KettleException {
     // Create a UserInfo object
     UserInfo user = new UserInfo(login);
@@ -131,13 +107,7 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
       return user;
 	}
 
-	public void renameProfile(ObjectId id_profile, String newname) throws KettleException {
-	}
-
 	public void renameUser(ObjectId id_user, String newname) throws KettleException {
-	}
-
-	public void saveProfile(ProfileMeta profileMeta) throws KettleException {
 	}
 
 	public void saveUserInfo(UserInfo userInfo) throws KettleException {

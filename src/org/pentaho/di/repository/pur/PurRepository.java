@@ -36,7 +36,6 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectPermission;
 import org.pentaho.di.repository.ObjectRecipient;
 import org.pentaho.di.repository.ObjectRevision;
-import org.pentaho.di.repository.ProfileMeta;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
@@ -54,7 +53,6 @@ import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.ObjectRecipient.Type;
-import org.pentaho.di.repository.ProfileMeta.Permission;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
@@ -174,11 +172,6 @@ public class PurRepository implements Repository
     userInfo = new UserInfo(username);
     userInfo.setPassword(password);
     
-    // TODO: phase out profiles
-    ProfileMeta adminProfile = new ProfileMeta("Administrator", "Administrator"); //$NON-NLS-1$//$NON-NLS-2$
-    adminProfile.addPermission(Permission.ADMIN);
-    userInfo.setProfile(adminProfile);
-
     // TODO: is this necessary in client side code? this could 
     //       cause problems when embedded in the platform.
     populatePentahoSessionHolder();
