@@ -18,6 +18,9 @@ public class UserRoleListDelegate {
   IUserDetailsRoleListWebService userDetailsRoleListWebService;
   UserRoleInfo userRoleInfo;
   Log logger;
+  public UserRoleListDelegate() {
+    
+  }
   public UserRoleListDelegate(PurRepositoryMeta repositoryMeta, UserInfo userInfo, Log logger) {
     try {
       this.logger = logger;
@@ -48,4 +51,17 @@ public class UserRoleListDelegate {
   public void updateUserRoleList() {
     userRoleInfo = userDetailsRoleListWebService.getUserRoleInfo();
   }
+  public IUserDetailsRoleListWebService getUserDetailsRoleListWebService() {
+    return userDetailsRoleListWebService;
+  }
+  public void setUserDetailsRoleListWebService(IUserDetailsRoleListWebService userDetailsRoleListWebService) {
+    this.userDetailsRoleListWebService = userDetailsRoleListWebService;
+  }
+  public UserRoleInfo getUserRoleInfo() {
+    return userRoleInfo;
+  }
+  public void setUserRoleInfo(UserRoleInfo userRoleInfo) {
+    this.userRoleInfo = userRoleInfo;
+  }
+
 }
