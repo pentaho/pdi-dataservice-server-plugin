@@ -53,6 +53,7 @@ import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
+import org.pentaho.di.repository.VersionRepository;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
@@ -81,7 +82,7 @@ import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
  * @author Matt
  * @author mlowery
  */
-public class PurRepository implements Repository
+public class PurRepository implements Repository, VersionRepository
 // , RevisionRepository 
 {
 
@@ -489,8 +490,12 @@ public class PurRepository implements Repository
     }
   }
 
-  public void restoreJob(ObjectId jobId, String versionId) {
-    throw new UnsupportedOperationException();
+  public void restoreJob(ObjectId idJob, String versionId) {
+    pur.restoreFileAtVersion(idJob.getId(), versionId);
+  }
+  
+  public void restoreTransformation(ObjectId idTransformation, String versionId) throws KettleException {
+    pur.restoreFileAtVersion(idTransformation.getId(), versionId);
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
