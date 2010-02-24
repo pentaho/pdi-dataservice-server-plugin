@@ -490,12 +490,12 @@ public class PurRepository implements Repository, VersionRepository
     }
   }
 
-  public void restoreJob(ObjectId idJob, String versionId) {
-    pur.restoreFileAtVersion(idJob.getId(), versionId);
+  public void restoreJob(ObjectId idJob, String versionId, String versionComment) {
+    pur.restoreFileAtVersion(idJob.getId(), versionId, versionComment, NodeRepositoryFileData.class);
   }
   
-  public void restoreTransformation(ObjectId idTransformation, String versionId) throws KettleException {
-    pur.restoreFileAtVersion(idTransformation.getId(), versionId);
+  public void restoreTransformation(ObjectId idTransformation, String versionId, String versionComment) throws KettleException {
+    pur.restoreFileAtVersion(idTransformation.getId(), versionId, versionComment, NodeRepositoryFileData.class);
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
