@@ -187,9 +187,9 @@ public class PurRepository implements Repository, VersionRepository
     populatePentahoSessionHolder();
 
     try {
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/repo?wsdl";
+      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/unifiedRepository?wsdl";
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0",
-          "DefaultUnifiedRepositoryWebServiceService"));
+          "unifiedRepository"));
 
       IUnifiedRepositoryWebService repoWebService = service.getPort(IUnifiedRepositoryWebService.class);
 

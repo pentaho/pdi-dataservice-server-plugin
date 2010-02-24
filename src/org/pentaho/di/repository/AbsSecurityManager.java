@@ -45,7 +45,7 @@ public class AbsSecurityManager extends AbsSecurityProvider implements IAbsSecur
         final String url = ((PurRepositoryMeta) repositoryMeta).getRepositoryLocation().getUrl()
             + "/roleBindingDao?wsdl"; //$NON-NLS-1$
         Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
-            "DefaultRoleAuthorizationPolicyRoleBindingDaoWebServiceService"));//$NON-NLS-1$
+            "roleBindingDao"));//$NON-NLS-1$
         authorizationPolicyRoleBindingService = service.getPort(IRoleAuthorizationPolicyRoleBindingDaoWebService.class);
         ((BindingProvider) authorizationPolicyRoleBindingService).getRequestContext().put(
             BindingProvider.USERNAME_PROPERTY, userInfo.getLogin());

@@ -38,9 +38,9 @@ public class UserRoleDelegate {
   public UserRoleDelegate(RepositorySecurityManager rsm, PurRepositoryMeta repositoryMeta, UserInfo userInfo, Log logger) {
     try {
       this.logger = logger;
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/userroleadmin?wsdl"; //$NON-NLS-1$
+      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/userRoleService?wsdl"; //$NON-NLS-1$
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
-          "UserRoleWebServiceService"));//$NON-NLS-1$
+          "userRoleService"));//$NON-NLS-1$
       userRoleWebService = service.getPort(IUserRoleWebService.class);
       ((BindingProvider) userRoleWebService).getRequestContext().put(BindingProvider.USERNAME_PROPERTY,
           userInfo.getLogin());

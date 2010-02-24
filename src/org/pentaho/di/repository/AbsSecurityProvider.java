@@ -24,7 +24,7 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
     try {
       final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/authorizationPolicy?wsdl"; //$NON-NLS-1$
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
-          "DefaultAuthorizationPolicyWebServiceService"));//$NON-NLS-1$
+          "authorizationPolicy"));//$NON-NLS-1$
       authorizationPolicyWebService = service.getPort(IAuthorizationPolicyWebService.class);
       ((BindingProvider) authorizationPolicyWebService).getRequestContext().put(BindingProvider.USERNAME_PROPERTY,
           userInfo.getLogin());
