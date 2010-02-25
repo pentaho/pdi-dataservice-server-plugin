@@ -25,11 +25,13 @@ public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
 
 	public PurRepositoryMeta() {
 		super(REPOSITORY_TYPE_ID);
+    PluginLicenseVerifier.verify();
 	}
 	
 	public PurRepositoryMeta(String id, String name, String description, PurRepositoryLocation repositoryLocation, boolean versionCommentMandatory)
 	{
 		super(id, name, description);
+    PluginLicenseVerifier.verify();
 		this.repositoryLocation = repositoryLocation;
 		this.versionCommentMandatory = versionCommentMandatory;
 	}

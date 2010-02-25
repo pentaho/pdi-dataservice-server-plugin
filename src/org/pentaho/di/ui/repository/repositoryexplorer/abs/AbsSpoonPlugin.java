@@ -28,6 +28,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.AbsSecurityManager;
 import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.SecurityManagerRegistery;
+import org.pentaho.di.repository.pur.PluginLicenseVerifier;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsController;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.ChangedWarningController;
@@ -81,6 +82,7 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   }; 
   
   public AbsSpoonPlugin() {
+    PluginLicenseVerifier.verify();
     RepositoryExplorer.setSecurityControllerClass(AbsController.class);
   }
   public Map<String, List<XulEventHandler>> getEventHandlers() {
@@ -149,8 +151,8 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
     SecurityManagerRegistery.getInstance().registerSecurityManager(AbsSecurityManager.class);
     UIObjectRegistery.getInstance().registerUIRepositoryRoleClass(UIAbsRepositoryRole.class);
   }
+  
   private void doOnShutdown() {
-    
   }
   
   /**
@@ -208,4 +210,5 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   
   private void enableAdminPermission(boolean adminPermitted) {
   }
+  
 }
