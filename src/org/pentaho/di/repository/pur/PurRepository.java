@@ -491,11 +491,11 @@ public class PurRepository implements Repository, VersionRepository
   }
 
   public void restoreJob(ObjectId idJob, String versionId, String versionComment) {
-    pur.restoreFileAtVersion(idJob.getId(), versionId, versionComment, NodeRepositoryFileData.class);
+    pur.restoreFileAtVersion(idJob.getId(), versionId, versionComment);
   }
   
   public void restoreTransformation(ObjectId idTransformation, String versionId, String versionComment) throws KettleException {
-    pur.restoreFileAtVersion(idTransformation.getId(), versionId, versionComment, NodeRepositoryFileData.class);
+    pur.restoreFileAtVersion(idTransformation.getId(), versionId, versionComment);
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
@@ -1232,7 +1232,7 @@ public class PurRepository implements Repository, VersionRepository
     try {
       // We dont need to use slaveServer variable as the dataNoteToElement method finds the server from the repository
       ClusterSchema clusterSchema = new ClusterSchema();
-      clusterTransformer.dataNodeToElement(pur.getDataForReadAtVersion(idClusterSchema.getId(), versionId,
+      clusterTransformer.dataNodeToElement(pur.getDataAtVersionForRead(idClusterSchema.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), clusterSchema);
       clusterSchema.setObjectId(new StringObjectId(idClusterSchema));
       clusterSchema.setObjectRevision(getObjectRevision(idClusterSchema, versionId));
@@ -1263,7 +1263,7 @@ public class PurRepository implements Repository, VersionRepository
   public PartitionSchema loadPartitionSchema(ObjectId partitionSchemaId, String versionId) throws KettleException {
     try {
       PartitionSchema partitionSchema = new PartitionSchema();
-      partitionSchemaTransformer.dataNodeToElement(pur.getDataForReadAtVersion(partitionSchemaId.getId(), versionId,
+      partitionSchemaTransformer.dataNodeToElement(pur.getDataAtVersionForRead(partitionSchemaId.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), partitionSchema);
       partitionSchema.setObjectId(new StringObjectId(partitionSchemaId));
       partitionSchema.setObjectRevision(getObjectRevision(partitionSchemaId, versionId));
@@ -1277,7 +1277,7 @@ public class PurRepository implements Repository, VersionRepository
   public SlaveServer loadSlaveServer(ObjectId idSlaveServer, String versionId) throws KettleException {
     try {
       SlaveServer slaveServer = new SlaveServer();
-      slaveTransformer.dataNodeToElement(pur.getDataForReadAtVersion(idSlaveServer.getId(), versionId,
+      slaveTransformer.dataNodeToElement(pur.getDataAtVersionForRead(idSlaveServer.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), slaveServer);
       slaveServer.setObjectId(new StringObjectId(idSlaveServer));
       slaveServer.setObjectRevision(getObjectRevision(idSlaveServer, versionId));
@@ -1468,7 +1468,7 @@ public class PurRepository implements Repository, VersionRepository
   public DatabaseMeta loadDatabaseMeta(final ObjectId databaseId, final String versionId) throws KettleException {
     try {
       DatabaseMeta databaseMeta = new DatabaseMeta();
-      databaseMetaTransformer.dataNodeToElement(pur.getDataForReadAtVersion(databaseId.getId(), versionId,
+      databaseMetaTransformer.dataNodeToElement(pur.getDataAtVersionForRead(databaseId.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), databaseMeta);
       databaseMeta.setObjectId(new StringObjectId(databaseId));
       databaseMeta.setObjectRevision(getObjectRevision(databaseId, versionId));
@@ -1493,7 +1493,7 @@ public class PurRepository implements Repository, VersionRepository
       transMeta.setRepositoryLock(getLock(file));
       transDelegate.loadSharedObjects(transMeta);
       transDelegate.dataNodeToElement(pur
-          .getDataForReadAtVersion(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), transMeta);
+          .getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), transMeta);
       transMeta.clearChanged();
       return transMeta;
     } catch (Exception e) {
@@ -1513,7 +1513,7 @@ public class PurRepository implements Repository, VersionRepository
       jobMeta.setRepositoryDirectory(parentDir);
       jobMeta.setRepositoryLock(getLock(file));
       jobDelegate.loadSharedObjects(jobMeta);
-      jobDelegate.dataNodeToElement(pur.getDataForReadAtVersion(file.getId(), versionId, NodeRepositoryFileData.class)
+      jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class)
           .getNode(), jobMeta);
       jobMeta.clearChanged();
       return jobMeta;
