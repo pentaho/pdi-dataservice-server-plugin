@@ -1805,7 +1805,7 @@ public class PurRepository implements Repository, VersionRepository
 
     ObjectAcl objectAcl = new RepositoryObjectAcl(owner);
     objectAcl.setEntriesInheriting(acl.isEntriesInheriting());
-    List<RepositoryFileAce> aces = acl.getAces();
+    List<RepositoryFileAce> aces =  (acl.isEntriesInheriting()) ? pur.getEffectiveAces(acl.getId()) : acl.getAces();
     List<ObjectAce> objectAces = new ArrayList<ObjectAce>();
     for (RepositoryFileAce ace : aces) {
       EnumSet<RepositoryFilePermission> permissions = ace.getPermissions();
