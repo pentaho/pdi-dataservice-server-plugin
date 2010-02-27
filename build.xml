@@ -232,7 +232,6 @@
     </ivy:publish>
   </target>
 
-	
   <!--=======================================================================
       publish-nojar (override)
       
@@ -251,7 +250,15 @@
       <param name="publish.file" value="${dist.dir}/${package.basename}.zip" />
     </antcall>
   </target>
-	
+
+  <!-- 
+    these targets are here for common-build backwards compat, 
+    they are needed so the release machine is happy.
+  -->
+  <target name="publish-pentaho" depends="publish"/>
+  <target name="publish-pentaho-nojar" depends="publish-nojar"/>
+		
+
   <!-- 
   The following overrides are in place to suppress IVY dependency management.  If you
   want to turn IVY off, you can uncomment these overrides. 
