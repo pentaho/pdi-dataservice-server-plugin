@@ -5,7 +5,8 @@
   <!-- Defining the folder names for pur and abs plugin -->
   <property name="pur.stage.dir" value="${stage.dir}/${ivy.artifact.id}"/>
   <property name="abs.stage.dir" value="${stage.dir}/${abs.artifact.id}"/>
-
+  <property name="bi-platform-ee-assembly.dir" value="../bi-platform-ee-assembly"/>
+  <property name="bi-platform-ee.obflib.dir" value="${bi-platform-ee-assembly.dir}/bin/stage/biserver-ee/tomcat/webapps/pentaho/WEB-INF/lib"/>
   <target name="install">
     <unzip src="${dist.dir}/${package.basename}.zip" dest="${kettle.plugin.dir}" overwrite="true">
     </unzip>
@@ -92,35 +93,37 @@
       <fileset dir="${lib.dir}">
       	<exclude name="kettle-*.jar" />
       	<exclude name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
+      	<exclude name="pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" />
       </fileset>
       <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
     </copy>
-  	
     <if>
-      <available file="${dist.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
+      <available file="${bi-platform-ee.obflib.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}-obf.jar" />
       <then>
-        <!-- copy the obfuscated license jar to the plugin dist lib folder -->
-        <copy todir="${pur.stage.dir}">
-          <fileset dir="${dist.dir}">
-            <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
-          </fileset>
-        </copy>
-        <copy todir="${abs.stage.dir}/lib">
-          <fileset dir="${dist.dir}">
-            <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
-          </fileset>
-        </copy>      	
+        <!-- copy the required obfuscated jars to the plugin dist lib folder -->
+      	<!-- We don't trust ProGuard to generate the same obfuscated classes for the dsc jar, so we overwrite it here -->
+      	<copy file="${bi-platform-ee.obflib.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}-obf.jar"
+      	      tofile="${pur.stage.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" overwrite="true"/>
+      	<copy file="${bi-platform-ee.obflib.dir}/pentaho-bi-platform-ee-${dependency.bi-platform.revision}-obf.jar"
+      	      tofile="${pur.stage.dir}/pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" overwrite="true"/>
+      	<copy file="${bi-platform-ee.obflib.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}-obf.jar"
+      	      tofile="${abs.stage.dir}/lib/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" overwrite="true"/>
+      	<copy file="${bi-platform-ee.obflib.dir}/pentaho-bi-platform-ee-${dependency.bi-platform.revision}-obf.jar"
+      	      tofile="${abs.stage.dir}/lib/pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" overwrite="true"/>    	
       </then>
       <else>
-        <!-- copy the license jar to the plugin dist lib folder -->
-        <copy todir="${pur.stage.dir}">
+        <!-- copy the required jars to the plugin dist lib folder -->
+      	<!-- if release=true, we've got a problem, we should blow up here -->
+        <copy todir="${pur.stage.dir}" overwrite="true">
           <fileset dir="${lib.dir}">
             <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
+          	<include name="pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" />
           </fileset>
         </copy>
-        <copy todir="${abs.stage.dir}/lib">
+        <copy todir="${abs.stage.dir}/lib" overwrite="true">
           <fileset dir="${lib.dir}">
             <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
+          	<include name="pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" />
           </fileset>
         </copy>
       </else>
@@ -143,6 +146,8 @@
       <mapper type="glob" from="*.jar" to="*-orig.jar" />
     </move>
 
+  	<!-- this project requires the platform ee assembly proguard file being present -->
+  	<copy todir="${dist.dir}" file="${bi-platform-ee-assembly.dir}/dist/proguard-biserver-ee-${dependency.bi-platform.revision}.map"/>
 
     <taskdef resource="proguard/ant/task.properties" classpath="obf-lib/proguard-4.3.jar" />
     <proguard>
@@ -160,15 +165,12 @@
       -libraryjars ${java.home}/lib/rt.jar
       -libraryjars ${java.home}/lib/jsse.jar
       -libraryjars ${java.home}/lib/jce.jar
-      -libraryjars ${lib.dir}(!pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar)
+      -libraryjars ${lib.dir}
       -libraryjars ${devlib.dir}
       
- 	  -injars      ${lib.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar	
-	  -outjars     ${dist.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar
       -injars      ${dist.dir}/${ivy.artifact.id}-${project.revision}-orig.jar
       -outjars     ${dist.dir}/${ivy.artifact.id}-${project.revision}.jar
  
-      
 	  -keepclasseswithmembernames class * implements org.pentaho.di.repository.Repository {
 		  public protected *;
 	  }
@@ -190,12 +192,17 @@
   	  -keepclasseswithmembernames class * implements  org.pentaho.di.repository.RepositoryVersionRegistry {
   		  public protected *;
   	  }
+      -keepclasseswithmembernames class * implements org.pentaho.ui.xul.impl.AbstractXulEventHandler {
+      	public protected *;	
+      }
   	  -keep class org.pentaho.di.ui.repository.pur.PurRepositoryDialog {
     		  public protected *;
       }
 
       -keep class org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin {}
-    	
+	  -keep class org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.* {
+  		  public protected *;
+      }
       -keepnames class org.pentaho.di.repository.pur.PurRepositoryLocation
     	
       -keepattributes Exceptions, InnerClasses, *Annotation*
