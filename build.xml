@@ -193,6 +193,8 @@
   	  -keep class org.pentaho.di.ui.repository.pur.PurRepositoryDialog {
     		  public protected *;
       }
+
+      -keep class org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin {}
     	
       -keepnames class org.pentaho.di.repository.pur.PurRepositoryLocation
     	
