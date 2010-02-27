@@ -210,8 +210,46 @@
     </delete>
 
   </target>
+	
+  <!--=======================================================================
+      publish-local-nojar (override)
+      
+      Publishes repo and abs jar and zip packages locally
+      ====================================================================-->
+  <target name="publish-local-nojar" depends="install-ivy,subfloor.publish-local-nojar">
+  	<antcall target="subfloor-pkg.publish-local-nojar"/>
+  	<antcall target="publish-abs-local-nojar">
+      <param name="ivy.artifact.id" value="abs-plugin" />
+	</antcall>
+  </target>
+	
+  <target name="publish-abs-local-nojar">
+    <ivy:resolve file="${package.artifact.ivyfile}" />
+    <ivy:publish resolver="local" pubrevision="${project.revision}" overwrite="true" forcedeliver="true">
+      <artifacts pattern="${dist.dir}/[artifact]-[revision].[ext]" />
+    </ivy:publish>
+  </target>
 
-
+	
+  <!--=======================================================================
+      publish-nojar (override)
+      
+      Publishes repo and abs jar and zip packages
+      ====================================================================-->
+  <target name="publish-nojar" depends="install-ivy,subfloor.publish-nojar">
+  	<antcall target="subfloor-pkg.publish-nojar"/>
+  	<antcall target="publish-abs-nojar">
+      <param name="ivy.artifact.id" value="abs-plugin" />
+	</antcall>
+  </target>
+	
+  <target name="publish-abs-nojar">
+    <antcall target="maven-publish-artifact">
+      <param name="publish.pomFile" value="${package.artifact.pomfile}" />
+      <param name="publish.file" value="${dist.dir}/${package.basename}.zip" />
+    </antcall>
+  </target>
+	
   <!-- 
   The following overrides are in place to suppress IVY dependency management.  If you
   want to turn IVY off, you can uncomment these overrides. 
