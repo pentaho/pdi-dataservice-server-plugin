@@ -1787,7 +1787,7 @@ public class PurRepository implements Repository, VersionRepository
     pur.unlockFile(id.getId());
   }
 
-  public ObjectAcl getAcl(ObjectId fileId) throws KettleException {
+  public ObjectAcl getAcl(ObjectId fileId, boolean forceParentInheriting) throws KettleException {
     RepositoryFileAcl acl = null;
     try {
       acl = pur.getAcl(fileId.getId());
@@ -1804,8 +1804,19 @@ public class PurRepository implements Repository, VersionRepository
     }
 
     ObjectAcl objectAcl = new RepositoryObjectAcl(owner);
-    objectAcl.setEntriesInheriting(acl.isEntriesInheriting());
-    List<RepositoryFileAce> aces =  (acl.isEntriesInheriting()) ? pur.getEffectiveAces(acl.getId()) : acl.getAces();
+    List<RepositoryFileAce> aces;
+    
+    // This flag (forceParentInheriting) is here to allow us to query the acl AS IF 'inherit from parent'
+    // were true, without committing the flag to the repository. We need this for state representation 
+    // while a user is changing the acl in the client dialogs.
+    
+    if(forceParentInheriting){
+      objectAcl.setEntriesInheriting(true);
+      aces =  pur.getEffectiveAces(acl.getId(),true);
+    }else{
+      objectAcl.setEntriesInheriting(acl.isEntriesInheriting());
+      aces =  (acl.isEntriesInheriting()) ? pur.getEffectiveAces(acl.getId()) : acl.getAces();
+    }
     List<ObjectAce> objectAces = new ArrayList<ObjectAce>();
     for (RepositoryFileAce ace : aces) {
       EnumSet<RepositoryFilePermission> permissions = ace.getPermissions();

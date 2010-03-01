@@ -582,7 +582,7 @@ public class RepositoryProxy implements Repository {
     throw new UnsupportedOperationException();
   }
 
-  public ObjectAcl getAcl(ObjectId arg0) throws KettleException {
+  public ObjectAcl getAcl(ObjectId arg0, boolean arg1) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
