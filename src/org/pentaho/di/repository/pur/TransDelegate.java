@@ -8,6 +8,9 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepLoaderException;
+import org.pentaho.di.core.plugins.PluginInterface;
+import org.pentaho.di.core.plugins.PluginRegistry;
+import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.partition.PartitionSchema;
@@ -16,8 +19,6 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjects;
-import org.pentaho.di.trans.StepLoader;
-import org.pentaho.di.trans.StepPlugin;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepErrorMeta;
@@ -223,11 +224,14 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
       // Create a new StepMetaInterface object...
       //
-      StepPlugin sp = StepLoader.getInstance().findStepPluginWithID(stepType);
+      PluginRegistry registry = PluginRegistry.getInstance();
+      PluginInterface stepPlugin = registry.findPluginWithId(StepPluginType.getInstance(), stepType);
+      
+      
       StepMetaInterface stepMetaInterface = null;
-      if (sp != null) {
-        stepMetaInterface = StepLoader.getInstance().getStepClass(sp);
-        stepType = sp.getID()[0]; // revert to the default in case we loaded an alternate version
+      if (stepPlugin != null) {
+        stepMetaInterface = (StepMetaInterface)registry.loadClass(stepPlugin);
+        stepType = stepPlugin.getIds()[0]; // revert to the default in case we loaded an alternate version
       } else {
         throw new KettleStepLoaderException(BaseMessages.getString(PKG,
             "StepMeta.Exception.UnableToLoadClass", stepType)); //$NON-NLS-1$

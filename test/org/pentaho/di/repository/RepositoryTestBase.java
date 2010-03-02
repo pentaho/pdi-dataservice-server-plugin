@@ -28,7 +28,7 @@ import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.NotePadMeta;
 import org.pentaho.di.core.Result;
-import org.pentaho.di.core.annotations.Job;
+import org.pentaho.di.core.annotations.JobEntry;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
@@ -1562,7 +1562,7 @@ public abstract class RepositoryTestBase {
   /**
    * Does assertions on all repository.getJobEntryAttribute* and repository.saveJobEntryAttribute* methods.
    */
-  @Job(id = "JobEntryAttributeTester", image = "")
+  @JobEntry(id = "JobEntryAttributeTester", image = "")
   public static class JobEntryAttributeTesterJobEntry extends JobEntryBase implements Cloneable, JobEntryInterface,
       EntryAndStepConstants {
 

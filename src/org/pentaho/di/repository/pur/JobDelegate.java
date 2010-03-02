@@ -9,12 +9,13 @@ import org.pentaho.di.core.NotePadMeta;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.plugins.JobEntryPluginType;
+import org.pentaho.di.core.plugins.PluginInterface;
+import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.job.JobEntryLoader;
 import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
-import org.pentaho.di.job.JobPlugin;
 import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
 import org.pentaho.di.repository.ObjectId;
@@ -358,8 +359,10 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       // load the entry from the node
       //
       String typeId = getString(copyNode, "JOBENTRY_TYPE");
-      JobPlugin plugin = JobEntryLoader.getInstance().findJobPluginWithID(typeId);
-      JobEntryInterface entry = JobEntryLoader.getInstance().getJobEntryClass(plugin);
+      
+      PluginRegistry registry = PluginRegistry.getInstance();
+      PluginInterface jobPlugin = registry.findPluginWithId(JobEntryPluginType.getInstance(), typeId);
+      JobEntryInterface entry = (JobEntryInterface) registry.loadClass(jobPlugin);
       entry.setName(name);
       entry.setDescription(getString(copyNode, PROP_DESCRIPTION));
       entry.setObjectId(new StringObjectId(copyNode.getId().toString()));
