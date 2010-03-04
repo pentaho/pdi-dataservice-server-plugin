@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin id="PurRepository" name="Enterprise Repository" description="Enterprise Repository"
+<plugin id="PentahoEnterpriseRepository" name="Enterprise Repository" description="Enterprise Repository"
   classname="org.pentaho.di.repository.pur.PurRepository" metaclassname="org.pentaho.di.repository.pur.PurRepositoryMeta"
   dialogclassname="org.pentaho.di.ui.repository.pur.PurRepositoryDialog" versionbrowserclassname="org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog">
   <libraries>

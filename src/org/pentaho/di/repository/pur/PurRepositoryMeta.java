@@ -17,7 +17,7 @@ import com.pentaho.commons.dsc.params.KParam;
 public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryMeta {
 
 	/** The id as specified in the repository plugin meta, used for backward compatibility only */
-	public static String REPOSITORY_TYPE_ID = "KettleJCRRepository";
+	public static String REPOSITORY_TYPE_ID = "PentahoEnterpriseRepository";
 	
 	private PurRepositoryLocation repositoryLocation;
 
