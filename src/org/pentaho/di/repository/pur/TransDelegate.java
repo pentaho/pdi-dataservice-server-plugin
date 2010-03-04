@@ -225,7 +225,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       // Create a new StepMetaInterface object...
       //
       PluginRegistry registry = PluginRegistry.getInstance();
-      PluginInterface stepPlugin = registry.findPluginWithId(StepPluginType.getInstance(), stepType);
+      PluginInterface stepPlugin = registry.findPluginWithId(StepPluginType.class, stepType);
       
       
       StepMetaInterface stepMetaInterface = null;

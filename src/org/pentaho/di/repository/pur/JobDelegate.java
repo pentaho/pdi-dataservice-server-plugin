@@ -361,7 +361,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       String typeId = getString(copyNode, "JOBENTRY_TYPE");
       
       PluginRegistry registry = PluginRegistry.getInstance();
-      PluginInterface jobPlugin = registry.findPluginWithId(JobEntryPluginType.getInstance(), typeId);
+      PluginInterface jobPlugin = registry.findPluginWithId(JobEntryPluginType.class, typeId);
       JobEntryInterface entry = (JobEntryInterface) registry.loadClass(jobPlugin);
       entry.setName(name);
       entry.setDescription(getString(copyNode, PROP_DESCRIPTION));
