@@ -65,7 +65,8 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
 
     rootNode.setProperty(PROP_NAME, databaseMeta.getName());
-    rootNode.setProperty(PROP_TYPE, DatabaseMeta.getDatabaseTypeCode(databaseMeta.getDatabaseType()));
+    //TODO The latest Database Meta has this method commented out. Need to figure out the alternative
+    //rootNode.setProperty(PROP_TYPE, DatabaseMeta.getDatabaseTypeCode(databaseMeta.getDatabaseType()));
     rootNode.setProperty(PROP_CONTYPE, DatabaseMeta.getAccessTypeDesc(databaseMeta.getAccessType()));
     rootNode.setProperty(PROP_HOST_NAME, databaseMeta.getHostname());
     rootNode.setProperty(PROP_DATABASE_NAME, databaseMeta.getDatabaseName());
@@ -111,10 +112,11 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
     if (dscContent.getExtra() != null) {
       databaseMeta.setName(getString(rootNode, PROP_NAME));
     }
-
+    //TODO The latest Database Meta has this method commented out. Need to figure out the alternative
+/*
     if (dscContent.getHolder() != null) {
       databaseMeta.setDatabaseType(getString(rootNode, PROP_TYPE));
-    }
+    }*/
     databaseMeta.setAccessType(DatabaseMeta.getAccessType(getString(rootNode, PROP_CONTYPE)));
     databaseMeta.setHostname(getString(rootNode, PROP_HOST_NAME));
     databaseMeta.setDBName(getString(rootNode, PROP_DATABASE_NAME));
