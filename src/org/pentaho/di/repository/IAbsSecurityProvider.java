@@ -13,8 +13,22 @@ import org.pentaho.di.core.exception.KettleException;
  * @author rmansoor
  */
 
-public interface IAbsSecurityProvider {
-  
+public interface IAbsSecurityProvider extends RepositorySecurityProvider{
+  public final static String CREATE_CONTENT_ROLE = "org.pentaho.di.creator"; //$NON-NLS-1$
+
+  public final static String READ_CONTENT_ROLE = "org.pentaho.di.reader";//$NON-NLS-1$
+
+  public final static String ADMINISTER_SECURITY_ROLE = "org.pentaho.di.securityAdministrator";//$NON-NLS-1$
+
+  public final static String CREATE_CONTENT_ACTION = "org.pentaho.repository.create"; //$NON-NLS-1$
+
+  public final static String READ_CONTENT_ACTION = "org.pentaho.repository.read";//$NON-NLS-1$
+
+  public final static String ADMINISTER_SECURITY_ACTION = "org.pentaho.security.administerSecurity";//$NON-NLS-1$
+
+  public final static String NAMESPACE = "org.pentaho"; //$NON-NLS-1$
+
+
   /**
   * Returns {@code true} if the the action should be allowed.
   * 

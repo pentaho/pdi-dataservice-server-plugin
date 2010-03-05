@@ -127,16 +127,12 @@ public class RepositoryExplorerController extends AbstractXulEventHandler {
     ConnectionsControllerOverride connCon = new ConnectionsControllerOverride();
     
     connCon.setRepository(Spoon.getInstance().getRepository());
-    connCon.setBindingFactory(bf);
-    connCon.setMessages(resourceBundle);
     
     getXulDomContainer().addEventHandler(connCon);
     
     SlavesController slaveCon = new SlavesControllerOverride();
     
     slaveCon.setRepository(Spoon.getInstance().getRepository());
-    slaveCon.setBindingFactory(bf);
-    slaveCon.setMessages(resourceBundle);
     
     getXulDomContainer().addEventHandler(slaveCon);
     
@@ -144,16 +140,12 @@ public class RepositoryExplorerController extends AbstractXulEventHandler {
     
     partCon.setVariableSpace(Variables.getADefaultVariableSpace());
     partCon.setRepository(Spoon.getInstance().getRepository());
-    partCon.setBindingFactory(bf);
-    partCon.setMessages(resourceBundle);
     
     getXulDomContainer().addEventHandler(partCon);
     
     ClustersController clustCon = new ClustersControllerOverride();
     
     clustCon.setRepository(Spoon.getInstance().getRepository());
-    clustCon.setBindingFactory(bf);
-    clustCon.setMessages(resourceBundle);
     
     getXulDomContainer().addEventHandler(clustCon);
     

@@ -16,10 +16,10 @@ import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 
 import com.pentaho.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 
-public class AbsSecurityProvider extends PurRepositorySecurityProvider implements IAbsSecurityProvider {
+public class AbsSecurityProvider extends PurRepositorySecurityProvider{
   private IAuthorizationPolicyWebService authorizationPolicyWebService = null;
 
-  public AbsSecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, UserInfo userInfo) {
+  public AbsSecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, IUser userInfo) {
     super(repository, repositoryMeta, userInfo);
     try {
       final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/authorizationPolicy?wsdl"; //$NON-NLS-1$
@@ -60,10 +60,4 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
           "AbsSecurityProvider.ERROR_0002_UNABLE_TO_ACCESS_IS_ALLOWED"), e);//$NON-NLS-1$
     }
   }
-
-  @Override
-  public IRole constructRole() throws KettleException {
-    return new AbsRoleInfo();
-  }
-
 }

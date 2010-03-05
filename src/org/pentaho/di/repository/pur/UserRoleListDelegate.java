@@ -10,7 +10,7 @@ import javax.xml.ws.Service;
 import org.apache.commons.logging.Log;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.UserInfo;
+import org.pentaho.di.repository.IUser;
 import org.pentaho.platform.engine.security.userrole.ws.IUserDetailsRoleListWebService;
 import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
 
@@ -21,7 +21,7 @@ public class UserRoleListDelegate {
   public UserRoleListDelegate() {
     
   }
-  public UserRoleListDelegate(PurRepositoryMeta repositoryMeta, UserInfo userInfo, Log logger) {
+  public UserRoleListDelegate(PurRepositoryMeta repositoryMeta, IUser userInfo, Log logger) {
     try {
       this.logger = logger;
       final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/userRoleListService?wsdl"; //$NON-NLS-1$

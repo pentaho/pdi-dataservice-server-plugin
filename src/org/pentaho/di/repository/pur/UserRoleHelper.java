@@ -7,9 +7,10 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.IEEUser;
 import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.repository.UserInfo;
+import org.pentaho.di.repository.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.IUser;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
@@ -19,8 +20,8 @@ import org.pentaho.platform.engine.security.userroledao.ws.UserToRoleAssignment;
 
 public class UserRoleHelper {
 
-  public static List<UserInfo> convertFromProxyPentahoUsers(UserRoleSecurityInfo info, RepositorySecurityManager rsm) {
-    List<UserInfo> userList = new ArrayList<UserInfo>();
+  public static List<IUser> convertFromProxyPentahoUsers(UserRoleSecurityInfo info, IRoleSupportSecurityManager rsm) {
+    List<IUser> userList = new ArrayList<IUser>();
     List<ProxyPentahoUser> users = info.getUsers();
     List<UserToRoleAssignment>  assignments = info.getAssignments();
     for(ProxyPentahoUser user:users) {
@@ -28,7 +29,7 @@ public class UserRoleHelper {
     }
     return userList;
   }
-  public static List<IRole> convertToListFromProxyPentahoRoles(UserRoleSecurityInfo info, RepositorySecurityManager rsm) {
+  public static List<IRole> convertToListFromProxyPentahoRoles(UserRoleSecurityInfo info, IRoleSupportSecurityManager rsm) {
     List<IRole> roleList = new ArrayList<IRole>();
     List<ProxyPentahoRole> roles = info.getRoles();
     List<UserToRoleAssignment>  assignments = info.getAssignments();
@@ -54,17 +55,17 @@ public class UserRoleHelper {
     return roleToFind;
   }
 
-  public static List<UserInfo> convertToListFromProxyPentahoUsers(ProxyPentahoUser[] users,
-      IUserRoleWebService userRoleWebService, UserRoleLookupCache lookupCache) {
-    List<UserInfo> userList = new ArrayList<UserInfo>();
+  public static List<IUser> convertToListFromProxyPentahoUsers(ProxyPentahoUser[] users,
+      IUserRoleWebService userRoleWebService, UserRoleLookupCache lookupCache, IRoleSupportSecurityManager rsm) {
+    List<IUser> userList = new ArrayList<IUser>();
     for (ProxyPentahoUser user : users) {
-      userList.add(convertFromProxyPentahoUser(userRoleWebService, user, lookupCache));
+      userList.add(convertFromProxyPentahoUser(userRoleWebService, user, lookupCache, rsm));
     }
     return userList;
   }
 
   public static List<IRole> convertToListFromProxyPentahoRoles(ProxyPentahoRole[] roles,
-      IUserRoleWebService userRoleWebService, UserRoleLookupCache lookupCache, RepositorySecurityManager rsm) {
+      IUserRoleWebService userRoleWebService, UserRoleLookupCache lookupCache, IRoleSupportSecurityManager rsm) {
     List<IRole> roleList = new ArrayList<IRole>();
     for (ProxyPentahoRole role : roles) {
       roleList.add(convertFromProxyPentahoRole(userRoleWebService, role, lookupCache, rsm));
@@ -72,25 +73,25 @@ public class UserRoleHelper {
     return roleList;
   }
 
-  public static ProxyPentahoUser[] convertToPentahoProxyUsers(Set<UserInfo> users) {
+  public static ProxyPentahoUser[] convertToPentahoProxyUsers(Set<IUser> users) {
     ProxyPentahoUser[] proxyUsers = new ProxyPentahoUser[users.size()];
     int i = 0;
-    for (UserInfo user : users) {
+    for (IUser user : users) {
       proxyUsers[i++] = convertToPentahoProxyUser(user);
     }
     return proxyUsers;
   }
 
-  public static ProxyPentahoUser[] convertToPentahoProxyUsers(List<UserInfo> users) {
+  public static ProxyPentahoUser[] convertToPentahoProxyUsers(List<IUser> users) {
     ProxyPentahoUser[] proxyUsers = new ProxyPentahoUser[users.size()];
     int i = 0;
-    for (UserInfo user : users) {
+    for (IUser user : users) {
       proxyUsers[i++] = convertToPentahoProxyUser(user);
     }
     return proxyUsers;
   }
 
-  public static ProxyPentahoUser convertToPentahoProxyUser(UserInfo userInfo) {
+  public static ProxyPentahoUser convertToPentahoProxyUser(IUser userInfo) {
     ProxyPentahoUser user = new ProxyPentahoUser();
     user.setName(userInfo.getLogin());
     // Since we send the empty password to the client, if the client has not modified the password then we do change it
@@ -136,7 +137,7 @@ public class UserRoleHelper {
   }
 
   public static IRole convertFromProxyPentahoRole(IUserRoleWebService userRoleWebService, ProxyPentahoRole role,
-      UserRoleLookupCache lookupCache, RepositorySecurityManager rsm) {
+      UserRoleLookupCache lookupCache, IRoleSupportSecurityManager rsm) {
     IRole roleInfo = null;
     try {
       roleInfo = rsm.constructRole();
@@ -155,31 +156,38 @@ public class UserRoleHelper {
     return roleInfo;
   }
 
-  public static UserInfo convertFromProxyPentahoUser(IUserRoleWebService userRoleWebService, ProxyPentahoUser user,
-      UserRoleLookupCache lookupCache) {
-    UserInfo userInfo = new UserInfo();
-    userInfo.setDescription(user.getDescription());
-    userInfo.setPassword(user.getPassword());
-    userInfo.setLogin(user.getName());
-    userInfo.setName(user.getName());
+  public static IUser convertFromProxyPentahoUser(IUserRoleWebService userRoleWebService, ProxyPentahoUser user,
+      UserRoleLookupCache lookupCache, IRoleSupportSecurityManager rsm) {
+    IUser userInfo = null;
     try {
-      userInfo.setRoles(convertToSetFromProxyPentahoRoles(userRoleWebService.getRolesForUser(user), lookupCache));
-    } catch (UserRoleException e) {
+      userInfo = rsm.constructUser();
+      userInfo.setDescription(user.getDescription());
+      userInfo.setPassword(user.getPassword());
+      userInfo.setLogin(user.getName());
+      userInfo.setName(user.getName());
+      try {
+        if(userInfo instanceof IEEUser)
+        ((IEEUser)userInfo).setRoles(convertToSetFromProxyPentahoRoles(userRoleWebService.getRolesForUser(user), lookupCache));
+      } catch (UserRoleException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }      
+    } catch (KettleException e1) {
       // TODO Auto-generated catch block
-      e.printStackTrace();
+      e1.printStackTrace();
     }
     return userInfo;
   }
 
-  private static Set<UserInfo> convertToSetFromProxyPentahoUsers(ProxyPentahoUser[] users,
+  private static Set<IUser> convertToSetFromProxyPentahoUsers(ProxyPentahoUser[] users,
       UserRoleLookupCache lookupCache) {
-    Set<UserInfo> userSet = new HashSet<UserInfo>();
+    Set<IUser> userSet = new HashSet<IUser>();
     for (ProxyPentahoUser user : users) {
       userSet.add(lookupCache.lookupUser(user));
     }
     return userSet;
   }
-  private static Set<IRole> convertToSetFromProxyPentahoRoles(ProxyPentahoRole[] roles, RepositorySecurityManager rsm) {
+  private static Set<IRole> convertToSetFromProxyPentahoRoles(ProxyPentahoRole[] roles, IRoleSupportSecurityManager rsm) {
     Set<IRole> roleSet = new HashSet<IRole>();
     for (ProxyPentahoRole role : roles) {
       IRole roleInfo = null;
@@ -195,50 +203,73 @@ public class UserRoleHelper {
     }
     return roleSet;
   }
-  public static UserInfo convertToUserInfo(ProxyPentahoUser user, ProxyPentahoRole[] roles, RepositorySecurityManager rsm) {
-    UserInfo userInfo = new UserInfo();
-    userInfo.setDescription(user.getDescription());
-    userInfo.setPassword(user.getPassword());
-    userInfo.setLogin(user.getName());
-    userInfo.setName(user.getName());
-    userInfo.setRoles(convertToSetFromProxyPentahoRoles(roles, rsm));
+  public static IUser convertToUserInfo(ProxyPentahoUser user, ProxyPentahoRole[] roles, IRoleSupportSecurityManager rsm) {
+    IUser userInfo = null;
+    try {
+      userInfo = rsm.constructUser();
+      userInfo.setDescription(user.getDescription());
+      userInfo.setPassword(user.getPassword());
+      userInfo.setLogin(user.getName());
+      userInfo.setName(user.getName());
+      if(userInfo instanceof IEEUser){
+        ((IEEUser)userInfo).setRoles(convertToSetFromProxyPentahoRoles(roles, rsm));  
+      }
+    } catch(KettleException ke) {
+      ke.printStackTrace();
+    }
     return userInfo;
   }
 
-  public static IRole convertFromProxyPentahoRole(ProxyPentahoRole role, List<UserToRoleAssignment> assignments, RepositorySecurityManager rsm) {
+  public static IRole convertFromProxyPentahoRole(ProxyPentahoRole role, List<UserToRoleAssignment> assignments, IRoleSupportSecurityManager rsm) {
     IRole roleInfo = null;
     try {
       roleInfo = rsm.constructRole();
+      roleInfo.setDescription(role.getDescription());
+      roleInfo.setName(role.getName());
+      roleInfo.setUsers(getUsersForRole(role.getName(), assignments, rsm));      
     } catch (KettleException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
-    roleInfo.setDescription(role.getDescription());
-    roleInfo.setName(role.getName());
-    roleInfo.setUsers(getUsersForRole(role.getName(), assignments));
     return roleInfo;
   }
-  public static UserInfo convertFromProxyPentahoUser(ProxyPentahoUser user, List<UserToRoleAssignment> assignments, RepositorySecurityManager rsm) {
-    UserInfo userInfo = new UserInfo();
-    userInfo.setDescription(user.getDescription());
-    userInfo.setPassword(user.getPassword());
-    userInfo.setLogin(user.getName());
-    userInfo.setName(user.getName());
-    userInfo.setRoles(getRolesForUser(user.getName(), assignments, rsm));
+  public static IUser convertFromProxyPentahoUser(ProxyPentahoUser user, List<UserToRoleAssignment> assignments, IRoleSupportSecurityManager rsm) {
+    IUser userInfo = null;
+    try {
+      userInfo = rsm.constructUser();
+      userInfo.setDescription(user.getDescription());
+      userInfo.setPassword(user.getPassword());
+      userInfo.setLogin(user.getName());
+      userInfo.setName(user.getName());
+      if(userInfo instanceof IEEUser) {
+        ((IEEUser)userInfo).setRoles(getRolesForUser(user.getName(), assignments, rsm));
+      }
+    } catch (KettleException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }    
     return userInfo;
   }
   
-  public static Set<UserInfo> getUsersForRole(String name, List<UserToRoleAssignment> assignments) {
-    Set<UserInfo> users = new HashSet<UserInfo>();
+  public static Set<IUser> getUsersForRole(String name, List<UserToRoleAssignment> assignments, IRoleSupportSecurityManager rsm) {
+    Set<IUser> users = new HashSet<IUser>();
     for(UserToRoleAssignment assignment:assignments) {
       if(name.equals(assignment.getRoleId())) {
-        users.add(new UserInfo(assignment.getUserId()));
+        IUser user= null;
+        try {
+          user = rsm.constructUser();
+        } catch (KettleException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+        user.setLogin(assignment.getUserId());
+        users.add(user);
       }
     }
     return users;
   }  
   
-  public static Set<IRole> getRolesForUser(String name, List<UserToRoleAssignment> assignments, RepositorySecurityManager rsm) {
+  public static Set<IRole> getRolesForUser(String name, List<UserToRoleAssignment> assignments, IRoleSupportSecurityManager rsm) {
     Set<IRole> roles = new HashSet<IRole>();
     for(UserToRoleAssignment assignment:assignments) {
       if(name.equals(assignment.getUserId())) {

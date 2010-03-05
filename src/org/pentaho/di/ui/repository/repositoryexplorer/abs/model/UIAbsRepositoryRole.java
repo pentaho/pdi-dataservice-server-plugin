@@ -2,52 +2,42 @@ package org.pentaho.di.ui.repository.repositoryexplorer.abs.model;
 
 import java.util.List;
 
-import org.pentaho.di.repository.ILogicalRole;
+import org.pentaho.di.repository.IAbsRole;
 import org.pentaho.di.repository.IRole;
+import org.pentaho.di.ui.repository.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 
-public class UIAbsRepositoryRole extends UIRepositoryRole implements ILogicalRole{
- 
+public class UIAbsRepositoryRole extends UIRepositoryRole implements IUIAbsRole{
+  IAbsRole absRole;
   public UIAbsRepositoryRole() {
     super();
   }
   
-  public UIAbsRepositoryRole(IRole rri) {
-    super(rri);
+  public UIAbsRepositoryRole(IRole role) {
+    super(role);
+    if(role instanceof IAbsRole) {
+      absRole = (IAbsRole) role;
+    } else {
+      throw new IllegalStateException();
+    }
   }
   public List<String> getLogicalRoles() {
-    if(this.getRole() instanceof ILogicalRole) {
-      return ((ILogicalRole) this.getRole()).getLogicalRoles();
-    }
-    return null;
+    return absRole.getLogicalRoles();
   }
 
   public void setLogicalRoles(List<String> logicalRoles) {
-    if(this.getRole() instanceof ILogicalRole) {
-      ((ILogicalRole) this.getRole()).setLogicalRoles(logicalRoles);
-    }
+    absRole.setLogicalRoles(logicalRoles);
   }
 
   public void addLogicalRole(String logicalRole) {
-    if(getRole() instanceof ILogicalRole) {
-      if(!containsLogicalRole(logicalRole)) {
-        ((ILogicalRole) this.getRole()).addLogicalRole(logicalRole);
-      }
-    }
+    absRole.addLogicalRole(logicalRole);
   }
 
   public void removeLogicalRole(String logicalRole) {
-    if(getRole() instanceof ILogicalRole) {
-      if(containsLogicalRole(logicalRole)) {
-        ((ILogicalRole) this.getRole()).removeLogicalRole(logicalRole);
-      }
-    }
+    absRole.removeLogicalRole(logicalRole);
   }
 
   public boolean containsLogicalRole(String logicalRole) {
-    if(getRole() instanceof ILogicalRole) {
-      return ((ILogicalRole) this.getRole()).containsLogicalRole(logicalRole);
-    }
-    return false;
+    return absRole.containsLogicalRole(logicalRole);
   }
 }

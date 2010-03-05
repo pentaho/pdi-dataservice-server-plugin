@@ -13,6 +13,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.repository.ObjectAcl;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
@@ -596,5 +597,20 @@ public class RepositoryProxy implements Repository {
   public List<RepositoryObject> getJobAndTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
       throws KettleException {
     throw new UnsupportedOperationException();
+  }
+
+  public IRepositoryService getService(Class<? extends IRepositoryService> clazz) throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public List<Class<? extends IRepositoryService>> getServiceInterfaces() throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public boolean hasService(Class<? extends IRepositoryService> clazz) throws KettleException {
+    // TODO Auto-generated method stub
+    return false;
   }
 }

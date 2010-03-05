@@ -1471,7 +1471,7 @@ public abstract class RepositoryTestBase {
     assertNotNull(version);
     assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
     assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
-    ObjectAcl acl = repository.getAcl(jobMeta.getObjectId(), false);
+    ObjectAcl acl = ((IAclManager)repository).getAcl(jobMeta.getObjectId(), false);
     assertNotNull(acl);    
   }
   @Test
@@ -1487,15 +1487,15 @@ public abstract class RepositoryTestBase {
     assertNotNull(version);
     assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
     assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
-    ObjectAcl acl = repository.getAcl(jobMeta.getObjectId(), false);
+    ObjectAcl acl = ((IAclManager)repository).getAcl(jobMeta.getObjectId(), false);
     assertNotNull(acl);
     acl.setEntriesInheriting(false);
     ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER),EnumSet.of(ObjectPermission.DELETE, ObjectPermission.DELETE_CHILD, ObjectPermission.READ, ObjectPermission.READ_ACL));
     List<ObjectAce> aceList = new ArrayList<ObjectAce>();
     aceList.add(ace);
     acl.setAces(aceList);
-    repository.setAcl(jobMeta.getObjectId(), acl);
-    ObjectAcl acl1 = repository.getAcl(jobMeta.getObjectId(), false);
+    ((IAclManager)repository).setAcl(jobMeta.getObjectId(), acl);
+    ObjectAcl acl1 = ((IAclManager)repository).getAcl(jobMeta.getObjectId(), false);
     assertEquals(Boolean.FALSE, acl1.isEntriesInheriting());
     assertEquals(1, acl1.getAces().size());
     ObjectAce ace1 = acl1.getAces().get(0);

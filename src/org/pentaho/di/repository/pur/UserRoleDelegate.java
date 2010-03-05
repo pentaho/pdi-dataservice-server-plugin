@@ -11,9 +11,10 @@ import javax.xml.ws.Service;
 import org.apache.commons.logging.Log;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.repository.IEEUser;
 import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.repository.UserInfo;
+import org.pentaho.di.repository.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.IUser;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
@@ -25,7 +26,7 @@ public class UserRoleDelegate {
 
   IUserRoleWebService userRoleWebService = null;
 
-  RepositorySecurityManager rsm = null;
+  IRoleSupportSecurityManager rsm = null;
 
   Log logger;
 
@@ -35,7 +36,7 @@ public class UserRoleDelegate {
 
   boolean hasNecessaryPermissions = false;
 
-  public UserRoleDelegate(RepositorySecurityManager rsm, PurRepositoryMeta repositoryMeta, UserInfo userInfo, Log logger) {
+  public UserRoleDelegate(IRoleSupportSecurityManager rsm, PurRepositoryMeta repositoryMeta, IUser userInfo, Log logger) {
     try {
       this.logger = logger;
       final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/userRoleService?wsdl"; //$NON-NLS-1$
@@ -69,12 +70,15 @@ public class UserRoleDelegate {
     }
   }
 
-  public void createUser(UserInfo newUser) throws KettleException {
+  public void createUser(IUser newUser) throws KettleException {
     if (hasNecessaryPermissions) {
       try {
         ProxyPentahoUser user = UserRoleHelper.convertToPentahoProxyUser(newUser);
         userRoleWebService.createUser(user);
-        userRoleWebService.setRoles(user, UserRoleHelper.convertToPentahoProxyRoles(newUser.getRoles()));
+        if(newUser instanceof IEEUser) {
+          userRoleWebService.setRoles(user,
+              UserRoleHelper.convertToPentahoProxyRoles(((IEEUser)newUser).getRoles()));
+        }
         lookupCache.insertUserToLookupSet(newUser);
         fireUserRoleListChange();
       } catch (Exception e) {
@@ -88,7 +92,7 @@ public class UserRoleDelegate {
 
   }
 
-  public void deleteUsers(List<UserInfo> users) throws KettleException {
+  public void deleteUsers(List<IUser> users) throws KettleException {
     if (hasNecessaryPermissions) {
       try {
         userRoleWebService.deleteUsers(UserRoleHelper.convertToPentahoProxyUsers(users));
@@ -127,13 +131,13 @@ public class UserRoleDelegate {
     }
   }
 
-  public void setUsers(List<UserInfo> users) throws KettleException {
+  public void setUsers(List<IUser> users) throws KettleException {
     // TODO Figure out what to do here
   }
 
-  public UserInfo getUser(String name, String password) throws KettleException {
+  public IUser getUser(String name, String password) throws KettleException {
     if (hasNecessaryPermissions) {
-      UserInfo userInfo = null;
+      IUser userInfo = null;
       try {
         ProxyPentahoUser user = userRoleWebService.getUser(name);
         if (user != null && user.getName().equals(name) && user.getPassword().equals(password)) {
@@ -150,9 +154,9 @@ public class UserRoleDelegate {
     }
   }
 
-  public UserInfo getUser(String name) throws KettleException {
+  public IUser getUser(String name) throws KettleException {
     if (hasNecessaryPermissions) {
-      UserInfo userInfo = null;
+      IUser userInfo = null;
       try {
         ProxyPentahoUser user = userRoleWebService.getUser(name);
         if (user != null && user.getName().equals(name)) {
@@ -169,7 +173,7 @@ public class UserRoleDelegate {
     }
   }
 
-  public List<UserInfo> getUsers() throws KettleException {
+  public List<IUser> getUsers() throws KettleException {
     if (hasNecessaryPermissions) {
       try {
         return UserRoleHelper.convertFromProxyPentahoUsers(userRoleSecurityInfo, rsm);
@@ -183,12 +187,15 @@ public class UserRoleDelegate {
     }
   }
 
-  public void updateUser(UserInfo user) throws KettleException {
+  public void updateUser(IUser user) throws KettleException {
     if (hasNecessaryPermissions) {
       try {
         ProxyPentahoUser proxyUser = UserRoleHelper.convertToPentahoProxyUser(user);
         userRoleWebService.updateUser(proxyUser);
-        userRoleWebService.setRoles(proxyUser, UserRoleHelper.convertToPentahoProxyRoles(user.getRoles()));
+        if(user instanceof IEEUser) {
+          userRoleWebService.setRoles(proxyUser,
+              UserRoleHelper.convertToPentahoProxyRoles(((IEEUser)user).getRoles()));
+        }
         lookupCache.updateUserInLookupSet(user);
         fireUserRoleListChange();
       } catch (Exception e) {
@@ -268,7 +275,7 @@ public class UserRoleDelegate {
     if (hasNecessaryPermissions) {
       try {
         List<String> users = new ArrayList<String>();
-        for (UserInfo user : role.getUsers()) {
+        for (IUser user : role.getUsers()) {
           users.add(user.getLogin());
         }
         userRoleWebService.updateRole(role.getName(), role.getDescription(), users);

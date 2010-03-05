@@ -13,35 +13,21 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
+import org.pentaho.di.repository.pur.PurRepositorySecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 
 import com.pentaho.security.policy.rolebased.RoleBindingStruct;
 import com.pentaho.security.policy.rolebased.ws.IRoleAuthorizationPolicyRoleBindingDaoWebService;
 
-public class AbsSecurityManager extends AbsSecurityProvider implements IAbsSecurityManager {
-
-  public final static String CREATE_CONTENT_ROLE = "org.pentaho.di.creator"; //$NON-NLS-1$
-
-  public final static String READ_CONTENT_ROLE = "org.pentaho.di.reader";//$NON-NLS-1$
-
-  public final static String ADMINISTER_SECURITY_ROLE = "org.pentaho.di.securityAdministrator";//$NON-NLS-1$
-
-  public final static String CREATE_CONTENT_ACTION = "org.pentaho.repository.create"; //$NON-NLS-1$
-
-  public final static String READ_CONTENT_ACTION = "org.pentaho.repository.read";//$NON-NLS-1$
-
-  public final static String ADMINISTER_SECURITY_ACTION = "org.pentaho.security.administerSecurity";//$NON-NLS-1$
-
-  public final static String NAMESPACE = "org.pentaho"; //$NON-NLS-1$
+public class AbsSecurityManager extends PurRepositorySecurityManager implements IAbsSecurityManager {
 
   private IRoleAuthorizationPolicyRoleBindingDaoWebService authorizationPolicyRoleBindingService = null;
 
   private RoleBindingStruct roleBindingStruct = null;
 
-  public AbsSecurityManager(Repository repository, RepositoryMeta repositoryMeta, UserInfo userInfo) {
+  public AbsSecurityManager(Repository repository, RepositoryMeta repositoryMeta, IUser userInfo) {
     super((PurRepository) repository, (PurRepositoryMeta) repositoryMeta, userInfo);
     try {
-      if (allowedActionsContains(ADMINISTER_SECURITY_ACTION)) {
         final String url = ((PurRepositoryMeta) repositoryMeta).getRepositoryLocation().getUrl()
             + "/roleBindingDao?wsdl"; //$NON-NLS-1$
         Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
@@ -56,22 +42,11 @@ public class AbsSecurityManager extends AbsSecurityProvider implements IAbsSecur
               BaseMessages.getString(AbsSpoonPlugin.class,
                   "AbsSecurityManager.ERROR_0001_UNABLE_TO_INITIALIZE_ROLE_BINDING_WEBSVC")); //$NON-NLS-1$
         }
-      }
     } catch (Exception e) {
       getLogger().error(
           BaseMessages.getString(AbsSpoonPlugin.class,
               "AbsSecurityManager.ERROR_0001_UNABLE_TO_INITIALIZE_ROLE_BINDING_WEBSVC"), e); //$NON-NLS-1$
     }
-  }
-
-  private boolean allowedActionsContains(String action) throws KettleException {
-    List<String> allowedActions = getAllowedActions(NAMESPACE);
-    for (String actionName : allowedActions) {
-      if (action != null && action.equals(actionName)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   public void initialize(String locale) throws KettleException {
@@ -84,17 +59,17 @@ public class AbsSecurityManager extends AbsSecurityProvider implements IAbsSecur
       }
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", getUserInfo().getLogin())); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
     }
   }
 
   @Override
   public IRole getRole(String name) throws KettleException {
     IRole role = super.getRole(name);
-    if (role instanceof ILogicalRole) {
+    if (role instanceof IAbsRole) {
       List<String> logicalRoles = getLogicalRoles(role.getName());
       if (logicalRoles != null && logicalRoles.size() > 0) {
-        ((ILogicalRole) role).setLogicalRoles(logicalRoles);
+        ((IAbsRole) role).setLogicalRoles(logicalRoles);
       }
     }
     return role;
@@ -104,14 +79,19 @@ public class AbsSecurityManager extends AbsSecurityProvider implements IAbsSecur
   public List<IRole> getRoles() throws KettleException {
     List<IRole> roles = super.getRoles();
     for (IRole role : roles) {
-      if (role instanceof ILogicalRole) {
+      if (role instanceof IAbsRole) {
         List<String> logicalRoles = getLogicalRoles(role.getName());
         if (logicalRoles != null && logicalRoles.size() > 0) {
-          ((ILogicalRole) role).setLogicalRoles(logicalRoles);
+          ((IAbsRole) role).setLogicalRoles(logicalRoles);
         }
       }
     }
     return roles;
+  }
+
+  @Override
+  public IRole constructRole() throws KettleException {
+    return new AbsRoleInfo();
   }
 
   public List<String> getLocalizedLogicalRoles(String runtimeRole, String locale) throws KettleException {
@@ -129,7 +109,7 @@ public class AbsSecurityManager extends AbsSecurityProvider implements IAbsSecur
       return localizedLogicalRoles;
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", getUserInfo().getLogin())); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
     }
   }
 
@@ -142,7 +122,7 @@ public class AbsSecurityManager extends AbsSecurityProvider implements IAbsSecur
       return null;
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", getUserInfo().getLogin())); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
     }
   }
 
@@ -156,7 +136,7 @@ public class AbsSecurityManager extends AbsSecurityProvider implements IAbsSecur
     }
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", getUserInfo().getLogin())); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
     }
   }
 
@@ -165,7 +145,7 @@ public class AbsSecurityManager extends AbsSecurityProvider implements IAbsSecur
       return roleBindingStruct.logicalRoleNameMap;
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", getUserInfo().getLogin())); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
     }
   }
 

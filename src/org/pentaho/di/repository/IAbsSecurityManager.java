@@ -11,7 +11,7 @@ import org.pentaho.di.core.exception.KettleException;
  * @author rmansoor
  */
 
-public interface IAbsSecurityManager extends IAbsSecurityProvider{
+public interface IAbsSecurityManager extends IRoleSupportSecurityManager{
 
 
   /**

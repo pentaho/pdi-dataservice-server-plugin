@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.namespace.QName;
@@ -30,7 +32,16 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.AbsSecurityManager;
+import org.pentaho.di.repository.AbsSecurityProvider;
 import org.pentaho.di.repository.Directory;
+import org.pentaho.di.repository.EEUserInfo;
+import org.pentaho.di.repository.IAbsSecurityManager;
+import org.pentaho.di.repository.IAbsSecurityProvider;
+import org.pentaho.di.repository.IAclManager;
+import org.pentaho.di.repository.IRepositoryService;
+import org.pentaho.di.repository.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectAce;
 import org.pentaho.di.repository.ObjectAcl;
 import org.pentaho.di.repository.ObjectId;
@@ -52,7 +63,6 @@ import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
-import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.VersionRepository;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.shared.SharedObjects;
@@ -82,7 +92,7 @@ import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
  * @author Matt
  * @author mlowery
  */
-public class PurRepository implements Repository, VersionRepository
+public class PurRepository implements Repository, VersionRepository, IAclManager
 // , RevisionRepository 
 {
 
@@ -108,7 +118,7 @@ public class PurRepository implements Repository, VersionRepository
 
   private IUnifiedRepository pur;
 
-  private UserInfo userInfo;
+  private IUser user;
 
   private PurRepositoryMeta repositoryMeta;
 
@@ -124,7 +134,9 @@ public class PurRepository implements Repository, VersionRepository
 
   private ISharedObjectsTransformer jobDelegate = new JobDelegate(this);
 
-  private PurRepositorySecurityProvider securityProvider;
+  private RepositorySecurityManager securityManager;
+  
+  private RepositorySecurityProvider securityProvider;
 
   protected LogChannelInterface log;
 
@@ -152,6 +164,8 @@ public class PurRepository implements Repository, VersionRepository
   private boolean isUserHomeDirectoryAliased = false;
 
   protected Serializable userHomeAlias = null;
+  private Map<Class<? extends IRepositoryService>, IRepositoryService> serviceMap;
+  private List<Class<? extends IRepositoryService>> serviceList;
 
   // ~ Constructors ====================================================================================================
 
@@ -176,12 +190,16 @@ public class PurRepository implements Repository, VersionRepository
   public void init(final RepositoryMeta repositoryMeta) {
     this.log = new LogChannel(this);
     this.repositoryMeta = (PurRepositoryMeta) repositoryMeta;
+    this.serviceMap = new HashMap<Class<? extends IRepositoryService>, IRepositoryService>();
+    this.serviceList = new ArrayList<Class<? extends IRepositoryService>>();
   }
 
   public void connect(String username, String password) throws KettleException, KettleSecurityException {
-    userInfo = new UserInfo(username);
-    userInfo.setPassword(password);
-
+    IUser user = new EEUserInfo();
+    user.setLogin(username);
+    user.setPassword(password);
+    user.setName(username);
+    this.user = user; 
     // TODO: is this necessary in client side code? this could 
     //       cause problems when embedded in the platform.
     populatePentahoSessionHolder();
@@ -201,16 +219,54 @@ public class PurRepository implements Repository, VersionRepository
 
       pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
       userHomeAlias = pur.getFile(RepositoryPaths.getUserHomeFolderPath()).getId();
-      securityProvider = new PurRepositorySecurityProvider(this, this.repositoryMeta, userInfo);
+      // We need to add the service class in the list in the order of dependencies
+      // IRoleSupportSecurityManager depends RepositorySecurityManager to be present
+      securityProvider = new AbsSecurityProvider(this, this.repositoryMeta, user);
+      registerRepositoryService(RepositorySecurityProvider.class, securityProvider);
+      registerRepositoryService(IAbsSecurityProvider.class, securityProvider);
 
+      // If the user does not have access to administer security we do not
+      // need to added them to the service list
+      if (allowedActionsContains((AbsSecurityProvider) securityProvider, IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION)) {
+        securityManager = new AbsSecurityManager(this, this.repositoryMeta, user);
+        // Set the reference of the security manager to security provider for user role list change event
+        ((PurRepositorySecurityProvider)  securityProvider).setUserRoleDelegate(
+            ((PurRepositorySecurityManager)  securityManager).getUserRoleDelegate());
+
+        registerRepositoryService(RepositorySecurityManager.class, securityManager);
+        registerRepositoryService(IRoleSupportSecurityManager.class, securityManager);
+        registerRepositoryService(IAbsSecurityManager.class, securityManager);        
+      }
+      registerRepositoryService(VersionRepository.class, this);
+      registerRepositoryService(IAclManager.class, this);            
     } catch (Exception e) {
       throw new KettleException(e);
     }
   }
+ 
+  /**
+   * Add the repository service to the map and add the interface to the list
+   * @param clazz
+   * @param repositoryService
+   */
+  private void registerRepositoryService(Class<? extends IRepositoryService> clazz, IRepositoryService repositoryService) {
+    this.serviceMap.put(clazz, repositoryService);
+    this.serviceList.add(clazz);
+  }
+  private boolean allowedActionsContains(AbsSecurityProvider provider, String action) throws KettleException {
+    List<String> allowedActions = provider.getAllowedActions(IAbsSecurityProvider.NAMESPACE);
+    for (String actionName : allowedActions) {
+      if (action != null && action.equals(actionName)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 
   protected void populatePentahoSessionHolder() {
     // only necessary for RepositoryPaths calls; server also uses PentahoSessionHolder but that is in a different JVM
-    PentahoSessionHolder.setSession(new StandaloneSession(userInfo.getLogin()));
+    PentahoSessionHolder.setSession(new StandaloneSession(user.getLogin()));
   }
 
   public boolean isConnected() {
@@ -1020,7 +1076,7 @@ public class PurRepository implements Repository, VersionRepository
   }
 
   public RepositorySecurityManager getSecurityManager() {
-    return securityProvider;
+    return securityManager;
   }
 
   public ObjectId getSlaveID(String name) throws KettleException {
@@ -1201,8 +1257,8 @@ public class PurRepository implements Repository, VersionRepository
     }
   }
 
-  public UserInfo getUserInfo() {
-    return userInfo;
+  public IUser getUserInfo() {
+    return user;
   }
 
   public String getVersion() {
@@ -1920,5 +1976,17 @@ public class PurRepository implements Repository, VersionRepository
       throws KettleException {
     return getPdiObjects(id_directory, Arrays.asList(new RepositoryObjectType[] { RepositoryObjectType.JOB,
         RepositoryObjectType.TRANSFORMATION }), includeDeleted);
+  }
+  
+  public IRepositoryService getService(Class<? extends IRepositoryService> clazz) throws KettleException {
+    return serviceMap.get(clazz);
+  }
+
+  public List<Class<? extends IRepositoryService>> getServiceInterfaces() throws KettleException {
+    return serviceList;
+  }
+
+  public boolean hasService(Class<? extends IRepositoryService> clazz) throws KettleException {
+    return serviceMap.containsKey(clazz);
   }
 }

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class AbsRoleInfo extends RoleInfo implements ILogicalRole {
+public class AbsRoleInfo extends EERoleInfo implements IAbsRole {
 
   // logical roles bound to a given runtime role
   private List<String> logicalRoles;
@@ -22,7 +22,7 @@ public class AbsRoleInfo extends RoleInfo implements ILogicalRole {
     this.logicalRoles = new ArrayList<String>();
   }
 
-  public AbsRoleInfo(String name, String description, Set<UserInfo> users, List<String> logicalRoles) {
+  public AbsRoleInfo(String name, String description, Set<IUser> users, List<String> logicalRoles) {
     super(name, description, users);
     this.logicalRoles = logicalRoles;
   }

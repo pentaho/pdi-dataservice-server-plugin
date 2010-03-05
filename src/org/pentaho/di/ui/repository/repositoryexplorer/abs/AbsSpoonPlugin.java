@@ -25,15 +25,17 @@ import java.util.ResourceBundle;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.AbsSecurityManager;
+import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.IAbsSecurityProvider;
-import org.pentaho.di.repository.SecurityManagerRegistery;
+import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.pur.PluginLicenseVerifier;
-import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
-import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsController;
+import org.pentaho.di.ui.repository.ManageRolesUISupport;
+import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
+import org.pentaho.di.ui.repository.repositoryexplorer.UISupportRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.ChangedWarningController;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.RepositoryExplorerController;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsRepositoryRole;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistery;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
@@ -83,7 +85,6 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   
   public AbsSpoonPlugin() {
     PluginLicenseVerifier.verify();
-    RepositoryExplorer.setSecurityControllerClass(AbsController.class);
   }
   public Map<String, List<XulEventHandler>> getEventHandlers() {
     HashMap<String, List<XulEventHandler>> handlerMap = new HashMap<String, List<XulEventHandler>>();
@@ -115,8 +116,12 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
     try {
       switch(evt) {
         case MENUS_REFRESHED:
+          break;
         case REPOSITORY_CHANGED:
+          doOnSecurityUpdate();
+          break;
         case REPOSITORY_CONNECTED:
+          registerRepositoryCapabilities();
           doOnSecurityUpdate();
           break;
         case REPOSITORY_DISCONNECTED:
@@ -148,8 +153,8 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   }
   
   private void doOnStartup() {
-    SecurityManagerRegistery.getInstance().registerSecurityManager(AbsSecurityManager.class);
-    UIObjectRegistery.getInstance().registerUIRepositoryRoleClass(UIAbsRepositoryRole.class);
+    UIObjectRegistery.getInstance().registerUIRepositoryUserClass(UIEERepositoryUser.class);
+    UIEEObjectRegistery.getInstance().registerUIRepositoryRoleClass(UIAbsRepositoryRole.class);
   }
   
   private void doOnShutdown() {
@@ -171,9 +176,9 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
         IAbsSecurityProvider securityProvider = (IAbsSecurityProvider)o;
 
         // Execute credential lookup
-        enableCreatePermission(securityProvider.isAllowed(AbsSecurityManager.CREATE_CONTENT_ACTION));
-        enableReadPermission(securityProvider.isAllowed(AbsSecurityManager.READ_CONTENT_ACTION));
-        enableAdminPermission(securityProvider.isAllowed(AbsSecurityManager.ADMINISTER_SECURITY_ACTION));
+        enableCreatePermission(securityProvider.isAllowed(IAbsSecurityProvider.CREATE_CONTENT_ACTION));
+        enableReadPermission(securityProvider.isAllowed(IAbsSecurityProvider.READ_CONTENT_ACTION));
+        enableAdminPermission(securityProvider.isAllowed(IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION));
       }
     }
   }
@@ -211,4 +216,8 @@ public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
   private void enableAdminPermission(boolean adminPermitted) {
   }
   
+  private void registerRepositoryCapabilities() {
+    UISupportRegistery.getInstance().registerUISupport(IRoleSupportSecurityManager.class, ManageRolesUISupport.class);
+    UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsUISupport.class);
+  }
 }

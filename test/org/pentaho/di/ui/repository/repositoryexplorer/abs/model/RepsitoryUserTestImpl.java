@@ -5,29 +5,32 @@ import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.AbsRoleInfo;
+import org.pentaho.di.repository.EEUserInfo;
 import org.pentaho.di.repository.IRole;
+import org.pentaho.di.repository.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.repository.UserInfo;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIRole;
+import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIUser;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEESecurity;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurity;
 
-public class RepsitoryUserTestImpl implements RepositorySecurityManager{
-  private List<UserInfo> users;
+public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSupportSecurityManager{
+  private List<IUser> users;
   private List<IRole> roles;
-  private UISecurity security;
+  private UIEESecurity security;
   public RepsitoryUserTestImpl() {
-    users = new ArrayList<UserInfo>();
+    users = new ArrayList<IUser>();
     roles = new ArrayList<IRole>();
-    security = new UISecurity();
+    security = new UIEESecurity();
     List<IUIRole> rroles;
-    List<UIRepositoryUser> rusers;
-    UserInfo joeUser;
-    UserInfo patUser;  
-    UserInfo suzyUser;
-    UserInfo tiffanyUser;
+    List<IUIUser> rusers;
+    EEUserInfo joeUser;
+    EEUserInfo patUser;  
+    EEUserInfo suzyUser;
+    EEUserInfo tiffanyUser;
     IRole adminRole = new AbsRoleInfo("Admin","Super User");
     IRole anonymousRole = new AbsRoleInfo("Anonymous","User has not logged in");
     IRole authenticatedRole =  new AbsRoleInfo("Authenticated","User has logged in");
@@ -45,10 +48,10 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     roles.add(devmgrRole);
     roles.add(isRole);
     
-    joeUser = new UserInfo("joe", "password", "joe","joe", true);
-    patUser = new UserInfo("pat", "password", "pat","pat", true);
-    suzyUser = new UserInfo("suzy", "password", "suzy","suzy", true);
-    tiffanyUser = new UserInfo("tiffany", "password", "tiffany","tiffany", true);
+    joeUser = new EEUserInfo("joe", "password", "joe","joe", true);
+    patUser = new EEUserInfo("pat", "password", "pat","pat", true);
+    suzyUser = new EEUserInfo("suzy", "password", "suzy","suzy", true);
+    tiffanyUser = new EEUserInfo("tiffany", "password", "tiffany","tiffany", true);
     
     joeUser.addRole(roles.get(0));
     joeUser.addRole(roles.get(2));
@@ -94,9 +97,9 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
       IUIRole role = new UIRepositoryRole(roleInfo);
       rroles.add(role);
     }
-    rusers = new ArrayList<UIRepositoryUser>();
-    for(UserInfo userInfo:users) {
-      rusers.add(new UIRepositoryUser(userInfo));
+    rusers = new ArrayList<IUIUser>();
+    for(IUser eEUserInfo:users) {
+      rusers.add(new UIRepositoryUser(eEUserInfo));
     }      
     security.setUserList(rusers);
     security.setRoleList(rroles);
@@ -131,7 +134,7 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     
   }
 
-  public void deleteUsers(List<UserInfo> arg0) throws KettleException {
+  public void deleteUsers(List<IUser> arg0) throws KettleException {
     // TODO Auto-generated method stub
     
   }
@@ -166,7 +169,7 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     return null;
   }
 
-  public UserInfo getUserInfo() {
+  public IUser getUserInfo() {
     // TODO Auto-generated method stub
     return null;
   }
@@ -176,17 +179,17 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     return null;
   }
 
-  public List<UserInfo> getUsers() throws KettleException {
+  public List<IUser> getUsers() throws KettleException {
     // TODO Auto-generated method stub
     return users;
   }
 
-  public UserInfo loadUserInfo(String arg0) throws KettleException {
+  public IUser loadUserInfo(String arg0) throws KettleException {
     // TODO Auto-generated method stub
     return null;
   }
 
-  public UserInfo loadUserInfo(String arg0, String arg1) throws KettleException {
+  public IUser loadUserInfo(String arg0, String arg1) throws KettleException {
     // TODO Auto-generated method stub
     return null;
   }
@@ -196,7 +199,7 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     
   }
 
-  public void saveUserInfo(UserInfo arg0) throws KettleException {
+  public void saveUserInfo(IUser arg0) throws KettleException {
     // TODO Auto-generated method stub
     
   }
@@ -206,12 +209,12 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     
   }
 
-  public void setUserInfo(UserInfo arg0) {
+  public void setUserInfo(IUser arg0) {
     // TODO Auto-generated method stub
     
   }
 
-  public void setUsers(List<UserInfo> arg0) throws KettleException {
+  public void setUsers(List<IUser> arg0) throws KettleException {
     // TODO Auto-generated method stub
     
   }
@@ -221,9 +224,13 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager{
     
   }
 
-  public void updateUser(UserInfo arg0) throws KettleException {
+  public void updateUser(IUser arg0) throws KettleException {
     // TODO Auto-generated method stub
     
+  }
+  public IUser constructUser() throws KettleException {
+    // TODO Auto-generated method stub
+    return new EEUserInfo();
   }
 
 }
