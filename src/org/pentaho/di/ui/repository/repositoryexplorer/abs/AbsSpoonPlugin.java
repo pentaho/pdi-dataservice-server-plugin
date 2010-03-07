@@ -41,6 +41,7 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
+import org.pentaho.di.ui.spoon.SpoonPluginInterface;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulOverlay;
 import org.pentaho.ui.xul.components.XulMenuitem;
@@ -51,7 +52,8 @@ import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.impl.DefaultXulOverlay;
 import org.pentaho.ui.xul.impl.XulEventHandler;
 
-public class AbsSpoonPlugin implements SpoonPlugin, SpoonLifecycleListener{
+@SpoonPlugin(id = "AbsSpoonPlugin", image = "")
+public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener{
   
   private XulDomContainer spoonXulContainer = null;
   private RepositoryExplorerController repositoryExplorerEventHandler = new RepositoryExplorerController();
