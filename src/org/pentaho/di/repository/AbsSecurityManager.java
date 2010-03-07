@@ -59,7 +59,7 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
       }
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
 
@@ -109,7 +109,7 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
       return localizedLogicalRoles;
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
 
@@ -122,7 +122,7 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
       return null;
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
 
@@ -136,7 +136,7 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
     }
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
 
@@ -145,7 +145,7 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
       return roleBindingStruct.logicalRoleNameMap;
     } else {
       throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
-          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES", "")); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
 

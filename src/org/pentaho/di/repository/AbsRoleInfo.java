@@ -9,9 +9,6 @@ public class AbsRoleInfo extends EERoleInfo implements IAbsRole {
   // logical roles bound to a given runtime role
   private List<String> logicalRoles;
 
-  // logical roles bound to a given runtime role
-  private List<String> localizedLogicalRoles;
-
   public AbsRoleInfo() {
     super();
     this.logicalRoles = new ArrayList<String>();    
@@ -45,14 +42,6 @@ public class AbsRoleInfo extends EERoleInfo implements IAbsRole {
 
   public void setLogicalRoles(List<String> logicalRoles) {
       this.logicalRoles = logicalRoles;
-  }
-
-  public void setLocalizedLogicalRoles(List<String> localizedLogicalRoles) {
-    this.localizedLogicalRoles = localizedLogicalRoles;
-  }
-
-  public List<String> getLocalizedLogicalRoles() {
-    return localizedLogicalRoles;
   }
 
   public boolean containsLogicalRole(String logicalRole) {

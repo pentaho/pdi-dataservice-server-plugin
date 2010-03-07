@@ -5,7 +5,7 @@ import java.util.Set;
 
 public class EERoleInfo implements IRole {
 
-	public static final String REPOSITORY_ELEMENT_TYPE = "role";
+	public static final String REPOSITORY_ELEMENT_TYPE = "role"; //$NON-NLS-1$
 
 	// ~ Instance fields
 	// =================================================================================================

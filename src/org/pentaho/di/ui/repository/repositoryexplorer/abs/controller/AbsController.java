@@ -26,8 +26,9 @@ import java.util.Map.Entry;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.i18n.GlobalMessages;
-import org.pentaho.di.repository.AbsSecurityManager;
+import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
@@ -77,13 +78,31 @@ public class AbsController extends EESecurityController {
 
   private BindingConvertor<Integer, Boolean> buttonConverter;
 
-  private AbsSecurityManager absAdmin;
+  private IAbsSecurityManager service;
   
   private UIAbsSecurity  absSecurity;
 
   public AbsController() {
 
   }
+  
+
+  @Override
+  public void init(Repository rep) throws ControllerInitializationException {
+    try {
+      if(rep.hasService(IAbsSecurityManager.class)) {
+        service = (IAbsSecurityManager) rep.getService(IAbsSecurityManager.class);
+        service.initialize(GlobalMessages.getLocale().getDisplayName());      
+      } else {
+        throw new ControllerInitializationException(BaseMessages.getString(AbsSpoonPlugin.class, "SecurityController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IAbsSecurityManager.class)); //$NON-NLS-1$
+      }
+    } catch (KettleException e) {
+      throw new ControllerInitializationException(e);
+      }
+    
+    super.init(rep);
+  }
+
 
   @Override
   protected void setInitialDeck() {
@@ -91,20 +110,8 @@ public class AbsController extends EESecurityController {
     initializeLogicalRolesUI();
   }
 
-  @Override
-  protected void createModel() {
-    try {
-      super.createModel();
-      absAdmin = (AbsSecurityManager) getRepositorySecurityManager();
-      absAdmin.initialize(GlobalMessages.getLocale().getDisplayName());      
-    } catch (Exception e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-
   protected void createSecurity()  throws Exception {
-    security = absSecurity = new UIAbsSecurity(getRepositorySecurityManager());
+    security = eeSecurity = absSecurity = new UIAbsSecurity(service);
   }
 
   @Override
@@ -113,7 +120,7 @@ public class AbsController extends EESecurityController {
     roleListBox = (XulListbox) document.getElementById("roles-list");//$NON-NLS-1$
     applyLogicalRolesButton = (XulButton) document.getElementById("apply-action-permission");//$NON-NLS-1$
     logicalRolesBox = (XulVbox) document.getElementById("role-action-permissions-vbox");//$NON-NLS-1$
-    this.getBindingFactory().setBindingType(Binding.Type.ONE_WAY);
+    bf.setBindingType(Binding.Type.ONE_WAY);
     // Action based security permissions
     buttonConverter = new BindingConvertor<Integer, Boolean>() {
 
@@ -131,9 +138,9 @@ public class AbsController extends EESecurityController {
       }
     };
 
-    this.getBindingFactory().createBinding(roleListBox,
+    bf.createBinding(roleListBox,
         "selectedIndex", applyLogicalRolesButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    this.getBindingFactory().createBinding(getSecurity(), "selectedRole", this, "selectedRoleChanged");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(absSecurity, "selectedRole", this, "selectedRoleChanged");//$NON-NLS-1$ //$NON-NLS-2$
 
   }
 
@@ -165,7 +172,7 @@ public class AbsController extends EESecurityController {
         } else {
           throw new IllegalStateException();
         }
-        absAdmin.setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
+        service.setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
         messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
         messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
         messageBox.setMessage(messages.getString("AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
@@ -216,7 +223,7 @@ public class AbsController extends EESecurityController {
   private void initializeLogicalRolesUI() {
     logicalRoleChecboxMap = new HashMap<XulCheckbox, String>();
     try {
-      Map<String, String> logicalRoles = absAdmin.getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
+      Map<String, String> logicalRoles = service.getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
       for (Entry<String, String> logicalRole : logicalRoles.entrySet()) {
         XulCheckbox logicalRoleCheckbox;
         logicalRoleCheckbox = (XulCheckbox) document.createElement("checkbox");//$NON-NLS-1$
@@ -227,8 +234,8 @@ public class AbsController extends EESecurityController {
         logicalRoleCheckbox.setDisabled(true);
         logicalRolesBox.addChild(logicalRoleCheckbox);
         logicalRoleChecboxMap.put(logicalRoleCheckbox, logicalRole.getKey());
-        this.getBindingFactory().setBindingType(Binding.Type.ONE_WAY);
-        this.getBindingFactory().createBinding(roleListBox,
+        bf.setBindingType(Binding.Type.ONE_WAY);
+        bf.createBinding(roleListBox,
             "selectedIndex", logicalRoleCheckbox, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
       }
     } catch (XulException xe) {

@@ -31,6 +31,7 @@ import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectRecipient;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
@@ -130,19 +131,37 @@ public class EESecurityController extends SecurityController {
 
   private XulButton unassignUserFromRoleButton;
   
-  Binding roleDetailBinding;
+  private Binding roleDetailBinding;
+  
+  private Binding userDetailBinding;
 
   protected UIEESecurityUser eeSecurityUser;
 
   protected UISecurityRole securityRole;
 
-  private IRoleSupportSecurityManager eeRsm;
+  private IRoleSupportSecurityManager service;
   
   protected UIEESecurity eeSecurity;
 
   public EESecurityController() {
   }
+
   
+  @Override
+  public void init(Repository rep) throws ControllerInitializationException {
+    try {
+      if(rep.hasService(IRoleSupportSecurityManager.class)) {
+        service = (IRoleSupportSecurityManager) rep.getService(IRoleSupportSecurityManager.class);
+      } else {
+        throw new ControllerInitializationException(BaseMessages.getString(IUIEEUser.class, "SecurityController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IRoleSupportSecurityManager.class)); //$NON-NLS-1$
+      }
+    } catch (KettleException e) {
+      throw new ControllerInitializationException(e);
+      }
+    super.init(rep);
+  }
+
+
   @Override
   protected void setInitialDeck() {
     changeToRoleDeck();
@@ -151,33 +170,15 @@ public class EESecurityController extends SecurityController {
   @Override
   protected void createModel() throws Exception{
     super.createModel();
-
-    if(rsm instanceof IRoleSupportSecurityManager) {
-      eeRsm = (IRoleSupportSecurityManager) rsm;      
-    } else {
-      throw new IllegalStateException();
-    }
-    if(securityUser instanceof UIEESecurityUser) {
-      eeSecurityUser = (UIEESecurityUser)securityUser;
-    } else {
-      throw new IllegalStateException();
-    }
-    
     securityRole = new UISecurityRole();
-
-    if(security instanceof UIEESecurity) {
-      eeSecurity = (UIEESecurity) security;
-    } else {
-      throw new IllegalStateException();
-    }
   }
 
   protected void createSecurityUser() throws Exception{
-    securityUser = new UIEESecurityUser(rsm);    
+    securityUser = eeSecurityUser = new UIEESecurityUser(service);    
   }
 
   protected void createSecurity()  throws Exception {
-    security = new UIEESecurity(rsm); 
+    security = eeSecurity = new UIEESecurity(service); 
   }
   
   @Override
@@ -210,9 +211,9 @@ public class EESecurityController extends SecurityController {
     assignRoleToUserButton = (XulButton) document.getElementById("assign-role-to-user");//$NON-NLS-1$
     unassignRoleFromUserButton = (XulButton) document.getElementById("unassign-role-from-user");//$NON-NLS-1$
 
-    getBindingFactory().setBindingType(Binding.Type.BI_DIRECTIONAL);
-    getBindingFactory().createBinding(eeSecurityUser, "assignedRoles", assignedRoles, "elements");//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(eeSecurityUser, "availableRoles", availableRoles, "elements");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.setBindingType(Binding.Type.BI_DIRECTIONAL);
+    bf.createBinding(eeSecurityUser, "assignedRoles", assignedRoles, "elements");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(eeSecurityUser, "availableRoles", availableRoles, "elements");//$NON-NLS-1$ //$NON-NLS-2$
 
     // Binding to convert role array to a role list object and vice versa
     BindingConvertor<List<IUIRole>, Object[]> arrayToListRoleConverter = new BindingConvertor<List<IUIRole>, Object[]>() {
@@ -275,8 +276,8 @@ public class EESecurityController extends SecurityController {
     };
 
     
-    getBindingFactory().createBinding(eeSecurityUser, "availableSelectedRoles", availableRoles, "selectedItems", arrayToListRoleConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(eeSecurityUser, "assignedSelectedRoles", assignedRoles, "selectedItems", arrayToListRoleConverter);//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(eeSecurityUser, "availableSelectedRoles", availableRoles, "selectedItems", arrayToListRoleConverter);//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(eeSecurityUser, "assignedSelectedRoles", assignedRoles, "selectedItems", arrayToListRoleConverter);//$NON-NLS-1$ //$NON-NLS-2$
 
     BindingConvertor<Integer, Boolean> accumulatorButtonConverter = new BindingConvertor<Integer, Boolean>() {
 
@@ -294,13 +295,13 @@ public class EESecurityController extends SecurityController {
       }
     };
 
-    getBindingFactory().setBindingType(Binding.Type.ONE_WAY);
-    getBindingFactory().createBinding(assignedRoles,
+    bf.setBindingType(Binding.Type.ONE_WAY);
+    bf.createBinding(assignedRoles,
         "selectedIndex", eeSecurityUser, "roleUnassignmentPossible", accumulatorButtonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(availableRoles,
+    bf.createBinding(availableRoles,
         "selectedIndex", eeSecurityUser, "roleAssignmentPossible", accumulatorButtonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(eeSecurityUser, "roleUnassignmentPossible", unassignRoleFromUserButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(eeSecurityUser, "roleAssignmentPossible", assignRoleToUserButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(eeSecurityUser, "roleUnassignmentPossible", unassignRoleFromUserButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(eeSecurityUser, "roleAssignmentPossible", assignRoleToUserButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
 
     // Add Role Binding
     rolename = (XulTextbox) document.getElementById("role-name");//$NON-NLS-1$
@@ -310,25 +311,25 @@ public class EESecurityController extends SecurityController {
     assignUserToRoleButton = (XulButton) document.getElementById("assign-user-to-role");//$NON-NLS-1$
     unassignUserFromRoleButton = (XulButton) document.getElementById("unassign-user-from-role");//$NON-NLS-1$
 
-    getBindingFactory().setBindingType(Binding.Type.BI_DIRECTIONAL);
-    getBindingFactory().createBinding(securityRole, "name", rolename, "value");//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(securityRole, "description", roleDescription, "value");//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(securityRole, "assignedUsers", assignedUsers, "elements");//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(securityRole, "availableUsers", availableUsers, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(securityRole, "availableSelectedUsers", availableUsers, "selectedItems", arrayToListUserConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(securityRole, "assignedSelectedUsers", assignedUsers, "selectedItems", arrayToListUserConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(security, "selectedRoleIndex", roleListBox, "selectedIndex");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.setBindingType(Binding.Type.BI_DIRECTIONAL);
+    bf.createBinding(securityRole, "name", rolename, "value");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(securityRole, "description", roleDescription, "value");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(securityRole, "assignedUsers", assignedUsers, "elements");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(securityRole, "availableUsers", availableUsers, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(securityRole, "availableSelectedUsers", availableUsers, "selectedItems", arrayToListUserConverter);//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(securityRole, "assignedSelectedUsers", assignedUsers, "selectedItems", arrayToListUserConverter);//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(eeSecurity, "selectedRoleIndex", roleListBox, "selectedIndex");//$NON-NLS-1$ //$NON-NLS-2$
 
-    getBindingFactory().setBindingType(Binding.Type.ONE_WAY);
-    getBindingFactory().createBinding(assignedUsers,
+    bf.setBindingType(Binding.Type.ONE_WAY);
+    bf.createBinding(assignedUsers,
         "selectedIndex", securityRole, "userUnassignmentPossible", accumulatorButtonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(availableUsers,
+    bf.createBinding(availableUsers,
         "selectedIndex", securityRole, "userAssignmentPossible", accumulatorButtonConverter); //$NON-NLS-1$ //$NON-NLS-2$  
-    getBindingFactory().createBinding(securityRole, "userUnassignmentPossible", unassignUserFromRoleButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
-    getBindingFactory().createBinding(securityRole, "userAssignmentPossible", assignUserToRoleButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(securityRole, "userUnassignmentPossible", unassignUserFromRoleButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(securityRole, "userAssignmentPossible", assignUserToRoleButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
 
     try {
-      getBindingFactory().setBindingType(Binding.Type.ONE_WAY);
+      bf.setBindingType(Binding.Type.ONE_WAY);
 
       BindingConvertor<Integer, Boolean> buttonConverter = new BindingConvertor<Integer, Boolean>() {
 
@@ -362,20 +363,20 @@ public class EESecurityController extends SecurityController {
           return null;
         }
       };
-      getBindingFactory().createBinding(roleListBox, "selectedIndex", roleEditButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      getBindingFactory().createBinding(roleListBox, "selectedIndex", roleRemoveButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(roleListBox, "selectedIndex", roleEditButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(roleListBox, "selectedIndex", roleRemoveButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
 
-      getBindingFactory().setBindingType(Binding.Type.ONE_WAY);
+      bf.setBindingType(Binding.Type.ONE_WAY);
       // Action based security permissions
-      getBindingFactory().createBinding(roleListBox, "selectedItem", security, "selectedRole");//$NON-NLS-1$ //$NON-NLS-2$
-      getBindingFactory().createBinding(roleListBox, "selectedIndex", addUserToRoleButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      getBindingFactory().createBinding(roleDetailTable, "selectedItem", removeUserFromRoleButton, "disabled", removeButtonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      getBindingFactory().createBinding(userListBox, "selectedIndex", addRoleToUserButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      getBindingFactory().createBinding(userDetailTable, "selectedItem", removeRoleFromUserButton, "disabled", removeButtonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      getBindingFactory().createBinding(security, "roleList", roleListBox, "elements").fireSourceChanged();//$NON-NLS-1$ //$NON-NLS-2$
-      getBindingFactory().createBinding(roleListBox, "selectedItem", security, "selectedRole");//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(roleListBox, "selectedItem", eeSecurity, "selectedRole");//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(roleListBox, "selectedIndex", addUserToRoleButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(roleDetailTable, "selectedItem", removeUserFromRoleButton, "disabled", removeButtonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(userListBox, "selectedIndex", addRoleToUserButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(userDetailTable, "selectedItem", removeRoleFromUserButton, "disabled", removeButtonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(eeSecurity, "roleList", roleListBox, "elements").fireSourceChanged();//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(roleListBox, "selectedItem", eeSecurity, "selectedRole");//$NON-NLS-1$ //$NON-NLS-2$
 
-      userDetailBinding = getBindingFactory().createBinding(security, "selectedUser", userDetailTable, "elements",//$NON-NLS-1$ //$NON-NLS-2$
+      userDetailBinding = bf.createBinding(eeSecurity, "selectedUser", userDetailTable, "elements",//$NON-NLS-1$ //$NON-NLS-2$
           new BindingConvertor<IUIUser, List<IUIRole>>() {
 
             @Override
@@ -395,7 +396,7 @@ public class EESecurityController extends SecurityController {
 
           });
       
-      roleDetailBinding = getBindingFactory().createBinding(security, "selectedRole", roleDetailTable, "elements",//$NON-NLS-1$ //$NON-NLS-2$
+      roleDetailBinding = bf.createBinding(eeSecurity, "selectedRole", roleDetailTable, "elements",//$NON-NLS-1$ //$NON-NLS-2$
           new BindingConvertor<IUIRole, List<IUIUser>>() {
 
             @Override
@@ -410,7 +411,7 @@ public class EESecurityController extends SecurityController {
             }
 
           });
-      getBindingFactory().createBinding(security, "selectedDeck", userRoleDeck, "selectedIndex",//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(eeSecurity, "selectedDeck", userRoleDeck, "selectedIndex",//$NON-NLS-1$ //$NON-NLS-2$
           new BindingConvertor<ObjectRecipient.Type, Integer>() {
 
             @Override
@@ -467,8 +468,8 @@ public class EESecurityController extends SecurityController {
         }
 
       };
-      getBindingFactory().createBinding(securityRole, "mode", rolename, "disabled", modeBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      getBindingFactory().createBinding(securityRole, "mode", roleDescription, "disabled", anotherModeBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(securityRole, "mode", rolename, "disabled", modeBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(securityRole, "mode", roleDescription, "disabled", anotherModeBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
 
     } catch (Exception e) {
       // convert to runtime exception so it bubbles up through the UI
@@ -496,9 +497,9 @@ public class EESecurityController extends SecurityController {
   @Override
   public void showAddUserDialog() throws Exception {
     try {
-      if (eeRsm != null && eeRsm.getRoles() != null) {
+      if (service != null && service.getRoles() != null) {
         eeSecurityUser.clear();
-        eeSecurityUser.setAvailableRoles(convertToUIRoleModel(eeRsm.getRoles()));
+        eeSecurityUser.setAvailableRoles(convertToUIRoleModel(service.getRoles()));
       }
       eeSecurityUser.setMode(Mode.ADD);
       userDialog.setTitle(messages.getString("AddUserDialog.Title"));//$NON-NLS-1$
@@ -523,9 +524,9 @@ public class EESecurityController extends SecurityController {
    */
   @Override
   protected void addUser() throws Exception {
-    if (eeRsm != null) {
+    if (service != null) {
       try {
-        eeRsm.saveUserInfo(eeSecurityUser.getUserInfo());
+        service.saveUserInfo(eeSecurityUser.getUserInfo());
         eeSecurity.addUser(UIObjectRegistery.getInstance().constructUIRepositoryUser(eeSecurityUser.getUserInfo()));
       } catch (KettleException ke) {
         messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
@@ -540,9 +541,9 @@ public class EESecurityController extends SecurityController {
   
   @Override
   public void showEditUserDialog() throws Exception {
-    if (eeRsm != null && eeRsm.getRoles() != null) {
+    if (service != null && service.getRoles() != null) {
       eeSecurityUser.clear();
-      eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(eeRsm.getRoles()));
+      eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(service.getRoles()));
       eeSecurityUser.setMode(Mode.EDIT);
       userDialog.setTitle(messages.getString("EditUserDialog.Title"));//$NON-NLS-1$
       userDialog.show();
@@ -556,7 +557,7 @@ public class EESecurityController extends SecurityController {
    */
   @Override
   protected void updateUser() throws Exception {
-    if (eeRsm != null) {
+    if (service != null) {
       try {
         UIEERepositoryUser uiUser = (UIEERepositoryUser) eeSecurity.getSelectedUser();
         Set<IUIRole> previousRoleList = new HashSet<IUIRole>();
@@ -564,7 +565,7 @@ public class EESecurityController extends SecurityController {
         uiUser.setDescription(eeSecurityUser.getDescription());
         uiUser.setPassword(eeSecurityUser.getPassword());
         uiUser.setRoles(new HashSet<IUIRole>(eeSecurityUser.getAssignedRoles()));
-        eeRsm.updateUser(uiUser.getUserInfo());
+        service.updateUser(uiUser.getUserInfo());
         eeSecurity.updateUser(uiUser, previousRoleList);
       } catch (KettleException ke) {
         messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
@@ -579,9 +580,9 @@ public class EESecurityController extends SecurityController {
 
   public void showAddRoleDialog() throws Exception {
     try {
-      if (eeRsm != null && eeRsm.getUsers() != null) {
+      if (service != null && service.getUsers() != null) {
         securityRole.clear();
-        securityRole.setAvailableUsers(convertToUIUserModel(eeRsm.getUsers()));
+        securityRole.setAvailableUsers(convertToUIUserModel(service.getUsers()));
       }
       roleDialog.setTitle(messages.getString("AddRoleDialog.Title"));//$NON-NLS-1$
       roleDialog.show();
@@ -596,9 +597,9 @@ public class EESecurityController extends SecurityController {
   }
 
   public void showAddUserToRoleDialog() throws Exception {
-    if (eeRsm != null && eeRsm.getUsers() != null) {
+    if (service != null && service.getUsers() != null) {
       securityRole.clear();
-      securityRole.setRole(((UIEESecurity) security).getSelectedRole(), convertToUIUserModel(eeRsm.getUsers()));
+      securityRole.setRole(((UIEESecurity) security).getSelectedRole(), convertToUIUserModel(service.getUsers()));
       securityRole.setMode(Mode.EDIT_MEMBER);
     }
     roleDialog.setTitle(messages.getString("AddUserToRoleDialog.Title"));//$NON-NLS-1$
@@ -606,9 +607,9 @@ public class EESecurityController extends SecurityController {
   }
 
   public void showAddRoleToUserDialog() throws Exception {
-    if (eeRsm != null && eeRsm.getRoles() != null) {
+    if (service != null && service.getRoles() != null) {
       eeSecurityUser.clear();
-      eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(eeRsm.getRoles()));
+      eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(service.getRoles()));
       eeSecurityUser.setMode(Mode.EDIT_MEMBER);
       userDialog.setTitle(messages.getString("AddRoleToUserDialog.Title"));//$NON-NLS-1$
       userDialog.show();
@@ -617,12 +618,12 @@ public class EESecurityController extends SecurityController {
 
   public void removeRolesFromUser() throws Exception {
     ((UIEESecurity)security).removeRolesFromSelectedUser(userDetailTable.getSelectedItems());
-    eeRsm.updateUser(security.getSelectedUser().getUserInfo());
+    service.updateUser(security.getSelectedUser().getUserInfo());
   }
 
   public void removeUsersFromRole() throws Exception {
     ((UIEESecurity)security).removeUsersFromSelectedRole(roleDetailTable.getSelectedItems());
-    ((IRoleSupportSecurityManager) eeRsm).updateRole(((UIEESecurity)security).getSelectedRole().getRole());
+    ((IRoleSupportSecurityManager) service).updateRole(((UIEESecurity)security).getSelectedRole().getRole());
   }
 
   /**
@@ -632,10 +633,10 @@ public class EESecurityController extends SecurityController {
    */
 
   private void addRole() throws Exception {
-    if (eeRsm != null) {
+    if (service != null) {
       try {
-        IRole role = securityRole.getRole(eeRsm);
-        eeRsm.createRole(role);
+        IRole role = securityRole.getRole(service);
+        service.createRole(role);
         eeSecurity.addRole(UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role));
       } catch (KettleException ke) {
         messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
@@ -655,14 +656,14 @@ public class EESecurityController extends SecurityController {
    */
 
   private void updateRole() throws Exception {
-    if (eeRsm != null) {
+    if (service != null) {
       try {
         IUIRole uiRole = eeSecurity.getSelectedRole();
         Set<IUIUser> previousUserList = new HashSet<IUIUser>();
         previousUserList.addAll(uiRole.getUsers());
         uiRole.setDescription(securityRole.getDescription());
         uiRole.setUsers(new HashSet<IUIUser>(securityRole.getAssignedUsers()));
-        eeRsm.updateRole(uiRole.getRole());
+        service.updateRole(uiRole.getRole());
         eeSecurity.updateRole(uiRole, previousUserList);
         roleDialog.hide();
       } catch (KettleException ke) {
@@ -690,10 +691,10 @@ public class EESecurityController extends SecurityController {
 
       public void onClose(XulComponent sender, Status returnCode, Object retVal) {
         if (returnCode == Status.ACCEPT) {
-          if (eeRsm != null) {
+          if (service != null) {
             if (eeSecurity != null && eeSecurity.getSelectedRole() != null) {
               try {
-                eeRsm.deleteRole(eeSecurity.getSelectedRole().getName());
+                service.deleteRole(eeSecurity.getSelectedRole().getName());
                 eeSecurity.removeRole(eeSecurity.getSelectedRole().getName());
               } catch (KettleException ke) {
                 messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
@@ -724,9 +725,9 @@ public class EESecurityController extends SecurityController {
   }
 
   public void showEditRoleDialog() throws Exception {
-    if (eeRsm != null && eeRsm.getUsers() != null) {
+    if (service != null && service.getUsers() != null) {
       securityRole.clear();
-      securityRole.setRole(eeSecurity.getSelectedRole(), convertToUIUserModel(eeRsm.getUsers()));
+      securityRole.setRole(eeSecurity.getSelectedRole(), convertToUIUserModel(service.getUsers()));
       securityRole.setMode(Mode.EDIT);
       roleDialog.setTitle(messages.getString("EditRoleDialog.Title"));//$NON-NLS-1$
       roleDialog.show();
