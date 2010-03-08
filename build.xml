@@ -49,9 +49,6 @@
     <copy todir="${pur.stage.dir}">
       <fileset file="${package.resdir}/${ivy.artifact.id}/plugin.xml" />
     </copy>
-    <copy todir="${abs.stage.dir}">
-      <fileset file="${package.resdir}/${abs.artifact.id}/plugin.xml" />
-    </copy>
     <chmod perm="a+x" dir="${stage.dir}" includes="**/*.sh" />
     <replace file="${approot.stage.dir}/plugin.xml">
       <replacefilter token="@project.revision@" value="${project.revision}" />
@@ -89,13 +86,15 @@
       <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
     </copy>
 
+	<copy todir="${abs.stage.dir}">
+		<fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
+	</copy>
     <copy todir="${abs.stage.dir}/lib">
       <fileset dir="${lib.dir}">
       	<exclude name="kettle-*.jar" />
       	<exclude name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
       	<exclude name="pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" />
       </fileset>
-      <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
     </copy>
     <if>
       <available file="${bi-platform-ee.obflib.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}-obf.jar" />

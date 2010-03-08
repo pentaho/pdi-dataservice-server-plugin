@@ -16,11 +16,7 @@
  */
 package org.pentaho.di.ui.repository.repositoryexplorer.abs;
 
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -41,18 +37,19 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
+import org.pentaho.di.ui.spoon.SpoonPluginCategories;
 import org.pentaho.di.ui.spoon.SpoonPluginInterface;
 import org.pentaho.ui.xul.XulDomContainer;
-import org.pentaho.ui.xul.XulOverlay;
+import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.components.XulMenuitem;
 import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulToolbarbutton;
 import org.pentaho.ui.xul.containers.XulMenu;
 import org.pentaho.ui.xul.dom.Document;
-import org.pentaho.ui.xul.impl.DefaultXulOverlay;
-import org.pentaho.ui.xul.impl.XulEventHandler;
+
 
 @SpoonPlugin(id = "AbsSpoonPlugin", image = "")
+@SpoonPluginCategories({"spoon"})
 public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener{
   
   private XulDomContainer spoonXulContainer = null;
@@ -87,24 +84,6 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
   
   public AbsSpoonPlugin() {
     PluginLicenseVerifier.verify();
-  }
-  public Map<String, List<XulEventHandler>> getEventHandlers() {
-    HashMap<String, List<XulEventHandler>> handlerMap = new HashMap<String, List<XulEventHandler>>();
-    handlerMap.put("repository-explorer", Collections.singletonList((XulEventHandler) repositoryExplorerEventHandler)); //$NON-NLS-1$
-    
-    handlerMap.put("trans-graph-changed-warning-dialog", Collections.singletonList((XulEventHandler) transChangedWarningEventHandler)); //$NON-NLS-1$
-    
-    handlerMap.put("job-graph-changed-warning-dialog", Collections.singletonList((XulEventHandler) jobChangedWarningEventHandler)); //$NON-NLS-1$
-    return handlerMap;
-  }
-
-  public Map<String, List<XulOverlay>> getOverlays() {
-  	HashMap<String, List<XulOverlay>> hash = new HashMap<String, List<XulOverlay>>();
-  	
-  	XulOverlay overlay = new DefaultXulOverlay("org/pentaho/di/ui/repository/repositoryexplorer/abs/xul/abs-layout-overlay.xul"); //$NON-NLS-1$
-  	hash.put("action-based-security", Collections.singletonList((XulOverlay) overlay)); //$NON-NLS-1$
-  
-  	return hash;
   }
 
   public SpoonLifecycleListener getLifecycleListener() {
@@ -221,5 +200,12 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
   private void registerRepositoryCapabilities() {
     UISupportRegistery.getInstance().registerUISupport(IRoleSupportSecurityManager.class, ManageRolesUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsUISupport.class);
+  }
+  public void applyToContainer(String category, XulDomContainer container) throws XulException {
+    // TODO Throwing a null pointer on setting repository in Connection Controller. Needs to take a look at how this will
+    // work with the new plugin structure
+    // container.addEventHandler(repositoryExplorerEventHandler);
+    // container.addEventHandler(transChangedWarningEventHandler);
+    // container.addEventHandler(jobChangedWarningEventHandler);
   }
 }
