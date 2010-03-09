@@ -102,7 +102,6 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
           doOnSecurityUpdate();
           break;
         case REPOSITORY_CONNECTED:
-          registerRepositoryCapabilities();
           doOnSecurityUpdate();
           break;
         case REPOSITORY_DISCONNECTED:
@@ -136,6 +135,7 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
   private void doOnStartup() {
     UIObjectRegistery.getInstance().registerUIRepositoryUserClass(UIEERepositoryUser.class);
     UIEEObjectRegistery.getInstance().registerUIRepositoryRoleClass(UIAbsRepositoryRole.class);
+    registerRepositoryCapabilities();
   }
   
   private void doOnShutdown() {
