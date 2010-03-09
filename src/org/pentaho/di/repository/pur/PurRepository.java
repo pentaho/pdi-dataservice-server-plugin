@@ -1943,24 +1943,25 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
         } else {
           sid = new RepositoryFileSid(recipient.getName());
         }
-
-        for (ObjectPermission perm : permissions) {
-          if (perm.equals(ObjectPermission.READ)) {
-            permissionSet.add(RepositoryFilePermission.READ);
-          } else if (perm.equals(ObjectPermission.DELETE)) {
-            permissionSet.add(RepositoryFilePermission.DELETE);
-          } else if (perm.equals(ObjectPermission.DELETE_CHILD)) {
-            permissionSet.add(RepositoryFilePermission.DELETE_CHILD);
-          } else if (perm.equals(ObjectPermission.EXECUTE)) {
-            permissionSet.add(RepositoryFilePermission.EXECUTE);
-          } else if (perm.equals(ObjectPermission.READ_ACL)) {
-            permissionSet.add(RepositoryFilePermission.READ_ACL);
-          } else if (perm.equals(ObjectPermission.WRITE)) {
-            permissionSet.add(RepositoryFilePermission.WRITE);
-          } else if (perm.equals(ObjectPermission.WRITE_ACL)) {
-            permissionSet.add(RepositoryFilePermission.WRITE_ACL);
-          } else if (perm.equals(ObjectPermission.ALL)) {
-            permissionSet.add(RepositoryFilePermission.ALL);
+        if(permissions != null) {
+          for (ObjectPermission perm : permissions) {
+            if (perm.equals(ObjectPermission.READ)) {
+              permissionSet.add(RepositoryFilePermission.READ);
+            } else if (perm.equals(ObjectPermission.DELETE)) {
+              permissionSet.add(RepositoryFilePermission.DELETE);
+            } else if (perm.equals(ObjectPermission.DELETE_CHILD)) {
+              permissionSet.add(RepositoryFilePermission.DELETE_CHILD);
+            } else if (perm.equals(ObjectPermission.EXECUTE)) {
+              permissionSet.add(RepositoryFilePermission.EXECUTE);
+            } else if (perm.equals(ObjectPermission.READ_ACL)) {
+              permissionSet.add(RepositoryFilePermission.READ_ACL);
+            } else if (perm.equals(ObjectPermission.WRITE)) {
+              permissionSet.add(RepositoryFilePermission.WRITE);
+            } else if (perm.equals(ObjectPermission.WRITE_ACL)) {
+              permissionSet.add(RepositoryFilePermission.WRITE_ACL);
+            } else if (perm.equals(ObjectPermission.ALL)) {
+              permissionSet.add(RepositoryFilePermission.ALL);
+            }
           }
         }
         newAcl = new RepositoryFileAcl.Builder(newAcl).ace(sid, permissionSet).build();
