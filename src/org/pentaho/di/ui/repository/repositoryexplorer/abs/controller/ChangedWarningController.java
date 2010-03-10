@@ -4,7 +4,6 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 import org.pentaho.di.ui.spoon.AbstractChangedWarningDialog;
 import org.pentaho.di.ui.spoon.XulSpoonResourceBundle;
-import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.dom.Document;
@@ -17,14 +16,8 @@ public abstract class ChangedWarningController extends AbstractChangedWarningDia
   public String getName() {
     return "changedWarningController"; //$NON-NLS-1$
   }
-
-  @Override
-  public void setXulDomContainer(XulDomContainer xulDomContainer) {
-    super.setXulDomContainer(xulDomContainer);
-    init();
-  }
   
-  protected void init() {
+  public void init() {
     if(!isSavePermitted()) {
       Document doc = getXulDomContainer().getDocumentRoot();
       XulDialog dialog = (XulDialog)doc.getElementById(getXulDialogId());

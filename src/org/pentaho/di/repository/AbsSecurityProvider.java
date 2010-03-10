@@ -16,7 +16,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 
 import com.pentaho.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 
-public class AbsSecurityProvider extends PurRepositorySecurityProvider{
+public class AbsSecurityProvider extends PurRepositorySecurityProvider implements IAbsSecurityProvider{
   private IAuthorizationPolicyWebService authorizationPolicyWebService = null;
 
   public AbsSecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, IUser userInfo) {

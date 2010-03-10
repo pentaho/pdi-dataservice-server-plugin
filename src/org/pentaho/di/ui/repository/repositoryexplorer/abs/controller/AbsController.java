@@ -28,7 +28,6 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.i18n.GlobalMessages;
 import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
@@ -36,6 +35,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsSecurity;
 import org.pentaho.di.ui.repository.repositoryexplorer.controller.EESecurityController;
+import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -79,30 +79,29 @@ public class AbsController extends EESecurityController {
   private BindingConvertor<Integer, Boolean> buttonConverter;
 
   private IAbsSecurityManager service;
-  
-  private UIAbsSecurity  absSecurity;
+
+  private UIAbsSecurity absSecurity;
 
   public AbsController() {
 
   }
-  
 
   @Override
   public void init(Repository rep) throws ControllerInitializationException {
     try {
-      if(rep.hasService(IAbsSecurityManager.class)) {
+      if (rep.hasService(IAbsSecurityManager.class)) {
         service = (IAbsSecurityManager) rep.getService(IAbsSecurityManager.class);
-        service.initialize(GlobalMessages.getLocale().getDisplayName());      
+        service.initialize(GlobalMessages.getLocale().getDisplayName());
       } else {
-        throw new ControllerInitializationException(BaseMessages.getString(AbsSpoonPlugin.class, "SecurityController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IAbsSecurityManager.class)); //$NON-NLS-1$
+        throw new ControllerInitializationException(BaseMessages.getString(AbsSpoonPlugin.class,
+            "SecurityController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IAbsSecurityManager.class)); //$NON-NLS-1$
       }
     } catch (KettleException e) {
       throw new ControllerInitializationException(e);
-      }
-    
+    }
+
     super.init(rep);
   }
-
 
   @Override
   protected void setInitialDeck() {
@@ -110,7 +109,7 @@ public class AbsController extends EESecurityController {
     initializeLogicalRolesUI();
   }
 
-  protected void createSecurity()  throws Exception {
+  protected void createSecurity() throws Exception {
     security = eeSecurity = absSecurity = new UIAbsSecurity(service);
   }
 
@@ -131,6 +130,7 @@ public class AbsController extends EESecurityController {
         }
         return true;
       }
+
       @Override
       public Integer targetToSource(Boolean value) {
         // TODO Auto-generated method stub
@@ -138,8 +138,7 @@ public class AbsController extends EESecurityController {
       }
     };
 
-    bf.createBinding(roleListBox,
-        "selectedIndex", applyLogicalRolesButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(roleListBox, "selectedIndex", applyLogicalRolesButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
     bf.createBinding(absSecurity, "selectedRole", this, "selectedRoleChanged");//$NON-NLS-1$ //$NON-NLS-2$
 
   }
@@ -166,17 +165,17 @@ public class AbsController extends EESecurityController {
     IUIRole role = null;
     IUIAbsRole absRole = null;
     try {
-        role = absSecurity.getSelectedRole();
-        if(role instanceof IUIAbsRole) {
-          absRole = (IUIAbsRole) role;
-        } else {
-          throw new IllegalStateException();
-        }
-        service.setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
-        messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(messages.getString("AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
-        messageBox.open();
+      role = absSecurity.getSelectedRole();
+      if (role instanceof IUIAbsRole) {
+        absRole = (IUIAbsRole) role;
+      } else {
+        throw new IllegalStateException();
+      }
+      service.setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
+      messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setMessage(messages.getString("AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
+      messageBox.open();
     } catch (KettleException e) {
       messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
       messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
@@ -193,7 +192,7 @@ public class AbsController extends EESecurityController {
   public void setSelectedRoleChanged(IUIRole role) throws Exception {
     IUIAbsRole absRole = null;
     uncheckAllActionPermissions();
-    if(role instanceof IUIAbsRole) {
+    if (role instanceof IUIAbsRole) {
       absRole = (IUIAbsRole) role;
       if (absRole != null && absRole.getLogicalRoles() != null) {
         for (String permission : absRole.getLogicalRoles()) {
@@ -225,18 +224,20 @@ public class AbsController extends EESecurityController {
     try {
       Map<String, String> logicalRoles = service.getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
       for (Entry<String, String> logicalRole : logicalRoles.entrySet()) {
-        XulCheckbox logicalRoleCheckbox;
-        logicalRoleCheckbox = (XulCheckbox) document.createElement("checkbox");//$NON-NLS-1$
-        logicalRoleCheckbox.setLabel(logicalRole.getValue());
-        logicalRoleCheckbox.setId(logicalRole.getValue());
-        logicalRoleCheckbox.setCommand("iSecurityController.updateRoleActionPermission()");//$NON-NLS-1$
-        logicalRoleCheckbox.setFlex(1);
-        logicalRoleCheckbox.setDisabled(true);
-        logicalRolesBox.addChild(logicalRoleCheckbox);
-        logicalRoleChecboxMap.put(logicalRoleCheckbox, logicalRole.getKey());
-        bf.setBindingType(Binding.Type.ONE_WAY);
-        bf.createBinding(roleListBox,
-            "selectedIndex", logicalRoleCheckbox, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+        if (!exists(logicalRole.getValue())) {
+          XulCheckbox logicalRoleCheckbox;
+          logicalRoleCheckbox = (XulCheckbox) document.createElement("checkbox");//$NON-NLS-1$
+          logicalRoleCheckbox.setLabel(logicalRole.getValue());
+          logicalRoleCheckbox.setId(logicalRole.getValue());
+          logicalRoleCheckbox.setCommand("iSecurityController.updateRoleActionPermission()");//$NON-NLS-1$
+          logicalRoleCheckbox.setFlex(1);
+          logicalRoleCheckbox.setDisabled(true);
+          logicalRolesBox.addChild(logicalRoleCheckbox);
+
+          logicalRoleChecboxMap.put(logicalRoleCheckbox, logicalRole.getKey());
+          bf.setBindingType(Binding.Type.ONE_WAY);
+          bf.createBinding(roleListBox, "selectedIndex", logicalRoleCheckbox, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+        }
       }
     } catch (XulException xe) {
 
@@ -244,6 +245,15 @@ public class AbsController extends EESecurityController {
 
     }
 
+  }
+
+  private boolean exists(String id) {
+    for (XulComponent component : logicalRolesBox.getChildNodes()) {
+      if (component.getId() != null && component.getId().equals(id)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private void uncheckAllActionPermissions() {

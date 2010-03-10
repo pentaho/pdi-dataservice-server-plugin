@@ -22,13 +22,12 @@ import java.util.ResourceBundle;
 
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.ClustersController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.ConnectionsController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.PartitionsController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.SlavesController;
-import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
@@ -45,6 +44,10 @@ public class RepositoryExplorerController extends AbstractXulEventHandler {
   private boolean readPermissionGranted = false;
   
   private static final Class<?> CLZ = RepositoryExplorer.class;
+  ConnectionsControllerOverride connCon;
+  PartitionsController partCon;
+  SlavesController slaveCon;
+  ClustersController clustCon;
   private ResourceBundle resourceBundle = new ResourceBundle() {
 
     @Override
@@ -64,12 +67,6 @@ public class RepositoryExplorerController extends AbstractXulEventHandler {
     return "ABSHandler"; //$NON-NLS-1$
   }
 
-  @Override
-  public void setXulDomContainer(XulDomContainer xulDomContainer) {
-    super.setXulDomContainer(xulDomContainer);
-    init();
-  }
-  
   public class ConnectionsControllerOverride extends ConnectionsController {
     @Override
     public void setEnableButtons(boolean enable) {
@@ -114,7 +111,13 @@ public class RepositoryExplorerController extends AbstractXulEventHandler {
     }
   };
 
-  private void init() {
+  public void setRepository(Repository rep) {
+/*    connCon.setRepository(rep);
+    slaveCon.setRepository(rep);
+    partCon.setRepository(rep);
+    clustCon.setRepository(rep);*/
+  }
+  public void init() {
     // Create bindings
     Document doc = getXulDomContainer().getDocumentRoot();
     
@@ -124,29 +127,21 @@ public class RepositoryExplorerController extends AbstractXulEventHandler {
     
     // Override repository explorer handlers to check permissions
     
-    ConnectionsControllerOverride connCon = new ConnectionsControllerOverride();
-    
-    connCon.setRepository(Spoon.getInstance().getRepository());
+    connCon = new ConnectionsControllerOverride();
     
     getXulDomContainer().addEventHandler(connCon);
     
-    SlavesController slaveCon = new SlavesControllerOverride();
-    
-    slaveCon.setRepository(Spoon.getInstance().getRepository());
+    slaveCon = new SlavesControllerOverride();
     
     getXulDomContainer().addEventHandler(slaveCon);
     
-    PartitionsController partCon = new PartitionsControllerOverride();
+    partCon = new PartitionsControllerOverride();
     
     partCon.setVariableSpace(Variables.getADefaultVariableSpace());
-    partCon.setRepository(Spoon.getInstance().getRepository());
     
     getXulDomContainer().addEventHandler(partCon);
     
-    ClustersController clustCon = new ClustersControllerOverride();
-    
-    clustCon.setRepository(Spoon.getInstance().getRepository());
-    
+    clustCon = new ClustersControllerOverride();
     getXulDomContainer().addEventHandler(clustCon);
     
     // Generate "Create" permissions bindings

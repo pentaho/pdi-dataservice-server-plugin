@@ -24,6 +24,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PluginLicenseVerifier;
 import org.pentaho.di.ui.repository.ManageRolesUISupport;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
@@ -37,6 +38,7 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
+
 import org.pentaho.di.ui.spoon.SpoonPluginCategories;
 import org.pentaho.di.ui.spoon.SpoonPluginInterface;
 import org.pentaho.ui.xul.XulDomContainer;
@@ -60,14 +62,13 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
       return "trans-graph-changed-warning-dialog"; //$NON-NLS-1$
     }
   };
-  
   private ChangedWarningController jobChangedWarningEventHandler = new ChangedWarningController() {
     @Override
     public String getXulDialogId() {
       return "changed-warning-dialog"; //$NON-NLS-1$
     }
   };
-  
+
   private ResourceBundle messages = new ResourceBundle() {
 
     @Override
@@ -146,24 +147,40 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
    * permission levels
    */
   private void doOnSecurityUpdate() throws KettleException {
+    transChangedWarningEventHandler.init();
+    jobChangedWarningEventHandler.init();
+    repositoryExplorerEventHandler.setRepository(Spoon.getInstance().getRepository());
+    
     if(Spoon.getInstance() != null) { // Make sure spoon has been initialized first
       if(spoonXulContainer == null) {
         spoonXulContainer = Spoon.getInstance().getMainSpoonContainer();
       }
-      
-      Object o = Spoon.getInstance().getSecurityManager();
-      
-      if(o instanceof IAbsSecurityProvider) {
-        IAbsSecurityProvider securityProvider = (IAbsSecurityProvider)o;
-
+      Repository repository = Spoon.getInstance().getRepository();
+      if(repository.hasService(IAbsSecurityProvider.class)) {
+        IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
         // Execute credential lookup
         enableCreatePermission(securityProvider.isAllowed(IAbsSecurityProvider.CREATE_CONTENT_ACTION));
-        enableReadPermission(securityProvider.isAllowed(IAbsSecurityProvider.READ_CONTENT_ACTION));
         enableAdminPermission(securityProvider.isAllowed(IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION));
+
       }
     }
   }
   private void doOnSecurityCleanup() {
+    Document doc = spoonXulContainer.getDocumentRoot();
+    boolean createPermitted = true;
+    ((XulToolbarbutton)doc.getElementById("toolbar-file-new")).setDisabled(!createPermitted); //$NON-NLS-1$
+    ((XulToolbarbutton)doc.getElementById("toolbar-file-save")).setDisabled(!createPermitted); //$NON-NLS-1$
+    ((XulToolbarbutton)doc.getElementById("toolbar-file-save-as")).setDisabled(!createPermitted); //$NON-NLS-1$
+    
+    // Popup menus
+    ((XulMenuitem) doc.getElementById("trans-class-new")).setDisabled(!createPermitted); //$NON-NLS-1$
+    ((XulMenuitem) doc.getElementById("job-class-new")).setDisabled(!createPermitted); //$NON-NLS-1$
+    
+    // Main spoon menu
+    ((XulMenu) doc.getElementById("file-new")).setDisabled(!createPermitted); //$NON-NLS-1$
+    ((XulMenuitem) doc.getElementById("file-save")).setDisabled(!createPermitted); //$NON-NLS-1$
+    ((XulMenuitem) doc.getElementById("file-save-as")).setDisabled(!createPermitted); //$NON-NLS-1$
+    ((XulMenuitem) doc.getElementById("file-close")).setDisabled(!createPermitted); //$NON-NLS-1$
   }
   
   private void enableCreatePermission(boolean createPermitted) {
@@ -185,14 +202,10 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
     ((XulMenuitem) doc.getElementById("file-close")).setDisabled(!createPermitted); //$NON-NLS-1$
     
     // Update repository explorer
-    repositoryExplorerEventHandler.setCreatePermissionGranted(createPermitted);
     transChangedWarningEventHandler.setSavePermitted(createPermitted);
     jobChangedWarningEventHandler.setSavePermitted(createPermitted);
   }
   
-  private void enableReadPermission(boolean readPermitted) {
-    repositoryExplorerEventHandler.setReadPermissionGranted(readPermitted);
-  }
   
   private void enableAdminPermission(boolean adminPermitted) {
   }
@@ -202,10 +215,7 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsUISupport.class);
   }
   public void applyToContainer(String category, XulDomContainer container) throws XulException {
-    // TODO Throwing a null pointer on setting repository in Connection Controller. Needs to take a look at how this will
-    // work with the new plugin structure
-    // container.addEventHandler(repositoryExplorerEventHandler);
-    // container.addEventHandler(transChangedWarningEventHandler);
-    // container.addEventHandler(jobChangedWarningEventHandler);
+     container.addEventHandler(transChangedWarningEventHandler);
+     container.addEventHandler(jobChangedWarningEventHandler);
   }
 }
