@@ -30,7 +30,6 @@ import org.pentaho.di.ui.repository.ManageRolesUISupport;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.UISupportRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.ChangedWarningController;
-import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.RepositoryExplorerController;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistery;
@@ -38,7 +37,6 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
-
 import org.pentaho.di.ui.spoon.SpoonPluginCategories;
 import org.pentaho.di.ui.spoon.SpoonPluginInterface;
 import org.pentaho.ui.xul.XulDomContainer;
@@ -55,7 +53,6 @@ import org.pentaho.ui.xul.dom.Document;
 public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener{
   
   private XulDomContainer spoonXulContainer = null;
-  private RepositoryExplorerController repositoryExplorerEventHandler = new RepositoryExplorerController();
   private ChangedWarningController transChangedWarningEventHandler = new ChangedWarningController() {
     @Override
     public String getXulDialogId() {
@@ -149,7 +146,6 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
   private void doOnSecurityUpdate() throws KettleException {
     transChangedWarningEventHandler.init();
     jobChangedWarningEventHandler.init();
-    repositoryExplorerEventHandler.setRepository(Spoon.getInstance().getRepository());
     
     if(Spoon.getInstance() != null) { // Make sure spoon has been initialized first
       if(spoonXulContainer == null) {

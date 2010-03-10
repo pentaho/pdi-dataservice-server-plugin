@@ -74,7 +74,7 @@ public class AbsController extends EESecurityController {
 
   private XulListbox roleListBox;
 
-  Map<XulCheckbox, String> logicalRoleChecboxMap;
+  Map<XulCheckbox, String> logicalRoleChecboxMap = new HashMap<XulCheckbox, String>();
 
   private BindingConvertor<Integer, Boolean> buttonConverter;
 
@@ -220,7 +220,6 @@ public class AbsController extends EESecurityController {
    * Initialized the ActionPermissions UI with all the possible values from  LogicalRoles enum
    */
   private void initializeLogicalRolesUI() {
-    logicalRoleChecboxMap = new HashMap<XulCheckbox, String>();
     try {
       Map<String, String> logicalRoles = service.getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
       for (Entry<String, String> logicalRole : logicalRoles.entrySet()) {
@@ -233,7 +232,6 @@ public class AbsController extends EESecurityController {
           logicalRoleCheckbox.setFlex(1);
           logicalRoleCheckbox.setDisabled(true);
           logicalRolesBox.addChild(logicalRoleCheckbox);
-
           logicalRoleChecboxMap.put(logicalRoleCheckbox, logicalRole.getKey());
           bf.setBindingType(Binding.Type.ONE_WAY);
           bf.createBinding(roleListBox, "selectedIndex", logicalRoleCheckbox, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
