@@ -274,7 +274,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   }
 
   public void disconnect() {
-    PentahoSessionHolder.removeSession();
+    
   }
 
   public int countNrJobEntryAttributes(ObjectId idJobentry, String code) throws KettleException {
