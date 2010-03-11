@@ -67,6 +67,8 @@ import org.pentaho.di.repository.VersionRepository;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.ui.repository.pur.services.RepositoryLockService;
+import org.pentaho.di.ui.repository.repositoryexplorer.UISupportRegistery;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;
 import org.pentaho.platform.api.repository.RepositoryFileAce;
@@ -224,6 +226,8 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       securityProvider = new AbsSecurityProvider(this, this.repositoryMeta, user);
       registerRepositoryService(RepositorySecurityProvider.class, securityProvider);
       registerRepositoryService(IAbsSecurityProvider.class, securityProvider);
+      
+      registerRepositoryService(RepositoryLockService.class, new RepositoryLockService());
 
       // If the user does not have access to administer security we do not
       // need to added them to the service list
@@ -238,7 +242,9 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
         registerRepositoryService(IAbsSecurityManager.class, securityManager);        
       }
       registerRepositoryService(VersionRepository.class, this);
-      registerRepositoryService(IAclManager.class, this);            
+      registerRepositoryService(IAclManager.class, this);
+
+      UISupportRegistery.getInstance().registerUISupport(RepositoryLockService.class, RepositoryLockService.class);
     } catch (Exception e) {
       throw new KettleException(e);
     }
