@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:pen="http://www.pentaho.org/2008/xul">
+  <deck id="browse-tab-right-panel-deck" flex="1">
+    <vbox>
+      <hbox>
+        <label id="spacer-label" flex="1" />
+        <button id="undelete-button" image="images/restore.png" pen:disabledimage="images/restore.png" onclick="browseController.undelete()" />
+        <button id="delete-button" image="images/Remove.png" pen:disabledimage="images/dRemove.png" onclick="browseController.delete()" />
+      </hbox>
+      <tree id="deleted-file-table" flex="4" hidecolumnpicker="true" enableColumnDrag="true" context="fileContextMenu"
+        ondrag="browseController.onDragFromLocalTable()" ondrop="browseController.onDrop()" pen:drageffect="move"
+        sortable="true" treeLines="false" command="browseController.onDoubleClick()">
+        <treecols>
+          <treecol id="name-col" flex="1" label="${RepositoryExplorerDialog.Tab.TableColumn.Name}" pen:binding="name"
+            pen:childrenbinding="children" pen:imagebinding="image" pen:comparatorbinding="comparator" />
+          <treecol id="type-col" flex="1" label="${RepositoryExplorerDialog.Tab.TableColumn.Type}" pen:binding="type" />
+          <!-- modified date used as deleted date -->
+          <treecol id="date-del-col" flex="1" label="${RepositoryExplorerDialog.Tab.TableColumn.DateDeleted}"
+            pen:binding="formatModifiedDate" />
+          <treecol id="orig-loc-col" flex="1" label="${RepositoryExplorerDialog.Tab.TableColumn.OriginalLocation}"
+            pen:binding="parentPath" />
+        </treecols>
+        <treechildren />
+      </tree>
+    </vbox>
+  </deck>
+</overlay>

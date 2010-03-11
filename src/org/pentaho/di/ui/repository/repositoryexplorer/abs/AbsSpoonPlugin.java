@@ -23,6 +23,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.IAbsSecurityProvider;
+import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PluginLicenseVerifier;
@@ -33,6 +34,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.ChangedWar
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistery;
+import org.pentaho.di.ui.repository.repositoryexplorer.trash.TrashUISupport;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
@@ -207,6 +209,7 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
     UISupportRegistery.getInstance().registerUISupport(IRoleSupportSecurityManager.class, ManageRolesUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsSecurityManagerUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityProvider.class, AbsSecurityProviderUISupport.class);
+    UISupportRegistery.getInstance().registerUISupport(ITrashService.class, TrashUISupport.class);
   }
   public void applyToContainer(String category, XulDomContainer container) throws XulException {
      container.addEventHandler(transChangedWarningEventHandler);

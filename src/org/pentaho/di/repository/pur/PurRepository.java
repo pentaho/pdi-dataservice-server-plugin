@@ -41,6 +41,7 @@ import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.IAclManager;
 import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectAce;
 import org.pentaho.di.repository.ObjectAcl;
@@ -50,6 +51,7 @@ import org.pentaho.di.repository.ObjectRecipient;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
+import org.pentaho.di.repository.RepositoryElement;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryElementLocationInterface;
 import org.pentaho.di.repository.RepositoryLock;
@@ -94,7 +96,7 @@ import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
  * @author Matt
  * @author mlowery
  */
-public class PurRepository implements Repository, VersionRepository, IAclManager
+public class PurRepository implements Repository, VersionRepository, IAclManager, ITrashService
 // , RevisionRepository 
 {
 
@@ -137,7 +139,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   private ISharedObjectsTransformer jobDelegate = new JobDelegate(this);
 
   private RepositorySecurityManager securityManager;
-  
+
   private RepositorySecurityProvider securityProvider;
 
   protected LogChannelInterface log;
@@ -166,7 +168,9 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   private boolean isUserHomeDirectoryAliased = false;
 
   protected Serializable userHomeAlias = null;
+
   private Map<Class<? extends IRepositoryService>, IRepositoryService> serviceMap;
+
   private List<Class<? extends IRepositoryService>> serviceList;
 
   // ~ Constructors ====================================================================================================
@@ -178,11 +182,11 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   // ~ Methods =========================================================================================================
 
   protected RepositoryDirectory getRootDir() throws KettleException {
-      if (rootRef != null && rootRef.get() != null) {
-        return rootRef.get();
-      } else {
-        return loadRepositoryDirectoryTree();
-      }
+    if (rootRef != null && rootRef.get() != null) {
+      return rootRef.get();
+    } else {
+      return loadRepositoryDirectoryTree();
+    }
   }
 
   public void setPur(final IUnifiedRepository pur) {
@@ -201,15 +205,14 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     user.setLogin(username);
     user.setPassword(password);
     user.setName(username);
-    this.user = user; 
+    this.user = user;
     // TODO: is this necessary in client side code? this could 
     //       cause problems when embedded in the platform.
     populatePentahoSessionHolder();
 
     try {
       final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/unifiedRepository?wsdl";
-      Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0",
-          "unifiedRepository"));
+      Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", "unifiedRepository"));
 
       IUnifiedRepositoryWebService repoWebService = service.getPort(IUnifiedRepositoryWebService.class);
 
@@ -231,25 +234,26 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
       // If the user does not have access to administer security we do not
       // need to added them to the service list
-      if (allowedActionsContains((AbsSecurityProvider) securityProvider, IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION)) {
+      if (allowedActionsContains((AbsSecurityProvider) securityProvider,
+          IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION)) {
         securityManager = new AbsSecurityManager(this, this.repositoryMeta, user);
         // Set the reference of the security manager to security provider for user role list change event
-        ((PurRepositorySecurityProvider)  securityProvider).setUserRoleDelegate(
-            ((PurRepositorySecurityManager)  securityManager).getUserRoleDelegate());
+        ((PurRepositorySecurityProvider) securityProvider)
+            .setUserRoleDelegate(((PurRepositorySecurityManager) securityManager).getUserRoleDelegate());
 
         registerRepositoryService(RepositorySecurityManager.class, securityManager);
         registerRepositoryService(IRoleSupportSecurityManager.class, securityManager);
-        registerRepositoryService(IAbsSecurityManager.class, securityManager);        
+        registerRepositoryService(IAbsSecurityManager.class, securityManager);
       }
       registerRepositoryService(VersionRepository.class, this);
       registerRepositoryService(IAclManager.class, this);
-
+      registerRepositoryService(ITrashService.class, this);
       UISupportRegistery.getInstance().registerUISupport(RepositoryLockService.class, RepositoryLockService.class);
     } catch (Exception e) {
       throw new KettleException(e);
     }
   }
- 
+
   /**
    * Add the repository service to the map and add the interface to the list
    * @param clazz
@@ -259,6 +263,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     this.serviceMap.put(clazz, repositoryService);
     this.serviceList.add(clazz);
   }
+
   private boolean allowedActionsContains(AbsSecurityProvider provider, String action) throws KettleException {
     List<String> allowedActions = provider.getAllowedActions(IAbsSecurityProvider.NAMESPACE);
     for (String actionName : allowedActions) {
@@ -268,7 +273,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     }
     return false;
   }
-
 
   protected void populatePentahoSessionHolder() {
     // only necessary for RepositoryPaths calls; server also uses PentahoSessionHolder but that is in a different JVM
@@ -280,7 +284,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   }
 
   public void disconnect() {
-    
+
   }
 
   public int countNrJobEntryAttributes(ObjectId idJobentry, String code) throws KettleException {
@@ -335,7 +339,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public void deleteRepositoryDirectory(final RepositoryDirectory dir) throws KettleException {
     try {
-      pur.deleteFile(dir.getObjectId().getId(), true, null);
+      pur.deleteFile(dir.getObjectId().getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete directory with path [" + getPath(null, dir, null) + "]", e);
     }
@@ -555,8 +559,9 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   public void restoreJob(ObjectId idJob, String versionId, String versionComment) {
     pur.restoreFileAtVersion(idJob.getId(), versionId, versionComment);
   }
-  
-  public void restoreTransformation(ObjectId idTransformation, String versionId, String versionComment) throws KettleException {
+
+  public void restoreTransformation(ObjectId idTransformation, String versionId, String versionComment)
+      throws KettleException {
     pur.restoreFileAtVersion(idTransformation.getId(), versionId, versionComment);
   }
 
@@ -1224,8 +1229,8 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
             + XMLHandler.date2string(lock.getLockDate()) + ")";
         RepositoryObjectType objectType = getObjectType(file.getName());
         list.add(new RepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
-            file.getName().length() - objectType.getExtension().length()), repDir, null, null, objectType, null,
-            lockMessage, false));
+            file.getName().length() - objectType.getExtension().length()), repDir, null, file.getLastModifiedDate(),
+            objectType, null, lockMessage, false));
       }
       if (includeDeleted) {
         List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(dirId, objectTypes);
@@ -1235,8 +1240,8 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
               + XMLHandler.date2string(lock.getLockDate()) + ")";
           RepositoryObjectType objectType = getObjectType(file.getName());
           list.add(new RepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
-              file.getName().length() - objectType.getExtension().length()), repDir, null, null, objectType, null,
-              lockMessage, true));
+              file.getName().length() - objectType.getExtension().length()), repDir, null, file.getLastModifiedDate(),
+              objectType, null, lockMessage, true));
         }
       }
       return list;
@@ -1867,17 +1872,17 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
     ObjectAcl objectAcl = new RepositoryObjectAcl(owner);
     List<RepositoryFileAce> aces;
-    
+
     // This flag (forceParentInheriting) is here to allow us to query the acl AS IF 'inherit from parent'
     // were true, without committing the flag to the repository. We need this for state representation 
     // while a user is changing the acl in the client dialogs.
-    
-    if(forceParentInheriting){
+
+    if (forceParentInheriting) {
       objectAcl.setEntriesInheriting(true);
-      aces =  pur.getEffectiveAces(acl.getId(),true);
-    }else{
+      aces = pur.getEffectiveAces(acl.getId(), true);
+    } else {
       objectAcl.setEntriesInheriting(acl.isEntriesInheriting());
-      aces =  (acl.isEntriesInheriting()) ? pur.getEffectiveAces(acl.getId()) : acl.getAces();
+      aces = (acl.isEntriesInheriting()) ? pur.getEffectiveAces(acl.getId()) : acl.getAces();
     }
     List<ObjectAce> objectAces = new ArrayList<ObjectAce>();
     for (RepositoryFileAce ace : aces) {
@@ -1949,7 +1954,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
         } else {
           sid = new RepositoryFileSid(recipient.getName());
         }
-        if(permissions != null) {
+        if (permissions != null) {
           for (ObjectPermission perm : permissions) {
             if (perm.equals(ObjectPermission.READ)) {
               permissionSet.add(RepositoryFilePermission.READ);
@@ -1984,7 +1989,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     return getPdiObjects(id_directory, Arrays.asList(new RepositoryObjectType[] { RepositoryObjectType.JOB,
         RepositoryObjectType.TRANSFORMATION }), includeDeleted);
   }
-  
+
   public IRepositoryService getService(Class<? extends IRepositoryService> clazz) throws KettleException {
     return serviceMap.get(clazz);
   }
@@ -1995,5 +2000,51 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public boolean hasService(Class<? extends IRepositoryService> clazz) throws KettleException {
     return serviceMap.containsKey(clazz);
+  }
+
+  public void delete(final List<ObjectId> ids) throws KettleException {
+    for (ObjectId id : ids) {
+      pur.deleteFile(id.getId(), true, null);
+    }
+  }
+
+  public void undelete(final List<ObjectId> ids) throws KettleException {
+    for (ObjectId id : ids) {
+      pur.undeleteFile(id.getId(), null);
+    }
+  }
+
+  public List<RepositoryElement> getTrash() throws KettleException {
+    List<RepositoryElement> trash = new ArrayList<RepositoryElement>();
+    List<RepositoryFile> deletedChildren = pur.getDeletedFiles();
+    for (final RepositoryFile file : deletedChildren) {
+      final Serializable originalParentFolderId = file.getOriginalParentFolderId();
+      final RepositoryDirectory origParentDir = new RepositoryDirectory() {
+        public ObjectId getObjectId() {
+          return new StringObjectId(originalParentFolderId.toString());
+        }
+      };
+      if (file.isFolder()) {
+        trash.add(new RepositoryDirectory() {
+          public String getName() {
+            return file.getName();
+          }
+
+          public ObjectId getObjectId() {
+            return new StringObjectId(file.getId().toString());
+          }
+
+          public RepositoryDirectory getParent() {
+            return origParentDir;
+          }
+        });
+      } else {
+        RepositoryObjectType objectType = getObjectType(file.getName());
+        trash.add(new RepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
+            file.getName().length() - objectType.getExtension().length()), origParentDir, null, file.getDeletedDate(),
+            objectType, null, null, true));
+      }
+    }
+    return trash;
   }
 }
