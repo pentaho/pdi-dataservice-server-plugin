@@ -8,7 +8,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsPartiti
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsSlavesController;
 import org.pentaho.ui.xul.impl.DefaultXulOverlay;
 
-public class AbsUISupport extends AbstractRepositoryExplorerUISupport{
+public class AbsSecurityManagerUISupport extends AbstractRepositoryExplorerUISupport{
 
   @Override
   public void setup() {

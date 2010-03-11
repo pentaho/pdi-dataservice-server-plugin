@@ -144,9 +144,6 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
    * permission levels
    */
   private void doOnSecurityUpdate() throws KettleException {
-    transChangedWarningEventHandler.init();
-    jobChangedWarningEventHandler.init();
-    
     if(Spoon.getInstance() != null) { // Make sure spoon has been initialized first
       if(spoonXulContainer == null) {
         spoonXulContainer = Spoon.getInstance().getMainSpoonContainer();
@@ -208,7 +205,8 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
   
   private void registerRepositoryCapabilities() {
     UISupportRegistery.getInstance().registerUISupport(IRoleSupportSecurityManager.class, ManageRolesUISupport.class);
-    UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsUISupport.class);
+    UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsSecurityManagerUISupport.class);
+    UISupportRegistery.getInstance().registerUISupport(IAbsSecurityProvider.class, AbsSecurityProviderUISupport.class);
   }
   public void applyToContainer(String category, XulDomContainer container) throws XulException {
      container.addEventHandler(transChangedWarningEventHandler);

@@ -18,9 +18,6 @@ public class AbsPartitionsController extends PartitionsController{
       if(repository.hasService(IAbsSecurityProvider.class)) {
         service = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
         setAllowed(allowedActionsContains(service, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
-        bf.createBinding(this, "allowed", "partitions-edit", "!disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        bf.createBinding(this, "allowed", "partitions-new", "!disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        bf.createBinding(this, "allowed", "partitions-remove", "!disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       }
     } catch (KettleException e) {
       throw new ControllerInitializationException(e);

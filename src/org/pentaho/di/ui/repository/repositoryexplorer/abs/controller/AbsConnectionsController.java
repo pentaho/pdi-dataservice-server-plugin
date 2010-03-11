@@ -18,10 +18,6 @@ public class AbsConnectionsController extends ConnectionsController{
       if(repository.hasService(IAbsSecurityProvider.class)) {
         service = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
         setAllowed(allowedActionsContains(service, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
-        bf.createBinding(this, "allowed", "connections-edit", "!disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        bf.createBinding(this, "allowed", "connections-new", "!disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        bf.createBinding(this, "allowed", "connections-remove", "!disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-
       }
     } catch (KettleException e) {
       throw new ControllerInitializationException(e);
