@@ -16,6 +16,8 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.KettleEnvironment;
+import org.pentaho.di.core.plugins.JobEntryPluginType;
+import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryTestBase;
@@ -69,12 +71,14 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     PentahoSessionHolder.removeSession();
     SecurityContextHolder.getContext().setAuthentication(null);
 
-    // tell kettle to look for plugins in this package (because custom plugins are defined in this class)
-    System.setProperty(Const.KETTLE_PLUGIN_PACKAGES, RepositoryTestBase.class.getPackage().getName());
-
     // test calls into local "unified" repository which requires biserver-ee license
     PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
     KettleEnvironment.init();
+
+    // programmatically register plugins, annotation based plugins do not get loaded unless
+    // they are in kettle's plugins folder.
+    JobEntryPluginType.getInstance().registerCustom(JobEntryAttributeTesterJobEntry.class, "test", "JobEntryAttributeTester", "JobEntryAttributeTester", "JobEntryAttributeTester", "");
+    StepPluginType.getInstance().registerCustom(TransStepAttributeTesterTransStep.class, "test", "StepAttributeTester", "StepAttributeTester", "StepAttributeTester", "");
 
     repositoryMeta = new PurRepositoryMeta();
     repositoryMeta.setName("JackRabbit");
