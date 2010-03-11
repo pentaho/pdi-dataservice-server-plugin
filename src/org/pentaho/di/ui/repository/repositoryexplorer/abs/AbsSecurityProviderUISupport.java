@@ -3,6 +3,7 @@ package org.pentaho.di.ui.repository.repositoryexplorer.abs;
 import org.pentaho.di.ui.repository.capabilities.AbstractRepositoryExplorerUISupport;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsClustersController;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsConnectionsController;
+import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsContextMenuController;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsPartitionsController;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.AbsSlavesController;
 
@@ -14,6 +15,7 @@ public class AbsSecurityProviderUISupport extends AbstractRepositoryExplorerUISu
       AbsPartitionsController absPartitionsController = new AbsPartitionsController();
       AbsSlavesController absSlavesController = new AbsSlavesController();
       AbsClustersController absClustersController = new AbsClustersController();
+      AbsContextMenuController absContextMenuController = new AbsContextMenuController(); 
       handlers.add(absConnectionsController);
       controllerNames.add(absConnectionsController.getName());
       handlers.add(absPartitionsController);
@@ -22,5 +24,7 @@ public class AbsSecurityProviderUISupport extends AbstractRepositoryExplorerUISu
       controllerNames.add(absSlavesController.getName());
       handlers.add(absClustersController);
       controllerNames.add(absClustersController.getName());
+      handlers.add(absContextMenuController);
+      controllerNames.add(absContextMenuController.getName());
     }
   }
