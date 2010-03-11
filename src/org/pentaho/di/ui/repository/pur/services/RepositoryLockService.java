@@ -19,6 +19,7 @@ import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
+import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import org.pentaho.ui.xul.impl.DefaultXulOverlay;
@@ -42,7 +43,7 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
 
       @Override
       protected Object handleGetObject(String key) {
-        return BaseMessages.getString(RepositoryExplorer.class, key);
+        return BaseMessages.getString(RepositoryLockService.class, key);
       }
     };
     
@@ -181,7 +182,12 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
       List<UIRepositoryObject> selectedRepoObjects = browseController.getSelectedFileItems();
       if(selectedRepoObjects.size() > 0 && selectedRepoObjects.get(0) instanceof UIRepositoryContent) {
         final UIRepositoryContent contentToLock = (UIRepositoryContent) selectedRepoObjects.get(0);
-        System.out.println(contentToLock.getLockMessage());
+        
+        XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox");  //$NON-NLS-1$
+        msgBox.setTitle(messages.getString("PurRepository.LockNote.Title")); //$NON-NLS-1$
+        msgBox.setMessage(contentToLock.getLockMessage());
+        
+        msgBox.open();
       }
     }
   };
@@ -194,5 +200,5 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
     controllerNames.add(repositoryLockController.getName());
     handlers.add(repositoryLockController);
   }
-
+  
 }
