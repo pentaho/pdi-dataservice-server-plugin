@@ -1627,7 +1627,7 @@ public abstract class RepositoryTestBase {
   /**
    * Does assertions on all repository.getStepAttribute* and repository.saveStepAttribute* methods.
    */
-  @Step(name = "StepAttributeTester", image = "")
+  @Step(id="StepAttributeTester", name = "StepAttributeTester", image = "")
   public static class TransStepAttributeTesterTransStep extends BaseStepMeta implements StepMetaInterface,
       EntryAndStepConstants {
 
