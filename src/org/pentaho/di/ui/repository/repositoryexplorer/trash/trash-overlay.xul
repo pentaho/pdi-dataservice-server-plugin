@@ -4,21 +4,21 @@
     <vbox>
       <hbox>
         <label id="spacer-label" flex="1" />
-        <button id="undelete-button" image="images/restore.png" pen:disabledimage="images/restore.png" onclick="browseController.undelete()" />
-        <button id="delete-button" image="images/Remove.png" pen:disabledimage="images/dRemove.png" onclick="browseController.delete()" />
+        <button id="undelete-button" image="images/restore.png" pen:disabledimage="images/restore_disabled.png"
+          tooltiptext="${trash.undelete}" onclick="browseController.undelete()" />
+        <button id="delete-button" image="images/Remove.png" pen:disabledimage="images/dRemove.png" tooltiptext="${trash.delete}"
+          onclick="browseController.delete()" />
       </hbox>
       <tree id="deleted-file-table" flex="4" hidecolumnpicker="true" enableColumnDrag="true" context="fileContextMenu"
         ondrag="browseController.onDragFromLocalTable()" ondrop="browseController.onDrop()" pen:drageffect="move"
         sortable="true" treeLines="false" command="browseController.onDoubleClick()">
         <treecols>
-          <treecol id="name-col" flex="1" label="${RepositoryExplorerDialog.Tab.TableColumn.Name}" pen:binding="name"
-            pen:childrenbinding="children" pen:imagebinding="image" pen:comparatorbinding="comparator" />
-          <treecol id="type-col" flex="1" label="${RepositoryExplorerDialog.Tab.TableColumn.Type}" pen:binding="type" />
+          <treecol id="name-col" flex="1" label="${trash.name}" pen:binding="name" pen:childrenbinding="children"
+            pen:imagebinding="image" pen:comparatorbinding="comparator" />
+          <treecol id="type-col" flex="1" label="${trash.type}" pen:binding="type" />
           <!-- modified date used as deleted date -->
-          <treecol id="date-del-col" flex="1" label="${RepositoryExplorerDialog.Tab.TableColumn.DateDeleted}"
-            pen:binding="formatModifiedDate" />
-          <treecol id="orig-loc-col" flex="1" label="${RepositoryExplorerDialog.Tab.TableColumn.OriginalLocation}"
-            pen:binding="parentPath" />
+          <treecol id="date-del-col" flex="1" label="${trash.deletedDate}" pen:binding="formatModifiedDate" />
+          <treecol id="orig-loc-col" flex="1" label="${trash.originalLocation}" pen:binding="parentPath" />
         </treecols>
         <treechildren />
       </tree>

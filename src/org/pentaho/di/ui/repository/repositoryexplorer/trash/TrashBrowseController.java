@@ -1,10 +1,12 @@
 package org.pentaho.di.ui.repository.repositoryexplorer.trash;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.ResourceBundle;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
@@ -13,6 +15,7 @@ import org.pentaho.di.repository.RepositoryElement;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
+import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIJob;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectories;
@@ -22,6 +25,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObjects
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UITransformation;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
+import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.containers.XulDeck;
 import org.pentaho.ui.xul.containers.XulTree;
 
@@ -31,6 +35,20 @@ public class TrashBrowseController extends BrowseController {
 
   // ~ Instance fields =================================================================================================
 
+  private ResourceBundle messages = new ResourceBundle() {
+
+    @Override
+    public Enumeration<String> getKeys() {
+      return null;
+    }
+
+    @Override
+    protected Object handleGetObject(String key) {
+      return BaseMessages.getString(IUIEEUser.class, key);
+    }
+    
+  };  
+  
   protected XulTree trashFileTable;
 
   protected XulDeck deck;
@@ -44,6 +62,10 @@ public class TrashBrowseController extends BrowseController {
   protected List<RepositoryElement> trash;
 
   protected Repository repository;
+  
+  protected XulButton undeleteButton;
+  
+  protected XulButton deleteButton;
 
   // ~ Constructors ====================================================================================================
 
@@ -84,12 +106,12 @@ public class TrashBrowseController extends BrowseController {
 
     @Override
     public String getImage() {
-      return "images/appIcon.png"; //$NON-NLS-1$
+      return "images/trash.png"; //$NON-NLS-1$
     }
 
     @Override
     public String getName() {
-      return "Trash";
+      return messages.getString("trash"); //$NON-NLS-1$
     }
 
     @Override
@@ -117,6 +139,9 @@ public class TrashBrowseController extends BrowseController {
     super.createBindings();
     trashFileTable = (XulTree) document.getElementById("deleted-file-table"); //$NON-NLS-1$
 
+    deleteButton = (XulButton) document.getElementById("delete-button"); //$NON-NLS-1$
+    undeleteButton = (XulButton) document.getElementById("undelete-button"); //$NON-NLS-1$
+    
     bf.setBindingType(Binding.Type.ONE_WAY);
     bf.createBinding(trashFileTable, "selectedItems", this, "selectedTrashFileItems"); //$NON-NLS-1$ //$NON-NLS-2$
 
@@ -218,6 +243,13 @@ public class TrashBrowseController extends BrowseController {
 
   public void setSelectedTrashFileItems(List<UIRepositoryObject> selectedTrashFileItems) {
     this.selectedTrashFileItems = selectedTrashFileItems;
+    if (selectedTrashFileItems != null && !selectedTrashFileItems.isEmpty()) {
+      deleteButton.setDisabled(false);
+      undeleteButton.setDisabled(false);
+    } else {
+      deleteButton.setDisabled(true);
+      undeleteButton.setDisabled(true);
+    }
   }
 
 }
