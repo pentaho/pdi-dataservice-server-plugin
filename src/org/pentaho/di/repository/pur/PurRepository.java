@@ -248,7 +248,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       registerRepositoryService(VersionRepository.class, this);
       registerRepositoryService(IAclManager.class, this);
       registerRepositoryService(ITrashService.class, this);
-      UISupportRegistery.getInstance().registerUISupport(RepositoryLockService.class, RepositoryLockService.class);
     } catch (Exception e) {
       throw new KettleException(e);
     }

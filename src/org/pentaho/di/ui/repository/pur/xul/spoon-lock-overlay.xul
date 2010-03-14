@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<overlay 
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:pen="http://www.pentaho.org/2008/xul">
+
+  <toolbar id="nav-toolbar">
+    <menupopup id="lockContextMenu">
+      <menuitem id="lock-context-lock" type="checkbox" label="${RepositoryExplorerDialog.ContextMenu.Lock}" command="spoonLockController.lockContent()"/>
+	  <menuitem id="lock-context-locknotes" label="${RepositoryExplorerDialog.ContextMenu.LockNotes}" command="spoonLockController.viewLockNote()"/>
+    </menupopup>
+    <toolbarbutton id="lock-menu" label="${Spoon.Menu.Transformation.Run}" image="images/lock_options.png" menu="lockContextMenu"/>
+  </toolbar>
+</overlay>

@@ -23,11 +23,13 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.IAbsSecurityProvider;
-import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PluginLicenseVerifier;
 import org.pentaho.di.ui.repository.ManageRolesUISupport;
+import org.pentaho.di.ui.repository.pur.services.RepositoryLockService;
+import org.pentaho.di.ui.repository.pur.services.SpoonLockController;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.UISupportRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.ChangedWarningController;
@@ -51,7 +53,7 @@ import org.pentaho.ui.xul.dom.Document;
 
 
 @SpoonPlugin(id = "AbsSpoonPlugin", image = "")
-@SpoonPluginCategories({"spoon"})
+@SpoonPluginCategories({"spoon", "trans-graph"})
 public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener{
   
   private XulDomContainer spoonXulContainer = null;
@@ -210,9 +212,15 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsSecurityManagerUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityProvider.class, AbsSecurityProviderUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(ITrashService.class, TrashUISupport.class);
+    UISupportRegistery.getInstance().registerUISupport(RepositoryLockService.class, RepositoryLockService.class);
   }
   public void applyToContainer(String category, XulDomContainer container) throws XulException {
-     container.addEventHandler(transChangedWarningEventHandler);
-     container.addEventHandler(jobChangedWarningEventHandler);
+    if(category.equals("spoon")) { //$NON-NLS-1$
+      container.addEventHandler(transChangedWarningEventHandler);
+      container.addEventHandler(jobChangedWarningEventHandler);
+    } else if(category.equals("trans-graph")) { //$NON-NLS-1$
+      container.getDocumentRoot().addOverlay("org/pentaho/di/ui/repository/pur/xul/spoon-lock-overlay.xul"); //$NON-NLS-1$
+      container.addEventHandler(new SpoonLockController());
+    }
   }
 }
