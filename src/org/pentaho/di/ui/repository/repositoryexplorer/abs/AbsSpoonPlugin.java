@@ -216,6 +216,7 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
     UISupportRegistery.getInstance().registerUISupport(RepositoryLockService.class, RepositoryLockService.class);
   }
   public void applyToContainer(String category, XulDomContainer container) throws XulException {
+    container.registerClassLoader(getClass().getClassLoader());
     if(category.equals("spoon")) { //$NON-NLS-1$
       container.addEventHandler(transChangedWarningEventHandler);
       container.addEventHandler(jobChangedWarningEventHandler);
