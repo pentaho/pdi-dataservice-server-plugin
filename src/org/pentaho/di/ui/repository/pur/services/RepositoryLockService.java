@@ -34,6 +34,8 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
     
     private BindingFactory bindingFactory = null;
     
+    private Repository repository = null;
+    
     protected ResourceBundle messages = new ResourceBundle() {
 
       @Override
@@ -49,6 +51,8 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
     
     public void init(Repository rep) throws ControllerInitializationException {
       try {
+        repository = rep;
+        
         bindingFactory = new DefaultBindingFactory();
         bindingFactory.setDocument(getXulDomContainer().getDocumentRoot());
         
@@ -63,6 +67,36 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
         throw new RuntimeException(e);
       }
     }
+    
+    private BindingConvertor<List<UIRepositoryObject>, Boolean> checkLockPermissions = new BindingConvertor<List<UIRepositoryObject>, Boolean>() {
+
+      @Override
+      public Boolean sourceToTarget(List<UIRepositoryObject> selectedRepoObjects) {
+        boolean result = false;
+        
+        try {
+          if(selectedRepoObjects.size() > 0 && selectedRepoObjects.get(0) instanceof UIRepositoryContent) {
+            final UIRepositoryContent contentToLock = (UIRepositoryContent)selectedRepoObjects.get(0);
+            
+            if(contentToLock.isLocked()) {
+              result = contentToLock.getRepositoryLock().getLogin().equalsIgnoreCase(repository.getUserInfo().getLogin());
+            } else {
+              // Content is not locked, permit locking
+              result = true;
+            }
+          }
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+        
+        return result;
+      }
+
+      @Override
+      public List<UIRepositoryObject> targetToSource(Boolean arg0) {
+        return null;
+      }
+    };
     
     private BindingConvertor<List<UIRepositoryObject>, Boolean> forButtons = new BindingConvertor<List<UIRepositoryObject>, Boolean>() {
 
@@ -137,9 +171,11 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
       bindingFactory.createBinding(browseController, "repositoryObjects", "lock-menu", "!disabled", forButtons); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       
       bindingFactory.createBinding(browseController, "repositoryObjects", "file-context-lock", "selected", checkLockedStateString); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      bindingFactory.createBinding(browseController, "repositoryObjects", "file-context-lock", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       bindingFactory.createBinding(browseController, "repositoryObjects", "file-context-locknotes", "!disabled", checkLockedStateBool); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       
       bindingFactory.createBinding(browseController, "repositoryObjects", "lock-context-lock", "selected", checkLockedStateString); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      bindingFactory.createBinding(browseController, "repositoryObjects", "lock-context-lock", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       bindingFactory.createBinding(browseController, "repositoryObjects", "lock-context-locknotes", "!disabled", checkLockedStateBool); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     }
     
@@ -200,5 +236,4 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
     controllerNames.add(repositoryLockController.getName());
     handlers.add(repositoryLockController);
   }
-  
 }

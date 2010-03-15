@@ -9,12 +9,11 @@ import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.JobMeta;
+import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.job.JobGraph;
 import org.pentaho.di.ui.spoon.trans.TransGraph;
@@ -29,7 +28,6 @@ import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import org.pentaho.ui.xul.util.XulDialogCallback;
-import org.pentaho.ui.xul.util.XulDialogCallback.Status;
 
 public class SpoonLockController extends AbstractXulEventHandler {
   
@@ -38,6 +36,10 @@ public class SpoonLockController extends AbstractXulEventHandler {
   private BindingFactory bindingFactory = null;
   
   private boolean tabBound = false;
+  
+  private boolean isCreateAllowed = false;
+  
+  private boolean isLockingAllowed = false;
   
   protected ResourceBundle messages = new ResourceBundle() {
 
@@ -160,6 +162,12 @@ public class SpoonLockController extends AbstractXulEventHandler {
   
   protected void init() {
     try {
+      if((Spoon.getInstance().getRepository() != null) && (Spoon.getInstance().getRepository().hasService(IAbsSecurityProvider.class))) {
+        IAbsSecurityProvider securityService = (IAbsSecurityProvider) Spoon.getInstance().getRepository().getService(IAbsSecurityProvider.class);
+        
+        setCreateAllowed(allowedActionsContains(securityService, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
+      }
+      
       XulDomContainer container = getXulDomContainer();
       
       bindingFactory = new DefaultBindingFactory();
@@ -168,6 +176,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
       bindingFactory.setBindingType(Type.ONE_WAY);
       
       bindingFactory.createBinding(this, "activeMetaUnlocked", "lock-context-locknotes", "disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      bindingFactory.createBinding(this, "lockingNotAllowedAsString", "lock-context-lock", "disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       
       // Get trans* object to gain access to the *Meta object to determine if we are initially locked or not
       // Try transformation
@@ -181,12 +190,48 @@ public class SpoonLockController extends AbstractXulEventHandler {
       if(repoLock != null) {
         XulMenuitem lockMenuItem = (XulMenuitem)container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
         lockMenuItem.setSelected(true);
+        // Permit locking/unlocking if the user owns the lock
+        setLockingAllowed(repoLock.getLogin().equalsIgnoreCase(Spoon.getInstance().getRepository().getUserInfo().getLogin()));
+      } else {
+        setLockingAllowed(true);
       }
       
       firePropertyChange("activeMetaUnlocked", null, repoLock != null ? "false" : "true"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+  
+  public boolean isCreateAllowed() {
+    return isCreateAllowed;
+  }
+
+  public void setCreateAllowed(boolean isCreateAllowed) {
+    this.isCreateAllowed = isCreateAllowed;
+    this.firePropertyChange("createAllowed", null, isCreateAllowed); //$NON-NLS-1$
+  }
+  
+  public boolean isLockingAllowed() {
+    return isLockingAllowed;
+  }
+  
+  public String isLockingNotAllowedAsString() {
+    return Boolean.toString(!isLockingAllowed);
+  }
+  
+  public void setLockingAllowed(boolean isLockingAllowed) {
+    this.isLockingAllowed = isLockingAllowed;
+    this.firePropertyChange("lockingNotAllowedAsString", null, Boolean.toString(!isLockingAllowed)); //$NON-NLS-1$
+  }
+  
+  private boolean allowedActionsContains(IAbsSecurityProvider service, String action) throws KettleException {
+    List<String> allowedActions = service.getAllowedActions(IAbsSecurityProvider.NAMESPACE);
+    for (String actionName : allowedActions) {
+      if (action != null && action.equals(actionName)) {
+        return true;
+      }
+    }
+    return false;
   }
   
   protected RepositoryLock fetchRepositoryLock(EngineMetaInterface meta) throws KettleException {
