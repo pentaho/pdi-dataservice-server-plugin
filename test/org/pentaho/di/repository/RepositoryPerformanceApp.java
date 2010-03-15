@@ -60,7 +60,6 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
   }
   
   protected void startupRepository() throws Exception{
-    System.setProperty(Const.KETTLE_PLUGIN_PACKAGES, RepositoryTestBase.class.getPackage().getName());
     PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("pdi-ee=true")); //$NON-NLS-1$
     KettleEnvironment.init();
 
