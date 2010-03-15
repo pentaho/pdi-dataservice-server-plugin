@@ -27,6 +27,7 @@ import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PluginLicenseVerifier;
+import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.ui.repository.ManageRolesUISupport;
 import org.pentaho.di.ui.repository.pur.services.RepositoryLockService;
 import org.pentaho.di.ui.repository.pur.services.SpoonLockController;
@@ -219,8 +220,10 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
       container.addEventHandler(transChangedWarningEventHandler);
       container.addEventHandler(jobChangedWarningEventHandler);
     } else if(category.equals("trans-graph") || category.equals("job-graph")) { //$NON-NLS-1$ //$NON-NLS-2$
-      container.getDocumentRoot().addOverlay("org/pentaho/di/ui/repository/pur/xul/spoon-lock-overlay.xul"); //$NON-NLS-1$
-      container.addEventHandler(new SpoonLockController());
+      if((Spoon.getInstance() != null) && (Spoon.getInstance().getRepository() != null) && (Spoon.getInstance().getRepository() instanceof PurRepository)) {
+        container.getDocumentRoot().addOverlay("org/pentaho/di/ui/repository/pur/xul/spoon-lock-overlay.xul"); //$NON-NLS-1$
+        container.addEventHandler(new SpoonLockController());
+      }
     }
   }
 }
