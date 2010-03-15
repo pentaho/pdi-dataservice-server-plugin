@@ -9,9 +9,7 @@
         <button id="delete-button" image="images/Remove.png" pen:disabledimage="images/dRemove.png" tooltiptext="${trash.delete}"
           onclick="browseController.delete()" />
       </hbox>
-      <tree id="deleted-file-table" flex="4" hidecolumnpicker="true" enableColumnDrag="true"
-        ondrag="browseController.onDragFromLocalTable()" ondrop="browseController.onDrop()" pen:drageffect="move"
-        sortable="true" treeLines="false" command="browseController.onDoubleClick()">
+      <tree id="deleted-file-table" flex="4" hidecolumnpicker="true" sortable="true" treeLines="false">
         <treecols>
           <treecol id="name-col" flex="1" label="${trash.name}" pen:binding="name" pen:childrenbinding="children"
             pen:imagebinding="image" pen:comparatorbinding="comparator" />
