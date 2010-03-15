@@ -3,16 +3,19 @@ package org.pentaho.di.ui.repository.pur.services;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
 
+import org.eclipse.swt.graphics.Image;
 import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.job.JobGraph;
 import org.pentaho.di.ui.spoon.trans.TransGraph;
 import org.pentaho.ui.xul.XulDomContainer;
+import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.binding.Binding.Type;
@@ -22,6 +25,10 @@ import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 public class SpoonLockController extends AbstractXulEventHandler {
   
   private EngineMetaInterface workingMeta = null;
+  
+  private BindingFactory bindingFactory = null;
+  
+  private boolean tabBound = false;
   
   protected ResourceBundle messages = new ResourceBundle() {
 
@@ -42,6 +49,31 @@ public class SpoonLockController extends AbstractXulEventHandler {
   
   public void lockContent() throws Exception {
     boolean result = lockMeta(workingMeta);
+    
+    if(!tabBound) {
+      bindingFactory.createBinding(this, "activeMetaUnlocked", Spoon.getInstance().delegates.tabs.findTabMapEntry(workingMeta).getTabItem(), "image", new BindingConvertor<String, Image>() { //$NON-NLS-1$ //$NON-NLS-2$
+        @Override
+        public Image sourceToTarget(String activeMetaUnlocked) {
+            if(Boolean.valueOf(activeMetaUnlocked)) {
+              if(workingMeta instanceof TransMeta) {
+                return GUIResource.getInstance().getImageTransGraph();
+              } else if(workingMeta instanceof JobMeta) {
+                return GUIResource.getInstance().getImageJobGraph();
+              }
+            } else {
+              return GUIResource.getInstance().getImageLocked();
+            }
+            return null;
+        }
+  
+        @Override
+        public String targetToSource(Image arg0) {
+          return null;
+        }
+      });
+      tabBound = true;
+    }
+    
 
     firePropertyChange("activeMetaUnlocked", null, result == true ? "false" : "true"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
   }
@@ -77,7 +109,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
     try {
       XulDomContainer container = getXulDomContainer();
       
-      BindingFactory bindingFactory = new DefaultBindingFactory();
+      bindingFactory = new DefaultBindingFactory();
       bindingFactory.setDocument(container.getDocumentRoot());
       
       bindingFactory.setBindingType(Type.ONE_WAY);
