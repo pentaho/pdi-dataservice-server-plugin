@@ -86,19 +86,12 @@ public class SpoonLockController extends AbstractXulEventHandler {
       
       // Get trans* object to gain access to the *Meta object to determine if we are initially locked or not
       // Try transformation
-      Object o = container.getEventHandler("transgraph"); //$NON-NLS-1$
-      if(o == null) {
-        // Nothing from transformation, try job
-        o = container.getEventHandler("jobgraph"); //$NON-NLS-1$
-        if(o != null) {
-          // We have a job
-          workingMeta = ((JobGraph)o).getMeta();
-        }
-      } else {
-        // We have a transformation
-        workingMeta = ((TransGraph)o).getMeta();
+      if(container.getEventHandlers().containsKey("transgraph")) { //$NON-NLS-1$
+        workingMeta = ((TransGraph)container.getEventHandler("transgraph")).getMeta(); //$NON-NLS-1$
+      } else if(container.getEventHandlers().containsKey("jobgraph")) { //$NON-NLS-1$
+        workingMeta = ((JobGraph)container.getEventHandler("jobgraph")).getMeta(); //$NON-NLS-1$
       }
-      
+
       RepositoryLock repoLock = fetchRepositoryLock(workingMeta);
       if(repoLock != null) {
         XulMenuitem lockMenuItem = (XulMenuitem)container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
@@ -113,28 +106,38 @@ public class SpoonLockController extends AbstractXulEventHandler {
   
   protected RepositoryLock fetchRepositoryLock(EngineMetaInterface meta) throws KettleException {
     RepositoryLock result = null;
-    
-    if(meta instanceof TransMeta) {
-      result = Spoon.getInstance().getRepository().getTransformationLock(meta.getObjectId());
-    } else if(meta instanceof JobMeta) {
-      result = Spoon.getInstance().getRepository().getJobLock(meta.getObjectId());
+    if(meta != null) {
+      if(meta.getObjectId() != null) {
+        if(meta instanceof TransMeta) {
+          result = Spoon.getInstance().getRepository().getTransformationLock(meta.getObjectId());
+        } else if(meta instanceof JobMeta) {
+          result = Spoon.getInstance().getRepository().getJobLock(meta.getObjectId());
+        }
+      }
     }
-    
     return result;
   }
   
   protected boolean lockMeta(EngineMetaInterface meta) throws KettleException {
-    RepositoryLock repoLock = fetchRepositoryLock(meta);
-    if(meta instanceof TransMeta) {
-      if(repoLock != null) {
-        Spoon.getInstance().getRepository().unlockTransformation(meta.getObjectId());
-        return false;
-      } else {
-        Spoon.getInstance().getRepository().lockTransformation(meta.getObjectId(), "Lock Note");
-        return true;
+    if(meta != null) {
+      RepositoryLock repoLock = fetchRepositoryLock(meta);
+      if(meta instanceof TransMeta) {
+        if(repoLock != null) {
+          Spoon.getInstance().getRepository().unlockTransformation(meta.getObjectId());
+          return false;
+        } else {
+          Spoon.getInstance().getRepository().lockTransformation(meta.getObjectId(), "Lock Note");
+          return true;
+        }
+      } else if(meta instanceof JobMeta) {
+        if(repoLock != null) {
+          Spoon.getInstance().getRepository().unlockJob(meta.getObjectId());
+          return false;
+        } else {
+          Spoon.getInstance().getRepository().lockJob(meta.getObjectId(), "Lock Note");
+          return true;
+        }
       }
-    } else if(meta instanceof JobMeta) {
-      // TODO: get repository for an active job
     }
     return false;
   }

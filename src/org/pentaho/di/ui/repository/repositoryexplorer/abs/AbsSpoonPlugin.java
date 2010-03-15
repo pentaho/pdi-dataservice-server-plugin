@@ -53,7 +53,7 @@ import org.pentaho.ui.xul.dom.Document;
 
 
 @SpoonPlugin(id = "AbsSpoonPlugin", image = "")
-@SpoonPluginCategories({"spoon", "trans-graph"})
+@SpoonPluginCategories({"spoon", "trans-graph", "job-graph"})
 public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener{
   
   private XulDomContainer spoonXulContainer = null;
@@ -218,7 +218,7 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
     if(category.equals("spoon")) { //$NON-NLS-1$
       container.addEventHandler(transChangedWarningEventHandler);
       container.addEventHandler(jobChangedWarningEventHandler);
-    } else if(category.equals("trans-graph")) { //$NON-NLS-1$
+    } else if(category.equals("trans-graph") || category.equals("job-graph")) { //$NON-NLS-1$ //$NON-NLS-2$
       container.getDocumentRoot().addOverlay("org/pentaho/di/ui/repository/pur/xul/spoon-lock-overlay.xul"); //$NON-NLS-1$
       container.addEventHandler(new SpoonLockController());
     }
