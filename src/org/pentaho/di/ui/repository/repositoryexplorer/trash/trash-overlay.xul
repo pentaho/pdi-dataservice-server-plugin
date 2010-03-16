@@ -2,8 +2,8 @@
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:pen="http://www.pentaho.org/2008/xul">
 	<dialog id="repository-explorer-dialog">
 		<menupopup id="deleteContextMenu">
-			<menuitem label="${RepositoryExplorerDialog.DeleteContextMenu.Delete}" command="browseController.delete()"/>
-			<menuitem label="${RepositoryExplorerDialog.DeleteContextMenu.Restore}" command="browseController.undelete()"/>
+			<menuitem id="trash-context-delete" label="${RepositoryExplorerDialog.DeleteContextMenu.Delete}" command="browseController.delete()"/>
+			<menuitem id="trash-context-restore" label="${RepositoryExplorerDialog.DeleteContextMenu.Restore}" command="browseController.undelete()"/>
 		</menupopup>
 	</dialog>
   <deck id="browse-tab-right-panel-deck" flex="1">

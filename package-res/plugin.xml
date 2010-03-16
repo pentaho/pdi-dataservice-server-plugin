@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin id="PentahoEnterpriseRepository" name="Enterprise Repository" description="Enterprise Repository"
+<plugin id="PentahoEnterpriseRepository" name="Enterprise Repository" description="Enterprise Repository" tooltip="i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository"
   classname="org.pentaho.di.repository.pur.PurRepository" meta-classname="org.pentaho.di.repository.pur.PurRepositoryMeta"
   dialog-classname="org.pentaho.di.ui.repository.pur.PurRepositoryDialog" version-browser-classname="org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog">
   <libraries>

@@ -143,8 +143,28 @@ public class TrashBrowseController extends BrowseController {
     undeleteButton = (XulButton) document.getElementById("undelete-button"); //$NON-NLS-1$
     
     bf.setBindingType(Binding.Type.ONE_WAY);
-    bf.createBinding(trashFileTable, "selectedItems", this, "selectedTrashFileItems"); //$NON-NLS-1$ //$NON-NLS-2$
+    BindingConvertor<List<UIRepositoryObject>, Boolean> buttonConverter = new BindingConvertor<List<UIRepositoryObject>, Boolean>() {
 
+      @Override
+      public Boolean sourceToTarget(List<UIRepositoryObject> value) {
+        if (value != null && value.size() > 0) {
+          return true;
+        }
+        return false;
+      }
+
+      @Override
+      public List<UIRepositoryObject> targetToSource(Boolean value) {
+        // TODO Auto-generated method stub
+        return null;
+      }
+    };
+    bf.createBinding(trashFileTable, "selectedItems", this, "selectedTrashFileItems"); //$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(trashFileTable, "selectedItems", deleteButton, "!disabled", buttonConverter); //$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(trashFileTable, "selectedItems", undeleteButton, "!disabled", buttonConverter); //$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(trashFileTable, "selectedItems", "trash-context-delete", "!disabled", buttonConverter); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ 
+    bf.createBinding(trashFileTable, "selectedItems", "trash-context-restore", "!disabled", buttonConverter); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+    
     bf.setBindingType(Binding.Type.ONE_WAY);
     bf.createBinding(this, "trash", trashFileTable, "elements", //$NON-NLS-1$  //$NON-NLS-2$
         new BindingConvertor<List<RepositoryElement>, UIRepositoryObjects>() {
@@ -243,13 +263,6 @@ public class TrashBrowseController extends BrowseController {
 
   public void setSelectedTrashFileItems(List<UIRepositoryObject> selectedTrashFileItems) {
     this.selectedTrashFileItems = selectedTrashFileItems;
-    if (selectedTrashFileItems != null && !selectedTrashFileItems.isEmpty()) {
-      deleteButton.setDisabled(false);
-      undeleteButton.setDisabled(false);
-    } else {
-      deleteButton.setDisabled(true);
-      undeleteButton.setDisabled(true);
-    }
   }
 
 }
