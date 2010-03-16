@@ -51,6 +51,7 @@ import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.components.XulButton;
+import org.pentaho.ui.xul.components.XulConfirmBox;
 import org.pentaho.ui.xul.components.XulRadio;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulDeck;
@@ -683,6 +684,7 @@ public class EESecurityController extends SecurityController {
    */
 
   public void removeRole() throws Exception {
+    XulConfirmBox confirmBox = (XulConfirmBox) document.createElement("confirmbox");//$NON-NLS-1$
     confirmBox.setTitle(messages.getString("ConfirmDialog.Title"));//$NON-NLS-1$
     confirmBox.setMessage(messages.getString("RemoveRoleConfirmDialog.Message"));//$NON-NLS-1$
     confirmBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
