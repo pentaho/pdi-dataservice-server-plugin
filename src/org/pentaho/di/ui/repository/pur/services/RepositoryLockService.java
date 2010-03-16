@@ -21,6 +21,8 @@ import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
+import org.pentaho.ui.xul.containers.XulTree;
+import org.pentaho.ui.xul.dnd.DropEvent;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import org.pentaho.ui.xul.impl.DefaultXulOverlay;
 import org.pentaho.ui.xul.impl.XulEventHandler;
@@ -62,7 +64,37 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
           browseController = (BrowseController)eventHandler;
         }
         
+        // Disable row dragging if it is locked and the user does not have permissions
+        XulTree fileTable = (XulTree)getXulDomContainer().getDocumentRoot().getElementById("file-table"); //$NON-NLS-1$
+        fileTable.setOndrag(getName() + ".onDragFromLocalTable()"); //$NON-NLS-1$
+        
         createBindings();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+    
+    // Object being dragged from the file listing table
+    public void onDragFromLocalTable(DropEvent event) {
+      try {
+        List<UIRepositoryObject> selectedRepoObjects = browseController.getSelectedFileItems();
+        
+        if(selectedRepoObjects.size() > 0 && selectedRepoObjects.get(0) instanceof UIRepositoryContent) {
+          final UIRepositoryContent contentToLock = (UIRepositoryContent)selectedRepoObjects.get(0);
+          
+          if(contentToLock.isLocked()) {
+            if(contentToLock.getRepositoryLock().getLogin().equalsIgnoreCase(repository.getUserInfo().getLogin())) {
+              // Current user owns the lock, check default permissions
+              browseController.onDragFromLocalTable(event);
+            } else {
+              // Current user does not own the lock
+              event.setAccepted(false);
+            }
+          } else {
+            // Content is not locked, check default permissions
+            browseController.onDragFromLocalTable(event);
+          }
+        }
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -173,6 +205,9 @@ public class RepositoryLockService extends AbstractRepositoryExplorerUISupport i
       bindingFactory.createBinding(browseController, "repositoryObjects", "file-context-lock", "selected", checkLockedStateString); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       bindingFactory.createBinding(browseController, "repositoryObjects", "file-context-lock", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       bindingFactory.createBinding(browseController, "repositoryObjects", "file-context-locknotes", "!disabled", checkLockedStateBool); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      
+      bindingFactory.createBinding(browseController, "repositoryObjects", "file-context-rename", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      bindingFactory.createBinding(browseController, "repositoryObjects", "file-context-delete", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       
       bindingFactory.createBinding(browseController, "repositoryObjects", "lock-context-lock", "selected", checkLockedStateString); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       bindingFactory.createBinding(browseController, "repositoryObjects", "lock-context-lock", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
