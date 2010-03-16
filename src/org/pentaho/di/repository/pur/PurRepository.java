@@ -69,7 +69,6 @@ import org.pentaho.di.repository.VersionRepository;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.ui.repository.pur.services.RepositoryLockService;
 import org.pentaho.di.ui.repository.repositoryexplorer.UISupportRegistery;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;

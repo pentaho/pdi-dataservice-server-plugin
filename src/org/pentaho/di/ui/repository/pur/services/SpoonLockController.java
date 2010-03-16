@@ -11,6 +11,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.RepositoryLock;
+import org.pentaho.di.repository.pur.RepositoryLockService;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
@@ -177,6 +178,8 @@ public class SpoonLockController extends AbstractXulEventHandler {
       
       bindingFactory.createBinding(this, "activeMetaUnlocked", "lock-context-locknotes", "disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       bindingFactory.createBinding(this, "lockingNotAllowedAsString", "lock-context-lock", "disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      
+      bindingFactory.createBinding(this, "lockingAllowed", "toolbar-file-save", "!disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       
       // Get trans* object to gain access to the *Meta object to determine if we are initially locked or not
       // Try transformation
