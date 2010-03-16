@@ -79,12 +79,14 @@ import org.pentaho.platform.api.repository.RepositoryFilePermission;
 import org.pentaho.platform.api.repository.RepositoryFileSid;
 import org.pentaho.platform.api.repository.VersionSummary;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.core.system.StandaloneSession;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
 import com.pentaho.repository.RepositoryPaths;
+import com.pentaho.repository.pur.data.node.DataNode;
 import com.pentaho.repository.pur.data.node.NodeRepositoryFileData;
 import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
 import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
@@ -200,12 +202,31 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     this.serviceList = new ArrayList<Class<? extends IRepositoryService>>();
   }
 
+  public void connectInProcess() throws KettleException, KettleSecurityException {
+    // connect to the IUnifiedRepository through PentahoSystem
+    // this assumes we're running in a BI Platform
+    pur = PentahoSystem.get(IUnifiedRepository.class);
+    userHomeAlias = pur.getFile(RepositoryPaths.getUserHomeFolderPath()).getId();
+    // for now, there is no need to support the security manager
+    // what about security provider?
+  }
+
   public void connect(String username, String password) throws KettleException, KettleSecurityException {
     IUser user = new EEUserInfo();
     user.setLogin(username);
     user.setPassword(password);
     user.setName(username);
     this.user = user;
+
+    if (PentahoSystem.getApplicationContext() != null) {
+      if (PentahoSystem.getApplicationContext().getBaseUrl() != null) {
+        if (repositoryMeta.getRepositoryLocation().getUrl().startsWith(PentahoSystem.getApplicationContext().getBaseUrl())) {
+          connectInProcess();
+          return;
+        }
+      }
+    }
+    
     // TODO: is this necessary in client side code? this could 
     //       cause problems when embedded in the platform.
     populatePentahoSessionHolder();
