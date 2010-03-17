@@ -14,12 +14,11 @@ import org.pentaho.ui.xul.dom.Document;
 
 public class SpoonMenuLockController implements ISpoonMenuController {
 
-  @Override
+
   public String getName() {
     return "spoonMenuLockController"; //$NON-NLS-1$
   }
 
-  @Override
   public void updateMenu(Document doc) {
     try {
       Spoon spoon = Spoon.getInstance();
@@ -34,12 +33,13 @@ public class SpoonMenuLockController implements ISpoonMenuController {
         if((meta != null) && ((meta instanceof JobMeta) || (meta instanceof TransMeta))) {
         
           RepositoryLock repoLock = null;
-          if(meta instanceof JobMeta) {
-            repoLock = repo.getJobLock(meta.getObjectId());
-          } else {
-            repoLock = repo.getTransformationLock(meta.getObjectId());
+          if(repo != null  && meta.getObjectId() != null) {
+            if(meta instanceof JobMeta) {
+              repoLock = repo.getJobLock(meta.getObjectId());
+            } else {
+              repoLock = repo.getTransformationLock(meta.getObjectId());
+            }
           }
-          
           // If (there is a lock on this item) and (the UserInfo is unavailable or the current user does not match the lock owner)
           if((repoLock != null) && (repo.getUserInfo() == null || !repoLock.getLogin().equals(repo.getUserInfo().getLogin()))) {
             // User does not have modify permissions on this file
