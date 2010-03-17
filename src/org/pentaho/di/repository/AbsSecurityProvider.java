@@ -22,7 +22,7 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
   public AbsSecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, IUser userInfo) {
     super(repository, repositoryMeta, userInfo);
     try {
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/authorizationPolicy?wsdl"; //$NON-NLS-1$
+      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/webservices/authorizationPolicy?wsdl"; //$NON-NLS-1$
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
           "authorizationPolicy"));//$NON-NLS-1$
       authorizationPolicyWebService = service.getPort(IAuthorizationPolicyWebService.class);

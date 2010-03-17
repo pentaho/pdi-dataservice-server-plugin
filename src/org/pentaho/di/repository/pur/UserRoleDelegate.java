@@ -39,7 +39,7 @@ public class UserRoleDelegate {
   public UserRoleDelegate(IRoleSupportSecurityManager rsm, PurRepositoryMeta repositoryMeta, IUser userInfo, Log logger) {
     try {
       this.logger = logger;
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/userRoleService?wsdl"; //$NON-NLS-1$
+      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/webservices/userRoleService?wsdl"; //$NON-NLS-1$
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
           "userRoleService"));//$NON-NLS-1$
       userRoleWebService = service.getPort(IUserRoleWebService.class);

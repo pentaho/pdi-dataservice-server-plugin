@@ -29,7 +29,7 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
     super((PurRepository) repository, (PurRepositoryMeta) repositoryMeta, userInfo);
     try {
         final String url = ((PurRepositoryMeta) repositoryMeta).getRepositoryLocation().getUrl()
-            + "/roleBindingDao?wsdl"; //$NON-NLS-1$
+            + "/webservices/roleBindingDao?wsdl"; //$NON-NLS-1$
         Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
             "roleBindingDao"));//$NON-NLS-1$
         authorizationPolicyRoleBindingService = service.getPort(IRoleAuthorizationPolicyRoleBindingDaoWebService.class);

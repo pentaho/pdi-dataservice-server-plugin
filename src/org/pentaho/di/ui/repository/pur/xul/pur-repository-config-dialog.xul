@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>  
+  <dialog id="repository-config-dialog" buttonlabelaccept="${RepositoryConfigDialog.OK}" buttonlabelcancel="${RepositoryConfigDialog.Cancel}"
+            ondialogaccept="repositoryConfigController.ok()"
+            ondialogcancel="repositoryConfigController.cancel()"
+            buttons="accept, cancel" buttonalign="right" title="${RepositoryConfigDialog.Title}"
+            appicon="ui/images/spoon.ico"
+            height="210" width="450"
+            xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+              xmlns:pen="http://www.pentaho.org/2008/xul"
+              onload="repositoryConfigController.init()"  padding="10" spacing="3">
+          <vbox>
+	          <label value="${RepositoryConfigDialog.RepositoryUrl}" />
+	          <hbox flex="1">
+		           <vbox flex="3">
+		                <textbox id="repository-url"  multiline="false"/>
+		                <label value="${RepositoryConfigDialog.RepositoryName}"/>
+		                <textbox id="repository-name" multiline="false"/>
+		                <label value="${RepositoryConfigDialog.RepositoryDescription}"/>
+		                <textbox id="repository-description"  multiline="false"/>
+		                <checkbox id="repository-modification-comments" command="repositoryConfigController.updateModificationComments()" label="${RepositoryConfigDialog.ModificationComments}" visible="false"/>
+		          </vbox>
+		          <vbox flex="1">
+		          		<hbox>
+			          		<label id="spacer-label" flex="1" />
+			                <button flex="3" id="repository-test" onclick="repositoryConfigController.test()" disabled="true" label="${RepositoryConfigDialog.Test}"/>
+		                </hbox>
+		                <label id="spacer-label" flex="1" />
+		          </vbox>
+	          </hbox>
+          </vbox>
+  </dialog>

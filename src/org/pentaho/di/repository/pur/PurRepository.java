@@ -69,7 +69,6 @@ import org.pentaho.di.repository.VersionRepository;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.ui.repository.repositoryexplorer.UISupportRegistery;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
 import org.pentaho.platform.api.repository.RepositoryFile;
 import org.pentaho.platform.api.repository.RepositoryFileAce;
@@ -85,7 +84,6 @@ import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
 import com.pentaho.repository.RepositoryPaths;
-import com.pentaho.repository.pur.data.node.DataNode;
 import com.pentaho.repository.pur.data.node.NodeRepositoryFileData;
 import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
 import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
@@ -231,7 +229,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     populatePentahoSessionHolder();
 
     try {
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/unifiedRepository?wsdl";
+      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/webservices/unifiedRepository?wsdl";
       Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", "unifiedRepository"));
 
       IUnifiedRepositoryWebService repoWebService = service.getPort(IUnifiedRepositoryWebService.class);
