@@ -16,6 +16,7 @@ import java.util.Set;
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Service;
+import javax.xml.ws.soap.SOAPBinding;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -87,6 +88,7 @@ import com.pentaho.repository.RepositoryPaths;
 import com.pentaho.repository.pur.data.node.NodeRepositoryFileData;
 import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
 import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
+import com.sun.xml.ws.developer.JAXWSProperties;
 
 /**
  * Implementation of {@link Repository} that delegates to the Pentaho unified repository (PUR), an instance of
@@ -239,7 +241,11 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, password);
       // accept cookies to maintain session on server
       ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
-
+      // support streaming binary data
+      ((BindingProvider) repoWebService).getRequestContext().put(JAXWSProperties.HTTP_CLIENT_STREAMING_CHUNK_SIZE, 8192);
+      SOAPBinding binding = (SOAPBinding) ((BindingProvider) repoWebService).getBinding();
+      binding.setMTOMEnabled(true);
+      
       pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
       userHomeAlias = pur.getFile(RepositoryPaths.getUserHomeFolderPath()).getId();
       // We need to add the service class in the list in the order of dependencies
