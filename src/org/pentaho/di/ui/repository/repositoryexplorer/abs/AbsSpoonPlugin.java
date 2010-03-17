@@ -31,6 +31,7 @@ import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.RepositoryLockService;
 import org.pentaho.di.ui.repository.ManageRolesUISupport;
 import org.pentaho.di.ui.repository.pur.services.SpoonLockController;
+import org.pentaho.di.ui.repository.pur.services.SpoonMenuLockController;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.UISupportRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.ChangedWarningController;
@@ -218,6 +219,9 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
   public void applyToContainer(String category, XulDomContainer container) throws XulException {
     container.registerClassLoader(getClass().getClassLoader());
     if(category.equals("spoon")) { //$NON-NLS-1$
+      // Register the SpoonMenuLockController to modify the main Spoon Menu structure
+      Spoon.getInstance().addSpoonMenuController(new SpoonMenuLockController());
+      
       container.addEventHandler(transChangedWarningEventHandler);
       container.addEventHandler(jobChangedWarningEventHandler);
     } else if(category.equals("trans-graph") || category.equals("job-graph")) { //$NON-NLS-1$ //$NON-NLS-2$
