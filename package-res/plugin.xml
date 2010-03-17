@@ -22,6 +22,8 @@
     <library name="lib/pentaho-bi-platform-engine-security-@dependency.bi-platform.revision@.jar" />
     <library name="lib/pentaho-bi-platform-security-userroledao-@dependency.bi-platform.revision@.jar" />
     <library name="lib/pentaho-ee-dsc-core-@dependency.pentaho-ee-dsc.revision@.jar" />
+    <library name="lib/pentaho-xul-core-@dependency.bi-platform.revision@.jar" />
+    <library name="lib/pentaho-xul-swt-@dependency.bi-platform.revision@.jar" />
   </libraries>
 
   <!-- PART BELOW IS NO USED YET -->
