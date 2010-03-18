@@ -79,6 +79,7 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
         }
         
       });
+      repositoryConfigController.setMessages(resourceBundle);
       repositoryConfigController.setRepositoryMeta(repositoryMeta);
       repositoryConfigController.setCallback(new IRepositoryConfigDialogCallback() {
 

@@ -23,7 +23,7 @@
 		          <vbox flex="1">
 		          		<hbox>
 			          		<label id="spacer-label" flex="1" />
-			                <button flex="3" id="repository-test" onclick="repositoryConfigController.test()" disabled="true" label="${RepositoryConfigDialog.Test}"/>
+			                <button flex="3" id="repository-test" onclick="repositoryConfigController.test()" disabled="false" label="${RepositoryConfigDialog.Test}"/>
 		                </hbox>
 		                <label id="spacer-label" flex="1" />
 		          </vbox>

@@ -3,7 +3,13 @@ package org.pentaho.di.ui.repository.pur.controller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Properties;
+import java.util.ResourceBundle;
+
+import javax.xml.namespace.QName;
+import javax.xml.ws.Service;
 
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.RepositoryMeta;
@@ -12,14 +18,20 @@ import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.ui.repository.pur.IRepositoryConfigDialogCallback;
 import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.pur.model.RepositoryConfigModel;
+import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
+import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
+import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.binding.Binding.Type;
 import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulCheckbox;
+import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
+
+import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
 
 public class RepositoryConfigController extends AbstractXulEventHandler{
  
@@ -39,13 +51,20 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
   private BindingFactory bf;
   private IRepositoryConfigDialogCallback callback;
   private RepositoryMeta repositoryMeta;
+  private ResourceBundle messages;
+  private XulMessageBox messageBox;
   public RepositoryConfigController() {
     
   }
-  public void init() {
+  public void init() throws ControllerInitializationException {
     bf = new DefaultBindingFactory();
     bf.setDocument(this.getXulDomContainer().getDocumentRoot());
     model = new RepositoryConfigModel();
+    try {
+      messageBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
+    } catch (Throwable th) {
+      throw new ControllerInitializationException(th);
+    }
     if(bf != null) {
       createBindings();
     }
@@ -89,7 +108,38 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
   }
   
   public void test() {
-    
+    final String url = model.getUrl() + "/webservices/unifiedRepository?wsdl"; //$NON-NLS-1$
+    Service service;
+    try {
+      service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", "unifiedRepository")); //$NON-NLS-1$ //$NON-NLS-2$
+      if(service != null) {
+        IUnifiedRepositoryWebService repoWebService = service.getPort(IUnifiedRepositoryWebService.class);
+        if(repoWebService != null) {
+          messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(messages.getString("RepositoryConfigDialog.RepositoryUrlTestPassed"));//$NON-NLS-1$
+          messageBox.open();
+
+        } else {
+          messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(messages.getString("RepositoryConfigDialog.RepositoryUrlTestFailed"));//$NON-NLS-1$
+          messageBox.open();
+        }
+      } else {
+        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(messages.getString("RepositoryConfigDialog.RepositoryUrlTestFailed"));//$NON-NLS-1$
+        messageBox.open();
+
+      }
+    } catch (Exception e) {
+      messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PurRepositoryDialog.class,
+          "RepositoryConfigDialog.RepositoryUrlTestFailedMessage", e.getLocalizedMessage()));//$NON-NLS-1$
+      messageBox.open();
+    }
   }
   
   private String getDefaultUrl() {
@@ -145,5 +195,12 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
     } else {
       model.setModificationComments(true);
     }
+  }
+  
+  public ResourceBundle getMessages() {
+    return messages;
+  }
+  public void setMessages(ResourceBundle messages) {
+    this.messages = messages;
   }
 }
