@@ -12,7 +12,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositorySecurityProvider;
-import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
+import org.pentaho.di.ui.repository.EESpoonPlugin;
 
 import com.pentaho.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 
@@ -32,13 +32,13 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
           userInfo.getPassword());
       if (authorizationPolicyWebService == null) {
         getLogger().error(
-            BaseMessages.getString(AbsSpoonPlugin.class,
+            BaseMessages.getString(EESpoonPlugin.class,
                 "AbsSecurityProvider.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC")); //$NON-NLS-1$
       }
 
     } catch (Exception e) {
       getLogger().error(
-          BaseMessages.getString(AbsSpoonPlugin.class,
+          BaseMessages.getString(EESpoonPlugin.class,
               "AbsSecurityProvider.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC"), e); //$NON-NLS-1$
     }
   }
@@ -47,7 +47,7 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
     try {
       return authorizationPolicyWebService.getAllowedActions(nameSpace);
     } catch (Exception e) {
-      throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
+      throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
           "AbsSecurityProvider.ERROR_0003_UNABLE_TO_ACCESS_GET_ALLOWED_ACTIONS"), e); //$NON-NLS-1$
     }
   }
@@ -56,7 +56,7 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
     try {
       return authorizationPolicyWebService.isAllowed(actionName);
     } catch (Exception e) {
-      throw new KettleException(BaseMessages.getString(AbsSpoonPlugin.class,
+      throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
           "AbsSecurityProvider.ERROR_0002_UNABLE_TO_ACCESS_IS_ALLOWED"), e);//$NON-NLS-1$
     }
   }

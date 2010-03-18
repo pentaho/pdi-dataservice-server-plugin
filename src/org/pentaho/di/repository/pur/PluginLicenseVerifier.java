@@ -6,7 +6,7 @@ import java.util.ResourceBundle;
 import javax.swing.JOptionPane;
 
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
+import org.pentaho.di.ui.repository.EESpoonPlugin;
 
 import com.pentaho.commons.dsc.PentahoLicenseException;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
@@ -24,7 +24,7 @@ public class PluginLicenseVerifier {
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(AbsSpoonPlugin.class, key);
+      return BaseMessages.getString(EESpoonPlugin.class, key);
     }
 
   };

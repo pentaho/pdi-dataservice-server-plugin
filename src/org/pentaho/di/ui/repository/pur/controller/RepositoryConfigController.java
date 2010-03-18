@@ -5,10 +5,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositoryLocation;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.ui.repository.pur.IRepositoryConfigDialogCallback;
+import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.pur.model.RepositoryConfigModel;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
@@ -67,12 +69,16 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
   }
   
   public void ok() {
-    PurRepositoryMeta repositoryMeta = new PurRepositoryMeta();
-    repositoryMeta.setDescription(model.getDescription());
-    repositoryMeta.setName(model.getName());
-    repositoryMeta.setRepositoryLocation(new PurRepositoryLocation(model.getUrl()));
-    repositoryMeta.setVersionCommentMandatory(model.isModificationComments());
-    getCallback().onSuccess(repositoryMeta);
+    if(repositoryMeta instanceof PurRepositoryMeta) {
+      repositoryMeta.setDescription(model.getDescription());
+      repositoryMeta.setName(model.getName());
+      ((PurRepositoryMeta)repositoryMeta).setRepositoryLocation(new PurRepositoryLocation(model.getUrl()));
+      ((PurRepositoryMeta)repositoryMeta).setVersionCommentMandatory(model.isModificationComments());
+      getCallback().onSuccess(((PurRepositoryMeta)repositoryMeta));
+    } else {
+      getCallback().onError(new IllegalStateException(BaseMessages.
+          getString(PurRepositoryDialog.class, "RepositoryConfigDialog.ERROR_0001_NotAnInstanceOfPurRepositoryMeta"))); //$NON-NLS-1$
+    }
   }
   
   public void cancel() {

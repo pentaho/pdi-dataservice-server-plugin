@@ -1,7 +1,7 @@
 package org.pentaho.di.ui.repository.repositoryexplorer.abs.controller;
 
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
+import org.pentaho.di.ui.repository.EESpoonPlugin;
 import org.pentaho.di.ui.spoon.AbstractChangedWarningDialog;
 import org.pentaho.di.ui.spoon.XulSpoonResourceBundle;
 import org.pentaho.ui.xul.XulDomContainer;
@@ -10,7 +10,7 @@ import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.dom.Document;
 
 public abstract class ChangedWarningController extends AbstractChangedWarningDialog {
-  private static Class<?> PKG = AbsSpoonPlugin.class;
+  private static Class<?> PKG = EESpoonPlugin.class;
   private boolean savePermitted = true;
   
   @Override

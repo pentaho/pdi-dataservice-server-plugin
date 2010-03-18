@@ -28,10 +28,10 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.i18n.GlobalMessages;
 import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.ui.repository.EESpoonPlugin;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
-import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsSecurity;
 import org.pentaho.di.ui.repository.repositoryexplorer.controller.EESecurityController;
@@ -63,7 +63,7 @@ public class AbsController extends EESecurityController {
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(AbsSpoonPlugin.class, key);
+      return BaseMessages.getString(EESpoonPlugin.class, key);
     }
 
   };
@@ -93,7 +93,7 @@ public class AbsController extends EESecurityController {
         service = (IAbsSecurityManager) rep.getService(IAbsSecurityManager.class);
         service.initialize(GlobalMessages.getLocale().getDisplayName());
       } else {
-        throw new ControllerInitializationException(BaseMessages.getString(AbsSpoonPlugin.class,
+        throw new ControllerInitializationException(BaseMessages.getString(EESpoonPlugin.class,
             "SecurityController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IAbsSecurityManager.class)); //$NON-NLS-1$
       }
     } catch (KettleException e) {
