@@ -11,7 +11,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.RepositoryLock;
-import org.pentaho.di.repository.pur.RepositoryLockService;
+import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
@@ -51,7 +51,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(RepositoryLockService.class, key);
+      return BaseMessages.getString(PurRepository.class, key);
     }
   };
   

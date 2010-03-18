@@ -23,13 +23,14 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.IAbsSecurityProvider;
+import org.pentaho.di.repository.ILockService;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PluginLicenseVerifier;
 import org.pentaho.di.repository.pur.PurRepository;
-import org.pentaho.di.repository.pur.RepositoryLockService;
 import org.pentaho.di.ui.repository.ManageRolesUISupport;
+import org.pentaho.di.ui.repository.RepositoryLockUISupport;
 import org.pentaho.di.ui.repository.pur.services.SpoonLockController;
 import org.pentaho.di.ui.repository.pur.services.SpoonMenuLockController;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
@@ -214,7 +215,7 @@ public class AbsSpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListe
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsSecurityManagerUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityProvider.class, AbsSecurityProviderUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(ITrashService.class, TrashUISupport.class);
-    UISupportRegistery.getInstance().registerUISupport(RepositoryLockService.class, RepositoryLockService.class);
+    UISupportRegistery.getInstance().registerUISupport(ILockService.class, RepositoryLockUISupport.class);
   }
   public void applyToContainer(String category, XulDomContainer container) throws XulException {
     container.registerClassLoader(getClass().getClassLoader());

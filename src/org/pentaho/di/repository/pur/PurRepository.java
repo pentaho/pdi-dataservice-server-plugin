@@ -40,6 +40,7 @@ import org.pentaho.di.repository.EEUserInfo;
 import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.IAclManager;
+import org.pentaho.di.repository.ILockService;
 import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.ITrashService;
@@ -253,9 +254,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       securityProvider = new AbsSecurityProvider(this, this.repositoryMeta, user);
       registerRepositoryService(RepositorySecurityProvider.class, securityProvider);
       registerRepositoryService(IAbsSecurityProvider.class, securityProvider);
-      
-      registerRepositoryService(RepositoryLockService.class, new RepositoryLockService());
-
       // If the user does not have access to administer security we do not
       // need to added them to the service list
       if (allowedActionsContains((AbsSecurityProvider) securityProvider,
@@ -272,6 +270,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       registerRepositoryService(VersionRepository.class, this);
       registerRepositoryService(IAclManager.class, this);
       registerRepositoryService(ITrashService.class, this);
+      registerRepositoryService(ILockService.class, this);
     } catch (Exception e) {
       throw new KettleException(e);
     }

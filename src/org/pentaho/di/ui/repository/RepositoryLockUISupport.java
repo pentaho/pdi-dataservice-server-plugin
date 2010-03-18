@@ -1,12 +1,10 @@
-package org.pentaho.di.repository.pur;
+package org.pentaho.di.ui.repository;
 
-import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.ui.repository.capabilities.AbstractRepositoryExplorerUISupport;
 import org.pentaho.di.ui.repository.pur.services.RepositoryLockController;
 import org.pentaho.ui.xul.impl.DefaultXulOverlay;
 
-public class RepositoryLockService extends AbstractRepositoryExplorerUISupport implements IRepositoryService {
-
+public class RepositoryLockUISupport extends AbstractRepositoryExplorerUISupport{
   @Override
   protected void setup() {
     RepositoryLockController repositoryLockController = new RepositoryLockController();
