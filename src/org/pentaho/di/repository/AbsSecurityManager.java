@@ -14,7 +14,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositorySecurityManager;
-import org.pentaho.di.ui.repository.EESpoonPlugin;
+import org.pentaho.di.repository.AbsSecurityManager;
 
 import com.pentaho.security.policy.rolebased.RoleBindingStruct;
 import com.pentaho.security.policy.rolebased.ws.IRoleAuthorizationPolicyRoleBindingDaoWebService;
@@ -39,12 +39,12 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
             BindingProvider.PASSWORD_PROPERTY, userInfo.getPassword());
         if (authorizationPolicyRoleBindingService == null) {
           getLogger().error(
-              BaseMessages.getString(EESpoonPlugin.class,
+              BaseMessages.getString(AbsSecurityManager.class,
                   "AbsSecurityManager.ERROR_0001_UNABLE_TO_INITIALIZE_ROLE_BINDING_WEBSVC")); //$NON-NLS-1$
         }
     } catch (Exception e) {
       getLogger().error(
-          BaseMessages.getString(EESpoonPlugin.class,
+          BaseMessages.getString(AbsSecurityManager.class,
               "AbsSecurityManager.ERROR_0001_UNABLE_TO_INITIALIZE_ROLE_BINDING_WEBSVC"), e); //$NON-NLS-1$
     }
   }
@@ -54,11 +54,11 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
       try {
         roleBindingStruct = authorizationPolicyRoleBindingService.getRoleBindingStruct(locale);
       } catch (Exception e) {
-        throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
+        throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
             "AbsSecurityManager.ERROR_0002_UNABLE_TO_GET_LOGICAL_ROLES"), e); //$NON-NLS-1$
       }
     } else {
-      throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
+      throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
           "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
@@ -103,12 +103,12 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
           localizedLogicalRoles.add(roleBindingStruct.logicalRoleNameMap.get(logicalRole));
         }
       } else {
-        throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
+        throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
             "AbsSecurityManager.ERROR_0003_UNABLE_TO_ACCESS_ROLE_BINDING_WEBSVC")); //$NON-NLS-1$
       }
       return localizedLogicalRoles;
     } else {
-      throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
+      throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
           "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
@@ -121,7 +121,7 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
       }
       return null;
     } else {
-      throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
+      throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
           "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
@@ -131,11 +131,11 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
     try {
       authorizationPolicyRoleBindingService.setRoleBindings(rolename, logicalRoles);
     } catch (Exception e) {
-      throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
+      throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
           "AbsSecurityManager.ERROR_0004_UNABLE_TO_APPLY_LOGICAL_ROLES_TO_RUNTIME_ROLE"), e); //$NON-NLS-1$
     }
     } else {
-      throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
+      throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
           "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
@@ -144,7 +144,7 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
     if(authorizationPolicyRoleBindingService != null) {    
       return roleBindingStruct.logicalRoleNameMap;
     } else {
-      throw new KettleException(BaseMessages.getString(EESpoonPlugin.class,
+      throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
           "AbsSecurityManager.ERROR_0005_INSUFFICIENT_PRIVELEGES")); //$NON-NLS-1$
     }
   }
