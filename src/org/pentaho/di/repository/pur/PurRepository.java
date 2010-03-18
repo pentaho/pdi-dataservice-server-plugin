@@ -220,7 +220,15 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
     if (PentahoSystem.getApplicationContext() != null) {
       if (PentahoSystem.getApplicationContext().getBaseUrl() != null) {
-        if (repositoryMeta.getRepositoryLocation().getUrl().startsWith(PentahoSystem.getApplicationContext().getBaseUrl())) {
+        String repoUrl = repositoryMeta.getRepositoryLocation().getUrl();
+        String baseUrl = PentahoSystem.getApplicationContext().getBaseUrl();
+        if (repoUrl.endsWith("/")) {
+          repoUrl = repoUrl.substring(0, repoUrl.length()-2);
+        }
+        if (baseUrl.endsWith("/")) {
+          baseUrl = baseUrl.substring(0, baseUrl.length()-2);
+        }
+        if (repoUrl.startsWith(baseUrl)) {
           connectInProcess();
           return;
         }
