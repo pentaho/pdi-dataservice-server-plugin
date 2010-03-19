@@ -210,6 +210,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     for (DataNode stepNode : stepsNode.getNodes()) {
 
       StepMeta stepMeta = new StepMeta(new StringObjectId(stepNode.getId().toString()));
+      stepMeta.setParentTransMeta(transMeta); // for tracing, retain hierarchy
 
       // Read the basics
       //
@@ -232,14 +233,12 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       PluginRegistry registry = PluginRegistry.getInstance();
       PluginInterface stepPlugin = registry.findPluginWithId(StepPluginType.class, stepType);
       
-      
       StepMetaInterface stepMetaInterface = null;
       if (stepPlugin != null) {
         stepMetaInterface = (StepMetaInterface)registry.loadClass(stepPlugin);
         stepType = stepPlugin.getIds()[0]; // revert to the default in case we loaded an alternate version
       } else {
-        throw new KettleStepLoaderException(BaseMessages.getString(PKG,
-            "StepMeta.Exception.UnableToLoadClass", stepType)); //$NON-NLS-1$
+        throw new KettleStepLoaderException(BaseMessages.getString(PKG, "StepMeta.Exception.UnableToLoadClass", stepType)); //$NON-NLS-1$
       }
 
       stepMeta.setStepID(stepType);
@@ -291,7 +290,16 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         meta.getSourceStep().setStepErrorMeta(meta); // a bit of a trick, I know.                        
       }
     }
-
+    
+    // Have all StreamValueLookups, etc. reference the correct source steps...
+    //
+    for (int i = 0; i < transMeta.nrSteps(); i++)
+    {
+        StepMeta stepMeta = transMeta.getStep(i);
+        StepMetaInterface sii = stepMeta.getStepMetaInterface();
+        if (sii != null) sii.searchInfoAndTargetSteps(transMeta.getSteps());
+    }
+    
     // Read the notes...
     //
     DataNode notesNode = rootNode.getNode(NODE_NOTES);
