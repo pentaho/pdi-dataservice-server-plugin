@@ -279,7 +279,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       registerRepositoryService(IAclManager.class, this);
       registerRepositoryService(ITrashService.class, this);
       registerRepositoryService(ILockService.class, this);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       throw new KettleException(e);
     }
   }
