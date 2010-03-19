@@ -100,9 +100,7 @@ import com.sun.xml.ws.developer.JAXWSProperties;
 	id="PentahoEnterpriseRepository", 
 	name="Enterprise Repository",
 	description="i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository",
-	metaClass="org.pentaho.di.repository.pur.PurRepositoryMeta",
-    dialogClass="org.pentaho.di.ui.repository.pur.PurRepositoryDialog", 
-	versionBrowserClass="org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog"
+	metaClass="org.pentaho.di.repository.pur.PurRepositoryMeta"
   )
 public class PurRepository implements Repository, VersionRepository, IAclManager, ITrashService
 // , RevisionRepository 
@@ -1550,6 +1548,13 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   protected void saveDatabaseMeta(final RepositoryElementInterface element, final String versionComment)
       throws KettleException {
+	  
+	// Even if the object id is null, we still have to check if the element is not present in the PUR
+	// For example, if we import data from an XML file and there is a database with the same name in it.
+	//
+	if (element.getObjectId()==null) {
+		element.setObjectId(getDatabaseID(element.getName()));
+	}
     boolean isUpdate = element.getObjectId() != null;
     RepositoryFile file = null;
     if (isUpdate) {
