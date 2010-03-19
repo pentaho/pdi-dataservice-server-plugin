@@ -18,6 +18,7 @@ import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
+import org.pentaho.ui.xul.binding.Binding.Type;
 import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
 import org.pentaho.ui.xul.containers.XulTree;
@@ -196,6 +197,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
   
   protected void createBindings() {
     // Lock bindings
+    bindingFactory.setBindingType(Type.ONE_WAY);
     bindingFactory.createBinding(browseController, "repositoryObjects", "lock-menu", "!disabled", forButtons); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     
     bindingFactory.createBinding(browseController, "repositoryObjects", "file-context-lock", "selected", checkLockedStateString); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
