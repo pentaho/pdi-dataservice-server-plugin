@@ -18,13 +18,12 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Service;
 import javax.xml.ws.soap.SOAPBinding;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.ProgressMonitorListener;
+import org.pentaho.di.core.annotations.RepositoryPlugin;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
@@ -35,7 +34,6 @@ import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.AbsSecurityManager;
 import org.pentaho.di.repository.AbsSecurityProvider;
-import org.pentaho.di.repository.Directory;
 import org.pentaho.di.repository.EEUserInfo;
 import org.pentaho.di.repository.IAbsSecurityManager;
 import org.pentaho.di.repository.IAbsSecurityProvider;
@@ -98,13 +96,21 @@ import com.sun.xml.ws.developer.JAXWSProperties;
  * @author Matt
  * @author mlowery
  */
+@RepositoryPlugin(
+	id="PentahoEnterpriseRepository", 
+	name="Enterprise Repository",
+	description="i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository",
+	metaClass="org.pentaho.di.repository.pur.PurRepositoryMeta",
+    dialogClass="org.pentaho.di.ui.repository.pur.PurRepositoryDialog", 
+	versionBrowserClass="org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog"
+  )
 public class PurRepository implements Repository, VersionRepository, IAclManager, ITrashService
 // , RevisionRepository 
 {
 
   // ~ Static fields/initializers ======================================================================================
 
-  private static final Log logger = LogFactory.getLog(PurRepository.class);
+  // private static final Log logger = LogFactory.getLog(PurRepository.class);
 
   private static final String REPOSITORY_VERSION = "1.0"; //$NON-NLS-1$
 
@@ -507,7 +513,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
     isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (tenantRoot.findChild(alias) != null));
 
-    List<Directory> children = new ArrayList<Directory>();
+    // List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
     newRoot.setObjectId(tenantRoot.getObjectId());
     newRoot.setVisible(false);
@@ -2079,7 +2085,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     return trash;
   }
 
-  @Override
   public RepositoryDirectory getDefaultSaveDirectory(RepositoryElementInterface repositoryElement) throws KettleException {
     loadRepositoryDirectoryTree();
     return getRootDir().findDirectory(RepositoryPaths.getUserHomeFolderPath());

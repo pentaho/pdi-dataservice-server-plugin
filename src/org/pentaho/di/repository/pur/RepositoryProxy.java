@@ -614,7 +614,6 @@ public class RepositoryProxy implements Repository {
     return false;
   }
 
-  @Override
   public RepositoryDirectory getDefaultSaveDirectory(RepositoryElementInterface arg0) throws KettleException {
     throw new UnsupportedOperationException();
   }
