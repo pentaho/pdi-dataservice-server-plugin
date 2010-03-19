@@ -2078,4 +2078,10 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     }
     return trash;
   }
+
+  @Override
+  public RepositoryDirectory getDefaultSaveDirectory(RepositoryElementInterface repositoryElement) throws KettleException {
+    loadRepositoryDirectoryTree();
+    return getRootDir().findDirectory(RepositoryPaths.getUserHomeFolderPath());
+  }
 }
