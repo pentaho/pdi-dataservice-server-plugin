@@ -510,6 +510,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
     newRoot.setObjectId(tenantRoot.getObjectId());
+    newRoot.setVisible(false);
 
     for (int i = 0; i < tenantRoot.getNrSubdirectories(); i++) {
       RepositoryDirectory tenantChild = tenantRoot.getSubdirectory(i);

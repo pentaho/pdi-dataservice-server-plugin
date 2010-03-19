@@ -80,22 +80,25 @@ public class TrashBrowseController extends BrowseController {
    */
   @Override
   protected Binding createDirectoryBinding() {
-    return bf.createBinding(repositoryDirectory, "children", folderTree, "elements", //$NON-NLS-1$//$NON-NLS-2$
-        new BindingConvertor<UIRepositoryDirectories, UIRepositoryDirectories>() {
+    bf.setBindingType(Binding.Type.ONE_WAY);
+    return bf.createBinding(this, "repositoryDirectory", folderTree, "elements", //$NON-NLS-1$//$NON-NLS-2$
+        new BindingConvertor<UIRepositoryDirectory, UIRepositoryDirectory>() {
 
           @Override
-          public UIRepositoryDirectories sourceToTarget(final UIRepositoryDirectories value) {
-            if (value == null) {
+          public UIRepositoryDirectory sourceToTarget(final UIRepositoryDirectory value) {
+            if (value == null || value.size() == 0) {
               return null;
             }
             if (!value.get(value.size() - 1).equals(trashDir)) {
-              value.add(trashDir);
+              // add directly to children collection to bypass events
+              value.getChildren().add(trashDir);
             }
             return value;
           }
 
           @Override
-          public UIRepositoryDirectories targetToSource(final UIRepositoryDirectories value) {
+          public UIRepositoryDirectory targetToSource(final UIRepositoryDirectory value) {
+            // not used
             return value;
           }
 
@@ -133,10 +136,8 @@ public class TrashBrowseController extends BrowseController {
     }
   }
 
-  @Override
-  protected void createBindings() {
+  protected void doCreateBindings() {
     deck = (XulDeck) document.getElementById("browse-tab-right-panel-deck");//$NON-NLS-1$
-    super.createBindings();
     trashFileTable = (XulTree) document.getElementById("deleted-file-table"); //$NON-NLS-1$
 
     deleteButton = (XulButton) document.getElementById("delete-button"); //$NON-NLS-1$
