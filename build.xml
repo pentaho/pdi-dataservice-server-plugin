@@ -53,7 +53,7 @@
   </target>
 
   <!-- Copy all jars over to the plugin zip, 
-  except for kettle, licensing jars -->
+  except for kettle, licensing jars, metro, xul, log4j, and pur (server-side) -->
   <target name="assemble.copy-libs" depends="install-antcontrib">
     <copy todir="${approot.stage.dir}">
       <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
@@ -65,6 +65,7 @@
         <exclude name="metro-*.jar" />
         <exclude name="log4j-*.jar" />
         <exclude name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
+        <exclude name="pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" />
       </fileset>
     </copy>
 
@@ -73,24 +74,15 @@
       <then>
         <!-- copy the required obfuscated jars to the plugin dist lib folder -->
       	<!-- We don't trust ProGuard to generate the same obfuscated classes for the dsc jar, so we overwrite it here -->
+        <!-- obf suffix removed since plugin.xml contains references to non-suffixed filenames -->
       	<copy file="${bi-platform-ee.obflib.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}-obf.jar"
-      	      tofile="${pur.stage.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" overwrite="true"/>
+      	      tofile="${approot.stage.dir}/lib/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" overwrite="true"/>
       	<copy file="${bi-platform-ee.obflib.dir}/pentaho-bi-platform-ee-${dependency.bi-platform.revision}-obf.jar"
-      	      tofile="${pur.stage.dir}/pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" overwrite="true"/>
-      	<copy file="${bi-platform-ee.obflib.dir}/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}-obf.jar"
-      	      tofile="${abs.stage.dir}/lib/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" overwrite="true"/>
-      	<copy file="${bi-platform-ee.obflib.dir}/pentaho-bi-platform-ee-${dependency.bi-platform.revision}-obf.jar"
-      	      tofile="${abs.stage.dir}/lib/pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" overwrite="true"/>    	
+      	      tofile="${approot.stage.dir}/lib/pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" overwrite="true"/>
       </then>
       <else>
         <!-- copy the required jars to the plugin dist lib folder -->
       	<!-- if release=true, we've got a problem, we should blow up here -->
-       <copy todir="${approot.stage.dir}/lib"  overwrite="true">
-          <fileset dir="${lib.dir}">
-            <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
-          	<include name="pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" />
-          </fileset>
-        </copy>
         <copy todir="${approot.stage.dir}/lib" overwrite="true">
           <fileset dir="${lib.dir}">
             <include name="pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" />
