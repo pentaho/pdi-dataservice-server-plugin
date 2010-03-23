@@ -272,6 +272,13 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
       transMeta.addStep(stepMeta);
 
+    }
+
+    for (DataNode stepNode : stepsNode.getNodes()) {
+
+      ObjectId stepObjectId = new StringObjectId(stepNode.getId().toString());
+      StepMeta stepMeta = StepMeta.findStep(transMeta.getSteps(), stepObjectId);
+      
       // Also load the step error handling metadata
       //
       if (stepNode.hasProperty(PROP_STEP_ERROR_HANDLING_SOURCE_STEP)) {
