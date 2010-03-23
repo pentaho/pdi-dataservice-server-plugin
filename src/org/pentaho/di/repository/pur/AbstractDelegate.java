@@ -24,13 +24,22 @@ public abstract class AbstractDelegate {
     for (char c : name.toCharArray()) {
       switch (c) {
         case ':':
+        case '/':
           result.append('-');
           break;
-        case '/':
-          result.append("-");
+        case '{':
+        case '}':
+        case '[':
+        case ']':
+        case ')':
+        case '(':
+        case '\\':
+          result.append(' ');
           break;
         default:
-          result.append(c);
+          if (Character.isLetterOrDigit(c)) {
+            result.append(c);
+          }
           break;
       }
     }
