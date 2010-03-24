@@ -36,6 +36,7 @@ import org.pentaho.di.trans.TransMeta;
 import com.pentaho.repository.pur.data.node.DataNode;
 import com.pentaho.repository.pur.data.node.DataNodeRef;
 import com.pentaho.repository.pur.data.node.DataProperty;
+import com.pentaho.repository.pur.data.node.DataNode.DataPropertyType;
 
 /**
  * A {@link Repository} that stands in for the real repository, collecting entry and step attributes and loading or
@@ -285,7 +286,12 @@ public class RepositoryProxy implements Repository {
 
   public long getStepAttributeInteger(ObjectId idStep, String code) throws KettleException {
     if (node.hasProperty(code)) {
-      return node.getProperty(code).getLong();
+      DataProperty property = node.getProperty(code);
+      if (property.getType().equals(DataPropertyType.LONG)) {
+    	  return property.getLong();
+      } else {
+    	  return 0;
+      }
     } else {
       return 0;
     }
