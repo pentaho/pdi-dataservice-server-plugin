@@ -2174,8 +2174,12 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     }
     return trash;
   }
-
+  
   public RepositoryDirectory getDefaultSaveDirectory(RepositoryElementInterface repositoryElement) throws KettleException {
+    return getUserHomeDirectory();
+  }
+
+  public RepositoryDirectory getUserHomeDirectory() throws KettleException {
     loadRepositoryDirectoryTree();
     return getRootDir().findDirectory(RepositoryPaths.getUserHomeFolderPath());
   }
