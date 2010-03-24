@@ -606,21 +606,22 @@ public class RepositoryProxy implements Repository {
   }
 
   public IRepositoryService getService(Class<? extends IRepositoryService> clazz) throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   public List<Class<? extends IRepositoryService>> getServiceInterfaces() throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   public boolean hasService(Class<? extends IRepositoryService> clazz) throws KettleException {
-    // TODO Auto-generated method stub
-    return false;
+    throw new UnsupportedOperationException();
   }
 
   public RepositoryDirectory getDefaultSaveDirectory(RepositoryElementInterface arg0) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public RepositoryDirectory getUserHomeDirectory() throws KettleException {
     throw new UnsupportedOperationException();
   }
 }
