@@ -1401,6 +1401,10 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   protected void lockFileById(final ObjectId id, final String message) throws KettleException {
     pur.lockFile(id.getId(), message);
   }
+  
+  public boolean canUnlockFileById(final ObjectId id) {
+    return pur.canUnlockFile(id.getId());
+  }
 
   public SharedObjects readJobMetaSharedObjects(final JobMeta jobMeta) throws KettleException {
     return jobDelegate.loadSharedObjects(jobMeta);

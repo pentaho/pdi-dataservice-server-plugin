@@ -40,11 +40,19 @@ public class SpoonMenuLockController implements ISpoonMenuController {
               repoLock = repo.getTransformationLock(meta.getObjectId());
             }
           }
-          // If (there is a lock on this item) and (the UserInfo is unavailable or the current user does not match the lock owner)
-          if((repoLock != null) && (repo.getUserInfo() == null || !repoLock.getLogin().equals(repo.getUserInfo().getLogin()))) {
-            // User does not have modify permissions on this file
-            ((XulToolbarbutton)doc.getElementById("toolbar-file-save")).setDisabled(true); //$NON-NLS-1$
-            ((XulMenuitem)doc.getElementById("file-save")).setDisabled(true); //$NON-NLS-1$
+          // If (there is a lock on this item) and (the UserInfo does not have permission to unlock this file)
+          if(repoLock != null) {
+            if(repo instanceof PurRepository) {
+              if(!((PurRepository)repo).canUnlockFileById(meta.getObjectId())) {
+                // User does not have modify permissions on this file
+                ((XulToolbarbutton)doc.getElementById("toolbar-file-save")).setDisabled(true); //$NON-NLS-1$
+                ((XulMenuitem)doc.getElementById("file-save")).setDisabled(true); //$NON-NLS-1$  
+              }
+            } else if((repo.getUserInfo() == null || !repoLock.getLogin().equals(repo.getUserInfo().getLogin()))){
+              // User does not have modify permissions on this file
+              ((XulToolbarbutton)doc.getElementById("toolbar-file-save")).setDisabled(true); //$NON-NLS-1$
+              ((XulMenuitem)doc.getElementById("file-save")).setDisabled(true); //$NON-NLS-1$
+            }
           }
         }
       }

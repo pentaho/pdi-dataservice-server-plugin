@@ -108,7 +108,11 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
           final UIRepositoryContent contentToLock = (UIRepositoryContent)selectedRepoObjects.get(0);
           
           if(contentToLock.isLocked()) {
-            result = contentToLock.getRepositoryLock().getLogin().equalsIgnoreCase(repository.getUserInfo().getLogin());
+            if(repository instanceof PurRepository) {
+              result = ((PurRepository)repository).canUnlockFileById(contentToLock.getObjectId());
+            } else {
+              result = contentToLock.getRepositoryLock().getLogin().equalsIgnoreCase(repository.getUserInfo().getLogin());
+            }
           } else {
             // Content is not locked, permit locking
             result = true;

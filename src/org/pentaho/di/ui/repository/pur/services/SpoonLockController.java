@@ -192,7 +192,11 @@ public class SpoonLockController extends AbstractXulEventHandler {
         XulMenuitem lockMenuItem = (XulMenuitem)container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
         lockMenuItem.setSelected(true);
         // Permit locking/unlocking if the user owns the lock
-        setLockingAllowed(repoLock.getLogin().equalsIgnoreCase(Spoon.getInstance().getRepository().getUserInfo().getLogin()));
+        if(Spoon.getInstance().getRepository() instanceof PurRepository) {
+          setLockingAllowed(((PurRepository)Spoon.getInstance().getRepository()).canUnlockFileById(workingMeta.getObjectId()));
+        } else {
+          setLockingAllowed(repoLock.getLogin().equalsIgnoreCase(Spoon.getInstance().getRepository().getUserInfo().getLogin()));
+        }
       } else {
         setLockingAllowed(true);
       }
