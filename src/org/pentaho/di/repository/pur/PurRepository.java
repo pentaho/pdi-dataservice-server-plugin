@@ -1499,6 +1499,32 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     }
   }
 
+  private void rename(final RepositoryElementInterface element) throws KettleException {
+    ObjectId id = element.getObjectId();
+    RepositoryFile file = pur.getFileById(id.getId());
+    StringBuilder buf = new StringBuilder(file.getAbsolutePath().length());
+    buf.append(getParentPath(file.getAbsolutePath()));
+    buf.append(RepositoryFile.SEPARATOR);
+    buf.append(element.getName());
+    switch (element.getRepositoryElementType()) {
+      case DATABASE:
+        buf.append(RepositoryObjectType.DATABASE.getExtension());
+        break;
+      case SLAVE_SERVER:
+        buf.append(RepositoryObjectType.SLAVE_SERVER.getExtension());
+        break;
+      case CLUSTER_SCHEMA:
+        buf.append(RepositoryObjectType.CLUSTER_SCHEMA.getExtension());
+        break;
+      case PARTITION_SCHEMA:
+        buf.append(RepositoryObjectType.PARTITION_SCHEMA.getExtension());
+        break;
+      default:
+        throw new KettleException("It's not possible to rename Class [" + element.getClass().getName()
+            + "] to the repository");
+    }
+    pur.moveFile(file.getId(), buf.toString(), null);
+  }
   private void saveJob(final RepositoryElementInterface element, final String versionComment) throws KettleException {
     jobDelegate.saveSharedObjects(element, versionComment);
 
@@ -1552,9 +1578,18 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 	// Even if the object id is null, we still have to check if the element is not present in the PUR
 	// For example, if we import data from an XML file and there is a database with the same name in it.
 	//
+  boolean renameRequired = false; 
 	if (element.getObjectId()==null) {
 		element.setObjectId(getDatabaseID(element.getName()));
 	}
+	  try {
+  	  DatabaseMeta databaseMeta = loadDatabaseMeta(element.getObjectId(), null);
+  	  if(databaseMeta != null && databaseMeta.getName() != null) { 
+  	    renameRequired = !databaseMeta.getName().equals(element.getName());
+  	  }
+	  } catch(KettleException ke) {
+	    renameRequired = false;
+	  }
     boolean isUpdate = element.getObjectId() != null;
     RepositoryFile file = null;
     if (isUpdate) {
@@ -1572,6 +1607,9 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     element.setObjectId(objectId);
     element.setObjectRevision(getObjectRevision(objectId, null));
     element.clearChanged();
+    if(renameRequired) {
+      rename(element);
+    }
   }
 
   public DatabaseMeta loadDatabaseMeta(final ObjectId databaseId, final String versionId) throws KettleException {
@@ -1642,8 +1680,19 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   protected void savePartitionSchema(final RepositoryElementInterface element, final String versionComment) {
     boolean isUpdate = element.getObjectId() != null;
+    boolean renameRequired = false;
     RepositoryFile file = null;
+    
     try {
+      try {
+        PartitionSchema partitionSchema = loadPartitionSchema(element.getObjectId(), null);
+        if(partitionSchema != null && partitionSchema.getName() != null) {
+          renameRequired = !partitionSchema.getName().equals(element.getName());
+        }
+      } catch(KettleException ke) {
+        renameRequired = false;
+      }
+
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         file = pur.updateFile(file, new NodeRepositoryFileData(partitionSchemaTransformer.elementToDataNode(element)),
@@ -1659,6 +1708,10 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       element.setObjectId(objectId);
       element.setObjectRevision(getObjectRevision(objectId, null));
       element.clearChanged();
+      if(renameRequired) {
+        rename(element);
+      }
+
     } catch (KettleException ke) {
       ke.printStackTrace();
     }
@@ -1666,8 +1719,17 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   protected void saveSlaveServer(final RepositoryElementInterface element, final String versionComment) {
     boolean isUpdate = element.getObjectId() != null;
+    boolean renameRequired = false;
     RepositoryFile file = null;
     try {
+      try {
+        SlaveServer slaveServer = loadSlaveServer(element.getObjectId(), null);
+        if(slaveServer != null && slaveServer.getName() != null) {
+          renameRequired = !slaveServer.getName().equals(element.getName());
+        }
+      } catch(KettleException ke) {
+        renameRequired = false;
+      }
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         file = pur.updateFile(file, new NodeRepositoryFileData(slaveTransformer.elementToDataNode(element)),
@@ -1683,6 +1745,9 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       element.setObjectId(objectId);
       element.setObjectRevision(getObjectRevision(objectId, null));
       element.clearChanged();
+      if(renameRequired) {
+        rename(element);
+      }
     } catch (KettleException ke) {
       ke.printStackTrace();
     }
@@ -1691,8 +1756,17 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   protected void saveClusterSchema(final RepositoryElementInterface element, final String versionComment) {
     boolean isUpdate = element.getObjectId() != null;
+    boolean renameRequired = false;
     RepositoryFile file = null;
     try {
+      try {
+        ClusterSchema clusterSchema = loadClusterSchema(element.getObjectId(), getSlaveServers(), null);
+        if(clusterSchema != null && clusterSchema.getName() != null) {
+          renameRequired = !clusterSchema.getName().equals(element.getName());
+        }
+      } catch(KettleException ke) {
+        renameRequired = false;
+      }
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         file = pur.updateFile(file, new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)),
@@ -1708,6 +1782,9 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       element.setObjectId(objectId);
       element.setObjectRevision(getObjectRevision(objectId, null));
       element.clearChanged();
+      if(renameRequired) {
+        rename(element);
+      }
     } catch (KettleException ke) {
       ke.printStackTrace();
     }
@@ -1952,8 +2029,10 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
           permissionSet.add(ObjectPermission.WRITE);
         } else if (perm.equals(RepositoryFilePermission.WRITE_ACL)) {
           permissionSet.add(ObjectPermission.WRITE_ACL);
-        } else {
+        } else if (perm.equals(RepositoryFilePermission.ALL)) {
           permissionSet.add(ObjectPermission.ALL);
+        } else if (perm.equals(RepositoryFilePermission.APPEND)) {
+          permissionSet.add(ObjectPermission.APPEND);
         }
       }
 
@@ -2014,6 +2093,8 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
               permissionSet.add(RepositoryFilePermission.WRITE_ACL);
             } else if (perm.equals(ObjectPermission.ALL)) {
               permissionSet.add(RepositoryFilePermission.ALL);
+            } else if (perm.equals(RepositoryFilePermission.APPEND)) {
+              permissionSet.add(RepositoryFilePermission.APPEND);
             }
           }
         }
