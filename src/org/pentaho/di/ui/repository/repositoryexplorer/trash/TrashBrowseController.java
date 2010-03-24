@@ -16,6 +16,7 @@ import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
+import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIJob;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectories;
@@ -26,6 +27,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UITransformation;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.components.XulButton;
+import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.containers.XulDeck;
 import org.pentaho.ui.xul.containers.XulTree;
 
@@ -66,7 +68,8 @@ public class TrashBrowseController extends BrowseController {
   protected XulButton undeleteButton;
   
   protected XulButton deleteButton;
-
+  
+  protected XulMessageBox messageBox;
   // ~ Constructors ====================================================================================================
 
   public TrashBrowseController() {
@@ -130,8 +133,9 @@ public class TrashBrowseController extends BrowseController {
     this.repository = repository;
     createBindings();
     try {
+      messageBox = (XulMessageBox) document.createElement("messagebox");//$NON-NLS-1$
       trashService = (ITrashService) repository.getService(ITrashService.class);
-    } catch (KettleException e) {
+    } catch (Throwable e) {
       throw new ControllerInitializationException(e);
     }
   }
@@ -223,21 +227,29 @@ public class TrashBrowseController extends BrowseController {
     return trash;
   }
 
-  public void delete() throws KettleException {
+  public void delete() {
     if (selectedTrashFileItems != null && selectedTrashFileItems.size() > 0) {
       List<ObjectId> ids = new ArrayList<ObjectId>();
       for (UIRepositoryObject uiObj : selectedTrashFileItems) {
         ids.add(uiObj.getObjectId());
       }
-      trashService.delete(ids);
-      setTrash(trashService.getTrash());
+      try {
+        trashService.delete(ids);
+        setTrash(trashService.getTrash());
+      } catch(Throwable th) {
+        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+            "TrashBrowseController.UnableToDeleteFile", th.getLocalizedMessage())); //$NON-NLS-1$
+        messageBox.open();
+      }
     } else {
       // ui probably allowed the button to be enabled when it shouldn't have been enabled
       throw new RuntimeException();
     }
   }
 
-  public void undelete() throws KettleException {
+  public void undelete(){
     // make a copy because the selected trash items changes as soon as trashService.undelete is called
     List<UIRepositoryObject> selectedTrashFileItemsSnapshot = new ArrayList<UIRepositoryObject>(selectedTrashFileItems);
     if (selectedTrashFileItemsSnapshot != null && selectedTrashFileItemsSnapshot.size() > 0) {
@@ -245,16 +257,24 @@ public class TrashBrowseController extends BrowseController {
       for (UIRepositoryObject uiObj : selectedTrashFileItemsSnapshot) {
         ids.add(uiObj.getObjectId());
       }
-      trashService.undelete(ids);
-      setTrash(trashService.getTrash());
-      for (UIRepositoryObject uiObj : selectedTrashFileItemsSnapshot) {
-        if (uiObj instanceof UIRepositoryDirectory) {
-          // refresh the whole tree since XUL cannot refresh a portion of the tree at this time
-          ((UIRepositoryDirectory) uiObj).refresh();
-        } else {
-          // refresh the files in the folder but only the affected folders
-          uiObj.getParent().getRepositoryObjects().add(uiObj);
-        }
+      try {
+        trashService.undelete(ids);
+        setTrash(trashService.getTrash());
+        for (UIRepositoryObject uiObj : selectedTrashFileItemsSnapshot) {
+          if (uiObj instanceof UIRepositoryDirectory) {
+            // refresh the whole tree since XUL cannot refresh a portion of the tree at this time
+            ((UIRepositoryDirectory) uiObj).refresh();
+          } else {
+            // refresh the files in the folder but only the affected folders
+            uiObj.getParent().getRepositoryObjects().add(uiObj);
+          }
+        }        
+      } catch(Throwable th) {
+        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+            "TrashBrowseController.UnableToRestoreFile", th.getLocalizedMessage())); //$NON-NLS-1$
+        messageBox.open();
       }
     } else {
       // ui probably allowed the button to be enabled when it shouldn't have been enabled

@@ -681,7 +681,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public ObjectId getClusterID(String name) throws KettleException {
     try {
-      return getObjectId(name, null, RepositoryObjectType.CLUSTER_SCHEMA);
+      return getObjectId(name, null, RepositoryObjectType.CLUSTER_SCHEMA, false);
     } catch (Exception e) {
       throw new KettleException("Unable to get ID for cluster schema [" + name + "]", e);
     }
@@ -717,7 +717,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public ObjectId getDatabaseID(final String name) throws KettleException {
     try {
-      return getObjectId(name, null, RepositoryObjectType.DATABASE);
+      return getObjectId(name, null, RepositoryObjectType.DATABASE, false);
     } catch (Exception e) {
       throw new KettleException("Unable to get ID for database [" + name + "]", e);
     }
@@ -726,13 +726,13 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   /**
    * Copying the behavior of the original JCRRepository, this implementation returns IDs of deleted objects too.
    */
-  private ObjectId getObjectId(final String name, final RepositoryDirectory dir, final RepositoryObjectType objectType) {
+  private ObjectId getObjectId(final String name, final RepositoryDirectory dir, final RepositoryObjectType objectType, boolean includedDeleteFiles) {
     final String absPath = getPath(name, dir, objectType);
     RepositoryFile file = pur.getFile(absPath);
     if (file != null) {
       // file exists
       return new StringObjectId(file.getId().toString());
-    } else {
+    } else if(includedDeleteFiles){
       switch (objectType) {
         case DATABASE: {
           // file either never existed or has been deleted
@@ -798,6 +798,8 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
           throw new UnsupportedOperationException("not implemented");
         }
       }
+    } else {
+      return null;
     }
   }
 
@@ -1024,7 +1026,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public ObjectId getJobId(final String name, final RepositoryDirectory repositoryDirectory) throws KettleException {
     try {
-      return getObjectId(name, repositoryDirectory, RepositoryObjectType.JOB);
+      return getObjectId(name, repositoryDirectory, RepositoryObjectType.JOB, false);
     } catch (Exception e) {
       throw new KettleException("Unable to get ID for job [" + name + "]", e);
     }
@@ -1064,7 +1066,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public ObjectId getPartitionSchemaID(String name) throws KettleException {
     try {
-      return getObjectId(name, null, RepositoryObjectType.PARTITION_SCHEMA);
+      return getObjectId(name, null, RepositoryObjectType.PARTITION_SCHEMA, false);
     } catch (Exception e) {
       throw new KettleException("Unable to get ID for partition schema [" + name + "]", e);
     }
@@ -1127,7 +1129,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public ObjectId getSlaveID(String name) throws KettleException {
     try {
-      return getObjectId(name, null, RepositoryObjectType.SLAVE_SERVER);
+      return getObjectId(name, null, RepositoryObjectType.SLAVE_SERVER, false);
     } catch (Exception e) {
       throw new KettleException("Unable to get ID for slave server with name [" + name + "]", e);
     }
@@ -1213,7 +1215,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public ObjectId getTransformationID(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
     try {
-      return getObjectId(name, repositoryDirectory, RepositoryObjectType.TRANSFORMATION);
+      return getObjectId(name, repositoryDirectory, RepositoryObjectType.TRANSFORMATION, false);
     } catch (Exception e) {
       throw new KettleException("Unable to get ID for transformation [" + name + "]", e);
     }
