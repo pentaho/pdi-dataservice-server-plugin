@@ -158,7 +158,7 @@
       	public protected *;	
       }
       
-      -keepclasseswithmembernames class * implements org.pentaho.ui.xul.XulEventSourceAdapter {
+      -keep class * implements org.pentaho.ui.xul.XulEventSourceAdapter {
           void set*(***);
           void set*(int, ***);
 
