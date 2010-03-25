@@ -569,7 +569,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public void deleteClusterSchema(ObjectId idCluster) throws KettleException {
     try {
-      pur.deleteFile(idCluster.getId(), null);
+      pur.deleteFile(idCluster.getId(), true, null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete cluster schema with name [" + idCluster + "]", e);
     }
@@ -602,7 +602,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
     try {
-      pur.deleteFile(idPartitionSchema.getId(), null);
+      pur.deleteFile(idPartitionSchema.getId(), true, null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete partition schema with name [" + idPartitionSchema + "]", e);
     }
@@ -610,7 +610,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   public void deleteSlave(ObjectId idSlave) throws KettleException {
     try {
-      pur.deleteFile(idSlave.getId(), null);
+      pur.deleteFile(idSlave.getId(), true, null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete slave with name [" + idSlave + "]", e);
     }
@@ -983,7 +983,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   public void deleteDatabaseMeta(final String databaseName) throws KettleException {
     try {
       RepositoryFile fileToDelete = pur.getFile(getPath(databaseName, null, RepositoryObjectType.DATABASE));
-      pur.deleteFile(fileToDelete.getId(), null);
+      pur.deleteFile(fileToDelete.getId(), true, null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete database with name [" + databaseName + "]", e);
     }
