@@ -8,6 +8,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PurRepository;
+import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUISupportController;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
@@ -44,7 +45,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(PurRepository.class, key);
+      return BaseMessages.getString(PurRepositoryDialog.class, key);
     }
   };
   

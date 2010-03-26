@@ -14,6 +14,7 @@ import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.gui.GUIResource;
+import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.job.JobGraph;
@@ -51,7 +52,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(PurRepository.class, key);
+      return BaseMessages.getString(PurRepositoryDialog.class, key);
     }
   };
   
