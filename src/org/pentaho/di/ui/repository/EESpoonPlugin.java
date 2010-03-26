@@ -19,6 +19,7 @@ package org.pentaho.di.ui.repository;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
 
+import org.eclipse.swt.SWT;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IAbsSecurityManager;
@@ -35,11 +36,12 @@ import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.UISupportRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSecurityManagerUISupport;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSecurityProviderUISupport;
-import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.ChangedWarningController;
+import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.SpoonMenuABSController;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.trash.TrashUISupport;
+import org.pentaho.di.ui.spoon.ChangedWarningDialog;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
@@ -59,20 +61,6 @@ import org.pentaho.ui.xul.dom.Document;
 public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener {
 
   private XulDomContainer spoonXulContainer = null;
-
-  private ChangedWarningController transChangedWarningEventHandler = new ChangedWarningController() {
-    @Override
-    public String getXulDialogId() {
-      return "trans-graph-changed-warning-dialog"; //$NON-NLS-1$
-    }
-  };
-
-  private ChangedWarningController jobChangedWarningEventHandler = new ChangedWarningController() {
-    @Override
-    public String getXulDialogId() {
-      return "changed-warning-dialog"; //$NON-NLS-1$
-    }
-  };
 
   private ResourceBundle messages = new ResourceBundle() {
 
@@ -161,14 +149,12 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
 
   private void doOnSecurityCleanup() {
     updateMenuState(true);
+    updateChangedWarningDialog(true);
   }
 
   private void enableCreatePermission(boolean createPermitted) {
     updateMenuState(createPermitted);
-
-    // Update repository explorer
-    transChangedWarningEventHandler.setSavePermitted(createPermitted);
-    jobChangedWarningEventHandler.setSavePermitted(createPermitted);
+    updateChangedWarningDialog(createPermitted);
   }
 
   private void enableAdminPermission(boolean adminPermitted) {
@@ -187,9 +173,9 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     if (category.equals("spoon")) { //$NON-NLS-1$
       // Register the SpoonMenuLockController to modify the main Spoon Menu structure
       Spoon.getInstance().addSpoonMenuController(new SpoonMenuLockController());
+      // Register the ABS Menu controller
+      Spoon.getInstance().addSpoonMenuController(new SpoonMenuABSController());
 
-      container.addEventHandler(transChangedWarningEventHandler);
-      container.addEventHandler(jobChangedWarningEventHandler);
     } else if (category.equals("trans-graph") || category.equals("job-graph")) { //$NON-NLS-1$ //$NON-NLS-2$
       if ((Spoon.getInstance() != null) && (Spoon.getInstance().getRepository() != null)
           && (Spoon.getInstance().getRepository() instanceof PurRepository)) {
@@ -216,6 +202,46 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ((XulMenuitem) doc.getElementById("file-save")).setDisabled(!createPermitted); //$NON-NLS-1$
       ((XulMenuitem) doc.getElementById("file-save-as")).setDisabled(!createPermitted); //$NON-NLS-1$
       ((XulMenuitem) doc.getElementById("file-close")).setDisabled(!createPermitted); //$NON-NLS-1$
+    }
+  }
+  
+  public static void updateChangedWarningDialog(boolean createPermitted) {
+    if(!createPermitted) {
+      // Update the ChangedWarningDialog - Disable the yes button
+      ChangedWarningDialog.setInstance(new ChangedWarningDialog() {
+        private Class<?> PKG = EESpoonPlugin.class;
+        
+        public int show() {
+          return show(null);
+        }
+        
+        public int show(String fileName) {
+          XulMessageBox msgBox = null;
+          try {
+            msgBox = runXulChangedWarningDialog(fileName);
+            if(fileName != null) {
+              msgBox.setMessage(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.Message.WithParam", fileName));
+            } else {
+              msgBox.setMessage(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.Message"));
+            }
+
+            msgBox.setButtons(new Integer[] {SWT.YES | SWT.NO});
+          } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+          }
+          int retVal = msgBox.open();
+         
+          // Map from this question to make sense in the original context (Yes = save, No = no-save , Cancel = do not close)
+          if(retVal == SWT.YES) {
+            return SWT.NO;
+          } else {
+            return SWT.CANCEL;
+          }
+        }
+      });
+    } else {
+      ChangedWarningDialog.setInstance(new ChangedWarningDialog());
     }
   }
   
