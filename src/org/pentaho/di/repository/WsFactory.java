@@ -2,7 +2,6 @@ package org.pentaho.di.repository;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,8 +11,6 @@ import javax.xml.ws.Service;
 import javax.xml.ws.soap.SOAPBinding;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 
 import com.sun.xml.ws.developer.JAXWSProperties;
@@ -29,8 +26,6 @@ public class WsFactory {
   private static final String NAMESPACE_URI = "http://www.pentaho.org/ws/1.0"; //$NON-NLS-1$
 
   private static Map<String, Object> serviceCache = new HashMap<String, Object>();
-
-  private static final Log logger = LogFactory.getLog(WsFactory.class);
 
   @SuppressWarnings("unchecked")
   public synchronized static <T> T createService(final PurRepositoryMeta repositoryMeta, final String serviceName,
@@ -64,9 +59,7 @@ public class WsFactory {
   private static String makeKey(final URL url, final String serviceName, final String username, final String password,
       final Class<?> clazz) {
     String key = url.toString() + '_' + serviceName + '_' + username + '_' + password + '_' + clazz.getName();
-    logger.debug("raw key:" + key);
     String hashedKey = DigestUtils.md5Hex(key);
-    logger.debug("hashed key: " + hashedKey);
     return hashedKey;
   }
 }
