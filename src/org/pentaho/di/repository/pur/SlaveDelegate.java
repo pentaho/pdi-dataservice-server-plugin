@@ -28,6 +28,8 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
 
   private static final String PROP_PROXY_PORT = "PROXY_PORT"; //$NON-NLS-1$
 
+  private static final String PROP_WEBAPP_NAME = "WEBAPP_NAME"; //$NON-NLS-1$
+
   private static final String PROP_NON_PROXY_HOSTS = "NON_PROXY_HOSTS"; //$NON-NLS-1$
 
   private static final String PROP_MASTER = "MASTER"; //$NON-NLS-1$
@@ -65,9 +67,9 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
     slaveServer.setPassword(Encr.decryptPasswordOptionallyEncrypted(getString(rootNode, PROP_PASSWORD)));
     slaveServer.setProxyHostname(getString(rootNode, PROP_PROXY_HOST_NAME));
     slaveServer.setProxyPort(getString(rootNode, PROP_PROXY_PORT));
+    slaveServer.setWebAppName(getString(rootNode, PROP_WEBAPP_NAME));
     slaveServer.setNonProxyHosts(getString(rootNode, PROP_NON_PROXY_HOSTS));
     slaveServer.setMaster(rootNode.getProperty(PROP_MASTER).getBoolean());
-
   }
 
   public DataNode elementToDataNode(RepositoryElementInterface element) throws KettleException {
@@ -90,6 +92,7 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
       rootNode.setProperty(PROP_DESCRIPTION, slaveServer.getDescription());
       rootNode.setProperty(PROP_HOST_NAME, slaveServer.getHostname());
       rootNode.setProperty(PROP_PORT, slaveServer.getPort());
+      rootNode.setProperty(PROP_WEBAPP_NAME, slaveServer.getWebAppName());
       rootNode.setProperty(PROP_USERNAME, slaveServer.getUsername());
       rootNode.setProperty(PROP_PASSWORD, Encr.encryptPasswordIfNotUsingVariables(slaveServer.getPassword()));
       rootNode.setProperty(PROP_PROXY_HOST_NAME, slaveServer.getProxyHostname());
