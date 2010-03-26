@@ -220,9 +220,9 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
           try {
             msgBox = runXulChangedWarningDialog(fileName);
             if(fileName != null) {
-              msgBox.setMessage(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.Message.WithParam", fileName));
+              msgBox.setMessage(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.Fail.Message.WithParam", fileName)); //$NON-NLS-1$
             } else {
-              msgBox.setMessage(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.Message"));
+              msgBox.setMessage(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.Fail.Message")); //$NON-NLS-1$
             }
 
             msgBox.setButtons(new Integer[] {SWT.YES | SWT.NO});
