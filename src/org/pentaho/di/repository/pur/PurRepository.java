@@ -2,7 +2,6 @@ package org.pentaho.di.repository.pur;
 
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,11 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.xml.namespace.QName;
-import javax.xml.ws.BindingProvider;
-import javax.xml.ws.Service;
-import javax.xml.ws.soap.SOAPBinding;
 
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
@@ -66,6 +60,7 @@ import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.VersionRepository;
+import org.pentaho.di.repository.WsFactory;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
@@ -87,7 +82,6 @@ import com.pentaho.repository.RepositoryPaths;
 import com.pentaho.repository.pur.data.node.NodeRepositoryFileData;
 import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
 import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
-import com.sun.xml.ws.developer.JAXWSProperties;
 
 /**
  * Implementation of {@link Repository} that delegates to the Pentaho unified repository (PUR), an instance of
@@ -96,12 +90,7 @@ import com.sun.xml.ws.developer.JAXWSProperties;
  * @author Matt
  * @author mlowery
  */
-@RepositoryPlugin(
-	id="PentahoEnterpriseRepository", 
-	name="Enterprise Repository",
-	description="i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository",
-	metaClass="org.pentaho.di.repository.pur.PurRepositoryMeta"
-  )
+@RepositoryPlugin(id = "PentahoEnterpriseRepository", name = "Enterprise Repository", description = "i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository", metaClass = "org.pentaho.di.repository.pur.PurRepositoryMeta")
 public class PurRepository implements Repository, VersionRepository, IAclManager, ITrashService
 // , RevisionRepository 
 {
@@ -244,20 +233,8 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     populatePentahoSessionHolder();
 
     try {
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/webservices/unifiedRepository?wsdl";
-      Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", "unifiedRepository"));
-
-      IUnifiedRepositoryWebService repoWebService = service.getPort(IUnifiedRepositoryWebService.class);
-
-      // http basic authentication
-      ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, username);
-      ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, password);
-      // accept cookies to maintain session on server
-      ((BindingProvider) repoWebService).getRequestContext().put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
-      // support streaming binary data
-      ((BindingProvider) repoWebService).getRequestContext().put(JAXWSProperties.HTTP_CLIENT_STREAMING_CHUNK_SIZE, 8192);
-      SOAPBinding binding = (SOAPBinding) ((BindingProvider) repoWebService).getBinding();
-      binding.setMTOMEnabled(true);
+      IUnifiedRepositoryWebService repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
+          username, password, IUnifiedRepositoryWebService.class);
       
       pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
       userHomeAlias = pur.getFile(RepositoryPaths.getUserHomeFolderPath()).getId();
@@ -726,13 +703,14 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   /**
    * Copying the behavior of the original JCRRepository, this implementation returns IDs of deleted objects too.
    */
-  private ObjectId getObjectId(final String name, final RepositoryDirectory dir, final RepositoryObjectType objectType, boolean includedDeleteFiles) {
+  private ObjectId getObjectId(final String name, final RepositoryDirectory dir, final RepositoryObjectType objectType,
+      boolean includedDeleteFiles) {
     final String absPath = getPath(name, dir, objectType);
     RepositoryFile file = pur.getFile(absPath);
     if (file != null) {
       // file exists
       return new StringObjectId(file.getId().toString());
-    } else if(includedDeleteFiles){
+    } else if (includedDeleteFiles) {
       switch (objectType) {
         case DATABASE: {
           // file either never existed or has been deleted
@@ -1403,7 +1381,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   protected void lockFileById(final ObjectId id, final String message) throws KettleException {
     pur.lockFile(id.getId(), message);
   }
-  
+
   public boolean canUnlockFileById(final ObjectId id) {
     return pur.canUnlockFile(id.getId());
   }
@@ -1531,6 +1509,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     }
     pur.moveFile(file.getId(), buf.toString(), null);
   }
+
   private void saveJob(final RepositoryElementInterface element, final String versionComment) throws KettleException {
     jobDelegate.saveSharedObjects(element, versionComment);
 
@@ -1580,22 +1559,22 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
 
   protected void saveDatabaseMeta(final RepositoryElementInterface element, final String versionComment)
       throws KettleException {
-	  
-	// Even if the object id is null, we still have to check if the element is not present in the PUR
-	// For example, if we import data from an XML file and there is a database with the same name in it.
-	//
-  boolean renameRequired = false; 
-	if (element.getObjectId()==null) {
-		element.setObjectId(getDatabaseID(element.getName()));
-	}
-	  try {
-  	  DatabaseMeta databaseMeta = loadDatabaseMeta(element.getObjectId(), null);
-  	  if(databaseMeta != null && databaseMeta.getName() != null) { 
-  	    renameRequired = !databaseMeta.getName().equals(element.getName());
-  	  }
-	  } catch(KettleException ke) {
-	    renameRequired = false;
-	  }
+
+    // Even if the object id is null, we still have to check if the element is not present in the PUR
+    // For example, if we import data from an XML file and there is a database with the same name in it.
+    //
+    boolean renameRequired = false;
+    if (element.getObjectId() == null) {
+      element.setObjectId(getDatabaseID(element.getName()));
+    }
+    try {
+      DatabaseMeta databaseMeta = loadDatabaseMeta(element.getObjectId(), null);
+      if (databaseMeta != null && databaseMeta.getName() != null) {
+        renameRequired = !databaseMeta.getName().equals(element.getName());
+      }
+    } catch (KettleException ke) {
+      renameRequired = false;
+    }
     boolean isUpdate = element.getObjectId() != null;
     RepositoryFile file = null;
     if (isUpdate) {
@@ -1613,7 +1592,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     element.setObjectId(objectId);
     element.setObjectRevision(getObjectRevision(objectId, null));
     element.clearChanged();
-    if(renameRequired) {
+    if (renameRequired) {
       rename(element);
     }
   }
@@ -1688,14 +1667,14 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     boolean isUpdate = element.getObjectId() != null;
     boolean renameRequired = false;
     RepositoryFile file = null;
-    
+
     try {
       try {
         PartitionSchema partitionSchema = loadPartitionSchema(element.getObjectId(), null);
-        if(partitionSchema != null && partitionSchema.getName() != null) {
+        if (partitionSchema != null && partitionSchema.getName() != null) {
           renameRequired = !partitionSchema.getName().equals(element.getName());
         }
-      } catch(KettleException ke) {
+      } catch (KettleException ke) {
         renameRequired = false;
       }
 
@@ -1714,7 +1693,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       element.setObjectId(objectId);
       element.setObjectRevision(getObjectRevision(objectId, null));
       element.clearChanged();
-      if(renameRequired) {
+      if (renameRequired) {
         rename(element);
       }
 
@@ -1730,10 +1709,10 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     try {
       try {
         SlaveServer slaveServer = loadSlaveServer(element.getObjectId(), null);
-        if(slaveServer != null && slaveServer.getName() != null) {
+        if (slaveServer != null && slaveServer.getName() != null) {
           renameRequired = !slaveServer.getName().equals(element.getName());
         }
-      } catch(KettleException ke) {
+      } catch (KettleException ke) {
         renameRequired = false;
       }
       if (isUpdate) {
@@ -1751,7 +1730,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       element.setObjectId(objectId);
       element.setObjectRevision(getObjectRevision(objectId, null));
       element.clearChanged();
-      if(renameRequired) {
+      if (renameRequired) {
         rename(element);
       }
     } catch (KettleException ke) {
@@ -1767,10 +1746,10 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     try {
       try {
         ClusterSchema clusterSchema = loadClusterSchema(element.getObjectId(), getSlaveServers(), null);
-        if(clusterSchema != null && clusterSchema.getName() != null) {
+        if (clusterSchema != null && clusterSchema.getName() != null) {
           renameRequired = !clusterSchema.getName().equals(element.getName());
         }
-      } catch(KettleException ke) {
+      } catch (KettleException ke) {
         renameRequired = false;
       }
       if (isUpdate) {
@@ -1788,7 +1767,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       element.setObjectId(objectId);
       element.setObjectRevision(getObjectRevision(objectId, null));
       element.clearChanged();
-      if(renameRequired) {
+      if (renameRequired) {
         rename(element);
       }
     } catch (KettleException ke) {
@@ -2176,8 +2155,9 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     }
     return trash;
   }
-  
-  public RepositoryDirectory getDefaultSaveDirectory(RepositoryElementInterface repositoryElement) throws KettleException {
+
+  public RepositoryDirectory getDefaultSaveDirectory(RepositoryElementInterface repositoryElement)
+      throws KettleException {
     return getUserHomeDirectory();
   }
 

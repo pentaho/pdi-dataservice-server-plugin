@@ -1,12 +1,7 @@
 package org.pentaho.di.repository.pur;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.xml.namespace.QName;
-import javax.xml.ws.BindingProvider;
-import javax.xml.ws.Service;
 
 import org.apache.commons.logging.Log;
 import org.pentaho.di.core.exception.KettleException;
@@ -15,6 +10,7 @@ import org.pentaho.di.repository.IEEUser;
 import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.IUser;
+import org.pentaho.di.repository.WsFactory;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
@@ -39,14 +35,8 @@ public class UserRoleDelegate {
   public UserRoleDelegate(IRoleSupportSecurityManager rsm, PurRepositoryMeta repositoryMeta, IUser userInfo, Log logger) {
     try {
       this.logger = logger;
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/webservices/userRoleService?wsdl"; //$NON-NLS-1$
-      Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
-          "userRoleService"));//$NON-NLS-1$
-      userRoleWebService = service.getPort(IUserRoleWebService.class);
-      ((BindingProvider) userRoleWebService).getRequestContext().put(BindingProvider.USERNAME_PROPERTY,
-          userInfo.getLogin());
-      ((BindingProvider) userRoleWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY,
-          userInfo.getPassword());
+      userRoleWebService = WsFactory.createService(repositoryMeta, "userRoleService", userInfo.getLogin(), userInfo //$NON-NLS-1$
+          .getPassword(), IUserRoleWebService.class);
       this.rsm = rsm;
       updateUserRoleInfo();
       initializeLookupCache();

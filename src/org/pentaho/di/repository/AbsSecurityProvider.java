@@ -1,18 +1,12 @@
 package org.pentaho.di.repository;
 
-import java.net.URL;
 import java.util.List;
-
-import javax.xml.namespace.QName;
-import javax.xml.ws.BindingProvider;
-import javax.xml.ws.Service;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositorySecurityProvider;
-import org.pentaho.di.repository.AbsSecurityProvider;
 
 import com.pentaho.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 
@@ -22,14 +16,8 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
   public AbsSecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, IUser userInfo) {
     super(repository, repositoryMeta, userInfo);
     try {
-      final String url = repositoryMeta.getRepositoryLocation().getUrl() + "/webservices/authorizationPolicy?wsdl"; //$NON-NLS-1$
-      Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
-          "authorizationPolicy"));//$NON-NLS-1$
-      authorizationPolicyWebService = service.getPort(IAuthorizationPolicyWebService.class);
-      ((BindingProvider) authorizationPolicyWebService).getRequestContext().put(BindingProvider.USERNAME_PROPERTY,
-          userInfo.getLogin());
-      ((BindingProvider) authorizationPolicyWebService).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY,
-          userInfo.getPassword());
+      authorizationPolicyWebService = WsFactory.createService(repositoryMeta, "authorizationPolicy", userInfo //$NON-NLS-1$
+          .getLogin(), userInfo.getPassword(), IAuthorizationPolicyWebService.class);
       if (authorizationPolicyWebService == null) {
         getLogger().error(
             BaseMessages.getString(AbsSecurityProvider.class,

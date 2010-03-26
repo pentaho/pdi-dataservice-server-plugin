@@ -1,20 +1,14 @@
 package org.pentaho.di.repository;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import javax.xml.namespace.QName;
-import javax.xml.ws.BindingProvider;
-import javax.xml.ws.Service;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositorySecurityManager;
-import org.pentaho.di.repository.AbsSecurityManager;
 
 import com.pentaho.security.policy.rolebased.RoleBindingStruct;
 import com.pentaho.security.policy.rolebased.ws.IRoleAuthorizationPolicyRoleBindingDaoWebService;
@@ -28,15 +22,9 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
   public AbsSecurityManager(Repository repository, RepositoryMeta repositoryMeta, IUser userInfo) {
     super((PurRepository) repository, (PurRepositoryMeta) repositoryMeta, userInfo);
     try {
-        final String url = ((PurRepositoryMeta) repositoryMeta).getRepositoryLocation().getUrl()
-            + "/webservices/roleBindingDao?wsdl"; //$NON-NLS-1$
-        Service service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", //$NON-NLS-1$
-            "roleBindingDao"));//$NON-NLS-1$
-        authorizationPolicyRoleBindingService = service.getPort(IRoleAuthorizationPolicyRoleBindingDaoWebService.class);
-        ((BindingProvider) authorizationPolicyRoleBindingService).getRequestContext().put(
-            BindingProvider.USERNAME_PROPERTY, userInfo.getLogin());
-        ((BindingProvider) authorizationPolicyRoleBindingService).getRequestContext().put(
-            BindingProvider.PASSWORD_PROPERTY, userInfo.getPassword());
+      authorizationPolicyRoleBindingService = WsFactory.createService((PurRepositoryMeta) repositoryMeta,
+          "roleBindingDao", userInfo.getLogin(), userInfo.getPassword(), //$NON-NLS-1$
+          IRoleAuthorizationPolicyRoleBindingDaoWebService.class);
         if (authorizationPolicyRoleBindingService == null) {
           getLogger().error(
               BaseMessages.getString(AbsSecurityManager.class,
