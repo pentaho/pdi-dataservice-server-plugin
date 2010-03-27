@@ -55,9 +55,7 @@
   <!-- Copy all jars over to the plugin zip, 
   except for kettle, licensing jars, metro, xul, log4j, and pur (server-side) -->
   <target name="assemble.copy-libs" depends="install-antcontrib">
-    <copy todir="${approot.stage.dir}">
-      <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
-    </copy>
+
     <copy todir="${approot.stage.dir}/lib">
       <fileset dir="${lib.dir}">
         <exclude name="kettle-*.jar" />
@@ -79,6 +77,8 @@
       	      tofile="${approot.stage.dir}/lib/pentaho-ee-dsc-core-${dependency.pentaho-ee-dsc.revision}.jar" overwrite="true"/>
       	<copy file="${bi-platform-ee.obflib.dir}/pentaho-bi-platform-ee-${dependency.bi-platform.revision}-obf.jar"
       	      tofile="${approot.stage.dir}/lib/pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" overwrite="true"/>
+        <copy file="${dist.dir}/${ivy.artifact.id}-${project.revision}-obf.jar"
+        	  tofile="${approot.stage.dir}/${ivy.artifact.id}-${project.revision}.jar"/>
       </then>
       <else>
         <!-- copy the required jars to the plugin dist lib folder -->
@@ -89,6 +89,8 @@
           	<include name="pentaho-bi-platform-ee-${dependency.bi-platform.revision}.jar" />
           </fileset>
         </copy>
+        <copy file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar"
+        	  tofile="${approot.stage.dir}/${ivy.artifact.id}-${project.revision}.jar"/>
       </else>
     </if>
   </target>
@@ -99,14 +101,6 @@
 	
 	-->
   <target name="obfuscate">
-
-    <move todir="${dist.dir}">
-      <fileset dir="${dist.dir}">
-        <include name="**/*.jar" />
-        <exclude name="**/*-orig.jar" />
-      </fileset>
-      <mapper type="glob" from="*.jar" to="*-orig.jar" />
-    </move>
 
   	<!-- this project requires the platform ee assembly proguard file being present -->
   	<copy todir="${dist.dir}" file="${bi-platform-ee-assembly.dir}/dist/proguard-biserver-ee-${dependency.bi-platform.revision}.map"/>
@@ -130,8 +124,8 @@
       -libraryjars ${lib.dir}
       -libraryjars ${devlib.dir}
       
-      -injars      ${dist.dir}/${ivy.artifact.id}-${project.revision}-orig.jar
-      -outjars     ${dist.dir}/${ivy.artifact.id}-${project.revision}.jar
+      -injars      ${dist.dir}/${ivy.artifact.id}-${project.revision}.jar
+      -outjars     ${dist.dir}/${ivy.artifact.id}-${project.revision}-obf.jar
  
 	  -keepclasseswithmembernames class * implements org.pentaho.di.repository.Repository {
 		  public protected *;
@@ -183,15 +177,6 @@
     
       ]]>
     </proguard>
-  	
-  
-
-    <delete>
-      <fileset dir="${dist.dir}">
-        <include name="**/*-orig.jar" />
-      </fileset>
-    </delete>
-
   </target>
 
 
