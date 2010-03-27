@@ -1,6 +1,5 @@
 package org.pentaho.di.ui.repository.repositoryexplorer.abs.controller;
 
-import org.eclipse.swt.SWT;
 import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.repository.IAbsSecurityProvider;
@@ -8,23 +7,19 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.EESpoonPlugin;
-import org.pentaho.di.ui.spoon.ChangedWarningDialog;
 import org.pentaho.di.ui.spoon.ISpoonMenuController;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.ui.xul.components.XulMenuitem;
-import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulToolbarbutton;
 import org.pentaho.ui.xul.containers.XulMenu;
 import org.pentaho.ui.xul.dom.Document;
 
 public class SpoonMenuABSController implements ISpoonMenuController {
 
-  @Override
   public String getName() {
     return "SpoonMenuABSController"; //$NON-NLS-1$
   }
 
-  @Override
   public void updateMenu(Document doc) {
     try {
       Spoon spoon = Spoon.getInstance();
