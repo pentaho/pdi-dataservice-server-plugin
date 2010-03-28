@@ -171,10 +171,15 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
   public void applyToContainer(String category, XulDomContainer container) throws XulException {
     container.registerClassLoader(getClass().getClassLoader());
     if (category.equals("spoon")) { //$NON-NLS-1$
-      // Register the SpoonMenuLockController to modify the main Spoon Menu structure
-      Spoon.getInstance().addSpoonMenuController(new SpoonMenuLockController());
+
+      // register the two controllers, note that the lock controller must come 
+      // after the abs controller so the biz logic between the two hold.
+      
       // Register the ABS Menu controller
       Spoon.getInstance().addSpoonMenuController(new SpoonMenuABSController());
+
+      // Register the SpoonMenuLockController to modify the main Spoon Menu structure
+      Spoon.getInstance().addSpoonMenuController(new SpoonMenuLockController());
 
     } else if (category.equals("trans-graph") || category.equals("job-graph")) { //$NON-NLS-1$ //$NON-NLS-2$
       if ((Spoon.getInstance() != null) && (Spoon.getInstance().getRepository() != null)

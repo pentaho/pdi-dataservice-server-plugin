@@ -106,10 +106,22 @@ public class SpoonLockController extends AbstractXulEventHandler {
                 
                 // Execute binding. Notify listeners that the object is now locked
                 firePropertyChange("activeMetaUnlocked", null, "false"); //$NON-NLS-1$ //$NON-NLS-2$
+
+                // this keeps the menu item and the state in sync
+                // could a binding be used instead?
+                XulDomContainer container = getXulDomContainer();
+                XulMenuitem lockMenuItem = (XulMenuitem)container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
+                lockMenuItem.setSelected(true);
               } catch (Exception e) {
                 // convert to runtime exception so it bubbles up through the UI
                 throw new RuntimeException(e);
               }
+            } else {
+              // this keeps the menu item and the state in sync
+              // could a binding be used instead?              
+              XulDomContainer container = getXulDomContainer();
+              XulMenuitem lockMenuItem = (XulMenuitem)container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
+              lockMenuItem.setSelected(false);
             }
           }
     
