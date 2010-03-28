@@ -22,6 +22,7 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.TransMeta.TransformationType;
 import org.pentaho.di.trans.step.StepErrorMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
@@ -446,6 +447,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     }
     transMeta.setUsingThreadPriorityManagment(usingThreadPriorityManagement);
     transMeta.setSharedObjectsFile(getString(rootNode, PROP_SHARED_FILE));
+    String transTypeCode = getString(rootNode, PROP_TRANSFORMATION_TYPE);
+    transMeta.setTransformationType(TransformationType.getTransformationTypeByCode(transTypeCode));
 
     // Performance monitoring for steps...
     //
