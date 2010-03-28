@@ -232,5 +232,9 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSu
     // TODO Auto-generated method stub
     return new EEUserInfo();
   }
+  public List<IRole> getDefaultRoles() throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
 }

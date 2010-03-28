@@ -14,8 +14,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.ui.xul.util.AbstractModelList;
 
-public class UIEESecurityUser extends UISecurityUser{
-
+public class UIEESecurityUser extends UISecurityUser {
 
   private AbstractModelList<IUIRole> availableRoles;
   private AbstractModelList<IUIRole> assignedRoles;
@@ -28,7 +27,6 @@ public class UIEESecurityUser extends UISecurityUser{
     super(rsm);
     availableRoles = new AbstractModelList<IUIRole>();
     availableRoles.addPropertyChangeListener("children", new PropertyChangeListener() { //$NON-NLS-1$
-      
       public void propertyChange(PropertyChangeEvent evt) {
         UIEESecurityUser.this.firePropertyChange("availableRoles", null, availableRoles); //$NON-NLS-1$
       }
@@ -36,7 +34,6 @@ public class UIEESecurityUser extends UISecurityUser{
     
     assignedRoles = new AbstractModelList<IUIRole>();
     assignedRoles.addPropertyChangeListener("children", new PropertyChangeListener() { //$NON-NLS-1$
-      
       public void propertyChange(PropertyChangeEvent evt) {
         UIEESecurityUser.this.firePropertyChange("assignedRoles", null, assignedRoles); //$NON-NLS-1$
       }
@@ -49,7 +46,7 @@ public class UIEESecurityUser extends UISecurityUser{
     if(user instanceof IUIEEUser) {
       for(IUIRole role:((IUIEEUser)user).getRoles()) {
         removeFromAvailableRoles(role.getName());
-        addToSelectedRoles(UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role.getRole()));
+        addToAssignedRoles(UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role.getRole()));
       }
     }
   }
@@ -64,7 +61,7 @@ public class UIEESecurityUser extends UISecurityUser{
     this.availableSelectedRoles.clear();
     if(availableSelectedRoles != null && availableSelectedRoles.size() > 0) {
       for(Object role:availableSelectedRoles) {
-        this.availableSelectedRoles.add((UIRepositoryRole) role);
+        this.availableSelectedRoles.add((IUIRole) role);
       }
     }
     this.firePropertyChange("availableSelectedRoles", previousVal, this.availableSelectedRoles); //$NON-NLS-1$
@@ -81,13 +78,12 @@ public class UIEESecurityUser extends UISecurityUser{
     this.assignedSelectedRoles.clear();
     if(assignedSelectedRoles != null && assignedSelectedRoles.size() > 0) {
       for(Object role:assignedSelectedRoles) {
-        this.assignedSelectedRoles.add((UIRepositoryRole) role);
+        this.assignedSelectedRoles.add((IUIRole) role);
       }
     }
     this.firePropertyChange("assignedSelectedRoles", null, this.assignedSelectedRoles); //$NON-NLS-1$
     fireRoleUnassignmentPropertyChange();
   }
-
 
   public UIEESecurityUser getUISecurityUser() {
     return this;
@@ -108,8 +104,15 @@ public class UIEESecurityUser extends UISecurityUser{
   public List<IUIRole> getAssignedRoles() {
     return assignedRoles;
   }
+  
+  public void updateAssignedRoles(List<IUIRole> assignedRoles) {
+    for(IUIRole role : assignedRoles) {
+      assignRole(role);
+    }
+  }
+  
   public void setAssignedRoles(List<IUIRole> selectedRoles) {
-    List<IUIRole> previousValue = getPreviousSelectedRoles();
+    List<IUIRole> previousValue = getPreviousAssignedRoles();
     this.assignedRoles.clear();
     if(selectedRoles != null) {
       this.assignedRoles.addAll(selectedRoles);
@@ -130,29 +133,29 @@ public class UIEESecurityUser extends UISecurityUser{
   
   public void assignRoles(List<Object> rolesToAssign) {   
     for(Object roleToAssign:rolesToAssign) {
-      assignRole((UIRepositoryRole)roleToAssign);
+      assignRole((IUIRole)roleToAssign);
     }
     setAssignedSelectedRoles(rolesToAssign);
     setAvailableSelectedRoles(new ArrayList<Object>());
     this.firePropertyChange("roleAssignmentPossible", null, false); //$NON-NLS-1$
   }
 
-  public void assignRole(UIRepositoryRole roleToAssign) {
-    addToSelectedRoles(roleToAssign);
+  public void assignRole(IUIRole roleToAssign) {
+    addToAssignedRoles(roleToAssign);
     removeFromAvailableRoles(roleToAssign.getName());
   }
   
   public void unassignRoles(List<Object> rolesToUnAssign) {
     for(Object roleToUnAssign:rolesToUnAssign) {
-      unassignRole((UIRepositoryRole) roleToUnAssign);
+      unassignRole((IUIRole) roleToUnAssign);
     }
     setAvailableSelectedRoles(rolesToUnAssign);
     setAssignedSelectedRoles(new ArrayList<Object>());
     this.firePropertyChange("roleUnassignmentPossible", null, false); //$NON-NLS-1$
   }
 
-  public void unassignRole(UIRepositoryRole roleToUnAssign) {
-    removeFromSelectedRoles(roleToUnAssign.getName());
+  public void unassignRole(IUIRole roleToUnAssign) {
+    removeFromAssignedRoles(roleToUnAssign.getName());
     addToAvailableRoles(roleToUnAssign);
   }
   public boolean isRoleAssignmentPossible() {
@@ -189,8 +192,8 @@ public class UIEESecurityUser extends UISecurityUser{
     return userInfo;
   }
 
-  private void addToSelectedRoles(IUIRole roleToAdd) {
-    List<IUIRole> previousValue = getPreviousSelectedRoles();
+  private void addToAssignedRoles(IUIRole roleToAdd) {
+    List<IUIRole> previousValue = getPreviousAssignedRoles();
     assignedRoles.add(roleToAdd);
     this.firePropertyChange("assignedRoles", previousValue, assignedRoles); //$NON-NLS-1$
     if(assignedRoles.size() == 1) {
@@ -199,7 +202,7 @@ public class UIEESecurityUser extends UISecurityUser{
     fireRoleUnassignmentPropertyChange();
   }
 
-  private void addToAvailableRoles(UIRepositoryRole roleToAdd) {
+  private void addToAvailableRoles(IUIRole roleToAdd) {
     List<IUIRole> previousValue = getPreviousAvailableRoles();
     availableRoles.add(roleToAdd);
     if(availableRoles.size() == 1) {
@@ -208,6 +211,7 @@ public class UIEESecurityUser extends UISecurityUser{
     this.firePropertyChange("availableRoles", previousValue, availableRoles); //$NON-NLS-1$
     fireRoleAssignmentPropertyChange();
   }
+
   private void removeFromAvailableRoles(String roleName) {
     List<IUIRole> previousValue = getPreviousAvailableRoles();
     availableRoles.remove(getAvailableRole(roleName));
@@ -218,8 +222,8 @@ public class UIEESecurityUser extends UISecurityUser{
     fireRoleAssignmentPropertyChange();
   }
 
-  private void removeFromSelectedRoles(String roleName) {
-    List<IUIRole> previousValue = getPreviousSelectedRoles();
+  private void removeFromAssignedRoles(String roleName) {
+    List<IUIRole> previousValue = getPreviousAssignedRoles();
     assignedRoles.remove(getSelectedRole(roleName));
     if(assignedRoles.size() == 0) {
       setRoleUnassignmentPossible(false);      
@@ -227,14 +231,16 @@ public class UIEESecurityUser extends UISecurityUser{
     this.firePropertyChange("assignedRoles", previousValue, assignedRoles); //$NON-NLS-1$
     fireRoleUnassignmentPropertyChange();
   }
-  private void fireRoleUnassignmentPropertyChange () {
+
+  private void fireRoleUnassignmentPropertyChange() {
     if(roleUnassignmentPossible && assignedRoles.size() > 0 && assignedSelectedRoles.size() > 0) {
       this.firePropertyChange("roleUnassignmentPossible", null, true); //$NON-NLS-1$
     } else {
       this.firePropertyChange("roleUnassignmentPossible", null, false); //$NON-NLS-1$
     }
   }
-  private void fireRoleAssignmentPropertyChange () {
+
+  private void fireRoleAssignmentPropertyChange() {
     if(roleAssignmentPossible && availableRoles.size() > 0 && availableSelectedRoles.size() > 0) {
       this.firePropertyChange("roleAssignmentPossible", null, true); //$NON-NLS-1$
     } else {
@@ -268,7 +274,7 @@ public class UIEESecurityUser extends UISecurityUser{
     return previousValue;
   }
 
-  private List<IUIRole> getPreviousSelectedRoles() {
+  private List<IUIRole> getPreviousAssignedRoles() {
     List<IUIRole> previousValue = new ArrayList<IUIRole>();
     for (IUIRole ru : assignedRoles) {
       previousValue.add(ru);

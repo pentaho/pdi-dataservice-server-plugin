@@ -38,7 +38,16 @@ public class UserRoleHelper {
     }
     return roleList;
   }
-  
+
+  public static List<IRole> convertToListFromProxyPentahoDefaultRoles(UserRoleSecurityInfo info, IRoleSupportSecurityManager rsm) {
+    List<IRole> roleList = new ArrayList<IRole>();
+    List<ProxyPentahoRole> roles = info.getDefaultRoles();
+    List<UserToRoleAssignment>  assignments = info.getAssignments();
+    for (ProxyPentahoRole role : roles) {
+      roleList.add(convertFromProxyPentahoRole(role, assignments, rsm));
+    }
+    return roleList;
+  }
 
   public static ProxyPentahoRole getProxyPentahoRole(IUserRoleWebService userRoleWebService, String name)
       throws UserRoleException {

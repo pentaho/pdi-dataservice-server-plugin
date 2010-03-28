@@ -31,14 +31,23 @@ public interface IRoleSupportSecurityManager extends RepositorySecurityManager{
    * @throws KettleException 
    */  
   public IRole getRole(String name) throws KettleException;
+
   /**
    * Retrieves all available roles in the system
    * 
-   * @param name of the role to be searched
-   * @return role object matching the name 
+   * @return the list of available roles 
    * @throws KettleException 
    */  
   public List<IRole> getRoles() throws KettleException;
+  
+  /**
+   * Retrieves the default roles in the system.
+   * 
+   * @return the list of default roles
+   * @throws KettleException
+   */
+  public List<IRole> getDefaultRoles() throws KettleException;
+  
   /**
    * Save the list of roles in the system
    * 

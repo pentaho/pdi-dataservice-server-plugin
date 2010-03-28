@@ -261,6 +261,20 @@ public class UserRoleDelegate {
     }
   }
 
+  public List<IRole> getDefaultRoles() throws KettleException {
+    if (hasNecessaryPermissions) {
+      try {
+        return UserRoleHelper.convertToListFromProxyPentahoDefaultRoles(userRoleSecurityInfo, rsm);
+      } catch (Exception e) {
+        throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
+            "UserRoleDelegate.ERROR_0011_UNABLE_TO_GET_ROLES"), e); //$NON-NLS-1$
+      }
+    } else {
+      throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
+          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+    }
+  }
+  
   public void updateRole(IRole role) throws KettleException {
     if (hasNecessaryPermissions) {
       try {

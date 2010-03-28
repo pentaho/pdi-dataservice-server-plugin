@@ -501,6 +501,7 @@ public class EESecurityController extends SecurityController {
       if (service != null && service.getRoles() != null) {
         eeSecurityUser.clear();
         eeSecurityUser.setAvailableRoles(convertToUIRoleModel(service.getRoles()));
+        eeSecurityUser.updateAssignedRoles(convertToUIRoleModel(service.getDefaultRoles()));
       }
       eeSecurityUser.setMode(Mode.ADD);
       userDialog.setTitle(messages.getString("AddUserDialog.Title"));//$NON-NLS-1$

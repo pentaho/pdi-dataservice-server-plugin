@@ -106,6 +106,10 @@ public class PurRepositorySecurityManager implements IRoleSupportSecurityManager
 		return userRoleDelegate.getRoles();
 	}
 
+  public List<IRole> getDefaultRoles() throws KettleException {
+    return userRoleDelegate.getDefaultRoles();
+  }
+
 	public void updateRole(IRole role) throws KettleException {
 		userRoleDelegate.updateRole(role);		
 	}
