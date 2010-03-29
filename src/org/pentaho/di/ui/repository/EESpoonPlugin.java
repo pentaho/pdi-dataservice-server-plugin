@@ -139,7 +139,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
   private void doOnSecurityUpdate() throws KettleException {
     getMainSpoonContainer();
     Repository repository = Spoon.getInstance().getRepository();
-    if (repository.hasService(IAbsSecurityProvider.class)) {
+    if (repository != null && repository.hasService(IAbsSecurityProvider.class)) {
       IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
       // Execute credential lookup
       enableCreatePermission(securityProvider.isAllowed(IAbsSecurityProvider.CREATE_CONTENT_ACTION));
