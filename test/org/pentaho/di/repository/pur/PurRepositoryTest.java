@@ -98,7 +98,11 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     setUpUser();
     
     List<RepositoryFile> files = pur.getChildren(pur.getFile("/pentaho/acme/public").getId());
-    assertTrue("files not deleted: " + files.toString(), files.isEmpty());
+    StringBuilder buf = new StringBuilder();
+    for (RepositoryFile file : files) {
+      buf.append("\n").append(file);
+    }
+    assertTrue("files not deleted: " + buf, files.isEmpty());
   }
 
   private void setUpRoleBindings() {

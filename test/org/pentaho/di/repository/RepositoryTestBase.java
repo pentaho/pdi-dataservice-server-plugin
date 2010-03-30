@@ -605,8 +605,6 @@ public abstract class RepositoryTestBase {
     repository.deleteJob(jobMeta.getObjectId());
     assertFalse(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
 
-    assertEquals(jobMeta.getObjectId(), repository.getJobId(EXP_JOB_NAME, jobsDir));
-
     assertEquals(0, repository.getJobObjects(jobsDir.getObjectId(), false).size());
     assertEquals(1, repository.getJobObjects(jobsDir.getObjectId(), true).size());
     assertEquals(jobMeta.getName(), repository.getJobObjects(jobsDir.getObjectId(), true).get(0).getName());
@@ -821,8 +819,6 @@ public abstract class RepositoryTestBase {
     repository.deleteTransformation(transMeta.getObjectId());
     assertFalse(repository.exists(uniqueTransName, transDir, RepositoryObjectType.TRANSFORMATION));
 
-    assertEquals(transMeta.getObjectId(), repository.getTransformationID(uniqueTransName, transDir));
-
     assertEquals(0, repository.getTransformationObjects(transDir.getObjectId(), false).size());
     assertEquals(1, repository.getTransformationObjects(transDir.getObjectId(), true).size());
     assertEquals(transMeta.getName(), repository.getTransformationObjects(transDir.getObjectId(), true).get(0)
@@ -949,7 +945,6 @@ public abstract class RepositoryTestBase {
     RepositoryDirectory rootDir = initRepo();
     PartitionSchema partSchema = createPartitionSchema("");
     repository.save(partSchema, VERSION_COMMENT_V1, null);
-    deleteStack.push(partSchema);
     assertNotNull(partSchema.getObjectId());
     ObjectRevision version = partSchema.getObjectRevision();
     assertNotNull(version);
@@ -987,15 +982,13 @@ public abstract class RepositoryTestBase {
     repository.deletePartitionSchema(partSchema.getObjectId());
     assertFalse(repository.exists(EXP_PART_SCHEMA_NAME, null, RepositoryObjectType.PARTITION_SCHEMA));
 
-    assertEquals(partSchema.getObjectId(), repository.getPartitionSchemaID(EXP_PART_SCHEMA_NAME));
-
     assertEquals(0, repository.getPartitionSchemaIDs(false).length);
-    assertEquals(1, repository.getPartitionSchemaIDs(true).length);
-    assertEquals(partSchema.getObjectId(), repository.getPartitionSchemaIDs(true)[0]);
+    // shared object deletion is permanent by default
+    assertEquals(0, repository.getPartitionSchemaIDs(true).length);
 
     assertEquals(0, repository.getPartitionSchemaNames(false).length);
-    assertEquals(1, repository.getPartitionSchemaNames(true).length);
-    assertEquals(EXP_PART_SCHEMA_NAME, repository.getPartitionSchemaNames(true)[0]);
+    // shared object deletion is permanent by default
+    assertEquals(0, repository.getPartitionSchemaNames(true).length);
   }
 
   /**
@@ -1012,7 +1005,6 @@ public abstract class RepositoryTestBase {
     RepositoryDirectory rootDir = initRepo();
     ClusterSchema clusterSchema = createClusterSchema(EXP_CLUSTER_SCHEMA_NAME);
     repository.save(clusterSchema, VERSION_COMMENT_V1, null);
-    deleteStack.push(clusterSchema);
     assertNotNull(clusterSchema.getObjectId());
     ObjectRevision version = clusterSchema.getObjectRevision();
     assertNotNull(version);
@@ -1057,15 +1049,13 @@ public abstract class RepositoryTestBase {
     repository.deleteClusterSchema(clusterSchema.getObjectId());
     assertFalse(repository.exists(EXP_CLUSTER_SCHEMA_NAME, null, RepositoryObjectType.CLUSTER_SCHEMA));
 
-    assertEquals(clusterSchema.getObjectId(), repository.getClusterID(EXP_CLUSTER_SCHEMA_NAME));
-
     assertEquals(0, repository.getClusterIDs(false).length);
-    assertEquals(1, repository.getClusterIDs(true).length);
-    assertEquals(clusterSchema.getObjectId(), repository.getClusterIDs(true)[0]);
+    // shared object deletion is permanent by default
+    assertEquals(0, repository.getClusterIDs(true).length);
 
     assertEquals(0, repository.getClusterNames(false).length);
-    assertEquals(1, repository.getClusterNames(true).length);
-    assertEquals(EXP_CLUSTER_SCHEMA_NAME, repository.getClusterNames(true)[0]);
+    // shared object deletion is permanent by default
+    assertEquals(0, repository.getClusterNames(true).length);
   }
 
   protected ClusterSchema createClusterSchema(String clusterName) throws Exception {
@@ -1181,7 +1171,6 @@ public abstract class RepositoryTestBase {
   public void testDatabases() throws Exception {
     DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
-    deleteStack.push(dbMeta);
     assertNotNull(dbMeta.getObjectId());
     ObjectRevision v1 = dbMeta.getObjectRevision();
     assertNotNull(v1);
@@ -1230,15 +1219,13 @@ public abstract class RepositoryTestBase {
     repository.deleteDatabaseMeta(EXP_DBMETA_NAME);
     assertFalse(repository.exists(EXP_DBMETA_NAME, null, RepositoryObjectType.DATABASE));
 
-    assertEquals(dbMeta.getObjectId(), repository.getDatabaseID(EXP_DBMETA_NAME));
-
     assertEquals(0, repository.getDatabaseIDs(false).length);
-    assertEquals(1, repository.getDatabaseIDs(true).length);
-    assertEquals(dbMeta.getObjectId(), repository.getDatabaseIDs(true)[0]);
+    // shared object deletion is permanent by default
+    assertEquals(0, repository.getDatabaseIDs(true).length);
 
     assertEquals(0, repository.getDatabaseNames(false).length);
-    assertEquals(1, repository.getDatabaseNames(true).length);
-    assertEquals(EXP_DBMETA_NAME, repository.getDatabaseNames(true)[0]);
+    // shared object deletion is permanent by default
+    assertEquals(0, repository.getDatabaseNames(true).length);
 
     assertEquals(0, repository.readDatabases().size());
   }
@@ -1268,7 +1255,6 @@ public abstract class RepositoryTestBase {
   public void testSlaves() throws Exception {
     SlaveServer slave = createSlaveServer("");
     repository.save(slave, VERSION_COMMENT_V1, null);
-    deleteStack.push(slave);
     assertNotNull(slave.getObjectId());
     ObjectRevision version = slave.getObjectRevision();
     assertNotNull(version);
@@ -1311,15 +1297,13 @@ public abstract class RepositoryTestBase {
     repository.deleteSlave(slave.getObjectId());
     assertFalse(repository.exists(EXP_SLAVE_NAME, null, RepositoryObjectType.SLAVE_SERVER));
 
-    assertEquals(slave.getObjectId(), repository.getSlaveID(EXP_SLAVE_NAME));
-
     assertEquals(0, repository.getSlaveIDs(false).length);
-    assertEquals(1, repository.getSlaveIDs(true).length);
-    assertEquals(slave.getObjectId(), repository.getSlaveIDs(true)[0]);
+    // shared object deletion is permanent by default
+    assertEquals(0, repository.getSlaveIDs(true).length);
 
     assertEquals(0, repository.getSlaveNames(false).length);
-    assertEquals(1, repository.getSlaveNames(true).length);
-    assertEquals(EXP_SLAVE_NAME, repository.getSlaveNames(true)[0]);
+    // shared object deletion is permanent by default
+    assertEquals(0, repository.getSlaveNames(true).length);
 
     assertEquals(0, repository.getSlaveServers().size());
   }
