@@ -2006,8 +2006,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
           permissionSet.add(ObjectPermission.DELETE);
         } else if (perm.equals(RepositoryFilePermission.DELETE_CHILD)) {
           permissionSet.add(ObjectPermission.DELETE_CHILD);
-        } else if (perm.equals(RepositoryFilePermission.EXECUTE)) {
-          permissionSet.add(ObjectPermission.EXECUTE);
         } else if (perm.equals(RepositoryFilePermission.READ_ACL)) {
           permissionSet.add(ObjectPermission.READ_ACL);
         } else if (perm.equals(RepositoryFilePermission.WRITE)) {
@@ -2016,8 +2014,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
           permissionSet.add(ObjectPermission.WRITE_ACL);
         } else if (perm.equals(RepositoryFilePermission.ALL)) {
           permissionSet.add(ObjectPermission.ALL);
-        } else if (perm.equals(RepositoryFilePermission.APPEND)) {
-          permissionSet.add(ObjectPermission.APPEND);
         }
       }
 
@@ -2068,8 +2064,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
               permissionSet.add(RepositoryFilePermission.DELETE);
             } else if (perm.equals(ObjectPermission.DELETE_CHILD)) {
               permissionSet.add(RepositoryFilePermission.DELETE_CHILD);
-            } else if (perm.equals(ObjectPermission.EXECUTE)) {
-              permissionSet.add(RepositoryFilePermission.EXECUTE);
             } else if (perm.equals(ObjectPermission.READ_ACL)) {
               permissionSet.add(RepositoryFilePermission.READ_ACL);
             } else if (perm.equals(ObjectPermission.WRITE)) {
@@ -2078,8 +2072,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
               permissionSet.add(RepositoryFilePermission.WRITE_ACL);
             } else if (perm.equals(ObjectPermission.ALL)) {
               permissionSet.add(RepositoryFilePermission.ALL);
-            } else if (perm.equals(RepositoryFilePermission.APPEND)) {
-              permissionSet.add(RepositoryFilePermission.APPEND);
             }
           }
         }
