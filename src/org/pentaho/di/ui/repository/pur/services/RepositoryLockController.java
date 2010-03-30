@@ -105,7 +105,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       boolean result = false;
       
       try {
-        if(selectedRepoObjects.size() > 0 && selectedRepoObjects.get(0) instanceof UIRepositoryContent) {
+        if(selectedRepoObjects.size() == 1 && selectedRepoObjects.get(0) instanceof UIRepositoryContent) {
           final UIRepositoryContent contentToLock = (UIRepositoryContent)selectedRepoObjects.get(0);
           
           if(contentToLock.isLocked()) {
