@@ -6,6 +6,7 @@
             buttons="accept, cancel" buttonalign="right" title="${RepositoryConfigDialog.Title}"
             appicon="ui/images/spoon.ico"
             height="260" width="450"
+            resizable="true"
             xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
               xmlns:pen="http://www.pentaho.org/2008/xul"
               onload="repositoryConfigController.init()"  padding="10" spacing="3">

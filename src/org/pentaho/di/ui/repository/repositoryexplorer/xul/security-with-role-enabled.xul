@@ -125,6 +125,7 @@
 	    		ondialogcancel="iSecurityController.cancelAddRoleDialog()" 
 	    		buttons="accept, cancel" buttonalign="right" title="${AddRoleDialog.AddRole}"
 	    		appicon="ui/images/spoon.ico" 
+	    		resizable="true"
 	    		height="400" width="350">
 	       <vbox>
 				<label value="${AddUserDialog.RoleName}" />
