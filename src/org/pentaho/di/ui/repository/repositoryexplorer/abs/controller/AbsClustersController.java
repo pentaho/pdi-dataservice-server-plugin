@@ -7,6 +7,7 @@ import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.ClustersController;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UICluster;
 
 public class AbsClustersController extends ClustersController{
   IAbsSecurityProvider service;
@@ -33,14 +34,12 @@ public class AbsClustersController extends ClustersController{
     this.firePropertyChange("allowed", null, isAllowed);
   }
   
-  
-  @Override
-  public void setEnableButtons(boolean enable) {
-      if(isAllowed) {
-        enableButtons(true, enable, enable);
-      } else {
-        enableButtons(false, false, false);
-      }
+  public void setEnableButtons(List<UICluster> clusters) {
+    if(isAllowed) {
+      super.setEnableButtons(clusters);
+    } else {
+      enableButtons(false, false, false);
+    }
   }
   
   private boolean allowedActionsContains(IAbsSecurityProvider service, String action) throws KettleException {

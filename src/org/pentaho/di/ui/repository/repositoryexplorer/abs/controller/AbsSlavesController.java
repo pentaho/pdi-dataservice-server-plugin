@@ -7,6 +7,7 @@ import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.SlavesController;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UISlave;
 
 public class AbsSlavesController extends SlavesController{
   IAbsSecurityProvider service;
@@ -25,9 +26,9 @@ public class AbsSlavesController extends SlavesController{
   }
 
   @Override
-  public void setEnableButtons(boolean enable) {
+  public void setEnableButtons(List<UISlave> slaves) {
       if(isAllowed) {
-        enableButtons(true, enable, enable);
+        super.setEnableButtons(slaves);
       } else {
         enableButtons(false, false, false);
       }

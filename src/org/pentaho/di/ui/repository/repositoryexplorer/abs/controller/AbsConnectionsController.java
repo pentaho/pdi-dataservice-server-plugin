@@ -7,6 +7,7 @@ import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.ConnectionsController;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIDatabaseConnection;
 
 public class AbsConnectionsController extends ConnectionsController{
   IAbsSecurityProvider service;
@@ -34,9 +35,9 @@ public class AbsConnectionsController extends ConnectionsController{
   }
 
   @Override
-  public void setEnableButtons(boolean enable) {
+  public void setEnableButtons(List<UIDatabaseConnection> connections) {
       if(isAllowed) {
-        enableButtons(true, enable, enable);
+        super.setEnableButtons(connections);
       } else {
         enableButtons(false, false, false);
       }

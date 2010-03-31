@@ -7,6 +7,7 @@ import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.PartitionsController;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIPartition;
 
 public class AbsPartitionsController extends PartitionsController{
   IAbsSecurityProvider service;
@@ -25,9 +26,9 @@ public class AbsPartitionsController extends PartitionsController{
   }
 
   @Override
-  public void setEnableButtons(boolean enable) {
+  public void setEnableButtons(List<UIPartition> partitions) {
       if(isAllowed) {
-        enableButtons(true, enable, enable);
+        super.setEnableButtons(partitions);
       } else {
         enableButtons(false, false, false);
       }
