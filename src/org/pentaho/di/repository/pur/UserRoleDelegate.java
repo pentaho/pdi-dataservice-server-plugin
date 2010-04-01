@@ -11,6 +11,8 @@ import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.WsFactory;
+import org.pentaho.platform.engine.security.userrole.ws.IUserDetailsRoleListWebService;
+import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
@@ -20,54 +22,60 @@ import org.pentaho.platform.engine.security.userroledao.ws.UserRoleSecurityInfo;
 public class UserRoleDelegate {
   private UserRoleListChangeListenerCollection userRoleListChangeListeners;
 
-  IUserRoleWebService userRoleWebService = null;
+  IUserRoleWebService userRoleWebService;
 
-  IRoleSupportSecurityManager rsm = null;
+  IUserDetailsRoleListWebService userDetailsRoleListWebService;
+
+  IRoleSupportSecurityManager rsm;
 
   Log logger;
 
-  UserRoleLookupCache lookupCache = null;
+  UserRoleLookupCache lookupCache;
 
   UserRoleSecurityInfo userRoleSecurityInfo;
 
+  UserRoleInfo userRoleInfo;
+
   boolean hasNecessaryPermissions = false;
+  boolean managed = true;
 
   public UserRoleDelegate(IRoleSupportSecurityManager rsm, PurRepositoryMeta repositoryMeta, IUser userInfo, Log logger) {
     try {
       this.logger = logger;
+      userDetailsRoleListWebService = WsFactory.createService(repositoryMeta, "userRoleListService", userInfo //$NON-NLS-1$
+          .getLogin(), userInfo.getPassword(), IUserDetailsRoleListWebService.class);
       userRoleWebService = WsFactory.createService(repositoryMeta, "userRoleService", userInfo.getLogin(), userInfo //$NON-NLS-1$
           .getPassword(), IUserRoleWebService.class);
       this.rsm = rsm;
       updateUserRoleInfo();
-      initializeLookupCache();
     } catch (Exception e) {
       this.logger.error(BaseMessages.getString(UserRoleDelegate.class,
           "UserRoleDelegate.ERROR_0001_UNABLE_TO_INITIALIZE_USER_ROLE_WEBSVC"), e); //$NON-NLS-1$
     }
   }
 
-  public void initializeLookupCache() {
-    lookupCache = new UserRoleLookupCache(userRoleWebService, rsm);
-  }
-
   public void updateUserRoleInfo() throws UserRoleException {
-    try  {
+    try {
       userRoleSecurityInfo = userRoleWebService.getUserRoleSecurityInfo();
+      lookupCache = new UserRoleLookupCache(userRoleSecurityInfo, rsm);
       hasNecessaryPermissions = true;
+      managed = true;
     } catch (UserRoleException e) {
+      userRoleInfo = userDetailsRoleListWebService.getUserRoleInfo();
       hasNecessaryPermissions = false;
-      throw e;
+      managed = false;
     }
   }
-
+  public boolean isManaged() {
+    return managed;
+  }
   public void createUser(IUser newUser) throws KettleException {
     if (hasNecessaryPermissions) {
       try {
         ProxyPentahoUser user = UserRoleHelper.convertToPentahoProxyUser(newUser);
         userRoleWebService.createUser(user);
-        if(newUser instanceof IEEUser) {
-          userRoleWebService.setRoles(user,
-              UserRoleHelper.convertToPentahoProxyRoles(((IEEUser)newUser).getRoles()));
+        if (newUser instanceof IEEUser) {
+          userRoleWebService.setRoles(user, UserRoleHelper.convertToPentahoProxyRoles(((IEEUser) newUser).getRoles()));
         }
         lookupCache.insertUserToLookupSet(newUser);
         fireUserRoleListChange();
@@ -77,7 +85,7 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
 
   }
@@ -94,7 +102,7 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
 
@@ -117,7 +125,7 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
 
@@ -140,7 +148,7 @@ public class UserRoleDelegate {
       return userInfo;
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
 
@@ -159,21 +167,20 @@ public class UserRoleDelegate {
       return userInfo;
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
 
   public List<IUser> getUsers() throws KettleException {
-    if (hasNecessaryPermissions) {
-      try {
+    try {
+      if (hasNecessaryPermissions) {
         return UserRoleHelper.convertFromProxyPentahoUsers(userRoleSecurityInfo, rsm);
-      } catch (Exception e) {
-        throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-            "UserRoleDelegate.ERROR_0006_UNABLE_TO_GET_USERS"), e); //$NON-NLS-1$
+      } else {
+        return UserRoleHelper.convertFromNonPentahoUsers(userRoleInfo, rsm);
       }
-    } else {
+    } catch (Exception e) {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0006_UNABLE_TO_GET_USERS"), e); //$NON-NLS-1$
     }
   }
 
@@ -182,9 +189,9 @@ public class UserRoleDelegate {
       try {
         ProxyPentahoUser proxyUser = UserRoleHelper.convertToPentahoProxyUser(user);
         userRoleWebService.updateUser(proxyUser);
-        if(user instanceof IEEUser) {
-          userRoleWebService.setRoles(proxyUser,
-              UserRoleHelper.convertToPentahoProxyRoles(((IEEUser)user).getRoles()));
+        if (user instanceof IEEUser) {
+          userRoleWebService
+              .setRoles(proxyUser, UserRoleHelper.convertToPentahoProxyRoles(((IEEUser) user).getRoles()));
         }
         lookupCache.updateUserInLookupSet(user);
         fireUserRoleListChange();
@@ -194,7 +201,7 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
 
@@ -212,7 +219,7 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
 
@@ -228,7 +235,7 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
 
@@ -243,21 +250,20 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
 
   public List<IRole> getRoles() throws KettleException {
-    if (hasNecessaryPermissions) {
-      try {
-        return UserRoleHelper.convertToListFromProxyPentahoRoles(userRoleSecurityInfo, rsm);
-      } catch (Exception e) {
-        throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-            "UserRoleDelegate.ERROR_0011_UNABLE_TO_GET_ROLES"), e); //$NON-NLS-1$
+    try {
+      if (hasNecessaryPermissions) {
+          return UserRoleHelper.convertToListFromProxyPentahoRoles(userRoleSecurityInfo, rsm);
+      } else {
+        return UserRoleHelper.convertToListFromNonPentahoRoles(userRoleInfo, rsm);
       }
-    } else {
+    } catch (Exception e) {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0011_UNABLE_TO_GET_ROLES"), e); //$NON-NLS-1$
     }
   }
 
@@ -271,10 +277,10 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
-  
+
   public void updateRole(IRole role) throws KettleException {
     if (hasNecessaryPermissions) {
       try {
@@ -291,7 +297,7 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
   }
 
@@ -314,7 +320,7 @@ public class UserRoleDelegate {
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-          "UserRoleDelegate.ERROR_0010_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
+          "UserRoleDelegate.ERROR_0014_INSUFFICIENT_PRIVILEGES")); //$NON-NLS-1$
     }
 
   }

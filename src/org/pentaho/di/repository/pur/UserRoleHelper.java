@@ -11,6 +11,7 @@ import org.pentaho.di.repository.IEEUser;
 import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.IUser;
+import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
@@ -29,6 +30,16 @@ public class UserRoleHelper {
     }
     return userList;
   }
+
+  public static List<IUser> convertFromNonPentahoUsers(UserRoleInfo info, IRoleSupportSecurityManager rsm) {
+    List<IUser> userList = new ArrayList<IUser>();
+    List<String> users = info.getUsers();
+    for(String user:users) {
+      userList.add(convertFromNonPentahoUser(user, rsm));
+    }
+    return userList;
+  }
+
   public static List<IRole> convertToListFromProxyPentahoRoles(UserRoleSecurityInfo info, IRoleSupportSecurityManager rsm) {
     List<IRole> roleList = new ArrayList<IRole>();
     List<ProxyPentahoRole> roles = info.getRoles();
@@ -39,6 +50,15 @@ public class UserRoleHelper {
     return roleList;
   }
 
+  public static List<IRole> convertToListFromNonPentahoRoles(UserRoleInfo info, IRoleSupportSecurityManager rsm) {
+    List<IRole> roleList = new ArrayList<IRole>();
+    List<String> roles = info.getRoles();
+    for (String role : roles) {
+      roleList.add(convertFromNonPentahoRole(role, rsm));
+    }
+    return roleList;
+  }
+  
   public static List<IRole> convertToListFromProxyPentahoDefaultRoles(UserRoleSecurityInfo info, IRoleSupportSecurityManager rsm) {
     List<IRole> roleList = new ArrayList<IRole>();
     List<ProxyPentahoRole> roles = info.getDefaultRoles();
@@ -242,6 +262,19 @@ public class UserRoleHelper {
     }
     return roleInfo;
   }
+  
+  public static IRole convertFromNonPentahoRole(String role, IRoleSupportSecurityManager rsm) {
+    IRole roleInfo = null;
+    try {
+      roleInfo = rsm.constructRole();
+      roleInfo.setName(role);
+    } catch (KettleException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return roleInfo;
+  }
+  
   public static IUser convertFromProxyPentahoUser(ProxyPentahoUser user, List<UserToRoleAssignment> assignments, IRoleSupportSecurityManager rsm) {
     IUser userInfo = null;
     try {
@@ -259,7 +292,19 @@ public class UserRoleHelper {
     }    
     return userInfo;
   }
-  
+
+  public static IUser convertFromNonPentahoUser(String user, IRoleSupportSecurityManager rsm) {
+    IUser userInfo = null;
+    try {
+      userInfo = rsm.constructUser();
+      userInfo.setLogin(user);
+      userInfo.setName(user);
+    } catch (KettleException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }    
+    return userInfo;
+  }
   public static Set<IUser> getUsersForRole(String name, List<UserToRoleAssignment> assignments, IRoleSupportSecurityManager rsm) {
     Set<IUser> users = new HashSet<IUser>();
     for(UserToRoleAssignment assignment:assignments) {

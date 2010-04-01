@@ -31,7 +31,6 @@ import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectRecipient;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
@@ -113,6 +112,8 @@ public class EESecurityController extends SecurityController {
   private XulListbox assignedUsers;
 
   private XulButton roleEditButton;
+  
+  private XulButton roleAddButton;
 
   private XulButton roleRemoveButton;
 
@@ -189,7 +190,8 @@ public class EESecurityController extends SecurityController {
 
     roleRadioButton = (XulRadio) document.getElementById("role-radio-button");//$NON-NLS-1$
     userRadioButton = (XulRadio) document.getElementById("user-radio-button");//$NON-NLS-1$
-
+    
+    roleAddButton = (XulButton) document.getElementById("role-add");//$NON-NLS-1$
     roleEditButton = (XulButton) document.getElementById("role-edit");//$NON-NLS-1$
     roleRemoveButton = (XulButton) document.getElementById("role-remove");//$NON-NLS-1$
 
@@ -331,49 +333,10 @@ public class EESecurityController extends SecurityController {
 
     try {
       bf.setBindingType(Binding.Type.ONE_WAY);
-
-      BindingConvertor<Integer, Boolean> buttonConverter = new BindingConvertor<Integer, Boolean>() {
-
-        @Override
-        public Boolean sourceToTarget(Integer value) {
-          if (value != null && value >= 0) {
-            return false;
-          }
-          return true;
-        }
-
-        @Override
-        public Integer targetToSource(Boolean value) {
-          // TODO Auto-generated method stub
-          return null;
-        }
-      };
-      BindingConvertor<Object, Boolean> removeButtonConverter = new BindingConvertor<Object, Boolean>() {
-
-        @Override
-        public Boolean sourceToTarget(Object value) {
-          if (value != null) {
-            return false;
-          }
-          return true;
-        }
-
-        @Override
-        public Object targetToSource(Boolean value) {
-          // TODO Auto-generated method stub
-          return null;
-        }
-      };
-      bf.createBinding(roleListBox, "selectedIndex", roleEditButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      bf.createBinding(roleListBox, "selectedIndex", roleRemoveButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-
+      bf.createBinding(roleListBox, "selectedIndex", this, "enableButtons");//$NON-NLS-1$ //$NON-NLS-2$
       bf.setBindingType(Binding.Type.ONE_WAY);
       // Action based security permissions
       bf.createBinding(roleListBox, "selectedItem", eeSecurity, "selectedRole");//$NON-NLS-1$ //$NON-NLS-2$
-      bf.createBinding(roleListBox, "selectedIndex", addUserToRoleButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      bf.createBinding(roleDetailTable, "selectedItem", removeUserFromRoleButton, "disabled", removeButtonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      bf.createBinding(userListBox, "selectedIndex", addRoleToUserButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-      bf.createBinding(userDetailTable, "selectedItem", removeRoleFromUserButton, "disabled", removeButtonConverter);//$NON-NLS-1$ //$NON-NLS-2$
       bf.createBinding(eeSecurity, "roleList", roleListBox, "elements").fireSourceChanged();//$NON-NLS-1$ //$NON-NLS-2$
       bf.createBinding(roleListBox, "selectedItem", eeSecurity, "selectedRole");//$NON-NLS-1$ //$NON-NLS-2$
 
@@ -766,5 +729,18 @@ public class EESecurityController extends SecurityController {
       rusers.add(UIObjectRegistery.getInstance().constructUIRepositoryUser(user));
     }
     return rusers;
-  }  
+  }
+
+
+  @Override
+  protected void enableButtons(boolean enableNew, boolean enableEdit, boolean enableRemove) {
+    super.enableButtons(enableNew, enableEdit, enableRemove);
+    roleAddButton.setDisabled(!enableNew);
+    roleEditButton.setDisabled(!enableEdit);
+    roleRemoveButton.setDisabled(!enableRemove);
+    addUserToRoleButton.setDisabled(!enableNew);
+    removeUserFromRoleButton.setDisabled(!enableNew);
+    addRoleToUserButton.setDisabled(!enableNew);
+    removeRoleFromUserButton .setDisabled(!enableNew);
+  }
 }

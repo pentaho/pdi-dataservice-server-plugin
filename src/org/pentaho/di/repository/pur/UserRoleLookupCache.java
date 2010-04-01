@@ -10,10 +10,10 @@ import org.pentaho.di.repository.IEEUser;
 import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.IUser;
-import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
+import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
-import org.pentaho.platform.engine.security.userroledao.ws.UserRoleException;
+import org.pentaho.platform.engine.security.userroledao.ws.UserRoleSecurityInfo;
 
 public class UserRoleLookupCache {
   Set<IUser> userInfoSet;
@@ -22,20 +22,29 @@ public class UserRoleLookupCache {
   
   IRoleSupportSecurityManager rsm;
   
-  public UserRoleLookupCache(IUserRoleWebService userRoleWebService, IRoleSupportSecurityManager rsm) {
-    try {
+  
+  public UserRoleLookupCache(UserRoleInfo userRoleInfo, IRoleSupportSecurityManager rsm) {
+    this.rsm = rsm;
+    userInfoSet = new HashSet<IUser>();
+    for (String user : userRoleInfo.getUsers()) {
+      userInfoSet.add(createUserInfo(user));
+    }
+    roleInfoSet = new HashSet<IRole>();
+    for (String role : userRoleInfo.getRoles()) {
+      roleInfoSet.add(createRoleInfo(role));
+    }
+    
+  }
+  public UserRoleLookupCache(UserRoleSecurityInfo userRoleSecurityInfo, IRoleSupportSecurityManager rsm) {
       this.rsm = rsm;
       userInfoSet = new HashSet<IUser>();
-      for (ProxyPentahoUser user : userRoleWebService.getUsers()) {
+      for (ProxyPentahoUser user : userRoleSecurityInfo.getUsers()) {
         userInfoSet.add(createUserInfo(user));
       }
       roleInfoSet = new HashSet<IRole>();
-      for (ProxyPentahoRole role : userRoleWebService.getRoles()) {
+      for (ProxyPentahoRole role : userRoleSecurityInfo.getRoles()) {
         roleInfoSet.add(createRoleInfo(role));
       }
-    } catch (UserRoleException ure) {
-
-    }
   }
 
   public IUser lookupUser(ProxyPentahoUser proxyUser) {
@@ -167,4 +176,27 @@ public class UserRoleLookupCache {
     return roleInfo;
   }
 
+  private IUser createUserInfo(String user) {
+    IUser userInfo = null;
+    try {
+      userInfo = this.rsm.constructUser();
+      userInfo.setName(user);
+    } catch (KettleException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return userInfo;
+  }
+
+  private IRole createRoleInfo(String role) {
+    IRole roleInfo = null;
+    try {
+      roleInfo = rsm.constructRole();
+    } catch (KettleException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    roleInfo.setName(role);
+    return roleInfo;
+  }
 }

@@ -159,5 +159,9 @@ public class PurRepositorySecurityManager implements IRoleSupportSecurityManager
     return logger;
   }
 
+  public boolean isManaged() throws KettleException {
+    return userRoleDelegate.isManaged();
+  }
+
 
 }

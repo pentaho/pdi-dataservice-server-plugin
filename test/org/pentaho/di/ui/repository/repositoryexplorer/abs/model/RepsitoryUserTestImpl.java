@@ -236,5 +236,9 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSu
     // TODO Auto-generated method stub
     return null;
   }
+  public boolean isManaged() throws KettleException {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
 }
