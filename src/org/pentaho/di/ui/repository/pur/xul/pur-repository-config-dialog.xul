@@ -15,10 +15,10 @@
 	          <hbox flex="1">
 		           <vbox flex="4">
 		                <textbox id="repository-url"  multiline="false"/>
+		                <label value="${RepositoryConfigDialog.RepositoryID}"/>
+		                <textbox id="repository-id" multiline="false"/>
 		                <label value="${RepositoryConfigDialog.RepositoryName}"/>
-		                <textbox id="repository-name" multiline="false"/>
-		                <label value="${RepositoryConfigDialog.RepositoryDescription}"/>
-		                <textbox id="repository-description"  multiline="false"/>
+		                <textbox id="repository-name"  multiline="false"/>
 		                <checkbox id="repository-modification-comments" command="repositoryConfigController.updateModificationComments()" label="${RepositoryConfigDialog.ModificationComments}" visible="false"/>
 		          </vbox>
 		          <vbox flex="1">

@@ -17,6 +17,7 @@ import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.ui.repository.dialog.RepositoryDialogInterface;
 import org.pentaho.di.ui.repository.pur.controller.RepositoryConfigController;
+import org.pentaho.di.ui.repository.pur.model.RepositoryConfigModel;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulRunner;
@@ -63,7 +64,7 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
     this.style = style;
   }
 
-  public RepositoryMeta open() {
+  public RepositoryMeta open(MODE mode) {
     try {
       SwtXulLoader swtLoader = new SwtXulLoader();
       swtLoader.setOuterContext(parent);
@@ -79,6 +80,7 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
         }
         
       });
+      repositoryConfigController.setMode(mode);
       repositoryConfigController.setMessages(resourceBundle);
       repositoryConfigController.setRepositoryMeta(repositoryMeta);
       repositoryConfigController.setCallback(new IRepositoryConfigDialogCallback() {
