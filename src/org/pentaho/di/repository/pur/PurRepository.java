@@ -261,6 +261,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
       registerRepositoryService(ITrashService.class, this);
       registerRepositoryService(ILockService.class, this);
     } catch (Throwable e) {
+      WsFactory.clearServices();
       throw new KettleException(e);
     }
   }
@@ -295,7 +296,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
   }
 
   public void disconnect() {
-
+    WsFactory.clearServices();
   }
 
   public int countNrJobEntryAttributes(ObjectId idJobentry, String code) throws KettleException {
