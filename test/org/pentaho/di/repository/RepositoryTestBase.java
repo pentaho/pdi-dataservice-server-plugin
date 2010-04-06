@@ -1474,7 +1474,7 @@ public abstract class RepositoryTestBase {
     ObjectAcl acl = ((IAclManager)repository).getAcl(jobMeta.getObjectId(), false);
     assertNotNull(acl);
     acl.setEntriesInheriting(false);
-    ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER),EnumSet.of(ObjectPermission.DELETE, ObjectPermission.DELETE_CHILD, ObjectPermission.READ, ObjectPermission.READ_ACL));
+    ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER),EnumSet.of(ObjectPermission.DELETE, ObjectPermission.READ, ObjectPermission.READ_ACL));
     List<ObjectAce> aceList = new ArrayList<ObjectAce>();
     aceList.add(ace);
     acl.setAces(aceList);
@@ -1484,7 +1484,6 @@ public abstract class RepositoryTestBase {
     assertEquals(1, acl1.getAces().size());
     ObjectAce ace1 = acl1.getAces().get(0);
     assertEquals(ace1.getRecipient().getName(), "suzy");
-    assertTrue(ace1.getPermissions().contains(ObjectPermission.DELETE_CHILD));
     assertTrue(ace1.getPermissions().contains(ObjectPermission.DELETE));
     assertTrue(ace1.getPermissions().contains(ObjectPermission.READ));
     assertTrue(ace1.getPermissions().contains(ObjectPermission.READ_ACL));

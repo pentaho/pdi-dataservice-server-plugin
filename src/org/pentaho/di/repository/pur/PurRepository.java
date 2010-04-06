@@ -2005,8 +2005,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
           permissionSet.add(ObjectPermission.READ);
         } else if (perm.equals(RepositoryFilePermission.DELETE)) {
           permissionSet.add(ObjectPermission.DELETE);
-        } else if (perm.equals(RepositoryFilePermission.DELETE_CHILD)) {
-          permissionSet.add(ObjectPermission.DELETE_CHILD);
         } else if (perm.equals(RepositoryFilePermission.READ_ACL)) {
           permissionSet.add(ObjectPermission.READ_ACL);
         } else if (perm.equals(RepositoryFilePermission.WRITE)) {
@@ -2063,8 +2061,6 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
               permissionSet.add(RepositoryFilePermission.READ);
             } else if (perm.equals(ObjectPermission.DELETE)) {
               permissionSet.add(RepositoryFilePermission.DELETE);
-            } else if (perm.equals(ObjectPermission.DELETE_CHILD)) {
-              permissionSet.add(RepositoryFilePermission.DELETE_CHILD);
             } else if (perm.equals(ObjectPermission.READ_ACL)) {
               permissionSet.add(RepositoryFilePermission.READ_ACL);
             } else if (perm.equals(ObjectPermission.WRITE)) {
