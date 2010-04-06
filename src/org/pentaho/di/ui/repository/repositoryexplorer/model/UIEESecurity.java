@@ -5,11 +5,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
+import org.pentaho.di.repository.model.IRole;
+import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
+import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 
 public class UIEESecurity extends UISecurity {

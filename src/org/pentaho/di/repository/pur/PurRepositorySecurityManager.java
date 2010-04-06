@@ -5,12 +5,12 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.repository.EERoleInfo;
-import org.pentaho.di.repository.EEUserInfo;
-import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.model.EERoleInfo;
+import org.pentaho.di.repository.model.EEUserInfo;
+import org.pentaho.di.repository.model.IRole;
+import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
 import org.pentaho.platform.engine.security.userroledao.ws.UserRoleException;
 
 public class PurRepositorySecurityManager implements IRoleSupportSecurityManager, IUserRoleListChangeListener {

@@ -2,8 +2,8 @@ package org.pentaho.di.ui.repository.repositoryexplorer.abs.model;
 
 import java.util.List;
 
-import org.pentaho.di.repository.IAbsRole;
-import org.pentaho.di.repository.IRole;
+import org.pentaho.di.repository.model.IAbsRole;
+import org.pentaho.di.repository.model.IRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 

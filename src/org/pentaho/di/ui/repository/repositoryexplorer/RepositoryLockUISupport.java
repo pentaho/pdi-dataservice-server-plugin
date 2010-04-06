@@ -1,4 +1,4 @@
-package org.pentaho.di.ui.repository;
+package org.pentaho.di.ui.repository.repositoryexplorer;
 
 import org.pentaho.di.ui.repository.capabilities.AbstractRepositoryExplorerUISupport;
 import org.pentaho.di.ui.repository.pur.services.RepositoryLockController;

@@ -7,18 +7,20 @@ import java.util.ResourceBundle;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElement;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
+import org.pentaho.di.repository.services.ITrashService;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIJob;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectCreationException;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistry;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectories;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
@@ -108,7 +110,7 @@ public class TrashBrowseController extends BrowseController {
         });
   }
 
-  protected class TrashDirectory extends UIRepositoryDirectory {
+  protected class TrashDirectory extends UIEERepositoryDirectory {
 
     @Override
     public String getImage() {
@@ -181,15 +183,28 @@ public class TrashBrowseController extends BrowseController {
               if (elem instanceof RepositoryDirectory) {
                 RepositoryDirectory dir = (RepositoryDirectory) elem;
                 // TODO fetch parent dir from somewhere
-                listOfObjects.add(new UIRepositoryDirectory(dir, dirMap.get(dir.getParent() != null ? dir.getParent()
-                    .getObjectId() : null), repository));
+                try {
+                  listOfObjects.add(UIObjectRegistry.getInstance().constructUIRepositoryDirectory(dir, dirMap.get(dir.getParent() != null ? dir.getParent()
+                      .getObjectId() : null), repository));
+                } catch (UIObjectCreationException e) {
+                  listOfObjects.add(new UIRepositoryDirectory(dir, dirMap.get(dir.getParent() != null ? dir.getParent()
+                      .getObjectId() : null), repository));
+                }
               } else {
                 RepositoryObject c = (RepositoryObject) elem;
                 if (c.getObjectType() == RepositoryObjectType.JOB) {
-                  listOfObjects.add(new UIJob(c, dirMap.get(c.getRepositoryDirectory().getObjectId()), repository));
+                  try {
+                    listOfObjects.add(UIObjectRegistry.getInstance().constructUIJob(c, dirMap.get(c.getRepositoryDirectory().getObjectId()), repository));
+                  } catch (UIObjectCreationException e) {
+                    listOfObjects.add(new UIJob(c, dirMap.get(c.getRepositoryDirectory().getObjectId()), repository));
+                  }
+                  
                 } else {
-                  listOfObjects.add(new UITransformation(c, dirMap.get(c.getRepositoryDirectory().getObjectId()),
-                      repository));
+                  try {
+                    listOfObjects.add(UIObjectRegistry.getInstance().constructUITransformation(c, dirMap.get(c.getRepositoryDirectory().getObjectId()),repository));
+                  } catch (UIObjectCreationException e) {
+                    listOfObjects.add(new UITransformation(c, dirMap.get(c.getRepositoryDirectory().getObjectId()),repository));
+                  }
                 }
               }
             }

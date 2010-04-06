@@ -8,16 +8,14 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.pentaho.di.repository.EERoleInfo;
-import org.pentaho.di.repository.EEUserInfo;
-import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.repository.UserInfo;
+import org.pentaho.di.repository.model.EERoleInfo;
+import org.pentaho.di.repository.model.EEUserInfo;
+import org.pentaho.di.repository.model.IRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.RepsitoryUserTestImpl;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEESecurityUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurityUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurity.Mode;
 
 public class UIEESecurityUserTest {

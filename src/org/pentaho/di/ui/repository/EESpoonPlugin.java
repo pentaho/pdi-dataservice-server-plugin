@@ -22,24 +22,33 @@ import java.util.ResourceBundle;
 import org.eclipse.swt.SWT;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.IAbsSecurityManager;
-import org.pentaho.di.repository.IAbsSecurityProvider;
-import org.pentaho.di.repository.ILockService;
-import org.pentaho.di.repository.IRoleSupportSecurityManager;
-import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PluginLicenseVerifier;
 import org.pentaho.di.repository.pur.PurRepository;
+import org.pentaho.di.repository.services.IAbsSecurityManager;
+import org.pentaho.di.repository.services.IAbsSecurityProvider;
+import org.pentaho.di.repository.services.IAclService;
+import org.pentaho.di.repository.services.ILockService;
+import org.pentaho.di.repository.services.IRevisionService;
+import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.services.ITrashService;
 import org.pentaho.di.ui.repository.pur.services.SpoonLockController;
 import org.pentaho.di.ui.repository.pur.services.SpoonMenuLockController;
+import org.pentaho.di.ui.repository.repositoryexplorer.AclUISupport;
+import org.pentaho.di.ui.repository.repositoryexplorer.ManageRolesUISupport;
+import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryLockUISupport;
+import org.pentaho.di.ui.repository.repositoryexplorer.RevisionsUISupport;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.UISupportRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSecurityManagerUISupport;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSecurityProviderUISupport;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.SpoonMenuABSController;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.UIAbsRepositoryRole;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEEJob;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistery;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEETransformation;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistry;
 import org.pentaho.di.ui.repository.repositoryexplorer.trash.TrashUISupport;
 import org.pentaho.di.ui.spoon.ChangedWarningDialog;
 import org.pentaho.di.ui.spoon.Spoon;
@@ -48,6 +57,9 @@ import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
 import org.pentaho.di.ui.spoon.SpoonPluginCategories;
 import org.pentaho.di.ui.spoon.SpoonPluginInterface;
+import org.pentaho.di.ui.spoon.delegates.SpoonDelegateRegistry;
+import org.pentaho.di.ui.spoon.delegates.SpoonEEJobDelegate;
+import org.pentaho.di.ui.spoon.delegates.SpoonEETransformationDelegate;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.components.XulMenuitem;
@@ -124,9 +136,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
   }
 
   private void doOnStartup() {
-    UIObjectRegistery.getInstance().registerUIRepositoryUserClass(UIEERepositoryUser.class);
-    UIEEObjectRegistery.getInstance().registerUIRepositoryRoleClass(UIAbsRepositoryRole.class);
-    registerRepositoryCapabilities();
+    registerUISuppportForRepositoryExplorer();
   }
 
   private void doOnShutdown() {
@@ -139,11 +149,37 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
   private void doOnSecurityUpdate() throws KettleException {
     getMainSpoonContainer();
     Repository repository = Spoon.getInstance().getRepository();
+    // Repository User
+    if(repository != null && repository.hasService(IRoleSupportSecurityManager.class)) {
+      UIObjectRegistry.getInstance().registerUIRepositoryUserClass(UIEERepositoryUser.class);      
+    } else {
+      UIObjectRegistry.getInstance().registerUIRepositoryUserClass(UIObjectRegistry.DEFAULT_UIREPOSITORYUSER_CLASS);
+    }
+    // Repository Directory
+    if(repository != null && repository.hasService(IAclService.class)) {
+      UIObjectRegistry.getInstance().registerUIRepositoryDirectoryClass(UIEERepositoryDirectory.class);
+    } else {
+      UIObjectRegistry.getInstance().registerUIRepositoryDirectoryClass(UIObjectRegistry.DEFAULT_UIDIR_CLASS);
+    }
+    // Repository Role
     if (repository != null && repository.hasService(IAbsSecurityProvider.class)) {
+      UIEEObjectRegistery.getInstance().registerUIRepositoryRoleClass(UIAbsRepositoryRole.class);
       IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
       // Execute credential lookup
       enableCreatePermission(securityProvider.isAllowed(IAbsSecurityProvider.CREATE_CONTENT_ACTION));
       enableAdminPermission(securityProvider.isAllowed(IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION));
+    }
+    // Job & Transformation =
+    if(repository.hasService(ILockService.class)) {
+      UIObjectRegistry.getInstance().registerUIJobClass(UIEEJob.class);
+      UIObjectRegistry.getInstance().registerUITransformationClass(UIEETransformation.class);
+      SpoonDelegateRegistry.getInstance().registerSpoonJobDelegateClass(SpoonEEJobDelegate.class);
+      SpoonDelegateRegistry.getInstance().registerSpoonTransDelegateClass(SpoonEETransformationDelegate.class);
+    } else {
+      UIObjectRegistry.getInstance().registerUIJobClass(UIObjectRegistry.DEFAULT_UIJOB_CLASS);
+      UIObjectRegistry.getInstance().registerUITransformationClass(UIObjectRegistry.DEFAULT_UITRANS_CLASS);
+      SpoonDelegateRegistry.getInstance().registerSpoonJobDelegateClass(SpoonDelegateRegistry.DEFAULT_SPOONJOBDELEGATE_CLASS);
+      SpoonDelegateRegistry.getInstance().registerSpoonTransDelegateClass(SpoonDelegateRegistry.DEFAULT_SPOONTRANSDELEGATE_CLASS);
     }
   }
 
@@ -160,7 +196,9 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
   private void enableAdminPermission(boolean adminPermitted) {
   }
 
-  private void registerRepositoryCapabilities() {
+  private void registerUISuppportForRepositoryExplorer() {
+    UISupportRegistery.getInstance().registerUISupport(IRevisionService.class, RevisionsUISupport.class);
+    UISupportRegistery.getInstance().registerUISupport(IAclService.class, AclUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IRoleSupportSecurityManager.class, ManageRolesUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsSecurityManagerUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityProvider.class, AbsSecurityProviderUISupport.class);

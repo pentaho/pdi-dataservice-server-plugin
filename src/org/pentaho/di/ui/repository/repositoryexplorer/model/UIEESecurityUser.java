@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.repository.IEEUser;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
+import org.pentaho.di.repository.model.IEEUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
+import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.ui.xul.util.AbstractModelList;
 

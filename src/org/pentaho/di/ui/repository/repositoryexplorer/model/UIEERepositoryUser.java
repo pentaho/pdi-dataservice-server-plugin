@@ -3,11 +3,11 @@ package org.pentaho.di.ui.repository.repositoryexplorer.model;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.pentaho.di.repository.IEEUser;
-import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.IUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
+import org.pentaho.di.repository.model.IEEUser;
+import org.pentaho.di.repository.model.IRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
+import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 
 public class UIEERepositoryUser extends UIRepositoryUser implements IUIEEUser{

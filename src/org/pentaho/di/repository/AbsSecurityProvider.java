@@ -7,6 +7,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositorySecurityProvider;
+import org.pentaho.di.repository.services.IAbsSecurityProvider;
 
 import com.pentaho.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 

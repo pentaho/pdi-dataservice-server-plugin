@@ -6,9 +6,13 @@ import java.util.Map;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.repository.model.AbsRoleInfo;
+import org.pentaho.di.repository.model.IAbsRole;
+import org.pentaho.di.repository.model.IRole;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositorySecurityManager;
+import org.pentaho.di.repository.services.IAbsSecurityManager;
 
 import com.pentaho.security.policy.rolebased.RoleBindingStruct;
 import com.pentaho.security.policy.rolebased.ws.IRoleAuthorizationPolicyRoleBindingDaoWebService;

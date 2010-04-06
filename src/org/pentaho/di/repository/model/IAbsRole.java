@@ -1,4 +1,4 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.model;
 
 import java.util.List;
 /**

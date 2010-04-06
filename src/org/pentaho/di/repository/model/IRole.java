@@ -1,6 +1,8 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.model;
 
 import java.util.Set;
+
+import org.pentaho.di.repository.IUser;
 /**
  * Repository Role object
  * @author rmansoor

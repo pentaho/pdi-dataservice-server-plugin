@@ -7,10 +7,10 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.repository.IEEUser;
-import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.IUser;
+import org.pentaho.di.repository.model.IEEUser;
+import org.pentaho.di.repository.model.IRole;
+import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
 import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;

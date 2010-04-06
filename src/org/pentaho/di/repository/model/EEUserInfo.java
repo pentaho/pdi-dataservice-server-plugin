@@ -1,7 +1,9 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.model;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import org.pentaho.di.repository.UserInfo;
 
 public class EEUserInfo extends UserInfo implements IEEUser {
 

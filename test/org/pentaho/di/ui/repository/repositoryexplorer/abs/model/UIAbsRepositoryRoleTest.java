@@ -6,8 +6,8 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.pentaho.di.repository.AbsRoleInfo;
-import org.pentaho.di.repository.IRole;
+import org.pentaho.di.repository.model.AbsRoleInfo;
+import org.pentaho.di.repository.model.IRole;
 
 public class UIAbsRepositoryRoleTest {
   public final static String CREATE_CONTENT = "org.pentaho.di.creator"; //$NON-NLS-1$

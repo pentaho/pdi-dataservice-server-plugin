@@ -2,9 +2,9 @@ package org.pentaho.di.ui.repository.repositoryexplorer.abs.controller;
 
 import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.job.JobMeta;
-import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PurRepository;
+import org.pentaho.di.repository.services.IAbsSecurityProvider;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.EESpoonPlugin;
 import org.pentaho.di.ui.spoon.ISpoonMenuController;

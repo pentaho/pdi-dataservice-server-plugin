@@ -1,8 +1,9 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.services;
 
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.RepositorySecurityProvider;
 
 /**
  * Core security API for Action based security

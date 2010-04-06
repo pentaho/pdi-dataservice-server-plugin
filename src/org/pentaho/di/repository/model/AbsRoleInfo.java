@@ -1,8 +1,10 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.model;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import org.pentaho.di.repository.IUser;
 
 public class AbsRoleInfo extends EERoleInfo implements IAbsRole {
 

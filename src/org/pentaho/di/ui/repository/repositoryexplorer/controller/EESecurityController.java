@@ -26,12 +26,12 @@ import java.util.Set;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.IRoleSupportSecurityManager;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectRecipient;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.ObjectRecipient.Type;
+import org.pentaho.di.repository.model.IRole;
+import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
@@ -43,7 +43,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEESecurity;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEESecurityUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectCreationException;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistery;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistry;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurityRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurity.Mode;
 import org.pentaho.ui.xul.XulComponent;
@@ -492,7 +492,7 @@ public class EESecurityController extends SecurityController {
     if (service != null) {
       try {
         service.saveUserInfo(eeSecurityUser.getUserInfo());
-        eeSecurity.addUser(UIObjectRegistery.getInstance().constructUIRepositoryUser(eeSecurityUser.getUserInfo()));
+        eeSecurity.addUser(UIObjectRegistry.getInstance().constructUIRepositoryUser(eeSecurityUser.getUserInfo()));
       } catch (KettleException ke) {
         messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
         messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
@@ -726,7 +726,7 @@ public class EESecurityController extends SecurityController {
   private List<IUIUser> convertToUIUserModel(List<IUser> users) throws UIObjectCreationException {
     List<IUIUser> rusers = new ArrayList<IUIUser>();
     for (IUser user : users) {
-      rusers.add(UIObjectRegistery.getInstance().constructUIRepositoryUser(user));
+      rusers.add(UIObjectRegistry.getInstance().constructUIRepositoryUser(user));
     }
     return rusers;
   }

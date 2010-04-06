@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.model.IRole;
+import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurity.Mode;
 import org.pentaho.ui.xul.XulEventSourceAdapter;

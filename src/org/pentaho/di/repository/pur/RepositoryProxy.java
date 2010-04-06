@@ -14,14 +14,12 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.IRepositoryService;
-import org.pentaho.di.repository.ObjectAcl;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryElementLocationInterface;
-import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
@@ -30,6 +28,9 @@ import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
+import org.pentaho.di.repository.model.ObjectAcl;
+import org.pentaho.di.repository.model.RepositoryLock;
+import org.pentaho.di.repository.services.ILockService;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 
@@ -42,7 +43,7 @@ import com.pentaho.repository.pur.data.node.DataNode.DataPropertyType;
  * A {@link Repository} that stands in for the real repository, collecting entry and step attributes and loading or
  * saving them as a batch. Use one instance of this class per entry or step!
  */
-public class RepositoryProxy implements Repository {
+public class RepositoryProxy implements Repository, ILockService {
 
   public static final String PROP_CODE_NR_SEPARATOR = "_#_"; //$NON-NLS-1$
 
@@ -622,6 +623,10 @@ public class RepositoryProxy implements Repository {
   }
 
   public RepositoryDirectory getUserHomeDirectory() throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean canUnlockFileById(ObjectId id) throws KettleException {
     throw new UnsupportedOperationException();
   }
 }

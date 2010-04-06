@@ -1,8 +1,10 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.services;
 
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.RepositorySecurityManager;
+import org.pentaho.di.repository.model.IRole;
 /**
  * Repository Security Manager with the Role support
  * @author rmansoor

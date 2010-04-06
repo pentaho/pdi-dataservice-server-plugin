@@ -3,8 +3,8 @@ package org.pentaho.di.ui.repository.repositoryexplorer.abs.controller;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.repository.IAbsSecurityProvider;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.services.IAbsSecurityProvider;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.ConnectionsController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIDatabaseConnection;

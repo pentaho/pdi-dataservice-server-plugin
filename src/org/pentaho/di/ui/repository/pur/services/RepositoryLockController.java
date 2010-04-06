@@ -10,12 +10,13 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
+import org.pentaho.di.ui.repository.repositoryexplorer.ILockObject;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUISupportController;
-import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
 import org.pentaho.ui.xul.XulComponent;
+import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
@@ -26,6 +27,7 @@ import org.pentaho.ui.xul.containers.XulTree;
 import org.pentaho.ui.xul.dnd.DropEvent;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import org.pentaho.ui.xul.impl.XulEventHandler;
+import org.pentaho.ui.xul.swt.custom.DialogConstant;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
 public class RepositoryLockController extends AbstractXulEventHandler implements IUISupportController {
@@ -77,11 +79,11 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
     try {
       List<UIRepositoryObject> selectedRepoObjects = browseController.getSelectedFileItems();
       
-      if(selectedRepoObjects.size() > 0 && selectedRepoObjects.get(0) instanceof UIRepositoryContent) {
+      if(selectedRepoObjects.size() > 0 && selectedRepoObjects.get(0) instanceof ILockObject) {
         final UIRepositoryContent contentToLock = (UIRepositoryContent)selectedRepoObjects.get(0);
         
-        if(contentToLock.isLocked()) {
-          if(contentToLock.getRepositoryLock().getLogin().equalsIgnoreCase(repository.getUserInfo().getLogin())) {
+        if(((ILockObject)contentToLock).isLocked()) {
+          if(((ILockObject)contentToLock).getRepositoryLock().getLogin().equalsIgnoreCase(repository.getUserInfo().getLogin())) {
             // Current user owns the lock, check default permissions
             browseController.onDragFromLocalTable(event);
           } else {
@@ -105,14 +107,14 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       boolean result = false;
       
       try {
-        if(selectedRepoObjects.size() == 1 && selectedRepoObjects.get(0) instanceof UIRepositoryContent) {
+        if(selectedRepoObjects.size() == 1 && selectedRepoObjects.get(0) instanceof ILockObject) {
           final UIRepositoryContent contentToLock = (UIRepositoryContent)selectedRepoObjects.get(0);
           
-          if(contentToLock.isLocked()) {
+          if(((ILockObject)contentToLock).isLocked()) {
             if(repository instanceof PurRepository) {
               result = ((PurRepository)repository).canUnlockFileById(contentToLock.getObjectId());
             } else {
-              result = contentToLock.getRepositoryLock().getLogin().equalsIgnoreCase(repository.getUserInfo().getLogin());
+              result = ((ILockObject)contentToLock).getRepositoryLock().getLogin().equalsIgnoreCase(repository.getUserInfo().getLogin());
             }
           } else {
             // Content is not locked, permit locking
@@ -157,8 +159,8 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       
       try {
         if(value != null && value.size() == 1 && value.get(0) != null) {
-          if(value.get(0) instanceof UIRepositoryContent) {
-            result = ((UIRepositoryContent)value.get(0)).isLocked();
+          if(value.get(0) instanceof ILockObject) {
+            result = ((ILockObject)value.get(0)).isLocked();
           }
         }
       } catch(KettleException e) {
@@ -183,8 +185,8 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       
       try {
         if(value != null && value.size() == 1 && value.get(0) != null) {
-          if(value.get(0) instanceof UIRepositoryContent) {
-            result = ((UIRepositoryContent)value.get(0)).isLocked();
+          if(value.get(0) instanceof ILockObject) {
+            result = ((ILockObject)value.get(0)).isLocked();
           }
         }
       } catch(KettleException e) {
@@ -223,18 +225,18 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
     if(selectedRepoObjects.size() > 0 && selectedRepoObjects.get(0) instanceof UIRepositoryContent) {
       final UIRepositoryContent contentToLock = (UIRepositoryContent)selectedRepoObjects.get(0);
       
-      if(contentToLock.isLocked()) {
+      if(((ILockObject)contentToLock).isLocked()) {
         // Unlock the item
-        contentToLock.unlock();
+        ((ILockObject)contentToLock).unlock();
       } else {
         // Lock the item
-        XulPromptBox lockNotePrompt = RepositoryExplorer.promptLockMessage(document, messages, null);
+        XulPromptBox lockNotePrompt = promptLockMessage(document, messages, null);
         lockNotePrompt.addDialogCallback(new XulDialogCallback<String>() {
           public void onClose(XulComponent component, Status status, String value) {
     
             if(!status.equals(Status.CANCEL)) {
               try {
-                contentToLock.lock(value);
+                ((ILockObject)contentToLock).lock(value);
               } catch (Exception e) {
                 // convert to runtime exception so it bubbles up through the UI
                 throw new RuntimeException(e);
@@ -259,10 +261,22 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       
       XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox");  //$NON-NLS-1$
       msgBox.setTitle(messages.getString("PurRepository.LockNote.Title")); //$NON-NLS-1$
-      msgBox.setMessage(contentToLock.getLockMessage());
+      msgBox.setMessage(((ILockObject)contentToLock).getLockMessage());
       
       msgBox.open();
     }
+  }
+  
+  
+  private  XulPromptBox promptLockMessage(org.pentaho.ui.xul.dom.Document document, ResourceBundle messages, String defaultMessage) throws XulException {
+    XulPromptBox prompt = (XulPromptBox) document.createElement("promptbox"); //$NON-NLS-1$
+    
+    prompt.setTitle(messages.getString("RepositoryExplorer.LockMessage.Title"));//$NON-NLS-1$
+    prompt.setButtons(new DialogConstant[] { DialogConstant.OK, DialogConstant.CANCEL });
+
+    prompt.setMessage(messages.getString("RepositoryExplorer.LockMessage.Label"));//$NON-NLS-1$
+    prompt.setValue(defaultMessage == null ? messages.getString("RepositoryExplorer.DefaultLockMessage") : defaultMessage); //$NON-NLS-1$
+    return prompt;
   }
 }
 

@@ -2,7 +2,7 @@ package org.pentaho.di.ui.repository.repositoryexplorer;
 
 import java.lang.reflect.Constructor;
 
-import org.pentaho.di.repository.IRole;
+import org.pentaho.di.repository.model.IRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectCreationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 

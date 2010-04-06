@@ -3,8 +3,8 @@ package org.pentaho.di.ui.repository.repositoryexplorer.model;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.pentaho.di.repository.IRole;
 import org.pentaho.di.repository.IUser;
+import org.pentaho.di.repository.model.IRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
@@ -47,7 +47,7 @@ public class UIRepositoryRole extends XulEventSourceAdapter implements IUIRole{
 	  Set<IUIUser> rusers = new HashSet<IUIUser>();
 	  for(IUser userInfo:rri.getUsers()) {
 	    try {
-        rusers.add(UIObjectRegistery.getInstance().constructUIRepositoryUser(userInfo));
+        rusers.add(UIObjectRegistry.getInstance().constructUIRepositoryUser(userInfo));
       } catch (UIObjectCreationException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();

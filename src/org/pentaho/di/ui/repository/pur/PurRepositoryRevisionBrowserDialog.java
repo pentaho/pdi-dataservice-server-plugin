@@ -17,12 +17,14 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementLocationInterface;
+import org.pentaho.di.repository.services.IRevisionService;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.dialog.ShowMessageDialog;
@@ -48,6 +50,7 @@ public class PurRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 	private PropsUI         props;
 	
 	private Repository	repository;
+	private IRevisionService revisionService;
 	private RepositoryElementLocationInterface element;
 
 	private List<ObjectRevision>	revisions;
@@ -62,7 +65,16 @@ public class PurRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 		this.props=PropsUI.getInstance();
 		this.repository = repository;
 		this.element = element;
-		
+    
+		try {
+      if (repository.hasService(IRevisionService.class)) {
+        revisionService = (IRevisionService) repository.getService(IRevisionService.class);
+      } else {
+        throw new IllegalStateException();
+      }
+    } catch (KettleException e) {
+      throw new IllegalStateException(e);
+    }
 		String name = element.getRepositoryElementType().toString()+" "+element.getRepositoryDirectory().getPath();
 		if (!name.endsWith("/")) name+="/";
 		name+=element.getName();
@@ -88,7 +100,7 @@ public class PurRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 			// int middle = props.getMiddlePct();
 			int margin = Const.MARGIN;
 	
-			revisions = repository.getRevisions(element);
+			revisions = revisionService.getRevisions(element);
 
 	        // Mmm, if we don't get any rows in the buffer: show a dialog box.
 	        if (revisions == null || revisions.size() == 0)

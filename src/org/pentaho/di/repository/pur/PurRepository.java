@@ -28,19 +28,9 @@ import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.AbsSecurityManager;
 import org.pentaho.di.repository.AbsSecurityProvider;
-import org.pentaho.di.repository.EEUserInfo;
-import org.pentaho.di.repository.IAbsSecurityManager;
-import org.pentaho.di.repository.IAbsSecurityProvider;
-import org.pentaho.di.repository.IAclManager;
-import org.pentaho.di.repository.ILockService;
 import org.pentaho.di.repository.IRepositoryService;
-import org.pentaho.di.repository.IRoleSupportSecurityManager;
-import org.pentaho.di.repository.ITrashService;
 import org.pentaho.di.repository.IUser;
-import org.pentaho.di.repository.ObjectAce;
-import org.pentaho.di.repository.ObjectAcl;
 import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.ObjectPermission;
 import org.pentaho.di.repository.ObjectRecipient;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
@@ -48,20 +38,33 @@ import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElement;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryElementLocationInterface;
-import org.pentaho.di.repository.RepositoryLock;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
-import org.pentaho.di.repository.RepositoryObjectAce;
-import org.pentaho.di.repository.RepositoryObjectAcl;
-import org.pentaho.di.repository.RepositoryObjectRecipient;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
-import org.pentaho.di.repository.VersionRepository;
 import org.pentaho.di.repository.WsFactory;
 import org.pentaho.di.repository.ObjectRecipient.Type;
+import org.pentaho.di.repository.model.EEJobMeta;
+import org.pentaho.di.repository.model.EERepositoryObject;
+import org.pentaho.di.repository.model.EETransMeta;
+import org.pentaho.di.repository.model.EEUserInfo;
+import org.pentaho.di.repository.model.ObjectAce;
+import org.pentaho.di.repository.model.ObjectAcl;
+import org.pentaho.di.repository.model.ObjectPermission;
+import org.pentaho.di.repository.model.RepositoryLock;
+import org.pentaho.di.repository.model.RepositoryObjectAce;
+import org.pentaho.di.repository.model.RepositoryObjectAcl;
+import org.pentaho.di.repository.model.RepositoryObjectRecipient;
+import org.pentaho.di.repository.services.IAbsSecurityManager;
+import org.pentaho.di.repository.services.IAbsSecurityProvider;
+import org.pentaho.di.repository.services.IAclService;
+import org.pentaho.di.repository.services.ILockService;
+import org.pentaho.di.repository.services.IRevisionService;
+import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.services.ITrashService;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
@@ -91,7 +94,7 @@ import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
  * @author mlowery
  */
 @RepositoryPlugin(id = "PentahoEnterpriseRepository", name = "Enterprise Repository", description = "i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository", metaClass = "org.pentaho.di.repository.pur.PurRepositoryMeta")
-public class PurRepository implements Repository, VersionRepository, IAclManager, ITrashService
+public class PurRepository implements Repository, IRevisionService, IAclService, ITrashService, ILockService
 // , RevisionRepository 
 {
 
@@ -256,8 +259,8 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
         registerRepositoryService(IRoleSupportSecurityManager.class, securityManager);
         registerRepositoryService(IAbsSecurityManager.class, securityManager);
       }
-      registerRepositoryService(VersionRepository.class, this);
-      registerRepositoryService(IAclManager.class, this);
+      registerRepositoryService(IRevisionService.class, this);
+      registerRepositoryService(IAclService.class, this);
       registerRepositoryService(ITrashService.class, this);
       registerRepositoryService(ILockService.class, this);
     } catch (Throwable e) {
@@ -1244,7 +1247,8 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
         String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
             + XMLHandler.date2string(lock.getLockDate()) + ")";
         RepositoryObjectType objectType = getObjectType(file.getName());
-        list.add(new RepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
+        
+        list.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
             file.getName().length() - objectType.getExtension().length()), repDir, null, file.getLastModifiedDate(),
             objectType, null, lockMessage, false));
       }
@@ -1255,7 +1259,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
           String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
               + XMLHandler.date2string(lock.getLockDate()) + ")";
           RepositoryObjectType objectType = getObjectType(file.getName());
-          list.add(new RepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
+          list.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
               file.getName().length() - objectType.getExtension().length()), repDir, null, file.getLastModifiedDate(),
               objectType, null, lockMessage, true));
         }
@@ -1619,7 +1623,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     try {
       absPath = getPath(transName, parentDir, RepositoryObjectType.TRANSFORMATION);
       RepositoryFile file = pur.getFile(absPath);
-      TransMeta transMeta = new TransMeta();
+      EETransMeta transMeta = new EETransMeta();
       transMeta.setObjectId(new StringObjectId(file.getId().toString()));
       transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
       transMeta.setRepositoryDirectory(parentDir);
@@ -1640,7 +1644,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
     try {
       absPath = getPath(jobname, parentDir, RepositoryObjectType.JOB);
       RepositoryFile file = pur.getFile(absPath);
-      JobMeta jobMeta = new JobMeta();
+      EEJobMeta jobMeta = new EEJobMeta();
       jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
       jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
       jobMeta.setRepositoryDirectory(parentDir);
@@ -2137,7 +2141,7 @@ public class PurRepository implements Repository, VersionRepository, IAclManager
         });
       } else {
         RepositoryObjectType objectType = getObjectType(file.getName());
-        trash.add(new RepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
+        trash.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
             file.getName().length() - objectType.getExtension().length()), origParentDir, null, file.getDeletedDate(),
             objectType, null, null, true));
       }

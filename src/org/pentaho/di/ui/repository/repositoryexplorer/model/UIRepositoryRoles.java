@@ -2,8 +2,8 @@ package org.pentaho.di.ui.repository.repositoryexplorer.model;
 
 import java.util.List;
 
-import org.pentaho.di.repository.IRole;
-import org.pentaho.di.repository.IRoleSupportSecurityManager;
+import org.pentaho.di.repository.model.IRole;
+import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.UIEEObjectRegistery;
 

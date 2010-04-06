@@ -8,19 +8,21 @@ import org.eclipse.swt.graphics.Image;
 import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.job.JobMeta;
-import org.pentaho.di.repository.IAbsSecurityProvider;
-import org.pentaho.di.repository.RepositoryLock;
+import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.model.EEJobMeta;
+import org.pentaho.di.repository.model.EETransMeta;
+import org.pentaho.di.repository.model.RepositoryLock;
 import org.pentaho.di.repository.pur.PurRepository;
-import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.repository.services.IAbsSecurityProvider;
+import org.pentaho.di.repository.services.ILockService;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
-import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.job.JobGraph;
 import org.pentaho.di.ui.spoon.trans.TransGraph;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
+import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
@@ -29,20 +31,22 @@ import org.pentaho.ui.xul.components.XulMenuitem;
 import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
+import org.pentaho.ui.xul.swt.custom.DialogConstant;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
 public class SpoonLockController extends AbstractXulEventHandler {
-  
+  private ILockService service;
+
   private EngineMetaInterface workingMeta = null;
-  
+
   private BindingFactory bindingFactory = null;
-  
+
   private boolean tabBound = false;
-  
+
   private boolean isCreateAllowed = false;
-  
+
   private boolean isLockingAllowed = false;
-  
+
   protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
@@ -55,62 +59,66 @@ public class SpoonLockController extends AbstractXulEventHandler {
       return BaseMessages.getString(PurRepositoryDialog.class, key);
     }
   };
-  
+
   public String getName() {
     return "spoonLockController"; //$NON-NLS-1$
   }
-  
+
   public void lockContent() throws Exception {
-    if(workingMeta != null) {
+    if (workingMeta != null) {
       // Bind the tab icon if it is not already bound (cannot be done in init because TransGraph must exist to create the tab)
       // Look in the SpoonTransformationDelegate for details on the TabItem creation
-      if(!tabBound) {
-        bindingFactory.createBinding(this, "activeMetaUnlocked", Spoon.getInstance().delegates.tabs.findTabMapEntry(workingMeta).getTabItem(), "image", new BindingConvertor<String, Image>() { //$NON-NLS-1$ //$NON-NLS-2$
-          @Override
-          public Image sourceToTarget(String activeMetaUnlocked) {
-              if(Boolean.valueOf(activeMetaUnlocked)) {
-                if(workingMeta instanceof TransMeta) {
-                  return GUIResource.getInstance().getImageTransGraph();
-                } else if(workingMeta instanceof JobMeta) {
-                  return GUIResource.getInstance().getImageJobGraph();
-                }
-              } else {
-                return GUIResource.getInstance().getImageLocked();
-              }
-              return null;
-          }
-    
-          @Override
-          public String targetToSource(Image arg0) {
-            return null;
-          }
-        });
+      if (!tabBound) {
+        bindingFactory
+            .createBinding(
+                this,
+                "activeMetaUnlocked", Spoon.getInstance().delegates.tabs.findTabMapEntry(workingMeta).getTabItem(), "image", new BindingConvertor<String, Image>() { //$NON-NLS-1$ //$NON-NLS-2$
+                  @Override
+                  public Image sourceToTarget(String activeMetaUnlocked) {
+                    if (Boolean.valueOf(activeMetaUnlocked)) {
+                      if (workingMeta instanceof EETransMeta) {
+                        return GUIResource.getInstance().getImageTransGraph();
+                      } else if (workingMeta instanceof EEJobMeta) {
+                        return GUIResource.getInstance().getImageJobGraph();
+                      }
+                    } else {
+                      return GUIResource.getInstance().getImageLocked();
+                    }
+                    return null;
+                  }
+
+                  @Override
+                  public String targetToSource(Image arg0) {
+                    return null;
+                  }
+                });
         tabBound = true;
       }
-      
+
       // Decide whether to lock or unlock the object
-      if(fetchRepositoryLock(workingMeta) == null) {
+      if (fetchRepositoryLock(workingMeta) == null) {
         // Lock the object (it currently is NOT locked)
-        
-        XulPromptBox lockNotePrompt = RepositoryExplorer.promptLockMessage(document, messages, null);
+
+        XulPromptBox lockNotePrompt = promptLockMessage(document, messages, null);
         lockNotePrompt.addDialogCallback(new XulDialogCallback<String>() {
           public void onClose(XulComponent component, Status status, String value) {
-    
-            if(!status.equals(Status.CANCEL)) {
+
+            if (!status.equals(Status.CANCEL)) {
               try {
-                if(workingMeta instanceof TransMeta) {
-                  Spoon.getInstance().getRepository().lockTransformation(workingMeta.getObjectId(), value);
-                } else if(workingMeta instanceof JobMeta) {
-                  Spoon.getInstance().getRepository().lockJob(workingMeta.getObjectId(), value);
+                if (workingMeta instanceof EETransMeta) {
+                  getService(Spoon.getInstance().getRepository()).lockTransformation(workingMeta.getObjectId(), value);
+                } else if (workingMeta instanceof EEJobMeta) {
+                  getService(Spoon.getInstance().getRepository()).lockJob(workingMeta.getObjectId(), value);
                 }
-                
+
                 // Execute binding. Notify listeners that the object is now locked
                 firePropertyChange("activeMetaUnlocked", null, "false"); //$NON-NLS-1$ //$NON-NLS-2$
 
                 // this keeps the menu item and the state in sync
                 // could a binding be used instead?
                 XulDomContainer container = getXulDomContainer();
-                XulMenuitem lockMenuItem = (XulMenuitem)container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
+                XulMenuitem lockMenuItem = (XulMenuitem) container.getDocumentRoot()
+                    .getElementById("lock-context-lock"); //$NON-NLS-1$
                 lockMenuItem.setSelected(true);
               } catch (Exception e) {
                 // convert to runtime exception so it bubbles up through the UI
@@ -120,51 +128,51 @@ public class SpoonLockController extends AbstractXulEventHandler {
               // this keeps the menu item and the state in sync
               // could a binding be used instead?              
               XulDomContainer container = getXulDomContainer();
-              XulMenuitem lockMenuItem = (XulMenuitem)container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
+              XulMenuitem lockMenuItem = (XulMenuitem) container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
               lockMenuItem.setSelected(false);
             }
           }
-    
+
           public void onError(XulComponent component, Throwable err) {
             throw new RuntimeException(err);
           }
         });
-        
+
         lockNotePrompt.open();
       } else {
         // Unlock the object (it currently IS locked)
-        if(workingMeta instanceof TransMeta) {
-          Spoon.getInstance().getRepository().unlockTransformation(workingMeta.getObjectId());
-        } else if(workingMeta instanceof JobMeta) {
-          Spoon.getInstance().getRepository().unlockJob(workingMeta.getObjectId());
+        if (workingMeta instanceof EETransMeta) {
+          getService(Spoon.getInstance().getRepository()).unlockTransformation(workingMeta.getObjectId());
+        } else if (workingMeta instanceof EEJobMeta) {
+          getService(Spoon.getInstance().getRepository()).unlockJob(workingMeta.getObjectId());
         }
         // Execute binding. Notify listeners that the object is now unlocked
         firePropertyChange("activeMetaUnlocked", null, "true"); //$NON-NLS-1$ //$NON-NLS-2$
       }
-      
+
     }
   }
-  
+
   public void viewLockNote() throws Exception {
     RepositoryLock repoLock = fetchRepositoryLock(workingMeta);
-    if(repoLock != null) {
-      XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox");  //$NON-NLS-1$
+    if (repoLock != null) {
+      XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
       msgBox.setTitle(messages.getString("PurRepository.LockNote.Title")); //$NON-NLS-1$
       msgBox.setMessage(repoLock.getMessage());
-      
+
       msgBox.open();
     }
   }
-  
+
   @Override
   public void setXulDomContainer(XulDomContainer xulDomContainer) {
     super.setXulDomContainer(xulDomContainer);
     init();
   }
-  
+
   public String isActiveMetaUnlocked() {
     try {
-      if(fetchRepositoryLock(workingMeta) != null) {
+      if (fetchRepositoryLock(workingMeta) != null) {
         return Boolean.toString(false);
       } else {
         return Boolean.toString(true);
@@ -173,53 +181,57 @@ public class SpoonLockController extends AbstractXulEventHandler {
       throw new RuntimeException(e);
     }
   }
-  
+
   protected void init() {
     try {
-      if((Spoon.getInstance().getRepository() != null) && (Spoon.getInstance().getRepository().hasService(IAbsSecurityProvider.class))) {
-        IAbsSecurityProvider securityService = (IAbsSecurityProvider) Spoon.getInstance().getRepository().getService(IAbsSecurityProvider.class);
-        
+      if ((Spoon.getInstance().getRepository() != null)
+          && (Spoon.getInstance().getRepository().hasService(IAbsSecurityProvider.class))) {
+        IAbsSecurityProvider securityService = (IAbsSecurityProvider) Spoon.getInstance().getRepository().getService(
+            IAbsSecurityProvider.class);
+
         setCreateAllowed(allowedActionsContains(securityService, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
       }
-      
+
       XulDomContainer container = getXulDomContainer();
-      
+
       bindingFactory = new DefaultBindingFactory();
       bindingFactory.setDocument(container.getDocumentRoot());
-      
+
       bindingFactory.setBindingType(Type.ONE_WAY);
-      
+
       bindingFactory.createBinding(this, "activeMetaUnlocked", "lock-context-locknotes", "disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       bindingFactory.createBinding(this, "lockingNotAllowedAsString", "lock-context-lock", "disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-      
+
       // Get trans* object to gain access to the *Meta object to determine if we are initially locked or not
       // Try transformation
-      if(container.getEventHandlers().containsKey("transgraph")) { //$NON-NLS-1$
-        workingMeta = ((TransGraph)container.getEventHandler("transgraph")).getMeta(); //$NON-NLS-1$
-      } else if(container.getEventHandlers().containsKey("jobgraph")) { //$NON-NLS-1$
-        workingMeta = ((JobGraph)container.getEventHandler("jobgraph")).getMeta(); //$NON-NLS-1$
+      if (container.getEventHandlers().containsKey("transgraph")) { //$NON-NLS-1$
+        workingMeta = ((TransGraph) container.getEventHandler("transgraph")).getMeta(); //$NON-NLS-1$
+      } else if (container.getEventHandlers().containsKey("jobgraph")) { //$NON-NLS-1$
+        workingMeta = ((JobGraph) container.getEventHandler("jobgraph")).getMeta(); //$NON-NLS-1$
       }
 
       RepositoryLock repoLock = fetchRepositoryLock(workingMeta);
-      if(repoLock != null) {
-        XulMenuitem lockMenuItem = (XulMenuitem)container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
+      if (repoLock != null) {
+        XulMenuitem lockMenuItem = (XulMenuitem) container.getDocumentRoot().getElementById("lock-context-lock"); //$NON-NLS-1$
         lockMenuItem.setSelected(true);
         // Permit locking/unlocking if the user owns the lock
-        if(Spoon.getInstance().getRepository() instanceof PurRepository) {
-          setLockingAllowed(((PurRepository)Spoon.getInstance().getRepository()).canUnlockFileById(workingMeta.getObjectId()));
+        if (Spoon.getInstance().getRepository() instanceof PurRepository) {
+          setLockingAllowed(((PurRepository) Spoon.getInstance().getRepository()).canUnlockFileById(workingMeta
+              .getObjectId()));
         } else {
-          setLockingAllowed(repoLock.getLogin().equalsIgnoreCase(Spoon.getInstance().getRepository().getUserInfo().getLogin()));
+          setLockingAllowed(repoLock.getLogin().equalsIgnoreCase(
+              Spoon.getInstance().getRepository().getUserInfo().getLogin()));
         }
       } else {
         setLockingAllowed(true);
       }
-      
+
       firePropertyChange("activeMetaUnlocked", null, repoLock != null ? "false" : "true"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
-  
+
   public boolean isCreateAllowed() {
     return isCreateAllowed;
   }
@@ -228,20 +240,20 @@ public class SpoonLockController extends AbstractXulEventHandler {
     this.isCreateAllowed = isCreateAllowed;
     this.firePropertyChange("createAllowed", null, isCreateAllowed); //$NON-NLS-1$
   }
-  
+
   public boolean isLockingAllowed() {
     return isLockingAllowed;
   }
-  
+
   public String isLockingNotAllowedAsString() {
     return Boolean.toString(!isLockingAllowed);
   }
-  
+
   public void setLockingAllowed(boolean isLockingAllowed) {
     this.isLockingAllowed = isLockingAllowed;
     this.firePropertyChange("lockingNotAllowedAsString", null, Boolean.toString(!isLockingAllowed)); //$NON-NLS-1$
   }
-  
+
   private boolean allowedActionsContains(IAbsSecurityProvider service, String action) throws KettleException {
     List<String> allowedActions = service.getAllowedActions(IAbsSecurityProvider.NAMESPACE);
     for (String actionName : allowedActions) {
@@ -251,18 +263,43 @@ public class SpoonLockController extends AbstractXulEventHandler {
     }
     return false;
   }
-  
+
   protected RepositoryLock fetchRepositoryLock(EngineMetaInterface meta) throws KettleException {
     RepositoryLock result = null;
-    if(meta != null) {
-      if(meta.getObjectId() != null) {
-        if(meta instanceof TransMeta) {
-          result = Spoon.getInstance().getRepository().getTransformationLock(meta.getObjectId());
-        } else if(meta instanceof JobMeta) {
-          result = Spoon.getInstance().getRepository().getJobLock(meta.getObjectId());
+    if (meta != null) {
+      if (meta.getObjectId() != null) {
+        if (meta instanceof EETransMeta) {
+          result = getService(Spoon.getInstance().getRepository()).getTransformationLock(meta.getObjectId());
+        } else if (meta instanceof EEJobMeta) {
+          result = getService(Spoon.getInstance().getRepository()).getJobLock(meta.getObjectId());
         }
       }
     }
     return result;
+  }
+
+  private XulPromptBox promptLockMessage(org.pentaho.ui.xul.dom.Document document, ResourceBundle messages,
+      String defaultMessage) throws XulException {
+    XulPromptBox prompt = (XulPromptBox) document.createElement("promptbox"); //$NON-NLS-1$
+
+    prompt.setTitle(messages.getString("RepositoryExplorer.LockMessage.Title"));//$NON-NLS-1$
+    prompt.setButtons(new DialogConstant[] { DialogConstant.OK, DialogConstant.CANCEL });
+
+    prompt.setMessage(messages.getString("RepositoryExplorer.LockMessage.Label"));//$NON-NLS-1$
+    prompt
+        .setValue(defaultMessage == null ? messages.getString("RepositoryExplorer.DefaultLockMessage") : defaultMessage); //$NON-NLS-1$
+    return prompt;
+  }
+
+  private ILockService getService(Repository repository) throws KettleException {
+    if (service == null) {
+      if (repository.hasService(ILockService.class)) {
+        return (ILockService) repository.getService(ILockService.class);
+      } else {
+        throw new IllegalStateException();
+      }
+    } else {
+      return service;
+    }
   }
 }

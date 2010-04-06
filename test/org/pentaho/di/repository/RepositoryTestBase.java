@@ -47,6 +47,14 @@ import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectRecipient.Type;
+import org.pentaho.di.repository.model.ObjectAce;
+import org.pentaho.di.repository.model.ObjectAcl;
+import org.pentaho.di.repository.model.ObjectPermission;
+import org.pentaho.di.repository.model.RepositoryObjectAce;
+import org.pentaho.di.repository.model.RepositoryObjectRecipient;
+import org.pentaho.di.repository.services.IAclService;
+import org.pentaho.di.repository.services.ILockService;
+import org.pentaho.di.repository.services.IRevisionService;
 import org.pentaho.di.trans.SlaveStepCopyPartitionDistribution;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransDependency;
@@ -507,6 +515,7 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testJobs() throws Exception {
+    ILockService service = ((ILockService)repository);
     RepositoryDirectory rootDir = initRepo();
     JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
     RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
@@ -573,16 +582,16 @@ public abstract class RepositoryTestBase {
     assertEquals(EXP_NOTEPAD_WIDTH, fetchedJob.getNote(0).getWidth());
     assertEquals(EXP_NOTEPAD_HEIGHT, fetchedJob.getNote(0).getHeight());
 
-    assertNull(repository.getJobLock(jobMeta.getObjectId()));
-    repository.lockJob(jobMeta.getObjectId(), EXP_JOB_LOCK_MSG);
-    assertEquals(EXP_JOB_LOCK_MSG, repository.getJobLock(jobMeta.getObjectId()).getMessage());
-    assertEquals(new Date().getDate(), repository.getJobLock(jobMeta.getObjectId()).getLockDate().getDate());
-    assertEquals(EXP_LOGIN, repository.getJobLock(jobMeta.getObjectId()).getLogin());
+    assertNull(service.getJobLock(jobMeta.getObjectId()));
+    service.lockJob(jobMeta.getObjectId(), EXP_JOB_LOCK_MSG);
+    assertEquals(EXP_JOB_LOCK_MSG, service.getJobLock(jobMeta.getObjectId()).getMessage());
+    assertEquals(new Date().getDate(), service.getJobLock(jobMeta.getObjectId()).getLockDate().getDate());
+    assertEquals(EXP_LOGIN, service.getJobLock(jobMeta.getObjectId()).getLogin());
     // TODO mlowery currently PUR lock only stores "login"; why do we need username too? 
     //    assertEquals(EXP_USERNAME, repository.getJobLock(jobMeta.getObjectId()).getUsername());
-    assertEquals(jobMeta.getObjectId(), repository.getJobLock(jobMeta.getObjectId()).getObjectId());
-    repository.unlockJob(jobMeta.getObjectId());
-    assertNull(repository.getJobLock(jobMeta.getObjectId()));
+    assertEquals(jobMeta.getObjectId(), service.getJobLock(jobMeta.getObjectId()).getObjectId());
+    service.unlockJob(jobMeta.getObjectId());
+    assertNull(service.getJobLock(jobMeta.getObjectId()));
 
     jobMeta.setDescription(EXP_JOB_DESC_V2);
     repository.save(jobMeta, VERSION_COMMENT_V2, null);
@@ -678,6 +687,7 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testTransformations() throws Exception {
+    ILockService service = ((ILockService)repository);
     RepositoryDirectory rootDir = initRepo();
     String uniqueTransName = EXP_TRANS_NAME.concat(EXP_DBMETA_NAME);
     TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
@@ -785,17 +795,17 @@ public abstract class RepositoryTestBase {
         EXP_PART_SCHEMA_NAME, 0));
     assertEquals(EXP_TRANS_SLAVE_TRANSFORMATION, transMeta.isSlaveTransformation());
 
-    assertNull(repository.getTransformationLock(transMeta.getObjectId()));
-    repository.lockTransformation(transMeta.getObjectId(), EXP_TRANS_LOCK_MSG);
-    assertEquals(EXP_TRANS_LOCK_MSG, repository.getTransformationLock(transMeta.getObjectId()).getMessage());
-    assertEquals(new Date().getDate(), repository.getTransformationLock(transMeta.getObjectId()).getLockDate()
+    assertNull(service.getTransformationLock(transMeta.getObjectId()));
+    service.lockTransformation(transMeta.getObjectId(), EXP_TRANS_LOCK_MSG);
+    assertEquals(EXP_TRANS_LOCK_MSG, service.getTransformationLock(transMeta.getObjectId()).getMessage());
+    assertEquals(new Date().getDate(), service.getTransformationLock(transMeta.getObjectId()).getLockDate()
         .getDate());
-    assertEquals(EXP_LOGIN, repository.getTransformationLock(transMeta.getObjectId()).getLogin());
+    assertEquals(EXP_LOGIN, service.getTransformationLock(transMeta.getObjectId()).getLogin());
     // TODO mlowery currently PUR lock only stores "login"; why do we need username too? 
     //    assertEquals(EXP_USERNAME, repository.getTransformationLock(transMeta.getObjectId()).getUsername());
-    assertEquals(transMeta.getObjectId(), repository.getTransformationLock(transMeta.getObjectId()).getObjectId());
-    repository.unlockTransformation(transMeta.getObjectId());
-    assertNull(repository.getTransformationLock(transMeta.getObjectId()));
+    assertEquals(transMeta.getObjectId(), service.getTransformationLock(transMeta.getObjectId()).getObjectId());
+    service.unlockTransformation(transMeta.getObjectId());
+    assertNull(service.getTransformationLock(transMeta.getObjectId()));
 
     transMeta.setDescription(EXP_TRANS_DESC_V2);
     repository.save(transMeta, VERSION_COMMENT_V2, null);
@@ -1232,7 +1242,8 @@ public abstract class RepositoryTestBase {
 
   protected boolean hasVersionWithComment(final RepositoryElementInterface element, final String comment)
       throws Exception {
-    List<ObjectRevision> versions = repository.getRevisions(element);
+    IRevisionService service = ((IRevisionService)repository);
+    List<ObjectRevision> versions = service.getRevisions(element);
     for (ObjectRevision version : versions) {
       if (version.getComment().equals(comment)) {
         return true;
@@ -1357,14 +1368,15 @@ public abstract class RepositoryTestBase {
 
   @Test
   public void testVersions() throws Exception {
+    IRevisionService service = ((IRevisionService)repository);
     DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
     deleteStack.push(dbMeta);
-    List<ObjectRevision> revs = repository.getRevisions(dbMeta);
+    List<ObjectRevision> revs = service.getRevisions(dbMeta);
     assertTrue(revs.size() >= 1);
     dbMeta.setHostname(EXP_DBMETA_HOSTNAME_V2);
     repository.save(dbMeta, VERSION_COMMENT_V2, null);
-    revs = repository.getRevisions(dbMeta);
+    revs = service.getRevisions(dbMeta);
     assertTrue(revs.size() >= 2);
 
     //    RepositoryVersionRegistry vReg = repository.getVersionRegistry();
@@ -1455,7 +1467,7 @@ public abstract class RepositoryTestBase {
     assertNotNull(version);
     assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
     assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
-    ObjectAcl acl = ((IAclManager)repository).getAcl(jobMeta.getObjectId(), false);
+    ObjectAcl acl = ((IAclService)repository).getAcl(jobMeta.getObjectId(), false);
     assertNotNull(acl);    
   }
   @Test
@@ -1471,15 +1483,15 @@ public abstract class RepositoryTestBase {
     assertNotNull(version);
     assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
     assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
-    ObjectAcl acl = ((IAclManager)repository).getAcl(jobMeta.getObjectId(), false);
+    ObjectAcl acl = ((IAclService)repository).getAcl(jobMeta.getObjectId(), false);
     assertNotNull(acl);
     acl.setEntriesInheriting(false);
     ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER),EnumSet.of(ObjectPermission.DELETE, ObjectPermission.READ, ObjectPermission.READ_ACL));
     List<ObjectAce> aceList = new ArrayList<ObjectAce>();
     aceList.add(ace);
     acl.setAces(aceList);
-    ((IAclManager)repository).setAcl(jobMeta.getObjectId(), acl);
-    ObjectAcl acl1 = ((IAclManager)repository).getAcl(jobMeta.getObjectId(), false);
+    ((IAclService)repository).setAcl(jobMeta.getObjectId(), acl);
+    ObjectAcl acl1 = ((IAclService)repository).getAcl(jobMeta.getObjectId(), false);
     assertEquals(Boolean.FALSE, acl1.isEntriesInheriting());
     assertEquals(1, acl1.getAces().size());
     ObjectAce ace1 = acl1.getAces().get(0);

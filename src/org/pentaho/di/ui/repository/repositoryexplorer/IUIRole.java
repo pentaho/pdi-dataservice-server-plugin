@@ -2,7 +2,7 @@ package org.pentaho.di.ui.repository.repositoryexplorer;
 
 import java.util.Set;
 
-import org.pentaho.di.repository.IRole;
+import org.pentaho.di.repository.model.IRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIUser;
 
 public interface IUIRole {

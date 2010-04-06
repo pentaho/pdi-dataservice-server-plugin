@@ -1,4 +1,4 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.services;
 
 import java.util.List;
 import java.util.Map;
