@@ -116,6 +116,9 @@
       -applymapping ${dist.dir}/proguard-biserver-ee-${dependency.bi-platform.revision}.map 
       -renamesourcefileattribute SourceFile
       -keepattributes SourceFile,LineNumberTable
+      -keepattributes *Annotation*
+      -keepattributes Signature
+      -keepattributes EnclosingMethod
       -printseeds
 
       -libraryjars ${java.home}/lib/rt.jar
@@ -127,6 +130,11 @@
       -injars      ${dist.dir}/${ivy.artifact.id}-${project.revision}.jar
       -outjars     ${dist.dir}/${ivy.artifact.id}-${project.revision}-obf.jar
  
+    -keepclassmembers enum * {
+      public static **[] values();
+      public static ** valueOf(java.lang.String);
+    }
+      
 	  -keepclasseswithmembernames class * implements org.pentaho.di.repository.Repository {
 		  public protected *;
 	  }
