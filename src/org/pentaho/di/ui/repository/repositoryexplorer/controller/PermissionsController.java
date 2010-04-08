@@ -57,7 +57,6 @@ import org.pentaho.ui.xul.components.XulCheckbox;
 import org.pentaho.ui.xul.components.XulConfirmBox;
 import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMessageBox;
-import org.pentaho.ui.xul.components.XulRadio;
 import org.pentaho.ui.xul.containers.XulDeck;
 import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.containers.XulListbox;
@@ -116,10 +115,12 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
   private XulButton removeAclButton;
 
   private XulCheckbox modifyCheckbox;
+  
+  private XulCheckbox viewCheckbox;
 
   private XulDialog manageAclsDialog;
 
-  private XulDialog applyAclConfirmationDialog;
+  //private XulDialog applyAclConfirmationDialog;
 
   private XulButton assignUserButton;
 
@@ -129,9 +130,9 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
 
   private XulButton unassignRoleButton;
 
-  private XulRadio applyOnlyRadioButton;
+  //private XulRadio applyOnlyRadioButton;
 
-  private XulRadio applyRecursiveRadioButton;
+  //private XulRadio applyRecursiveRadioButton;
 
   private Binding securityBinding;
 
@@ -213,6 +214,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
 
     inheritParentPermissionCheckbox = (XulCheckbox) document.getElementById("inherit-from-parent-permission-checkbox");//$NON-NLS-1$ 
     modifyCheckbox = (XulCheckbox) document.getElementById("modify-checkbox");//$NON-NLS-1$ 
+    viewCheckbox = (XulCheckbox) document.getElementById("view-checkbox");//$NON-NLS-1$
     manageAclsDialog = (XulDialog) document.getElementById("manage-acls-dialog");//$NON-NLS-1$ 
     addAclButton = (XulButton) document.getElementById("add-acl-button");//$NON-NLS-1$ 
     removeAclButton = (XulButton) document.getElementById("remove-acl-button");//$NON-NLS-1$ 
@@ -228,9 +230,9 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     assignUserButton = (XulButton) document.getElementById("assign-user");//$NON-NLS-1$ 
     unassignUserButton = (XulButton) document.getElementById("unassign-user");//$NON-NLS-1$ 
 
-    applyAclConfirmationDialog = (XulDialog) document.getElementById("apply-acl-confirmation-dialog");//$NON-NLS-1$ 
-    applyOnlyRadioButton = (XulRadio) document.getElementById("apply-only-radio-button");//$NON-NLS-1$ 
-    applyRecursiveRadioButton = (XulRadio) document.getElementById("apply-recursive-radio-button");//$NON-NLS-1$ 
+    //applyAclConfirmationDialog = (XulDialog) document.getElementById("apply-acl-confirmation-dialog");//$NON-NLS-1$ 
+    //applyOnlyRadioButton = (XulRadio) document.getElementById("apply-only-radio-button");//$NON-NLS-1$ 
+    //applyRecursiveRadioButton = (XulRadio) document.getElementById("apply-recursive-radio-button");//$NON-NLS-1$ 
 
     // Binding the model user or role list to the ui user or role list
     bf.setBindingType(Binding.Type.ONE_WAY);
@@ -424,7 +426,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
           if(repoObject instanceof IAclObject) {
             ((IAclObject) repoObject).getAcls(viewAclsModel);  
           } else {
-            throw new IllegalStateException("Repository does not support acls");
+            throw new IllegalStateException(messages.getString("PermissionsController.NoAclSupport")); //$NON-NLS-1$
           }          
           
           fileFolderLabel.setValue(BaseMessages.getString(RepositoryExplorer.class,
@@ -478,6 +480,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     //bf.createBinding(viewAclsModel, "removeEnabled", readCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     bf.createBinding(viewAclsModel, "removeEnabled", deleteCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     bf.createBinding(viewAclsModel, "removeEnabled", modifyCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
+    bf.createBinding(viewAclsModel, "removeEnabled", viewCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     bf.setBindingType(Binding.Type.ONE_WAY);
     // Binding when the user select from the list
 
@@ -598,11 +601,11 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
    */
   public void apply() {
     List<UIRepositoryObject> roList = getSelectedRepositoryObject();
-    if (roList != null && roList.size() == 1 && (roList.get(0) instanceof UIRepositoryDirectory)) {
+    /*if (roList != null && roList.size() == 1 && (roList.get(0) instanceof UIRepositoryDirectory)) {
       applyAclConfirmationDialog.show();
-    } else {
+    } else {*/
       applyOnObjectOnly(roList, false);
-    }
+    /*}*/
 
   }
 
@@ -618,7 +621,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
         if (rd instanceof IAclObject) {
           ((IAclObject) rd).setAcls(viewAclsModel);
         } else {
-          throw new IllegalStateException("Repository does not support acls");
+          throw new IllegalStateException(messages.getString("PermissionsController.NoAclSupport")); //$NON-NLS-1$
         }
 
       } else {
@@ -626,21 +629,21 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
         if (rc instanceof IAclObject) {
           ((IAclObject) rc).setAcls(viewAclsModel);
         } else {
-          throw new IllegalStateException("Repository does not support acls");
+          throw new IllegalStateException(messages.getString("PermissionsController.NoAclSupport")); //$NON-NLS-1$
         }
       }
-      if (hideDialog) {
+      /*if (hideDialog) {
         applyAclConfirmationDialog.hide();
-      }
+      }*/
       viewAclsModel.setModelDirty(false);
       messageBox.setTitle(messages.getString("Dialog.Success")); //$NON-NLS-1$
       messageBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
       messageBox.setMessage(messages.getString("PermissionsController.PermissionAppliedSuccessfully")); //$NON-NLS-1$
       messageBox.open();
     } catch (AccessDeniedException ade) {
-      if (hideDialog) {
+      /*if (hideDialog) {
         applyAclConfirmationDialog.hide();
-      }
+      }*/
       messageBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
       messageBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
       messageBox.setMessage(messages.getString(ade.getLocalizedMessage()));
@@ -648,6 +651,9 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     }
   }
 
+  /* TODO Once we have the functionality to apply permission recursively to the folder and its children
+   * we need to uncomment the section below 
+   *
   public void setApplyOnly() {
     applyOnlyRadioButton.setSelected(true);
     applyRecursiveRadioButton.setSelected(false);
@@ -657,33 +663,32 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     applyOnlyRadioButton.setSelected(false);
     applyRecursiveRadioButton.setSelected(true);
   }
-
+*/
   /**
    * applyAcl is called to save the acls back to the repository
    * @throws Exception
    */
   public void applyAcl() throws Exception {
+    /* TODO Once we have the functionality to apply permission recursively to the folder and its children
+     * we need to uncomment the section below 
+     *
     // We will call the the server apply method that only applies this acls changes on the current object
-    if (applyOnlyRadioButton.isSelected()) {
+    /*if (applyOnlyRadioButton.isSelected()) {*/
       List<UIRepositoryObject> roList = getSelectedRepositoryObject();
       applyOnObjectOnly(roList, true);
-    } else {
+    /*} else {
       // TODO We will call the the server apply method that applies this acls changes on the current object and its children
       applyAclConfirmationDialog.hide();
       messageBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
       messageBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
       messageBox.setMessage(messages.getString("PermissionsController.Error.FunctionalityNotSupported")); //$NON-NLS-1$
       messageBox.open();
-    }
+    }*/
   }
 
-  public void closeApplyAclConfirmationDialog() {
+  /*public void closeApplyAclConfirmationDialog() {
     applyAclConfirmationDialog.hide();
-  }
-
-  public void confirmRemoveAcl() throws Exception {
-    manageAclsDialog.hide();
-  }
+  }*/
 
   /*
    * The method is called when a user select an acl from the acl list. This method reads the current selected
@@ -710,6 +715,8 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
           writeCheckbox.setChecked(true);
         } else if (permission.equals(ObjectPermission.WRITE_ACL)) {
           modifyCheckbox.setChecked(true);
+        } else if (permission.equals(ObjectPermission.READ_ACL)) {
+          viewCheckbox.setChecked(true);
         }
       }
     } else {
@@ -717,16 +724,12 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     }
   }
 
-  private boolean areAllPermissionBoxChecked() {
-    return (deleteCheckbox.isChecked() && readCheckbox.isChecked() && writeCheckbox.isChecked() && modifyCheckbox
-        .isChecked());
-  }
-
   private void uncheckAllPermissionBox() {
     deleteCheckbox.setChecked(false);
     readCheckbox.setChecked(false);
     writeCheckbox.setChecked(false);
     modifyCheckbox.setChecked(false);
+    viewCheckbox.setChecked(false);
   }
 
   private void checkAllPermissionBox() {
@@ -734,6 +737,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     readCheckbox.setChecked(true);
     writeCheckbox.setChecked(true);
     modifyCheckbox.setChecked(true);
+    viewCheckbox.setChecked(true);
   }
 
   /*
@@ -746,13 +750,9 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       EnumSet<ObjectPermission> permissions = acl.getPermissionSet();
       if (permissions == null) {
         permissions = EnumSet.noneOf(ObjectPermission.class);
-      }
-      if (areAllPermissionBoxChecked()) {
-        permissions.add(ObjectPermission.ALL);
-      } else {
+      } else if(permissions.contains(ObjectPermission.ALL)) {
         permissions.remove(ObjectPermission.ALL);
       }
-      if (!areAllPermissionBoxChecked()) {
         if (deleteCheckbox.isChecked()) {
           permissions.add(ObjectPermission.DELETE);
         } else {
@@ -773,7 +773,11 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
         } else {
           permissions.remove(ObjectPermission.WRITE_ACL);
         }
-      }
+        if (viewCheckbox.isChecked()) {
+          permissions.add(ObjectPermission.READ_ACL);
+        } else {
+          permissions.remove(ObjectPermission.READ_ACL);
+        }        
       acl.setPermissionSet(permissions);
       viewAclsModel.updateAcl(acl);
     }
