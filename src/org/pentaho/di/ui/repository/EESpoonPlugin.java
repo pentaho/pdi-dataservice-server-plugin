@@ -22,7 +22,10 @@ import java.util.ResourceBundle;
 import org.eclipse.swt.SWT;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.repository.DomainObjectRegistry;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.model.EEJobMeta;
+import org.pentaho.di.repository.model.EETransMeta;
 import org.pentaho.di.repository.pur.PluginLicenseVerifier;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.services.IAbsSecurityManager;
@@ -175,11 +178,15 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       UIObjectRegistry.getInstance().registerUITransformationClass(UIEETransformation.class);
       SpoonDelegateRegistry.getInstance().registerSpoonJobDelegateClass(SpoonEEJobDelegate.class);
       SpoonDelegateRegistry.getInstance().registerSpoonTransDelegateClass(SpoonEETransformationDelegate.class);
+      DomainObjectRegistry.getInstance().registerJobMetaClass(EEJobMeta.class);
+      DomainObjectRegistry.getInstance().registerTransMetaClass(EETransMeta.class);
     } else {
       UIObjectRegistry.getInstance().registerUIJobClass(UIObjectRegistry.DEFAULT_UIJOB_CLASS);
       UIObjectRegistry.getInstance().registerUITransformationClass(UIObjectRegistry.DEFAULT_UITRANS_CLASS);
       SpoonDelegateRegistry.getInstance().registerSpoonJobDelegateClass(SpoonDelegateRegistry.DEFAULT_SPOONJOBDELEGATE_CLASS);
       SpoonDelegateRegistry.getInstance().registerSpoonTransDelegateClass(SpoonDelegateRegistry.DEFAULT_SPOONTRANSDELEGATE_CLASS);
+      DomainObjectRegistry.getInstance().registerJobMetaClass(DomainObjectRegistry.DEFAULT_JOB_META_CLASS);
+      DomainObjectRegistry.getInstance().registerTransMetaClass(DomainObjectRegistry.DEFAULT_TRANS_META_CLASS);
     }
   }
 
