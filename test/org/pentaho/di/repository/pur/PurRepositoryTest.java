@@ -4,7 +4,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +13,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.plugins.JobEntryPluginType;
 import org.pentaho.di.core.plugins.StepPluginType;
@@ -22,6 +20,7 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.UserInfo;
+import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository.IBackingRepositoryLifecycleManager;
 import org.pentaho.platform.api.repository.IUnifiedRepository;
@@ -29,6 +28,7 @@ import org.pentaho.platform.api.repository.RepositoryFile;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.StandaloneSession;
 import org.pentaho.platform.engine.security.SecurityHelper;
+import org.pentaho.test.platform.engine.core.MicroPlatform;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -56,6 +56,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   private IBackingRepositoryLifecycleManager manager;
   
   private IRoleAuthorizationPolicyRoleBindingDao roleBindingDao;
+  
+  private static IAuthorizationPolicy authorizationPolicy;
 
   @BeforeClass
   public static void setUpClass() throws Exception {
@@ -63,6 +65,11 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     // parent folder must match jcrRepository.homeDir bean property in repository-test-override.spring.xml
     FileUtils.deleteDirectory(new File("/tmp/jackrabbit-test"));
     PentahoSessionHolder.setStrategyName(PentahoSessionHolder.MODE_GLOBAL);
+    
+    MicroPlatform mp = new MicroPlatform();
+    // used by DefaultPentahoJackrabbitAccessControlHelper
+    mp.define(IAuthorizationPolicy.class, DelegatingAuthorizationPolicy.class);
+    mp.start();
   }
 
   @Before
@@ -87,6 +94,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
     repository = new PurRepository();
     ((PurRepository) repository).setPur(pur);
+    ((PurRepository) repository).setUserHomeDirectoryAliased(false);
 
     repository.init(repositoryMeta);
     
@@ -236,6 +244,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     manager = (IBackingRepositoryLifecycleManager) applicationContext.getBean("backingRepositoryLifecycleManager");
     roleBindingDao = (IRoleAuthorizationPolicyRoleBindingDao) applicationContext
         .getBean("roleAuthorizationPolicyRoleBindingDao");
+    authorizationPolicy = (IAuthorizationPolicy) applicationContext.getBean("authorizationPolicy");
     manager.startup();
   }
 
@@ -245,6 +254,22 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     RepositoryDirectory startDir = rootDir.findDirectory("public");
     assertNotNull(startDir);
     return startDir;
+  }
+  
+  /**
+   * Allow PentahoSystem to create this class but it in turn delegates to the authorizationPolicy fetched from Spring's
+   * ApplicationContext.
+   */
+  public static class DelegatingAuthorizationPolicy implements IAuthorizationPolicy {
+
+    public List<String> getAllowedActions(final String actionNamespace) {
+      return authorizationPolicy.getAllowedActions(actionNamespace);
+    }
+
+    public boolean isAllowed(final String actionName) {
+      return authorizationPolicy.isAllowed(actionName);
+    }
+
   }
 
 }

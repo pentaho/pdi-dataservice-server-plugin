@@ -151,6 +151,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   protected Serializable cachedDatabaseMetaParentFolderId;
 
   /**
+   * TODO mlowery remove this
+   */
+  private Boolean userHomeDirectoryAliasedOverride;
+  
+  /**
    * We cache the root directory of the loaded tree, to save retrievals when the findDirectory() method 
    * is called.
    */
@@ -490,7 +495,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     // a. the user has write access to the home directory (signifying admin access)
     // b. an admin has inadvertently created a sibling folder with the same name as the alias we want to use. 
 
-    isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (tenantRoot.findChild(alias) != null));
+    if (userHomeDirectoryAliasedOverride != null) {
+      isUserHomeDirectoryAliased = userHomeDirectoryAliasedOverride.booleanValue();
+    } else {
+      isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (tenantRoot.findChild(alias) != null));
+    }
 
     // List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
@@ -611,6 +620,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
+  /**
+   * TODO mlowery remove this
+   */
+  protected void setUserHomeDirectoryAliased(final Boolean userHomeDirectoryAliased) {
+    this.userHomeDirectoryAliasedOverride = userHomeDirectoryAliased;
+  }
+  
   private String getPath(final String name, final RepositoryDirectory repositoryDirectory,
       final RepositoryObjectType objectType) {
 
