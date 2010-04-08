@@ -20,15 +20,16 @@ import org.pentaho.di.ui.repository.pur.controller.RepositoryConfigController;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulRunner;
+import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 
 public class PurRepositoryDialog implements RepositoryDialogInterface {
   private RepositoryMeta repositoryMeta;
-
   private RepositoriesMeta repositoriesMeta;
-
+  private RepositoriesMeta masterRepositoriesMeta;
+  private String masterRepositoryName;
   private Shell parent;
 
   private int style;
@@ -40,7 +41,7 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
   private RepositoryConfigController repositoryConfigController = new RepositoryConfigController();
 
   private XulDomContainer container;
-
+   
   private ResourceBundle resourceBundle = new ResourceBundle() {
 
     @Override
@@ -55,15 +56,16 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
 
   };
 
-  public PurRepositoryDialog(Shell parent, int style, RepositoryMeta repositoryMeta,
-      RepositoriesMeta repositoriesMeta) {
+  public PurRepositoryDialog(Shell parent, int style, RepositoryMeta repositoryMeta, RepositoriesMeta repositoriesMeta) {
     this.parent = parent;
     this.repositoriesMeta = repositoriesMeta;
     this.repositoryMeta = repositoryMeta;
     this.style = style;
+    this.masterRepositoriesMeta = repositoriesMeta.clone();
+    this.masterRepositoryName = repositoryMeta.getName();
   }
 
-  public RepositoryMeta open(MODE mode) {
+  public RepositoryMeta open(final MODE mode) {
     try {
       SwtXulLoader swtLoader = new SwtXulLoader();
       swtLoader.setOuterContext(parent);
@@ -72,25 +74,47 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
           "org/pentaho/di/ui/repository/pur/xul/pur-repository-config-dialog.xul", resourceBundle); //$NON-NLS-1$
       final XulRunner runner = new SwtXulRunner();
       runner.addContainer(container);
-      parent.addDisposeListener(new DisposeListener(){
+      parent.addDisposeListener(new DisposeListener() {
 
         public void widgetDisposed(DisposeEvent arg0) {
           hide();
         }
-        
+
       });
-      repositoryConfigController.setMode(mode);
       repositoryConfigController.setMessages(resourceBundle);
       repositoryConfigController.setRepositoryMeta(repositoryMeta);
       repositoryConfigController.setCallback(new IRepositoryConfigDialogCallback() {
 
         public void onSuccess(PurRepositoryMeta meta) {
-          repositoryMeta = meta;
-          hide();
+          // If repository does not have a name then send back a null repository meta
+          if (meta.getName() != null) {
+            // If MODE is ADD then check if the repository name does not exist in the repository list then close this dialog
+            // If MODE is EDIT then check if the repository name is the same as before if not check if the new name does
+            // not exist in the repository. Otherwise return true to this method, which will mean that repository already exist
+            if (mode == MODE.ADD) {
+              if (masterRepositoriesMeta.searchRepository(meta.getName()) == null) {
+                repositoryMeta = meta;
+                hide();
+              } else {
+                displayRepositoryAlreadyExistMessage(meta.getName());
+              }
+            } else {
+              if (masterRepositoryName.equals(meta.getName())) {
+                repositoryMeta = meta;
+                hide();
+              } else if (masterRepositoriesMeta.searchRepository(meta.getName()) == null) {
+                repositoryMeta = meta;
+                hide();
+              } else {
+                displayRepositoryAlreadyExistMessage(meta.getName());
+              }
+            }
+          }
         }
 
         public void onError(Throwable t) {
-          SpoonFactory.getInstance().messageBox(t.getLocalizedMessage(), resourceBundle.getString("RepositoryConfigDialog.InitializationFailed"), false, Const.ERROR); //$NON-NLS-1$
+          SpoonFactory.getInstance().messageBox(t.getLocalizedMessage(),
+              resourceBundle.getString("RepositoryConfigDialog.InitializationFailed"), false, Const.ERROR); //$NON-NLS-1$
           log.error(resourceBundle.getString("RepositoryConfigDialog.ErrorStartingXulApplication"), t);//$NON-NLS-1$
         }
 
@@ -105,7 +129,8 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
         runner.initialize();
         show();
       } catch (XulException e) {
-        SpoonFactory.getInstance().messageBox(e.getLocalizedMessage(), resourceBundle.getString("RepositoryConfigDialog.InitializationFailed"), false, Const.ERROR); //$NON-NLS-1$
+        SpoonFactory.getInstance().messageBox(e.getLocalizedMessage(),
+            resourceBundle.getString("RepositoryConfigDialog.InitializationFailed"), false, Const.ERROR); //$NON-NLS-1$
         log.error(resourceBundle.getString("RepositoryConfigDialog.ErrorStartingXulApplication"), e);//$NON-NLS-1$
       }
     } catch (XulException e) {
@@ -123,7 +148,7 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
     XulDialog dialog = (XulDialog) container.getDocumentRoot().getElementById("repository-config-dialog"); //$NON-NLS-1$
     dialog.show();
   }
-  
+
   public void hide() {
     XulDialog dialog = (XulDialog) container.getDocumentRoot().getElementById("repository-config-dialog"); //$NON-NLS-1$
     dialog.hide();
@@ -134,4 +159,16 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
     return (Shell) dialog.getRootObject();
   }
 
+  private void  displayRepositoryAlreadyExistMessage(String name) {
+    try {
+      XulMessageBox messageBox = (XulMessageBox) container.getDocumentRoot().createElement("messagebox");
+      messageBox.setTitle(resourceBundle.getString("Dialog.Error"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(resourceBundle.getString("Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(CLZ, "PurRepositoryDialog.Dialog.ErrorIdExist.Message", name));//$NON-NLS-1$
+      messageBox.open();
+
+    } catch (XulException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

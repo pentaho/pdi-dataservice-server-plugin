@@ -102,4 +102,9 @@ public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
 	public void setVersionCommentMandatory(boolean versionCommentMandatory) {
 		this.versionCommentMandatory = versionCommentMandatory;
 	}
+
+  public RepositoryMeta clone() {
+    return new PurRepositoryMeta(REPOSITORY_TYPE_ID, getName(), getDescription(), getRepositoryLocation(), isVersionCommentMandatory());
+  }
+	
 }

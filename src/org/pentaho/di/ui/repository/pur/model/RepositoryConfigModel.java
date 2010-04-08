@@ -3,7 +3,6 @@
  */
 package org.pentaho.di.ui.repository.pur.model;
 
-import org.pentaho.di.ui.repository.dialog.RepositoryDialogInterface.MODE;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
 /**
@@ -15,7 +14,6 @@ public class RepositoryConfigModel extends XulEventSourceAdapter{
   private String id;
   private String name;
   private boolean modificationComments;
-  private MODE mode;
 
   /**
    * 
@@ -69,14 +67,5 @@ public class RepositoryConfigModel extends XulEventSourceAdapter{
   }
   public boolean isValid() {
     return url != null && url.length() > 0 && id != null && id.length() > 0 && name != null && name.length() > 0;
-  }
-
-  public void setMode(MODE mode) {
-    this.mode = mode;
-    this.firePropertyChange("mode", null, mode);//$NON-NLS-1$
-  }
-
-  public MODE getMode() {
-    return mode;
   }
 }

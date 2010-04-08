@@ -14,12 +14,10 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositoryLocation;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
-import org.pentaho.di.ui.repository.dialog.RepositoryDialogInterface.MODE;
 import org.pentaho.di.ui.repository.pur.IRepositoryConfigDialogCallback;
 import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.pur.model.RepositoryConfigModel;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
-import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.binding.Binding.Type;
@@ -52,7 +50,6 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
   private RepositoryMeta repositoryMeta;
   private ResourceBundle messages;
   private XulMessageBox messageBox;
-  private MODE mode;
   public RepositoryConfigController() {
     
   }
@@ -85,30 +82,11 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
     bf.createBinding(model, "modificationComments", modificationComments, "checked");//$NON-NLS-1$ //$NON-NLS-2$
     bf.setBindingType(Type.ONE_WAY);
     bf.createBinding(model, "valid", okButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
-    bf.createBinding(model, "mode", id, "disabled", new BindingConvertor<MODE, Boolean>() {//$NON-NLS-1$ //$NON-NLS-2$
-
-      @Override
-      public Boolean sourceToTarget(MODE arg0) {
-        if (arg0.equals(MODE.ADD)) {
-          return false;
-        }
-        return true;
-      }
-
-      @Override
-      public MODE targetToSource(Boolean arg0) {
-        // TODO Auto-generated method stub
-        return null;
-      }
-
-    });
   }
   
   public void ok() {
     if(repositoryMeta instanceof PurRepositoryMeta) {
-      if(model.getMode() == MODE.ADD) {
-        repositoryMeta.setName(model.getId());
-      }
+      repositoryMeta.setName(model.getId());
       repositoryMeta.setDescription(model.getName());  
       ((PurRepositoryMeta)repositoryMeta).setRepositoryLocation(new PurRepositoryLocation(model.getUrl()));
       ((PurRepositoryMeta)repositoryMeta).setVersionCommentMandatory(model.isModificationComments());
@@ -205,7 +183,6 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
       purRepositoryMeta = (PurRepositoryMeta) repositoryMeta;
       model.setName(purRepositoryMeta.getDescription());
       model.setId(purRepositoryMeta.getName());
-      model.setMode(mode);
       PurRepositoryLocation location = purRepositoryMeta.getRepositoryLocation();
       if (location != null) {
         model.setUrl(location.getUrl());
@@ -223,12 +200,4 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
   public void setMessages(ResourceBundle messages) {
     this.messages = messages;
   }
-
-  public MODE getMode() {
-    return mode;
-  }
-  public void setMode(MODE mode) {
-    this.mode = mode;
-  }
- 
 }
