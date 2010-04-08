@@ -20,9 +20,9 @@ import java.util.Enumeration;
 import java.util.ResourceBundle;
 
 import org.eclipse.swt.SWT;
+import org.pentaho.di.core.DomainObjectRegistry;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.DomainObjectRegistry;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.model.EEJobMeta;
 import org.pentaho.di.repository.model.EETransMeta;
