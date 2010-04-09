@@ -175,8 +175,8 @@
     		  public protected *;
       }
 
-      -keep class org.pentaho.di.ui.repository.repositoryexplorer.abs.AbsSpoonPlugin {}
-	  -keep class org.pentaho.di.ui.repository.repositoryexplorer.abs.controller.* {
+      -keep class org.pentaho.di.ui.repository.EESpoonPlugin {}
+	  -keep class org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.* {
   		  public protected *;
       }
       -keepnames class org.pentaho.di.repository.pur.PurRepositoryLocation
