@@ -7,14 +7,14 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.repository.model.AbsRoleInfo;
-import org.pentaho.di.repository.model.EEUserInfo;
-import org.pentaho.di.repository.model.IRole;
-import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
-import org.pentaho.di.ui.repository.repositoryexplorer.IUIRole;
+import org.pentaho.di.repository.pur.model.AbsRoleInfo;
+import org.pentaho.di.repository.pur.model.EEUserInfo;
+import org.pentaho.di.repository.pur.model.IRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEESecurity;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryRole;
+import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEESecurity;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
 
 public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSupportSecurityManager{

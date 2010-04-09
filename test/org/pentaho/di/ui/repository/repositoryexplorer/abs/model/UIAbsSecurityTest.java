@@ -3,7 +3,9 @@ package org.pentaho.di.ui.repository.repositoryexplorer.abs.model;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.pentaho.di.repository.services.IRoleSupportSecurityManager;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsRepositoryRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsSecurity;
+import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 
 public class UIAbsSecurityTest {
   IRoleSupportSecurityManager sm; 

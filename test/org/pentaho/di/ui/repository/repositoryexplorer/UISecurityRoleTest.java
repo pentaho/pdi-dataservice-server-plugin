@@ -9,12 +9,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.pentaho.di.repository.UserInfo;
-import org.pentaho.di.repository.model.EERoleInfo;
+import org.pentaho.di.repository.pur.model.EERoleInfo;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEERepositoryUser;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UISecurityRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurityRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurity.Mode;
 
 public class UISecurityRoleTest {

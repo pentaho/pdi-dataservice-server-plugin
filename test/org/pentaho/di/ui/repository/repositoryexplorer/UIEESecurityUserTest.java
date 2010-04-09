@@ -9,12 +9,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.repository.model.EERoleInfo;
-import org.pentaho.di.repository.model.EEUserInfo;
-import org.pentaho.di.repository.model.IRole;
+import org.pentaho.di.repository.pur.model.EERoleInfo;
+import org.pentaho.di.repository.pur.model.EEUserInfo;
+import org.pentaho.di.repository.pur.model.IRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEESecurityUser;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.abs.model.RepsitoryUserTestImpl;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEESecurityUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UISecurity.Mode;
 

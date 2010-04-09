@@ -2,9 +2,9 @@ package org.pentaho.di.ui.spoon.delegates;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.services.ILockService;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.gui.GUIResource;
+import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.TabMapEntry;
 import org.pentaho.xul.swt.tab.TabItem;

@@ -28,11 +28,11 @@ import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
-import org.pentaho.di.repository.model.ObjectAcl;
-import org.pentaho.di.repository.model.RepositoryLock;
-import org.pentaho.di.repository.services.ILockService;
+import org.pentaho.di.repository.pur.model.ObjectAcl;
+import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.ui.repository.pur.services.ILockService;
 
 import com.pentaho.repository.pur.data.node.DataNode;
 import com.pentaho.repository.pur.data.node.DataNodeRef;

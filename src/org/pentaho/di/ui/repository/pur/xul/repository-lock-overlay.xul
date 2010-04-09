@@ -19,4 +19,6 @@
 		<label id="spacer-label" flex="1" />
 		<button id="lock-menu" image="images/lock_options.png" menu="lockContextMenu" context="lockContextMenu"/>
 	</hbox>
+	
+	<tree id="file-table" ondrag="repositoryLockController.onDragFromLocalTable()"/>
 </overlay>

@@ -24,7 +24,6 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementLocationInterface;
-import org.pentaho.di.repository.services.IRevisionService;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.dialog.ShowMessageDialog;
@@ -33,6 +32,7 @@ import org.pentaho.di.ui.core.gui.WindowProperty;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.repository.dialog.RepositoryRevisionBrowserDialogInterface;
+import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 
 public class PurRepositoryRevisionBrowserDialog implements RepositoryRevisionBrowserDialogInterface {

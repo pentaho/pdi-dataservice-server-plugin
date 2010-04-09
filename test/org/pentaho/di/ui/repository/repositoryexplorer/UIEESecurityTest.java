@@ -12,13 +12,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectRecipient;
-import org.pentaho.di.repository.model.EERoleInfo;
-import org.pentaho.di.repository.model.EEUserInfo;
-import org.pentaho.di.repository.model.IRole;
+import org.pentaho.di.repository.pur.model.EERoleInfo;
+import org.pentaho.di.repository.pur.model.EEUserInfo;
+import org.pentaho.di.repository.pur.model.IRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEERepositoryUser;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEESecurity;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEERepositoryUser;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIEESecurity;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
 
 public class UIEESecurityTest {
