@@ -61,6 +61,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
   private static final String PROP_STEP_PERFORMANCE_CAPTURING_DELAY = "STEP_PERFORMANCE_CAPTURING_DELAY";
 
+  private static final String PROP_STEP_PERFORMANCE_CAPTURING_SIZE_LIMIT = "STEP_PERFORMANCE_CAPTURING_SIZE_LIMIT";
+
   private static final String PROP_CAPTURE_STEP_PERFORMANCE = "CAPTURE_STEP_PERFORMANCE";
 
   private static final String PROP_SHARED_FILE = "SHARED_FILE";
@@ -458,6 +460,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     }
     transMeta.setCapturingStepPerformanceSnapShots(capturingStepPerformanceSnapShots);
     transMeta.setStepPerformanceCapturingDelay(rootNode.getProperty(PROP_STEP_PERFORMANCE_CAPTURING_DELAY).getLong());
+    transMeta.setStepPerformanceCapturingSizeLimit(rootNode.getProperty(PROP_STEP_PERFORMANCE_CAPTURING_SIZE_LIMIT).getString());
     transMeta.getPerformanceLogTable().setTableName(getString(rootNode, PROP_STEP_PERFORMANCE_LOG_TABLE));
     transMeta.getTransLogTable().setLogSizeLimit(getString(rootNode, PROP_LOG_SIZE_LIMIT));
     //transMeta.setStepPerformanceLogTable( repository.getPropertyString(rootNode, "STEP_PERFORMANCE_LOG_TABLE") );
@@ -648,6 +651,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
     rootNode.setProperty(PROP_CAPTURE_STEP_PERFORMANCE, transMeta.isCapturingStepPerformanceSnapShots());
     rootNode.setProperty(PROP_STEP_PERFORMANCE_CAPTURING_DELAY, transMeta.getStepPerformanceCapturingDelay());
+    rootNode.setProperty(PROP_STEP_PERFORMANCE_CAPTURING_SIZE_LIMIT, transMeta.getStepPerformanceCapturingSizeLimit());
     rootNode.setProperty(PROP_STEP_PERFORMANCE_LOG_TABLE, transMeta.getPerformanceLogTable().getTableName());
 
     rootNode.setProperty(PROP_LOG_SIZE_LIMIT, transMeta.getTransLogTable().getLogSizeLimit());
