@@ -11,6 +11,6 @@ public class AbsSecurityManagerUISupport extends AbstractRepositoryExplorerUISup
     AbsController absController = new AbsController();
     handlers.add(absController);
     controllerNames.add(absController.getName());
-    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/repositoryexplorer/abs/xul/abs-layout-overlay.xul")); //$NON-NLS-1$
+    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/pur/repositoryexplorer/abs/xul/abs-layout-overlay.xul")); //$NON-NLS-1$
   }
 }

@@ -11,6 +11,6 @@ public class ManageRolesUISupport extends AbstractRepositoryExplorerUISupport{
     EESecurityController manageUserAndRolesController = new EESecurityController();
     handlers.add(manageUserAndRolesController);
     controllerNames.add(manageUserAndRolesController.getName());
-    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/repositoryexplorer/xul/security-with-role-enabled.xul")); //$NON-NLS-1$
+    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/pur/repositoryexplorer/xul/security-with-role-enabled.xul")); //$NON-NLS-1$
   }
 }

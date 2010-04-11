@@ -1537,10 +1537,15 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     boolean isUpdate = element.getObjectId() != null;
     RepositoryFile file = null;
     if (isUpdate) {
-      file = pur.getFileById(element.getObjectId().getId());
-      // update description
-      file = new RepositoryFile.Builder(file).description(element.getDescription()).build();
-      file = pur.updateFile(file, new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), versionComment);
+      ObjectId id = element.getObjectId();
+      file = pur.getFileById(id.getId());
+      if(!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
+        // update description
+        file = new RepositoryFile.Builder(file).description(element.getDescription()).build();
+        file = pur.updateFile(file, new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), versionComment);
+      } else {
+        throw new KettleException("File is currently locked by another user for editing");
+      }
     } else {
       file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.JOB.getExtension()).versioned(true)
           .description(element.getDescription()).build();
@@ -1561,10 +1566,15 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     boolean isUpdate = element.getObjectId() != null;
     RepositoryFile file = null;
     if (isUpdate) {
-      file = pur.getFileById(element.getObjectId().getId());
-      // update description
-      file = new RepositoryFile.Builder(file).description(element.getDescription()).build();
-      file = pur.updateFile(file, new NodeRepositoryFileData(transDelegate.elementToDataNode(element)), versionComment);
+      ObjectId id = element.getObjectId();
+      file = pur.getFileById(id.getId());
+      if(!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
+        // update description
+        file = new RepositoryFile.Builder(file).description(element.getDescription()).build();
+        file = pur.updateFile(file, new NodeRepositoryFileData(transDelegate.elementToDataNode(element)), versionComment);
+      } else {
+        throw new KettleException("File is currently locked by another user for editing");
+      }
     } else {
       file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.TRANSFORMATION.getExtension())
           .versioned(true).description(element.getDescription()).build();

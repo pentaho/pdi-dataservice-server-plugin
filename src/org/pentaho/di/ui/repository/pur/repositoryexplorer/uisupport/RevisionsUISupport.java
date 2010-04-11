@@ -12,6 +12,6 @@ public class RevisionsUISupport extends AbstractRepositoryExplorerUISupport{
     RevisionController revisionController = new RevisionController();
     handlers.add(revisionController);
     controllerNames.add(revisionController.getName());
-    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/repositoryexplorer/xul/version-layout-overlay.xul")); //$NON-NLS-1$
+    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/pur/repositoryexplorer/xul/version-layout-overlay.xul")); //$NON-NLS-1$
   }
 }

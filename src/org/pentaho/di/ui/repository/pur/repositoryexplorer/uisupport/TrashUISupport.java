@@ -10,7 +10,7 @@ public class TrashUISupport extends AbstractRepositoryExplorerUISupport {
   protected void setup() {
     TrashBrowseController deleteController = new TrashBrowseController();
     handlers.add(deleteController);
-    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/repositoryexplorer/trash/trash-overlay.xul")); //$NON-NLS-1$
+    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/pur/repositoryexplorer/xul/trash-overlay.xul")); //$NON-NLS-1$
   }
 
 }
