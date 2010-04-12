@@ -6,7 +6,7 @@ import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.AbstractModelNode;
+import org.pentaho.ui.xul.util.AbstractModelNode;
 
 public class UIRepositoryRoles extends AbstractModelNode<IUIRole> {
   
@@ -32,7 +32,7 @@ public class UIRepositoryRoles extends AbstractModelNode<IUIRole> {
     
     @Override
     protected void fireCollectionChanged() {
-      this.changeSupport.firePropertyChange("children", null, this.getChildren());
+      this.changeSupport.firePropertyChange("children", null, this);
     }
 
 }

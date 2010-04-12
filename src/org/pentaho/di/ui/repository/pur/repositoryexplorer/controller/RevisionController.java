@@ -45,6 +45,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
   protected BindingFactory bf;
   protected XulTabbox  filePropertiesTabbox;
   protected RepositoryExplorerCallback callback;
+  protected UIRepositoryObjectRevisions revisions;
 
   protected ResourceBundle messages = new ResourceBundle() {
 
@@ -105,7 +106,10 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
 
     bf.setBindingType(Binding.Type.ONE_WAY);
     bf.createBinding(folderTree, "selectedItems", this, "historyTabVisibility"); //$NON-NLS-1$  //$NON-NLS-2$
-    revisionBinding = bf.createBinding(browseController, "repositoryObjects", revisionTable, "elements", //$NON-NLS-1$ //$NON-NLS-2$
+
+    revisionBinding = bf.createBinding(this, "revisionObjects", revisionTable, "elements");//$NON-NLS-1$ //$NON-NLS-2$
+        
+    revisionBinding = bf.createBinding(browseController, "repositoryObjects",  this, "revisionObjects",//$NON-NLS-1$ //$NON-NLS-2$
         new BindingConvertor<List<UIRepositoryObject>, UIRepositoryObjectRevisions>() {
           @Override
           public UIRepositoryObjectRevisions sourceToTarget(List<UIRepositoryObject> ro) {
@@ -129,9 +133,6 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
               } else {
                 throw new IllegalStateException(messages.getString("RevisionsController.RevisionsNotSupported")); //$NON-NLS-1$
               }
-              bf.setBindingType(Binding.Type.ONE_WAY);
-              bf.createBinding(revisions, "children", revisionTable, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
-
             } catch (KettleException e) {
               // convert to runtime exception so it bubbles up through the UI
               throw new RuntimeException(e);
@@ -155,6 +156,16 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
     }
 
   }
+  
+  public void setRevisionObjects(UIRepositoryObjectRevisions revisions){
+    this.revisions = revisions;
+    this.firePropertyChange("revisionObjects", null, revisions);
+  }
+  
+  public UIRepositoryObjectRevisions getRevisionObjects(){
+    return revisions;
+  }
+  
   public String getName() {
     return "revisionController"; //$NON-NLS-1$
   }

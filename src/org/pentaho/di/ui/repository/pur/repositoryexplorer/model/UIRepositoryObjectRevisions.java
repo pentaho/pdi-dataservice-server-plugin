@@ -18,8 +18,7 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.List;
 
-import org.pentaho.di.ui.repository.repositoryexplorer.model.AbstractModelNode;
-
+import org.pentaho.ui.xul.util.AbstractModelNode;
 
 public class UIRepositoryObjectRevisions extends AbstractModelNode<UIRepositoryObjectRevision>{
 
@@ -33,7 +32,7 @@ public class UIRepositoryObjectRevisions extends AbstractModelNode<UIRepositoryO
   
   @Override
   protected void fireCollectionChanged() {
-    this.changeSupport.firePropertyChange("children", null, this.getChildren());
+    this.changeSupport.firePropertyChange("children", null, this);
   }
   
 }
