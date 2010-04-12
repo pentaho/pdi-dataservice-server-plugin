@@ -35,6 +35,7 @@ import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
 import org.pentaho.di.repository.pur.model.ObjectPermission;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IAclObject;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAcl;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAclModel;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAcls;
@@ -81,7 +82,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(RepositoryExplorer.class, key);
+      return BaseMessages.getString(IUIEEUser.class, key);
     }
 
   };
@@ -167,7 +168,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       if (rep != null && rep.hasService(RepositorySecurityProvider.class)) {
         service = (RepositorySecurityProvider) rep.getService(RepositorySecurityProvider.class);
       } else {
-        throw new ControllerInitializationException(BaseMessages.getString(RepositoryExplorer.class,
+        throw new ControllerInitializationException(BaseMessages.getString(IUIEEUser.class,
             "PermissionsController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", RepositorySecurityManager.class)); //$NON-NLS-1$
 
       }
@@ -429,21 +430,21 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
             throw new IllegalStateException(messages.getString("PermissionsController.NoAclSupport")); //$NON-NLS-1$
           }          
           
-          fileFolderLabel.setValue(BaseMessages.getString(RepositoryExplorer.class,
+          fileFolderLabel.setValue(BaseMessages.getString(IUIEEUser.class,
               "PermissionsTab.UserRolePermission", repoObject.getName())); //$NON-NLS-1$
           bf.setBindingType(Binding.Type.ONE_WAY);
           bf.createBinding(viewAclsModel, "acls", userRoleList, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
         } catch (AccessDeniedException ade) {
           messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
           messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(BaseMessages.getString(RepositoryExplorer.class,
+          messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
               "PermissionsController.UnableToGetAcls", repoObject.getName(), ade.getLocalizedMessage()));//$NON-NLS-1$
 
           messageBox.open();
         } catch (Exception e) {
           messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
           messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(BaseMessages.getString(RepositoryExplorer.class,
+          messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
               "PermissionsController.UnableToGetAcls", repoObject.getName(), e.getLocalizedMessage())); //$NON-NLS-1$
           messageBox.open();
         }
@@ -564,7 +565,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     } catch (KettleException ke) {
       messageBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
       messageBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(RepositoryExplorer.class,
+      messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
           "PermissionsController.UnableToGetUserOrRole", ke.getLocalizedMessage()));//$NON-NLS-1$
 
       messageBox.open();

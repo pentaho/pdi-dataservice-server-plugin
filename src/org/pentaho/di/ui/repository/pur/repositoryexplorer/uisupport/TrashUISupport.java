@@ -1,8 +1,9 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.uisupport;
 
-import org.pentaho.di.ui.repository.capabilities.AbstractRepositoryExplorerUISupport;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.controller.TrashBrowseController;
-import org.pentaho.ui.xul.impl.DefaultXulOverlay;
+import org.pentaho.di.ui.repository.repositoryexplorer.uisupport.AbstractRepositoryExplorerUISupport;
+import org.pentaho.di.ui.repository.repositoryexplorer.uisupport.RepositoryExplorerDefaultXulOverlay;
 
 public class TrashUISupport extends AbstractRepositoryExplorerUISupport {
 
@@ -10,7 +11,7 @@ public class TrashUISupport extends AbstractRepositoryExplorerUISupport {
   protected void setup() {
     TrashBrowseController deleteController = new TrashBrowseController();
     handlers.add(deleteController);
-    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/pur/repositoryexplorer/xul/trash-overlay.xul")); //$NON-NLS-1$
+    overlays.add(new RepositoryExplorerDefaultXulOverlay("org/pentaho/di/ui/repository/pur/repositoryexplorer/xul/trash-overlay.xul", IUIEEUser.class)); //$NON-NLS-1$
   }
 
 }

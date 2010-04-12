@@ -9,11 +9,11 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IRevisionObject;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectRevision;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectRevisions;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUISupportController;
-import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorerCallback;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.IBrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.MainController;
@@ -33,8 +33,6 @@ import org.pentaho.ui.xul.containers.XulTree;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import org.pentaho.ui.xul.swt.custom.DialogConstant;
 import org.pentaho.ui.xul.util.XulDialogCallback;
-
-import com.sun.xml.txw2.IllegalSignatureException;
 
 public class RevisionController  extends AbstractXulEventHandler implements IUISupportController {
   protected XulTree folderTree;
@@ -57,7 +55,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(RepositoryExplorer.class, key);
+      return BaseMessages.getString(IUIEEUser.class, key);
     }
 
   };
@@ -71,7 +69,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
     try {
       this.repository = repository; 
       mainController = (MainController) this.getXulDomContainer().getEventHandler("mainController"); //$NON-NLS-1$
-      browseController = (IBrowseController) this.getXulDomContainer().getEventHandler("browseController");
+      browseController = (IBrowseController) this.getXulDomContainer().getEventHandler("browseController"); //$NON-NLS-1$
       bf = new DefaultBindingFactory();
       bf.setDocument(this.getXulDomContainer().getDocumentRoot());
 
@@ -129,7 +127,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
               if(rc instanceof IRevisionObject) {
                 revisions = ((IRevisionObject)rc).getRevisions();
               } else {
-                throw new IllegalStateException("Repository does not support revisions");
+                throw new IllegalStateException(messages.getString("RevisionsController.RevisionsNotSupported")); //$NON-NLS-1$
               }
               bf.setBindingType(Binding.Type.ONE_WAY);
               bf.createBinding(revisions, "children", revisionTable, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -208,7 +206,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
               if(contentToRestore instanceof IRevisionObject) {
                 ((IRevisionObject)contentToRestore).restoreRevision(versionToRestore, value);
               } else {
-                throw new IllegalSignatureException("Repository does not support revisions");
+                throw new IllegalStateException(messages.getString("RevisionsController.RevisionsNotSupported")); //$NON-NLS-1$
               }
             } catch (Exception e) {
               // convert to runtime exception so it bubbles up through the UI

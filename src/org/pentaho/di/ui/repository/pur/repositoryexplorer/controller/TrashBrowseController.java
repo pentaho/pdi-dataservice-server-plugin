@@ -119,7 +119,7 @@ public class TrashBrowseController extends BrowseController {
 
     @Override
     public String getName() {
-      return messages.getString("trash"); //$NON-NLS-1$
+      return messages.getString("Trash"); //$NON-NLS-1$
     }
 
     @Override

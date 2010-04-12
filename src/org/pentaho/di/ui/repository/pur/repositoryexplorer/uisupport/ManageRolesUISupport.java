@@ -1,8 +1,9 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.uisupport;
 
-import org.pentaho.di.ui.repository.capabilities.AbstractRepositoryExplorerUISupport;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.controller.EESecurityController;
-import org.pentaho.ui.xul.impl.DefaultXulOverlay;
+import org.pentaho.di.ui.repository.repositoryexplorer.uisupport.AbstractRepositoryExplorerUISupport;
+import org.pentaho.di.ui.repository.repositoryexplorer.uisupport.RepositoryExplorerDefaultXulOverlay;
 
 public class ManageRolesUISupport extends AbstractRepositoryExplorerUISupport{
 
@@ -11,6 +12,6 @@ public class ManageRolesUISupport extends AbstractRepositoryExplorerUISupport{
     EESecurityController manageUserAndRolesController = new EESecurityController();
     handlers.add(manageUserAndRolesController);
     controllerNames.add(manageUserAndRolesController.getName());
-    overlays.add(new DefaultXulOverlay("org/pentaho/di/ui/repository/pur/repositoryexplorer/xul/security-with-role-enabled.xul")); //$NON-NLS-1$
+    overlays.add(new RepositoryExplorerDefaultXulOverlay("org/pentaho/di/ui/repository/pur/repositoryexplorer/xul/security-with-role-enabled.xul", IUIEEUser.class)); //$NON-NLS-1$
   }
 }

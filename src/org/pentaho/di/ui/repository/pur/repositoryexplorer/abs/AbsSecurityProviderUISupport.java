@@ -1,11 +1,11 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs;
 
-import org.pentaho.di.ui.repository.capabilities.AbstractRepositoryExplorerUISupport;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.AbsClustersController;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.AbsConnectionsController;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.AbsContextMenuController;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.AbsPartitionsController;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.AbsSlavesController;
+import org.pentaho.di.ui.repository.repositoryexplorer.uisupport.AbstractRepositoryExplorerUISupport;
 
 public class AbsSecurityProviderUISupport extends AbstractRepositoryExplorerUISupport{
 

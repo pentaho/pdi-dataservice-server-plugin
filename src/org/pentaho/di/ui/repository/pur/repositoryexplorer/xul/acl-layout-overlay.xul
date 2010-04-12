@@ -26,7 +26,7 @@
 							<checkbox id="delete-checkbox" command="permissionsController.updatePermission()" flex="1" label="${PermissionsTab.Delete}" disabled="true"/>														
 						</vbox>																																								
 						<vbox id="permission-column-2" flex="1"> 
-							<checkbox id="view-checkbox" command="permissionsController.updatePermission()" flex="1" label="View Permission" disabled="true"/>
+							<checkbox id="view-checkbox" command="permissionsController.updatePermission()" flex="1" label="${PermissionsTab.ViewPermission}" disabled="true"/>
 							<checkbox id="modify-checkbox" command="permissionsController.updatePermission()" flex="1" label="${PermissionsTab.ModifyPermission}" disabled="true"/>
 							<label id="spacer-label" flex="1" />
 						</vbox>

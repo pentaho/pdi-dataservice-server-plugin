@@ -11,12 +11,11 @@ import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.gui.SpoonFactory;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PurRepository;
-import org.pentaho.di.repository.pur.model.EEJobMeta;
-import org.pentaho.di.repository.pur.model.EETransMeta;
-import org.pentaho.di.repository.pur.model.ILockable;
 import org.pentaho.di.repository.pur.model.RepositoryLock;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
@@ -73,7 +72,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
   public void lockContent() throws Exception {
     try {
-      if (workingMeta != null && workingMeta instanceof ILockable) {
+      if (workingMeta != null && supportsLocking(Spoon.getInstance().getRepository())) {
         // Bind the tab icon if it is not already bound (cannot be done in init because TransGraph must exist to create the tab)
         // Look in the SpoonTransformationDelegate for details on the TabItem creation
         if (!tabBound) {
@@ -84,9 +83,9 @@ public class SpoonLockController extends AbstractXulEventHandler {
                     @Override
                     public Image sourceToTarget(String activeMetaUnlocked) {
                       if (Boolean.valueOf(activeMetaUnlocked)) {
-                        if (workingMeta instanceof EETransMeta) {
+                        if (workingMeta instanceof TransMeta) {
                           return GUIResource.getInstance().getImageTransGraph();
-                        } else if (workingMeta instanceof EEJobMeta) {
+                        } else if (workingMeta instanceof JobMeta) {
                           return GUIResource.getInstance().getImageJobGraph();
                         }
                       } else {
@@ -113,10 +112,10 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
               if (!status.equals(Status.CANCEL)) {
                 try {
-                  if (workingMeta instanceof EETransMeta) {
+                  if (workingMeta instanceof TransMeta) {
                     getService(Spoon.getInstance().getRepository())
                         .lockTransformation(workingMeta.getObjectId(), value);
-                  } else if (workingMeta instanceof EEJobMeta) {
+                  } else if (workingMeta instanceof JobMeta) {
                     getService(Spoon.getInstance().getRepository()).lockJob(workingMeta.getObjectId(), value);
                   }
 
@@ -151,9 +150,9 @@ public class SpoonLockController extends AbstractXulEventHandler {
           lockNotePrompt.open();
         } else {
           // Unlock the object (it currently IS locked)
-          if (workingMeta instanceof EETransMeta) {
+          if (workingMeta instanceof TransMeta) {
             getService(Spoon.getInstance().getRepository()).unlockTransformation(workingMeta.getObjectId());
-          } else if (workingMeta instanceof EEJobMeta) {
+          } else if (workingMeta instanceof JobMeta) {
             getService(Spoon.getInstance().getRepository()).unlockJob(workingMeta.getObjectId());
           }
           // Execute binding. Notify listeners that the object is now unlocked
@@ -173,7 +172,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
   }
 
   public void viewLockNote() throws Exception {
-    if (workingMeta != null && workingMeta instanceof ILockable) {
+    if (workingMeta != null && supportsLocking(Spoon.getInstance().getRepository())) {
       try {
         RepositoryLock repoLock = fetchRepositoryLock(workingMeta);
         if (repoLock != null) {
@@ -302,9 +301,9 @@ public class SpoonLockController extends AbstractXulEventHandler {
     RepositoryLock result = null;
     if (meta != null) {
       if (meta.getObjectId() != null) {
-        if (meta instanceof EETransMeta) {
+        if (meta instanceof TransMeta) {
           result = getService(Spoon.getInstance().getRepository()).getTransformationLock(meta.getObjectId());
-        } else if (meta instanceof EEJobMeta) {
+        } else if (meta instanceof JobMeta) {
           result = getService(Spoon.getInstance().getRepository()).getJobLock(meta.getObjectId());
         }
       }
@@ -336,4 +335,9 @@ public class SpoonLockController extends AbstractXulEventHandler {
       return service;
     }
   }
+  
+  private boolean supportsLocking(Repository repository) throws KettleException {
+    return repository.hasService(ILockService.class);
+  }
+  
 }
