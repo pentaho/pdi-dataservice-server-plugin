@@ -13,6 +13,7 @@ import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.platform.engine.security.userrole.ws.IUserDetailsRoleListWebService;
 import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
+import org.pentaho.platform.engine.security.userroledao.AlreadyExistsException;
 import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
@@ -80,8 +81,8 @@ public class UserRoleDelegate {
         lookupCache.insertUserToLookupSet(newUser);
         fireUserRoleListChange();
       } catch (Exception e) {
-        throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-            "UserRoleDelegate.ERROR_0002_UNABLE_TO_CREATE_USER"), e); //$NON-NLS-1$
+          throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
+          "UserRoleDelegate.ERROR_0002_UNABLE_TO_CREATE_USER", newUser.getLogin()), e); //$NON-NLS-1$
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
@@ -98,7 +99,7 @@ public class UserRoleDelegate {
         fireUserRoleListChange();
       } catch (Exception e) {
         throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-            "UserRoleDelegate.ERROR_0003_UNABLE_TO_DELETE_USERS"), e); //$NON-NLS-1$
+            "UserRoleDelegate.ERROR_0003_UNABLE_TO_DELETE_USERS", e.getLocalizedMessage()), e); //$NON-NLS-1$
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
@@ -213,9 +214,9 @@ public class UserRoleDelegate {
         userRoleWebService.setUsers(role, UserRoleHelper.convertToPentahoProxyUsers(newRole.getUsers()));
         lookupCache.insertRoleToLookupSet(newRole);
         fireUserRoleListChange();
-      } catch (Exception e) {
-        throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
-            "UserRoleDelegate.ERROR_0008_UNABLE_TO_CREATE_ROLE", newRole.getName()), e); //$NON-NLS-1$
+      } catch (UserRoleException e) {
+          throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
+              "UserRoleDelegate.ERROR_0008_UNABLE_TO_CREATE_ROLE", newRole.getName()), e); //$NON-NLS-1$
       }
     } else {
       throw new KettleException(BaseMessages.getString(UserRoleDelegate.class,
