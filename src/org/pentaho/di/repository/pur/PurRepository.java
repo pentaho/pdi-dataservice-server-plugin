@@ -76,12 +76,11 @@ import org.pentaho.platform.api.repository.RepositoryFileSid;
 import org.pentaho.platform.api.repository.VersionSummary;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.pentaho.platform.engine.core.system.StandaloneSession;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
-import com.pentaho.repository.RepositoryPaths;
+import com.pentaho.repository.ClientRepositoryPaths;
 import com.pentaho.repository.pur.data.node.NodeRepositoryFileData;
 import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
 import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
@@ -154,7 +153,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
    * TODO mlowery remove this
    */
   private Boolean userHomeDirectoryAliasedOverride;
-  
+
   /**
    * We cache the root directory of the loaded tree, to save retrievals when the findDirectory() method 
    * is called.
@@ -192,8 +191,18 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public void setPur(final IUnifiedRepository pur) {
+  /**
+   * Protected for unit tests.
+   */
+  protected void setPur(final IUnifiedRepository pur) {
     this.pur = pur;
+  }
+  
+  /**
+   * Protected for unit tests.
+   */
+  protected void setUser(final IUser user) {
+    this.user = user;
   }
 
   public void init(final RepositoryMeta repositoryMeta) {
@@ -207,7 +216,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     // connect to the IUnifiedRepository through PentahoSystem
     // this assumes we're running in a BI Platform
     pur = PentahoSystem.get(IUnifiedRepository.class);
-    userHomeAlias = pur.getFile(RepositoryPaths.getUserHomeFolderPath()).getId();
+    userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
     // for now, there is no need to support the security manager
     // what about security provider?
   }
@@ -224,10 +233,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         String repoUrl = repositoryMeta.getRepositoryLocation().getUrl();
         String baseUrl = PentahoSystem.getApplicationContext().getBaseUrl();
         if (repoUrl.endsWith("/")) {
-          repoUrl = repoUrl.substring(0, repoUrl.length()-2);
+          repoUrl = repoUrl.substring(0, repoUrl.length() - 2);
         }
         if (baseUrl.endsWith("/")) {
-          baseUrl = baseUrl.substring(0, baseUrl.length()-2);
+          baseUrl = baseUrl.substring(0, baseUrl.length() - 2);
         }
         if (repoUrl.startsWith(baseUrl)) {
           connectInProcess();
@@ -235,17 +244,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         }
       }
     }
-    
-    // TODO: is this necessary in client side code? this could 
-    //       cause problems when embedded in the platform.
-    populatePentahoSessionHolder();
 
     try {
       IUnifiedRepositoryWebService repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
           username, password, IUnifiedRepositoryWebService.class);
-      
+
       pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
-      userHomeAlias = pur.getFile(RepositoryPaths.getUserHomeFolderPath()).getId();
+      userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
       // We need to add the service class in the list in the order of dependencies
       // IRoleSupportSecurityManager depends RepositorySecurityManager to be present
       securityProvider = new AbsSecurityProvider(this, this.repositoryMeta, user);
@@ -292,11 +297,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       }
     }
     return false;
-  }
-
-  protected void populatePentahoSessionHolder() {
-    // only necessary for RepositoryPaths calls; server also uses PentahoSessionHolder but that is in a different JVM
-    PentahoSessionHolder.setSession(new StandaloneSession(user.getLogin()));
   }
 
   public boolean isConnected() {
@@ -387,7 +387,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     try {
       RepositoryFile folder = pur.getFileById(dirId.getId());
       finalName = (newName != null ? newName : folder.getName());
-      interimFolderPath = folder.getAbsolutePath().replace(RepositoryFile.SEPARATOR + folder.getName(), "");
+      interimFolderPath = getParentPath(folder.getPath());
       finalParentPath = (newParent != null ? getPath(null, newParent, null) : interimFolderPath);
       pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName, null);
       return dirId;
@@ -398,17 +398,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public RepositoryDirectory loadRepositoryDirectoryTree() throws KettleException {
-
-    RepositoryFile pentahoRootFolder = pur.getFile(RepositoryPaths.getPentahoRootFolderPath());
-
-    RepositoryDirectory root = new RepositoryDirectory();
-    rootRef = new SoftReference<RepositoryDirectory>(root);
-
-    root.setObjectId(null);
-    RepositoryDirectory dir = new RepositoryDirectory(root, pentahoRootFolder.getName());
-    dir.setObjectId(new StringObjectId(pentahoRootFolder.getId().toString()));
-    root.addSubdirectory(dir);
-    loadRepositoryDirectory(dir, pentahoRootFolder);
+    RepositoryFile rootFolder = pur.getFile(ClientRepositoryPaths.getRootFolderPath());
+    RepositoryDirectory rootDir = new RepositoryDirectory();
+    rootRef = new SoftReference<RepositoryDirectory>(rootDir);
+    rootDir.setObjectId(new StringObjectId(rootFolder.getId().toString()));
+    loadRepositoryDirectory(rootDir, rootFolder);
 
     /** HACK AND SLASH HERE ***/
     /**
@@ -416,7 +410,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     * of the Enterprise repository:
     * 
     * 1. Spoon's Repository Explorer should not be tenant aware. This means that the Repository Explorer will only show one tenant's content at a time. (Jake approved) 
-    * 2. Management of multiple tenants shouldn't be dome in the design tools. A super admin tool is needed for multi-tenant administration. 
+    * 2. Management of multiple tenants shouldn't be done in the design tools. A super admin tool is needed for multi-tenant administration. 
     * 3. Admin's perspective in Repository Explorer:
     *   a. The admin will see all folders in the tenant root folder as siblings, with an unnamed root. One of these folders will be the physical path from the tenant folder to the root of all users home folders. Under this node, the admin can see and access all users' home folders (dictated by ACLs, not business logic). 
       
@@ -478,47 +472,46 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
     **********************************************************************************************/
 
-    // Example: /pentaho/tenant0
-    RepositoryDirectory tenantRoot = root.findDirectory(RepositoryPaths.getTenantRootFolderPath());
-    // Example: /pentaho/tenant0/home
-    RepositoryDirectory tenantHome = root.findDirectory(RepositoryPaths.getTenantHomeFolderPath());
-    // Example: /pentaho/tenant0/home/suzy
-    RepositoryDirectory userHome = root.findDirectory(RepositoryPaths.getUserHomeFolderPath());
-    // Example: /pentaho/tenant0/etc
-    RepositoryDirectory etcHome = root.findDirectory(RepositoryPaths.getTenantEtcFolderPath());
-    String alias = userHome.getName();
+    // Example: /home
+    RepositoryDirectory homeDir = rootDir.findDirectory(ClientRepositoryPaths.getHomeFolderPath());
+    // Example: /home/suzy
+    RepositoryDirectory userHomeDir = rootDir.findDirectory(ClientRepositoryPaths
+        .getUserHomeFolderPath(user.getLogin()));
+    // Example: /etc
+    RepositoryDirectory etcDir = rootDir.findDirectory(ClientRepositoryPaths.getEtcFolderPath());
+    String alias = userHomeDir.getName();
 
-    boolean hasHomeWriteAccess = pur.hasAccess(RepositoryPaths.getTenantHomeFolderPath(), EnumSet
+    boolean hasHomeWriteAccess = pur.hasAccess(ClientRepositoryPaths.getHomeFolderPath(), EnumSet
         .of(RepositoryFilePermission.WRITE));
 
-    // Skip aliasing the home directory if:
-    // a. the user has write access to the home directory (signifying admin access)
-    // b. an admin has inadvertently created a sibling folder with the same name as the alias we want to use. 
+    // Skip aliasing the user's home directory if:
+    // a. the user has write access to the home directory (signifying admin access) or
+    // b. an admin has created a sibling folder with the same name as the alias we want to use. 
 
     if (userHomeDirectoryAliasedOverride != null) {
       isUserHomeDirectoryAliased = userHomeDirectoryAliasedOverride.booleanValue();
     } else {
-      isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (tenantRoot.findChild(alias) != null));
+      isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (rootDir.findChild(alias) != null));
     }
 
     // List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
-    newRoot.setObjectId(tenantRoot.getObjectId());
+    newRoot.setObjectId(rootDir.getObjectId());
     newRoot.setVisible(false);
 
-    for (int i = 0; i < tenantRoot.getNrSubdirectories(); i++) {
-      RepositoryDirectory tenantChild = tenantRoot.getSubdirectory(i);
-      boolean isEtcChild = tenantChild.equals(etcHome);
+    for (int i = 0; i < rootDir.getNrSubdirectories(); i++) {
+      RepositoryDirectory childDir = rootDir.getSubdirectory(i);
+      boolean isEtcChild = childDir.equals(etcDir);
       if (isEtcChild) {
         continue;
       }
-      boolean isHomeChild = tenantChild.equals(tenantHome);
+      boolean isHomeChild = childDir.equals(homeDir);
       // We are now re-parenting to serve up the view that the UI would like to display...
       // We revert to the absolute paths need for repo functions in the getPath() method....
       if (isHomeChild && isUserHomeDirectoryAliased) {
-        newRoot.addSubdirectory(userHome);
+        newRoot.addSubdirectory(userHomeDir);
       } else {
-        newRoot.addSubdirectory(tenantChild);
+        newRoot.addSubdirectory(childDir);
       }
     }
     /** END HACK AND SLASH HERE ***/
@@ -636,9 +629,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       ObjectId id = repositoryDirectory.getObjectId();
       absolutePath = repositoryDirectory.getPath();
       if ((isUserHomeDirectoryAliased) && (id.getId().equals(userHomeAlias.toString()))) {
-        absolutePath = RepositoryPaths.getTenantHomeFolderPath().concat(absolutePath);
-      } else {
-        absolutePath = RepositoryPaths.getTenantRootFolderPath().concat(absolutePath);
+        absolutePath = ClientRepositoryPaths.getHomeFolderPath() + absolutePath;
       }
     }
 
@@ -1263,7 +1254,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
             + XMLHandler.date2string(lock.getLockDate()) + ")";
         RepositoryObjectType objectType = getObjectType(file.getName());
-        
+
         list.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
             file.getName().length() - objectType.getExtension().length()), repDir, null, file.getLastModifiedDate(),
             objectType, null, lockMessage, false));
@@ -1417,8 +1408,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public ObjectId renameDatabase(ObjectId idDatabase, String newName) throws KettleException {
     RepositoryFile file = pur.getFileById(idDatabase.getId());
-    StringBuilder buf = new StringBuilder(file.getAbsolutePath().length());
-    buf.append(getParentPath(file.getAbsolutePath()));
+    StringBuilder buf = new StringBuilder(file.getPath().length());
+    buf.append(getParentPath(file.getPath()));
     buf.append(RepositoryFile.SEPARATOR);
     buf.append(newName);
     if (!newName.endsWith(RepositoryObjectType.DATABASE.getExtension())) {
@@ -1441,20 +1432,20 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return idTransformation;
   }
 
-  protected String getParentPath(final String absPath) {
-    int lastSlashIndex = absPath.lastIndexOf(RepositoryFile.SEPARATOR);
-    return absPath.substring(0, lastSlashIndex);
+  protected String getParentPath(final String path) {
+    int lastSlashIndex = path.lastIndexOf(RepositoryFile.SEPARATOR);
+    return path.substring(0, lastSlashIndex);
   }
 
   protected String calcDestAbsPath(final ObjectId id, final RepositoryDirectory newDirectory, final String newName,
       final RepositoryObjectType objectType) {
     String newDirectoryPath = getPath(null, newDirectory, null);
     RepositoryFile file = pur.getFileById(id.getId());
-    StringBuilder buf = new StringBuilder(file.getAbsolutePath().length());
+    StringBuilder buf = new StringBuilder(file.getPath().length());
     if (newDirectory != null) {
       buf.append(newDirectoryPath);
     } else {
-      buf.append(getParentPath(file.getAbsolutePath()));
+      buf.append(getParentPath(file.getPath()));
     }
     buf.append(RepositoryFile.SEPARATOR);
     if (newName != null) {
@@ -1507,8 +1498,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   private void rename(final RepositoryElementInterface element) throws KettleException {
     ObjectId id = element.getObjectId();
     RepositoryFile file = pur.getFileById(id.getId());
-    StringBuilder buf = new StringBuilder(file.getAbsolutePath().length());
-    buf.append(getParentPath(file.getAbsolutePath()));
+    StringBuilder buf = new StringBuilder(file.getPath().length());
+    buf.append(getParentPath(file.getPath()));
     buf.append(RepositoryFile.SEPARATOR);
     buf.append(element.getName());
     switch (element.getRepositoryElementType()) {
@@ -1539,7 +1530,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (isUpdate) {
       ObjectId id = element.getObjectId();
       file = pur.getFileById(id.getId());
-      if(!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
+      if (!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
         // update description
         file = new RepositoryFile.Builder(file).description(element.getDescription()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), versionComment);
@@ -1568,10 +1559,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (isUpdate) {
       ObjectId id = element.getObjectId();
       file = pur.getFileById(id.getId());
-      if(!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
+      if (!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
         // update description
         file = new RepositoryFile.Builder(file).description(element.getDescription()).build();
-        file = pur.updateFile(file, new NodeRepositoryFileData(transDelegate.elementToDataNode(element)), versionComment);
+        file = pur.updateFile(file, new NodeRepositoryFileData(transDelegate.elementToDataNode(element)),
+            versionComment);
       } else {
         throw new KettleException("File is currently locked by another user for editing");
       }
@@ -1814,7 +1806,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   private String getDatabaseMetaParentFolderPath() {
-    return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
+    return ClientRepositoryPaths.getEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
         + FOLDER_DATABASES;
   }
 
@@ -1827,7 +1819,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   private String getPartitionSchemaParentFolderPath() {
-    return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
+    return ClientRepositoryPaths.getEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
         + FOLDER_PARTITION_SCHEMAS;
   }
 
@@ -1840,7 +1832,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   private String getSlaveServerParentFolderPath() {
-    return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
+    return ClientRepositoryPaths.getEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
         + FOLDER_SLAVE_SERVERS;
   }
 
@@ -1853,7 +1845,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   private String getClusterSchemaParentFolderPath() {
-    return RepositoryPaths.getTenantEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
+    return ClientRepositoryPaths.getEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
         + FOLDER_CLUSTER_SCHEMAS;
   }
 
@@ -2182,6 +2174,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public RepositoryDirectory getUserHomeDirectory() throws KettleException {
     loadRepositoryDirectoryTree();
-    return getRootDir().findDirectory(RepositoryPaths.getUserHomeFolderPath());
+    return getRootDir().findDirectory(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
   }
 }

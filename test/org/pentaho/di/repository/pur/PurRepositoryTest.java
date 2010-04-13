@@ -16,10 +16,12 @@ import org.junit.runner.RunWith;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.plugins.JobEntryPluginType;
 import org.pentaho.di.core.plugins.StepPluginType;
+import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.UserInfo;
+import org.pentaho.di.repository.pur.model.EEUserInfo;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository.IBackingRepositoryLifecycleManager;
@@ -54,9 +56,9 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   private IUnifiedRepository pur;
 
   private IBackingRepositoryLifecycleManager manager;
-  
+
   private IRoleAuthorizationPolicyRoleBindingDao roleBindingDao;
-  
+
   private static IAuthorizationPolicy authorizationPolicy;
 
   @BeforeClass
@@ -65,7 +67,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     // parent folder must match jcrRepository.homeDir bean property in repository-test-override.spring.xml
     FileUtils.deleteDirectory(new File("/tmp/jackrabbit-test"));
     PentahoSessionHolder.setStrategyName(PentahoSessionHolder.MODE_GLOBAL);
-    
+
     MicroPlatform mp = new MicroPlatform();
     // used by DefaultPentahoJackrabbitAccessControlHelper
     mp.define(IAuthorizationPolicy.class, DelegatingAuthorizationPolicy.class);
@@ -84,8 +86,10 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
     // programmatically register plugins, annotation based plugins do not get loaded unless
     // they are in kettle's plugins folder.
-    JobEntryPluginType.getInstance().registerCustom(JobEntryAttributeTesterJobEntry.class, "test", "JobEntryAttributeTester", "JobEntryAttributeTester", "JobEntryAttributeTester", "");
-    StepPluginType.getInstance().registerCustom(TransStepAttributeTesterTransStep.class, "test", "StepAttributeTester", "StepAttributeTester", "StepAttributeTester", "");
+    JobEntryPluginType.getInstance().registerCustom(JobEntryAttributeTesterJobEntry.class, "test",
+        "JobEntryAttributeTester", "JobEntryAttributeTester", "JobEntryAttributeTester", "");
+    StepPluginType.getInstance().registerCustom(TransStepAttributeTesterTransStep.class, "test", "StepAttributeTester",
+        "StepAttributeTester", "StepAttributeTester", "");
 
     repositoryMeta = new PurRepositoryMeta();
     repositoryMeta.setName("JackRabbit");
@@ -93,19 +97,19 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     userInfo = new UserInfo(EXP_LOGIN, "password", EXP_USERNAME, "Apache Tomcat user", true);
 
     repository = new PurRepository();
+    repository.init(repositoryMeta);
+
+    // begin stuff done in connect method; we don't actually call connect since we want to use the in-memory PUR
     ((PurRepository) repository).setPur(pur);
     ((PurRepository) repository).setUserHomeDirectoryAliased(false);
-
-    repository.init(repositoryMeta);
-    
-    // connect is not called as it is only applicable in the "real" deployment
-    //repository.connect();
+    ((PurRepository) repository).setUser(userInfo);
+    // end stuff done in connect method
 
     setUpRoleBindings();
-    
+
     setUpUser();
-    
-    List<RepositoryFile> files = pur.getChildren(pur.getFile("/pentaho/acme/public").getId());
+
+    List<RepositoryFile> files = pur.getChildren(pur.getFile("/public").getId());
     StringBuilder buf = new StringBuilder();
     for (RepositoryFile file : files) {
       buf.append("\n").append(file);
@@ -145,7 +149,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     manager.newTenant();
     manager.newUser();
   }
-  
+
   protected void setUpUser() {
     StandaloneSession pentahoSession = new StandaloneSession(userInfo.getLogin());
     pentahoSession.setAuthenticated(userInfo.getLogin());
@@ -170,7 +174,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     super.tearDown();
     try {
       // clean up after test
-      List<RepositoryFile> dirs = pur.getChildren(pur.getFile("/pentaho/acme/public").getId());
+      List<RepositoryFile> dirs = pur.getChildren(pur.getFile("/public").getId());
       for (RepositoryFile file : dirs) {
         pur.deleteFile(file.getId(), true, null);
       }
@@ -183,7 +187,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
   @Override
   protected void delete(ObjectId id) {
-    if (id != null){
+    if (id != null) {
       pur.deleteFile(id.getId(), true, null);
     }
   }
@@ -255,7 +259,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     assertNotNull(startDir);
     return startDir;
   }
-  
+
   /**
    * Allow PentahoSystem to create this class but it in turn delegates to the authorizationPolicy fetched from Spring's
    * ApplicationContext.
