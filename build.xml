@@ -28,6 +28,8 @@
 
   <!-- Override to put mock license JAR first -->
   <path id="test.classpath">
+    <dirset dir="${testclasses.dir}" />
+    <dirset dir="${classes.dir}" />
     <fileset dir="${devlib.dir}">
       <include name="*.jar" />
     </fileset>
@@ -37,8 +39,6 @@
     <fileset dir="${lib.dir}">
       <include name="*.jar" />
     </fileset>
-    <dirset dir="${classes.dir}" />
-    <dirset dir="${testclasses.dir}" />
   </path>
 
   <!-- Override assemble to build plugin.xml afterwards -->
