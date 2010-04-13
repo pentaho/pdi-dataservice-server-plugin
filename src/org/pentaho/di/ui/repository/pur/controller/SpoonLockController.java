@@ -72,7 +72,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
   public void lockContent() throws Exception {
     try {
-      if (workingMeta != null && supportsLocking(Spoon.getInstance().getRepository())) {
+      if (workingMeta != null && workingMeta.getObjectId() != null && supportsLocking(Spoon.getInstance().getRepository())) {
         // Bind the tab icon if it is not already bound (cannot be done in init because TransGraph must exist to create the tab)
         // Look in the SpoonTransformationDelegate for details on the TabItem creation
         if (!tabBound) {
@@ -159,7 +159,22 @@ public class SpoonLockController extends AbstractXulEventHandler {
           firePropertyChange("activeMetaUnlocked", null, "true"); //$NON-NLS-1$ //$NON-NLS-2$
         }
 
+      } else if(workingMeta != null && workingMeta.getObjectId() == null && supportsLocking(Spoon.getInstance().getRepository())) {
+        XulDomContainer container = getXulDomContainer();
+        XulMenuitem lockMenuItem = (XulMenuitem) container.getDocumentRoot().getElementById(
+            "lock-context-lock"); //$NON-NLS-1$
+        lockMenuItem.setSelected(false);
+
+        XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
+        msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
+        msgBox.setMessage(messages.getString("LockController.SaveBeforeLock"));//$NON-NLS-1$
+        msgBox.open();
       } else {
+        XulDomContainer container = getXulDomContainer();
+        XulMenuitem lockMenuItem = (XulMenuitem) container.getDocumentRoot().getElementById(
+            "lock-context-lock"); //$NON-NLS-1$
+        lockMenuItem.setSelected(false);
+
         XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
         msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
         msgBox.setMessage(messages.getString("LockController.NoLockingSupport"));//$NON-NLS-1$
