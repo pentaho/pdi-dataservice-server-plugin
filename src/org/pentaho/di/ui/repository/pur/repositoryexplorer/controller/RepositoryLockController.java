@@ -15,6 +15,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationE
 import org.pentaho.di.ui.repository.repositoryexplorer.IUISupportController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
@@ -22,6 +23,7 @@ import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.binding.Binding.Type;
+import org.pentaho.ui.xul.components.XulMenuitem;
 import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
 import org.pentaho.ui.xul.containers.XulTree;
@@ -42,7 +44,13 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
   private ILockService service = null;
   
   private Repository repository = null;
-
+  
+  private XulMenuitem lockFileMenuItem;
+  
+  private XulMenuitem deleteFileMenuItem;
+  
+  private XulMenuitem renameFileMenuItem;
+  
   protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
@@ -79,6 +87,10 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       // Disable row dragging if it is locked and the user does not have permissions
       XulTree fileTable = (XulTree) getXulDomContainer().getDocumentRoot().getElementById("file-table"); //$NON-NLS-1$
       fileTable.setOndrag(getName() + ".onDragFromLocalTable()"); //$NON-NLS-1$
+      lockFileMenuItem = (XulMenuitem) getXulDomContainer().getDocumentRoot().getElementById("file-context-lock"); //$NON-NLS-1$
+      deleteFileMenuItem = (XulMenuitem) getXulDomContainer().getDocumentRoot().getElementById("file-context-delete"); //$NON-NLS-1$
+      renameFileMenuItem = (XulMenuitem) getXulDomContainer().getDocumentRoot().getElementById("file-context-rename"); //$NON-NLS-1$
+      
       messageBox = (XulMessageBox) document.createElement("messagebox");//$NON-NLS-1$
 
       createBindings();
@@ -129,7 +141,9 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       boolean result = false;
 
       try {
-        if (selectedRepoObjects.size() == 1 && selectedRepoObjects.get(0) instanceof ILockObject) {
+        if(selectedRepoObjects.size() == 1 && selectedRepoObjects.get(0) instanceof UIRepositoryDirectory) {
+          return true;
+        } else if (selectedRepoObjects.size() == 1 && selectedRepoObjects.get(0) instanceof ILockObject) {
           final UIRepositoryContent contentToLock = (UIRepositoryContent) selectedRepoObjects.get(0);
 
           if (((ILockObject) contentToLock).isLocked()) {
@@ -234,14 +248,9 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
     bindingFactory.createBinding(browseController,
         "repositoryObjects", "file-context-lock", "selected", checkLockedStateString); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     bindingFactory.createBinding(browseController,
-        "repositoryObjects", "file-context-lock", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        "repositoryObjects", this, "menuItemEnabledState"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     bindingFactory.createBinding(browseController,
         "repositoryObjects", "file-context-locknotes", "!disabled", checkLockedStateBool); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-
-    bindingFactory.createBinding(browseController,
-        "repositoryObjects", "file-context-rename", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-    bindingFactory.createBinding(browseController,
-        "repositoryObjects", "file-context-delete", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
     bindingFactory.createBinding(browseController,
         "repositoryObjects", "lock-context-lock", "selected", checkLockedStateString); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -310,5 +319,40 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
     prompt
         .setValue(defaultMessage == null ? messages.getString("RepositoryExplorer.DefaultLockMessage") : defaultMessage); //$NON-NLS-1$
     return prompt;
+  }
+  public void setMenuItemEnabledState(List<UIRepositoryObject> selectedRepoObjects) {
+    try {
+      boolean result = false;
+      if(selectedRepoObjects.size() == 1 && selectedRepoObjects.get(0) instanceof UIRepositoryDirectory) {
+        lockFileMenuItem.setDisabled(true);
+        deleteFileMenuItem.setDisabled(false);
+        renameFileMenuItem.setDisabled(false);
+      } else if (selectedRepoObjects.size() == 1 && selectedRepoObjects.get(0) instanceof ILockObject) {
+        final UIRepositoryContent contentToLock = (UIRepositoryContent) selectedRepoObjects.get(0);
+        if (((ILockObject) contentToLock).isLocked()) {
+          if (repository instanceof PurRepository) {
+            result = service.canUnlockFileById(contentToLock.getObjectId());
+            
+          } else {
+            result = ((ILockObject) contentToLock).getRepositoryLock().getLogin().equalsIgnoreCase(
+                repository.getUserInfo().getLogin());
+          }
+          lockFileMenuItem.setDisabled(!result);
+          deleteFileMenuItem.setDisabled(!result);
+          renameFileMenuItem.setDisabled(!result);
+        } else {
+          lockFileMenuItem.setDisabled(false);
+          deleteFileMenuItem.setDisabled(false);
+          renameFileMenuItem.setDisabled(false);
+        }
+      } else {
+        lockFileMenuItem.setDisabled(true);
+        deleteFileMenuItem.setDisabled(true);
+        renameFileMenuItem.setDisabled(true);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
   }
 }

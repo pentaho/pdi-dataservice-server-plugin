@@ -76,8 +76,8 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter {
     setModelDirty(true);
   }
   public void addAcl(UIRepositoryObjectAcl aclToAdd) {
-    // By default the user or role will get a read acl when a user of role is added
-    EnumSet<ObjectPermission> initialialPermisson = EnumSet.of(ObjectPermission.READ);
+    // By default the user or role will get a READ, READ_ACL when a user of role is added
+    EnumSet<ObjectPermission> initialialPermisson = EnumSet.of(ObjectPermission.READ, ObjectPermission.READ_ACL);
     aclToAdd.setPermissionSet(initialialPermisson);
     this.obj.getAces().add(aclToAdd.getAce());
   }
