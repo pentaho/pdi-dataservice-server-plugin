@@ -99,15 +99,12 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     repository = new PurRepository();
     repository.init(repositoryMeta);
 
-    // begin stuff done in connect method; we don't actually call connect since we want to use the in-memory PUR
-    ((PurRepository) repository).setPur(pur);
-    ((PurRepository) repository).setUserHomeDirectoryAliased(false);
-    ((PurRepository) repository).setUser(userInfo);
-    // end stuff done in connect method
-
-    setUpRoleBindings();
-
     setUpUser();
+    
+    ((PurRepository) repository).setTest(pur);
+    repository.connect(EXP_LOGIN, "password");
+    
+    setUpRoleBindings();
 
     List<RepositoryFile> files = pur.getChildren(pur.getFile("/public").getId());
     StringBuilder buf = new StringBuilder();

@@ -117,6 +117,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   // ~ Instance fields =================================================================================================
 
+  /**
+   * Indicates that this code should be run in unit test mode (where PUR is passed in instead of created inside this 
+   * class).
+   */
+  private boolean test = false;
+  
   private IUnifiedRepository pur;
 
   private IUser user;
@@ -150,19 +156,14 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   protected Serializable cachedDatabaseMetaParentFolderId;
 
   /**
-   * TODO mlowery remove this
-   */
-  private Boolean userHomeDirectoryAliasedOverride;
-
-  /**
    * We cache the root directory of the loaded tree, to save retrievals when the findDirectory() method 
    * is called.
    */
   private SoftReference<RepositoryDirectory> rootRef = null;
 
   /** 
-   * We need to cache the fact that the user home is aliased, in order to properly map back to a fully
-   * qualified repository path for use in repository functions. This arises specifically because of the use case where a 
+   * We need to cache the fact that the user home is aliased, in order to properly map back to a path known to PUR.
+   * This arises specifically because of the use case where a 
    * folder the same name as a user home folder can be created at the tenant root level; if that happens, then we 
    * don't alias the user's home directory, but we still have a folder at the tenant root level that LOOKS like and 
    * aliased user home folder. 
@@ -194,15 +195,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   /**
    * Protected for unit tests.
    */
-  protected void setPur(final IUnifiedRepository pur) {
+  protected void setTest(final IUnifiedRepository pur) {
     this.pur = pur;
-  }
-  
-  /**
-   * Protected for unit tests.
-   */
-  protected void setUser(final IUser user) {
-    this.user = user;
+    // set this to avoid NPE in connect()
+    this.repositoryMeta.setRepositoryLocation(new PurRepositoryLocation("doesnotmatch"));
+    this.test = true;
   }
 
   public void init(final RepositoryMeta repositoryMeta) {
@@ -215,68 +212,77 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public void connectInProcess() throws KettleException, KettleSecurityException {
     // connect to the IUnifiedRepository through PentahoSystem
     // this assumes we're running in a BI Platform
-    pur = PentahoSystem.get(IUnifiedRepository.class);
-    userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
+    if (!isTest()) {
+      pur = PentahoSystem.get(IUnifiedRepository.class);
+      userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
+    }
     // for now, there is no need to support the security manager
     // what about security provider?
   }
 
   public void connect(String username, String password) throws KettleException, KettleSecurityException {
-    IUser user = new EEUserInfo();
-    user.setLogin(username);
-    user.setPassword(password);
-    user.setName(username);
-    this.user = user;
-
-    if (PentahoSystem.getApplicationContext() != null) {
-      if (PentahoSystem.getApplicationContext().getBaseUrl() != null) {
-        String repoUrl = repositoryMeta.getRepositoryLocation().getUrl();
-        String baseUrl = PentahoSystem.getApplicationContext().getBaseUrl();
-        if (repoUrl.endsWith("/")) {
-          repoUrl = repoUrl.substring(0, repoUrl.length() - 2);
-        }
-        if (baseUrl.endsWith("/")) {
-          baseUrl = baseUrl.substring(0, baseUrl.length() - 2);
-        }
-        if (repoUrl.startsWith(baseUrl)) {
-          connectInProcess();
-          return;
-        }
-      }
-    }
-
     try {
-      IUnifiedRepositoryWebService repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
-          username, password, IUnifiedRepositoryWebService.class);
+      IUser user = new EEUserInfo();
+      user.setLogin(username);
+      user.setPassword(password);
+      user.setName(username);
+      this.user = user;
 
-      pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
-      userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
-      // We need to add the service class in the list in the order of dependencies
-      // IRoleSupportSecurityManager depends RepositorySecurityManager to be present
-      securityProvider = new AbsSecurityProvider(this, this.repositoryMeta, user);
-      registerRepositoryService(RepositorySecurityProvider.class, securityProvider);
-      registerRepositoryService(IAbsSecurityProvider.class, securityProvider);
-      // If the user does not have access to administer security we do not
-      // need to added them to the service list
-      if (allowedActionsContains((AbsSecurityProvider) securityProvider,
-          IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION)) {
-        securityManager = new AbsSecurityManager(this, this.repositoryMeta, user);
-        // Set the reference of the security manager to security provider for user role list change event
-        ((PurRepositorySecurityProvider) securityProvider)
-            .setUserRoleDelegate(((PurRepositorySecurityManager) securityManager).getUserRoleDelegate());
+      if (!isTest()) {
+        if (PentahoSystem.getApplicationContext() != null) {
+          if (PentahoSystem.getApplicationContext().getBaseUrl() != null) {
+            String repoUrl = repositoryMeta.getRepositoryLocation().getUrl();
+            String baseUrl = PentahoSystem.getApplicationContext().getBaseUrl();
+            if (repoUrl.endsWith("/")) {
+              repoUrl = repoUrl.substring(0, repoUrl.length() - 2);
+            }
+            if (baseUrl.endsWith("/")) {
+              baseUrl = baseUrl.substring(0, baseUrl.length() - 2);
+            }
+            if (repoUrl.startsWith(baseUrl)) {
+              connectInProcess();
+              return;
+            }
+          }
+        }
 
-        registerRepositoryService(RepositorySecurityManager.class, securityManager);
-        registerRepositoryService(IRoleSupportSecurityManager.class, securityManager);
-        registerRepositoryService(IAbsSecurityManager.class, securityManager);
+        IUnifiedRepositoryWebService repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
+            username, password, IUnifiedRepositoryWebService.class);
+
+        pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
+
+        // We need to add the service class in the list in the order of dependencies
+        // IRoleSupportSecurityManager depends RepositorySecurityManager to be present
+        securityProvider = new AbsSecurityProvider(this, this.repositoryMeta, user);
+        registerRepositoryService(RepositorySecurityProvider.class, securityProvider);
+        registerRepositoryService(IAbsSecurityProvider.class, securityProvider);
+        // If the user does not have access to administer security we do not
+        // need to added them to the service list
+        if (allowedActionsContains((AbsSecurityProvider) securityProvider,
+            IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION)) {
+          securityManager = new AbsSecurityManager(this, this.repositoryMeta, user);
+          // Set the reference of the security manager to security provider for user role list change event
+          ((PurRepositorySecurityProvider) securityProvider)
+              .setUserRoleDelegate(((PurRepositorySecurityManager) securityManager).getUserRoleDelegate());
+
+          registerRepositoryService(RepositorySecurityManager.class, securityManager);
+          registerRepositoryService(IRoleSupportSecurityManager.class, securityManager);
+          registerRepositoryService(IAbsSecurityManager.class, securityManager);
+        }
+        registerRepositoryService(IRevisionService.class, this);
+        registerRepositoryService(IAclService.class, this);
+        registerRepositoryService(ITrashService.class, this);
+        registerRepositoryService(ILockService.class, this);
       }
-      registerRepositoryService(IRevisionService.class, this);
-      registerRepositoryService(IAclService.class, this);
-      registerRepositoryService(ITrashService.class, this);
-      registerRepositoryService(ILockService.class, this);
+      userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
     } catch (Throwable e) {
       WsFactory.clearServices();
       throw new KettleException(e);
     }
+  }
+
+  private boolean isTest() {
+    return test;
   }
 
   /**
@@ -409,11 +415,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     * This code accomodates the following parenting logic for display and navigation
     * of the Enterprise repository:
     * 
-    * 1. Spoon's Repository Explorer should not be tenant aware. This means that the Repository Explorer will only show one tenant's content at a time. (Jake approved) 
-    * 2. Management of multiple tenants shouldn't be done in the design tools. A super admin tool is needed for multi-tenant administration. 
-    * 3. Admin's perspective in Repository Explorer:
-    *   a. The admin will see all folders in the tenant root folder as siblings, with an unnamed root. One of these folders will be the physical path from the tenant folder to the root of all users home folders. Under this node, the admin can see and access all users' home folders (dictated by ACLs, not business logic). 
-      
+    * 1. Admin's perspective in Repository Explorer:
+    *   a. The admin will see all folders in the PUR root folder as siblings, with an unnamed root. One of these folders 
+    *   will be the home (e.g. /home) folder. Under this node, the admin can see and access all users' home folders 
+    *   (dictated by ACLs, not business logic). 
     *   EXAMPLE: Admin logs in...
     *   ===================
     *   /
@@ -423,25 +428,16 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     *   /public
     *   /extra1
     *   /extra2
-    
-    *   b. The admin will not see the protected physical multi-tenant structure (ie., the actual physical root of the repository to the tenant folder). This physical path to the tenant folder is also configurable and fetched from the server.
-    
-    *   EXAMPLE:
-    *   ===================
-    *   getRootFolder() returns "pentaho/acme", or whatever is in the configuration server-side. "pentaho/acme" is never shown in the UI, nor does the client code ever have to have knowledge of this structure. 
-    
-    * 4. User's perspective in Repository Explorer:
-    *   a. The user should see a "home" folder, and a "public" folder. The home folder will appear as the user's login, aliased from it's actual physical path. The physical structure of the path to the home folder from the tenant folder will be fetched from the server by the client code, so as to be configurable. 
-    
+    * 2. User's perspective in Repository Explorer:
+    *   a. The user should see her home folder (e.g. /suzy), and a public (e.g. /public) folder. The user's home folder 
+    *   will appear as the user's login, aliased from its actual PUR path.  
     *   EXAMPLE: Suzy logs in...
-      ===================
+    *   ===================
     *   /
     *   /public
     *   /suzy (physically stored as /home/suzy)
-      
-    
-    *   b. In the case where the admin has created a folder with the same name as the "home" folder alias, the "home" folder will appear as it's physical path and name.
-    
+    *   b. In the case where the admin has created a folder with the same name as the user's home folder alias, the 
+    *   user's home folder will appear as it's PUR path and name.
     *   EXAMPLE: Admin logs in... and creates /suzy folder...
     *   ===================
     *   /
@@ -451,25 +447,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     *   /public
     *   /suzy
     *   /extra2
-    
     *   ... then suzy logs in ...
     *   ===================
     *   /
     *   /public
     *   /suzy (the folder admin created)
     *   /home/suzy (suzy's home folder)
-
-    * Pseudo-code:
-    * ==============================================
-    
-    * Call 1: getTenant() ==> /tenant0
-    * Call 2: get children down 2 levels
-    * Call 3: getHomeFolder() ==> /home/me
-    * BizLogic 1: chop off tenant node
-    * BizLogic 2: if write() on home folder, skip;
-    *   if sibling folder same name as alias ("me"), skip;
-    *   alias /home/me to "me"  
-
     **********************************************************************************************/
 
     // Example: /home
@@ -488,11 +471,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     // a. the user has write access to the home directory (signifying admin access) or
     // b. an admin has created a sibling folder with the same name as the alias we want to use. 
 
-    if (userHomeDirectoryAliasedOverride != null) {
-      isUserHomeDirectoryAliased = userHomeDirectoryAliasedOverride.booleanValue();
-    } else {
-      isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (rootDir.findChild(alias) != null));
-    }
+
+    isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (rootDir.findChild(alias) != null));
+
 
     // List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
@@ -507,7 +488,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       }
       boolean isHomeChild = childDir.equals(homeDir);
       // We are now re-parenting to serve up the view that the UI would like to display...
-      // We revert to the absolute paths need for repo functions in the getPath() method....
+      // We revert to the paths needed for PUR methods in the getPath() method....
       if (isHomeChild && isUserHomeDirectoryAliased) {
         newRoot.addSubdirectory(userHomeDir);
       } else {
@@ -612,30 +593,23 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       throw new KettleException("Unable to verify if the repository element [" + name + "] exists in ", e);
     }
   }
-
-  /**
-   * TODO mlowery remove this
-   */
-  protected void setUserHomeDirectoryAliased(final Boolean userHomeDirectoryAliased) {
-    this.userHomeDirectoryAliasedOverride = userHomeDirectoryAliased;
-  }
   
   private String getPath(final String name, final RepositoryDirectory repositoryDirectory,
       final RepositoryObjectType objectType) {
 
-    String absolutePath = null;
+    String path = null;
 
     if (repositoryDirectory != null) {
       ObjectId id = repositoryDirectory.getObjectId();
-      absolutePath = repositoryDirectory.getPath();
+      path = repositoryDirectory.getPath();
       if ((isUserHomeDirectoryAliased) && (id.getId().equals(userHomeAlias.toString()))) {
-        absolutePath = ClientRepositoryPaths.getHomeFolderPath() + absolutePath;
+        path = ClientRepositoryPaths.getHomeFolderPath() + path;
       }
     }
 
     // return the directory path
     if (objectType == null) {
-      return absolutePath;
+      return path;
     }
 
     switch (objectType) {
@@ -644,7 +618,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             + RepositoryObjectType.DATABASE.getExtension();
       }
       case TRANSFORMATION: {
-        return absolutePath + RepositoryFile.SEPARATOR + name + RepositoryObjectType.TRANSFORMATION.getExtension();
+        return path + RepositoryFile.SEPARATOR + name + RepositoryObjectType.TRANSFORMATION.getExtension();
       }
       case PARTITION_SCHEMA: {
         return getPartitionSchemaParentFolderPath() + RepositoryFile.SEPARATOR + name
@@ -659,7 +633,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
       }
       case JOB: {
-        return absolutePath + RepositoryFile.SEPARATOR + name + RepositoryObjectType.JOB.getExtension();
+        return path + RepositoryFile.SEPARATOR + name + RepositoryObjectType.JOB.getExtension();
       }
       default: {
         throw new UnsupportedOperationException("not implemented");
@@ -1215,8 +1189,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   protected RepositoryLock getLockById(final ObjectId id) throws KettleException {
+    try {
     RepositoryFile file = pur.getFileById(id.getId());
     return getLock(file);
+    } catch (Exception e) {
+      throw new KettleException("Unable to get lock for object with id [" + id + "]", e);
+    }
   }
 
   public String[] getTransformationNames(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
