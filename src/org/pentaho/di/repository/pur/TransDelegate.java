@@ -8,6 +8,7 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepLoaderException;
+import org.pentaho.di.core.logging.LogTableInterface;
 import org.pentaho.di.core.plugins.PluginInterface;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.plugins.StepPluginType;
@@ -465,15 +466,13 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     transMeta.getTransLogTable().setLogSizeLimit(getString(rootNode, PROP_LOG_SIZE_LIMIT));
     //transMeta.setStepPerformanceLogTable( repository.getPropertyString(rootNode, "STEP_PERFORMANCE_LOG_TABLE") );
     //transMeta.setLogSizeLimit( repository.getPropertyString(rootNode, "LOG_SIZE_LIMIT") );
-
     
     // Load the logging tables too..
     //
-	RepositoryAttributeInterface attributeInterface = new PurRepositoryAttribute(rootNode, transMeta.getDatabases());
-    transMeta.getTransLogTable().loadFromRepository(attributeInterface);
-    transMeta.getStepLogTable().loadFromRepository(attributeInterface);
-    transMeta.getPerformanceLogTable().loadFromRepository(attributeInterface);
-    transMeta.getChannelLogTable().loadFromRepository(attributeInterface);
+    RepositoryAttributeInterface attributeInterface = new PurRepositoryAttribute(rootNode, transMeta.getDatabases());
+    for (LogTableInterface logTable : transMeta.getLogTables()) {
+      logTable.loadFromRepository(attributeInterface);
+    }
   }
 
   public DataNode elementToDataNode(final RepositoryElementInterface element) throws KettleException {
@@ -661,11 +660,10 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     
     // Save the logging tables too..
     //
-	RepositoryAttributeInterface attributeInterface = new PurRepositoryAttribute(rootNode, transMeta.getDatabases());
-    transMeta.getTransLogTable().saveToRepository(attributeInterface);
-    transMeta.getStepLogTable().saveToRepository(attributeInterface);
-    transMeta.getPerformanceLogTable().saveToRepository(attributeInterface);
-    transMeta.getChannelLogTable().saveToRepository(attributeInterface);
+  	RepositoryAttributeInterface attributeInterface = new PurRepositoryAttribute(rootNode, transMeta.getDatabases());
+  	for (LogTableInterface logTable : transMeta.getLogTables()) {
+  	  logTable.saveToRepository(attributeInterface);
+  	}
   }
 
   public SharedObjects loadSharedObjects(final RepositoryElementInterface element) throws KettleException {

@@ -134,4 +134,7 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
     }
   }
 
+  public Repository getRepository() {
+    return repo;
+  }
 }

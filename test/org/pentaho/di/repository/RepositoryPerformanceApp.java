@@ -1,15 +1,11 @@
 package org.pentaho.di.repository;
 
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryLocation;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.trans.TransMeta;
-
-import com.pentaho.commons.dsc.PentahoLicenseVerifier;
-import com.pentaho.commons.dsc.util.TestLicenseStream;
 
 /**
  * This test class is not meant to be run automated. It provides two simple purposes:
@@ -60,7 +56,7 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
   }
   
   protected void startupRepository() throws Exception{
-    PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("pdi-ee=true")); //$NON-NLS-1$
+    // PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("pdi-ee=true")); //$NON-NLS-1$
     KettleEnvironment.init();
 
     repositoryMeta = new PurRepositoryMeta();

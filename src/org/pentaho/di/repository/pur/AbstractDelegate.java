@@ -3,6 +3,7 @@ package org.pentaho.di.repository.pur;
 import java.util.Date;
 
 import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.core.logging.LogChannelInterface;
 
 import com.pentaho.repository.pur.data.node.DataNode;
 
@@ -12,10 +13,10 @@ public abstract class AbstractDelegate {
 
   protected static final String PROP_DESCRIPTION = "DESCRIPTION"; //$NON-NLS-1$
 
-  protected LogChannel log;
+  protected LogChannelInterface log;
   
   public AbstractDelegate() {
-    log = new LogChannel(this);
+    log = LogChannel.GENERAL;
   }
 
   protected String sanitizeNodeName(final String name) {

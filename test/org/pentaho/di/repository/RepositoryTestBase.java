@@ -14,7 +14,6 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Stack;
 
 import org.apache.commons.logging.Log;
@@ -1159,7 +1158,7 @@ public abstract class RepositoryTestBase {
     dbMeta.setServername(EXP_DBMETA_SERVERNAME);
     dbMeta.setDataTablespace(EXP_DBMETA_DATA_TABLESPACE);
     dbMeta.setIndexTablespace(EXP_DBMETA_INDEX_TABLESPACE);
-    Properties attrs = new Properties();
+    // Properties attrs = new Properties();
     // exposed mutable state; yikes
     dbMeta.getAttributes().put(EXP_DBMETA_ATTR1_KEY, EXP_DBMETA_ATTR1_VALUE);
     dbMeta.getAttributes().put(EXP_DBMETA_ATTR2_KEY, EXP_DBMETA_ATTR2_VALUE);
@@ -1191,7 +1190,7 @@ public abstract class RepositoryTestBase {
     DatabaseMeta fetchedDatabase = repository.loadDatabaseMeta(dbMeta.getObjectId(), null);
     assertEquals(EXP_DBMETA_NAME, fetchedDatabase.getName());
     assertEquals(EXP_DBMETA_HOSTNAME, fetchedDatabase.getHostname());
-    assertEquals(EXP_DBMETA_TYPE, fetchedDatabase.getDatabaseTypeDesc());
+    assertEquals(EXP_DBMETA_TYPE, fetchedDatabase.getPluginId());
     assertEquals(EXP_DBMETA_ACCESS, fetchedDatabase.getAccessType());
     assertEquals(EXP_DBMETA_DBNAME, fetchedDatabase.getDatabaseName());
     assertEquals(EXP_DBMETA_PORT, fetchedDatabase.getDatabasePortNumberString());

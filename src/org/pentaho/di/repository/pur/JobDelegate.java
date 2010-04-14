@@ -9,6 +9,7 @@ import org.pentaho.di.core.NotePadMeta;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogTableInterface;
 import org.pentaho.di.core.plugins.JobEntryPluginType;
 import org.pentaho.di.core.plugins.PluginInterface;
 import org.pentaho.di.core.plugins.PluginRegistry;
@@ -20,6 +21,7 @@ import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositoryAttributeInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjects;
@@ -340,6 +342,12 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
       jobMeta.getJobLogTable().setLogSizeLimit(getString(rootNode, PROP_LOG_SIZE_LIMIT));
 
+      // Load the logging tables too..
+      //
+      RepositoryAttributeInterface attributeInterface = new PurRepositoryAttribute(rootNode, jobMeta.getDatabases());
+      for (LogTableInterface logTable : jobMeta.getLogTables()) {
+        logTable.loadFromRepository(attributeInterface);
+      }
     } catch (Exception e) {
       throw new KettleException("Error loading job details", e);
     }
@@ -493,6 +501,13 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     rootNode.setProperty(PROP_SHARED_FILE, jobMeta.getSharedObjectsFile());
     
     rootNode.setProperty(PROP_LOG_SIZE_LIMIT, jobMeta.getJobLogTable().getLogSizeLimit());
+    
+    // Save the logging tables too..
+    //
+    RepositoryAttributeInterface attributeInterface = new PurRepositoryAttribute(rootNode, jobMeta.getDatabases());
+    for (LogTableInterface logTable : jobMeta.getLogTables()) {
+      logTable.saveToRepository(attributeInterface);
+    }
   }
 
   /**
