@@ -74,7 +74,6 @@ import org.pentaho.platform.api.repository.RepositoryFileAcl;
 import org.pentaho.platform.api.repository.RepositoryFilePermission;
 import org.pentaho.platform.api.repository.RepositoryFileSid;
 import org.pentaho.platform.api.repository.VersionSummary;
-import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
@@ -175,6 +174,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   private Map<Class<? extends IRepositoryService>, IRepositoryService> serviceMap;
 
   private List<Class<? extends IRepositoryService>> serviceList;
+  
+  private boolean connected = false;
 
   // ~ Constructors ====================================================================================================
 
@@ -241,6 +242,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             }
             if (repoUrl.startsWith(baseUrl)) {
               connectInProcess();
+              connected = true;
               return;
             }
           }
@@ -275,7 +277,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         registerRepositoryService(ILockService.class, this);
       }
       userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
+      connected = true;
     } catch (Throwable e) {
+      connected = false;
       WsFactory.clearServices();
       throw new KettleException(e);
     }
@@ -306,10 +310,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public boolean isConnected() {
-    return PentahoSessionHolder.getSession() != null;
+    return connected;
   }
 
   public void disconnect() {
+    connected = false;
     WsFactory.clearServices();
   }
 
