@@ -74,6 +74,7 @@ import org.pentaho.platform.api.repository.RepositoryFileAcl;
 import org.pentaho.platform.api.repository.RepositoryFilePermission;
 import org.pentaho.platform.api.repository.RepositoryFileSid;
 import org.pentaho.platform.api.repository.VersionSummary;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
@@ -214,6 +215,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     // connect to the IUnifiedRepository through PentahoSystem
     // this assumes we're running in a BI Platform
     if (!isTest()) {
+      String username = PentahoSessionHolder.getSession().getName();
+      IUser user1 = new EEUserInfo();
+      user1.setLogin(username);
+      user1.setName(username);
+      this.user = user1;
       pur = PentahoSystem.get(IUnifiedRepository.class);
       userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
     }
@@ -223,12 +229,15 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public void connect(String username, String password) throws KettleException, KettleSecurityException {
     try {
-      IUser user = new EEUserInfo();
-      user.setLogin(username);
-      user.setPassword(password);
-      user.setName(username);
-      this.user = user;
-
+      // if we are connecting in process (determined below) username and password arguments are possibly null here; we
+      // get the username instead from PentahoSessionHolder in connectInProcess; set a user here (to possibly be 
+      // replaced)
+      IUser user1 = new EEUserInfo();
+      user1.setLogin(username);
+      user1.setPassword(password);
+      user1.setName(username);
+      this.user = user1;
+      
       if (!isTest()) {
         if (PentahoSystem.getApplicationContext() != null) {
           if (PentahoSystem.getApplicationContext().getBaseUrl() != null) {
