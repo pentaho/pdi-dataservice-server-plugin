@@ -1,5 +1,6 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -51,6 +52,8 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
   
   private XulMenuitem renameFileMenuItem;
   
+  private XulTree fileTable;
+  
   protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
@@ -85,8 +88,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       }
 
       // Disable row dragging if it is locked and the user does not have permissions
-      XulTree fileTable = (XulTree) getXulDomContainer().getDocumentRoot().getElementById("file-table"); //$NON-NLS-1$
-      fileTable.setOndrag(getName() + ".onDragFromLocalTable()"); //$NON-NLS-1$
+      fileTable = (XulTree) getXulDomContainer().getDocumentRoot().getElementById("file-table"); //$NON-NLS-1$
       lockFileMenuItem = (XulMenuitem) getXulDomContainer().getDocumentRoot().getElementById("file-context-lock"); //$NON-NLS-1$
       deleteFileMenuItem = (XulMenuitem) getXulDomContainer().getDocumentRoot().getElementById("file-context-delete"); //$NON-NLS-1$
       renameFileMenuItem = (XulMenuitem) getXulDomContainer().getDocumentRoot().getElementById("file-context-rename"); //$NON-NLS-1$
@@ -102,10 +104,10 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
   // Object being dragged from the file listing table
   public void onDragFromLocalTable(DropEvent event) {
     try {
-      List<UIRepositoryObject> selectedRepoObjects = browseController.getSelectedFileItems();
+      Collection<Object> selectedRepoObjects = fileTable.getSelectedItems();
       if (selectedRepoObjects.size() > 0) {
-        for (UIRepositoryObject ro : selectedRepoObjects) {
-          if (ro instanceof ILockObject) {
+        for (Object ro : selectedRepoObjects) {
+          if (ro instanceof UIRepositoryObject && ro instanceof ILockObject) {
             final UIRepositoryContent contentToLock = (UIRepositoryContent) ro;
             if (((ILockObject) contentToLock).isLocked()) {
               // Content is locked. Lets check if the lock belongs to the current logged in user
