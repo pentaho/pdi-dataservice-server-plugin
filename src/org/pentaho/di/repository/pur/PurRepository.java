@@ -616,7 +616,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
     String path = null;
 
-    if (repositoryDirectory != null) {
+    // need to check for null id since shared objects return a non-null repoDir (see partSchema.getRepositoryDirectory())
+    if (repositoryDirectory != null && repositoryDirectory.getObjectId() != null) {
       ObjectId id = repositoryDirectory.getObjectId();
       path = repositoryDirectory.getPath();
       if ((isUserHomeDirectoryAliased) && (id.getId().equals(userHomeAlias.toString()))) {
