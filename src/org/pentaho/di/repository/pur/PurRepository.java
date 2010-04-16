@@ -340,9 +340,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public RepositoryDirectory createRepositoryDirectory(final RepositoryDirectory parentDirectory,
       final String directoryPath) throws KettleException {
     try {
+      
+      RepositoryDirectory refreshedParentDir = loadRepositoryDirectoryTree().findDirectory(parentDirectory.getPath());
+      
       String[] path = Const.splitPath(directoryPath, RepositoryDirectory.DIRECTORY_SEPARATOR);
 
-      RepositoryDirectory follow = parentDirectory;
+      RepositoryDirectory follow = refreshedParentDir;
       for (int level = 0; level < path.length; level++) {
         RepositoryDirectory child = follow.findChild(path[level]);
         if (child == null) {
