@@ -104,27 +104,12 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     ((PurRepository) repository).setTest(pur);
     repository.connect(EXP_LOGIN, "password");
     
-    setUpRoleBindings();
-
     List<RepositoryFile> files = pur.getChildren(pur.getFile("/public").getId());
     StringBuilder buf = new StringBuilder();
     for (RepositoryFile file : files) {
       buf.append("\n").append(file);
     }
     assertTrue("files not deleted: " + buf, files.isEmpty());
-  }
-
-  private void setUpRoleBindings() {
-    loginAsTenantAdmin();
-    final String RUNTIME_ROLE_ACME_ADMIN = "acme_Admin";
-    final String RUNTIME_ROLE_ACME_AUTHENTICATED = "acme_Authenticated";
-    final String LOGICAL_ROLE_SECURITY_ADMINISTRATOR = "org.pentaho.di.securityAdministrator";
-    final String LOGICAL_ROLE_CREATOR = "org.pentaho.di.creator";
-    final String LOGICAL_ROLE_READER = "org.pentaho.di.reader";
-    roleBindingDao.setRoleBindings(RUNTIME_ROLE_ACME_AUTHENTICATED, Arrays.asList(new String[] { LOGICAL_ROLE_READER,
-        LOGICAL_ROLE_CREATOR }));
-    roleBindingDao.setRoleBindings(RUNTIME_ROLE_ACME_ADMIN, Arrays.asList(new String[] { LOGICAL_ROLE_READER,
-        LOGICAL_ROLE_CREATOR, LOGICAL_ROLE_SECURITY_ADMINISTRATOR }));
   }
 
   protected void loginAsTenantAdmin() {
