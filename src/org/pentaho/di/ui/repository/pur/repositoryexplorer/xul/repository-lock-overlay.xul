@@ -20,5 +20,6 @@
 		<button id="lock-menu" image="images/lock_options.png" menu="lockContextMenu" context="lockContextMenu"/>
 	</hbox>
 	
-	<tree id="file-table" ondrag="repositoryLockController.onDragFromLocalTable()"/>
+	<tree id="file-table" ondrag="repositoryLockController.onDragFromLocalTable() "/>
+	<tree id="folder-tree" ondrag="repositoryLockController.onDragFromGlobalTree()" />
 </overlay>

@@ -283,7 +283,8 @@ public class TrashBrowseController extends BrowseController {
             // refresh the files in the folder but only the affected folders
             uiObj.getParent().getRepositoryObjects().add(uiObj);
           }
-        }        
+        }
+        deck.setSelectedIndex(1);
       } catch(Throwable th) {
         messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
         messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$

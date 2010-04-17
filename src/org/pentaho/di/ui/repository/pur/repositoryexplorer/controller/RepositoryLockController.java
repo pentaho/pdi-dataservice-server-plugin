@@ -16,8 +16,10 @@ import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationE
 import org.pentaho.di.ui.repository.repositoryexplorer.IUISupportController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectories;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObjects;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -53,6 +55,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
   private XulMenuitem renameFileMenuItem;
   
   private XulTree fileTable;
+  private XulTree folderTree;
   
   protected ResourceBundle messages = new ResourceBundle() {
 
@@ -89,6 +92,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
 
       // Disable row dragging if it is locked and the user does not have permissions
       fileTable = (XulTree) getXulDomContainer().getDocumentRoot().getElementById("file-table"); //$NON-NLS-1$
+      folderTree = (XulTree) document.getElementById("folder-tree"); //$NON-NLS-1$
       lockFileMenuItem = (XulMenuitem) getXulDomContainer().getDocumentRoot().getElementById("file-context-lock"); //$NON-NLS-1$
       deleteFileMenuItem = (XulMenuitem) getXulDomContainer().getDocumentRoot().getElementById("file-context-delete"); //$NON-NLS-1$
       renameFileMenuItem = (XulMenuitem) getXulDomContainer().getDocumentRoot().getElementById("file-context-rename"); //$NON-NLS-1$
@@ -101,6 +105,56 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
     }
   }
 
+  public void onDragFromGlobalTree(DropEvent event) {
+    Collection<Object> selectedItems = folderTree.getSelectedItems();
+    if (selectedItems.size() > 0) {
+      for (Object object: selectedItems) {
+        if (object instanceof UIRepositoryDirectory) {
+          try {
+            if(!(doesAnyRepositoryDirectoryHasLockedObject(event, (UIRepositoryDirectory) object))) {
+              // All the contents in the folder are not locked, check default permissions
+              browseController.onDragFromGlobalTree(event);              
+            }
+          } catch (KettleException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }  
+    }
+  }
+  private boolean doesAnyRepositoryDirectoryHasLockedObject(DropEvent event, UIRepositoryDirectory dir)  throws KettleException{
+    if (areAnyRepositoryObjectsLocked(event, dir.getRepositoryObjects())) {
+      return true;
+    } 
+    for(UIRepositoryObject ro: dir.getChildren()) {
+      if(ro instanceof UIRepositoryDirectory) {
+        UIRepositoryDirectory directory = (UIRepositoryDirectory) ro;
+        doesAnyRepositoryDirectoryHasLockedObject(event, directory);
+      }
+    }
+    return false;
+  }
+  private boolean areAnyRepositoryObjectsLocked(DropEvent event, UIRepositoryObjects repositoryObjects) throws KettleException{
+    for(UIRepositoryObject ro:repositoryObjects) {
+      if (ro instanceof ILockObject) {
+        final UIRepositoryContent contentToLock = (UIRepositoryContent) ro;
+        if (((ILockObject) contentToLock).isLocked()) {
+          // Content is locked. Lets check if the lock belongs to the current logged in user
+          if (!((ILockObject) contentToLock).getRepositoryLock().getLogin().equalsIgnoreCase(
+              repository.getUserInfo().getLogin())) {
+            // Current user does not own the lock
+            event.setAccepted(false);
+            messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
+            messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
+            messageBox.setMessage(messages.getString("BrowseController.FolderMoveNotAllowed")); //$NON-NLS-1$
+            messageBox.open();
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
   // Object being dragged from the file listing table
   public void onDragFromLocalTable(DropEvent event) {
     try {
