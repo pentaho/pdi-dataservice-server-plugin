@@ -1,4 +1,4 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.pur;
 
 import java.net.MalformedURLException;
 import java.net.URL;

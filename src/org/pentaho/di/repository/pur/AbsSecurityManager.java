@@ -1,4 +1,4 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.pur;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,6 +6,9 @@ import java.util.Map;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.repository.IUser;
+import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositorySecurityManager;

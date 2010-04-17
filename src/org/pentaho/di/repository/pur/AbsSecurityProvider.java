@@ -1,9 +1,10 @@
-package org.pentaho.di.repository;
+package org.pentaho.di.repository.pur;
 
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.repository.pur.PurRepositorySecurityProvider;
