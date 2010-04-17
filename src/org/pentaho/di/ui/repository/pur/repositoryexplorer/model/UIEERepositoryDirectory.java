@@ -1,7 +1,7 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.repository.Directory;
+import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IAclObject;
 import org.pentaho.di.ui.repository.pur.services.IAclService;
@@ -9,21 +9,20 @@ import org.pentaho.di.ui.repository.repositoryexplorer.AccessDeniedException;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 
 public class UIEERepositoryDirectory extends UIRepositoryDirectory implements IAclObject{
+
+  private static final long serialVersionUID = -6273975748634580673L;
+
   private IAclService aclService;
+
   public UIEERepositoryDirectory() {
     super();
-    // TODO Auto-generated constructor stub
   }
 
-  public UIEERepositoryDirectory(Directory rd, Repository rep) {
-    super(rd, rep);
-    initializeService(rep);
-  }
-
-  public UIEERepositoryDirectory(Directory rd, UIRepositoryDirectory uiParent, Repository rep) {
+  public UIEERepositoryDirectory(RepositoryDirectoryInterface rd, UIRepositoryDirectory uiParent, Repository rep) {
     super(rd, uiParent, rep);
     initializeService(rep);
   }
+
   public void getAcls(UIRepositoryObjectAcls acls, boolean forceParentInheriting) throws AccessDeniedException{
     try {
       acls.setObjectAcl(aclService.getAcl(getObjectId(), forceParentInheriting));

@@ -10,7 +10,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
-import org.pentaho.di.repository.RepositoryElement;
+import org.pentaho.di.repository.RepositoryObjectInterface;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
@@ -63,7 +63,7 @@ public class TrashBrowseController extends BrowseController {
 
   protected ITrashService trashService;
 
-  protected List<RepositoryElement> trash;
+  protected List<RepositoryObjectInterface> trash;
 
   protected Repository repository;
   
@@ -174,12 +174,12 @@ public class TrashBrowseController extends BrowseController {
     
     bf.setBindingType(Binding.Type.ONE_WAY);
     bf.createBinding(this, "trash", trashFileTable, "elements", //$NON-NLS-1$  //$NON-NLS-2$
-        new BindingConvertor<List<RepositoryElement>, UIRepositoryObjects>() {
+        new BindingConvertor<List<RepositoryObjectInterface>, UIRepositoryObjects>() {
           @Override
-          public UIRepositoryObjects sourceToTarget(List<RepositoryElement> trash) {
+          public UIRepositoryObjects sourceToTarget(List<RepositoryObjectInterface> trash) {
             UIRepositoryObjects listOfObjects = new UIRepositoryObjects();
 
-            for (RepositoryElement elem : trash) {
+            for (RepositoryObjectInterface elem : trash) {
               if (elem instanceof RepositoryDirectory) {
                 RepositoryDirectory dir = (RepositoryDirectory) elem;
                 // TODO fetch parent dir from somewhere
@@ -212,7 +212,7 @@ public class TrashBrowseController extends BrowseController {
           }
 
           @Override
-          public List<RepositoryElement> targetToSource(UIRepositoryObjects elements) {
+          public List<RepositoryObjectInterface> targetToSource(UIRepositoryObjects elements) {
             return null;
           }
         });
@@ -233,12 +233,12 @@ public class TrashBrowseController extends BrowseController {
     }
   }
 
-  public void setTrash(List<RepositoryElement> trash) {
+  public void setTrash(List<RepositoryObjectInterface> trash) {
     this.trash = trash;
     firePropertyChange("trash", null, trash); //$NON-NLS-1$
   }
 
-  public List<RepositoryElement> getTrash() {
+  public List<RepositoryObjectInterface> getTrash() {
     return trash;
   }
 

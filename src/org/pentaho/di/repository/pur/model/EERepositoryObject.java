@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryDirectory;
+import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 
@@ -16,13 +17,13 @@ public class EERepositoryObject extends RepositoryObject implements ILockObject{
     // TODO Auto-generated constructor stub
   }
 
-  public EERepositoryObject(ObjectId objectId, String name, RepositoryDirectory repositoryDirectory,
+  public EERepositoryObject(ObjectId objectId, String name, RepositoryDirectoryInterface repositoryDirectory,
       String modifiedUser, Date modifiedDate, RepositoryObjectType objectType, String description, boolean deleted) {
     super(objectId, name, repositoryDirectory, modifiedUser, modifiedDate, objectType, description, deleted);
     // TODO Auto-generated constructor stub
   }
 
-  public EERepositoryObject(ObjectId objectId, String name, RepositoryDirectory repositoryDirectory,
+  public EERepositoryObject(ObjectId objectId, String name, RepositoryDirectoryInterface repositoryDirectory,
       String modifiedUser, Date modifiedDate, RepositoryObjectType objectType, String description, String lockMessage, boolean deleted) {
     super(objectId, name, repositoryDirectory, modifiedUser, modifiedDate, objectType, description, deleted);
     this.lockMessage = lockMessage;

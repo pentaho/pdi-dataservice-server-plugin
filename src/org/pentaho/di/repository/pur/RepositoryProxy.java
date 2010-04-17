@@ -17,15 +17,13 @@ import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryDirectory;
+import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
-import org.pentaho.di.repository.RepositoryElementLocationInterface;
+import org.pentaho.di.repository.RepositoryElementMetaInterface;
 import org.pentaho.di.repository.RepositoryMeta;
-import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
-import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
@@ -78,7 +76,7 @@ public class RepositoryProxy implements Repository, ILockService {
     return getPropertyCount(idStep, code);
   }
 
-  public RepositoryDirectory createRepositoryDirectory(final RepositoryDirectory parentDirectory,
+  public RepositoryDirectoryInterface createRepositoryDirectory(final RepositoryDirectoryInterface parentDirectory,
       final String directoryPath) throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -99,7 +97,7 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
-  public void deleteRepositoryDirectory(RepositoryDirectory dir) throws KettleException {
+  public void deleteRepositoryDirectory(RepositoryDirectoryInterface dir) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -115,7 +113,7 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
-  public boolean exists(String name, RepositoryDirectory repositoryDirectory, RepositoryObjectType objectType)
+  public boolean exists(String name, RepositoryDirectoryInterface repositoryDirectory, RepositoryObjectType objectType)
       throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -197,7 +195,7 @@ public class RepositoryProxy implements Repository, ILockService {
     }
   }
 
-  public ObjectId getJobId(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
+  public ObjectId getJobId(String name, RepositoryDirectoryInterface repositoryDirectory) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -209,7 +207,7 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
-  public List<RepositoryObject> getJobObjects(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
+  public List<RepositoryElementMetaInterface> getJobObjects(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -234,10 +232,6 @@ public class RepositoryProxy implements Repository, ILockService {
   }
 
   public RepositoryMeta getRepositoryMeta() {
-    throw new UnsupportedOperationException();
-  }
-
-  public List<ObjectRevision> getRevisions(RepositoryElementLocationInterface element) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -323,7 +317,7 @@ public class RepositoryProxy implements Repository, ILockService {
     }
   }
 
-  public ObjectId getTransformationID(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
+  public ObjectId getTransformationID(String name, RepositoryDirectoryInterface repositoryDirectory) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -335,7 +329,7 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
-  public List<RepositoryObject> getTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
+  public List<RepositoryElementMetaInterface> getTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
       throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -345,10 +339,6 @@ public class RepositoryProxy implements Repository, ILockService {
   }
 
   public String getVersion() {
-    throw new UnsupportedOperationException();
-  }
-
-  public RepositoryVersionRegistry getVersionRegistry() throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -413,7 +403,7 @@ public class RepositoryProxy implements Repository, ILockService {
     return null;
   }
 
-  public JobMeta loadJob(String jobname, RepositoryDirectory repdir, ProgressMonitorListener monitor, String revision)
+  public JobMeta loadJob(String jobname, RepositoryDirectoryInterface repdir, ProgressMonitorListener monitor, String revision)
       throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -422,7 +412,7 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
-  public RepositoryDirectory loadRepositoryDirectoryTree() throws KettleException {
+  public RepositoryDirectoryInterface loadRepositoryDirectoryTree() throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -430,7 +420,7 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
-  public TransMeta loadTransformation(String transname, RepositoryDirectory repdir, ProgressMonitorListener monitor,
+  public TransMeta loadTransformation(String transname, RepositoryDirectoryInterface repdir, ProgressMonitorListener monitor,
       boolean setInternalVariables, String revision) throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -455,24 +445,16 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
-  public ObjectId renameDatabase(ObjectId idDatabase, String newname) throws KettleException {
+  public ObjectId renameJob(ObjectId idJob, RepositoryDirectoryInterface newDirectory, String newName) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
-  public ObjectId renameJob(ObjectId idJob, RepositoryDirectory newDirectory, String newName) throws KettleException {
-    throw new UnsupportedOperationException();
-  }
-
-  public ObjectId renameRepositoryDirectory(RepositoryDirectory dir) throws KettleException {
-    throw new UnsupportedOperationException();
-  }
-
-  public ObjectId renameRepositoryDirectory(ObjectId id, RepositoryDirectory newParentDir, String newName)
+  public ObjectId renameRepositoryDirectory(ObjectId id, RepositoryDirectoryInterface newParentDir, String newName)
       throws KettleException {
     throw new UnsupportedOperationException();
   }
 
-  public ObjectId renameTransformation(ObjectId idTransformation, RepositoryDirectory newDirectory, String newName)
+  public ObjectId renameTransformation(ObjectId idTransformation, RepositoryDirectoryInterface newDirectory, String newName)
       throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -534,7 +516,7 @@ public class RepositoryProxy implements Repository, ILockService {
     node.setProperty(code + PROP_CODE_NR_SEPARATOR + nr, value);
   }
 
-  public void saveRepositoryDirectory(RepositoryDirectory dir) throws KettleException {
+  public void saveRepositoryDirectory(RepositoryDirectoryInterface dir) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -578,7 +560,7 @@ public class RepositoryProxy implements Repository, ILockService {
     node.setProperty(code + PROP_CODE_NR_SEPARATOR + nr, value);
   }
 
-  public void undeleteObject(RepositoryElementLocationInterface element) throws KettleException {
+  public void undeleteObject(RepositoryElementMetaInterface element) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
@@ -601,7 +583,7 @@ public class RepositoryProxy implements Repository, ILockService {
   public void setAcl(ObjectId arg0, ObjectAcl arg1) throws KettleException {
     throw new UnsupportedOperationException();
   }
-  public List<RepositoryObject> getJobAndTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
+  public List<RepositoryElementMetaInterface> getJobAndTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
       throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -618,11 +600,11 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
-  public RepositoryDirectory getDefaultSaveDirectory(RepositoryElementInterface arg0) throws KettleException {
+  public RepositoryDirectoryInterface getDefaultSaveDirectory(RepositoryElementInterface arg0) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
-  public RepositoryDirectory getUserHomeDirectory() throws KettleException {
+  public RepositoryDirectoryInterface getUserHomeDirectory() throws KettleException {
     throw new UnsupportedOperationException();
   }
 

@@ -6,7 +6,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
-import org.pentaho.di.repository.RepositoryElementLocationInterface;
+import org.pentaho.di.repository.RepositoryElementInterface;
 /**
  * Repository service which adds a revision feature to the repository. Using this feature,
  * user of this repository can get revisions of the object and restore to a specific version
@@ -23,7 +23,7 @@ public interface IRevisionService extends IRepositoryService{
    * @return The revision history, sorted from first to last.
    * @throws KettleException in case something goes horribly wrong
    */
-  public List<ObjectRevision> getRevisions(RepositoryElementLocationInterface element) throws KettleException;
+   public List<ObjectRevision> getRevisions(RepositoryElementInterface element) throws KettleException;
 
   /**
    * Get the revision history of a repository element.

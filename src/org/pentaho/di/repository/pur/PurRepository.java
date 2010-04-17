@@ -18,6 +18,7 @@ import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.ProgressMonitorListener;
 import org.pentaho.di.core.annotations.RepositoryPlugin;
+import org.pentaho.di.core.changed.ChangedFlagInterface;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
@@ -35,15 +36,14 @@ import org.pentaho.di.repository.ObjectRecipient;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
-import org.pentaho.di.repository.RepositoryElement;
+import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
-import org.pentaho.di.repository.RepositoryElementLocationInterface;
+import org.pentaho.di.repository.RepositoryElementMetaInterface;
 import org.pentaho.di.repository.RepositoryMeta;
-import org.pentaho.di.repository.RepositoryObject;
+import org.pentaho.di.repository.RepositoryObjectInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
-import org.pentaho.di.repository.RepositoryVersionRegistry;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.WsFactory;
 import org.pentaho.di.repository.ObjectRecipient.Type;
@@ -93,9 +93,7 @@ import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
  * @author mlowery
  */
 @RepositoryPlugin(id = "PentahoEnterpriseRepository", name = "Enterprise Repository", description = "i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository", metaClass = "org.pentaho.di.repository.pur.PurRepositoryMeta")
-public class PurRepository implements Repository, IRevisionService, IAclService, ITrashService, ILockService
-// , RevisionRepository 
-{
+public class PurRepository implements Repository, IRevisionService, IAclService, ITrashService, ILockService {
 
   // ~ Static fields/initializers ======================================================================================
 
@@ -186,7 +184,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   // ~ Methods =========================================================================================================
 
-  protected RepositoryDirectory getRootDir() throws KettleException {
+  protected RepositoryDirectoryInterface getRootDir() throws KettleException {
     if (rootRef != null && rootRef.get() != null) {
       return rootRef.get();
     } else {
@@ -337,17 +335,18 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     throw new UnsupportedOperationException();
   }
 
-  public RepositoryDirectory createRepositoryDirectory(final RepositoryDirectory parentDirectory,
+  public RepositoryDirectoryInterface createRepositoryDirectory(final RepositoryDirectoryInterface parentDirectory,
       final String directoryPath) throws KettleException {
     try {
       
-      RepositoryDirectory refreshedParentDir = loadRepositoryDirectoryTree().findDirectory(parentDirectory.getPath());
+      RepositoryDirectoryInterface refreshedParentDir = loadRepositoryDirectoryTree().findDirectory(parentDirectory.getPath());
       
       String[] path = Const.splitPath(directoryPath, RepositoryDirectory.DIRECTORY_SEPARATOR);
 
-      RepositoryDirectory follow = refreshedParentDir;
+      RepositoryDirectoryInterface follow = refreshedParentDir;
+
       for (int level = 0; level < path.length; level++) {
-        RepositoryDirectory child = follow.findChild(path[level]);
+        RepositoryDirectoryInterface child = follow.findChild(path[level]);
         if (child == null) {
           // create this one
           //
@@ -366,7 +365,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public void saveRepositoryDirectory(final RepositoryDirectory dir) throws KettleException {
+  public void saveRepositoryDirectory(final RepositoryDirectoryInterface dir) throws KettleException {
     try {
       PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
       if (dscContent.getSubject() != null) {
@@ -380,7 +379,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public void deleteRepositoryDirectory(final RepositoryDirectory dir) throws KettleException {
+  public void deleteRepositoryDirectory(final RepositoryDirectoryInterface dir) throws KettleException {
     try {
       pur.deleteFile(dir.getObjectId().getId(), null);
     } catch (Exception e) {
@@ -388,19 +387,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public ObjectId renameRepositoryDirectory(final RepositoryDirectory dir) throws KettleException {
-    // dir ID is used to find orig obj; dir name is new name of obj; dir is not moved from its original loc
-    try {
-      String absPath = getPath(null, dir.getParent(), null);
-      pur.moveFile(dir.getObjectId().getId(), absPath + RepositoryFile.SEPARATOR + dir.getName(), null);
-      return dir.getObjectId();
-    } catch (Exception e) {
-      throw new KettleException("Unable to rename directory with id [" + dir.getObjectId() + "] to [" + dir.getName()
-          + "]", e);
-    }
-  }
-
-  public ObjectId renameRepositoryDirectory(final ObjectId dirId, final RepositoryDirectory newParent,
+  public ObjectId renameRepositoryDirectory(final ObjectId dirId, final RepositoryDirectoryInterface newParent,
       final String newName) throws KettleException {
     // dir ID is used to find orig obj; new parent is used as new parent (might be null meaning no change in parent); 
     // new name is used as new file name (might be null meaning no change in name)
@@ -420,7 +407,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public RepositoryDirectory loadRepositoryDirectoryTree() throws KettleException {
+  public RepositoryDirectoryInterface loadRepositoryDirectoryTree() throws KettleException {
     RepositoryFile rootFolder = pur.getFile(ClientRepositoryPaths.getRootFolderPath());
     RepositoryDirectory rootDir = new RepositoryDirectory();
     rootRef = new SoftReference<RepositoryDirectory>(rootDir);
@@ -516,7 +503,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return newRoot;
   }
 
-  private void loadRepositoryDirectory(final RepositoryDirectory parentDir, final RepositoryFile folder)
+  private void loadRepositoryDirectory(final RepositoryDirectoryInterface parentDir, final RepositoryFile folder)
       throws KettleException {
     try {
       List<RepositoryFile> children = pur.getChildren(folder.getId());
@@ -601,7 +588,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     deleteFileById(idTransformation);
   }
 
-  public boolean exists(final String name, final RepositoryDirectory repositoryDirectory,
+  public boolean exists(final String name, final RepositoryDirectoryInterface repositoryDirectory,
       final RepositoryObjectType objectType) throws KettleException {
     try {
       String absPath = getPath(name, repositoryDirectory, objectType);
@@ -611,7 +598,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
   
-  private String getPath(final String name, final RepositoryDirectory repositoryDirectory,
+  private String getPath(final String name, final RepositoryDirectoryInterface repositoryDirectory,
       final RepositoryObjectType objectType) {
 
     String path = null;
@@ -706,7 +693,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   /**
    * Copying the behavior of the original JCRRepository, this implementation returns IDs of deleted objects too.
    */
-  private ObjectId getObjectId(final String name, final RepositoryDirectory dir, final RepositoryObjectType objectType,
+  private ObjectId getObjectId(final String name, final RepositoryDirectoryInterface dir, final RepositoryObjectType objectType,
       boolean includedDeleteFiles) {
     final String absPath = getPath(name, dir, objectType);
     RepositoryFile file = pur.getFile(absPath);
@@ -1005,7 +992,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     throw new UnsupportedOperationException();
   }
 
-  public ObjectId getJobId(final String name, final RepositoryDirectory repositoryDirectory) throws KettleException {
+  public ObjectId getJobId(final String name, final RepositoryDirectoryInterface repositoryDirectory) throws KettleException {
     try {
       return getObjectId(name, repositoryDirectory, RepositoryObjectType.JOB, false);
     } catch (Exception e) {
@@ -1032,7 +1019,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public List<RepositoryObject> getJobObjects(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
+  public List<RepositoryElementMetaInterface> getJobObjects(ObjectId idDirectory, boolean includeDeleted) throws KettleException {
     return getPdiObjects(idDirectory, Arrays.asList(new RepositoryObjectType[] { RepositoryObjectType.JOB }),
         includeDeleted);
   }
@@ -1086,18 +1073,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   /**
-   * The implementation of this method is more complex because it takes a {@link RepositoryElementLocationInterface}
+   * The implementation of this method is more complex because it takes a {@link RepositoryElementInterface}
    * which does not have an ID.
    */
-  public List<ObjectRevision> getRevisions(final RepositoryElementLocationInterface element) throws KettleException {
-    String absPath = null;
-    try {
-      absPath = getPath(element.getName(), element.getRepositoryDirectory(), element.getRepositoryElementType());
-      RepositoryFile file = pur.getFile(absPath);
-      return getRevisions(new StringObjectId(file.getId().toString()));
-    } catch (Exception e) {
-      throw new KettleException("Could not retrieve version history of object with path [" + absPath + "]", e);
-    }
+  public List<ObjectRevision> getRevisions(final RepositoryElementInterface element) throws KettleException {
+    return getRevisions(element.getObjectId());
   }
 
   public RepositorySecurityProvider getSecurityProvider() {
@@ -1194,7 +1174,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     throw new UnsupportedOperationException();
   }
 
-  public ObjectId getTransformationID(String name, RepositoryDirectory repositoryDirectory) throws KettleException {
+  public ObjectId getTransformationID(String name, RepositoryDirectoryInterface repositoryDirectory) throws KettleException {
     try {
       return getObjectId(name, repositoryDirectory, RepositoryObjectType.TRANSFORMATION, false);
     } catch (Exception e) {
@@ -1231,19 +1211,19 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public List<RepositoryObject> getTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
+  public List<RepositoryElementMetaInterface> getTransformationObjects(ObjectId idDirectory, boolean includeDeleted)
       throws KettleException {
     return getPdiObjects(idDirectory,
         Arrays.asList(new RepositoryObjectType[] { RepositoryObjectType.TRANSFORMATION }), includeDeleted);
   }
 
-  protected List<RepositoryObject> getPdiObjects(ObjectId dirId, List<RepositoryObjectType> objectTypes,
+  protected List<RepositoryElementMetaInterface> getPdiObjects(ObjectId dirId, List<RepositoryObjectType> objectTypes,
       boolean includeDeleted) throws KettleException {
     try {
 
-      RepositoryDirectory repDir = getRootDir().findDirectory(dirId);
+      RepositoryDirectoryInterface repDir = getRootDir().findDirectory(dirId);
 
-      List<RepositoryObject> list = new ArrayList<RepositoryObject>();
+      List<RepositoryElementMetaInterface> list = new ArrayList<RepositoryElementMetaInterface>();
       List<RepositoryFile> nonDeletedChildren = getAllFilesOfType(dirId, objectTypes);
       for (RepositoryFile file : nonDeletedChildren) {
         RepositoryLock lock = getLock(file);
@@ -1297,10 +1277,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public String getVersion() {
     return REPOSITORY_VERSION;
-  }
-
-  public RepositoryVersionRegistry getVersionRegistry() throws KettleException {
-    throw new UnsupportedOperationException();
   }
 
   public void insertJobEntryDatabase(ObjectId idJob, ObjectId idJobentry, ObjectId idDatabase) throws KettleException {
@@ -1402,26 +1378,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return transDelegate.loadSharedObjects(transMeta);
   }
 
-  public ObjectId renameDatabase(ObjectId idDatabase, String newName) throws KettleException {
-    RepositoryFile file = pur.getFileById(idDatabase.getId());
-    StringBuilder buf = new StringBuilder(file.getPath().length());
-    buf.append(getParentPath(file.getPath()));
-    buf.append(RepositoryFile.SEPARATOR);
-    buf.append(newName);
-    if (!newName.endsWith(RepositoryObjectType.DATABASE.getExtension())) {
-      buf.append(RepositoryObjectType.DATABASE.getExtension());
-    }
-    pur.moveFile(file.getId(), buf.toString(), null);
-    return new StringObjectId(file.getId().toString());
-  }
-
-  public ObjectId renameJob(final ObjectId idJob, final RepositoryDirectory newDirectory, final String newName)
+  public ObjectId renameJob(final ObjectId idJob, final RepositoryDirectoryInterface newDirectory, final String newName)
       throws KettleException {
     pur.moveFile(idJob.getId(), calcDestAbsPath(idJob, newDirectory, newName, RepositoryObjectType.JOB), null);
     return idJob;
   }
 
-  public ObjectId renameTransformation(final ObjectId idTransformation, final RepositoryDirectory newDirectory,
+  public ObjectId renameTransformation(final ObjectId idTransformation, final RepositoryDirectoryInterface newDirectory,
       final String newName) throws KettleException {
     pur.moveFile(idTransformation.getId(), calcDestAbsPath(idTransformation, newDirectory, newName,
         RepositoryObjectType.TRANSFORMATION), null);
@@ -1433,7 +1396,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return path.substring(0, lastSlashIndex);
   }
 
-  protected String calcDestAbsPath(final ObjectId id, final RepositoryDirectory newDirectory, final String newName,
+  protected String calcDestAbsPath(final ObjectId id, final RepositoryDirectoryInterface newDirectory, final String newName,
       final RepositoryObjectType objectType) {
     String newDirectoryPath = getPath(null, newDirectory, null);
     RepositoryFile file = pur.getFileById(id.getId());
@@ -1543,7 +1506,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     ObjectId objectId = new StringObjectId(file.getId().toString());
     element.setObjectId(objectId);
     element.setObjectRevision(getObjectRevision(objectId, null));
-    element.clearChanged();
+    if (element instanceof ChangedFlagInterface) {
+      ((ChangedFlagInterface)element).clearChanged();
+    }
   }
 
   protected void saveTrans(final RepositoryElementInterface element, final String versionComment)
@@ -1573,7 +1538,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     ObjectId objectId = new StringObjectId(file.getId().toString());
     element.setObjectId(objectId);
     element.setObjectRevision(getObjectRevision(objectId, null));
-    element.clearChanged();
+    if (element instanceof ChangedFlagInterface) {
+      ((ChangedFlagInterface)element).clearChanged();
+    }
   }
 
   protected void saveDatabaseMeta(final RepositoryElementInterface element, final String versionComment)
@@ -1610,7 +1577,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     ObjectId objectId = new StringObjectId(file.getId().toString());
     element.setObjectId(objectId);
     element.setObjectRevision(getObjectRevision(objectId, null));
-    element.clearChanged();
+    if (element instanceof ChangedFlagInterface) {
+      ((ChangedFlagInterface)element).clearChanged();
+    }
     if (renameRequired) {
       rename(element);
     }
@@ -1630,7 +1599,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public TransMeta loadTransformation(final String transName, final RepositoryDirectory parentDir,
+  public TransMeta loadTransformation(final String transName, final RepositoryDirectoryInterface parentDir,
       final ProgressMonitorListener monitor, final boolean setInternalVariables, final String versionId)
       throws KettleException {
     String absPath = null;
@@ -1652,7 +1621,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public JobMeta loadJob(String jobname, RepositoryDirectory parentDir, ProgressMonitorListener monitor,
+  public JobMeta loadJob(String jobname, RepositoryDirectoryInterface parentDir, ProgressMonitorListener monitor,
       String versionId) throws KettleException {
     String absPath = null;
     try {
@@ -1711,7 +1680,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       ObjectId objectId = new StringObjectId(file.getId().toString());
       element.setObjectId(objectId);
       element.setObjectRevision(getObjectRevision(objectId, null));
-      element.clearChanged();
+      if (element instanceof ChangedFlagInterface) {
+        ((ChangedFlagInterface)element).clearChanged();
+      }
       if (renameRequired) {
         rename(element);
       }
@@ -1748,7 +1719,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       ObjectId objectId = new StringObjectId(file.getId().toString());
       element.setObjectId(objectId);
       element.setObjectRevision(getObjectRevision(objectId, null));
-      element.clearChanged();
+      if (element instanceof ChangedFlagInterface) {
+        ((ChangedFlagInterface)element).clearChanged();
+      }
       if (renameRequired) {
         rename(element);
       }
@@ -1785,7 +1758,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       ObjectId objectId = new StringObjectId(file.getId().toString());
       element.setObjectId(objectId);
       element.setObjectRevision(getObjectRevision(objectId, null));
-      element.clearChanged();
+      if (element instanceof ChangedFlagInterface) {
+        ((ChangedFlagInterface)element).clearChanged();
+      }
+      
       if (renameRequired) {
         rename(element);
       }
@@ -1955,11 +1931,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     throw new UnsupportedOperationException();
   }
 
-  public void undeleteObject(final RepositoryElementLocationInterface element) throws KettleException {
+  public void undeleteObject(final RepositoryElementMetaInterface element) throws KettleException {
 
     RepositoryFile originalParentFolder = pur.getFile(getPath(null, element.getRepositoryDirectory(), null));
     List<RepositoryFile> deletedChildren = pur.getDeletedFiles(originalParentFolder.getId(), element.getName()
-        + element.getRepositoryElementType().getExtension());
+        + element.getObjectType().getExtension());
     if (!deletedChildren.isEmpty()) {
       pur.undeleteFile(deletedChildren.get(0).getId(), null);
     }
@@ -2099,7 +2075,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public List<RepositoryObject> getJobAndTransformationObjects(ObjectId id_directory, boolean includeDeleted)
+  public List<RepositoryElementMetaInterface> getJobAndTransformationObjects(ObjectId id_directory, boolean includeDeleted)
       throws KettleException {
     return getPdiObjects(id_directory, Arrays.asList(new RepositoryObjectType[] { RepositoryObjectType.JOB,
         RepositoryObjectType.TRANSFORMATION }), includeDeleted);
@@ -2129,8 +2105,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public List<RepositoryElement> getTrash() throws KettleException {
-    List<RepositoryElement> trash = new ArrayList<RepositoryElement>();
+  public List<RepositoryObjectInterface> getTrash() throws KettleException {
+    List<RepositoryObjectInterface> trash = new ArrayList<RepositoryObjectInterface>();
     List<RepositoryFile> deletedChildren = pur.getDeletedFiles();
     for (final RepositoryFile file : deletedChildren) {
       final Serializable originalParentFolderId = file.getOriginalParentFolderId();
@@ -2149,7 +2125,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             return new StringObjectId(file.getId().toString());
           }
 
-          public RepositoryDirectory getParent() {
+          public RepositoryDirectoryInterface getParent() {
             return origParentDir;
           }
         });
@@ -2163,12 +2139,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return trash;
   }
 
-  public RepositoryDirectory getDefaultSaveDirectory(RepositoryElementInterface repositoryElement)
+  public RepositoryDirectoryInterface getDefaultSaveDirectory(RepositoryElementInterface repositoryElement)
       throws KettleException {
     return getUserHomeDirectory();
   }
 
-  public RepositoryDirectory getUserHomeDirectory() throws KettleException {
+  public RepositoryDirectoryInterface getUserHomeDirectory() throws KettleException {
     loadRepositoryDirectoryTree();
     return getRootDir().findDirectory(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
   }

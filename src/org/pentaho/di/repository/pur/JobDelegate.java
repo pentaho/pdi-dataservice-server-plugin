@@ -428,7 +428,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
       // Save the entry information here as well, for completeness.  TODO: since this slightly stores duplicate information, figure out how to store this separately.
       //
-      copyNode.setProperty(PROP_JOBENTRY_TYPE, entry.getTypeId());
+      copyNode.setProperty(PROP_JOBENTRY_TYPE, entry.getPluginId());
       DataNode customNode = new DataNode(NODE_CUSTOM);
       RepositoryProxy proxy = new RepositoryProxy(customNode);
       entry.saveRep(proxy, null);

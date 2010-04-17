@@ -423,8 +423,8 @@ public abstract class RepositoryTestBase {
     assertNotNull(repository.getLog());
   }
 
-  protected RepositoryDirectory initRepo() throws Exception {
-    RepositoryDirectory startDir = loadStartDirectory();
+  protected RepositoryDirectoryInterface initRepo() throws Exception {
+    RepositoryDirectoryInterface startDir = loadStartDirectory();
     repository.createRepositoryDirectory(startDir, DIR_CONNECTIONS);
     repository.createRepositoryDirectory(startDir, DIR_SCHEMAS);
     repository.createRepositoryDirectory(startDir, DIR_SLAVES);
@@ -443,8 +443,8 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testDirectories() throws Exception {
-    RepositoryDirectory startDir = loadStartDirectory();
-    RepositoryDirectory connDir = repository.createRepositoryDirectory(startDir, DIR_CONNECTIONS);
+    RepositoryDirectoryInterface startDir = loadStartDirectory();
+    RepositoryDirectoryInterface connDir = repository.createRepositoryDirectory(startDir, DIR_CONNECTIONS);
     assertNotNull(connDir);
     assertNotNull(connDir.getObjectId());
     assertEquals(startDir.getPath() + (startDir.getPath().endsWith("/") ? "" : RepositoryDirectory.DIRECTORY_SEPARATOR)
@@ -462,28 +462,20 @@ public abstract class RepositoryTestBase {
     assertNotNull(startDir.findDirectory(DIR_TRANSFORMATIONS));
     assertNotNull(startDir.findDirectory(DIR_JOBS));
 
-    RepositoryDirectory tmpDir = repository.createRepositoryDirectory(startDir, DIR_TMP);
+    RepositoryDirectoryInterface tmpDir = repository.createRepositoryDirectory(startDir, DIR_TMP);
     repository.deleteRepositoryDirectory(tmpDir);
     startDir = loadStartDirectory();
     assertNull(startDir.findDirectory(DIR_TMP));
 
-    RepositoryDirectory tmp2Dir = repository.createRepositoryDirectory(startDir, DIR_TMP2);
-    tmp2Dir.setName(DIR_TMP2_NEW_NAME);
-    repository.renameRepositoryDirectory(tmp2Dir);
-
-    startDir = loadStartDirectory();
-    assertNull(startDir.findDirectory(DIR_TMP2));
-    assertNotNull(startDir.findDirectory(DIR_TMP2_NEW_NAME));
-
-    RepositoryDirectory moveTestDestDir = repository.createRepositoryDirectory(startDir, "moveTestDest");
-    RepositoryDirectory moveTestSrcDir = repository.createRepositoryDirectory(startDir, "moveTestSrc");
+    RepositoryDirectoryInterface moveTestDestDir = repository.createRepositoryDirectory(startDir, "moveTestDest");
+    RepositoryDirectoryInterface moveTestSrcDir = repository.createRepositoryDirectory(startDir, "moveTestSrc");
     repository.renameRepositoryDirectory(moveTestSrcDir.getObjectId(), moveTestDestDir, "moveTestSrcNewName");
     startDir = loadStartDirectory();
     assertNull(startDir.findDirectory("moveTestSrc"));
     assertNotNull(startDir.findDirectory("moveTestDest/moveTestSrcNewName"));
 
     String[] dirs = repository.getDirectoryNames(startDir.getObjectId());
-    assertEquals(8, dirs.length);
+    assertEquals(7, dirs.length);
     boolean foundDir = false;
     for (String dir : dirs) {
       if (dir.equals(DIR_CONNECTIONS)) { // spot check
@@ -495,7 +487,7 @@ public abstract class RepositoryTestBase {
 
   }
 
-  protected RepositoryDirectory loadStartDirectory() throws Exception {
+  protected RepositoryDirectoryInterface loadStartDirectory() throws Exception {
     return repository.loadRepositoryDirectoryTree();
     
   }
@@ -515,9 +507,9 @@ public abstract class RepositoryTestBase {
   @Test
   public void testJobs() throws Exception {
     ILockService service = ((ILockService)repository);
-    RepositoryDirectory rootDir = initRepo();
+    RepositoryDirectoryInterface rootDir = initRepo();
     JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
-    RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
+    RepositoryDirectoryInterface jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
     deleteStack.push(jobMeta);
     assertNotNull(jobMeta.getObjectId());
@@ -623,7 +615,7 @@ public abstract class RepositoryTestBase {
   }
 
   protected JobMeta createJobMeta(String jobName) throws Exception {
-    RepositoryDirectory rootDir = loadStartDirectory();
+    RepositoryDirectoryInterface rootDir = loadStartDirectory();
     JobMeta jobMeta = new JobMeta();
     jobMeta.setName(jobName);
     jobMeta.setDescription(EXP_JOB_DESC);
@@ -687,10 +679,10 @@ public abstract class RepositoryTestBase {
   @Test
   public void testTransformations() throws Exception {
     ILockService service = ((ILockService)repository);
-    RepositoryDirectory rootDir = initRepo();
+    RepositoryDirectoryInterface rootDir = initRepo();
     String uniqueTransName = EXP_TRANS_NAME.concat(EXP_DBMETA_NAME);
     TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
-    RepositoryDirectory transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
+    RepositoryDirectoryInterface transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     repository.save(transMeta, VERSION_COMMENT_V1, null);
     deleteStack.push(transMeta);
     assertNotNull(transMeta.getObjectId());
@@ -839,7 +831,7 @@ public abstract class RepositoryTestBase {
   }
 
   protected TransMeta createTransMeta(final String dbName) throws Exception {
-    RepositoryDirectory rootDir = loadStartDirectory();
+    RepositoryDirectoryInterface rootDir = loadStartDirectory();
     TransMeta transMeta = new TransMeta();
     transMeta.setName(EXP_TRANS_NAME.concat(dbName));
     transMeta.setDescription(EXP_TRANS_DESC);
@@ -951,7 +943,7 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testPartitionSchemas() throws Exception {
-    RepositoryDirectory rootDir = initRepo();
+    RepositoryDirectoryInterface rootDir = initRepo();
     PartitionSchema partSchema = createPartitionSchema("");
     repository.save(partSchema, VERSION_COMMENT_V1, null);
     assertNotNull(partSchema.getObjectId());
@@ -1011,7 +1003,7 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testClusterSchemas() throws Exception {
-    RepositoryDirectory rootDir = initRepo();
+    RepositoryDirectoryInterface rootDir = initRepo();
     ClusterSchema clusterSchema = createClusterSchema(EXP_CLUSTER_SCHEMA_NAME);
     repository.save(clusterSchema, VERSION_COMMENT_V1, null);
     assertNotNull(clusterSchema.getObjectId());
@@ -1334,15 +1326,16 @@ public abstract class RepositoryTestBase {
 
   @Test
   public void testRenameAndUndelete() throws Exception {
-    RepositoryDirectory rootDir = initRepo();
+    RepositoryDirectoryInterface rootDir = initRepo();
     JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
-    RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
+    RepositoryDirectoryInterface jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
     deleteStack.push(jobMeta);
 
     repository.deleteJob(jobMeta.getObjectId());
     assertFalse(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
-    repository.undeleteObject(jobMeta);
+    RepositoryObject robj = new RepositoryObject(jobMeta.getObjectId(), jobMeta.getName(), jobMeta.getRepositoryDirectory(), null, null, jobMeta.getRepositoryElementType(), null, false);
+    repository.undeleteObject(robj);
     assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
 
     repository.renameJob(jobMeta.getObjectId(), jobsDir, EXP_JOB_NAME_NEW);
@@ -1350,7 +1343,7 @@ public abstract class RepositoryTestBase {
     assertTrue(repository.exists(EXP_JOB_NAME_NEW, jobsDir, RepositoryObjectType.JOB));
 
     TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
-    RepositoryDirectory transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
+    RepositoryDirectoryInterface transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     repository.save(transMeta, VERSION_COMMENT_V1, null);
     deleteStack.push(transMeta);
     repository.renameTransformation(transMeta.getObjectId(), transDir, EXP_TRANS_NAME_NEW);
@@ -1360,7 +1353,9 @@ public abstract class RepositoryTestBase {
     DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA2_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
     deleteStack.push(dbMeta);
-    repository.renameDatabase(dbMeta.getObjectId(), EXP_DBMETA_NAME_NEW);
+    
+    dbMeta.setName(EXP_DBMETA_NAME_NEW);
+    repository.save(dbMeta, VERSION_COMMENT_V2, null);
     assertFalse(repository.exists(EXP_DBMETA2_NAME, null, RepositoryObjectType.DATABASE));
     assertTrue(repository.exists(EXP_DBMETA_NAME_NEW, null, RepositoryObjectType.DATABASE));
   }
@@ -1456,9 +1451,9 @@ public abstract class RepositoryTestBase {
   @Test
   @Ignore
   public void testGetAcl() throws Exception{
-    RepositoryDirectory rootDir = initRepo();
+    RepositoryDirectoryInterface rootDir = initRepo();
     JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
-    RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
+    RepositoryDirectoryInterface jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
     deleteStack.push(jobMeta);
     assertNotNull(jobMeta.getObjectId());
@@ -1472,9 +1467,9 @@ public abstract class RepositoryTestBase {
   @Test
   @Ignore   
   public void testSetAcl() throws Exception{
-    RepositoryDirectory rootDir = initRepo();
+    RepositoryDirectoryInterface rootDir = initRepo();
     JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
-    RepositoryDirectory jobsDir = rootDir.findDirectory(DIR_JOBS);
+    RepositoryDirectoryInterface jobsDir = rootDir.findDirectory(DIR_JOBS);
     repository.save(jobMeta, VERSION_COMMENT_V1, null);
     deleteStack.push(jobMeta);
     assertNotNull(jobMeta.getObjectId());

@@ -23,7 +23,7 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryElementLocationInterface;
+import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.dialog.ShowMessageDialog;
@@ -51,7 +51,7 @@ public class PurRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 	
 	private Repository	repository;
 	private IRevisionService revisionService;
-	private RepositoryElementLocationInterface element;
+	private RepositoryElementInterface element;
 
 	private List<ObjectRevision>	revisions;
 
@@ -59,7 +59,7 @@ public class PurRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 	
 	private String selectedRevision;
 	
-	public PurRepositoryRevisionBrowserDialog(Shell parent, int style, Repository repository, RepositoryElementLocationInterface element)
+	public PurRepositoryRevisionBrowserDialog(Shell parent, int style, Repository repository, RepositoryElementInterface element)
 	{
 		this.display = parent.getDisplay();
 		this.props=PropsUI.getInstance();

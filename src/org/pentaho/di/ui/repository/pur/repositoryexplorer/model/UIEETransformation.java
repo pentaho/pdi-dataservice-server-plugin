@@ -5,7 +5,7 @@ import java.util.List;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryContent;
+import org.pentaho.di.repository.RepositoryElementMetaInterface;
 import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IAclObject;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.ILockObject;
@@ -23,7 +23,7 @@ public class UIEETransformation extends UITransformation implements ILockObject,
   private IRevisionService revisionService;
   private UIRepositoryObjectRevisions revisions;
 
-  public UIEETransformation(RepositoryContent rc, UIRepositoryDirectory parent, Repository rep) {
+  public UIEETransformation(RepositoryElementMetaInterface rc, UIRepositoryDirectory parent, Repository rep) {
     super(rc, parent, rep);
     try {
       if (rep.hasService(ILockService.class)) {

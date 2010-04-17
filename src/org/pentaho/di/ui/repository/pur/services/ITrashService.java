@@ -5,7 +5,7 @@ import java.util.List;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.RepositoryElement;
+import org.pentaho.di.repository.RepositoryObjectInterface;
 /**
  * Repository Service used to add a trash bin feature to the repository
  * @author mlowery
@@ -33,5 +33,5 @@ public interface ITrashService extends IRepositoryService {
    * @return
    * @throws KettleException
    */
-  List<RepositoryElement> getTrash() throws KettleException;
+  List<RepositoryObjectInterface> getTrash() throws KettleException;
 }

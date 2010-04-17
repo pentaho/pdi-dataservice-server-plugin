@@ -86,11 +86,11 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
   private Long testLoad(int max) throws Exception{
     
     Long timeInMillis = System.currentTimeMillis();
-    RepositoryDirectory rootDir = loadStartDirectory();
+    RepositoryDirectoryInterface rootDir = loadStartDirectory();
 
     for (int i = 0; i < max; i++) {
       
-      RepositoryDirectory childDir = repository.createRepositoryDirectory(rootDir,  
+      RepositoryDirectoryInterface childDir = repository.createRepositoryDirectory(rootDir,  
                                                       testFolder.concat(String.valueOf(i)));
       createContent(contentLoadMax, childDir);
       createDirectories(contentLoadMax, childDir);
@@ -104,7 +104,7 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
     return exec;
   }
 
-  private void createContent(int loadMax, RepositoryDirectory createHere) throws Exception{
+  private void createContent(int loadMax, RepositoryDirectoryInterface createHere) throws Exception{
       for (int ix = 0; ix < loadMax; ix++) {
         TransMeta transMeta = createTransMeta(createHere.getName().concat(EXP_DBMETA_NAME.concat(String.valueOf(ix))));
         transMeta.setRepositoryDirectory(createHere);
@@ -122,7 +122,7 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
       }
     }
     
-    private void createDirectories(int loadMax, RepositoryDirectory createHere) throws Exception{
+    private void createDirectories(int loadMax, RepositoryDirectoryInterface createHere) throws Exception{
       for (int ix = 0; ix < loadMax; ix++) {
         repository.createRepositoryDirectory(createHere, testFolder.concat(String.valueOf(ix)));
       }
@@ -133,8 +133,8 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
     }
 
     @Override
-    protected RepositoryDirectory loadStartDirectory() throws Exception {
-      RepositoryDirectory dir = super.loadStartDirectory();
+    protected RepositoryDirectoryInterface loadStartDirectory() throws Exception {
+      RepositoryDirectoryInterface dir = super.loadStartDirectory();
       return dir.findDirectory("home/joe");
     }
 

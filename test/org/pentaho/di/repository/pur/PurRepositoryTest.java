@@ -19,6 +19,7 @@ import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryDirectory;
+import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.pur.model.EEUserInfo;
@@ -235,9 +236,9 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   }
 
   @Override
-  protected RepositoryDirectory loadStartDirectory() throws Exception {
-    RepositoryDirectory rootDir = repository.loadRepositoryDirectoryTree();
-    RepositoryDirectory startDir = rootDir.findDirectory("public");
+  protected RepositoryDirectoryInterface loadStartDirectory() throws Exception {
+    RepositoryDirectoryInterface rootDir = repository.loadRepositoryDirectoryTree();
+    RepositoryDirectoryInterface startDir = rootDir.findDirectory("public");
     assertNotNull(startDir);
     return startDir;
   }
