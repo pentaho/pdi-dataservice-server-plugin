@@ -325,6 +325,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       if (((ILockObject) contentToLock).isLocked()) {
         // Unlock the item
         ((ILockObject) contentToLock).unlock();
+        browseController.getSelectedItemsBinding().fireSourceChanged();
       } else {
         // Lock the item
         XulPromptBox lockNotePrompt = promptLockMessage(document, messages, null);
@@ -334,6 +335,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
             if (!status.equals(Status.CANCEL)) {
               try {
                 ((ILockObject) contentToLock).lock(value);
+                browseController.getSelectedItemsBinding().fireSourceChanged();
               } catch (Exception e) {
                 // convert to runtime exception so it bubbles up through the UI
                 throw new RuntimeException(e);
