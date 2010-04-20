@@ -38,6 +38,7 @@ import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryElementMetaInterface;
 import org.pentaho.di.repository.RepositoryMeta;
+import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityManager;
@@ -2144,5 +2145,21 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public RepositoryDirectoryInterface getUserHomeDirectory() throws KettleException {
     loadRepositoryDirectoryTree();
     return getRootDir().findDirectory(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
+  }
+
+  public RepositoryObject getObjectInformation(ObjectId objectId, RepositoryObjectType objectType)
+      throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public JobMeta loadJob(ObjectId idJob, String versionLabel) throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public TransMeta loadTransformation(ObjectId idTransformation, String versionLabel) throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

@@ -21,6 +21,7 @@ import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryElementMetaInterface;
 import org.pentaho.di.repository.RepositoryMeta;
+import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
@@ -610,5 +611,21 @@ public class RepositoryProxy implements Repository, ILockService {
 
   public boolean canUnlockFileById(ObjectId id) throws KettleException {
     throw new UnsupportedOperationException();
+  }
+
+  public RepositoryObject getObjectInformation(ObjectId objectId, RepositoryObjectType objectType)
+      throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public JobMeta loadJob(ObjectId idJob, String versionLabel) throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public TransMeta loadTransformation(ObjectId idTransformation, String versionLabel) throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
   }
 }
