@@ -47,6 +47,7 @@ public class RepositoryConfigModel extends XulEventSourceAdapter{
     String previousVal = this.id;
     this.id = id;
     this.firePropertyChange("id", previousVal, id);//$NON-NLS-1$
+    checkIfModelValid();
   }
   public boolean isModificationComments() {
     return modificationComments;
