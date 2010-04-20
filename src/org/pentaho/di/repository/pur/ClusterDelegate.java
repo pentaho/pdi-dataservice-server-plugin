@@ -54,12 +54,6 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
   public void dataNodeToElement(DataNode rootNode, RepositoryElementInterface element) throws KettleException {
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
     ClusterSchema clusterSchema = (ClusterSchema) element;
-    if (dscContent.getExtra() != null) {
-      clusterSchema.setName(getString(rootNode, PROP_NAME));
-      if (rootNode.hasProperty(PROP_DESCRIPTION)) {
-        clusterSchema.setDescription(getString(rootNode, PROP_DESCRIPTION));
-      }
-    }
     // The metadata...
     clusterSchema.setBasePort(getString(rootNode, PROP_BASE_PORT));
     clusterSchema.setSocketsBufferSize(getString(rootNode, PROP_SOCKETS_BUFFER_SIZE));
@@ -90,8 +84,6 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
           + "] already exists.");
     }
     // save the properties...
-    rootNode.setProperty(PROP_NAME, clusterSchema.getName());
-    rootNode.setProperty(PROP_DESCRIPTION, clusterSchema.getDescription());
     rootNode.setProperty(PROP_BASE_PORT, clusterSchema.getBasePort());
     rootNode.setProperty(PROP_SOCKETS_BUFFER_SIZE, clusterSchema.getSocketsBufferSize());
     rootNode.setProperty(PROP_SOCKETS_FLUSH_INTERVAL, clusterSchema.getSocketsFlushInterval());

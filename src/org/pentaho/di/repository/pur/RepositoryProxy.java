@@ -612,20 +612,17 @@ public class RepositoryProxy implements Repository, ILockService {
   public boolean canUnlockFileById(ObjectId id) throws KettleException {
     throw new UnsupportedOperationException();
   }
-
+  
   public RepositoryObject getObjectInformation(ObjectId objectId, RepositoryObjectType objectType)
       throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   public JobMeta loadJob(ObjectId idJob, String versionLabel) throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   public TransMeta loadTransformation(ObjectId idTransformation, String versionLabel) throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
+    throw new UnsupportedOperationException();  
   }
 }

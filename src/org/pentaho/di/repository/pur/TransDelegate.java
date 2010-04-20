@@ -205,9 +205,6 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       throws KettleException {
     TransMeta transMeta = (TransMeta) element;
 
-    transMeta.setName(getString(rootNode, PROP_NAME));
-    transMeta.setDescription(getString(rootNode, PROP_DESCRIPTION));
-
     // read the steps...
     //
     DataNode stepsNode = rootNode.getNode(NODE_STEPS);
@@ -479,9 +476,6 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     TransMeta transMeta = (TransMeta) element;
 
     DataNode rootNode = new DataNode(NODE_TRANS);
-
-    rootNode.setProperty(PROP_NAME, transMeta.getName());
-    rootNode.setProperty(PROP_DESCRIPTION, Const.NVL(transMeta.getDescription(), "")); //$NON-NLS-1$
 
     DataNode stepsNode = rootNode.addNode(NODE_STEPS);
 

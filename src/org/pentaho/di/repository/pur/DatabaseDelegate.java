@@ -64,7 +64,6 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
     //
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
 
-    rootNode.setProperty(PROP_NAME, databaseMeta.getName());
     rootNode.setProperty(PROP_TYPE, databaseMeta.getPluginId());
     rootNode.setProperty(PROP_CONTYPE, DatabaseMeta.getAccessTypeDesc(databaseMeta.getAccessType()));
     rootNode.setProperty(PROP_HOST_NAME, databaseMeta.getHostname());
@@ -108,9 +107,6 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
 
     DatabaseMeta databaseMeta = (DatabaseMeta) element;
-    if (dscContent.getExtra() != null) {
-      databaseMeta.setName(getString(rootNode, PROP_NAME));
-    }
     if (dscContent.getHolder() != null) {
       databaseMeta.setDatabaseType(getString(rootNode, PROP_TYPE));
     }

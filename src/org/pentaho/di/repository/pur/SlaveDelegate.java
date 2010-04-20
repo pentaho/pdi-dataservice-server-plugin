@@ -56,12 +56,8 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
     SlaveServer slaveServer = (SlaveServer) element;
     if (dscContent.getExtra() != null) {
-      slaveServer.setName(getString(rootNode, PROP_NAME));
-      if (rootNode.hasProperty(PROP_DESCRIPTION)) {
-        slaveServer.setDescription(getString(rootNode, PROP_DESCRIPTION));
-      }
+      slaveServer.setHostname(getString(rootNode, PROP_HOST_NAME));
     }
-    slaveServer.setHostname(getString(rootNode, PROP_HOST_NAME));
     slaveServer.setPort(getString(rootNode, PROP_PORT));
     slaveServer.setUsername(getString(rootNode, PROP_USERNAME));
     slaveServer.setPassword(Encr.decryptPasswordOptionallyEncrypted(getString(rootNode, PROP_PASSWORD)));
@@ -88,8 +84,6 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
     // Create or version a new slave node
     //
     if (dscContent.getSubject() != null) {
-      rootNode.setProperty(PROP_NAME, slaveServer.getName());
-      rootNode.setProperty(PROP_DESCRIPTION, slaveServer.getDescription());
       rootNode.setProperty(PROP_HOST_NAME, slaveServer.getHostname());
       rootNode.setProperty(PROP_PORT, slaveServer.getPort());
       rootNode.setProperty(PROP_WEBAPP_NAME, slaveServer.getWebAppName());

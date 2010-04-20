@@ -573,6 +573,9 @@ public abstract class RepositoryTestBase {
     assertEquals(EXP_NOTEPAD_WIDTH, fetchedJob.getNote(0).getWidth());
     assertEquals(EXP_NOTEPAD_HEIGHT, fetchedJob.getNote(0).getHeight());
 
+    JobMeta jobMetaById = repository.loadJob(jobMeta.getObjectId(), null);
+    assertEquals(fetchedJob, jobMetaById);
+    
     assertNull(service.getJobLock(jobMeta.getObjectId()));
     service.lockJob(jobMeta.getObjectId(), EXP_JOB_LOCK_MSG);
     assertEquals(EXP_JOB_LOCK_MSG, service.getJobLock(jobMeta.getObjectId()).getMessage());
@@ -592,6 +595,9 @@ public abstract class RepositoryTestBase {
     fetchedJob = repository.loadJob(EXP_JOB_NAME, jobsDir, null, VERSION_LABEL_V1);
     assertEquals(EXP_JOB_DESC, fetchedJob.getDescription());
 
+    jobMetaById = repository.loadJob(jobMeta.getObjectId(), VERSION_LABEL_V1);
+    assertEquals(fetchedJob, jobMetaById);
+    
     assertEquals(jobMeta.getObjectId(), repository.getJobId(EXP_JOB_NAME, jobsDir));
 
     assertEquals(1, repository.getJobObjects(jobsDir.getObjectId(), false).size());
@@ -786,6 +792,9 @@ public abstract class RepositoryTestBase {
         EXP_PART_SCHEMA_NAME, 0));
     assertEquals(EXP_TRANS_SLAVE_TRANSFORMATION, transMeta.isSlaveTransformation());
 
+    TransMeta transMetaById = repository.loadTransformation(transMeta.getObjectId(), null);
+    assertEquals(fetchedTrans, transMetaById);
+    
     assertNull(service.getTransformationLock(transMeta.getObjectId()));
     service.lockTransformation(transMeta.getObjectId(), EXP_TRANS_LOCK_MSG);
     assertEquals(EXP_TRANS_LOCK_MSG, service.getTransformationLock(transMeta.getObjectId()).getMessage());
@@ -805,6 +814,9 @@ public abstract class RepositoryTestBase {
     assertEquals(EXP_TRANS_DESC_V2, fetchedTrans.getDescription());
     fetchedTrans = repository.loadTransformation(uniqueTransName, transDir, null, false, VERSION_LABEL_V1);
     assertEquals(EXP_TRANS_DESC, fetchedTrans.getDescription());
+    
+    transMetaById = repository.loadTransformation(transMeta.getObjectId(), VERSION_LABEL_V1);
+    assertEquals(fetchedTrans, transMetaById);
 
     assertEquals(transMeta.getObjectId(), repository.getTransformationID(uniqueTransName, transDir));
 

@@ -198,9 +198,6 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     }
     JobMeta jobMeta = (JobMeta) element;
 
-    jobMeta.setName(getString(rootNode, PROP_NAME));
-    jobMeta.setDescription(getString(rootNode, PROP_DESCRIPTION));
-
     jobMeta.setSharedObjectsFile(getString(rootNode, "SHARED_FILE"));
     jobMeta.setSharedObjects(loadSharedObjects(jobMeta));
 
@@ -317,8 +314,6 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
   protected void loadJobMetaDetails(DataNode rootNode, JobMeta jobMeta) throws KettleException {
     try {
-      jobMeta.setName(getString(rootNode, PROP_NAME));
-      jobMeta.setDescription(getString(rootNode, PROP_DESCRIPTION));
       jobMeta.setExtendedDescription(getString(rootNode, PROP_EXTENDED_DESCRIPTION));
       jobMeta.setJobversion(getString(rootNode, PROP_JOB_VERSION));
       jobMeta.setJobstatus((int) rootNode.getProperty(PROP_JOB_STATUS).getLong());
@@ -478,9 +473,6 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   }
 
   private void saveJobDetails(DataNode rootNode, JobMeta jobMeta) throws KettleException {
-    rootNode.setProperty(PROP_NAME, jobMeta.getName());
-    rootNode.setProperty(PROP_DESCRIPTION, jobMeta.getDescription());
-
     rootNode.setProperty(PROP_EXTENDED_DESCRIPTION, jobMeta.getExtendedDescription());
     rootNode.setProperty(PROP_JOB_VERSION, jobMeta.getJobversion());
     rootNode.setProperty(PROP_JOB_STATUS, jobMeta.getJobstatus() < 0 ? -1L : jobMeta.getJobstatus());

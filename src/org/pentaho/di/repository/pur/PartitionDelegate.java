@@ -47,12 +47,11 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
 
     PartitionSchema partitionSchema = (PartitionSchema) element;
+    
     if (dscContent.getExtra() != null) {
-      partitionSchema.setName(getString(rootNode, PROP_NAME));
+      partitionSchema.setDynamicallyDefined(rootNode.getProperty(PROP_DYNAMIC_DEFINITION).getBoolean());
+      partitionSchema.setNumberOfPartitionsPerSlave(getString(rootNode, PROP_PARTITIONS_PER_SLAVE));
     }
-    partitionSchema.setDynamicallyDefined(rootNode.getProperty(PROP_DYNAMIC_DEFINITION).getBoolean());
-    partitionSchema.setNumberOfPartitionsPerSlave(getString(rootNode, PROP_PARTITIONS_PER_SLAVE));
-
     // Also, load all the properties we can find...
 
     DataNode attrNode = rootNode.getNode(NODE_ATTRIBUTES);
@@ -78,7 +77,6 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
       throw new KettleException("Failed to save object to repository. Object [" + partitionSchema.getName()
           + "] already exists.");
     }
-    rootNode.setProperty(PROP_NAME, partitionSchema.getName());
     rootNode.setProperty(PROP_DYNAMIC_DEFINITION, partitionSchema.isDynamicallyDefined());
     rootNode.setProperty(PROP_PARTITIONS_PER_SLAVE, partitionSchema.getNumberOfPartitionsPerSlave());
 

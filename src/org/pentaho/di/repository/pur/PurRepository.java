@@ -5,6 +5,7 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.Condition;
@@ -615,28 +617,30 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       return path;
     }
 
+    String sanitizedName = checkAndSanitize(name);
+    
     switch (objectType) {
       case DATABASE: {
-        return getDatabaseMetaParentFolderPath() + RepositoryFile.SEPARATOR + name
+        return getDatabaseMetaParentFolderPath() + RepositoryFile.SEPARATOR + sanitizedName
             + RepositoryObjectType.DATABASE.getExtension();
       }
       case TRANSFORMATION: {
-        return path + RepositoryFile.SEPARATOR + name + RepositoryObjectType.TRANSFORMATION.getExtension();
+        return path + RepositoryFile.SEPARATOR + sanitizedName + RepositoryObjectType.TRANSFORMATION.getExtension();
       }
       case PARTITION_SCHEMA: {
-        return getPartitionSchemaParentFolderPath() + RepositoryFile.SEPARATOR + name
+        return getPartitionSchemaParentFolderPath() + RepositoryFile.SEPARATOR + sanitizedName
             + RepositoryObjectType.PARTITION_SCHEMA.getExtension();
       }
       case SLAVE_SERVER: {
-        return getSlaveServerParentFolderPath() + RepositoryFile.SEPARATOR + name
+        return getSlaveServerParentFolderPath() + RepositoryFile.SEPARATOR + sanitizedName
             + RepositoryObjectType.SLAVE_SERVER.getExtension();
       }
       case CLUSTER_SCHEMA: {
-        return getClusterSchemaParentFolderPath() + RepositoryFile.SEPARATOR + name
+        return getClusterSchemaParentFolderPath() + RepositoryFile.SEPARATOR + sanitizedName
             + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
       }
       case JOB: {
-        return path + RepositoryFile.SEPARATOR + name + RepositoryObjectType.JOB.getExtension();
+        return path + RepositoryFile.SEPARATOR + sanitizedName + RepositoryObjectType.JOB.getExtension();
       }
       default: {
         throw new UnsupportedOperationException("not implemented");
@@ -670,9 +674,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       List<RepositoryFile> children = getAllFilesOfType(null, RepositoryObjectType.CLUSTER_SCHEMA, includeDeleted);
       List<String> names = new ArrayList<String>();
       for (RepositoryFile file : children) {
-        // strip off extension
-        names.add(file.getName().substring(0,
-            file.getName().length() - RepositoryObjectType.CLUSTER_SCHEMA.getExtension().length()));
+        names.add(file.getTitle());
       }
       return names.toArray(new String[0]);
     } catch (Exception e) {
@@ -922,9 +924,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       List<RepositoryFile> children = getAllFilesOfType(null, RepositoryObjectType.DATABASE, includeDeleted);
       List<String> names = new ArrayList<String>();
       for (RepositoryFile file : children) {
-        // strip off extension
-        names.add(file.getName().substring(0,
-            file.getName().length() - RepositoryObjectType.DATABASE.getExtension().length()));
+        names.add(file.getTitle());
       }
       return names.toArray(new String[0]);
     } catch (Exception e) {
@@ -1007,9 +1007,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       List<RepositoryFile> children = getAllFilesOfType(idDirectory, RepositoryObjectType.JOB, includeDeleted);
       List<String> names = new ArrayList<String>();
       for (RepositoryFile file : children) {
-        // strip off extension
-        names.add(file.getName().substring(0,
-            file.getName().length() - RepositoryObjectType.JOB.getExtension().length()));
+        names.add(file.getTitle());
       }
       return names.toArray(new String[0]);
     } catch (Exception e) {
@@ -1056,9 +1054,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       List<RepositoryFile> children = getAllFilesOfType(null, RepositoryObjectType.PARTITION_SCHEMA, includeDeleted);
       List<String> names = new ArrayList<String>();
       for (RepositoryFile file : children) {
-        // strip off extension
-        names.add(file.getName().substring(0,
-            file.getName().length() - RepositoryObjectType.PARTITION_SCHEMA.getExtension().length()));
+        names.add(file.getTitle());
       }
       return names.toArray(new String[0]);
     } catch (Exception e) {
@@ -1112,9 +1108,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       List<RepositoryFile> children = getAllFilesOfType(null, RepositoryObjectType.SLAVE_SERVER, includeDeleted);
       List<String> names = new ArrayList<String>();
       for (RepositoryFile file : children) {
-        // strip off extension
-        names.add(file.getName().substring(0,
-            file.getName().length() - RepositoryObjectType.SLAVE_SERVER.getExtension().length()));
+        names.add(file.getTitle());
       }
       return names.toArray(new String[0]);
     } catch (Exception e) {
@@ -1199,9 +1193,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           includeDeleted);
       List<String> names = new ArrayList<String>();
       for (RepositoryFile file : children) {
-        // strip off extension
-        names.add(file.getName().substring(0,
-            file.getName().length() - RepositoryObjectType.TRANSFORMATION.getExtension().length()));
+        names.add(file.getTitle());
       }
       return names.toArray(new String[0]);
     } catch (Exception e) {
@@ -1229,8 +1221,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             + XMLHandler.date2string(lock.getLockDate()) + ")";
         RepositoryObjectType objectType = getObjectType(file.getName());
 
-        list.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
-            file.getName().length() - objectType.getExtension().length()), repDir, null, file.getLastModifiedDate(),
+        list.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getTitle(), repDir, null, file.getLastModifiedDate(),
             objectType, null, lockMessage, false));
       }
       if (includeDeleted) {
@@ -1240,8 +1231,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
               + XMLHandler.date2string(lock.getLockDate()) + ")";
           RepositoryObjectType objectType = getObjectType(file.getName());
-          list.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
-              file.getName().length() - objectType.getExtension().length()), repDir, null, file.getLastModifiedDate(),
+          list.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getTitle(), repDir, null, file.getLastModifiedDate(),
               objectType, null, lockMessage, true));
         }
       }
@@ -1298,6 +1288,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       ClusterSchema clusterSchema = new ClusterSchema();
       clusterTransformer.dataNodeToElement(pur.getDataAtVersionForRead(idClusterSchema.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), clusterSchema);
+      RepositoryFile file = null;
+      if (versionId != null) {
+        file = pur.getFileAtVersion(idClusterSchema.getId(), versionId);
+      } else {
+        file = pur.getFileById(idClusterSchema.getId());  
+      }
+      clusterSchema.setName(file.getTitle());
       clusterSchema.setObjectId(new StringObjectId(idClusterSchema));
       clusterSchema.setObjectRevision(getObjectRevision(idClusterSchema, versionId));
       clusterSchema.clearChanged();
@@ -1329,6 +1326,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       PartitionSchema partitionSchema = new PartitionSchema();
       partitionSchemaTransformer.dataNodeToElement(pur.getDataAtVersionForRead(partitionSchemaId.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), partitionSchema);
+      RepositoryFile file = null;
+      if (versionId != null) {
+        file = pur.getFileAtVersion(partitionSchemaId.getId(), versionId);
+      } else {
+        file = pur.getFileById(partitionSchemaId.getId());  
+      }
+      partitionSchema.setName(file.getTitle());
       partitionSchema.setObjectId(new StringObjectId(partitionSchemaId));
       partitionSchema.setObjectRevision(getObjectRevision(partitionSchemaId, versionId));
       partitionSchema.clearChanged();
@@ -1343,6 +1347,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       SlaveServer slaveServer = new SlaveServer();
       slaveTransformer.dataNodeToElement(pur.getDataAtVersionForRead(idSlaveServer.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), slaveServer);
+      RepositoryFile file = null;
+      if (versionId != null) {
+        file = pur.getFileAtVersion(idSlaveServer.getId(), versionId);
+      } else {
+        file = pur.getFileById(idSlaveServer.getId());  
+      }
+      slaveServer.setName(file.getTitle());
       slaveServer.setObjectId(new StringObjectId(idSlaveServer));
       slaveServer.setObjectRevision(getObjectRevision(idSlaveServer, versionId));
       slaveServer.clearChanged();
@@ -1378,20 +1389,41 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public ObjectId renameJob(final ObjectId idJob, final RepositoryDirectoryInterface newDirectory, final String newName)
       throws KettleException {
+    RepositoryFile file = pur.getFileById(idJob.getId());
+    file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, newName).build();
+    NodeRepositoryFileData data = pur
+    .getDataAtVersionForRead(file.getId(), null, NodeRepositoryFileData.class);
+    file = pur.updateFile(file, data, null);
     pur.moveFile(idJob.getId(), calcDestAbsPath(idJob, newDirectory, newName, RepositoryObjectType.JOB), null);
     return idJob;
   }
 
   public ObjectId renameTransformation(final ObjectId idTransformation, final RepositoryDirectoryInterface newDirectory,
       final String newName) throws KettleException {
+    RepositoryFile file = pur.getFileById(idTransformation.getId());
+    file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, newName).build();
+    NodeRepositoryFileData data = pur
+    .getDataAtVersionForRead(file.getId(), null, NodeRepositoryFileData.class);
+    file = pur.updateFile(file, data, null);
     pur.moveFile(idTransformation.getId(), calcDestAbsPath(idTransformation, newDirectory, newName,
         RepositoryObjectType.TRANSFORMATION), null);
     return idTransformation;
   }
 
   protected String getParentPath(final String path) {
+    if (path == null) {
+      throw new IllegalArgumentException();
+    } else if (RepositoryFile.SEPARATOR.equals(path)) {
+      return null;
+    }
     int lastSlashIndex = path.lastIndexOf(RepositoryFile.SEPARATOR);
-    return path.substring(0, lastSlashIndex);
+    if (lastSlashIndex == 0) {
+      return RepositoryFile.SEPARATOR;
+    } else if (lastSlashIndex > 0) {
+      return path.substring(0, lastSlashIndex);
+    } else {
+      throw new IllegalArgumentException();
+    }
   }
 
   protected String calcDestAbsPath(final ObjectId id, final RepositoryDirectoryInterface newDirectory, final String newName,
@@ -1406,7 +1438,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
     buf.append(RepositoryFile.SEPARATOR);
     if (newName != null) {
-      buf.append(newName);
+      buf.append(checkAndSanitize(newName));
       if (!newName.endsWith(objectType.getExtension())) {
         buf.append(objectType.getExtension());
       }
@@ -1458,7 +1490,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     StringBuilder buf = new StringBuilder(file.getPath().length());
     buf.append(getParentPath(file.getPath()));
     buf.append(RepositoryFile.SEPARATOR);
-    buf.append(element.getName());
+    buf.append(checkAndSanitize(element.getName()));
     switch (element.getRepositoryElementType()) {
       case DATABASE:
         buf.append(RepositoryObjectType.DATABASE.getExtension());
@@ -1481,22 +1513,30 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   private void saveJob(final RepositoryElementInterface element, final String versionComment) throws KettleException {
     jobDelegate.saveSharedObjects(element, versionComment);
-
+    boolean renameRequired = false;
     boolean isUpdate = element.getObjectId() != null;
+    try {
+      JobMeta jobMeta = loadJob(element.getObjectId(), null);
+      if (jobMeta != null && jobMeta.getName() != null) {
+        renameRequired = !jobMeta.getName().equals(element.getName());
+      }
+    } catch (KettleException ke) {
+      renameRequired = false;
+    }
     RepositoryFile file = null;
     if (isUpdate) {
       ObjectId id = element.getObjectId();
       file = pur.getFileById(id.getId());
       if (!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
-        // update description
-        file = new RepositoryFile.Builder(file).description(element.getDescription()).build();
+        // update title and description
+        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).description(RepositoryFile.ROOT_LOCALE, element.getDescription()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), versionComment);
       } else {
         throw new KettleException("File is currently locked by another user for editing");
       }
     } else {
-      file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.JOB.getExtension()).versioned(true)
-          .description(element.getDescription()).build();
+      file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.JOB.getExtension())).versioned(true)
+          .title(RepositoryFile.ROOT_LOCALE, element.getName()).description(RepositoryFile.ROOT_LOCALE, element.getDescription()).build();
       file = pur.createFile(pur.getFileById(element.getRepositoryDirectory().getObjectId().getId()).getId(), file,
           new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), versionComment);
     }
@@ -1507,28 +1547,39 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (element instanceof ChangedFlagInterface) {
       ((ChangedFlagInterface)element).clearChanged();
     }
+    if (renameRequired) {
+      renameJob(element.getObjectId(), null, element.getName());
+    }
   }
 
   protected void saveTrans(final RepositoryElementInterface element, final String versionComment)
       throws KettleException {
     transDelegate.saveSharedObjects(element, versionComment);
-
+    boolean renameRequired = false;
     boolean isUpdate = element.getObjectId() != null;
     RepositoryFile file = null;
+    try {
+      TransMeta transMeta = loadTransformation(element.getObjectId(), null);
+      if (transMeta != null && transMeta.getName() != null) {
+        renameRequired = !transMeta.getName().equals(element.getName());
+      }
+    } catch (KettleException ke) {
+      renameRequired = false;
+    }
     if (isUpdate) {
       ObjectId id = element.getObjectId();
       file = pur.getFileById(id.getId());
       if (!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
-        // update description
-        file = new RepositoryFile.Builder(file).description(element.getDescription()).build();
+        // update title and description
+        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).description(RepositoryFile.ROOT_LOCALE, element.getDescription()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(transDelegate.elementToDataNode(element)),
             versionComment);
       } else {
         throw new KettleException("File is currently locked by another user for editing");
       }
     } else {
-      file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.TRANSFORMATION.getExtension())
-          .versioned(true).description(element.getDescription()).build();
+      file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.TRANSFORMATION.getExtension()))
+          .versioned(true).title(RepositoryFile.ROOT_LOCALE, element.getName()).description(RepositoryFile.ROOT_LOCALE, element.getDescription()).build();
       file = pur.createFile(pur.getFileById(element.getRepositoryDirectory().getObjectId().getId()).getId(), file,
           new NodeRepositoryFileData(transDelegate.elementToDataNode(element)), versionComment);
     }
@@ -1538,6 +1589,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     element.setObjectRevision(getObjectRevision(objectId, null));
     if (element instanceof ChangedFlagInterface) {
       ((ChangedFlagInterface)element).clearChanged();
+    }
+    if (renameRequired) {
+      renameTransformation(element.getObjectId(), null, element.getName());
     }
   }
 
@@ -1563,10 +1617,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     RepositoryFile file = null;
     if (isUpdate) {
       file = pur.getFileById(element.getObjectId().getId());
+      // update title
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
       file = pur.updateFile(file, new NodeRepositoryFileData(databaseMetaTransformer.elementToDataNode(element)),
           versionComment);
     } else {
-      file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.DATABASE.getExtension()).versioned(
+      file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.DATABASE.getExtension())).title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(
           VERSION_SHARED_OBJECTS).build();
       file = pur.createFile(getDatabaseMetaParentFolderId(), file, new NodeRepositoryFileData(databaseMetaTransformer
           .elementToDataNode(element)), versionComment);
@@ -1588,6 +1644,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       DatabaseMeta databaseMeta = new DatabaseMeta();
       databaseMetaTransformer.dataNodeToElement(pur.getDataAtVersionForRead(databaseId.getId(), versionId,
           NodeRepositoryFileData.class).getNode(), databaseMeta);
+      RepositoryFile file = null;
+      if (versionId != null) {
+        file = pur.getFileAtVersion(databaseId.getId(), versionId);
+      } else {
+        file = pur.getFileById(databaseId.getId());  
+      }
+      databaseMeta.setName(file.getTitle());
       databaseMeta.setObjectId(new StringObjectId(databaseId));
       databaseMeta.setObjectRevision(getObjectRevision(databaseId, versionId));
       databaseMeta.clearChanged();
@@ -1604,7 +1667,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     try {
       absPath = getPath(transName, parentDir, RepositoryObjectType.TRANSFORMATION);
       RepositoryFile file = pur.getFile(absPath);
+      if (versionId != null) {
+        // need to go back to server to get versioned info
+        file = pur.getFileAtVersion(file.getId(), versionId);
+      }
       EETransMeta transMeta = new EETransMeta();
+      transMeta.setName(file.getTitle());
+      transMeta.setDescription(file.getDescription());
       transMeta.setObjectId(new StringObjectId(file.getId().toString()));
       transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
       transMeta.setRepositoryDirectory(parentDir);
@@ -1625,7 +1694,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     try {
       absPath = getPath(jobname, parentDir, RepositoryObjectType.JOB);
       RepositoryFile file = pur.getFile(absPath);
+      if (versionId != null) {
+        // need to go back to server to get versioned info
+        file = pur.getFileAtVersion(file.getId(), versionId);
+      }
       EEJobMeta jobMeta = new EEJobMeta();
+      jobMeta.setName(file.getTitle());
+      jobMeta.setDescription(file.getDescription());
       jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
       jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
       jobMeta.setRepositoryDirectory(parentDir);
@@ -1639,7 +1714,43 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
     }
   }
-
+  
+  /**
+   * Performs one-way conversion on incoming String to produce a syntactically valid JCR path (section 4.6 Path Syntax). 
+   */
+  protected static String checkAndSanitize(final String in) {
+    if (in == null) {
+      throw new IllegalArgumentException();
+    }
+    String extension = null;
+    if (in.endsWith(RepositoryObjectType.CLUSTER_SCHEMA.getExtension())) {
+      extension = RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
+    } else if (in.endsWith(RepositoryObjectType.DATABASE.getExtension())) {
+      extension = RepositoryObjectType.DATABASE.getExtension();
+    } else if (in.endsWith(RepositoryObjectType.JOB.getExtension())) {
+      extension = RepositoryObjectType.JOB.getExtension();
+    } else if (in.endsWith(RepositoryObjectType.PARTITION_SCHEMA.getExtension())) {
+      extension = RepositoryObjectType.PARTITION_SCHEMA.getExtension();
+    } else if (in.endsWith(RepositoryObjectType.SLAVE_SERVER.getExtension())) {
+      extension = RepositoryObjectType.SLAVE_SERVER.getExtension();
+    } else if (in.endsWith(RepositoryObjectType.TRANSFORMATION.getExtension())) {
+      extension = RepositoryObjectType.TRANSFORMATION.getExtension();
+    }
+    String out = in;
+    if (extension != null) {
+      out = out.substring(0, out.length()-extension.length());
+    }
+    if (out.contains("/") || out.equals("..") || out.equals(".") || StringUtils.isBlank(out)) {
+      throw new IllegalArgumentException();
+    }
+    out = out.replaceAll("[/:\\[\\]\\*'\"\\|\\s\\.]", "_");  //$NON-NLS-1$//$NON-NLS-2$
+    if (extension != null) {
+      return out + extension;
+    } else {
+      return out;
+    }
+  }
+  
   protected RepositoryLock getLock(final RepositoryFile file) throws KettleException {
     if (file.isLocked()) {
       return new RepositoryLock(new StringObjectId(file.getId().toString()), file.getLockMessage(),
@@ -1666,11 +1777,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
+        // update title
+        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(partitionSchemaTransformer.elementToDataNode(element)),
             versionComment);
       } else {
-        file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.PARTITION_SCHEMA.getExtension())
-            .versioned(VERSION_SHARED_OBJECTS).build();
+        file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.PARTITION_SCHEMA.getExtension()))
+        .title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
         file = pur.createFile(getPartitionSchemaParentFolderId(), file, new NodeRepositoryFileData(
             partitionSchemaTransformer.elementToDataNode(element)), versionComment);
       }
@@ -1705,11 +1818,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       }
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
+        // update title
+        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(slaveTransformer.elementToDataNode(element)),
             versionComment);
       } else {
-        file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.SLAVE_SERVER.getExtension())
-            .versioned(VERSION_SHARED_OBJECTS).build();
+        file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.SLAVE_SERVER.getExtension()))
+        .title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
         file = pur.createFile(getSlaveServerParentFolderId(), file, new NodeRepositoryFileData(slaveTransformer
             .elementToDataNode(element)), versionComment);
       }
@@ -1744,11 +1859,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       }
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
+        // update title
+        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)),
             versionComment);
       } else {
-        file = new RepositoryFile.Builder(element.getName() + RepositoryObjectType.CLUSTER_SCHEMA.getExtension())
-            .versioned(VERSION_SHARED_OBJECTS).build();
+        file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.CLUSTER_SCHEMA.getExtension()))
+        .title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
         file = pur.createFile(getClusterSchemaParentFolderId(), file, new NodeRepositoryFileData(clusterTransformer
             .elementToDataNode(element)), versionComment);
       }
@@ -1932,8 +2049,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public void undeleteObject(final RepositoryElementMetaInterface element) throws KettleException {
 
     RepositoryFile originalParentFolder = pur.getFile(getPath(null, element.getRepositoryDirectory(), null));
-    List<RepositoryFile> deletedChildren = pur.getDeletedFiles(originalParentFolder.getId(), element.getName()
-        + element.getObjectType().getExtension());
+    List<RepositoryFile> deletedChildren = pur.getDeletedFiles(originalParentFolder.getId(), checkAndSanitize(element.getName()
+        + element.getObjectType().getExtension()));
     if (!deletedChildren.isEmpty()) {
       pur.undeleteFile(deletedChildren.get(0).getId(), null);
     }
@@ -2129,8 +2246,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         });
       } else {
         RepositoryObjectType objectType = getObjectType(file.getName());
-        trash.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getName().substring(0,
-            file.getName().length() - objectType.getExtension().length()), origParentDir, null, file.getDeletedDate(),
+        trash.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getTitle(), origParentDir, null, file.getDeletedDate(),
             objectType, null, null, true));
       }
     }
@@ -2146,20 +2262,74 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     loadRepositoryDirectoryTree();
     return getRootDir().findDirectory(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
   }
-
+  
   public RepositoryObject getObjectInformation(ObjectId objectId, RepositoryObjectType objectType)
       throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
+    try {
+      RepositoryFile repositoryFile = pur.getFileById(objectId.getId());
+      if (repositoryFile==null) {
+        return null;
+      }
+      String parentPath = getParentPath(repositoryFile.getPath());
+      String name = repositoryFile.getTitle();
+      String description = repositoryFile.getDescription();
+      Date modifiedDate = repositoryFile.getLastModifiedDate();
+      String ownerName = repositoryFile.getOwner().getName();
+      boolean deleted = repositoryFile.getOriginalParentFolderPath() != null;
+      RepositoryDirectoryInterface directory = loadRepositoryDirectoryTree().findDirectory(parentPath);
+      return new RepositoryObject(objectId, name, directory, ownerName, modifiedDate, objectType, description, deleted);
+    } catch(Exception e) {
+      throw new KettleException("Unable to get object information for object with id="+objectId, e);
+    }
   }
 
   public JobMeta loadJob(ObjectId idJob, String versionLabel) throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
+    try {
+      RepositoryFile file = null;
+      if (versionLabel != null) {
+        file = pur.getFileAtVersion(idJob.getId(), versionLabel);
+      } else {
+        file = pur.getFileById(idJob.getId());  
+      }
+      EEJobMeta jobMeta = new EEJobMeta();
+      jobMeta.setName(file.getTitle());
+      jobMeta.setDescription(file.getDescription());
+      jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
+      jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
+      jobMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(getParentPath(file.getPath())));
+      jobMeta.setRepositoryLock(getLock(file));
+      jobDelegate.loadSharedObjects(jobMeta);
+      jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idJob.getId(), versionLabel,
+          NodeRepositoryFileData.class).getNode(), jobMeta);
+      jobMeta.clearChanged();
+      return jobMeta;
+    } catch (Exception e) {
+      throw new KettleException("Unable to load job with id [" + idJob + "]", e);
+    }
   }
 
   public TransMeta loadTransformation(ObjectId idTransformation, String versionLabel) throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
+    try {
+      RepositoryFile file = null;
+      if (versionLabel != null) {
+        file = pur.getFileAtVersion(idTransformation.getId(), versionLabel);
+      } else {
+        file = pur.getFileById(idTransformation.getId());  
+      }
+      EETransMeta transMeta = new EETransMeta();
+      transMeta.setName(file.getTitle());
+      transMeta.setDescription(file.getDescription());
+      transMeta.setObjectId(new StringObjectId(file.getId().toString()));
+      transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
+      transMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(getParentPath(file.getPath())));
+      transMeta.setRepositoryLock(getLock(file));
+      transDelegate.loadSharedObjects(transMeta);
+      transDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idTransformation.getId(), versionLabel,
+          NodeRepositoryFileData.class).getNode(), transMeta);
+      transMeta.clearChanged();
+      return transMeta;
+    } catch (Exception e) {
+      throw new KettleException("Unable to load transformation with id [" + idTransformation + "]", e);
+    }
   }
 }
