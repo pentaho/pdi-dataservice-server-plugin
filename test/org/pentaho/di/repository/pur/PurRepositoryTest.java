@@ -82,7 +82,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     SecurityContextHolder.getContext().setAuthentication(null);
 
     // test calls into local "unified" repository which requires biserver-ee license
-    PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
+    // PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
     KettleEnvironment.init();
 
     // programmatically register plugins, annotation based plugins do not get loaded unless

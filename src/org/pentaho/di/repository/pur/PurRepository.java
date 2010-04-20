@@ -2263,26 +2263,33 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return getRootDir().findDirectory(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
   }
   
-  public RepositoryObject getObjectInformation(ObjectId objectId, RepositoryObjectType objectType)
-      throws KettleException {
+  public RepositoryObject getObjectInformation(ObjectId objectId, RepositoryObjectType objectType) throws KettleException {
     try {
       RepositoryFile repositoryFile = pur.getFileById(objectId.getId());
       if (repositoryFile==null) {
         return null;
       }
-      String parentPath = getParentPath(repositoryFile.getPath());
-      String name = repositoryFile.getTitle();
+      String path = repositoryFile.getPath();
+      int idx = path.lastIndexOf('/');
+      if (idx>=0) path=path.substring(0, idx);
+      String name = repositoryFile.getName();
+      if (name.endsWith(objectType.getExtension())) {
+        name = name.substring(0, name.lastIndexOf(objectType.getExtension()));
+      }
       String description = repositoryFile.getDescription();
       Date modifiedDate = repositoryFile.getLastModifiedDate();
       String ownerName = repositoryFile.getOwner().getName();
-      boolean deleted = repositoryFile.getOriginalParentFolderPath() != null;
-      RepositoryDirectoryInterface directory = loadRepositoryDirectoryTree().findDirectory(parentPath);
+      boolean deleted = repositoryFile.isHidden();
+      
+      RepositoryDirectoryInterface directory = loadRepositoryDirectoryTree().findDirectory(path);
+          
       return new RepositoryObject(objectId, name, directory, ownerName, modifiedDate, objectType, description, deleted);
+      
     } catch(Exception e) {
       throw new KettleException("Unable to get object information for object with id="+objectId, e);
     }
   }
-
+  
   public JobMeta loadJob(ObjectId idJob, String versionLabel) throws KettleException {
     try {
       RepositoryFile file = null;
