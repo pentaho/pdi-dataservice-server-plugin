@@ -50,6 +50,7 @@ import org.pentaho.ui.xul.containers.XulVbox;
  * 
  */
 public class AbsController extends EESecurityController {
+  private boolean initialized = false;
 
   private ResourceBundle messages = new ResourceBundle() {
 
@@ -86,23 +87,26 @@ public class AbsController extends EESecurityController {
 
   @Override
   public void init(Repository rep) throws ControllerInitializationException {
-    try {
-      if (rep.hasService(IAbsSecurityManager.class)) {
-        service = (IAbsSecurityManager) rep.getService(IAbsSecurityManager.class);
-        try {
-        service.initialize(GlobalMessages.getLocale().getDisplayName());
-        } catch(Throwable th) {
-          service.initialize("en_us"); //$NON-NLS-1$
+    if (!initialized) {
+      try {
+        if (rep.hasService(IAbsSecurityManager.class)) {
+          service = (IAbsSecurityManager) rep.getService(IAbsSecurityManager.class);
+          try {
+            service.initialize(GlobalMessages.getLocale().getDisplayName());
+          } catch (Throwable th) {
+            service.initialize("en_us"); //$NON-NLS-1$
+          }
+        } else {
+          throw new ControllerInitializationException(BaseMessages.getString(IUIAbsRole.class,
+              "AbsController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IAbsSecurityManager.class)); //$NON-NLS-1$
         }
-      } else {
-        throw new ControllerInitializationException(BaseMessages.getString(IUIAbsRole.class,
-            "AbsController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IAbsSecurityManager.class)); //$NON-NLS-1$
+      } catch (KettleException ke) {
+        throw new ControllerInitializationException(ke);
       }
-    } catch (KettleException ke) {
-      throw new ControllerInitializationException(ke);
-    }
 
-    super.init(rep);
+      super.init(rep);
+      initialized = true;
+    }
   }
 
   @Override
