@@ -2272,10 +2272,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       String path = repositoryFile.getPath();
       int idx = path.lastIndexOf('/');
       if (idx>=0) path=path.substring(0, idx);
-      String name = repositoryFile.getName();
-      if (name.endsWith(objectType.getExtension())) {
-        name = name.substring(0, name.lastIndexOf(objectType.getExtension()));
-      }
+      String name = repositoryFile.getTitle();
       String description = repositoryFile.getDescription();
       Date modifiedDate = repositoryFile.getLastModifiedDate();
       String ownerName = repositoryFile.getOwner().getName();
