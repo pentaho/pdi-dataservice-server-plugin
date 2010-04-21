@@ -536,11 +536,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public void deleteClusterSchema(ObjectId idCluster) throws KettleException {
-    try {
-      pur.deleteFile(idCluster.getId(), true, null);
-    } catch (Exception e) {
-      throw new KettleException("Unable to delete cluster schema with name [" + idCluster + "]", e);
-    }
+    permanentlyDeleteSharedObject(idCluster);
   }
 
   public void deleteJob(ObjectId idJob) throws KettleException {
@@ -551,6 +547,14 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     pur.deleteFileAtVersion(jobId.getId(), versionId);
   }
 
+  protected void permanentlyDeleteSharedObject(final ObjectId id) throws KettleException {
+    try {
+      pur.deleteFile(id.getId(), true, null);
+    } catch (Exception e) {
+      throw new KettleException("Unable to delete object with id [" + id + "]", e);
+    }    
+  }
+  
   public void deleteFileById(final ObjectId id) throws KettleException {
     try {
       pur.deleteFile(id.getId(), null);
@@ -569,19 +573,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
-    try {
-      pur.deleteFile(idPartitionSchema.getId(), true, null);
-    } catch (Exception e) {
-      throw new KettleException("Unable to delete partition schema with name [" + idPartitionSchema + "]", e);
-    }
+    permanentlyDeleteSharedObject(idPartitionSchema);
   }
 
   public void deleteSlave(ObjectId idSlave) throws KettleException {
-    try {
-      pur.deleteFile(idSlave.getId(), true, null);
-    } catch (Exception e) {
-      throw new KettleException("Unable to delete slave with name [" + idSlave + "]", e);
-    }
+    permanentlyDeleteSharedObject(idSlave);
   }
 
   public void deleteTransformation(ObjectId idTransformation) throws KettleException {
@@ -947,12 +943,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public void deleteDatabaseMeta(final String databaseName) throws KettleException {
+    RepositoryFile fileToDelete = null;
     try {
-      RepositoryFile fileToDelete = pur.getFile(getPath(databaseName, null, RepositoryObjectType.DATABASE));
-      pur.deleteFile(fileToDelete.getId(), true, null);
+      fileToDelete = pur.getFile(getPath(databaseName, null, RepositoryObjectType.DATABASE));
     } catch (Exception e) {
       throw new KettleException("Unable to delete database with name [" + databaseName + "]", e);
     }
+    permanentlyDeleteSharedObject(new StringObjectId(fileToDelete.getId().toString()));
   }
 
   public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, String code) throws KettleException {
