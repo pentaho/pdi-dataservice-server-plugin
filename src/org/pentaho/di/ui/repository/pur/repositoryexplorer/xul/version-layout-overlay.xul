@@ -21,8 +21,8 @@
 		<hbox>
 			<label id="revision-label" value="" />
 			<label id="spacer-label" flex="1" />
-			<button id="revision-restore" image="images/restore.png" onclick="revisionController.restoreRevision()"/>
-			<button id="revision-open" image="images/open.png" onclick="revisionController.openRevision()"/>
+			<button id="revision-restore" image="images/restore.png" onclick="revisionController.restoreRevision()" tooltiptext="${RepositoryExplorerDialog.Buttons.Restore}"/>
+			<button id="revision-open" image="images/open.png" onclick="revisionController.openRevision()" tooltiptext="${RepositoryExplorerDialog.Buttons.Open}" />
 			<!-- <button id="revision-remove" image="images/Remove.png"  />  -->
 		</hbox>
 
