@@ -2263,30 +2263,26 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return getRootDir().findDirectory(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
   }
   
-  public RepositoryObject getObjectInformation(ObjectId objectId, RepositoryObjectType objectType) throws KettleException {
+  public RepositoryObject getObjectInformation(ObjectId objectId, RepositoryObjectType objectType)
+      throws KettleException {
     try {
       RepositoryFile repositoryFile = pur.getFileById(objectId.getId());
       if (repositoryFile==null) {
         return null;
       }
-      String path = repositoryFile.getPath();
-      int idx = path.lastIndexOf('/');
-      if (idx>=0) path=path.substring(0, idx);
+      String parentPath = getParentPath(repositoryFile.getPath());
       String name = repositoryFile.getTitle();
       String description = repositoryFile.getDescription();
       Date modifiedDate = repositoryFile.getLastModifiedDate();
       String ownerName = repositoryFile.getOwner().getName();
-      boolean deleted = repositoryFile.isHidden();
-      
-      RepositoryDirectoryInterface directory = loadRepositoryDirectoryTree().findDirectory(path);
-          
+      boolean deleted = repositoryFile.getOriginalParentFolderPath() != null;
+      RepositoryDirectoryInterface directory = loadRepositoryDirectoryTree().findDirectory(aliasPurPathIfNecessary(parentPath));
       return new RepositoryObject(objectId, name, directory, ownerName, modifiedDate, objectType, description, deleted);
-      
     } catch(Exception e) {
       throw new KettleException("Unable to get object information for object with id="+objectId, e);
     }
   }
-  
+
   public JobMeta loadJob(ObjectId idJob, String versionLabel) throws KettleException {
     try {
       RepositoryFile file = null;
@@ -2300,7 +2296,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       jobMeta.setDescription(file.getDescription());
       jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
       jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
-      jobMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(getParentPath(file.getPath())));
+      jobMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
       jobMeta.setRepositoryLock(getLock(file));
       jobDelegate.loadSharedObjects(jobMeta);
       jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idJob.getId(), versionLabel,
@@ -2325,7 +2321,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       transMeta.setDescription(file.getDescription());
       transMeta.setObjectId(new StringObjectId(file.getId().toString()));
       transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
-      transMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(getParentPath(file.getPath())));
+      transMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
       transMeta.setRepositoryLock(getLock(file));
       transDelegate.loadSharedObjects(transMeta);
       transDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idTransformation.getId(), versionLabel,
@@ -2334,6 +2330,14 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       return transMeta;
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation with id [" + idTransformation + "]", e);
+    }
+  }
+  
+  protected String aliasPurPathIfNecessary(String purPath) {
+    if (purPath.startsWith(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())) && isUserHomeDirectoryAliased) {
+      return purPath.substring(ClientRepositoryPaths.getHomeFolderPath().length());
+    } else {
+      return purPath;
     }
   }
 }
