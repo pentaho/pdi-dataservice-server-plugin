@@ -15,7 +15,6 @@ import org.pentaho.ui.xul.components.XulToolbarbutton;
 import org.pentaho.ui.xul.dom.Document;
 
 public class SpoonMenuLockController implements ISpoonMenuController {
-  private ILockService service;
 
   public String getName() {
     return "spoonMenuLockController"; //$NON-NLS-1$
@@ -27,7 +26,7 @@ public class SpoonMenuLockController implements ISpoonMenuController {
 
       // If we are working with an Enterprise Repository
       if ((spoon != null) && (spoon.getRepository() != null) && (spoon.getRepository() instanceof PurRepository)) {
-        service = getService(spoon.getRepository());
+        ILockService service = getService(spoon.getRepository());
 
         EngineMetaInterface meta = spoon.getActiveMeta();
 
@@ -58,14 +57,10 @@ public class SpoonMenuLockController implements ISpoonMenuController {
   }
 
   private ILockService getService(Repository repository) throws KettleException {
-    if (service == null) {
-      if (repository.hasService(ILockService.class)) {
-        return (ILockService) repository.getService(ILockService.class);
-      } else {
-        throw new IllegalStateException();
-      }
+    if (repository.hasService(ILockService.class)) {
+      return (ILockService) repository.getService(ILockService.class);
     } else {
-      return service;
+      throw new IllegalStateException();
     }
   }
 }
