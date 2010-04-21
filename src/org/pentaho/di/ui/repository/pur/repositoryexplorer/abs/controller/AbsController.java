@@ -19,13 +19,16 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Map.Entry;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.i18n.GlobalMessages;
+import org.pentaho.di.i18n.LanguageChoice;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
@@ -91,17 +94,23 @@ public class AbsController extends EESecurityController {
       try {
         if (rep.hasService(IAbsSecurityManager.class)) {
           service = (IAbsSecurityManager) rep.getService(IAbsSecurityManager.class);
+          String localeValue = null;
           try {
-            service.initialize(GlobalMessages.getLocale().getDisplayName());
-          } catch (Throwable th) {
-            service.initialize("en_us"); //$NON-NLS-1$
+            localeValue = GlobalMessages.getLocale().getDisplayName();
+          } catch(MissingResourceException e) {
+            try {
+              localeValue = LanguageChoice.getInstance().getFailoverLocale().getDisplayName();
+            }catch(MissingResourceException e2){
+              localeValue = "en_US"; //$NON-NLS-1$
+            }
           }
+          service.initialize(localeValue); 
         } else {
           throw new ControllerInitializationException(BaseMessages.getString(IUIAbsRole.class,
               "AbsController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IAbsSecurityManager.class)); //$NON-NLS-1$
         }
-      } catch (KettleException ke) {
-        throw new ControllerInitializationException(ke);
+      } catch (Throwable th) {
+        throw new ControllerInitializationException(th);
       }
 
       super.init(rep);
