@@ -1386,22 +1386,28 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public ObjectId renameJob(final ObjectId idJob, final RepositoryDirectoryInterface newDirectory, final String newName)
       throws KettleException {
-    RepositoryFile file = pur.getFileById(idJob.getId());
-    file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, newName).build();
-    NodeRepositoryFileData data = pur
-    .getDataAtVersionForRead(file.getId(), null, NodeRepositoryFileData.class);
-    file = pur.updateFile(file, data, null);
+    if (newName != null) {
+      // set new title
+      RepositoryFile file = pur.getFileById(idJob.getId());
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, newName).build();
+      NodeRepositoryFileData data = pur
+      .getDataAtVersionForRead(file.getId(), null, NodeRepositoryFileData.class);
+      file = pur.updateFile(file, data, null);
+    }
     pur.moveFile(idJob.getId(), calcDestAbsPath(idJob, newDirectory, newName, RepositoryObjectType.JOB), null);
     return idJob;
   }
 
   public ObjectId renameTransformation(final ObjectId idTransformation, final RepositoryDirectoryInterface newDirectory,
       final String newName) throws KettleException {
-    RepositoryFile file = pur.getFileById(idTransformation.getId());
-    file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, newName).build();
-    NodeRepositoryFileData data = pur
-    .getDataAtVersionForRead(file.getId(), null, NodeRepositoryFileData.class);
-    file = pur.updateFile(file, data, null);
+    if (newName != null) {
+      // set new title
+      RepositoryFile file = pur.getFileById(idTransformation.getId());
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, newName).build();
+      NodeRepositoryFileData data = pur
+      .getDataAtVersionForRead(file.getId(), null, NodeRepositoryFileData.class);
+      file = pur.updateFile(file, data, null);
+    }
     pur.moveFile(idTransformation.getId(), calcDestAbsPath(idTransformation, newDirectory, newName,
         RepositoryObjectType.TRANSFORMATION), null);
     return idTransformation;
