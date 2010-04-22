@@ -242,10 +242,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             String repoUrl = repositoryMeta.getRepositoryLocation().getUrl();
             String baseUrl = PentahoSystem.getApplicationContext().getBaseUrl();
             if (repoUrl.endsWith("/")) {
-              repoUrl = repoUrl.substring(0, repoUrl.length() - 2);
+              repoUrl = repoUrl.substring(0, repoUrl.length() - 1);
             }
             if (baseUrl.endsWith("/")) {
-              baseUrl = baseUrl.substring(0, baseUrl.length() - 2);
+              baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
             }
             if (repoUrl.startsWith(baseUrl)) {
               connectInProcess();
