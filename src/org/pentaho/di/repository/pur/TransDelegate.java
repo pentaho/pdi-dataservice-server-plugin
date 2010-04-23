@@ -455,12 +455,10 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       capturingStepPerformanceSnapShots = rootNode.getProperty(PROP_CAPTURE_STEP_PERFORMANCE).getBoolean();
     }
     transMeta.setCapturingStepPerformanceSnapShots(capturingStepPerformanceSnapShots);
-    transMeta.setStepPerformanceCapturingDelay(rootNode.getProperty(PROP_STEP_PERFORMANCE_CAPTURING_DELAY).getLong());
-    transMeta.setStepPerformanceCapturingSizeLimit(rootNode.getProperty(PROP_STEP_PERFORMANCE_CAPTURING_SIZE_LIMIT).getString());
+    transMeta.setStepPerformanceCapturingDelay(getLong(rootNode, PROP_STEP_PERFORMANCE_CAPTURING_DELAY));
+    transMeta.setStepPerformanceCapturingSizeLimit(getString(rootNode, PROP_STEP_PERFORMANCE_CAPTURING_SIZE_LIMIT));
     transMeta.getPerformanceLogTable().setTableName(getString(rootNode, PROP_STEP_PERFORMANCE_LOG_TABLE));
     transMeta.getTransLogTable().setLogSizeLimit(getString(rootNode, PROP_LOG_SIZE_LIMIT));
-    //transMeta.setStepPerformanceLogTable( repository.getPropertyString(rootNode, "STEP_PERFORMANCE_LOG_TABLE") );
-    //transMeta.setLogSizeLimit( repository.getPropertyString(rootNode, "LOG_SIZE_LIMIT") );
     
     // Load the logging tables too..
     //
