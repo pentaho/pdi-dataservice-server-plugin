@@ -333,8 +333,6 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         enabled = hopNode.getProperty(TRANS_HOP_ENABLED).getBoolean();
       }
 
-      System.out.println("Read Hop from " + stepFromName + " --> " + stepToName); //$NON-NLS-1$ //$NON-NLS-2$
-
       StepMeta stepFrom = StepMeta.findStep(transMeta.getSteps(), stepFromName);
       StepMeta stepTo = StepMeta.findStep(transMeta.getSteps(), stepToName);
 
