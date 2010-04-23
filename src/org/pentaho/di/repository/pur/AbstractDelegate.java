@@ -56,6 +56,14 @@ public abstract class AbstractDelegate {
     }
   }
   
+  protected long getLong(DataNode node, String name) {
+    if (node.hasProperty(name)) {
+      return node.getProperty(name).getLong();
+    } else {
+      return 0L;
+    }
+  }
+  
   protected Date getDate(DataNode node, String name) {
     if (node.hasProperty(name)) {
       return node.getProperty(name).getDate();

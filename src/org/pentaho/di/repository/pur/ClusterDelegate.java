@@ -52,7 +52,6 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
   }
 
   public void dataNodeToElement(DataNode rootNode, RepositoryElementInterface element) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
     ClusterSchema clusterSchema = (ClusterSchema) element;
     // The metadata...
     clusterSchema.setBasePort(getString(rootNode, PROP_BASE_PORT));
@@ -76,13 +75,6 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
     DataNode rootNode = new DataNode(NODE_ROOT);
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
 
-    // Check for naming collision
-    ObjectId clusterId = repo.getClusterID(clusterSchema.getName());
-    if (clusterId != null && !clusterSchema.getObjectId().equals(clusterId)) {
-      // We have a naming collision, abort the save
-      throw new KettleException("Failed to save object to repository. Object [" + clusterSchema.getName()
-          + "] already exists.");
-    }
     // save the properties...
     rootNode.setProperty(PROP_BASE_PORT, clusterSchema.getBasePort());
     rootNode.setProperty(PROP_SOCKETS_BUFFER_SIZE, clusterSchema.getSocketsBufferSize());
@@ -120,5 +112,9 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
       e.printStackTrace();
     }
     return null;
+  }
+  
+  protected Repository getRepository() {
+    return repo;
   }
 }

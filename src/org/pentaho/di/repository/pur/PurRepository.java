@@ -1532,16 +1532,30 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       file = pur.getFileById(id.getId());
       if (!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
         // update title and description
-        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).description(RepositoryFile.ROOT_LOCALE, element.getDescription()).build();
-        file = pur.updateFile(file, new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), versionComment);
+        file = new RepositoryFile.Builder(file)
+          .title(RepositoryFile.ROOT_LOCALE, element.getName())
+          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+          .build();
+        file = pur.updateFile(
+            file, 
+            new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), 
+            versionComment
+           );
       } else {
         throw new KettleException("File is currently locked by another user for editing");
       }
     } else {
-      file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.JOB.getExtension())).versioned(true)
-          .title(RepositoryFile.ROOT_LOCALE, element.getName()).description(RepositoryFile.ROOT_LOCALE, element.getDescription()).build();
-      file = pur.createFile(pur.getFileById(element.getRepositoryDirectory().getObjectId().getId()).getId(), file,
-          new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), versionComment);
+      file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.JOB.getExtension()))
+          .versioned(true)
+          .title(RepositoryFile.ROOT_LOCALE, element.getName())
+          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+          .build();
+      file = pur.createFile(
+          pur.getFileById(element.getRepositoryDirectory().getObjectId().getId()).getId(), 
+          file,
+          new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), 
+          versionComment
+         );
     }
     // side effects
     ObjectId objectId = new StringObjectId(file.getId().toString());
@@ -1574,17 +1588,29 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       file = pur.getFileById(id.getId());
       if (!file.isLocked() || (file.isLocked() && canUnlockFileById(id))) {
         // update title and description
-        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).description(RepositoryFile.ROOT_LOCALE, element.getDescription()).build();
-        file = pur.updateFile(file, new NodeRepositoryFileData(transDelegate.elementToDataNode(element)),
-            versionComment);
+        file = new RepositoryFile.Builder(file)
+          .title(RepositoryFile.ROOT_LOCALE, element.getName())
+          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+          .build();
+        file = pur.updateFile(
+            file, 
+            new NodeRepositoryFileData(transDelegate.elementToDataNode(element)),
+            versionComment
+           );
       } else {
         throw new KettleException("File is currently locked by another user for editing");
       }
     } else {
       file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.TRANSFORMATION.getExtension()))
-          .versioned(true).title(RepositoryFile.ROOT_LOCALE, element.getName()).description(RepositoryFile.ROOT_LOCALE, element.getDescription()).build();
-      file = pur.createFile(pur.getFileById(element.getRepositoryDirectory().getObjectId().getId()).getId(), file,
-          new NodeRepositoryFileData(transDelegate.elementToDataNode(element)), versionComment);
+          .versioned(true)
+          .title(RepositoryFile.ROOT_LOCALE, element.getName())
+          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), "")).build();
+      file = pur.createFile(
+                pur.getFileById(element.getRepositoryDirectory().getObjectId().getId()).getId(), 
+                file,
+                new NodeRepositoryFileData(transDelegate.elementToDataNode(element)), 
+                versionComment
+              );
     }
     // side effects
     ObjectId objectId = new StringObjectId(file.getId().toString());
@@ -1806,9 +1832,17 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  protected void saveSlaveServer(final RepositoryElementInterface element, final String versionComment) {
-    boolean isUpdate = element.getObjectId() != null;
+  protected void saveSlaveServer(final RepositoryElementInterface element, final String versionComment) throws KettleException {
+    
+    // Even if the object id is null, we still have to check if the element is not present in the PUR
+    // For example, if we import data from an XML file and there is a slave with the same name in it.
+    //
     boolean renameRequired = false;
+    if (element.getObjectId() == null) {
+      element.setObjectId(getSlaveID(element.getName()));
+    }
+
+    boolean isUpdate = element.getObjectId() != null;
     RepositoryFile file = null;
     try {
       try {
@@ -1863,14 +1897,27 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         // update title
-        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
-        file = pur.updateFile(file, new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)),
-            versionComment);
+        file = new RepositoryFile.Builder(file)
+          .title(RepositoryFile.ROOT_LOCALE, element.getName())
+          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+          .build();
+        file = pur.updateFile(
+            file, 
+            new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)),
+            versionComment
+           );
       } else {
         file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.CLUSTER_SCHEMA.getExtension()))
-        .title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
-        file = pur.createFile(getClusterSchemaParentFolderId(), file, new NodeRepositoryFileData(clusterTransformer
-            .elementToDataNode(element)), versionComment);
+          .title(RepositoryFile.ROOT_LOCALE, element.getName())
+          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+          .versioned(VERSION_SHARED_OBJECTS)
+          .build();
+        file = pur.createFile(
+            getClusterSchemaParentFolderId(), 
+            file, 
+            new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)), 
+            versionComment
+           );
       }
       // side effects
       ObjectId objectId = new StringObjectId(file.getId().toString());

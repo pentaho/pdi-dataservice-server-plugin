@@ -3,7 +3,6 @@ package org.pentaho.di.repository.pur;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
 
@@ -73,13 +72,15 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
     DataNode rootNode = new DataNode(NODE_ROOT);
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
 
+    /*
     // Check for naming collision
     ObjectId slaveId = repo.getSlaveID(slaveServer.getName());
-    if (slaveId != null && !slaveServer.getObjectId().equals(slaveId)) {
+    if (slaveId != null && slaveServer.getObjectId()!=null && !slaveServer.getObjectId().equals(slaveId)) {
       // We have a naming collision, abort the save
       throw new KettleException("Failed to save object to repository. Object [" + slaveServer.getName()
           + "] already exists.");
     }
+    */
 
     // Create or version a new slave node
     //
@@ -97,4 +98,7 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
     return rootNode;
   }
 
+  protected Repository getRepository() {
+    return repo;
+  }
 }
