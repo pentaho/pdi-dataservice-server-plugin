@@ -77,7 +77,7 @@
     <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.5.8" conf="test->default" />
     <dependency org="javassist" name="javassist" rev="3.4.GA" conf="test->default" transitive="false" />
     <dependency org="org.scannotation" name="scannotation" rev="1.0.2" conf="test->default" transitive="false"/>
-    <dependency org="pentaho" name="pentaho-bi-platform-test-foundation" rev="${project.revision}" changing="true" 
+    <dependency org="pentaho" name="pentaho-bi-platform-test-foundation" rev="${dependency.bi-platform.revision}" changing="true" 
       conf="test->default" />
 
 
