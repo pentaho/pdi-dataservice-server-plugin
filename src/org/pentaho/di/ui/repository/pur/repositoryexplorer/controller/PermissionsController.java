@@ -43,7 +43,6 @@ import org.pentaho.di.ui.repository.repositoryexplorer.AccessDeniedException;
 import org.pentaho.di.ui.repository.repositoryexplorer.ContextChangeVetoer;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUISupportController;
-import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.IBrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
@@ -106,8 +105,6 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
   private XulCheckbox writeCheckbox;
 
   private XulCheckbox readCheckbox;
-
-  private XulCheckbox deleteCheckbox;
 
   private XulCheckbox inheritParentPermissionCheckbox;
 
@@ -211,7 +208,6 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     userRoleList = (XulListbox) document.getElementById("user-role-list");//$NON-NLS-1$ 
     writeCheckbox = (XulCheckbox) document.getElementById("write-checkbox");//$NON-NLS-1$ 
     readCheckbox = (XulCheckbox) document.getElementById("read-checkbox");//$NON-NLS-1$ 
-    deleteCheckbox = (XulCheckbox) document.getElementById("delete-checkbox");//$NON-NLS-1$ 
 
     inheritParentPermissionCheckbox = (XulCheckbox) document.getElementById("inherit-from-parent-permission-checkbox");//$NON-NLS-1$ 
     modifyCheckbox = (XulCheckbox) document.getElementById("modify-checkbox");//$NON-NLS-1$ 
@@ -479,7 +475,6 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     bf.createBinding(viewAclsModel, "removeEnabled", removeAclButton, "!disabled"); //$NON-NLS-1$  //$NON-NLS-2$ 
     bf.createBinding(viewAclsModel, "removeEnabled", writeCheckbox, "!disabled"); //$NON-NLS-1$  //$NON-NLS-2$
     //bf.createBinding(viewAclsModel, "removeEnabled", readCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
-    bf.createBinding(viewAclsModel, "removeEnabled", deleteCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     bf.createBinding(viewAclsModel, "removeEnabled", modifyCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     //bf.createBinding(viewAclsModel, "removeEnabled", viewCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     bf.setBindingType(Binding.Type.ONE_WAY);
@@ -708,8 +703,6 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
         if (permission.equals(ObjectPermission.ALL)) {
           checkAllPermissionBox();
           break;
-        } else if (permission.equals(ObjectPermission.DELETE)) {
-          deleteCheckbox.setChecked(true);
         } else if (permission.equals(ObjectPermission.READ)) {
           readCheckbox.setChecked(true);
         } else if (permission.equals(ObjectPermission.WRITE)) {
@@ -726,7 +719,6 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
   }
 
   private void uncheckAllPermissionBox() {
-    deleteCheckbox.setChecked(false);
     readCheckbox.setChecked(false);
     writeCheckbox.setChecked(false);
     modifyCheckbox.setChecked(false);
@@ -734,7 +726,6 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
   }
 
   private void checkAllPermissionBox() {
-    deleteCheckbox.setChecked(true);
     readCheckbox.setChecked(true);
     writeCheckbox.setChecked(true);
     modifyCheckbox.setChecked(true);
@@ -754,11 +745,6 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       } else if(permissions.contains(ObjectPermission.ALL)) {
         permissions.remove(ObjectPermission.ALL);
       }
-        if (deleteCheckbox.isChecked()) {
-          permissions.add(ObjectPermission.DELETE);
-        } else {
-          permissions.remove(ObjectPermission.DELETE);
-        }
         if (readCheckbox.isChecked()) {
           permissions.add(ObjectPermission.READ);
         } else {

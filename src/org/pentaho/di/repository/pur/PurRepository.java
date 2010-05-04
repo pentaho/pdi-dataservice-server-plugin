@@ -2162,8 +2162,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       for (RepositoryFilePermission perm : permissions) {
         if (perm.equals(RepositoryFilePermission.READ)) {
           permissionSet.add(ObjectPermission.READ);
-        } else if (perm.equals(RepositoryFilePermission.DELETE)) {
-          permissionSet.add(ObjectPermission.DELETE);
         } else if (perm.equals(RepositoryFilePermission.READ_ACL)) {
           permissionSet.add(ObjectPermission.READ_ACL);
         } else if (perm.equals(RepositoryFilePermission.WRITE)) {
@@ -2218,8 +2216,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           for (ObjectPermission perm : permissions) {
             if (perm.equals(ObjectPermission.READ)) {
               permissionSet.add(RepositoryFilePermission.READ);
-            } else if (perm.equals(ObjectPermission.DELETE)) {
-              permissionSet.add(RepositoryFilePermission.DELETE);
             } else if (perm.equals(ObjectPermission.READ_ACL)) {
               permissionSet.add(RepositoryFilePermission.READ_ACL);
             } else if (perm.equals(ObjectPermission.WRITE)) {

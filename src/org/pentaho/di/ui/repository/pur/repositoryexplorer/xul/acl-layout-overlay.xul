@@ -23,7 +23,6 @@
 					    <vbox id="permission-column-1" flex="1">
 							<checkbox id="write-checkbox" command="permissionsController.updatePermission()" flex="1" label="${PermissionsTab.Write}" disabled="true"/>
 							<checkbox id="read-checkbox" command="permissionsController.updatePermission()" flex="1" label="${PermissionsTab.Read}" disabled="true"/>
-							<checkbox id="delete-checkbox" command="permissionsController.updatePermission()" flex="1" label="${PermissionsTab.Delete}" disabled="true"/>														
 						</vbox>																																								
 						<vbox id="permission-column-2" flex="1"> 
 							<checkbox id="view-checkbox" command="permissionsController.updatePermission()" flex="1" label="${PermissionsTab.ViewPermission}" disabled="true"/>
