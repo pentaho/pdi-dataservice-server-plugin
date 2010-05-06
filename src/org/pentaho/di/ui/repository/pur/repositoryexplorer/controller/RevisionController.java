@@ -1,5 +1,6 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObj
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.IUISupportController;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorerCallback;
+import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.IBrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.MainController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
@@ -41,11 +43,13 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
   protected Repository repository;
   protected XulTree revisionTable;
   protected MainController mainController;
-  protected IBrowseController browseController;
+  protected BrowseController browseController;
   protected BindingFactory bf;
   protected XulTabbox  filePropertiesTabbox;
   protected RepositoryExplorerCallback callback;
   protected UIRepositoryObjectRevisions revisions;
+  protected Binding revisionBinding;
+
 
   protected ResourceBundle messages = new ResourceBundle() {
 
@@ -70,7 +74,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
     try {
       this.repository = repository; 
       mainController = (MainController) this.getXulDomContainer().getEventHandler("mainController"); //$NON-NLS-1$
-      browseController = (IBrowseController) this.getXulDomContainer().getEventHandler("browseController"); //$NON-NLS-1$
+      browseController = (BrowseController) this.getXulDomContainer().getEventHandler("browseController"); //$NON-NLS-1$
       bf = new DefaultBindingFactory();
       bf.setDocument(this.getXulDomContainer().getDocumentRoot());
 
@@ -102,8 +106,6 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
     };
 
     Binding buttonBinding = bf.createBinding(revisionTable, "selectedRows", "revision-open", "!disabled", forButtons); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-    Binding revisionBinding = null;
-
     bf.setBindingType(Binding.Type.ONE_WAY);
     bf.createBinding(folderTree, "selectedItems", this, "historyTabVisibility"); //$NON-NLS-1$  //$NON-NLS-2$
 
@@ -200,13 +202,14 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
   }
 
   public void restoreRevision() {
+    
     try {
-      Collection<UIRepositoryContent> content = fileTable.getSelectedItems();
+      final Collection<UIRepositoryContent> content = fileTable.getSelectedItems();
       final UIRepositoryContent contentToRestore = content.iterator().next();
 
       Collection<UIRepositoryObjectRevision> versions = revisionTable.getSelectedItems();
       final UIRepositoryObjectRevision versionToRestore = versions.iterator().next();
-
+      
       XulPromptBox commitPrompt = promptCommitComment(document, messages, null);
 
       commitPrompt.addDialogCallback(new XulDialogCallback<String>() {
@@ -216,6 +219,9 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
             try {
               if(contentToRestore instanceof IRevisionObject) {
                 ((IRevisionObject)contentToRestore).restoreRevision(versionToRestore, value);
+                List<UIRepositoryObject> objects = new ArrayList<UIRepositoryObject>();
+                objects.add(contentToRestore);
+                browseController.setRepositoryObjects(objects);    
               } else {
                 throw new IllegalStateException(messages.getString("RevisionsController.RevisionsNotSupported")); //$NON-NLS-1$
               }
