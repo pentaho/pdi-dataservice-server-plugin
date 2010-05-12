@@ -34,6 +34,7 @@ import org.pentaho.ui.xul.binding.Binding.Type;
 import org.pentaho.ui.xul.components.XulMenuitem;
 import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
+import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import org.pentaho.ui.xul.swt.custom.DialogConstant;
 import org.pentaho.ui.xul.util.XulDialogCallback;
@@ -52,6 +53,8 @@ public class SpoonLockController extends AbstractXulEventHandler {
   private boolean isLockingAllowed = false;
 
   private static Log log = LogFactory.getLog(SpoonLockController.class);
+  
+  private XulDialog repoDialog;
 
   protected ResourceBundle messages = new ResourceBundle() {
 
@@ -168,6 +171,8 @@ public class SpoonLockController extends AbstractXulEventHandler {
         XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
         msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
         msgBox.setMessage(messages.getString("LockController.SaveBeforeLock"));//$NON-NLS-1$
+        msgBox.setModalParent(repoDialog);
+        
         msgBox.open();
       } else {
         XulDomContainer container = getXulDomContainer();
@@ -178,6 +183,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
         XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
         msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
         msgBox.setMessage(messages.getString("LockController.NoLockingSupport"));//$NON-NLS-1$
+        msgBox.setModalParent(repoDialog);
         msgBox.open();
       }
     } catch (Throwable th) {
@@ -194,6 +200,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
           XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
           msgBox.setTitle(messages.getString("PurRepository.LockNote.Title")); //$NON-NLS-1$
           msgBox.setMessage(repoLock.getMessage());
+          msgBox.setModalParent(repoDialog);
 
           msgBox.open();
         }
@@ -205,6 +212,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
       XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
       msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
       msgBox.setMessage(messages.getString("LockController.NoLockingSupport"));//$NON-NLS-1$
+      msgBox.setModalParent(repoDialog);
       msgBox.open();
     }
   }
@@ -236,6 +244,8 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
         setCreateAllowed(allowedActionsContains(securityService, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
       }
+      
+      repoDialog = (XulDialog) document.getElementById("repository-explorer-dialog");
 
       XulDomContainer container = getXulDomContainer();
 
@@ -329,6 +339,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
   private XulPromptBox promptLockMessage(org.pentaho.ui.xul.dom.Document document, ResourceBundle messages,
       String defaultMessage) throws XulException {
     XulPromptBox prompt = (XulPromptBox) document.createElement("promptbox"); //$NON-NLS-1$
+    prompt.setModalParent(repoDialog.getRootObject());
 
     prompt.setTitle(messages.getString("RepositoryExplorer.LockMessage.Title"));//$NON-NLS-1$
     prompt.setButtons(new DialogConstant[] { DialogConstant.OK, DialogConstant.CANCEL });
