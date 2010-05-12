@@ -50,8 +50,8 @@ import com.pentaho.commons.dsc.util.TestLicenseStream;
 import com.pentaho.security.policy.rolebased.IRoleAuthorizationPolicyRoleBindingDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:/sample-repository.spring.xml",
-    "classpath:/sample-repository-test-override.spring.xml" })
+@ContextConfiguration(locations = { "classpath:/repository.spring.xml",
+    "classpath:/repository-test-override.spring.xml" })
 public class PurRepositoryTest extends RepositoryTestBase implements ApplicationContextAware {
 
   private IUnifiedRepository pur;
