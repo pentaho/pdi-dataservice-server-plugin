@@ -642,7 +642,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       }*/
       messageBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
       messageBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
-      messageBox.setMessage(messages.getString(ade.getLocalizedMessage()));
+      messageBox.setMessage(ade.getLocalizedMessage());
       messageBox.open();
     }
   }
