@@ -55,8 +55,10 @@ import org.pentaho.ui.xul.components.XulRadio;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulDeck;
 import org.pentaho.ui.xul.containers.XulDialog;
+import org.pentaho.ui.xul.containers.XulHbox;
 import org.pentaho.ui.xul.containers.XulListbox;
 import org.pentaho.ui.xul.containers.XulTree;
+import org.pentaho.ui.xul.containers.XulVbox;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
 /**
@@ -82,7 +84,8 @@ public class EESecurityController extends SecurityController {
     }
     
   };  
-
+  private XulRadio systemRoleRadioButton;
+  
   private XulRadio roleRadioButton;
 
   private XulRadio userRadioButton;
@@ -145,6 +148,13 @@ public class EESecurityController extends SecurityController {
   
   protected UIEESecurity eeSecurity;
 
+  private XulListbox systemRoleListBox;
+  private XulVbox innerRoleVbox;
+  
+  private XulHbox roleHbox;
+  
+  private XulVbox roleVboxNonManaged; 
+  
   public EESecurityController() {
   }
 
@@ -161,12 +171,11 @@ public class EESecurityController extends SecurityController {
       throw new ControllerInitializationException(e);
       }
     super.init(rep);
-  }
-
-
-  @Override
-  protected void setInitialDeck() {
-    changeToRoleDeck();
+    if(!managed) {
+      userRadioButton.setVisible(false); 
+      roleHbox.removeChild(innerRoleVbox);
+      roleHbox.addChild(roleVboxNonManaged);
+    }
   }
   
   @Override
@@ -182,12 +191,21 @@ public class EESecurityController extends SecurityController {
   protected void createSecurity()  throws Exception {
     security = eeSecurity = new UIEESecurity(service); 
   }
+
+  @Override
+  protected void setInitialDeck() {
+    if(managed) {
+      super.setInitialDeck();
+    } else {
+      changeToRoleDeck();  
+    }
+  }
   
   @Override
   protected void createBindings() {
     super.createBindings();
     //User Role Binding
-
+    systemRoleRadioButton = (XulRadio) document.getElementById("system-role-radio-button");//$NON-NLS-1$
     roleRadioButton = (XulRadio) document.getElementById("role-radio-button");//$NON-NLS-1$
     userRadioButton = (XulRadio) document.getElementById("user-radio-button");//$NON-NLS-1$
     
@@ -214,6 +232,16 @@ public class EESecurityController extends SecurityController {
     assignRoleToUserButton = (XulButton) document.getElementById("assign-role-to-user");//$NON-NLS-1$
     unassignRoleFromUserButton = (XulButton) document.getElementById("unassign-role-from-user");//$NON-NLS-1$
 
+    
+    systemRoleListBox = (XulListbox) document.getElementById("system-roles-list");//$NON-NLS-1$
+    
+    innerRoleVbox = (XulVbox) document.getElementById("inner-role-vbox");//$NON-NLS-1$
+    roleVboxNonManaged = (XulVbox) document.getElementById("role-vbox-nonmanaged");//$NON-NLS-1$
+    roleHbox = (XulHbox) document.getElementById("role-hbox");//$NON-NLS-1$
+        
+    
+    
+    
     bf.setBindingType(Binding.Type.BI_DIRECTIONAL);
     bf.createBinding(eeSecurityUser, "assignedRoles", assignedRoles, "elements");//$NON-NLS-1$ //$NON-NLS-2$
     bf.createBinding(eeSecurityUser, "availableRoles", availableRoles, "elements");//$NON-NLS-1$ //$NON-NLS-2$
@@ -322,6 +350,7 @@ public class EESecurityController extends SecurityController {
     bf.createBinding(securityRole, "availableSelectedUsers", availableUsers, "selectedItems", arrayToListUserConverter);//$NON-NLS-1$ //$NON-NLS-2$
     bf.createBinding(securityRole, "assignedSelectedUsers", assignedUsers, "selectedItems", arrayToListUserConverter);//$NON-NLS-1$ //$NON-NLS-2$
     bf.createBinding(eeSecurity, "selectedRoleIndex", roleListBox, "selectedIndex");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding(eeSecurity, "selectedSystemRoleIndex", systemRoleListBox, "selectedIndex");//$NON-NLS-1$ //$NON-NLS-2$    
 
     bf.setBindingType(Binding.Type.ONE_WAY);
     bf.createBinding(assignedUsers,
@@ -340,6 +369,11 @@ public class EESecurityController extends SecurityController {
       bf.createBinding(eeSecurity, "roleList", roleListBox, "elements").fireSourceChanged();//$NON-NLS-1$ //$NON-NLS-2$
       bf.createBinding(roleListBox, "selectedItem", eeSecurity, "selectedRole");//$NON-NLS-1$ //$NON-NLS-2$
 
+      bf.createBinding(systemRoleListBox, "selectedItem", eeSecurity, "selectedSystemRole");//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(eeSecurity, "systemRoleList", systemRoleListBox, "elements").fireSourceChanged();//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(systemRoleListBox, "selectedItem", eeSecurity, "selectedSystemRole");//$NON-NLS-1$ //$NON-NLS-2$
+
+      if(managed) {    
       userDetailBinding = bf.createBinding(eeSecurity, "selectedUser", userDetailTable, "elements",//$NON-NLS-1$ //$NON-NLS-2$
           new BindingConvertor<IUIUser, List<IUIRole>>() {
 
@@ -359,35 +393,42 @@ public class EESecurityController extends SecurityController {
             }
 
           });
-      
-      roleDetailBinding = bf.createBinding(eeSecurity, "selectedRole", roleDetailTable, "elements",//$NON-NLS-1$ //$NON-NLS-2$
-          new BindingConvertor<IUIRole, List<IUIUser>>() {
-
-            @Override
-            public List<IUIUser> sourceToTarget(IUIRole rr) {
-              return new ArrayList<IUIUser>(rr.getUsers());
-            }
-
-            @Override
-            public IUIRole targetToSource(List<IUIUser> arg0) {
-              // TODO Auto-generated method stub
-              return null;
-            }
-
-          });
+        roleDetailBinding = bf.createBinding(eeSecurity, "selectedRole", roleDetailTable, "elements",//$NON-NLS-1$ //$NON-NLS-2$
+            new BindingConvertor<IUIRole, List<IUIUser>>() {
+  
+              @Override
+              public List<IUIUser> sourceToTarget(IUIRole rr) {
+                return new ArrayList<IUIUser>(rr.getUsers());
+              }
+  
+              @Override
+              public IUIRole targetToSource(List<IUIUser> arg0) {
+                // TODO Auto-generated method stub
+                return null;
+              }
+  
+            });
+      }
       bf.createBinding(eeSecurity, "selectedDeck", userRoleDeck, "selectedIndex",//$NON-NLS-1$ //$NON-NLS-2$
           new BindingConvertor<ObjectRecipient.Type, Integer>() {
 
             @Override
             public Integer sourceToTarget(Type arg0) {
               if (arg0 == Type.ROLE) {
-                roleRadioButton.setSelected(true);
                 userRadioButton.setSelected(false);
+                roleRadioButton.setSelected(true);
+                systemRoleRadioButton.setSelected(false);
                 return 1;
               } else if (arg0 == Type.USER) {
-                roleRadioButton.setSelected(false);
                 userRadioButton.setSelected(true);
+                roleRadioButton.setSelected(false);
+                systemRoleRadioButton.setSelected(false);
                 return 0;
+              } else if (arg0 == Type.SYSTEM_ROLE) {
+                userRadioButton.setSelected(false);
+                roleRadioButton.setSelected(false);
+                systemRoleRadioButton.setSelected(true);
+                return 2;
               } else
                 return -1;
             }
@@ -434,6 +475,10 @@ public class EESecurityController extends SecurityController {
       };
       bf.createBinding(securityRole, "mode", rolename, "disabled", modeBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
       bf.createBinding(securityRole, "mode", roleDescription, "disabled", anotherModeBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      
+      bf.createBinding(securityUser, "mode", userPassword, "disabled", anotherModeBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      bf.createBinding(securityUser, "mode", userDescription, "disabled", anotherModeBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
+      
 
     } catch (Exception e) {
       // convert to runtime exception so it bubbles up through the UI
@@ -702,6 +747,11 @@ public class EESecurityController extends SecurityController {
   public void changeToRoleDeck() {
     security.setSelectedDeck(ObjectRecipient.Type.ROLE);
   }
+  
+  public void changeToSystemRoleDeck() {
+    security.setSelectedDeck(ObjectRecipient.Type.SYSTEM_ROLE);
+  }
+  
   /**
    * saveRole method is called when the user click on the ok button of a Add or Edit Role dialog
    * Depending on the mode it calls add of update role method
@@ -742,5 +792,16 @@ public class EESecurityController extends SecurityController {
     removeUserFromRoleButton.setDisabled(!enableNew);
     addRoleToUserButton.setDisabled(!enableNew);
     removeRoleFromUserButton .setDisabled(!enableNew);
+  }
+  @Override
+  protected void showButtons(boolean showNew, boolean showEdit, boolean showRemove) {
+    super.showButtons(showNew, showEdit, showRemove);
+    roleAddButton.setVisible(showNew);
+    roleEditButton.setVisible(showEdit);
+    roleRemoveButton.setVisible(showRemove);
+    addUserToRoleButton.setVisible(showNew);
+    removeUserFromRoleButton.setVisible(showNew);
+    addRoleToUserButton.setVisible(showNew);
+    removeRoleFromUserButton .setVisible(showNew);
   }
 }

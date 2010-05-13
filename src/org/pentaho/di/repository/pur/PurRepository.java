@@ -1715,13 +1715,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         // need to go back to server to get versioned info
         file = pur.getFileAtVersion(file.getId(), versionId);
       }
-      EETransMeta transMeta = new EETransMeta();
+      TransMeta transMeta = new TransMeta();
       transMeta.setName(file.getTitle());
       transMeta.setDescription(file.getDescription());
       transMeta.setObjectId(new StringObjectId(file.getId().toString()));
       transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
       transMeta.setRepositoryDirectory(parentDir);
-      transMeta.setRepositoryLock(getLock(file));
+      //transMeta.setRepositoryLock(getLock(file));
       transDelegate.loadSharedObjects(transMeta);
       transDelegate.dataNodeToElement(pur
           .getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), transMeta);
@@ -1742,13 +1742,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         // need to go back to server to get versioned info
         file = pur.getFileAtVersion(file.getId(), versionId);
       }
-      EEJobMeta jobMeta = new EEJobMeta();
+      JobMeta jobMeta = new JobMeta();
       jobMeta.setName(file.getTitle());
       jobMeta.setDescription(file.getDescription());
       jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
       jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
       jobMeta.setRepositoryDirectory(parentDir);
-      jobMeta.setRepositoryLock(getLock(file));
+      //jobMeta.setRepositoryLock(getLock(file));
       jobDelegate.loadSharedObjects(jobMeta);
       jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class)
           .getNode(), jobMeta);

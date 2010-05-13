@@ -22,22 +22,50 @@ public class UIEESecurity extends UISecurity {
 
   protected List<IUIRole> roleList;
 
+  protected IUIRole selectedSystemRole;
+
+  private int selectedSystemRoleIndex;
+
+  protected List<IUIRole> systemRoleList;
+  
+  private static final String AUTHENTICATED = "Authenticated";
+  private static final String ANONYMOUS = "Anonymous";
+
   public UIEESecurity() {
    super();
    roleList = new ArrayList<IUIRole>();
+   systemRoleList = new ArrayList<IUIRole>();
   }
 
   
   public UIEESecurity(RepositorySecurityManager rsm) throws Exception {
     super(rsm);
     roleList = new ArrayList<IUIRole>();
-      if(rsm instanceof IRoleSupportSecurityManager) {
-        for (IRole role : ((IRoleSupportSecurityManager) rsm).getRoles()) {
+    systemRoleList = new ArrayList<IUIRole>();    
+    if(rsm instanceof IRoleSupportSecurityManager) {
+      for (IRole role : ((IRoleSupportSecurityManager) rsm).getRoles()) {
+        // For a NON-MANAGED SERVER( I.E LDAP) We don't want to show
+        // Authenticated and Anonymous in the Roles List. These will appear in the
+        // System Roles Deck
+        if(!rsm.isManaged() && (role.getName().equals(AUTHENTICATED) || role.getName().equals(ANONYMOUS))) {
+          continue;
+        } else {
           IUIRole newRole = UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role);
           roleList.add(newRole);
         }
       }
-      this.firePropertyChange("roleList", null, roleList); //$NON-NLS-1$
+    }
+    this.firePropertyChange("roleList", null, roleList); //$NON-NLS-1$
+    // Hardcoding the System Roles
+    IRole authenticatedSystemRole = ((IRoleSupportSecurityManager) rsm).constructRole();
+    IRole anonymousSystemRole = ((IRoleSupportSecurityManager) rsm).constructRole();
+    authenticatedSystemRole.setName(AUTHENTICATED);
+    authenticatedSystemRole.setDescription(AUTHENTICATED);
+    anonymousSystemRole.setName(ANONYMOUS);
+    anonymousSystemRole.setDescription(ANONYMOUS);
+    systemRoleList.add(UIEEObjectRegistery.getInstance().constructUIRepositoryRole(authenticatedSystemRole));
+    systemRoleList.add(UIEEObjectRegistery.getInstance().constructUIRepositoryRole(anonymousSystemRole));
+    this.firePropertyChange("systemRoleList", null, systemRoleList); //$NON-NLS-1$
   }
 
 
@@ -50,7 +78,14 @@ public class UIEESecurity extends UISecurity {
     this.firePropertyChange("selectedRoleIndex", null, selectedRoleIndex); //$NON-NLS-1$
   }
 
+  public int getSelectedSystemRoleIndex() {
+    return selectedSystemRoleIndex;
+  }
 
+  public void setSelectedSystemRoleIndex(int selectedSystemRoleIndex) {
+    this.selectedSystemRoleIndex = selectedSystemRoleIndex;
+    this.firePropertyChange("selectedSystemRoleIndex", null, selectedSystemRoleIndex); //$NON-NLS-1$
+  }
 
   public IUIRole getSelectedRole() {
     return selectedRole;
@@ -62,7 +97,15 @@ public class UIEESecurity extends UISecurity {
     setSelectedRoleIndex(getIndexOfRole(selectedRole));
   }
 
+  public IUIRole getSelectedSystemRole() {
+    return selectedSystemRole;
+  }
 
+  public void setSelectedSystemRole(IUIRole selectedSystemRole) {
+    this.selectedSystemRole = selectedSystemRole;
+    this.firePropertyChange("selectedSystemRole", null, selectedSystemRole); //$NON-NLS-1$
+    setSelectedSystemRoleIndex(getIndexOfSystemRole(selectedSystemRole));
+  }
 
   public List<IUIRole> getRoleList() {
     return roleList;
@@ -72,6 +115,16 @@ public class UIEESecurity extends UISecurity {
     this.roleList.clear();
     this.roleList.addAll(roleList);
     this.firePropertyChange("roleList", null, roleList); //$NON-NLS-1$    
+  }
+  
+  public List<IUIRole> getSystemRoleList() {
+    return systemRoleList;
+  }
+
+  public void setSystemRoleList(List<IUIRole> systemRoleList) {
+    this.systemRoleList.clear();
+    this.systemRoleList.addAll(systemRoleList);
+    this.firePropertyChange("systemRoleList", null, systemRoleList); //$NON-NLS-1$    
   }
 
   public void addRole(IUIRole roleToAdd) {
@@ -300,6 +353,16 @@ public class UIEESecurity extends UISecurity {
     return -1;
   }
 
+  protected int getIndexOfSystemRole(IUIRole rr) {
+    for (int i = 0; i < this.systemRoleList.size(); i++) {
+      IUIRole role = this.systemRoleList.get(i);
+      if (rr.getName().equals(role.getName())) {
+        return i;
+      }
+    }
+    return -1;
+  }
+  
   private void assignRoleToUser(IUIUser userInfo2, IUIRole role) {
     IUIEEUser userInfo = findEEUser(userInfo2);
     if(userInfo != null) {

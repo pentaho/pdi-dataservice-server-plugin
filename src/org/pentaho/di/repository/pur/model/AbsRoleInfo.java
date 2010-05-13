@@ -27,6 +27,9 @@ public class AbsRoleInfo extends EERoleInfo implements IAbsRole {
   }
 
   public void addLogicalRole(String logicalRole) {
+    if(logicalRoles == null) {
+      this.logicalRoles = new ArrayList<String>();
+    }
     if(!containsLogicalRole(logicalRole)) {
       this.logicalRoles.add(logicalRole);
     }
