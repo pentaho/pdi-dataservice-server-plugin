@@ -7,6 +7,7 @@ import java.util.ResourceBundle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.gui.SpoonFactory;
@@ -34,7 +35,6 @@ import org.pentaho.ui.xul.binding.Binding.Type;
 import org.pentaho.ui.xul.components.XulMenuitem;
 import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
-import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import org.pentaho.ui.xul.swt.custom.DialogConstant;
 import org.pentaho.ui.xul.util.XulDialogCallback;
@@ -52,10 +52,9 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
   private boolean isLockingAllowed = false;
 
+  private Shell shell;
   private static Log log = LogFactory.getLog(SpoonLockController.class);
   
-  private XulDialog repoDialog;
-
   protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
@@ -171,7 +170,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
         XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
         msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
         msgBox.setMessage(messages.getString("LockController.SaveBeforeLock"));//$NON-NLS-1$
-        msgBox.setModalParent(repoDialog);
+        msgBox.setModalParent(shell);
         
         msgBox.open();
       } else {
@@ -183,7 +182,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
         XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
         msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
         msgBox.setMessage(messages.getString("LockController.NoLockingSupport"));//$NON-NLS-1$
-        msgBox.setModalParent(repoDialog);
+        msgBox.setModalParent(shell);
         msgBox.open();
       }
     } catch (Throwable th) {
@@ -200,7 +199,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
           XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
           msgBox.setTitle(messages.getString("PurRepository.LockNote.Title")); //$NON-NLS-1$
           msgBox.setMessage(repoLock.getMessage());
-          msgBox.setModalParent(repoDialog);
+          msgBox.setModalParent(shell);
 
           msgBox.open();
         }
@@ -212,7 +211,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
       XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
       msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
       msgBox.setMessage(messages.getString("LockController.NoLockingSupport"));//$NON-NLS-1$
-      msgBox.setModalParent(repoDialog);
+      msgBox.setModalParent(shell);
       msgBox.open();
     }
   }
@@ -245,8 +244,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
         setCreateAllowed(allowedActionsContains(securityService, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
       }
       
-      repoDialog = (XulDialog) document.getElementById("repository-explorer-dialog");
-
+      shell = (((Spoon)SpoonFactory.getInstance()).getShell());
       XulDomContainer container = getXulDomContainer();
 
       bindingFactory = new DefaultBindingFactory();
@@ -339,7 +337,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
   private XulPromptBox promptLockMessage(org.pentaho.ui.xul.dom.Document document, ResourceBundle messages,
       String defaultMessage) throws XulException {
     XulPromptBox prompt = (XulPromptBox) document.createElement("promptbox"); //$NON-NLS-1$
-    prompt.setModalParent(repoDialog.getRootObject());
+    prompt.setModalParent(shell);
 
     prompt.setTitle(messages.getString("RepositoryExplorer.LockMessage.Title"));//$NON-NLS-1$
     prompt.setButtons(new DialogConstant[] { DialogConstant.OK, DialogConstant.CANCEL });
