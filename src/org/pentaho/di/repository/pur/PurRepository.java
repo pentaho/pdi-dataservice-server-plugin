@@ -80,6 +80,8 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
+import com.pentaho.pdi.ws.IRepositorySyncWebService;
+import com.pentaho.pdi.ws.RepositorySyncException;
 import com.pentaho.repository.ClientRepositoryPaths;
 import com.pentaho.repository.pur.data.node.NodeRepositoryFileData;
 import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
@@ -176,6 +178,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   
   private boolean connected = false;
 
+  private String connectMessage = null;
+  
   // ~ Constructors ====================================================================================================
 
   public PurRepository() {
@@ -255,6 +259,17 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           }
         }
 
+        IRepositorySyncWebService syncWebService = WsFactory.createService(repositoryMeta, "repositorySync", //$NON-NLS-1$
+            username, password, IRepositorySyncWebService.class);
+        
+        try {
+          syncWebService.sync(repositoryMeta.getName(), repositoryMeta.getRepositoryLocation().getUrl());
+        } catch (RepositorySyncException e) {
+          log.logError(e.getMessage(), e);
+          // this message will be presented to the user in spoon
+          connectMessage = e.getMessage();
+        }
+        
         IUnifiedRepositoryWebService repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
             username, password, IUnifiedRepositoryWebService.class);
 
@@ -2385,5 +2400,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     } else {
       return purPath;
     }
+  }
+
+  public String getConnectMessage() {
+    return connectMessage;
   }
 }
