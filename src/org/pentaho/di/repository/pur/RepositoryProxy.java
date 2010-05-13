@@ -625,4 +625,9 @@ public class RepositoryProxy implements Repository, ILockService {
   public TransMeta loadTransformation(ObjectId idTransformation, String versionLabel) throws KettleException {
     throw new UnsupportedOperationException();  
   }
+
+  public String getConnectMessage() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }
