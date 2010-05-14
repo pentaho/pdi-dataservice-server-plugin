@@ -2,6 +2,7 @@ package org.pentaho.di.ui.repository.repositoryexplorer.abs.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.IUser;
@@ -11,19 +12,24 @@ import org.pentaho.di.repository.pur.model.AbsRoleInfo;
 import org.pentaho.di.repository.pur.model.EEUserInfo;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.UIEEObjectRegistery;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsRepositoryRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEESecurity;
-import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryRole;
+import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
 
-public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSupportSecurityManager{
+public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSupportSecurityManager, IAbsSecurityManager {
   private List<IUser> users;
   private List<IRole> roles;
+  private List<IRole> systemRoles;
   private UIEESecurity security;
   public RepsitoryUserTestImpl() {
     users = new ArrayList<IUser>();
     roles = new ArrayList<IRole>();
+    systemRoles = new ArrayList<IRole>();
     security = new UIEESecurity();
     List<IUIRole> rroles;
     List<IUIUser> rusers;
@@ -40,14 +46,15 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSu
     IRole devmgrRole =  new AbsRoleInfo("devmgr","Development Manager");
     IRole isRole =  new AbsRoleInfo("is","Information Services");
     roles.add(adminRole);
-    roles.add(anonymousRole);
-    roles.add(authenticatedRole);
     roles.add(ceoRole);
     roles.add(ctoRole);
     roles.add(devRole);
     roles.add(devmgrRole);
     roles.add(isRole);
     
+    systemRoles.add(anonymousRole);
+    systemRoles.add(authenticatedRole);
+
     joeUser = new EEUserInfo("joe", "password", "joe","joe", true);
     patUser = new EEUserInfo("pat", "password", "pat","pat", true);
     suzyUser = new EEUserInfo("suzy", "password", "suzy","suzy", true);
@@ -59,14 +66,14 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSu
 
     suzyUser.addRole(roles.get(2));
     suzyUser.addRole(roles.get(4));
-    suzyUser.addRole(roles.get(7));
+    suzyUser.addRole(roles.get(1));
 
     patUser.addRole(roles.get(2));
-    patUser.addRole(roles.get(5));
+    patUser.addRole(roles.get(4));
 
+    tiffanyUser.addRole(roles.get(1));
     tiffanyUser.addRole(roles.get(2));
-    tiffanyUser.addRole(roles.get(5));
-    tiffanyUser.addRole(roles.get(6));
+    tiffanyUser.addRole(roles.get(4));
     
     adminRole.addUser(joeUser);
     adminRole.addUser(patUser);
@@ -94,7 +101,7 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSu
     users.add(tiffanyUser);
     rroles = new ArrayList<IUIRole>();
     for(IRole roleInfo:roles) {
-      IUIRole role = new UIRepositoryRole(roleInfo);
+      IUIAbsRole role = new UIAbsRepositoryRole(roleInfo);
       rroles.add(role);
     }
     rusers = new ArrayList<IUIUser>();
@@ -105,8 +112,8 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSu
     security.setRoleList(rroles);
   }
   public IRole constructRole() throws KettleException {
-    // TODO Auto-generated method stub
-    return null;
+   
+    return new AbsRoleInfo();
   }
 
   public void createRole(IRole arg0) throws KettleException {
@@ -239,6 +246,44 @@ public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSu
   public boolean isManaged() throws KettleException {
     // TODO Auto-generated method stub
     return false;
+  }
+  public Map<String, String> getAllLogicalRoles(String locale) throws KettleException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+  public List<String> getLogicalRoles(String runtimeRole) throws KettleException {
+    for(IRole role:roles) {
+      if(role.getName().equals(runtimeRole)) {
+        return ((AbsRoleInfo) role).getLogicalRoles();
+      }
+    }
+    for(IRole role:systemRoles) {
+      if(role.getName().equals(runtimeRole)) {
+        return ((AbsRoleInfo) role).getLogicalRoles();
+      }
+    }
+    return null;
+  }
+  public void initialize(String locale) throws KettleException {
+    // TODO Auto-generated method stub
+    
+  }
+  public void setLogicalRoles(String rolename, List<String> logicalRoles) throws KettleException {
+    boolean done = false;
+    for(IRole role:roles) {
+      if(role.getName().equals(rolename)) {
+        ((AbsRoleInfo) role).setLogicalRoles(logicalRoles);
+        done = true;
+      }
+    }
+    if(!done) {
+      for(IRole role:systemRoles) {
+        if(role.getName().equals(rolename)) {
+          ((AbsRoleInfo) role).setLogicalRoles(logicalRoles);
+          done = true;
+        }
+      }      
+    }
   }
 
 }

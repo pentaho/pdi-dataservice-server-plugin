@@ -7,6 +7,7 @@ import org.pentaho.di.repository.pur.AbsSecurityManager;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEESecurity;
+import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
 
 public class UIAbsSecurity extends UIEESecurity {
 
@@ -17,11 +18,11 @@ public class UIAbsSecurity extends UIEESecurity {
   public UIAbsSecurity(RepositorySecurityManager rsm) throws Exception {
     super(rsm);
     for (IUIRole systemRole : systemRoleList) {
-      if (rsm instanceof AbsSecurityManager) {
-        AbsSecurityManager asm = (AbsSecurityManager) rsm;
+      if (rsm instanceof IAbsSecurityManager) {
+        IAbsSecurityManager asm = (IAbsSecurityManager) rsm;
         List<String> logicalRoles = asm.getLogicalRoles(systemRole.getName());
-        if (systemRole instanceof UIAbsRepositoryRole) {
-          ((UIAbsRepositoryRole) systemRole).setLogicalRoles(logicalRoles);
+        if (systemRole instanceof IUIAbsRole) {
+          ((IUIAbsRole) systemRole).setLogicalRoles(logicalRoles);
         } else {
           throw new IllegalStateException();
         }
