@@ -76,14 +76,14 @@ public class UIEESecurityUser extends UISecurityUser {
 
   public void setAssignedSelectedRoles(List<Object> assignedSelectedRoles) {
     List<Object> previousVal = new ArrayList<Object>();
-    previousVal.addAll(this.availableSelectedRoles);
+    previousVal.addAll(this.assignedSelectedRoles);
     this.assignedSelectedRoles.clear();
     if(assignedSelectedRoles != null && assignedSelectedRoles.size() > 0) {
       for(Object role:assignedSelectedRoles) {
         this.assignedSelectedRoles.add((IUIRole) role);
       }
     }
-    this.firePropertyChange("assignedSelectedRoles", null, this.assignedSelectedRoles); //$NON-NLS-1$
+    this.firePropertyChange("assignedSelectedRoles", previousVal, this.assignedSelectedRoles); //$NON-NLS-1$
     fireRoleUnassignmentPropertyChange();
   }
 

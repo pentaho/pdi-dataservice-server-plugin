@@ -151,12 +151,16 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter {
   }
 
   public void setSelectedAclList(List<UIRepositoryObjectAcl> list) {
+    if(this.selectedAclList != null && this.selectedAclList.equals(list)) {
+      return;
+    }
+
     List<UIRepositoryObjectAcl> previousVal = new ArrayList<UIRepositoryObjectAcl>();
     previousVal.addAll(selectedAclList);
     selectedAclList.clear();
     if(list != null) {
       selectedAclList.addAll(list);
-      this.firePropertyChange("selectedAclList", null, list); //$NON-NLS-1$
+      this.firePropertyChange("selectedAclList", previousVal, list); //$NON-NLS-1$
     }
     setRemoveEnabled((!isEntriesInheriting() && !isEmpty()));
   }

@@ -9,7 +9,15 @@ import org.pentaho.ui.xul.XulEventSourceAdapter;
 
 public class UIRepositoryObjectAcl extends XulEventSourceAdapter{
 	
-	protected ObjectAce ace;
+	@Override
+  public boolean equals(Object obj) {
+	  if(obj == null) {
+	    return false;
+	  }
+	  UIRepositoryObjectAcl acl = (UIRepositoryObjectAcl) obj;
+    return ace.equals(acl.getAce());
+  }
+  protected ObjectAce ace;
 	
 	public ObjectAce getAce() {
     return ace;

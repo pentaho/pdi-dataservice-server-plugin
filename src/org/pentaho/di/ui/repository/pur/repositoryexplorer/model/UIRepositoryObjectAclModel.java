@@ -1,6 +1,8 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.pentaho.di.repository.ObjectRecipient;
@@ -9,6 +11,8 @@ import org.pentaho.di.repository.pur.model.ObjectAce;
 import org.pentaho.di.repository.pur.model.RepositoryObjectAce;
 import org.pentaho.di.repository.pur.model.RepositoryObjectRecipient;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
+
+import com.sun.xml.ws.policy.privateutil.PolicyUtils.Collections;
 
 public class UIRepositoryObjectAclModel extends XulEventSourceAdapter {
   private List<String> masterAvailableUserList;
@@ -64,6 +68,10 @@ public class UIRepositoryObjectAclModel extends XulEventSourceAdapter {
   }
 
   public void setSelectedAvailableRoles(List<String> selectedAvailableRoles) {
+    if(this.selectedAvailableRoles != null && this.selectedAvailableRoles.equals(selectedAvailableRoles)) {
+      return;
+    }
+    
     List<String> previousVal = new ArrayList<String>();
     previousVal.addAll(this.selectedAvailableRoles);
     this.selectedAvailableRoles.clear();
@@ -83,6 +91,10 @@ public class UIRepositoryObjectAclModel extends XulEventSourceAdapter {
   }
 
   public void setSelectedAvailableUsers(List<String> selectedAvailableUsers) {
+    if(this.selectedAvailableUsers != null && this.selectedAvailableUsers.equals(selectedAvailableUsers)) {
+      return;
+    }
+    
     List<String> previousVal = new ArrayList<String>();
     previousVal.addAll(this.selectedAvailableUsers);
     this.selectedAvailableUsers.clear();
@@ -102,6 +114,10 @@ public class UIRepositoryObjectAclModel extends XulEventSourceAdapter {
   }
 
   public void setSelectedAssignedRoles(List<UIRepositoryObjectAcl> selectedAssignedRoles) {
+    if(this.selectedAssignedRoles != null && this.selectedAssignedRoles.equals(selectedAssignedRoles)) {
+      return;
+    }
+
     List<UIRepositoryObjectAcl> previousVal = new ArrayList<UIRepositoryObjectAcl>();
     previousVal.addAll(this.selectedAssignedRoles);
     this.selectedAssignedRoles.clear();
@@ -117,6 +133,9 @@ public class UIRepositoryObjectAclModel extends XulEventSourceAdapter {
   }
 
   public void setSelectedAssignedUsers(List<UIRepositoryObjectAcl> selectedAssignedUsers) {
+    if(this.selectedAssignedUsers != null && this.selectedAssignedUsers.equals(selectedAssignedUsers)) {
+      return;
+    }
     List<UIRepositoryObjectAcl> previousVal = new ArrayList<UIRepositoryObjectAcl>();
     previousVal.addAll(this.selectedAssignedUsers);
     this.selectedAssignedUsers.clear();

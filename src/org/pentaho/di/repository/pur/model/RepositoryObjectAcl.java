@@ -9,7 +9,25 @@ public class RepositoryObjectAcl implements ObjectAcl{
 
 	private List<ObjectAce> aces = new ArrayList<ObjectAce>();
 
-	private ObjectRecipient owner;
+	@Override
+  public boolean equals(Object obj) {
+	  if(obj != null) {
+  	  RepositoryObjectAcl acl = (RepositoryObjectAcl) obj;
+  	  if(aces != null && owner != null) {
+  	    return aces.equals(acl.getAces()) && owner.equals(acl.getOwner()) && entriesInheriting == acl.isEntriesInheriting();
+  	  } else if(aces == null && acl.getAces() == null) {
+  	    return owner.equals(acl.getOwner()) && entriesInheriting == acl.isEntriesInheriting();
+  	  } else if(owner == null && acl.getOwner() == null) {
+        return aces.equals(acl.getAces()) && entriesInheriting == acl.isEntriesInheriting();
+      } else {
+        return false;
+      }
+	  } else {
+	    return false;
+	  }
+  }
+
+  private ObjectRecipient owner;
 
 	private boolean entriesInheriting = true;
 
