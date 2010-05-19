@@ -1,8 +1,6 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import org.pentaho.di.repository.ObjectRecipient;
@@ -11,8 +9,6 @@ import org.pentaho.di.repository.pur.model.ObjectAce;
 import org.pentaho.di.repository.pur.model.RepositoryObjectAce;
 import org.pentaho.di.repository.pur.model.RepositoryObjectRecipient;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
-
-import com.sun.xml.ws.policy.privateutil.PolicyUtils.Collections;
 
 public class UIRepositoryObjectAclModel extends XulEventSourceAdapter {
   private List<String> masterAvailableUserList;
