@@ -427,7 +427,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
           }          
           
           fileFolderLabel.setValue(BaseMessages.getString(IUIEEUser.class,
-              "PermissionsTab.UserRolePermission", repoObject.getName())); //$NON-NLS-1$
+              "AclTab.UserRolePermission", repoObject.getName())); //$NON-NLS-1$
           bf.setBindingType(Binding.Type.ONE_WAY);
           bf.createBinding(viewAclsModel, "acls", userRoleList, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
         } catch (AccessDeniedException ade) {

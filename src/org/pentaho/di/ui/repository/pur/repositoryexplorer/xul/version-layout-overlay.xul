@@ -29,7 +29,7 @@
 							<tabbox id="file-properties-tabs" flex="1">
 								<tabs>
 									<tab id="history" label="${RepositoryExplorerDialog.Tab.VersionHistory}" />
-									<tab id="permission" label="${RepositoryExplorerDialog.Tab.Permissions}" />
+									<tab id="permission" label="${RepositoryExplorerDialog.Tab.Acl}" />
 								</tabs>
 								<tabpanels flex="1">
 									<tabpanel id="history-tab">
@@ -53,7 +53,7 @@
 									<tabpanel id="acl-tab">
 										<deck id="acl-deck"  flex="1">
 											<vbox id="no-acl-box" flex="1">
-												<label value="${PermissionsTab.NoPermission}"/> 
+												<label value="${AclTab.NoAcl}"/> 
 											</vbox>
 											<vbox id="acl-box" flex="1"/>
 										</deck>
