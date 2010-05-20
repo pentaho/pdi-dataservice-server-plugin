@@ -231,9 +231,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public void connect(String username, String password) throws KettleException, KettleSecurityException {
     try {
-      // if we are connecting in process (determined below) username and password arguments are possibly null here; we
-      // get the username instead from PentahoSessionHolder in connectInProcess; set a user here (to possibly be 
-      // replaced)
+      /*
+      Three scenarios:
+      1. Connect in process: username fetched using PentahoSessionHolder; no authentication occurs
+      2. Connect externally with trust: username specified is assumed authenticated if IP of calling code is trusted
+      3. Connect externally: authentication occurs normally (i.e. password is checked)
+      */
       IUser user1 = new EEUserInfo();
       user1.setLogin(username);
       user1.setPassword(password);

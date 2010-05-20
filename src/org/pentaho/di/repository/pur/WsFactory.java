@@ -2,15 +2,17 @@ package org.pentaho.di.repository.pur;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Service;
+import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.soap.SOAPBinding;
 
-import org.pentaho.di.repository.pur.PurRepositoryMeta;
+import org.apache.commons.lang.StringUtils;
 
 import com.sun.xml.ws.developer.JAXWSProperties;
 
@@ -21,6 +23,12 @@ import com.sun.xml.ws.developer.JAXWSProperties;
  * @author mlowery
  */
 public class WsFactory {
+
+  /**
+   * Header name must match that specified in ProxyTrustingFilter. Note that an header has the following form: initial
+   * capital letter followed by all lowercase letters.
+   */
+  private static final String TRUST_USER = "_trust_user_"; //$NON-NLS-1$
 
   private static final String NAMESPACE_URI = "http://www.pentaho.org/ws/1.0"; //$NON-NLS-1$
 
@@ -47,9 +55,15 @@ public class WsFactory {
     } else {
       Service service = Service.create(url, new QName(NAMESPACE_URI, serviceName));
       T port = service.getPort(clazz);
-      // http basic authentication
-      ((BindingProvider) port).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, username);
-      ((BindingProvider) port).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, password);
+      // add TRUST_USER if necessary
+      if (StringUtils.isNotBlank(System.getProperty("pentaho.repository.client.attemptTrust"))) {
+        ((BindingProvider) port).getRequestContext().put(MessageContext.HTTP_REQUEST_HEADERS,
+            Collections.singletonMap(TRUST_USER, Collections.singletonList(username)));
+      } else {
+        // http basic authentication
+        ((BindingProvider) port).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, username);
+        ((BindingProvider) port).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, password);
+      }
       // accept cookies to maintain session on server
       ((BindingProvider) port).getRequestContext().put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
       // support streaming binary data
