@@ -340,6 +340,13 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
                 // convert to runtime exception so it bubbles up through the UI
                 throw new RuntimeException(e);
               }
+            } else {
+
+              XulMenuitem lockMenuItem = (XulMenuitem) document.getElementById("lock-context-lock"); //$NON-NLS-1$
+              lockMenuItem.setSelected(false);
+              lockMenuItem = (XulMenuitem) document.getElementById("file-context-lock"); //$NON-NLS-1$
+              lockMenuItem.setSelected(false);
+              
             }
           }
 
