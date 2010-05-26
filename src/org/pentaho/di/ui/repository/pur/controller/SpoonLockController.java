@@ -279,7 +279,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
         setLockingAllowed(true);
       }
 
-      firePropertyChange("activeMetaUnlocked", null, repoLock != null ? "false" : "true"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      firePropertyChange("activeMetaUnlocked", null, repoLock == null ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     } catch (Exception e) {
       log.error(messages.getString("LockController.NoLockingSupport"), e);//$NON-NLS-1$
       new ErrorDialog(((Spoon) SpoonFactory.getInstance()).getShell(), BaseMessages.getString(PurRepositoryDialog.class,
