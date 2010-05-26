@@ -31,13 +31,15 @@ public class SpoonEETransformationDelegate extends SpoonTransformationDelegate{
   public void addTransGraph(TransMeta transMeta) {
     super.addTransGraph(transMeta);
     TabMapEntry tabEntry = spoon.delegates.tabs.findTabMapEntry(transMeta);
-    TabItem tabItem = tabEntry.getTabItem();
-    try {
-      if((service != null) && (transMeta.getObjectId() != null) && (service.getTransformationLock(transMeta.getObjectId()) != null)) {
-        tabItem.setImage(GUIResource.getInstance().getImageLocked());
+    if(tabEntry != null) {
+      TabItem tabItem = tabEntry.getTabItem();
+      try {
+        if((service != null) && (transMeta.getObjectId() != null) && (service.getTransformationLock(transMeta.getObjectId()) != null)) {
+          tabItem.setImage(GUIResource.getInstance().getImageLocked());
+        }
+      } catch(Exception e) {
+        throw new RuntimeException(e);
       }
-    } catch(Exception e) {
-      throw new RuntimeException(e);
     }
   }
 

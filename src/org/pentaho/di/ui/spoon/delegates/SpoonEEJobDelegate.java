@@ -29,13 +29,15 @@ public class SpoonEEJobDelegate extends SpoonJobDelegate{
   public void addJobGraph(JobMeta jobMeta) {
     super.addJobGraph(jobMeta);
     TabMapEntry tabEntry = spoon.delegates.tabs.findTabMapEntry(jobMeta);
-    TabItem tabItem = tabEntry.getTabItem();
-    try {
-      if((service != null) && (jobMeta.getObjectId() != null) && (service.getJobLock(jobMeta.getObjectId()) != null)) {
-        tabItem.setImage(GUIResource.getInstance().getImageLocked());
+    if(tabEntry != null) {
+      TabItem tabItem = tabEntry.getTabItem();
+      try {
+        if((service != null) && (jobMeta.getObjectId() != null) && (service.getJobLock(jobMeta.getObjectId()) != null)) {
+          tabItem.setImage(GUIResource.getInstance().getImageLocked());
+        }
+      } catch(Exception e) {
+        throw new RuntimeException(e);
       }
-    } catch(Exception e) {
-      throw new RuntimeException(e);
     }
   }
 
