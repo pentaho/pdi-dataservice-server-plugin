@@ -301,7 +301,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
     return isLockingAllowed;
   }
 
-  public boolean isLockingNotAllowedAsString() {
+  public boolean isLockingNotAllowed() {
     return !isLockingAllowed;
   }
 
