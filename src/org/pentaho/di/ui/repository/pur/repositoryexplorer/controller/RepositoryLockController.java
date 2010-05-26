@@ -270,10 +270,10 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
   };
 
   // This needs to exist until we have better method override support in the DefaultBinding
-  private BindingConvertor<List<UIRepositoryObject>, String> checkLockedStateString = new BindingConvertor<List<UIRepositoryObject>, String>() {
+  private BindingConvertor<List<UIRepositoryObject>, Boolean> checkLockedState = new BindingConvertor<List<UIRepositoryObject>, Boolean>() {
 
     @Override
-    public String sourceToTarget(List<UIRepositoryObject> value) {
+    public Boolean sourceToTarget(List<UIRepositoryObject> value) {
       boolean result = false;
 
       try {
@@ -286,11 +286,11 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
         throw new RuntimeException(e);
       }
 
-      return Boolean.toString(result);
+      return result;
     }
 
     @Override
-    public List<UIRepositoryObject> targetToSource(String value) {
+    public List<UIRepositoryObject> targetToSource(Boolean value) {
       return null;
     }
   };
@@ -302,14 +302,14 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
     bindingFactory.createBinding(browseController, "repositoryObjects", "lock-menu", "!disabled", forButtons); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
     bindingFactory.createBinding(browseController,
-        "repositoryObjects", "file-context-lock", "selected", checkLockedStateString); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        "repositoryObjects", "file-context-lock", "selected", checkLockedState); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     bindingFactory.createBinding(browseController,
         "repositoryObjects", this, "menuItemEnabledState"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     bindingFactory.createBinding(browseController,
         "repositoryObjects", "file-context-locknotes", "!disabled", checkLockedStateBool); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
     bindingFactory.createBinding(browseController,
-        "repositoryObjects", "lock-context-lock", "selected", checkLockedStateString); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        "repositoryObjects", "lock-context-lock", "selected", checkLockedState); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     bindingFactory.createBinding(browseController,
         "repositoryObjects", "lock-context-lock", "!disabled", checkLockPermissions); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     bindingFactory.createBinding(browseController,
