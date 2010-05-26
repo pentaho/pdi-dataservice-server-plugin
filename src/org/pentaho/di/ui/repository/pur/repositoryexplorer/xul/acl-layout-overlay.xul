@@ -39,7 +39,7 @@
 		</hbox>
 	</vbox>
  
-	<window id="repository-explorer-window"> 
+	<dialog id="repository-explorer-dialog"> 
 		<!--  ###############################################################################   -->
 	    <!--     MANAGE ACLS DIALOG: Dialog to manage acls                                      -->
 	    <!--  ###############################################################################   -->    
@@ -107,6 +107,6 @@
 	           <radio id="apply-recursive-radio-button" label="${ApplyAclConfirmationDialog.ApplyRecursive}" command="permissionsController.setApplyRecursive()" />
 	        </vbox>
 	    </dialog>
-  </window>  
+  </dialog>  
 </overlay>
 										

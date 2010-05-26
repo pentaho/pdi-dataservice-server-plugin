@@ -141,7 +141,7 @@
     <!--     Adding the add role dialog to the main xul container                           -->
     <!--  ###############################################################################   -->    
    
-   <window id="repository-explorer-window">
+   	<dialog id="repository-explorer-dialog"> 
 	  <!--  ###############################################################################   -->
 	  <!--     ADD ROLE DIALOG: Dialog to add/edit/manage role                                -->
 	  <!--  ###############################################################################   -->    
@@ -200,6 +200,6 @@
 		</vbox>
 	</vbox>	
 	
-   </window>
+   </dialog>
 </overlay>
 
