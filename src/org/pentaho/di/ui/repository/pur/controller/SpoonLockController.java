@@ -222,12 +222,12 @@ public class SpoonLockController extends AbstractXulEventHandler {
     init();
   }
 
-  public String isActiveMetaUnlocked() {
+  public boolean isActiveMetaUnlocked() {
     try {
       if (fetchRepositoryLock(workingMeta) != null) {
-        return Boolean.toString(false);
+        return false;
       } else {
-        return Boolean.toString(true);
+        return true;
       }
     } catch (KettleException e) {
       throw new RuntimeException(e);
@@ -253,7 +253,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
       bindingFactory.setBindingType(Type.ONE_WAY);
 
       bindingFactory.createBinding(this, "activeMetaUnlocked", "lock-context-locknotes", "disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-      bindingFactory.createBinding(this, "lockingNotAllowedAsString", "lock-context-lock", "disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      bindingFactory.createBinding(this, "lockingNotAllowed", "lock-context-lock", "disabled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
       // Get trans* object to gain access to the *Meta object to determine if we are initially locked or not
       // Try transformation
@@ -301,13 +301,13 @@ public class SpoonLockController extends AbstractXulEventHandler {
     return isLockingAllowed;
   }
 
-  public String isLockingNotAllowedAsString() {
-    return Boolean.toString(!isLockingAllowed);
+  public boolean isLockingNotAllowedAsString() {
+    return !isLockingAllowed;
   }
 
   public void setLockingAllowed(boolean isLockingAllowed) {
     this.isLockingAllowed = isLockingAllowed;
-    this.firePropertyChange("lockingNotAllowedAsString", null, Boolean.toString(!isLockingAllowed)); //$NON-NLS-1$
+    this.firePropertyChange("lockingNotAllowed", null, !isLockingAllowed); //$NON-NLS-1$
   }
 
   private boolean allowedActionsContains(IAbsSecurityProvider service, String action) throws KettleException {
