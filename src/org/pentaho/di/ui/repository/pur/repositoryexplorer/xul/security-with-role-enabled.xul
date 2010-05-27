@@ -187,19 +187,21 @@
 	       </groupbox>
 	  </dialog>
 	     
+   </dialog>
+   
 	<!--  ###############################################################################   -->
     <!--     vbox for Non Managed Role Setup                                                            -->
     <!--  ###############################################################################   -->    
 
-	<vbox id="role-vbox-nonmanaged" flex="1">
-		<hbox>
-			<label id="spacer-label"/>
-		</hbox>			    
-		<vbox>
-			<label multiline="true" id="instructional-text-label" value="${SecurityTab.SystemRoleInstructionalText}"/>
-		</vbox>
-	</vbox>	
-	
-   </dialog>
+   <window id="repository-explorer-window">
+		<vbox id="role-vbox-nonmanaged" flex="1">
+			<hbox>
+				<label id="spacer-label"/>
+			</hbox>			    
+			<vbox>
+				<label multiline="true" id="instructional-text-label" value="${SecurityTab.SystemRoleInstructionalText}"/>
+			</vbox>
+		</vbox>	
+	</window>
 </overlay>
 
