@@ -17,7 +17,6 @@ import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationE
 import org.pentaho.di.ui.repository.repositoryexplorer.IUISupportController;
 import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorerCallback;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
-import org.pentaho.di.ui.repository.repositoryexplorer.controllers.IBrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.MainController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
@@ -111,7 +110,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
 
     revisionBinding = bf.createBinding(this, "revisionObjects", revisionTable, "elements");//$NON-NLS-1$ //$NON-NLS-2$
         
-    revisionBinding = bf.createBinding(browseController, "repositoryObjects",  this, "revisionObjects",//$NON-NLS-1$ //$NON-NLS-2$
+    revisionBinding = bf.createBinding(browseController, "repositoryItems",  this, "revisionObjects",//$NON-NLS-1$ //$NON-NLS-2$
         new BindingConvertor<List<UIRepositoryObject>, UIRepositoryObjectRevisions>() {
           @Override
           public UIRepositoryObjectRevisions sourceToTarget(List<UIRepositoryObject> ro) {
