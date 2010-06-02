@@ -358,7 +358,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     try {
       
       RepositoryDirectoryInterface refreshedParentDir = loadRepositoryDirectoryTree().findDirectory(parentDirectory.getPath());
-      
+			// update the passed in repository directory with the children recently loaded from the repo
+      parentDirectory.setChildren(refreshedParentDir.getChildren());
       String[] path = Const.splitPath(directoryPath, RepositoryDirectory.DIRECTORY_SEPARATOR);
 
       RepositoryDirectoryInterface follow = refreshedParentDir;
@@ -372,6 +373,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
           if (dscContent.getHolder() != null) {
             saveRepositoryDirectory(child);
+            // link this with the parent directory
+            follow.addSubdirectory(child);
           }
         }
 
