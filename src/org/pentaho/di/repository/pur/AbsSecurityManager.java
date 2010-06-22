@@ -9,16 +9,12 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryMeta;
-import org.pentaho.di.repository.pur.PurRepository;
-import org.pentaho.di.repository.pur.PurRepositoryMeta;
-import org.pentaho.di.repository.pur.PurRepositorySecurityManager;
 import org.pentaho.di.repository.pur.model.AbsRoleInfo;
 import org.pentaho.di.repository.pur.model.IAbsRole;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
-
-import com.pentaho.security.policy.rolebased.RoleBindingStruct;
-import com.pentaho.security.policy.rolebased.ws.IRoleAuthorizationPolicyRoleBindingDaoWebService;
+import org.pentaho.platform.security.policy.rolebased.RoleBindingStruct;
+import org.pentaho.platform.security.policy.rolebased.ws.IRoleAuthorizationPolicyRoleBindingDaoWebService;
 
 public class AbsSecurityManager extends PurRepositorySecurityManager implements IAbsSecurityManager {
 

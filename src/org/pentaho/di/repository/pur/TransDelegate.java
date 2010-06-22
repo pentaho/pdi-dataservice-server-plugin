@@ -28,9 +28,8 @@ import org.pentaho.di.trans.step.StepErrorMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.step.StepPartitioningMeta;
-
-import com.pentaho.repository.pur.data.node.DataNode;
-import com.pentaho.repository.pur.data.node.DataNodeRef;
+import org.pentaho.platform.repository2.unified.data.node.DataNode;
+import org.pentaho.platform.repository2.unified.data.node.DataNodeRef;
 
 public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer {
 

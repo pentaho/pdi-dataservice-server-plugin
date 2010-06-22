@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -16,21 +15,19 @@ import org.junit.runner.RunWith;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.plugins.JobEntryPluginType;
 import org.pentaho.di.core.plugins.StepPluginType;
-import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.UserInfo;
-import org.pentaho.di.repository.pur.model.EEUserInfo;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
-import org.pentaho.platform.api.repository.IBackingRepositoryLifecycleManager;
-import org.pentaho.platform.api.repository.IUnifiedRepository;
-import org.pentaho.platform.api.repository.RepositoryFile;
+import org.pentaho.platform.api.repository2.unified.IBackingRepositoryLifecycleManager;
+import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
+import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.StandaloneSession;
 import org.pentaho.platform.engine.security.SecurityHelper;
+import org.pentaho.platform.security.policy.rolebased.IRoleAuthorizationPolicyRoleBindingDao;
 import org.pentaho.test.platform.engine.core.MicroPlatform;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -47,7 +44,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
-import com.pentaho.security.policy.rolebased.IRoleAuthorizationPolicyRoleBindingDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/repository.spring.xml",

@@ -6,12 +6,12 @@ import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.platform.repository2.unified.data.node.DataNode;
+import org.pentaho.platform.repository2.unified.data.node.DataProperty;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
-import com.pentaho.repository.pur.data.node.DataNode;
-import com.pentaho.repository.pur.data.node.DataProperty;
 
 public class PartitionDelegate extends AbstractDelegate implements ITransformer {
 

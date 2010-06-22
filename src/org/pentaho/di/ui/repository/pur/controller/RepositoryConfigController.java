@@ -18,6 +18,7 @@ import org.pentaho.di.ui.repository.pur.IRepositoryConfigDialogCallback;
 import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.pur.model.RepositoryConfigModel;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
+import org.pentaho.platform.repository2.unified.ws.IUnifiedRepositoryWebService;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.binding.Binding.Type;
@@ -27,8 +28,6 @@ import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
-
-import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
 
 public class RepositoryConfigController extends AbstractXulEventHandler{
  

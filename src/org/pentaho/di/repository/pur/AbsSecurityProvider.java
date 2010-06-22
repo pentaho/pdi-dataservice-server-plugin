@@ -5,12 +5,8 @@ import java.util.List;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IUser;
-import org.pentaho.di.repository.pur.PurRepository;
-import org.pentaho.di.repository.pur.PurRepositoryMeta;
-import org.pentaho.di.repository.pur.PurRepositorySecurityProvider;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
-
-import com.pentaho.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
+import org.pentaho.platform.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 
 public class AbsSecurityProvider extends PurRepositorySecurityProvider implements IAbsSecurityProvider{
   private IAuthorizationPolicyWebService authorizationPolicyWebService = null;

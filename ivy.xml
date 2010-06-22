@@ -20,6 +20,8 @@
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-ee" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
+    <dependency org="pentaho" name="pentaho-bi-platform-repository" rev="${dependency.bi-platform.revision}"
+      changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-engine-security" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-security-userroledao" rev="${dependency.bi-platform.revision}"
@@ -66,8 +68,6 @@
     <dependency org="org.springframework" name="spring-test" rev="2.5.6" conf="test->default" />
     <dependency org="org.springframework" name="spring" rev="2.5.6" transitive="false" conf="test->default" />
     <dependency org="org.springframework" name="se-jcr" rev="0.9" transitive="false" conf="test->default" />
-    <dependency org="pentaho" name="pentaho-third-party-security" rev="TRUNK-SNAPSHOT" conf="test->default"
-      changing="true" transitive="false" />
     <dependency org="com.google.collections" name="google-collections" rev="1.0-rc5" conf="test->default" />
     <dependency org="pentaho" name="pentaho-bi-platform-engine-security" rev="TRUNK-SNAPSHOT" changing="true"
       conf="test->default" />

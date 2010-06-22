@@ -67,25 +67,25 @@ import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.pur.services.ITrashService;
-import org.pentaho.platform.api.repository.IUnifiedRepository;
-import org.pentaho.platform.api.repository.RepositoryFile;
-import org.pentaho.platform.api.repository.RepositoryFileAce;
-import org.pentaho.platform.api.repository.RepositoryFileAcl;
-import org.pentaho.platform.api.repository.RepositoryFilePermission;
-import org.pentaho.platform.api.repository.RepositoryFileSid;
-import org.pentaho.platform.api.repository.VersionSummary;
+import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
+import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.repository2.unified.RepositoryFileAce;
+import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
+import org.pentaho.platform.api.repository2.unified.RepositoryFileSid;
+import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.repository2.ClientRepositoryPaths;
+import org.pentaho.platform.repository2.unified.data.node.NodeRepositoryFileData;
+import org.pentaho.platform.repository2.unified.ws.IUnifiedRepositoryWebService;
+import org.pentaho.platform.repository2.unified.ws.UnifiedRepositoryToWebServiceAdapter;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
 import com.pentaho.pdi.ws.IRepositorySyncWebService;
 import com.pentaho.pdi.ws.RepositorySyncException;
-import com.pentaho.repository.ClientRepositoryPaths;
-import com.pentaho.repository.pur.data.node.NodeRepositoryFileData;
-import com.pentaho.repository.pur.ws.IUnifiedRepositoryWebService;
-import com.pentaho.repository.pur.ws.UnifiedRepositoryToWebServiceAdapter;
 
 /**
  * Implementation of {@link Repository} that delegates to the Pentaho unified repository (PUR), an instance of
