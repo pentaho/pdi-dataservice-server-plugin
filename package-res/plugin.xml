@@ -18,6 +18,7 @@
     <library name="lib/pentaho-bi-platform-api-@dependency.bi-platform.revision@.jar" />
     <library name="lib/pentaho-bi-platform-engine-core-@dependency.bi-platform.revision@.jar" />
     <library name="lib/pentaho-bi-platform-ee-@dependency.bi-platform.revision@.jar" />
+    <library name="lib/pentaho-bi-platform-repository-@dependency.bi-platform.revision@.jar" />
     <library name="lib/pentaho-bi-platform-util-@dependency.bi-platform.revision@.jar" />
     <library name="lib/pentaho-bi-platform-engine-security-@dependency.bi-platform.revision@.jar" />
     <library name="lib/pentaho-bi-platform-security-userroledao-@dependency.bi-platform.revision@.jar" />
