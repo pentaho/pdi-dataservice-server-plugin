@@ -18,7 +18,7 @@ import org.pentaho.di.ui.repository.pur.IRepositoryConfigDialogCallback;
 import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.pur.model.RepositoryConfigModel;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
-import org.pentaho.platform.repository2.unified.ws.IUnifiedRepositoryWebService;
+import org.pentaho.platform.repository2.unified.webservices.jaxws.IUnifiedRepositoryJaxwsWebService;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.binding.Binding.Type;
@@ -109,7 +109,7 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
     try {
       service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", "unifiedRepository")); //$NON-NLS-1$ //$NON-NLS-2$
       if(service != null) {
-        IUnifiedRepositoryWebService repoWebService = service.getPort(IUnifiedRepositoryWebService.class);
+        IUnifiedRepositoryJaxwsWebService repoWebService = service.getPort(IUnifiedRepositoryJaxwsWebService.class);
         if(repoWebService != null) {
           messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
           messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$

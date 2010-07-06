@@ -5,7 +5,7 @@ import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
-import org.pentaho.platform.repository2.unified.data.node.DataNode;
+import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;

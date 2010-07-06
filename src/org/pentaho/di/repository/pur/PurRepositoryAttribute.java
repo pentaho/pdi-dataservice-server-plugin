@@ -7,8 +7,8 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoryAttributeInterface;
 import org.pentaho.di.repository.StringObjectId;
-import org.pentaho.platform.repository2.unified.data.node.DataNode;
-import org.pentaho.platform.repository2.unified.data.node.DataProperty;
+import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
+import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 
 public class PurRepositoryAttribute implements RepositoryAttributeInterface {
 

@@ -74,12 +74,12 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileSid;
 import org.pentaho.platform.api.repository2.unified.VersionSummary;
+import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.repository2.ClientRepositoryPaths;
-import org.pentaho.platform.repository2.unified.data.node.NodeRepositoryFileData;
-import org.pentaho.platform.repository2.unified.ws.IUnifiedRepositoryWebService;
-import org.pentaho.platform.repository2.unified.ws.UnifiedRepositoryToWebServiceAdapter;
+import org.pentaho.platform.repository2.unified.webservices.UnifiedRepositoryToWebServiceAdapter;
+import org.pentaho.platform.repository2.unified.webservices.jaxws.IUnifiedRepositoryJaxwsWebService;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
@@ -273,8 +273,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           connectMessage = e.getMessage();
         }
         
-        IUnifiedRepositoryWebService repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
-            username, password, IUnifiedRepositoryWebService.class);
+        IUnifiedRepositoryJaxwsWebService repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
+            username, password, IUnifiedRepositoryJaxwsWebService.class);
 
         pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
 

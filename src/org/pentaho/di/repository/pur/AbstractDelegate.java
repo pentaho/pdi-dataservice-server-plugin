@@ -4,7 +4,7 @@ import java.util.Date;
 
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.platform.repository2.unified.data.node.DataNode;
+import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 
 public abstract class AbstractDelegate {
 

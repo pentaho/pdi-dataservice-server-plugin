@@ -25,8 +25,8 @@ import org.pentaho.di.repository.RepositoryAttributeInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjects;
-import org.pentaho.platform.repository2.unified.data.node.DataNode;
-import org.pentaho.platform.repository2.unified.data.node.DataNodeRef;
+import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
+import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
