@@ -78,8 +78,8 @@ import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFile
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.repository2.ClientRepositoryPaths;
-import org.pentaho.platform.repository2.unified.webservices.UnifiedRepositoryToWebServiceAdapter;
 import org.pentaho.platform.repository2.unified.webservices.jaxws.IUnifiedRepositoryJaxwsWebService;
+import org.pentaho.platform.repository2.unified.webservices.jaxws.UnifiedRepositoryToWebServiceAdapter;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
@@ -358,7 +358,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     try {
       
       RepositoryDirectoryInterface refreshedParentDir = loadRepositoryDirectoryTree().findDirectory(parentDirectory.getPath());
-			// update the passed in repository directory with the children recently loaded from the repo
+      // update the passed in repository directory with the children recently loaded from the repo
       parentDirectory.setChildren(refreshedParentDir.getChildren());
       String[] path = Const.splitPath(directoryPath, RepositoryDirectory.DIRECTORY_SEPARATOR);
 
