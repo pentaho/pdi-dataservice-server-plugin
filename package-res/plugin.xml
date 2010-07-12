@@ -23,6 +23,7 @@
     <library name="lib/pentaho-bi-platform-engine-security-@dependency.bi-platform.revision@.jar" />
     <library name="lib/pentaho-bi-platform-security-userroledao-@dependency.bi-platform.revision@.jar" />
     <library name="lib/pentaho-ee-dsc-core-@dependency.pentaho-ee-dsc.revision@.jar" />
+    <library name="lib/gwt-servlet-2.0.3.jar" />
   </libraries>
 
   <!-- PART BELOW IS NO USED YET -->
