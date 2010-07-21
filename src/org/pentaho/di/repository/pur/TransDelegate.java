@@ -268,7 +268,17 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
       stepMeta.getStepPartitioningMeta().setPartitionSchemaAfterLoading(transMeta.getPartitionSchemas());
       // Get the cluster schema name
-      stepMeta.setClusterSchemaName(getString(stepNode, PROP_CLUSTER_SCHEMA));
+      String clusterSchemaName = getString(stepNode, PROP_CLUSTER_SCHEMA);
+      stepMeta.setClusterSchemaName(clusterSchemaName);
+      if(clusterSchemaName != null && transMeta.getClusterSchemas() != null) {
+    	  // Get the cluster schema from the given name
+    	  for(ClusterSchema clusterSchema : transMeta.getClusterSchemas()) {
+    		  if(clusterSchema.getName().equals(clusterSchemaName)) {
+    			  stepMeta.setClusterSchema(clusterSchema);
+    			  break;
+    		  }
+    	  }
+      }
 
       transMeta.addStep(stepMeta);
 
