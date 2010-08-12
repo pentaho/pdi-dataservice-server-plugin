@@ -297,8 +297,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
             PROP_STEP_ERROR_HANDLING_TARGET_STEP).getString()));
         meta.setEnabled(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_IS_ENABLED).getBoolean());
         meta.setNrErrorsValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_NR_VALUENAME));
-        meta.setErrorDescriptionsValuename(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_DESCRIPTIONS_VALUENAME)
-            .getString());
+        meta.setErrorDescriptionsValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_DESCRIPTIONS_VALUENAME));
         meta.setErrorFieldsValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_FIELDS_VALUENAME));
         meta.setErrorCodesValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_CODES_VALUENAME));
         meta.setMaxErrors(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_MAX_ERRORS).getLong());
