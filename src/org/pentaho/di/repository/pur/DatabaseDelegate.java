@@ -62,7 +62,7 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
 
     // Then the basic db information
     //
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
 
     rootNode.setProperty(PROP_TYPE, databaseMeta.getPluginId());
     rootNode.setProperty(PROP_CONTYPE, DatabaseMeta.getAccessTypeDesc(databaseMeta.getAccessType()));
@@ -104,7 +104,7 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
   }
   
   public void dataNodeToElement(final DataNode rootNode, final RepositoryElementInterface element) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
 
     DatabaseMeta databaseMeta = (DatabaseMeta) element;
     if (dscContent.getHolder() != null) {

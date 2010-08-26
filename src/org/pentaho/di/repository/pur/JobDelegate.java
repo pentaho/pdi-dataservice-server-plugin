@@ -156,7 +156,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   public void saveSharedObjects(final RepositoryElementInterface element, final String versionComment)
       throws KettleException {
     JobMeta jobMeta = (JobMeta) element;
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     // Now store the databases in the job.
     // Only store if the database has actually changed or doesn't have an object ID (imported)
     //
@@ -192,7 +192,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   public void dataNodeToElement(final DataNode rootNode, final RepositoryElementInterface element)
       throws KettleException {
 
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     if (dscContent.getHolder() == null) {
       return;
     }
@@ -379,7 +379,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   }
 
   public DataNode elementToDataNode(final RepositoryElementInterface element) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     JobMeta jobMeta = (JobMeta) element;
     DataNode rootNode = new DataNode(NODE_JOB);
 

@@ -34,7 +34,7 @@ public class PluginLicenseVerifier {
 
   public static void verify() {
     try {
-      PentahoLicenseVerifier.verify(new KParam());
+      PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     } catch (PentahoLicenseException ple) {
       ple.printStackTrace();
       

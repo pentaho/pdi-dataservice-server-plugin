@@ -44,7 +44,7 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
   }
 
   public void dataNodeToElement(DataNode rootNode, RepositoryElementInterface element) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
 
     PartitionSchema partitionSchema = (PartitionSchema) element;
     
@@ -68,7 +68,7 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
     PartitionSchema partitionSchema = (PartitionSchema) element;
     DataNode rootNode = new DataNode(NODE_ROOT);
 
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
 
     // Check for naming collision
     ObjectId partitionId = repo.getPartitionSchemaID(partitionSchema.getName());

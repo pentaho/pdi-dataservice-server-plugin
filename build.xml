@@ -1,5 +1,8 @@
 <project name="PUR Repository Plugin" basedir="." default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
 
+  <property name="subfloor-ee.parent.file" value="subfloor-pkg.xml" />
+  
+  <import file="build-res/subfloor-ee.xml" />
   <!-- Import the subfloor-pkg.xml file which contains all the default tasks -->
   <import file="build-res/subfloor-pkg.xml" />
   <property name="bi-platform-ee-assembly.dir" value="../bi-platform-ee-assembly"/>
@@ -8,38 +11,6 @@
     <unzip src="${dist.dir}/${package.basename}.zip" dest="${kettle.plugin.dir}" overwrite="true">
     </unzip>
   </target>
-
-  <!-- 
-  subfloor overrides 
-  -->
-  <path id="classpath">
-    <fileset dir="${devlib.dir}">
-      <include name="*.jar" />
-    </fileset>
-    <fileset dir="${lib.dir}">
-      <include name="*.jar" />
-    </fileset>
-    <!--
-    <fileset dir="../Kettle/lib">
-      <include name="*.jar" />
-    </fileset>
-    -->
-  </path>
-
-  <!-- Override to put mock license JAR first -->
-  <path id="test.classpath">
-    <dirset dir="${testclasses.dir}" />
-    <dirset dir="${classes.dir}" />
-    <fileset dir="${devlib.dir}">
-      <include name="*.jar" />
-    </fileset>
-    <fileset dir="${testlib.dir}">
-      <include name="*.jar" />
-    </fileset>
-    <fileset dir="${lib.dir}">
-      <include name="*.jar" />
-    </fileset>
-  </path>
 
   <!-- Override assemble to build plugin.xml afterwards -->
   <target name="assemble" depends="subfloor-pkg.assemble, update-plugin-xml" />

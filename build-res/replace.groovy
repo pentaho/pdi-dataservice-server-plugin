@@ -1,0 +1,1 @@
+properties['project.revision.obf'] = com.pentaho.commons.dsc.tlsup.util.ObfuscatedString.obfuscate("${properties['project.revision']}")

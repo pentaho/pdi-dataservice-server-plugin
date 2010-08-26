@@ -370,7 +370,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           // create this one
           //
           child = new RepositoryDirectory(follow, path[level]);
-          PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+          PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
           if (dscContent.getHolder() != null) {
             saveRepositoryDirectory(child);
             // link this with the parent directory
@@ -388,7 +388,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public void saveRepositoryDirectory(final RepositoryDirectoryInterface dir) throws KettleException {
     try {
-      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
       if (dscContent.getSubject() != null) {
         // id of root dir is null--check for it
         RepositoryFile newFolder = pur.createFolder(dir.getParent().getObjectId() != null ? dir.getParent()
@@ -1474,7 +1474,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public void save(final RepositoryElementInterface element, final String versionComment,
       final ProgressMonitorListener monitor) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     if (dscContent.getSubject() == null) {
       return;
     }

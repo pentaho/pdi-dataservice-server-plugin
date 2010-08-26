@@ -1,0 +1,85 @@
+<project name="subfloor-ee" basedir="." default="default">
+  
+  <!-- This property is here to make Eclipse happy. File that imports this file should set the property. -->
+  <property name="subfloor-ee.parent.file" value="subfloor.xml" />
+  
+  <import file="${subfloor-ee.parent.file}" />
+
+  <property name="prepared.src.dir" value="${bin.dir}/prepared-src" description="Modified source" />
+  <property name="groovy.url" value="http://dist.groovy.codehaus.org/distributions/groovy-binary-1.7.4.zip" 
+    description="URL to download Groovy Ant task." />
+  
+  <!--=======================================================================
+      compile.compile
+      
+      Override.
+      ====================================================================-->
+  <target name="compile.compile" depends="init,compile.pre.src_copy,compile.pre.src_prepare">
+    <javac destdir="${classes.dir}" debug="${javac.debug}" deprecation="${javac.deprecation}" fork="true"
+      source="${javac.source}" target="${javac.target}">
+      <classpath>
+        <path refid="classpath" />
+      </classpath>
+      <src path="${prepared.src.dir}" />
+    </javac>
+  </target>
+
+  <!--=======================================================================
+      install.groovy
+      
+      Installs Groovy Ant task.
+      ====================================================================-->
+  <target name="install.groovy" depends="install-antcontrib">
+    <download-antlib name="groovy" url="${groovy.url}" classname="org.codehaus.groovy.ant.Groovy" extension="zip" />
+    <taskdef resource="org/codehaus/groovy/antlib.xml">
+      <classpath>
+        <fileset dir="${build.cache.dir}/groovy">
+          <include name="**/*.jar" />
+        </fileset>
+      </classpath>
+    </taskdef>
+  </target>
+
+  <!--=======================================================================
+      compile.pre.src_copy
+      
+      Copies source to temp folder so that it can be modified before 
+      compilation.
+      ====================================================================-->
+  <target name="compile.pre.src_copy">
+    <delete dir="${prepared.src.dir}" />
+    <mkdir dir="${prepared.src.dir}" />
+    <copy todir="${prepared.src.dir}" flatten="false">
+      <fileset dir="${src.dir}" />
+    </copy>
+  </target>
+  
+  <!--=======================================================================
+      compile.pre.src_prepare
+      
+      Modifies source before compilation.
+      ====================================================================-->
+  <target name="compile.pre.src_prepare" depends="install.groovy">
+    <!-- sets a property called project.revision.obf -->
+    <groovy src="build-res/replace.groovy">
+      <classpath refid="classpath" />
+    </groovy>
+    <replace file="${prepared.src.dir}/${obf.class}" token="&quot;@VERSION_FOR_LICENSE@&quot;" value="${project.revision.obf}"/>
+  </target>
+  
+  <!-- Override to put mock license JAR first -->
+  <path id="test.classpath">
+    <fileset dir="${devlib.dir}">
+      <include name="*.jar" />
+    </fileset>
+    <fileset dir="${testlib.dir}">
+      <include name="*.jar" />
+    </fileset>
+    <fileset dir="${lib.dir}">
+      <include name="*.jar" />
+    </fileset>
+    <dirset dir="${testclasses.dir}" />
+    <dirset dir="${classes.dir}" />
+  </path>
+
+</project>

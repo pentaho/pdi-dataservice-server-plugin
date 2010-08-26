@@ -52,7 +52,7 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
   }
 
   public void dataNodeToElement(DataNode rootNode, RepositoryElementInterface element) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     SlaveServer slaveServer = (SlaveServer) element;
     if (dscContent.getExtra() != null) {
       slaveServer.setHostname(getString(rootNode, PROP_HOST_NAME));
@@ -70,7 +70,7 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
   public DataNode elementToDataNode(RepositoryElementInterface element) throws KettleException {
     SlaveServer slaveServer = (SlaveServer) element;
     DataNode rootNode = new DataNode(NODE_ROOT);
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
 
     /*
     // Check for naming collision

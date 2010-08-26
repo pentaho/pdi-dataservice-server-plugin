@@ -73,7 +73,7 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
   public DataNode elementToDataNode(RepositoryElementInterface element) throws KettleException {
     ClusterSchema clusterSchema = (ClusterSchema) element;
     DataNode rootNode = new DataNode(NODE_ROOT);
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
 
     // save the properties...
     rootNode.setProperty(PROP_BASE_PORT, clusterSchema.getBasePort());

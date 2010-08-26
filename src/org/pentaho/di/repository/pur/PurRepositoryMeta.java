@@ -19,6 +19,8 @@ public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
 	/** The id as specified in the repository plugin meta, used for backward compatibility only */
 	public static String REPOSITORY_TYPE_ID = "PentahoEnterpriseRepository";
 	
+	public static String BUNDLE_REF_NAME = "@VERSION_FOR_LICENSE@";
+	
 	private PurRepositoryLocation repositoryLocation;
 
 	private boolean	versionCommentMandatory;
@@ -65,7 +67,7 @@ public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
 
 	public RepositoryCapabilities getRepositoryCapabilities() {
 	  
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam());
+    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(BUNDLE_REF_NAME));
     if (dscContent.getSubject()==null){
       return null;
     }
