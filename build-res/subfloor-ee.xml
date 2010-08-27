@@ -64,7 +64,7 @@
     <groovy src="build-res/replace.groovy">
       <classpath refid="classpath" />
     </groovy>
-    <replace file="${prepared.src.dir}/${obf.class}" token="&quot;@VERSION_FOR_LICENSE@&quot;" value="${project.revision.obf}"/>
+    <replace file="${prepared.src.dir}/${version.for.license.class}" token="&quot;@VERSION_FOR_LICENSE@&quot;" value="${version.for.license.obf}"/>
   </target>
   
   <!-- Override to put mock license JAR first -->
