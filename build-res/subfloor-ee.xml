@@ -59,13 +59,12 @@
       
       Modifies source before compilation.
       ====================================================================-->
-  <target name="compile.pre.src_prepare" depends="install.groovy" unless="compile.pre.src_prepare.run">
+  <target name="compile.pre.src_prepare" depends="install.groovy">
     <!-- sets a property called project.revision.obf -->
     <groovy src="build-res/replace.groovy">
       <classpath refid="classpath" />
     </groovy>
     <replace file="${prepared.src.dir}/${version.for.license.class}" token="&quot;@VERSION_FOR_LICENSE@&quot;" value="${version.for.license.obf}"/>
-    <property name="compile.pre.src_prepare.run" value="true" />
   </target>
   
   <!-- Override to put mock license JAR first -->
