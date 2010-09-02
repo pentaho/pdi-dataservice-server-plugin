@@ -33,7 +33,7 @@
     <download-antlib name="groovy" url="${groovy.url}" classname="org.codehaus.groovy.ant.Groovy" extension="zip" />
     <taskdef resource="org/codehaus/groovy/antlib.xml">
       <classpath>
-        <fileset dir="${build.cache.dir}/groovy">
+        <fileset dir="${subfloor.resources.dir}/groovy">
           <include name="**/*.jar" />
         </fileset>
       </classpath>
