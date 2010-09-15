@@ -7,6 +7,9 @@ import org.pentaho.di.repository.pur.PurRepositoryLocation;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.trans.TransMeta;
 
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.util.TestLicenseStream;
+
 /**
  * This test class is not meant to be run automated. It provides two simple purposes:
  * 1. to bulk load a PUR repository
@@ -29,7 +32,7 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
     setRepositoryLocation(url);
   }
 
-  private static int lightLoadMax = 1;
+  private static int lightLoadMax = 5;
   private static int moderateLoadMax = 50;
   private static int heavyLoadMax = 500;
   private static int contentLoadMax = 5;
@@ -40,7 +43,7 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
 
   public static void main(String[] args){
     
-    String url = "http://localhost:8080/pentaho/webservices";
+    String url = "http://localhost:9080/pentaho-di";
     if (args.length>0){
       url = args[0];
     }
@@ -48,7 +51,7 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
     try {
       test.setUp();
       test.startupRepository();
-      test.testModerateLoad();
+      test.testLightLoad();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -141,6 +144,12 @@ public class RepositoryPerformanceApp extends RepositoryTestBase {
     @Override
     protected void delete(ObjectId id) {
       // nothing to do
+    }
+
+    @Override
+    public void setUp() throws Exception {
+      super.setUp();  
+      PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
     }
     
 

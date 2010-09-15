@@ -28,8 +28,8 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectRecipient;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.ObjectRecipient.Type;
+import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
@@ -39,8 +39,6 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEESecurity;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEESecurityUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UISecurityRole;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
-import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
-import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.SecurityController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectCreationException;
@@ -62,11 +60,13 @@ import org.pentaho.ui.xul.containers.XulVbox;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
 /**
- *
- * This is the XulEventHandler for the browse panel of the repository explorer. It sets up the bindings for  
- * browse functionality. 
- * mx
+ * {@code XulEventHandler} for the Security panel of the repository explorer.
  * 
+ * <p>
+ * This class handles only role-related functionality. {@link SecurityController} handles users.
+ * </p>
+ * 
+ * @see org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.AbsController
  */
 public class EESecurityController extends SecurityController {
   public static final int ROLE_DECK = 1;
@@ -143,8 +143,6 @@ public class EESecurityController extends SecurityController {
   protected UIEESecurityUser eeSecurityUser;
 
   protected UISecurityRole securityRole;
-
-  private IRoleSupportSecurityManager service;
   
   protected UIEESecurity eeSecurity;
 
@@ -157,25 +155,33 @@ public class EESecurityController extends SecurityController {
   
   public EESecurityController() {
   }
-
   
   @Override
-  public void init(Repository rep) throws ControllerInitializationException {
-    try {
-      if(rep.hasService(IRoleSupportSecurityManager.class)) {
-        service = (IRoleSupportSecurityManager) rep.getService(IRoleSupportSecurityManager.class);
-      } else {
-        throw new ControllerInitializationException(BaseMessages.getString(IUIEEUser.class, "SecurityController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IRoleSupportSecurityManager.class)); //$NON-NLS-1$
-      }
-    } catch (KettleException e) {
-      throw new ControllerInitializationException(e);
-      }
-    super.init(rep);
+  protected boolean doLazyInit() {
+    boolean superSucceeded = super.doLazyInit();
+    if (!superSucceeded) {
+      return false;
+    }
     if(!managed) {
       userRadioButton.setVisible(false); 
       roleHbox.removeChild(innerRoleVbox);
       roleHbox.addChild(roleVboxNonManaged);
     }
+    return true;
+  }
+  
+  @Override
+  protected boolean initService() {
+    try {
+      if(repository.hasService(IRoleSupportSecurityManager.class)) {
+        service = (RepositorySecurityManager) repository.getService(IRoleSupportSecurityManager.class);
+      } else {
+        return false;
+      }
+    } catch (KettleException e) {
+      throw new RuntimeException(e);
+    }
+    return true;
   }
   
   @Override
@@ -506,10 +512,10 @@ public class EESecurityController extends SecurityController {
   @Override
   public void showAddUserDialog() throws Exception {
     try {
-      if (service != null && service.getRoles() != null) {
+      if (service != null && ((IRoleSupportSecurityManager) service).getRoles() != null) {
         eeSecurityUser.clear();
-        eeSecurityUser.setAvailableRoles(convertToUIRoleModel(service.getRoles()));
-        eeSecurityUser.updateAssignedRoles(convertToUIRoleModel(service.getDefaultRoles()));
+        eeSecurityUser.setAvailableRoles(convertToUIRoleModel(((IRoleSupportSecurityManager) service).getRoles()));
+        eeSecurityUser.updateAssignedRoles(convertToUIRoleModel(((IRoleSupportSecurityManager) service).getDefaultRoles()));
       }
       eeSecurityUser.setMode(Mode.ADD);
       userDialog.setTitle(messages.getString("AddUserDialog.Title"));//$NON-NLS-1$
@@ -551,9 +557,9 @@ public class EESecurityController extends SecurityController {
   
   @Override
   public void showEditUserDialog() throws Exception {
-    if (service != null && service.getRoles() != null) {
+    if (service != null && ((IRoleSupportSecurityManager) service).getRoles() != null) {
       eeSecurityUser.clear();
-      eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(service.getRoles()));
+      eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(((IRoleSupportSecurityManager) service).getRoles()));
       eeSecurityUser.setMode(Mode.EDIT);
       userDialog.setTitle(messages.getString("EditUserDialog.Title"));//$NON-NLS-1$
       userDialog.show();
@@ -617,9 +623,9 @@ public class EESecurityController extends SecurityController {
   }
 
   public void showAddRoleToUserDialog() throws Exception {
-    if (service != null && service.getRoles() != null) {
+    if (service != null && ((IRoleSupportSecurityManager) service).getRoles() != null) {
       eeSecurityUser.clear();
-      eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(service.getRoles()));
+      eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(((IRoleSupportSecurityManager) service).getRoles()));
       eeSecurityUser.setMode(Mode.EDIT_MEMBER);
       userDialog.setTitle(messages.getString("AddRoleToUserDialog.Title"));//$NON-NLS-1$
       userDialog.show();
@@ -645,8 +651,8 @@ public class EESecurityController extends SecurityController {
   private void addRole() {
     if (service != null) {
       try {
-        IRole role = securityRole.getRole(service);
-        service.createRole(role);
+        IRole role = securityRole.getRole((IRoleSupportSecurityManager) service);
+        ((IRoleSupportSecurityManager) service).createRole(role);
         eeSecurity.addRole(UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role));
         roleDialog.hide();
       } catch (Throwable th) {
@@ -673,7 +679,7 @@ public class EESecurityController extends SecurityController {
         previousUserList.addAll(uiRole.getUsers());
         uiRole.setDescription(securityRole.getDescription());
         uiRole.setUsers(new HashSet<IUIUser>(securityRole.getAssignedUsers()));
-        service.updateRole(uiRole.getRole());
+        ((IRoleSupportSecurityManager) service).updateRole(uiRole.getRole());
         eeSecurity.updateRole(uiRole, previousUserList);
         roleDialog.hide();
       } catch (Throwable th) {
@@ -705,7 +711,7 @@ public class EESecurityController extends SecurityController {
           if (service != null) {
             if (eeSecurity != null && eeSecurity.getSelectedRole() != null) {
               try {
-                service.deleteRole(eeSecurity.getSelectedRole().getName());
+                ((IRoleSupportSecurityManager) service).deleteRole(eeSecurity.getSelectedRole().getName());
                 eeSecurity.removeRole(eeSecurity.getSelectedRole().getName());
               } catch (Throwable th) {
                 messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$

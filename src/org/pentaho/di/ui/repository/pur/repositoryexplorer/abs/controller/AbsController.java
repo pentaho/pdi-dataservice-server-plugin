@@ -20,21 +20,21 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.Map.Entry;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.i18n.GlobalMessages;
 import org.pentaho.di.i18n.LanguageChoice;
-import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsSecurity;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.controller.EESecurityController;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
-import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
+import org.pentaho.di.ui.repository.repositoryexplorer.controllers.SecurityController;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -45,10 +45,12 @@ import org.pentaho.ui.xul.containers.XulListbox;
 import org.pentaho.ui.xul.containers.XulVbox;
 
 /**
- *
- * This is the XulEventHandler for the browse panel of the repository explorer. It sets up the bindings for  
- * browse functionality.
+ * {@code XulEventHandler} for the Security panel of the repository explorer.
  * 
+ * <p>
+ * This class handles only task permission (aka ABS)-related functionality. {@link SecurityController} handles users and
+ * {@link EESecurityController} handles roles. 
+ * </p>
  */
 public class AbsController extends EESecurityController {
   private boolean initialized = false;
@@ -86,42 +88,35 @@ public class AbsController extends EESecurityController {
 
   private BindingConvertor<Integer, Boolean> buttonConverter;
 
-  private IAbsSecurityManager service;
-
   private UIAbsSecurity absSecurity;
 
   public AbsController() {
 
   }
-
+  
   @Override
-  public void init(Repository rep) throws ControllerInitializationException {
-    if (!initialized) {
-      try {
-        if (rep.hasService(IAbsSecurityManager.class)) {
-          service = (IAbsSecurityManager) rep.getService(IAbsSecurityManager.class);
-          String localeValue = null;
+  protected boolean initService() {
+    try {
+      if (repository.hasService(IAbsSecurityManager.class)) {
+        service = (RepositorySecurityManager) repository.getService(IAbsSecurityManager.class);
+        String localeValue = null;
+        try {
+          localeValue = GlobalMessages.getLocale().getDisplayName();
+        } catch (MissingResourceException e) {
           try {
-            localeValue = GlobalMessages.getLocale().getDisplayName();
-          } catch (MissingResourceException e) {
-            try {
-              localeValue = LanguageChoice.getInstance().getFailoverLocale().getDisplayName();
-            } catch (MissingResourceException e2) {
-              localeValue = "en_US"; //$NON-NLS-1$
-            }
+            localeValue = LanguageChoice.getInstance().getFailoverLocale().getDisplayName();
+          } catch (MissingResourceException e2) {
+            localeValue = "en_US"; //$NON-NLS-1$
           }
-          service.initialize(localeValue);
-        } else {
-          throw new ControllerInitializationException(BaseMessages.getString(IUIAbsRole.class,
-              "AbsController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", IAbsSecurityManager.class)); //$NON-NLS-1$
         }
-      } catch (Throwable th) {
-        throw new ControllerInitializationException(th);
+        ((IAbsSecurityManager) service).initialize(localeValue);
+      } else {
+        return false;
       }
-
-      super.init(rep);
-      initialized = true;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
+    return true;
   }
 
   @Override
@@ -211,7 +206,7 @@ public class AbsController extends EESecurityController {
       } else {
         throw new IllegalStateException();
       }
-      service.setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
+      ((IAbsSecurityManager) service).setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
       messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
       messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
       messageBox.setMessage(messages.getString("AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
@@ -239,7 +234,7 @@ public class AbsController extends EESecurityController {
       } else {
         throw new IllegalStateException();
       }
-      service.setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
+      ((IAbsSecurityManager) service).setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
       messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
       messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
       messageBox.setMessage(messages.getString("AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
@@ -320,7 +315,7 @@ public class AbsController extends EESecurityController {
    */
   private void initializeLogicalRolesUI() {
     try {
-      Map<String, String> logicalRoles = service.getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
+      Map<String, String> logicalRoles = ((IAbsSecurityManager) service).getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
       for (Entry<String, String> logicalRole : logicalRoles.entrySet()) {
         XulCheckbox logicalRoleCheckbox;
         logicalRoleCheckbox = (XulCheckbox) document.createElement("checkbox");//$NON-NLS-1$
@@ -346,7 +341,7 @@ public class AbsController extends EESecurityController {
    */
   private void initializeLogicalSystemRolesUI() {
     try {
-      Map<String, String> logicalRoles = service.getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
+      Map<String, String> logicalRoles = ((IAbsSecurityManager) service).getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
       for (Entry<String, String> logicalRole : logicalRoles.entrySet()) {
         XulCheckbox logicalSystemRoleCheckbox;
         logicalSystemRoleCheckbox = (XulCheckbox) document.createElement("checkbox");//$NON-NLS-1$

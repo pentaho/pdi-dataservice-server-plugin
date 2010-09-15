@@ -3,26 +3,33 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
+import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.ClustersController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UICluster;
 
 public class AbsClustersController extends ClustersController{
   IAbsSecurityProvider service;
   boolean isAllowed = false;
+  
   @Override
-  public void init(Repository repository) throws ControllerInitializationException{
-    super.init(repository);
+  protected boolean doLazyInit() {
+    boolean superSucceeded = super.doLazyInit();
+    if (!superSucceeded) {
+      return false;
+    }
     try {
       if(repository.hasService(IAbsSecurityProvider.class)) {
         service = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
         setAllowed(allowedActionsContains(service, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
       }
     } catch (KettleException e) {
-      throw new ControllerInitializationException(e);
+      throw new RuntimeException(e);
     }
+    return true;
   }
 
   public boolean isAllowed() {

@@ -12,19 +12,24 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIPartition;
 public class AbsPartitionsController extends PartitionsController{
   IAbsSecurityProvider service;
   boolean isAllowed = false;
+  
   @Override
-  public void init(Repository repository) throws ControllerInitializationException{
-    super.init(repository);
+  protected boolean doLazyInit() {
+    boolean superSucceeded = super.doLazyInit();
+    if (!superSucceeded) {
+      return false;
+    }
     try {
       if(repository.hasService(IAbsSecurityProvider.class)) {
         service = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
         setAllowed(allowedActionsContains(service, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
       }
     } catch (KettleException e) {
-      throw new ControllerInitializationException(e);
+      throw new RuntimeException(e);
     }
+    return true;
   }
-
+  
   @Override
   public void setEnableButtons(List<UIPartition> partitions) {
       if(isAllowed) {

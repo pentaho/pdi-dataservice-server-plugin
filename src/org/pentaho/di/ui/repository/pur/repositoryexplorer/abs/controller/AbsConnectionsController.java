@@ -12,17 +12,22 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIDatabaseConnectio
 public class AbsConnectionsController extends ConnectionsController{
   IAbsSecurityProvider service;
   boolean isAllowed = false;
+  
   @Override
-  public void init(Repository repository) throws ControllerInitializationException{
-    super.init(repository);
+  protected boolean doLazyInit() {
+    boolean superSucceeded = super.doLazyInit();
+    if (!superSucceeded) {
+      return false;
+    }
     try {
       if(repository.hasService(IAbsSecurityProvider.class)) {
         service = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
         setAllowed(allowedActionsContains(service, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
       }
     } catch (KettleException e) {
-      throw new ControllerInitializationException(e);
+      throw new RuntimeException(e);
     }
+    return true;
   }
 
   public boolean isAllowed() {
