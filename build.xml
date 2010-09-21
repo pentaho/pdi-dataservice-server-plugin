@@ -158,6 +158,34 @@
     </proguard>
   </target>
 
+	 <!--=======================================================================
+	      publish-nojar
+	      
+	      Publishes the jar file for this project to a Maven2 repository.
+	      Overriding the default publish-nojar to remove publishing sources
+	      ====================================================================-->
+	  <target name="publish-nojar" depends="install-antcontrib,create-pom,ivy.deliver">
+	    <antcall target="maven-publish-dependencies">
+	      <param name="publish.groupId" value="${ivy.artifact.group}" />
+	      <param name="publish.artifactId" value="${ivy.artifact.id}" />
+	      <param name="publish.version" value="${project.revision}" />
+	      <param name="publish.file" value="${ivy.artifact.ivypathname}" />
+	    </antcall>
+
+	  	<!-- Normally maven-publish-sources would happen here -->
+	  		  	
+	    <antcall target="maven-publish-artifact">
+	      <param name="publish.pomFile" value="${ivy.artifact.pomfile}" />
+	      <param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
+	    </antcall>
+	    
+	    <antcall target="maven-publish-artifact">
+	      <param name="publish.pomFile" value="${package.artifact.pomfile}" />
+	      <param name="publish.file" value="${dist.dir}/${package.basename}.zip" />
+	    </antcall>
+	  </target>
+
+
 
   <!-- 
   The following overrides are in place to suppress IVY dependency management.  If you
