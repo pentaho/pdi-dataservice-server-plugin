@@ -2411,4 +2411,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public String getConnectMessage() {
     return connectMessage;
   }
+
+  public String[] getJobsUsingDatabase(ObjectId id_database) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public String[] getTransformationsUsingDatabase(ObjectId id_database) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
 }

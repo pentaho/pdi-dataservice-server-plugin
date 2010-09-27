@@ -629,4 +629,12 @@ public class RepositoryProxy implements Repository, ILockService {
     // TODO Auto-generated method stub
     return null;
   }
+
+  public String[] getJobsUsingDatabase(ObjectId id_database) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public String[] getTransformationsUsingDatabase(ObjectId id_database) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
 }
