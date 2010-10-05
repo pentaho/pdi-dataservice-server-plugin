@@ -3,7 +3,7 @@
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:pen="http://www.pentaho.org/2008/xul" onload="iSecurityController.init()">
   	<vbox id="role-vbox">
 		<vbox id="role-action-permissions-groupbox">
-			<groupbox id="role-action-permissions-groupbox">
+			<groupbox id="role-action-permissions-groupbox" height="60">
 				<caption label="${SecurityTab.ActionPermission.Permissions}"/>
 			    <vbox flex="1" id="role-action-permissions-vbox"/>
 			</groupbox>
@@ -16,7 +16,7 @@
 	
 	<vbox id="system-role-vbox">
 		<vbox id="system-role-action-permissions-groupbox">
-			<groupbox id="system-role-action-permissions-groupbox">
+			<groupbox id="system-role-action-permissions-groupbox"  height="60">
 				<caption label="${SecurityTab.ActionPermission.Permissions}"/>
 			    <vbox flex="1" id="system-role-action-permissions-vbox"/>
 			</groupbox>
