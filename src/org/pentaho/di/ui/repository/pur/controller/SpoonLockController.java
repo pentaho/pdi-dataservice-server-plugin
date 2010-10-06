@@ -54,7 +54,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
   private Shell shell;
   private static Log log = LogFactory.getLog(SpoonLockController.class);
-  
+
   protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
@@ -81,10 +81,10 @@ public class SpoonLockController extends AbstractXulEventHandler {
           bindingFactory
               .createBinding(
                   this,
-                  "activeMetaUnlocked", Spoon.getInstance().delegates.tabs.findTabMapEntry(workingMeta).getTabItem(), "image", new BindingConvertor<String, Image>() { //$NON-NLS-1$ //$NON-NLS-2$
+                  "activeMetaUnlocked", Spoon.getInstance().delegates.tabs.findTabMapEntry(workingMeta).getTabItem(), "image", new BindingConvertor<Boolean, Image>() { //$NON-NLS-1$ //$NON-NLS-2$
                     @Override
-                    public Image sourceToTarget(String activeMetaUnlocked) {
-                      if (Boolean.valueOf(activeMetaUnlocked)) {
+                    public Image sourceToTarget(Boolean activeMetaUnlocked) {
+                      if (activeMetaUnlocked) {
                         if (workingMeta instanceof TransMeta) {
                           return GUIResource.getInstance().getImageTransGraph();
                         } else if (workingMeta instanceof JobMeta) {
@@ -97,8 +97,8 @@ public class SpoonLockController extends AbstractXulEventHandler {
                     }
 
                     @Override
-                    public String targetToSource(Image arg0) {
-                      return null;
+                    public Boolean targetToSource(Image arg0) {
+                      return false;
                     }
                   });
           tabBound = true;
@@ -122,7 +122,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
                   }
 
                   // Execute binding. Notify listeners that the object is now locked
-                  firePropertyChange("activeMetaUnlocked", null, "false"); //$NON-NLS-1$ //$NON-NLS-2$
+                  firePropertyChange("activeMetaUnlocked", true, false); //$NON-NLS-1$ //$NON-NLS-2$
 
                   // this keeps the menu item and the state in sync
                   // could a binding be used instead?
@@ -136,7 +136,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
                 }
               } else {
                 // this keeps the menu item and the state in sync
-                // could a binding be used instead?              
+                // could a binding be used instead?
                 XulDomContainer container = getXulDomContainer();
                 XulMenuitem lockMenuItem = (XulMenuitem) container.getDocumentRoot()
                     .getElementById("lock-context-lock"); //$NON-NLS-1$
@@ -158,7 +158,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
             getService(Spoon.getInstance().getRepository()).unlockJob(workingMeta.getObjectId());
           }
           // Execute binding. Notify listeners that the object is now unlocked
-          firePropertyChange("activeMetaUnlocked", null, "true"); //$NON-NLS-1$ //$NON-NLS-2$
+          firePropertyChange("activeMetaUnlocked", false, true); //$NON-NLS-1$ //$NON-NLS-2$
         }
 
       } else if(workingMeta != null && workingMeta.getObjectId() == null && supportsLocking(Spoon.getInstance().getRepository())) {
@@ -171,7 +171,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
         msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
         msgBox.setMessage(messages.getString("LockController.SaveBeforeLock"));//$NON-NLS-1$
         msgBox.setModalParent(shell);
-        
+
         msgBox.open();
       } else {
         XulDomContainer container = getXulDomContainer();
@@ -243,7 +243,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
         setCreateAllowed(allowedActionsContains(securityService, IAbsSecurityProvider.CREATE_CONTENT_ACTION));
       }
-      
+
       shell = (((Spoon)SpoonFactory.getInstance()).getShell());
       XulDomContainer container = getXulDomContainer();
 
@@ -359,9 +359,9 @@ public class SpoonLockController extends AbstractXulEventHandler {
       return service;
     }
   }
-  
+
   private boolean supportsLocking(Repository repository) throws KettleException {
     return repository.hasService(ILockService.class);
   }
-  
+
 }
