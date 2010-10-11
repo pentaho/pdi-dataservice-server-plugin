@@ -1,6 +1,10 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 
 import org.pentaho.di.core.EngineMetaInterface;
+import org.pentaho.di.core.logging.DefaultLogLevel;
+import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.pur.PurRepository;
@@ -16,6 +20,13 @@ import org.pentaho.ui.xul.dom.Document;
 
 public class SpoonMenuABSController implements ISpoonMenuController {
 
+  protected LogChannelInterface log;
+  protected LogLevel logLevel = DefaultLogLevel.getLogLevel();
+
+  public SpoonMenuABSController() {
+    this.log = new LogChannel(this);
+  }
+  
   public String getName() {
     return "SpoonMenuABSController"; //$NON-NLS-1$
   }
@@ -62,7 +73,8 @@ public class SpoonMenuABSController implements ISpoonMenuController {
       EESpoonPlugin.updateChangedWarningDialog(createPermitted);
       
     } catch(Exception e) {
-      throw new RuntimeException(e);
+      // don't let this bomb all the way out, otherwise we'll get stuck:  PDI-4670
+      log.logError(e.getMessage(), e);
     }
   }
 
