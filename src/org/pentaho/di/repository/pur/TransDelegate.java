@@ -300,9 +300,9 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         meta.setErrorDescriptionsValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_DESCRIPTIONS_VALUENAME));
         meta.setErrorFieldsValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_FIELDS_VALUENAME));
         meta.setErrorCodesValuename(getString(stepNode, PROP_STEP_ERROR_HANDLING_CODES_VALUENAME));
-        meta.setMaxErrors(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_MAX_ERRORS).getLong());
-        meta.setMaxPercentErrors((int) stepNode.getProperty(PROP_STEP_ERROR_HANDLING_MAX_PCT_ERRORS).getLong());
-        meta.setMinPercentRows(stepNode.getProperty(PROP_STEP_ERROR_HANDLING_MIN_PCT_ROWS).getLong());
+        meta.setMaxErrors(getString(stepNode, PROP_STEP_ERROR_HANDLING_MAX_ERRORS));
+        meta.setMaxPercentErrors(getString(stepNode, PROP_STEP_ERROR_HANDLING_MAX_PCT_ERRORS));
+        meta.setMinPercentRows(getString(stepNode, PROP_STEP_ERROR_HANDLING_MIN_PCT_ROWS));
         meta.getSourceStep().setStepErrorMeta(meta); // a bit of a trick, I know.                        
       }
     }

@@ -319,11 +319,11 @@ public abstract class RepositoryTestBase {
 
   protected static final String EXP_TRANS_STEP_ERROR_META_1_CODES_VALUE_NAME = "wedsse";
 
-  protected static final long EXP_TRANS_STEP_ERROR_META_1_MAX_ERRORS = 2000;
+  protected static final String EXP_TRANS_STEP_ERROR_META_1_MAX_ERRORS = "2000";
 
-  protected static final int EXP_TRANS_STEP_ERROR_META_1_MAX_PERCENT_ERRORS = 29;
+  protected static final String EXP_TRANS_STEP_ERROR_META_1_MAX_PERCENT_ERRORS = "29";
 
-  protected static final long EXP_TRANS_STEP_ERROR_META_1_MIN_PERCENT_ROWS = 12;
+  protected static final String EXP_TRANS_STEP_ERROR_META_1_MIN_PERCENT_ROWS = "12";
 
   protected static final boolean EXP_TRANS_SLAVE_TRANSFORMATION = true;
 
