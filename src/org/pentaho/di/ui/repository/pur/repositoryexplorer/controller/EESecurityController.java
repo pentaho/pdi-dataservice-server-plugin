@@ -152,6 +152,7 @@ public class EESecurityController extends SecurityController {
   private XulHbox roleHbox;
   
   private XulVbox roleVboxNonManaged; 
+  private XulVbox systemRoleVboxNonManaged;
   
   public EESecurityController() {
   }
@@ -243,6 +244,7 @@ public class EESecurityController extends SecurityController {
     
     innerRoleVbox = (XulVbox) document.getElementById("inner-role-vbox");//$NON-NLS-1$
     roleVboxNonManaged = (XulVbox) document.getElementById("role-vbox-nonmanaged");//$NON-NLS-1$
+    systemRoleVboxNonManaged = (XulVbox) document.getElementById("system-role-vbox-nonmanaged");//$NON-NLS-1$
     roleHbox = (XulHbox) document.getElementById("role-hbox");//$NON-NLS-1$
         
     
@@ -752,10 +754,18 @@ public class EESecurityController extends SecurityController {
   }
   public void changeToRoleDeck() {
     security.setSelectedDeck(ObjectRecipient.Type.ROLE);
+    if(!managed) {
+      roleHbox.removeChild(systemRoleVboxNonManaged);
+      roleHbox.addChild(roleVboxNonManaged);
+    }
   }
   
   public void changeToSystemRoleDeck() {
     security.setSelectedDeck(ObjectRecipient.Type.SYSTEM_ROLE);
+    if(!managed) {
+      roleHbox.removeChild(roleVboxNonManaged);
+      roleHbox.addChild(systemRoleVboxNonManaged);
+    }
   }
   
   /**
