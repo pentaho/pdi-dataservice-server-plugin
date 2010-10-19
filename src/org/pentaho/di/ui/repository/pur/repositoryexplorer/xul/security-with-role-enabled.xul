@@ -194,7 +194,7 @@
     <!--  ###############################################################################   -->    
 
    <window id="repository-explorer-window">
-		<vbox id="system-role-vbox-nonmanaged" flex="1">
+		<vbox id="role-vbox-nonmanaged" flex="1">
 			<hbox>
 				<label id="spacer-label"/>
 			</hbox>			    
@@ -202,14 +202,6 @@
 				<label multiline="true" id="instructional-text-label" value="${SecurityTab.SystemRoleInstructionalText}"/>
 			</vbox>
 		</vbox>
-		<vbox id="role-vbox-nonmanaged" flex="1">
-			<hbox>
-				<label id="spacer-label"/>
-			</hbox>			    
-			<vbox>
-				<label multiline="true" id="instructional-text-label" value=""/>
-			</vbox>
-		</vbox>	
 	</window>
 </overlay>
 

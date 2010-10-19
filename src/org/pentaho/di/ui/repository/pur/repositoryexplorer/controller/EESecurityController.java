@@ -49,6 +49,7 @@ import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulConfirmBox;
+import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulRadio;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulDeck;
@@ -152,7 +153,8 @@ public class EESecurityController extends SecurityController {
   private XulHbox roleHbox;
   
   private XulVbox roleVboxNonManaged; 
-  private XulVbox systemRoleVboxNonManaged;
+  
+  private XulLabel instructionalTextLabel;
   
   public EESecurityController() {
   }
@@ -244,11 +246,8 @@ public class EESecurityController extends SecurityController {
     
     innerRoleVbox = (XulVbox) document.getElementById("inner-role-vbox");//$NON-NLS-1$
     roleVboxNonManaged = (XulVbox) document.getElementById("role-vbox-nonmanaged");//$NON-NLS-1$
-    systemRoleVboxNonManaged = (XulVbox) document.getElementById("system-role-vbox-nonmanaged");//$NON-NLS-1$
     roleHbox = (XulHbox) document.getElementById("role-hbox");//$NON-NLS-1$
-        
-    
-    
+    instructionalTextLabel = (XulLabel) document.getElementById("instructional-text-label");//$NON-NLS-1$
     
     bf.setBindingType(Binding.Type.BI_DIRECTIONAL);
     bf.createBinding(eeSecurityUser, "assignedRoles", assignedRoles, "elements");//$NON-NLS-1$ //$NON-NLS-2$
@@ -754,18 +753,13 @@ public class EESecurityController extends SecurityController {
   }
   public void changeToRoleDeck() {
     security.setSelectedDeck(ObjectRecipient.Type.ROLE);
-    if(!managed) {
-      roleHbox.removeChild(systemRoleVboxNonManaged);
-      roleHbox.addChild(roleVboxNonManaged);
-    }
+    instructionalTextLabel.setValue("");
   }
   
   public void changeToSystemRoleDeck() {
     security.setSelectedDeck(ObjectRecipient.Type.SYSTEM_ROLE);
-    if(!managed) {
-      roleHbox.removeChild(roleVboxNonManaged);
-      roleHbox.addChild(systemRoleVboxNonManaged);
-    }
+    instructionalTextLabel.setValue(BaseMessages.getString(EESecurityController.class,
+          "SecurityTab.SystemRoleInstructionalText"));
   }
   
   /**
