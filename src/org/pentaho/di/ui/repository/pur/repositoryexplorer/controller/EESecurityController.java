@@ -753,13 +753,12 @@ public class EESecurityController extends SecurityController {
   }
   public void changeToRoleDeck() {
     security.setSelectedDeck(ObjectRecipient.Type.ROLE);
-    instructionalTextLabel.setValue("");
+    instructionalTextLabel.setValue(messages.getString("SecurityTab.RoleInstructionalText"));
   }
   
   public void changeToSystemRoleDeck() {
     security.setSelectedDeck(ObjectRecipient.Type.SYSTEM_ROLE);
-    instructionalTextLabel.setValue(BaseMessages.getString(EESecurityController.class,
-          "SecurityTab.SystemRoleInstructionalText"));
+    instructionalTextLabel.setValue(messages.getString("SecurityTab.SystemRoleInstructionalText"));
   }
   
   /**
