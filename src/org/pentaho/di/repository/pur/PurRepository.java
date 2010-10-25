@@ -2413,10 +2413,39 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public String[] getJobsUsingDatabase(ObjectId id_database) throws KettleException {
-    throw new UnsupportedOperationException();
+    List<String> result = new ArrayList<String>();
+    for(RepositoryFile file : getReferrers(id_database, Arrays.asList(new RepositoryObjectType[]{RepositoryObjectType.JOB}))) {
+        result.add(file.getPath());
+    }
+    return result.toArray(new String[result.size()]);
   }
 
   public String[] getTransformationsUsingDatabase(ObjectId id_database) throws KettleException {
-    throw new UnsupportedOperationException();
+    List<String> result = new ArrayList<String>();
+    for(RepositoryFile file : getReferrers(id_database, Arrays.asList(new RepositoryObjectType[]{RepositoryObjectType.TRANSFORMATION}))) {
+        result.add(file.getPath());
+    }
+    return result.toArray(new String[result.size()]);
+  }
+  
+  protected List<RepositoryFile> getReferrers(ObjectId fileId) throws KettleException {
+    return getReferrers(fileId, null);
+  }
+  
+  protected List<RepositoryFile> getReferrers(ObjectId fileId, List<RepositoryObjectType> referrerTypes) throws KettleException {
+    // Use a result list to append to; Removing from the files list was causing a concurrency exception
+    List<RepositoryFile> result = new ArrayList<RepositoryFile>(); 
+    List<RepositoryFile> files = pur.getReferrers(fileId.getId());
+    
+    // Filter out types
+    if(referrerTypes != null && referrerTypes.size() > 0) {
+      for(RepositoryFile file : files) {
+        if(referrerTypes.contains(getObjectType(file.getName()))) {
+          result.add(file);
+        }
+      }
+    }
+    
+    return result;
   }
 }

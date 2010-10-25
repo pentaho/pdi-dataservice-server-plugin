@@ -62,6 +62,7 @@ import org.pentaho.di.trans.step.StepErrorMeta;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 import org.pentaho.di.ui.repository.pur.services.IAclService;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
@@ -688,6 +689,16 @@ public abstract class RepositoryTestBase {
     RepositoryDirectoryInterface rootDir = initRepo();
     String uniqueTransName = EXP_TRANS_NAME.concat(EXP_DBMETA_NAME);
     TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
+    
+    // Create a database association
+    DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
+    repository.save(dbMeta, VERSION_COMMENT_V1, null);
+    
+    TableInputMeta tableInputMeta = new TableInputMeta();
+    tableInputMeta.setDatabaseMeta(dbMeta);
+    
+    transMeta.addStep(new StepMeta(EXP_TRANS_STEP_1_NAME, tableInputMeta));
+    
     RepositoryDirectoryInterface transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     repository.save(transMeta, VERSION_COMMENT_V1, null);
     deleteStack.push(transMeta);
@@ -712,6 +723,13 @@ public abstract class RepositoryTestBase {
     assertEquals(1, fetchedTrans.listParameters().length);
     assertEquals(EXP_TRANS_PARAM_1_DEF, fetchedTrans.getParameterDefault(EXP_TRANS_PARAM_1_NAME));
     assertEquals(EXP_TRANS_PARAM_1_DESC, fetchedTrans.getParameterDescription(EXP_TRANS_PARAM_1_NAME));
+    
+    // Test reference to database connection 
+    String[] transformations = repository.getTransformationsUsingDatabase(dbMeta.getObjectId());
+    assertNotNull(transformations);
+    assertEquals(1, transformations.length);
+    assertTrue(transformations[0].contains(fetchedTrans.getName()));
+    
     TransLogTable transLogTable = fetchedTrans.getTransLogTable();
     // TODO mlowery why doesn't this work?
     //    assertEquals(EXP_TRANS_LOG_TABLE_CONN_NAME, transLogTable.getConnectionName());
@@ -762,7 +780,7 @@ public abstract class RepositoryTestBase {
     //    assertEquals(EXP_TRANS_DEP_TABLE_NAME, fetchedTrans.getDependency(0).getTablename());
     //    assertEquals(EXP_TRANS_DEP_FIELD_NAME, fetchedTrans.getDependency(0).getFieldname());
 
-    assertEquals(2, fetchedTrans.getSteps().size());
+    assertEquals(3, fetchedTrans.getSteps().size());
     assertEquals(EXP_TRANS_STEP_1_NAME, fetchedTrans.getStep(0).getName());
     assertEquals(EXP_TRANS_STEP_ERROR_META_1_ENABLED, fetchedTrans.getStep(0).getStepErrorMeta().isEnabled());
     assertEquals(EXP_TRANS_STEP_ERROR_META_1_NR_ERRORS_VALUE_NAME, fetchedTrans.getStep(0).getStepErrorMeta()
