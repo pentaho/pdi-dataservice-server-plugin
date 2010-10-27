@@ -402,6 +402,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public void deleteRepositoryDirectory(final RepositoryDirectoryInterface dir) throws KettleException {
     try {
+      RepositoryFile homeFolder = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
+      RepositoryFile folder = pur.getFileById(dir.getObjectId().getId());
+      if (homeFolder.getId().equals(folder.getId()) || homeFolder.getPath().startsWith(folder.getPath())) {
+        throw new KettleException("You are not allowed to delete your home folder.");
+      }
       pur.deleteFile(dir.getObjectId().getId(), null);
     } catch (Exception e) {
       throw new KettleException("Unable to delete directory with path [" + getPath(null, dir, null) + "]", e);
@@ -416,7 +421,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     String finalParentPath = null;
     String interimFolderPath = null;
     try {
+      RepositoryFile homeFolder = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
       RepositoryFile folder = pur.getFileById(dirId.getId());
+      if (homeFolder.getId().equals(dirId.getId()) || homeFolder.getPath().startsWith(folder.getPath())) {
+        throw new KettleException("You are not allowed to move/rename your home folder.");
+      }
       finalName = (newName != null ? newName : folder.getName());
       interimFolderPath = getParentPath(folder.getPath());
       finalParentPath = (newParent != null ? getPath(null, newParent, null) : interimFolderPath);
