@@ -7,10 +7,6 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 
-import com.pentaho.commons.dsc.PentahoDscContent;
-import com.pentaho.commons.dsc.PentahoLicenseVerifier;
-import com.pentaho.commons.dsc.params.KParam;
-
 public class SlaveDelegate extends AbstractDelegate implements ITransformer {
 
   private static final String NODE_ROOT = "Slave"; //$NON-NLS-1$
@@ -52,11 +48,8 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
   }
 
   public void dataNodeToElement(DataNode rootNode, RepositoryElementInterface element) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     SlaveServer slaveServer = (SlaveServer) element;
-    if (dscContent.getExtra() != null) {
-      slaveServer.setHostname(getString(rootNode, PROP_HOST_NAME));
-    }
+    slaveServer.setHostname(getString(rootNode, PROP_HOST_NAME));
     slaveServer.setPort(getString(rootNode, PROP_PORT));
     slaveServer.setUsername(getString(rootNode, PROP_USERNAME));
     slaveServer.setPassword(Encr.decryptPasswordOptionallyEncrypted(getString(rootNode, PROP_PASSWORD)));
@@ -70,7 +63,6 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
   public DataNode elementToDataNode(RepositoryElementInterface element) throws KettleException {
     SlaveServer slaveServer = (SlaveServer) element;
     DataNode rootNode = new DataNode(NODE_ROOT);
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
 
     /*
     // Check for naming collision
@@ -84,17 +76,15 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
 
     // Create or version a new slave node
     //
-    if (dscContent.getSubject() != null) {
-      rootNode.setProperty(PROP_HOST_NAME, slaveServer.getHostname());
-      rootNode.setProperty(PROP_PORT, slaveServer.getPort());
-      rootNode.setProperty(PROP_WEBAPP_NAME, slaveServer.getWebAppName());
-      rootNode.setProperty(PROP_USERNAME, slaveServer.getUsername());
-      rootNode.setProperty(PROP_PASSWORD, Encr.encryptPasswordIfNotUsingVariables(slaveServer.getPassword()));
-      rootNode.setProperty(PROP_PROXY_HOST_NAME, slaveServer.getProxyHostname());
-      rootNode.setProperty(PROP_PROXY_PORT, slaveServer.getProxyPort());
-      rootNode.setProperty(PROP_NON_PROXY_HOSTS, slaveServer.getNonProxyHosts());
-      rootNode.setProperty(PROP_MASTER, slaveServer.isMaster());
-    }
+    rootNode.setProperty(PROP_HOST_NAME, slaveServer.getHostname());
+    rootNode.setProperty(PROP_PORT, slaveServer.getPort());
+    rootNode.setProperty(PROP_WEBAPP_NAME, slaveServer.getWebAppName());
+    rootNode.setProperty(PROP_USERNAME, slaveServer.getUsername());
+    rootNode.setProperty(PROP_PASSWORD, Encr.encryptPasswordIfNotUsingVariables(slaveServer.getPassword()));
+    rootNode.setProperty(PROP_PROXY_HOST_NAME, slaveServer.getProxyHostname());
+    rootNode.setProperty(PROP_PROXY_PORT, slaveServer.getProxyPort());
+    rootNode.setProperty(PROP_NON_PROXY_HOSTS, slaveServer.getNonProxyHosts());
+    rootNode.setProperty(PROP_MASTER, slaveServer.isMaster());
     return rootNode;
   }
 

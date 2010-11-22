@@ -11,10 +11,6 @@ import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 
-import com.pentaho.commons.dsc.PentahoDscContent;
-import com.pentaho.commons.dsc.PentahoLicenseVerifier;
-import com.pentaho.commons.dsc.params.KParam;
-
 public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
 
   // ~ Static fields/initializers ======================================================================================
@@ -62,8 +58,6 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
 
     // Then the basic db information
     //
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
-
     rootNode.setProperty(PROP_TYPE, databaseMeta.getPluginId());
     rootNode.setProperty(PROP_CONTYPE, DatabaseMeta.getAccessTypeDesc(databaseMeta.getAccessType()));
     rootNode.setProperty(PROP_HOST_NAME, databaseMeta.getHostname());
@@ -77,22 +71,18 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
 
     DataNode attrNode = rootNode.addNode(NODE_ATTRIBUTES);
 
-    if (dscContent.getSubject() != null) {
-
-      // Now store all the attributes set on the database connection...
-      // 
-      Properties attributes = databaseMeta.getAttributes();
-      Enumeration<Object> keys = databaseMeta.getAttributes().keys();
-      while (keys.hasMoreElements()) {
-        String code = (String) keys.nextElement();
-        String attribute = (String) attributes.get(code);
-
-        // Save this attribute
-        //
-        attrNode.setProperty(code, attribute);
-      }
-
-    }
+	// Now store all the attributes set on the database connection...
+	// 
+	Properties attributes = databaseMeta.getAttributes();
+	Enumeration<Object> keys = databaseMeta.getAttributes().keys();
+	while (keys.hasMoreElements()) {
+	  String code = (String) keys.nextElement();
+	  String attribute = (String) attributes.get(code);
+	
+	  // Save this attribute
+	  //
+	  attrNode.setProperty(code, attribute);
+	}
     return rootNode;
 
   }
@@ -104,12 +94,8 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
   }
   
   public void dataNodeToElement(final DataNode rootNode, final RepositoryElementInterface element) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
-
     DatabaseMeta databaseMeta = (DatabaseMeta) element;
-    if (dscContent.getHolder() != null) {
-      databaseMeta.setDatabaseType(getString(rootNode, PROP_TYPE));
-    }
+    databaseMeta.setDatabaseType(getString(rootNode, PROP_TYPE));
     databaseMeta.setAccessType(DatabaseMeta.getAccessType(getString(rootNode, PROP_CONTYPE)));
     databaseMeta.setHostname(getString(rootNode, PROP_HOST_NAME));
     databaseMeta.setDBName(getString(rootNode, PROP_DATABASE_NAME));

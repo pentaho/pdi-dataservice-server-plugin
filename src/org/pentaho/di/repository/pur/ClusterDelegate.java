@@ -12,10 +12,6 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 
-import com.pentaho.commons.dsc.PentahoDscContent;
-import com.pentaho.commons.dsc.PentahoLicenseVerifier;
-import com.pentaho.commons.dsc.params.KParam;
-
 public class ClusterDelegate extends AbstractDelegate implements ITransformer {
 
   private static final String NODE_ROOT = "Slave"; //$NON-NLS-1$
@@ -73,8 +69,6 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
   public DataNode elementToDataNode(RepositoryElementInterface element) throws KettleException {
     ClusterSchema clusterSchema = (ClusterSchema) element;
     DataNode rootNode = new DataNode(NODE_ROOT);
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
-
     // save the properties...
     rootNode.setProperty(PROP_BASE_PORT, clusterSchema.getBasePort());
     rootNode.setProperty(PROP_SOCKETS_BUFFER_SIZE, clusterSchema.getSocketsBufferSize());
@@ -84,16 +78,14 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
 
     DataNode attrNode = rootNode.addNode(NODE_ATTRIBUTES);
 
-    if (dscContent.getSubject() != null) {
-      // Also save the used slave server references.
+    // Also save the used slave server references.
 
-      attrNode.setProperty(PROP_NB_SLAVE_SERVERS, clusterSchema.getSlaveServers().size());
-      for (int i = 0; i < clusterSchema.getSlaveServers().size(); i++) {
-        SlaveServer slaveServer = clusterSchema.getSlaveServers().get(i);
-        DataNodeRef slaveNodeRef = new DataNodeRef(slaveServer.getObjectId().getId());
-        // Save the slave server by reference, this way it becomes impossible to delete the slave by accident when still in use.
-        attrNode.setProperty(String.valueOf(i), slaveNodeRef);
-      }
+    attrNode.setProperty(PROP_NB_SLAVE_SERVERS, clusterSchema.getSlaveServers().size());
+    for (int i = 0; i < clusterSchema.getSlaveServers().size(); i++) {
+      SlaveServer slaveServer = clusterSchema.getSlaveServers().get(i);
+      DataNodeRef slaveNodeRef = new DataNodeRef(slaveServer.getObjectId().getId());
+      // Save the slave server by reference, this way it becomes impossible to delete the slave by accident when still in use.
+      attrNode.setProperty(String.valueOf(i), slaveNodeRef);
     }
     return rootNode;
   }

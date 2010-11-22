@@ -356,7 +356,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public RepositoryDirectoryInterface createRepositoryDirectory(final RepositoryDirectoryInterface parentDirectory,
       final String directoryPath) throws KettleException {
     try {
-      
+      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));      
       RepositoryDirectoryInterface refreshedParentDir = loadRepositoryDirectoryTree().findDirectory(parentDirectory.getPath());
       // update the passed in repository directory with the children recently loaded from the repo
       parentDirectory.setChildren(refreshedParentDir.getChildren());
@@ -370,7 +370,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           // create this one
           //
           child = new RepositoryDirectory(follow, path[level]);
-          PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
           if (dscContent.getHolder() != null) {
             saveRepositoryDirectory(child);
             // link this with the parent directory
@@ -1725,6 +1724,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     String absPath = null;
     try {
       absPath = getPath(transName, parentDir, RepositoryObjectType.TRANSFORMATION);
+      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
       RepositoryFile file = pur.getFile(absPath);
       if (versionId != null) {
         // need to go back to server to get versioned info
@@ -1733,9 +1733,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       TransMeta transMeta = new TransMeta();
       transMeta.setName(file.getTitle());
       transMeta.setDescription(file.getDescription());
-      transMeta.setObjectId(new StringObjectId(file.getId().toString()));
-      transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
-      transMeta.setRepositoryDirectory(parentDir);
+      // Additional obfuscation through obscurity
+      if (dscContent != null) {
+	    transMeta.setObjectId(new StringObjectId(file.getId().toString()));
+	    transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
+        transMeta.setRepositoryDirectory(parentDir);
+      }
       //transMeta.setRepositoryLock(getLock(file));
       transDelegate.loadSharedObjects(transMeta);
       transDelegate.dataNodeToElement(pur
@@ -1757,6 +1760,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         // need to go back to server to get versioned info
         file = pur.getFileAtVersion(file.getId(), versionId);
       }
+      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
       JobMeta jobMeta = new JobMeta();
       jobMeta.setName(file.getTitle());
       jobMeta.setDescription(file.getDescription());
@@ -1765,9 +1769,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       jobMeta.setRepositoryDirectory(parentDir);
       //jobMeta.setRepositoryLock(getLock(file));
       jobDelegate.loadSharedObjects(jobMeta);
-      jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class)
-          .getNode(), jobMeta);
-      jobMeta.clearChanged();
+      // Additional obfuscation through obscurity
+      if (dscContent != null) {
+        jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class)
+            .getNode(), jobMeta);
+        jobMeta.clearChanged();
+      }
       return jobMeta;
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
@@ -2361,6 +2368,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public JobMeta loadJob(ObjectId idJob, String versionLabel) throws KettleException {
     try {
+      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
       RepositoryFile file = null;
       if (versionLabel != null) {
         file = pur.getFileAtVersion(idJob.getId(), versionLabel);
@@ -2373,8 +2381,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
       jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
       jobMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
-      jobMeta.setRepositoryLock(getLock(file));
-      jobDelegate.loadSharedObjects(jobMeta);
+      // Additional obfuscation through obscurity
+      if (dscContent != null) {
+    	  jobMeta.setRepositoryLock(getLock(file));
+    	  jobDelegate.loadSharedObjects(jobMeta);
+      }
       jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idJob.getId(), versionLabel,
           NodeRepositoryFileData.class).getNode(), jobMeta);
       jobMeta.clearChanged();
@@ -2392,6 +2403,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       } else {
         file = pur.getFileById(idTransformation.getId());  
       }
+      PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
       EETransMeta transMeta = new EETransMeta();
       transMeta.setName(file.getTitle());
       transMeta.setDescription(file.getDescription());
@@ -2400,8 +2412,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       transMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
       transMeta.setRepositoryLock(getLock(file));
       transDelegate.loadSharedObjects(transMeta);
-      transDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idTransformation.getId(), versionLabel,
-          NodeRepositoryFileData.class).getNode(), transMeta);
+      // Additional obfuscation through obscurity
+      if (dscContent != null) {
+    	  transDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idTransformation.getId(), versionLabel,
+    			  NodeRepositoryFileData.class).getNode(), transMeta);
+      }
       transMeta.clearChanged();
       return transMeta;
     } catch (Exception e) {

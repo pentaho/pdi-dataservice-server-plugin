@@ -28,10 +28,6 @@ import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 
-import com.pentaho.commons.dsc.PentahoDscContent;
-import com.pentaho.commons.dsc.PentahoLicenseVerifier;
-import com.pentaho.commons.dsc.params.KParam;
-
 public class JobDelegate extends AbstractDelegate implements ISharedObjectsTransformer {
 
   private static final String PROP_SHARED_FILE = "SHARED_FILE";
@@ -156,7 +152,6 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   public void saveSharedObjects(final RepositoryElementInterface element, final String versionComment)
       throws KettleException {
     JobMeta jobMeta = (JobMeta) element;
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     // Now store the databases in the job.
     // Only store if the database has actually changed or doesn't have an object ID (imported)
     //
@@ -165,7 +160,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
         // Only save the connection if it's actually used in the transformation...
         //
-        if (jobMeta.isDatabaseConnectionUsed(databaseMeta) && (dscContent.getSubject() != null)) {
+        if (jobMeta.isDatabaseConnectionUsed(databaseMeta)) {
           repo.save(databaseMeta, versionComment, null);
         }
       }
@@ -174,10 +169,8 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     // Store the slave server
     //
     for (SlaveServer slaveServer : jobMeta.getSlaveServers()) {
-      if (dscContent.getSubject() != null) {
-        if (slaveServer.hasChanged() || slaveServer.getObjectId() == null) {
-          repo.save(slaveServer, versionComment, null);
-        }
+      if (slaveServer.hasChanged() || slaveServer.getObjectId() == null) {
+        repo.save(slaveServer, versionComment, null);
       }
     }
 
@@ -192,10 +185,6 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   public void dataNodeToElement(final DataNode rootNode, final RepositoryElementInterface element)
       throws KettleException {
 
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
-    if (dscContent.getHolder() == null) {
-      return;
-    }
     JobMeta jobMeta = (JobMeta) element;
 
     jobMeta.setSharedObjectsFile(getString(rootNode, "SHARED_FILE"));
@@ -379,7 +368,6 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   }
 
   public DataNode elementToDataNode(final RepositoryElementInterface element) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     JobMeta jobMeta = (JobMeta) element;
     DataNode rootNode = new DataNode(NODE_JOB);
 
@@ -447,21 +435,19 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       hopNode.setProperty(JOB_HOP_UNCONDITIONAL, hop.isUnconditional());
     }
 
-    if (dscContent.getIssuer() != null) {
-      String[] paramKeys = jobMeta.listParameters();
-      DataNode paramsNode = rootNode.addNode(NODE_PARAMETERS);
-      paramsNode.setProperty(PROP_NR_PARAMETERS, paramKeys == null ? 0 : paramKeys.length);
+    String[] paramKeys = jobMeta.listParameters();
+    DataNode paramsNode = rootNode.addNode(NODE_PARAMETERS);
+    paramsNode.setProperty(PROP_NR_PARAMETERS, paramKeys == null ? 0 : paramKeys.length);
 
-      for (int idx = 0; idx < paramKeys.length; idx++) {
-        DataNode paramNode = paramsNode.addNode(PARAM_PREFIX + idx);
-        String key = paramKeys[idx];
-        String description = jobMeta.getParameterDescription(paramKeys[idx]);
-        String defaultValue = jobMeta.getParameterDefault(paramKeys[idx]);
+    for (int idx = 0; idx < paramKeys.length; idx++) {
+      DataNode paramNode = paramsNode.addNode(PARAM_PREFIX + idx);
+      String key = paramKeys[idx];
+      String description = jobMeta.getParameterDescription(paramKeys[idx]);
+      String defaultValue = jobMeta.getParameterDefault(paramKeys[idx]);
 
-        paramNode.setProperty(PARAM_KEY, key != null ? key : ""); //$NON-NLS-1$
-        paramNode.setProperty(PARAM_DEFAULT, defaultValue != null ? defaultValue : ""); //$NON-NLS-1$
-        paramNode.setProperty(PARAM_DESC, description != null ? description : ""); //$NON-NLS-1$
-      }
+      paramNode.setProperty(PARAM_KEY, key != null ? key : ""); //$NON-NLS-1$
+      paramNode.setProperty(PARAM_DEFAULT, defaultValue != null ? defaultValue : ""); //$NON-NLS-1$
+      paramNode.setProperty(PARAM_DESC, description != null ? description : ""); //$NON-NLS-1$
     }
 
     // Let's not forget to save the details of the transformation itself.

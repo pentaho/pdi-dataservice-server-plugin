@@ -9,10 +9,6 @@ import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 
-import com.pentaho.commons.dsc.PentahoDscContent;
-import com.pentaho.commons.dsc.PentahoLicenseVerifier;
-import com.pentaho.commons.dsc.params.KParam;
-
 public class PartitionDelegate extends AbstractDelegate implements ITransformer {
 
   private static final String NODE_ROOT = "partitionSchema"; //$NON-NLS-1$
@@ -44,14 +40,9 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
   }
 
   public void dataNodeToElement(DataNode rootNode, RepositoryElementInterface element) throws KettleException {
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
-
     PartitionSchema partitionSchema = (PartitionSchema) element;
-    
-    if (dscContent.getExtra() != null) {
-      partitionSchema.setDynamicallyDefined(rootNode.getProperty(PROP_DYNAMIC_DEFINITION).getBoolean());
-      partitionSchema.setNumberOfPartitionsPerSlave(getString(rootNode, PROP_PARTITIONS_PER_SLAVE));
-    }
+    partitionSchema.setDynamicallyDefined(rootNode.getProperty(PROP_DYNAMIC_DEFINITION).getBoolean());
+    partitionSchema.setNumberOfPartitionsPerSlave(getString(rootNode, PROP_PARTITIONS_PER_SLAVE));
     // Also, load all the properties we can find...
 
     DataNode attrNode = rootNode.getNode(NODE_ATTRIBUTES);
@@ -68,8 +59,6 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
     PartitionSchema partitionSchema = (PartitionSchema) element;
     DataNode rootNode = new DataNode(NODE_ROOT);
 
-    PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
-
     // Check for naming collision
     ObjectId partitionId = repo.getPartitionSchemaID(partitionSchema.getName());
     if (partitionId != null && !partitionSchema.getObjectId().equals(partitionId)) {
@@ -83,10 +72,8 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
     // Save the cluster-partition relationships
     DataNode attrNode = rootNode.addNode(NODE_ATTRIBUTES);
     attrNode.setProperty(PROP_NB_PARTITION_SCHEMA, partitionSchema.getPartitionIDs().size());
-    if (dscContent.getSubject() != null) {
-      for (int i = 0; i < partitionSchema.getPartitionIDs().size(); i++) {
-        attrNode.setProperty(String.valueOf(i), partitionSchema.getPartitionIDs().get(i));
-      }
+    for (int i = 0; i < partitionSchema.getPartitionIDs().size(); i++) {
+      attrNode.setProperty(String.valueOf(i), partitionSchema.getPartitionIDs().get(i));
     }
     return rootNode;
   }
