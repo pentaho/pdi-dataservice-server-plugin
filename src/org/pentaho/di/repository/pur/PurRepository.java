@@ -830,7 +830,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   protected List<RepositoryFile> getAllFilesOfType(final ObjectId dirId, final List<RepositoryObjectType> objectTypes)
       throws KettleException {
-    List<Serializable> parentFolderIds = new ArrayList<Serializable>();
+    Set<Serializable> parentFolderIds = new HashSet<Serializable>();
     List<String> filters = new ArrayList<String>();
     for (RepositoryObjectType objectType : objectTypes) {
       switch (objectType) {
