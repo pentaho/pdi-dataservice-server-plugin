@@ -132,8 +132,6 @@ public class TrashBrowseController extends BrowseController {
   @Override
   public void init(Repository repository) throws ControllerInitializationException {
     super.init(repository);
-    this.repository = repository;
-    createBindings();
     try {
       messageBox = (XulMessageBox) document.createElement("messagebox");//$NON-NLS-1$
       trashService = (ITrashService) repository.getService(ITrashService.class);
