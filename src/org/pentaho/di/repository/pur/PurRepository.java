@@ -33,6 +33,7 @@ import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRecipient;
+import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
@@ -46,7 +47,6 @@ import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.StringObjectId;
-import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.repository.pur.model.EEJobMeta;
 import org.pentaho.di.repository.pur.model.EERepositoryObject;
 import org.pentaho.di.repository.pur.model.EETransMeta;
@@ -73,6 +73,7 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFileAce;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileSid;
+import org.pentaho.platform.api.repository2.unified.RepositoryFileTree;
 import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
@@ -441,7 +442,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     RepositoryDirectory rootDir = new RepositoryDirectory();
     rootRef = new SoftReference<RepositoryDirectory>(rootDir);
     rootDir.setObjectId(new StringObjectId(rootFolder.getId().toString()));
-    loadRepositoryDirectory(rootDir, rootFolder);
+    RepositoryFileTree rootFileTree = pur.getTree(ClientRepositoryPaths.getRootFolderPath(), -1, null);
+    loadRepositoryDirectory(rootDir, rootFolder, rootFileTree);
 
     /** HACK AND SLASH HERE ***/
     /**
@@ -532,17 +534,29 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return newRoot;
   }
 
-  private void loadRepositoryDirectory(final RepositoryDirectoryInterface parentDir, final RepositoryFile folder)
+  private void loadRepositoryDirectory(final RepositoryDirectoryInterface parentDir, final RepositoryFile folder, final RepositoryFileTree treeNode)
       throws KettleException {
     try {
-      List<RepositoryFile> children = pur.getChildren(folder.getId());
-      for (RepositoryFile child : children) {
-        if (child.isFolder()) {
-          RepositoryDirectory dir = new RepositoryDirectory(parentDir, child.getName());
-          dir.setObjectId(new StringObjectId(child.getId().toString()));
-          parentDir.addSubdirectory(dir);
-          loadRepositoryDirectory(dir, child);
+      List<RepositoryElementMetaInterface> fileChildren = new ArrayList<RepositoryElementMetaInterface>();
+      List<RepositoryFileTree> children = treeNode.getChildren();
+      if (children != null) {
+        for (RepositoryFileTree child : children) {
+          if (child.getFile().isFolder()) {
+            RepositoryDirectory dir = new RepositoryDirectory(parentDir, child.getFile().getName());
+            dir.setObjectId(new StringObjectId(child.getFile().getId().toString()));
+            parentDir.addSubdirectory(dir);
+            loadRepositoryDirectory(dir, child.getFile(), child);
+          } else {
+            // a real file, like a Transformation or Job
+            RepositoryLock lock = getLock(child.getFile());
+            String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
+                + XMLHandler.date2string(lock.getLockDate()) + ")";
+            RepositoryObjectType objectType = getObjectType(child.getFile().getName());
+            fileChildren.add(new EERepositoryObject(new StringObjectId(child.getFile().getId().toString()), child.getFile().getTitle(), parentDir, null, child.getFile().getLastModifiedDate(),
+              objectType, null, lockMessage, false));
+          }
         }
+        parentDir.setRepositoryObjects(fileChildren);
       }
     } catch (Exception e) {
       throw new KettleException("Unable to load directory structure from repository", e);
