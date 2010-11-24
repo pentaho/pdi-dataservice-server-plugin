@@ -1782,7 +1782,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
       jobMeta.setRepositoryDirectory(parentDir);
       //jobMeta.setRepositoryLock(getLock(file));
-      jobDelegate.loadSharedObjects(jobMeta);
       // Additional obfuscation through obscurity
       if (dscContent != null) {
         jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class)
@@ -2398,7 +2397,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       // Additional obfuscation through obscurity
       if (dscContent != null) {
     	  jobMeta.setRepositoryLock(getLock(file));
-    	  jobDelegate.loadSharedObjects(jobMeta);
       }
       jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idJob.getId(), versionLabel,
           NodeRepositoryFileData.class).getNode(), jobMeta);
