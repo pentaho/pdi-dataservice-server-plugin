@@ -2,12 +2,12 @@ package org.pentaho.di.repository.pur;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.NotePadMeta;
 import org.pentaho.di.core.database.DatabaseMeta;
-import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogTableInterface;
 import org.pentaho.di.core.plugins.JobEntryPluginType;
@@ -19,11 +19,11 @@ import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
-import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryAttributeInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
@@ -126,25 +126,33 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
   // ~ Instance fields =================================================================================================
 
-  private Repository repo;
+  private PurRepository repo;
 
   // ~ Constructors ====================================================================================================
 
-  public JobDelegate(final Repository repo) {
+  public JobDelegate(final PurRepository repo) {
     super();
     this.repo = repo;
   }
 
   // ~ Methods =========================================================================================================
-
+  @SuppressWarnings("unchecked")
   public SharedObjects loadSharedObjects(final RepositoryElementInterface element) throws KettleException {
     JobMeta jobMeta = (JobMeta) element;
     jobMeta.setSharedObjects(jobMeta.readSharedObjects());
 
+    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = null;
+    try {
+      sharedObjectsByType = repo.readSharedObjects(RepositoryObjectType.DATABASE, RepositoryObjectType.SLAVE_SERVER);
+    } catch (Exception e) {
+      // TODO Create this property
+      throw new KettleException(BaseMessages.getString(PKG,
+          "JCRRepository.Exception.UnableToReadSharedObjectsFromRepository"), e); //$NON-NLS-1$
+    }
     // Repository objects take priority so let's overwrite them...
     //
-    readDatabases(jobMeta, true);
-    readSlaves(jobMeta, true);
+    readDatabases(jobMeta, true, (List<DatabaseMeta>) sharedObjectsByType.get(RepositoryObjectType.DATABASE));
+    readSlaves(jobMeta, true, (List<SlaveServer>) sharedObjectsByType.get(RepositoryObjectType.SLAVE_SERVER));
 
     return jobMeta.getSharedObjects();
   }
@@ -489,60 +497,40 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   }
 
   /**
-   * Read all the databases from the repository, insert into the JobMeta object, overwriting optionally
+   * Insert all the databases from the repository into the JobMeta object, overwriting optionally
    * 
    * @param JobMeta The transformation to load into.
-   * @param overWriteShared if an object with the same name exists, overwrite
-   * @throws KettleException 
+   * @param overWriteShared if an object with the same name exists, overwrite 
    */
-  protected void readDatabases(JobMeta jobMeta, boolean overWriteShared) throws KettleException {
-    try {
-      ObjectId dbids[] = repo.getDatabaseIDs(false);
-      for (int i = 0; i < dbids.length; i++) {
-        DatabaseMeta databaseMeta = repo.loadDatabaseMeta(dbids[i], null); // Load the last version
-        databaseMeta.shareVariablesWith(jobMeta);
-
-        DatabaseMeta check = jobMeta.findDatabase(databaseMeta.getName()); // Check if there already is one in the transformation
-        if (check == null || overWriteShared) // We only add, never overwrite database connections. 
-        {
-          if (databaseMeta.getName() != null) {
-            jobMeta.addOrReplaceDatabase(databaseMeta);
-            if (!overWriteShared)
-              databaseMeta.setChanged(false);
-          }
+  protected void readDatabases(JobMeta jobMeta, boolean overWriteShared, List<DatabaseMeta> databaseMetas){
+    for (DatabaseMeta databaseMeta : databaseMetas) {
+      if (overWriteShared || jobMeta.findDatabase(databaseMeta.getName()) == null) {
+        if (databaseMeta.getName() != null) {
+          databaseMeta.shareVariablesWith(jobMeta);
+          jobMeta.addOrReplaceDatabase(databaseMeta);
+          if (!overWriteShared)
+            databaseMeta.setChanged(false);
         }
       }
-      jobMeta.clearChanged();
-    } catch (Exception e) {
-      throw new KettleException(BaseMessages.getString(PKG,
-          "JCRRepository.Exception.UnableToReadDatabasesFromRepository"), e); //$NON-NLS-1$
     }
+    jobMeta.clearChanged();
   }
 
   /**
-   * Read the slave servers in the repository and add them to this job if they are not yet present.
+   * Add the slave servers in the repository to this job if they are not yet present.
    * @param JobMeta The job to load into.
    * @param overWriteShared if an object with the same name exists, overwrite
-   * @throws KettleException 
    */
-  protected void readSlaves(JobMeta jobMeta, boolean overWriteShared) throws KettleException {
-    try {
-      ObjectId dbids[] = repo.getSlaveIDs(false);
-      for (int i = 0; i < dbids.length; i++) {
-        SlaveServer slaveServer = repo.loadSlaveServer(dbids[i], null); // load the last version
-        slaveServer.shareVariablesWith(jobMeta);
-        SlaveServer check = jobMeta.findSlaveServer(slaveServer.getName()); // Check if there already is one in the transformation
-        if (check == null || overWriteShared) {
-          if (!Const.isEmpty(slaveServer.getName())) {
-            jobMeta.addOrReplaceSlaveServer(slaveServer);
-            if (!overWriteShared)
-              slaveServer.setChanged(false);
-          }
+  protected void readSlaves(JobMeta jobMeta, boolean overWriteShared, List<SlaveServer> slaveServers) {
+    for (SlaveServer slaveServer : slaveServers) {
+      if (overWriteShared || jobMeta.findSlaveServer(slaveServer.getName()) == null) {
+        if (!Const.isEmpty(slaveServer.getName())) {
+          slaveServer.shareVariablesWith(jobMeta);
+          jobMeta.addOrReplaceSlaveServer(slaveServer);
+          if (!overWriteShared)
+            slaveServer.setChanged(false);
         }
       }
-    } catch (KettleDatabaseException dbe) {
-      throw new KettleException(
-          BaseMessages.getString(PKG, "JCRRepository.Log.UnableToReadSlaveServersFromRepository"), dbe); //$NON-NLS-1$
     }
   }
 

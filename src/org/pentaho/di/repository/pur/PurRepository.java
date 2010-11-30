@@ -9,8 +9,11 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
@@ -58,6 +61,7 @@ import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.repository.pur.model.RepositoryObjectAce;
 import org.pentaho.di.repository.pur.model.RepositoryObjectAcl;
 import org.pentaho.di.repository.pur.model.RepositoryObjectRecipient;
+import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
@@ -130,17 +134,19 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   private PurRepositoryMeta repositoryMeta;
 
-  private ITransformer databaseMetaTransformer = new DatabaseDelegate(this);
+  private DatabaseDelegate databaseMetaTransformer = new DatabaseDelegate(this);
 
-  private ITransformer partitionSchemaTransformer = new PartitionDelegate(this);
+  private PartitionDelegate partitionSchemaTransformer = new PartitionDelegate(this);
 
-  private ITransformer slaveTransformer = new SlaveDelegate(this);
+  private SlaveDelegate slaveTransformer = new SlaveDelegate(this);
 
-  private ITransformer clusterTransformer = new ClusterDelegate(this);
+  private ClusterDelegate clusterTransformer = new ClusterDelegate(this);
 
   private ISharedObjectsTransformer transDelegate = new TransDelegate(this);
 
   private ISharedObjectsTransformer jobDelegate = new JobDelegate(this);
+
+  private Map<RepositoryObjectType, SharedObjectAssembler<?>> sharedObjectAssemblerMap;
 
   private RepositorySecurityManager securityManager;
 
@@ -185,6 +191,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public PurRepository() {
     super();
+    initSharedObjectAssemblerMap();
   }
 
   // ~ Methods =========================================================================================================
@@ -969,6 +976,98 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     } catch (Exception e) {
       throw new KettleException("Unable to get all database names", e);
     }
+  }
+
+  /**
+   * Initialize the shared object assembler map with known assemblers
+   */
+  private void initSharedObjectAssemblerMap() {
+    sharedObjectAssemblerMap = new HashMap<RepositoryObjectType, SharedObjectAssembler<?>>();
+    sharedObjectAssemblerMap.put(RepositoryObjectType.DATABASE, databaseMetaTransformer);
+    sharedObjectAssemblerMap.put(RepositoryObjectType.CLUSTER_SCHEMA, clusterTransformer);
+    sharedObjectAssemblerMap.put(RepositoryObjectType.PARTITION_SCHEMA, partitionSchemaTransformer);
+    sharedObjectAssemblerMap.put(RepositoryObjectType.SLAVE_SERVER, slaveTransformer);
+  }
+
+  /**
+   * Read shared objects of the types provided from the repository.  Every {@link SharedObjectInterface} that is read will be
+   * fully loaded as if it has been loaded through {@link #loadDatabaseMeta(ObjectId, String)}, {@link #loadClusterSchema(ObjectId, List, String)}, etc.
+   * <p>This method was introduced to reduce the number of server calls for loading shared objects to a constant number: {@code 2 + n, where n is the number of types requested}.</p>
+   * 
+   * @param types Types of repository objects to read from the repository
+   * @return Map of type to shared objects.  Each map entry will contain a non-null {@link List} of {@link RepositoryObjectType}s for every type provided.
+   * @throws KettleException
+   */
+  public Map<RepositoryObjectType, List<? extends SharedObjectInterface>> readSharedObjects(
+      RepositoryObjectType... types) throws KettleException {
+    // Overview:  
+    //  1) We will fetch RepositoryFile, NodeRepositoryFileData, and VersionSummary for all types provided.  
+    //  2) We assume that unless an exception is thrown every RepositoryFile returned by getFilesByType(..) have a 
+    //     matching NodeRepositoryFileData and VersionSummary.
+    //  3) With all files, node data, and versions in hand we will iterate over them, merging them back into usable shared objects
+    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+    List<RepositoryFile> allFiles = new ArrayList<RepositoryFile>();
+    // Since type is not preserved in the RepositoryFile we fetch files by type so we don't rely on parsing the name to determine type afterward
+    // Map must be ordered or we can't match up files with data and version summary
+    LinkedHashMap<RepositoryObjectType, List<RepositoryFile>> filesByType = getFilesByType(allFiles, types);
+    try
+    {
+      List<NodeRepositoryFileData> data = pur.getDataForReadInBatch(allFiles, NodeRepositoryFileData.class);
+      List<VersionSummary> versions = pur.getVersionSummaryInBatch(allFiles);
+      // Only need one iterator for all data and versions.  We will work through them as we process the files by type, in order.
+      Iterator<NodeRepositoryFileData> dataIter = data.iterator();
+      Iterator<VersionSummary> versionsIter = versions.iterator();
+  
+      // Assemble into completely loaded SharedObjectInterfaces by type
+      for (Entry<RepositoryObjectType, List<RepositoryFile>> entry : filesByType.entrySet()) {
+        SharedObjectAssembler<?> assembler = sharedObjectAssemblerMap.get(entry.getKey());
+        if (assembler == null) {
+          throw new UnsupportedOperationException(String.format("Cannot assemble shared object of type [%s]", entry.getKey())); //$NON-NLS-1$
+        }
+        // For all files of this type, assemble them from the pieces of data pulled from the repository
+        Iterator<RepositoryFile> filesIter = entry.getValue().iterator();
+        List<SharedObjectInterface> sharedObjects = new ArrayList<SharedObjectInterface>(entry.getValue().size());
+        // Exceptions are thrown during lookup if data or versions aren't found so all the lists should be the same size
+        // (no need to check for next on all iterators)
+        while (filesIter.hasNext()) {
+          RepositoryFile file = filesIter.next();
+          NodeRepositoryFileData repoData = dataIter.next();
+          VersionSummary version = versionsIter.next();
+          sharedObjects.add(assembler.assemble(file, repoData, version));
+        }
+        sharedObjectsByType.put(entry.getKey(), sharedObjects);
+      }
+    } catch (Exception ex) {
+      // TODO i18n
+      throw new KettleException("Unable to load shared objects", ex); //$NON-NLS-1$
+    }
+    return sharedObjectsByType;
+  }
+
+  /**
+   * Fetch {@link RepositoryFile}s by {@code RepositoryObjectType}.
+   * 
+   * @param allFiles List to add files into.
+   * @param types Types of files to fetch
+   * @return Ordered map of object types to list of files.
+   * @throws KettleException 
+   */
+  private LinkedHashMap<RepositoryObjectType, List<RepositoryFile>> getFilesByType(List<RepositoryFile> allFiles,
+      RepositoryObjectType... types) throws KettleException {
+    // Must be ordered or we can't match up files with data and version summary
+    LinkedHashMap<RepositoryObjectType, List<RepositoryFile>> filesByType = new LinkedHashMap<RepositoryObjectType, List<RepositoryFile>>();
+    // Since type is not preserved in the RepositoryFile we must fetch files by type
+    for (RepositoryObjectType type : types) {
+      try {
+        List<RepositoryFile> files = getAllFilesOfType(null, type, false);
+        filesByType.put(type, files);
+        allFiles.addAll(files);
+      } catch (Exception ex) {
+        // TODO i18n
+        throw new KettleException(String.format("Unable to get all files of type [%s]", type), ex); //$NON-NLS-1$
+      }
+    }
+    return filesByType;
   }
 
   public List<DatabaseMeta> readDatabases() throws KettleException {

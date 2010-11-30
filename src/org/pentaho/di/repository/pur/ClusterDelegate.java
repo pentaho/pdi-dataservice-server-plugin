@@ -9,10 +9,13 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
+import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
 
-public class ClusterDelegate extends AbstractDelegate implements ITransformer {
+public class ClusterDelegate extends AbstractDelegate implements ITransformer, SharedObjectAssembler<ClusterSchema> {
 
   private static final String NODE_ROOT = "Slave"; //$NON-NLS-1$
 
@@ -108,5 +111,15 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer {
   
   protected Repository getRepository() {
     return repo;
+  }
+
+  public ClusterSchema assemble(RepositoryFile file, NodeRepositoryFileData data, VersionSummary version)
+      throws KettleException {
+    ClusterSchema clusterSchema = (ClusterSchema) dataNodeToElement(data.getNode());
+    clusterSchema.setName(file.getTitle());
+    clusterSchema.setObjectId(new StringObjectId(file.getId().toString()));
+    clusterSchema.setObjectRevision(createObjectRevision(version));
+    clusterSchema.clearChanged();
+    return clusterSchema;
   }
 }

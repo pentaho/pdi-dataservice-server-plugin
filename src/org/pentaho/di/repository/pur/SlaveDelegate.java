@@ -5,9 +5,13 @@ import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
+import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
 
-public class SlaveDelegate extends AbstractDelegate implements ITransformer {
+public class SlaveDelegate extends AbstractDelegate implements ITransformer, SharedObjectAssembler<SlaveServer> {
 
   private static final String NODE_ROOT = "Slave"; //$NON-NLS-1$
 
@@ -90,5 +94,15 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer {
 
   protected Repository getRepository() {
     return repo;
+  }
+  
+  public SlaveServer assemble(RepositoryFile file, NodeRepositoryFileData data, VersionSummary version)
+      throws KettleException {
+    SlaveServer slaveServer = (SlaveServer) dataNodeToElement(data.getNode());
+    slaveServer.setName(file.getTitle());
+    slaveServer.setObjectId(new StringObjectId(file.getId().toString()));
+    slaveServer.setObjectRevision(createObjectRevision(version));
+    slaveServer.clearChanged();
+    return slaveServer;
   }
 }

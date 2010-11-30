@@ -6,10 +6,14 @@ import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
+import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
 
-public class PartitionDelegate extends AbstractDelegate implements ITransformer {
+public class PartitionDelegate extends AbstractDelegate implements ITransformer, SharedObjectAssembler<PartitionSchema> {
 
   private static final String NODE_ROOT = "partitionSchema"; //$NON-NLS-1$
 
@@ -76,5 +80,15 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer 
       attrNode.setProperty(String.valueOf(i), partitionSchema.getPartitionIDs().get(i));
     }
     return rootNode;
+  }
+
+  public PartitionSchema assemble(RepositoryFile file, NodeRepositoryFileData data, VersionSummary version)
+      throws KettleException {
+    PartitionSchema partitionSchema = (PartitionSchema) dataNodeToElement(data.getNode());
+    partitionSchema.setName(file.getTitle());
+    partitionSchema.setObjectId(new StringObjectId(file.getId().toString()));
+    partitionSchema.setObjectRevision(createObjectRevision(version));
+    partitionSchema.clearChanged();
+    return partitionSchema;
   }
 }

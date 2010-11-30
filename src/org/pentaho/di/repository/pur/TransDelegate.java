@@ -1,5 +1,8 @@
 package org.pentaho.di.repository.pur;
 
+import java.util.List;
+import java.util.Map;
+
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.Const;
@@ -19,7 +22,9 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryAttributeInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
@@ -187,9 +192,9 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
   private static final String PARAM_DEFAULT = "PARAM_DEFAULT";
 
-  private Repository repo;
+  private PurRepository repo;
 
-  public TransDelegate(final Repository repo) {
+  public TransDelegate(final PurRepository repo) {
     super();
     this.repo = repo;
   }
@@ -664,128 +669,104 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   	}
   }
 
+  @SuppressWarnings("unchecked")
   public SharedObjects loadSharedObjects(final RepositoryElementInterface element) throws KettleException {
     TransMeta transMeta = (TransMeta) element;
     transMeta.setSharedObjects(transMeta.readSharedObjects());
 
+    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = null;
+    try {
+      sharedObjectsByType = repo
+          .readSharedObjects(RepositoryObjectType.DATABASE, RepositoryObjectType.PARTITION_SCHEMA,
+              RepositoryObjectType.SLAVE_SERVER, RepositoryObjectType.CLUSTER_SCHEMA);
+    } catch (Exception e) {
+      // TODO Create this property
+      throw new KettleException(BaseMessages.getString(PKG,
+          "JCRRepository.Exception.UnableToReadSharedObjectsFromRepository"), e); //$NON-NLS-1$
+    }
+
     // Repository objects take priority so let's overwrite them...
     //
-    readDatabases(transMeta, true);
-    readPartitionSchemas(transMeta, true);
-    readSlaves(transMeta, true);
-    readClusters(transMeta, true);
+    readDatabases(transMeta, true, (List<DatabaseMeta>) sharedObjectsByType.get(RepositoryObjectType.DATABASE));
+    readPartitionSchemas(transMeta, true, (List<PartitionSchema>) sharedObjectsByType.get(RepositoryObjectType.PARTITION_SCHEMA));
+    readSlaves(transMeta, true, (List<SlaveServer>) sharedObjectsByType.get(RepositoryObjectType.SLAVE_SERVER));
+    readClusters(transMeta, true, (List<ClusterSchema>) sharedObjectsByType.get(RepositoryObjectType.CLUSTER_SCHEMA));
 
     return transMeta.getSharedObjects();
   }
 
   /**
-   * Read all the databases from the repository, insert into the TransMeta object, overwriting optionally
+   * Insert all the databases from the repository into the TransMeta object, overwriting optionally
    * 
    * @param TransMeta The transformation to load into.
    * @param overWriteShared if an object with the same name exists, overwrite
    * @throws KettleException 
    */
-  protected void readDatabases(TransMeta transMeta, boolean overWriteShared) throws KettleException {
-    try {
-      ObjectId dbids[] = repo.getDatabaseIDs(false);
-      for (int i = 0; i < dbids.length; i++) {
-        DatabaseMeta databaseMeta = repo.loadDatabaseMeta(dbids[i], null); // Load the last version
-        databaseMeta.shareVariablesWith(transMeta);
-
-        DatabaseMeta check = transMeta.findDatabase(databaseMeta.getName()); // Check if there already is one in the transformation
-        if (check == null || overWriteShared) // We only add, never overwrite database connections. 
-        {
-          if (databaseMeta.getName() != null) {
-            transMeta.addOrReplaceDatabase(databaseMeta);
-            if (!overWriteShared)
-              databaseMeta.setChanged(false);
-          }
+  protected void readDatabases(TransMeta transMeta, boolean overWriteShared, List<DatabaseMeta> databaseMetas) {
+    for (DatabaseMeta databaseMeta : databaseMetas) {
+      if (overWriteShared || transMeta.findDatabase(databaseMeta.getName()) == null) {
+        if (databaseMeta.getName() != null) {
+          databaseMeta.shareVariablesWith(transMeta);
+          transMeta.addOrReplaceDatabase(databaseMeta);
+          if (!overWriteShared)
+            databaseMeta.setChanged(false);
         }
       }
-      transMeta.clearChangedDatabases();
-    } catch (Exception e) {
-      throw new KettleException(BaseMessages.getString(PKG,
-          "JCRRepository.Exception.UnableToReadDatabasesFromRepository"), e); //$NON-NLS-1$
+    }
+    transMeta.clearChangedDatabases();
+  }
+
+  /**
+   * Add clusters in the repository to this transformation if they are not yet present.
+   * 
+   * @param TransMeta The transformation to load into.
+   * @param overWriteShared if an object with the same name exists, overwrite
+   */
+  protected void readClusters(TransMeta transMeta, boolean overWriteShared, List<ClusterSchema> clusterSchemas) {
+    for (ClusterSchema clusterSchema : clusterSchemas) {
+      if (overWriteShared || transMeta.findClusterSchema(clusterSchema.getName()) == null) {
+        if (!Const.isEmpty(clusterSchema.getName())) {
+          clusterSchema.shareVariablesWith(transMeta);
+          transMeta.addOrReplaceClusterSchema(clusterSchema);
+          if (!overWriteShared)
+            clusterSchema.setChanged(false);
+        }
+      }
     }
   }
 
   /**
-   * Read the clusters in the repository and add them to this transformation if they are not yet present.
+   * Add the partitions in the repository to this transformation if they are not yet present.
    * @param TransMeta The transformation to load into.
    * @param overWriteShared if an object with the same name exists, overwrite
-   * @throws KettleException 
    */
-  protected void readClusters(TransMeta transMeta, boolean overWriteShared) throws KettleException {
-    try {
-      ObjectId dbids[] = repo.getClusterIDs(false);
-      for (int i = 0; i < dbids.length; i++) {
-        ClusterSchema clusterSchema = repo.loadClusterSchema(dbids[i], transMeta.getSlaveServers(), null); // Read the last version
-        clusterSchema.shareVariablesWith(transMeta);
-        ClusterSchema check = transMeta.findClusterSchema(clusterSchema.getName()); // Check if there already is one in the transformation
-        if (check == null || overWriteShared) {
-          if (!Const.isEmpty(clusterSchema.getName())) {
-            transMeta.addOrReplaceClusterSchema(clusterSchema);
-            if (!overWriteShared)
-              clusterSchema.setChanged(false);
-          }
+  protected void readPartitionSchemas(TransMeta transMeta, boolean overWriteShared, List<PartitionSchema> partitionSchemas) {
+    for (PartitionSchema partitionSchema : partitionSchemas) {
+      if (overWriteShared || transMeta.findPartitionSchema(partitionSchema.getName()) == null) {
+        if (!Const.isEmpty(partitionSchema.getName())) {
+          transMeta.addOrReplacePartitionSchema(partitionSchema);
+          if (!overWriteShared)
+            partitionSchema.setChanged(false);
         }
       }
-    } catch (KettleDatabaseException dbe) {
-      throw new KettleException(
-          BaseMessages.getString(PKG, "JCRRepository.Log.UnableToReadClustersFromRepository"), dbe); //$NON-NLS-1$
     }
   }
 
   /**
-   * Read the partitions in the repository and add them to this transformation if they are not yet present.
+   * Add the slave servers in the repository to this transformation if they are not yet present.
    * @param TransMeta The transformation to load into.
    * @param overWriteShared if an object with the same name exists, overwrite
-   * @throws KettleException 
    */
-  protected void readPartitionSchemas(TransMeta transMeta, boolean overWriteShared) throws KettleException {
-    try {
-      ObjectId dbids[] = repo.getPartitionSchemaIDs(false);
-      for (int i = 0; i < dbids.length; i++) {
-        PartitionSchema partitionSchema = repo.loadPartitionSchema(dbids[i], null); // Load the last version
-        PartitionSchema check = transMeta.findPartitionSchema(partitionSchema.getName()); // Check if there already is one in the transformation
-        if (check == null || overWriteShared) {
-          if (!Const.isEmpty(partitionSchema.getName())) {
-            transMeta.addOrReplacePartitionSchema(partitionSchema);
-            if (!overWriteShared)
-              partitionSchema.setChanged(false);
-          }
+  protected void readSlaves(TransMeta transMeta, boolean overWriteShared, List<SlaveServer> slaveServers) {
+    for (SlaveServer slaveServer : slaveServers) {
+      if (overWriteShared || transMeta.findSlaveServer(slaveServer.getName()) == null) {
+        if (!Const.isEmpty(slaveServer.getName())) {
+          slaveServer.shareVariablesWith(transMeta);
+          transMeta.addOrReplaceSlaveServer(slaveServer);
+          if (!overWriteShared)
+            slaveServer.setChanged(false);
         }
       }
-    } catch (KettleException dbe) {
-      throw new KettleException(BaseMessages.getString(PKG,
-          "JCRRepository.Log.UnableToReadPartitionSchemaFromRepository"), dbe); //$NON-NLS-1$
-    }
-  }
-
-  /**
-   * Read the slave servers in the repository and add them to this transformation if they are not yet present.
-   * @param TransMeta The transformation to load into.
-   * @param overWriteShared if an object with the same name exists, overwrite
-   * @throws KettleException 
-   */
-  protected void readSlaves(TransMeta transMeta, boolean overWriteShared) throws KettleException {
-    try {
-      ObjectId dbids[] = repo.getSlaveIDs(false);
-      for (int i = 0; i < dbids.length; i++) {
-        SlaveServer slaveServer = repo.loadSlaveServer(dbids[i], null); // load the last version
-        slaveServer.shareVariablesWith(transMeta);
-        SlaveServer check = transMeta.findSlaveServer(slaveServer.getName()); // Check if there already is one in the transformation
-        if (check == null || overWriteShared) {
-          if (!Const.isEmpty(slaveServer.getName())) {
-            transMeta.addOrReplaceSlaveServer(slaveServer);
-            if (!overWriteShared)
-              slaveServer.setChanged(false);
-          }
-        }
-      }
-    } catch (KettleDatabaseException dbe) {
-      throw new KettleException(
-          BaseMessages.getString(PKG, "JCRRepository.Log.UnableToReadSlaveServersFromRepository"), dbe); //$NON-NLS-1$
     }
   }
 

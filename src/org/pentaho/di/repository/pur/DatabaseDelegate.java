@@ -8,10 +8,14 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
+import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
+import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
 
-public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
+public class DatabaseDelegate extends AbstractDelegate implements ITransformer, SharedObjectAssembler<DatabaseMeta> {
 
   // ~ Static fields/initializers ======================================================================================
 
@@ -118,5 +122,14 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer {
 
   public Repository getRepository() {
     return repo;
+  }
+
+  public DatabaseMeta assemble(RepositoryFile file, NodeRepositoryFileData data, VersionSummary version) throws KettleException {
+    DatabaseMeta databaseMeta = (DatabaseMeta) dataNodeToElement(data.getNode());
+    databaseMeta.setName(file.getTitle());
+    databaseMeta.setObjectId(new StringObjectId(file.getId().toString()));
+    databaseMeta.setObjectRevision(createObjectRevision(version));
+    databaseMeta.clearChanged();
+    return databaseMeta;
   }
 }
