@@ -1424,20 +1424,15 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       throws KettleException {
     try {
       // We dont need to use slaveServer variable as the dataNoteToElement method finds the server from the repository
-      ClusterSchema clusterSchema = new ClusterSchema();
-      clusterTransformer.dataNodeToElement(pur.getDataAtVersionForRead(idClusterSchema.getId(), versionId,
-          NodeRepositoryFileData.class).getNode(), clusterSchema);
+      NodeRepositoryFileData data = pur.getDataAtVersionForRead(idClusterSchema.getId(), versionId,
+          NodeRepositoryFileData.class);
       RepositoryFile file = null;
       if (versionId != null) {
         file = pur.getFileAtVersion(idClusterSchema.getId(), versionId);
       } else {
         file = pur.getFileById(idClusterSchema.getId());  
       }
-      clusterSchema.setName(file.getTitle());
-      clusterSchema.setObjectId(new StringObjectId(idClusterSchema));
-      clusterSchema.setObjectRevision(getObjectRevision(idClusterSchema, versionId));
-      clusterSchema.clearChanged();
-      return clusterSchema;
+      return clusterTransformer.assemble(file, data, pur.getVersionSummary(idClusterSchema.getId(), versionId));
     } catch (Exception e) {
       throw new KettleException("Unable to load cluster schema with id [" + idClusterSchema + "]", e);
     }
@@ -1462,20 +1457,15 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public PartitionSchema loadPartitionSchema(ObjectId partitionSchemaId, String versionId) throws KettleException {
     try {
-      PartitionSchema partitionSchema = new PartitionSchema();
-      partitionSchemaTransformer.dataNodeToElement(pur.getDataAtVersionForRead(partitionSchemaId.getId(), versionId,
-          NodeRepositoryFileData.class).getNode(), partitionSchema);
+      NodeRepositoryFileData data = pur.getDataAtVersionForRead(partitionSchemaId.getId(), versionId,
+          NodeRepositoryFileData.class);
       RepositoryFile file = null;
       if (versionId != null) {
         file = pur.getFileAtVersion(partitionSchemaId.getId(), versionId);
       } else {
         file = pur.getFileById(partitionSchemaId.getId());  
       }
-      partitionSchema.setName(file.getTitle());
-      partitionSchema.setObjectId(new StringObjectId(partitionSchemaId));
-      partitionSchema.setObjectRevision(getObjectRevision(partitionSchemaId, versionId));
-      partitionSchema.clearChanged();
-      return partitionSchema;
+      return partitionSchemaTransformer.assemble(file, data, pur.getVersionSummary(partitionSchemaId.getId(), versionId));
     } catch (Exception e) {
       throw new KettleException("Unable to load partition schema with id [" + partitionSchemaId + "]", e);
     }
@@ -1483,20 +1473,15 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public SlaveServer loadSlaveServer(ObjectId idSlaveServer, String versionId) throws KettleException {
     try {
-      SlaveServer slaveServer = new SlaveServer();
-      slaveTransformer.dataNodeToElement(pur.getDataAtVersionForRead(idSlaveServer.getId(), versionId,
-          NodeRepositoryFileData.class).getNode(), slaveServer);
+      NodeRepositoryFileData data = pur.getDataAtVersionForRead(idSlaveServer.getId(), versionId,
+          NodeRepositoryFileData.class);
       RepositoryFile file = null;
       if (versionId != null) {
         file = pur.getFileAtVersion(idSlaveServer.getId(), versionId);
       } else {
         file = pur.getFileById(idSlaveServer.getId());  
       }
-      slaveServer.setName(file.getTitle());
-      slaveServer.setObjectId(new StringObjectId(idSlaveServer));
-      slaveServer.setObjectRevision(getObjectRevision(idSlaveServer, versionId));
-      slaveServer.clearChanged();
-      return slaveServer;
+      return slaveTransformer.assemble(file, data, pur.getVersionSummary(idSlaveServer.getId(), versionId));
     } catch (Exception e) {
       throw new KettleException("Unable to load slave server with id [" + idSlaveServer + "]", e);
     }
@@ -1812,20 +1797,15 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public DatabaseMeta loadDatabaseMeta(final ObjectId databaseId, final String versionId) throws KettleException {
     try {
-      DatabaseMeta databaseMeta = new DatabaseMeta();
-      databaseMetaTransformer.dataNodeToElement(pur.getDataAtVersionForRead(databaseId.getId(), versionId,
-          NodeRepositoryFileData.class).getNode(), databaseMeta);
+      NodeRepositoryFileData data = pur.getDataAtVersionForRead(databaseId.getId(), versionId,
+          NodeRepositoryFileData.class);
       RepositoryFile file = null;
       if (versionId != null) {
         file = pur.getFileAtVersion(databaseId.getId(), versionId);
       } else {
         file = pur.getFileById(databaseId.getId());  
       }
-      databaseMeta.setName(file.getTitle());
-      databaseMeta.setObjectId(new StringObjectId(databaseId));
-      databaseMeta.setObjectRevision(getObjectRevision(databaseId, versionId));
-      databaseMeta.clearChanged();
-      return databaseMeta;
+      return databaseMetaTransformer.assemble(file, data, pur.getVersionSummary(databaseId.getId(), versionId));
     } catch (Exception e) {
       throw new KettleException("Unable to load database with id [" + databaseId + "]", e);
     }
