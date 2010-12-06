@@ -29,7 +29,6 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.IRepositoryService;
@@ -556,11 +555,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           } else {
             // a real file, like a Transformation or Job
             RepositoryLock lock = getLock(child.getFile());
-            String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
-                + XMLHandler.date2string(lock.getLockDate()) + ")";
             RepositoryObjectType objectType = getObjectType(child.getFile().getName());
             fileChildren.add(new EERepositoryObject(new StringObjectId(child.getFile().getId().toString()), child.getFile().getTitle(), parentDir, null, child.getFile().getLastModifiedDate(),
-              objectType, null, lockMessage, false));
+              objectType, null, lock, false));
           }
         }
         parentDir.setRepositoryObjects(fileChildren);
@@ -1356,22 +1353,17 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       List<RepositoryFile> nonDeletedChildren = getAllFilesOfType(dirId, objectTypes);
       for (RepositoryFile file : nonDeletedChildren) {
         RepositoryLock lock = getLock(file);
-        String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
-            + XMLHandler.date2string(lock.getLockDate()) + ")";
         RepositoryObjectType objectType = getObjectType(file.getName());
-
         list.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getTitle(), repDir, null, file.getLastModifiedDate(),
-            objectType, null, lockMessage, false));
+            objectType, null, lock, false));
       }
       if (includeDeleted) {
         List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(dirId, objectTypes);
         for (RepositoryFile file : deletedChildren) {
           RepositoryLock lock = getLock(file);
-          String lockMessage = lock == null ? null : lock.getMessage() + " (" + lock.getLogin() + " since "
-              + XMLHandler.date2string(lock.getLockDate()) + ")";
           RepositoryObjectType objectType = getObjectType(file.getName());
           list.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getTitle(), repDir, null, file.getLastModifiedDate(),
-              objectType, null, lockMessage, true));
+              objectType, null, lock, true));
         }
       }
       return list;
@@ -1487,12 +1479,14 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  public void lockJob(final ObjectId idJob, final String message) throws KettleException {
+  public RepositoryLock lockJob(final ObjectId idJob, final String message) throws KettleException {
     lockFileById(idJob, message);
+    return getLockById(idJob);
   }
 
-  public void lockTransformation(final ObjectId idTransformation, final String message) throws KettleException {
+  public RepositoryLock lockTransformation(final ObjectId idTransformation, final String message) throws KettleException {
     lockFileById(idTransformation, message);
+    return getLockById(idTransformation);
   }
 
   protected void lockFileById(final ObjectId id, final String message) throws KettleException {

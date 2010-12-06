@@ -6,6 +6,8 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementMetaInterface;
+import org.pentaho.di.repository.pur.model.EERepositoryObject;
+import org.pentaho.di.repository.pur.model.ObjectAcl;
 import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IAclObject;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.ILockObject;
@@ -22,9 +24,15 @@ public class UIEETransformation extends UITransformation implements ILockObject,
   private IAclService aclService;
   private IRevisionService revisionService;
   private UIRepositoryObjectRevisions revisions;
+  private EERepositoryObject repObj;
+  private ObjectAcl acl;
 
   public UIEETransformation(RepositoryElementMetaInterface rc, UIRepositoryDirectory parent, Repository rep) {
     super(rc, parent, rep);
+    if (!(rc instanceof EERepositoryObject)) {
+      throw new IllegalArgumentException();
+    }
+    repObj = (EERepositoryObject) rc;
     try {
       if (rep.hasService(ILockService.class)) {
         lockService = (ILockService) rep.getService(ILockService.class);
@@ -59,32 +67,27 @@ public class UIEETransformation extends UITransformation implements ILockObject,
   }
 
   public String getLockMessage() throws KettleException {
-    String result = null;
-    RepositoryLock objLock = getRepositoryLock();
-    if (objLock != null) {
-      result = objLock.getMessage();
-    }
-    return result;
+    return repObj.getLockMessage();
   }
 
   public void lock(String lockNote) throws KettleException {
-    lockService.lockTransformation(getObjectId(), lockNote);
-    refreshRevisions();
+    RepositoryLock lock = lockService.lockTransformation(getObjectId(), lockNote);
+    repObj.setLock(lock);
     uiParent.fireCollectionChanged();
   }
 
   public void unlock() throws KettleException {
     lockService.unlockTransformation(getObjectId());
-    refreshRevisions();
+    repObj.setLock(null);
     uiParent.fireCollectionChanged();
   }
 
   public boolean isLocked() throws KettleException {
-    return (getRepositoryLock() != null);
+    return repObj.isLocked();
   }
 
   public RepositoryLock getRepositoryLock() throws KettleException {
-    return lockService.getTransformationLock(getObjectId());
+    return repObj.getLock();
   }
 
   public UIRepositoryObjectRevisions getRevisions() throws KettleException {
@@ -115,19 +118,18 @@ public class UIEETransformation extends UITransformation implements ILockObject,
     }
   }
   public void getAcls(UIRepositoryObjectAcls acls, boolean forceParentInheriting) throws AccessDeniedException{
-    try {
-      acls.setObjectAcl(aclService.getAcl(getObjectId(), forceParentInheriting));
-    } catch(KettleException ke) {
-      throw new AccessDeniedException(ke);
+    if (acl == null) {
+      try {
+        acl = aclService.getAcl(getObjectId(), forceParentInheriting);
+      } catch(KettleException ke) {
+        throw new AccessDeniedException(ke);
+      }
     }
+    acls.setObjectAcl(acl);
   }
 
   public void getAcls(UIRepositoryObjectAcls acls) throws AccessDeniedException{
-    try {
-      acls.setObjectAcl(aclService.getAcl(getObjectId(), false));
-    } catch(KettleException ke) {
-      throw new AccessDeniedException(ke);
-    }
+    getAcls(acls, false);
   }
 
   public void setAcls(UIRepositoryObjectAcls security) throws AccessDeniedException{

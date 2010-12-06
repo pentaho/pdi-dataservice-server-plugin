@@ -425,11 +425,11 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
-  public void lockJob(ObjectId idJob, String message) throws KettleException {
+  public RepositoryLock lockJob(ObjectId idJob, String message) throws KettleException {
     throw new UnsupportedOperationException();
   }
 
-  public void lockTransformation(ObjectId idTransformation, String message) throws KettleException {
+  public RepositoryLock lockTransformation(ObjectId idTransformation, String message) throws KettleException {
     throw new UnsupportedOperationException();
   }
 

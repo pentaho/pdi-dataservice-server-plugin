@@ -3,12 +3,22 @@ package org.pentaho.di.repository.pur.model;
 public interface ILockObject {
 
   /**
+   * @return is this object locked?
+   */
+  public boolean isLocked();
+  
+  /**
    * @return the lockMessage
    */
   public String getLockMessage();
 
   /**
-   * @param lockMessage the lockMessage to set
+   * @return the repository lock for this object
    */
-  public void setLockMessage(String lockMessage);
+  public RepositoryLock getLock();
+  
+  /**
+   * Set the lock for this object
+   */
+  public void setLock(RepositoryLock lock);
 }

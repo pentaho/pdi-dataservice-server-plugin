@@ -17,9 +17,11 @@ public interface ILockService extends IRepositoryService{
    * Locks this job for exclusive use by the current user of the repository
    * @param id_job the id of the job to lock 
    * @param message the lock message
+   * 
+   * @return Repository lock object
    * @throws KettleException in case something goes wrong or the job is already locked by someone else.
    */
-  public void lockJob(ObjectId id_job, String message) throws KettleException;
+  public RepositoryLock lockJob(ObjectId id_job, String message) throws KettleException;
   
   /**
    * Unlocks a job, allowing other people to modify it again.
@@ -41,10 +43,12 @@ public interface ILockService extends IRepositoryService{
    * Locks this transformation for exclusive use by the current user of the repository
    * @param id_transformation the id of the transformation to lock
    * @param isSessionScoped If isSessionScoped is true then this lock will expire upon the expiration of the current session (either through an automatic or explicit Session.logout); if false, this lock does not expire until explicitly unlocked or automatically unlocked due to a implementation-specific limitation, such as a timeout. 
-   * @param message the lock message 
+   * @param message the lock message
+   * 
+   * @return Transformation lock
    * @throws KettleException in case something goes wrong or the transformation is already locked by someone else.
    */
-  public void lockTransformation(ObjectId id_transformation, String message) throws KettleException;
+  public RepositoryLock lockTransformation(ObjectId id_transformation, String message) throws KettleException;
 
   /**
    * Unlocks a transformation, allowing other people to modify it again.

@@ -6,6 +6,8 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementMetaInterface;
+import org.pentaho.di.repository.pur.model.EERepositoryObject;
+import org.pentaho.di.repository.pur.model.ObjectAcl;
 import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IAclObject;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.ILockObject;
@@ -22,9 +24,15 @@ public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAcl
   private IRevisionService revisionService;
   private IAclService aclService;
   private UIRepositoryObjectRevisions revisions;
+  private EERepositoryObject repObj;
+  private ObjectAcl acl;
 
   public UIEEJob(RepositoryElementMetaInterface rc, UIRepositoryDirectory parent, Repository rep) {
     super(rc, parent, rep);
+    if (!(rc instanceof EERepositoryObject)) {
+      throw new IllegalArgumentException();
+    }
+    repObj = (EERepositoryObject) rc;
     try {
       if (rep.hasService(ILockService.class)) {
         lockService = (ILockService) rep.getService(ILockService.class);
@@ -59,23 +67,18 @@ public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAcl
   }
 
   public String getLockMessage() throws KettleException {
-    String result = null;
-    RepositoryLock objLock = getRepositoryLock();
-    if(objLock != null) {
-      result = objLock.getMessage();
-    }
-    return result;
+    return repObj.getLockMessage();
   }
 
   public void lock(String lockNote) throws KettleException {
-    lockService.lockJob(getObjectId(), lockNote);
-    refreshRevisions();
+    RepositoryLock lock = lockService.lockJob(getObjectId(), lockNote);
+    repObj.setLock(lock);
     uiParent.fireCollectionChanged();
   }
 
   public void unlock() throws KettleException {
     lockService.unlockJob(getObjectId());
-    refreshRevisions();
+    repObj.setLock(null);
     uiParent.fireCollectionChanged();
   }
   
@@ -84,7 +87,7 @@ public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAcl
   }
   
   public RepositoryLock getRepositoryLock() throws KettleException {
-    return lockService.getJobLock(getObjectId());
+    return repObj.getLock();
   }
   
   public UIRepositoryObjectRevisions getRevisions() throws KettleException {
@@ -117,19 +120,18 @@ public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAcl
   }
   
   public void getAcls(UIRepositoryObjectAcls acls, boolean forceParentInheriting) throws AccessDeniedException{
-    try {
-      acls.setObjectAcl(aclService.getAcl(getObjectId(), forceParentInheriting));
-    } catch(KettleException ke) {
-      throw new AccessDeniedException(ke);
+    if (acl == null) {
+      try {
+        acl = aclService.getAcl(getObjectId(), forceParentInheriting);
+      } catch(KettleException ke) {
+        throw new AccessDeniedException(ke);
+      }
     }
+    acls.setObjectAcl(acl);
   }
 
   public void getAcls(UIRepositoryObjectAcls acls) throws AccessDeniedException{
-    try {
-      acls.setObjectAcl(aclService.getAcl(getObjectId(), false));
-    } catch(KettleException ke) {
-      throw new AccessDeniedException(ke);
-    }
+    getAcls(acls, false);
   }
 
   public void setAcls(UIRepositoryObjectAcls security) throws AccessDeniedException{
