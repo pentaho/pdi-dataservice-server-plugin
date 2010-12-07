@@ -111,27 +111,27 @@ public class RepositoryConfigController extends AbstractXulEventHandler{
       if(service != null) {
         IUnifiedRepositoryJaxwsWebService repoWebService = service.getPort(IUnifiedRepositoryJaxwsWebService.class);
         if(repoWebService != null) {
-          messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
-          messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(messages.getString("RepositoryConfigDialog.RepositoryUrlTestPassed"));//$NON-NLS-1$
+          messageBox.setTitle(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Success"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PurRepositoryDialog.class, "RepositoryConfigDialog.RepositoryUrlTestPassed"));//$NON-NLS-1$
           messageBox.open();
 
         } else {
-          messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-          messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(messages.getString("RepositoryConfigDialog.RepositoryUrlTestFailed"));//$NON-NLS-1$
+          messageBox.setTitle(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PurRepositoryDialog.class, "RepositoryConfigDialog.RepositoryUrlTestFailed"));//$NON-NLS-1$
           messageBox.open();
         }
       } else {
-        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(messages.getString("RepositoryConfigDialog.RepositoryUrlTestFailed"));//$NON-NLS-1$
+        messageBox.setTitle(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PurRepositoryDialog.class, "RepositoryConfigDialog.RepositoryUrlTestFailed"));//$NON-NLS-1$
         messageBox.open();
 
       }
     } catch (Exception e) {
-      messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setTitle(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Error"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Ok"));//$NON-NLS-1$
       messageBox.setMessage(BaseMessages.getString(PurRepositoryDialog.class,
           "RepositoryConfigDialog.RepositoryUrlTestFailedMessage", e.getLocalizedMessage()));//$NON-NLS-1$
       messageBox.open();

@@ -37,6 +37,8 @@ public class TrashBrowseController extends BrowseController {
 
   // ~ Static fields/initializers ======================================================================================
 
+  private static final Class<?> PKG = IUIEEUser.class;
+
   // ~ Instance fields =================================================================================================
 
   private ResourceBundle messages = new ResourceBundle() {
@@ -48,7 +50,7 @@ public class TrashBrowseController extends BrowseController {
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(IUIEEUser.class, key);
+      return BaseMessages.getString(PKG, key);
     }
     
   };  
@@ -119,7 +121,7 @@ public class TrashBrowseController extends BrowseController {
 
     @Override
     public String getName() {
-      return messages.getString("Trash"); //$NON-NLS-1$
+      return BaseMessages.getString(PKG, "Trash"); //$NON-NLS-1$
     }
 
     @Override
@@ -250,9 +252,9 @@ public class TrashBrowseController extends BrowseController {
         trashService.delete(ids);
         setTrash(trashService.getTrash());
       } catch(Throwable th) {
-        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG,
             "TrashBrowseController.UnableToDeleteFile", th.getLocalizedMessage())); //$NON-NLS-1$
         messageBox.open();
       }
@@ -284,9 +286,9 @@ public class TrashBrowseController extends BrowseController {
         }
         deck.setSelectedIndex(1);
       } catch(Throwable th) {
-        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG,
             "TrashBrowseController.UnableToRestoreFile", th.getLocalizedMessage())); //$NON-NLS-1$
         messageBox.open();
       }

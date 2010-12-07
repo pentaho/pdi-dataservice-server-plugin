@@ -34,7 +34,7 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
 
   private int style;
 
-  private static final Class<?> CLZ = PurRepositoryDialog.class;
+  private static final Class<?> PKG = PurRepositoryDialog.class;
 
   private static Log log = LogFactory.getLog(PurRepositoryDialog.class);
 
@@ -51,7 +51,7 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(CLZ, key);
+      return BaseMessages.getString(PKG, key);
     }
 
   };
@@ -164,7 +164,7 @@ public class PurRepositoryDialog implements RepositoryDialogInterface {
       XulMessageBox messageBox = (XulMessageBox) container.getDocumentRoot().createElement("messagebox");
       messageBox.setTitle(resourceBundle.getString("Dialog.Error"));//$NON-NLS-1$
       messageBox.setAcceptLabel(resourceBundle.getString("Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(CLZ, "PurRepositoryDialog.Dialog.ErrorIdExist.Message", name));//$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG, "PurRepositoryDialog.Dialog.ErrorIdExist.Message", name));//$NON-NLS-1$
       messageBox.open();
 
     } catch (XulException e) {

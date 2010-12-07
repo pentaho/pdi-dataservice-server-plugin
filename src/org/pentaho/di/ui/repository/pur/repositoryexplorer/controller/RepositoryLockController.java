@@ -38,6 +38,8 @@ import org.pentaho.ui.xul.util.XulDialogCallback;
 
 public class RepositoryLockController extends AbstractXulEventHandler implements IUISupportController {
 
+  private static final Class<?> PKG = IUIEEUser.class;
+
   private BrowseController browseController = null;
 
   private BindingFactory bindingFactory = null;
@@ -66,7 +68,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(IUIEEUser.class, key);
+      return BaseMessages.getString(PKG, key);
     }
   };
 
@@ -76,7 +78,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
         repository = rep;
         service = (ILockService) rep.getService(ILockService.class);
       } else {
-        throw new ControllerInitializationException(BaseMessages.getString(IUIEEUser.class,
+        throw new ControllerInitializationException(BaseMessages.getString(PKG,
             "RepositoryLockController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", ILockService.class)); //$NON-NLS-1$
 
       }
@@ -144,9 +146,9 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
               repository.getUserInfo().getLogin())) {
             // Current user does not own the lock
             event.setAccepted(false);
-            messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-            messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-            messageBox.setMessage(messages.getString("BrowseController.FolderMoveNotAllowed")); //$NON-NLS-1$
+            messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+            messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+            messageBox.setMessage(BaseMessages.getString(PKG, "BrowseController.FolderMoveNotAllowed")); //$NON-NLS-1$
             messageBox.open();
             return true;
           }
@@ -172,9 +174,9 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
               } else {
                 // Current user does not own the lock
                 event.setAccepted(false);
-                messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-                messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-                messageBox.setMessage(messages.getString("BrowseController.MoveNotAllowed")); //$NON-NLS-1$
+                messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+                messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+                messageBox.setMessage(BaseMessages.getString(PKG, "BrowseController.MoveNotAllowed")); //$NON-NLS-1$
                 messageBox.open();
                 break;
               }
@@ -366,7 +368,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       final UIRepositoryContent contentToLock = (UIRepositoryContent) selectedRepoObjects.get(0);
 
       XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
-      msgBox.setTitle(messages.getString("PurRepository.LockNote.Title")); //$NON-NLS-1$
+      msgBox.setTitle(BaseMessages.getString(PKG, "PurRepository.LockNote.Title")); //$NON-NLS-1$
       msgBox.setMessage(((ILockObject) contentToLock).getLockMessage());
 
       msgBox.open();
@@ -377,12 +379,12 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       String defaultMessage) throws XulException {
     XulPromptBox prompt = (XulPromptBox) document.createElement("promptbox"); //$NON-NLS-1$
 
-    prompt.setTitle(messages.getString("RepositoryExplorer.LockMessage.Title"));//$NON-NLS-1$
+    prompt.setTitle(BaseMessages.getString(PKG, "RepositoryExplorer.LockMessage.Title"));//$NON-NLS-1$
     prompt.setButtons(new DialogConstant[] { DialogConstant.OK, DialogConstant.CANCEL });
 
-    prompt.setMessage(messages.getString("RepositoryExplorer.LockMessage.Label"));//$NON-NLS-1$
+    prompt.setMessage(BaseMessages.getString(PKG, "RepositoryExplorer.LockMessage.Label"));//$NON-NLS-1$
     prompt
-        .setValue(defaultMessage == null ? messages.getString("RepositoryExplorer.DefaultLockMessage") : defaultMessage); //$NON-NLS-1$
+        .setValue(defaultMessage == null ? BaseMessages.getString(PKG, "RepositoryExplorer.DefaultLockMessage") : defaultMessage); //$NON-NLS-1$
     return prompt;
   }
   public void setMenuItemEnabledState(List<UIRepositoryObject> selectedRepoObjects) {

@@ -40,6 +40,9 @@ import org.pentaho.ui.xul.swt.custom.DialogConstant;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
 public class SpoonLockController extends AbstractXulEventHandler {
+  
+  private static final Class<?> PKG = PurRepositoryDialog.class;
+  
   private ILockService service;
 
   private EngineMetaInterface workingMeta = null;
@@ -64,7 +67,7 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(PurRepositoryDialog.class, key);
+      return BaseMessages.getString(PKG, key);
     }
   };
 
@@ -168,8 +171,8 @@ public class SpoonLockController extends AbstractXulEventHandler {
         lockMenuItem.setSelected(false);
 
         XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
-        msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
-        msgBox.setMessage(messages.getString("LockController.SaveBeforeLock"));//$NON-NLS-1$
+        msgBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+        msgBox.setMessage(BaseMessages.getString(PKG, "LockController.SaveBeforeLock"));//$NON-NLS-1$
         msgBox.setModalParent(shell);
 
         msgBox.open();
@@ -180,14 +183,14 @@ public class SpoonLockController extends AbstractXulEventHandler {
         lockMenuItem.setSelected(false);
 
         XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
-        msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
-        msgBox.setMessage(messages.getString("LockController.NoLockingSupport"));//$NON-NLS-1$
+        msgBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+        msgBox.setMessage(BaseMessages.getString(PKG, "LockController.NoLockingSupport"));//$NON-NLS-1$
         msgBox.setModalParent(shell);
         msgBox.open();
       }
     } catch (Throwable th) {
-      log.error(messages.getString("LockController.NoLockingSupport"), th);//$NON-NLS-1$
-      new ErrorDialog(((Spoon) SpoonFactory.getInstance()).getShell(), messages.getString("Dialog.Error"), messages.getString("LockController.NoLockingSupport"), th); //$NON-NLS-1$ //$NON-NLS-2$
+      log.error(BaseMessages.getString(PKG, "LockController.NoLockingSupport"), th);//$NON-NLS-1$
+      new ErrorDialog(((Spoon) SpoonFactory.getInstance()).getShell(), BaseMessages.getString(PKG, "Dialog.Error"), BaseMessages.getString(PKG, "LockController.NoLockingSupport"), th); //$NON-NLS-1$ //$NON-NLS-2$
     }
   }
 
@@ -197,20 +200,20 @@ public class SpoonLockController extends AbstractXulEventHandler {
         RepositoryLock repoLock = fetchRepositoryLock(workingMeta);
         if (repoLock != null) {
           XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
-          msgBox.setTitle(messages.getString("PurRepository.LockNote.Title")); //$NON-NLS-1$
+          msgBox.setTitle(BaseMessages.getString(PKG, "PurRepository.LockNote.Title")); //$NON-NLS-1$
           msgBox.setMessage(repoLock.getMessage());
           msgBox.setModalParent(shell);
 
           msgBox.open();
         }
       } catch (Throwable th) {
-        log.error(messages.getString("LockController.NoLockingSupport"), th);//$NON-NLS-1$
-        new ErrorDialog(((Spoon) SpoonFactory.getInstance()).getShell(), messages.getString("Dialog.Error"), messages.getString("LockController.NoLockingSupport"), th); //$NON-NLS-1$ //$NON-NLS-2$
+        log.error(BaseMessages.getString(PKG, "LockController.NoLockingSupport"), th);//$NON-NLS-1$
+        new ErrorDialog(((Spoon) SpoonFactory.getInstance()).getShell(), BaseMessages.getString(PKG, "Dialog.Error"), BaseMessages.getString(PKG, "LockController.NoLockingSupport"), th); //$NON-NLS-1$ //$NON-NLS-2$
       }
     } else {
       XulMessageBox msgBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
-      msgBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
-      msgBox.setMessage(messages.getString("LockController.NoLockingSupport"));//$NON-NLS-1$
+      msgBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+      msgBox.setMessage(BaseMessages.getString(PKG, "LockController.NoLockingSupport"));//$NON-NLS-1$
       msgBox.setModalParent(shell);
       msgBox.open();
     }
@@ -281,8 +284,8 @@ public class SpoonLockController extends AbstractXulEventHandler {
 
       firePropertyChange("activeMetaUnlocked", null, repoLock == null ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     } catch (Exception e) {
-      log.error(messages.getString("LockController.NoLockingSupport"), e);//$NON-NLS-1$
-      new ErrorDialog(((Spoon) SpoonFactory.getInstance()).getShell(), BaseMessages.getString(PurRepositoryDialog.class,
+      log.error(BaseMessages.getString(PKG, "LockController.NoLockingSupport"), e);//$NON-NLS-1$
+      new ErrorDialog(((Spoon) SpoonFactory.getInstance()).getShell(), BaseMessages.getString(PKG,
           "Dialog.Error"), e.getMessage(), e); //$NON-NLS-1$
 
     }
@@ -339,12 +342,12 @@ public class SpoonLockController extends AbstractXulEventHandler {
     XulPromptBox prompt = (XulPromptBox) document.createElement("promptbox"); //$NON-NLS-1$
     prompt.setModalParent(shell);
 
-    prompt.setTitle(messages.getString("RepositoryExplorer.LockMessage.Title"));//$NON-NLS-1$
+    prompt.setTitle(BaseMessages.getString(PKG, "RepositoryExplorer.LockMessage.Title"));//$NON-NLS-1$
     prompt.setButtons(new DialogConstant[] { DialogConstant.OK, DialogConstant.CANCEL });
 
-    prompt.setMessage(messages.getString("RepositoryExplorer.LockMessage.Label"));//$NON-NLS-1$
+    prompt.setMessage(BaseMessages.getString(PKG, "RepositoryExplorer.LockMessage.Label"));//$NON-NLS-1$
     prompt
-        .setValue(defaultMessage == null ? messages.getString("RepositoryExplorer.DefaultLockMessage") : defaultMessage); //$NON-NLS-1$
+        .setValue(defaultMessage == null ? BaseMessages.getString(PKG, "RepositoryExplorer.DefaultLockMessage") : defaultMessage); //$NON-NLS-1$
     return prompt;
   }
 

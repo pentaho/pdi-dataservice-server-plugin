@@ -70,6 +70,9 @@ import org.pentaho.ui.xul.util.XulDialogCallback;
  * @see org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.AbsController
  */
 public class EESecurityController extends SecurityController {
+
+  private static final Class<?> PKG = IUIEEUser.class;
+
   public static final int ROLE_DECK = 1;
 
   private ResourceBundle messages = new ResourceBundle() {
@@ -81,7 +84,7 @@ public class EESecurityController extends SecurityController {
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(IUIEEUser.class, key);
+      return BaseMessages.getString(PKG, key);
     }
     
   };  
@@ -519,12 +522,12 @@ public class EESecurityController extends SecurityController {
         eeSecurityUser.updateAssignedRoles(convertToUIRoleModel(((IRoleSupportSecurityManager) service).getDefaultRoles()));
       }
       eeSecurityUser.setMode(Mode.ADD);
-      userDialog.setTitle(messages.getString("AddUserDialog.Title"));//$NON-NLS-1$
+      userDialog.setTitle(BaseMessages.getString(PKG, "AddUserDialog.Title"));//$NON-NLS-1$
       userDialog.show();
     } catch (KettleException e) {
-      messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG,
           "SecurityController.AddUser.UnableToShowAddUser", e.getLocalizedMessage()));//$NON-NLS-1$
       messageBox.open();
     }
@@ -547,9 +550,9 @@ public class EESecurityController extends SecurityController {
         eeSecurity.addUser(UIObjectRegistry.getInstance().constructUIRepositoryUser(eeSecurityUser.getUserInfo()));
         userDialog.hide();        
       } catch (Throwable th) {
-        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG,
             "AddUser.UnableToAddUser", th.getLocalizedMessage()));//$NON-NLS-1$
         messageBox.open();
       }
@@ -562,7 +565,7 @@ public class EESecurityController extends SecurityController {
       eeSecurityUser.clear();
       eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(((IRoleSupportSecurityManager) service).getRoles()));
       eeSecurityUser.setMode(Mode.EDIT);
-      userDialog.setTitle(messages.getString("EditUserDialog.Title"));//$NON-NLS-1$
+      userDialog.setTitle(BaseMessages.getString(PKG, "EditUserDialog.Title"));//$NON-NLS-1$
       userDialog.show();
     }
   }
@@ -586,9 +589,9 @@ public class EESecurityController extends SecurityController {
         eeSecurity.updateUser(uiUser, previousRoleList);
         userDialog.hide();        
       } catch (Throwable th) {
-        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG,
             "UpdateUser.UnableToUpdateUser", th.getLocalizedMessage()));//$NON-NLS-1$
         messageBox.open();
       }
@@ -601,12 +604,12 @@ public class EESecurityController extends SecurityController {
         securityRole.clear();
         securityRole.setAvailableUsers(convertToUIUserModel(service.getUsers()));
       }
-      roleDialog.setTitle(messages.getString("AddRoleDialog.Title"));//$NON-NLS-1$
+      roleDialog.setTitle(BaseMessages.getString(PKG, "AddRoleDialog.Title"));//$NON-NLS-1$
       roleDialog.show();
     } catch (KettleException e) {
-      messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG,
           "SecurityController.AddRole.UnableToShowAddRole", e.getLocalizedMessage()));//$NON-NLS-1$
       messageBox.open();
 
@@ -619,7 +622,7 @@ public class EESecurityController extends SecurityController {
       securityRole.setRole(((UIEESecurity) security).getSelectedRole(), convertToUIUserModel(service.getUsers()));
       securityRole.setMode(Mode.EDIT_MEMBER);
     }
-    roleDialog.setTitle(messages.getString("AddUserToRoleDialog.Title"));//$NON-NLS-1$
+    roleDialog.setTitle(BaseMessages.getString(PKG, "AddUserToRoleDialog.Title"));//$NON-NLS-1$
     roleDialog.show();
   }
 
@@ -628,7 +631,7 @@ public class EESecurityController extends SecurityController {
       eeSecurityUser.clear();
       eeSecurityUser.setUser(security.getSelectedUser(), convertToUIRoleModel(((IRoleSupportSecurityManager) service).getRoles()));
       eeSecurityUser.setMode(Mode.EDIT_MEMBER);
-      userDialog.setTitle(messages.getString("AddRoleToUserDialog.Title"));//$NON-NLS-1$
+      userDialog.setTitle(BaseMessages.getString(PKG, "AddRoleToUserDialog.Title"));//$NON-NLS-1$
       userDialog.show();
     }
   }
@@ -657,9 +660,9 @@ public class EESecurityController extends SecurityController {
         eeSecurity.addRole(UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role));
         roleDialog.hide();
       } catch (Throwable th) {
-        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG,
             "AddRole.UnableToAddRole", th.getLocalizedMessage()));//$NON-NLS-1$
         messageBox.open();
       }
@@ -684,9 +687,9 @@ public class EESecurityController extends SecurityController {
         eeSecurity.updateRole(uiRole, previousUserList);
         roleDialog.hide();
       } catch (Throwable th) {
-        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG,
             "UpdateRole.UnableToUpdateRole", th.getLocalizedMessage()));//$NON-NLS-1$
         messageBox.open();
       }
@@ -701,10 +704,10 @@ public class EESecurityController extends SecurityController {
 
   public void removeRole() throws Exception {
     XulConfirmBox confirmBox = (XulConfirmBox) document.createElement("confirmbox");//$NON-NLS-1$
-    confirmBox.setTitle(messages.getString("ConfirmDialog.Title"));//$NON-NLS-1$
-    confirmBox.setMessage(messages.getString("RemoveRoleConfirmDialog.Message"));//$NON-NLS-1$
-    confirmBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-    confirmBox.setCancelLabel(messages.getString("Dialog.Cancel"));//$NON-NLS-1$
+    confirmBox.setTitle(BaseMessages.getString(PKG, "ConfirmDialog.Title"));//$NON-NLS-1$
+    confirmBox.setMessage(BaseMessages.getString(PKG, "RemoveRoleConfirmDialog.Message"));//$NON-NLS-1$
+    confirmBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+    confirmBox.setCancelLabel(BaseMessages.getString(PKG, "Dialog.Cancel"));//$NON-NLS-1$
     confirmBox.addDialogCallback(new XulDialogCallback<Object>() {
 
       public void onClose(XulComponent sender, Status returnCode, Object retVal) {
@@ -715,16 +718,16 @@ public class EESecurityController extends SecurityController {
                 ((IRoleSupportSecurityManager) service).deleteRole(eeSecurity.getSelectedRole().getName());
                 eeSecurity.removeRole(eeSecurity.getSelectedRole().getName());
               } catch (Throwable th) {
-                messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-                messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-                messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+                messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+                messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+                messageBox.setMessage(BaseMessages.getString(PKG,
                     "RemoveRole.UnableToRemoveRole", th.getLocalizedMessage()));//$NON-NLS-1$
                 messageBox.open();
               }
             } else {
-              messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-              messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-              messageBox.setMessage(messages.getString("RemoveRole.NoRoleSelected"));//$NON-NLS-1$
+              messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+              messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+              messageBox.setMessage(BaseMessages.getString(PKG, "RemoveRole.NoRoleSelected"));//$NON-NLS-1$
               messageBox.open();
             }
           }
@@ -732,9 +735,9 @@ public class EESecurityController extends SecurityController {
       }
 
       public void onError(XulComponent sender, Throwable t) {
-        messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG,
             "RemoveRole.UnableToRemoveRole", t.getLocalizedMessage()));//$NON-NLS-1$
         messageBox.open();
       }
@@ -747,18 +750,18 @@ public class EESecurityController extends SecurityController {
       securityRole.clear();
       securityRole.setRole(eeSecurity.getSelectedRole(), convertToUIUserModel(service.getUsers()));
       securityRole.setMode(Mode.EDIT);
-      roleDialog.setTitle(messages.getString("EditRoleDialog.Title"));//$NON-NLS-1$
+      roleDialog.setTitle(BaseMessages.getString(PKG, "EditRoleDialog.Title"));//$NON-NLS-1$
       roleDialog.show();
     }
   }
   public void changeToRoleDeck() {
     security.setSelectedDeck(ObjectRecipient.Type.ROLE);
-    instructionalTextLabel.setValue(messages.getString("SecurityTab.RoleInstructionalText"));
+    instructionalTextLabel.setValue(BaseMessages.getString(PKG, "SecurityTab.RoleInstructionalText"));
   }
   
   public void changeToSystemRoleDeck() {
     security.setSelectedDeck(ObjectRecipient.Type.SYSTEM_ROLE);
-    instructionalTextLabel.setValue(messages.getString("SecurityTab.SystemRoleInstructionalText"));
+    instructionalTextLabel.setValue(BaseMessages.getString(PKG, "SecurityTab.SystemRoleInstructionalText"));
   }
   
   /**

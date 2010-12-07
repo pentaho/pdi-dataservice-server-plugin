@@ -29,6 +29,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.i18n.GlobalMessages;
 import org.pentaho.di.i18n.LanguageChoice;
 import org.pentaho.di.repository.RepositorySecurityManager;
+import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsSecurity;
@@ -55,6 +56,8 @@ import org.pentaho.ui.xul.containers.XulVbox;
 public class AbsController extends EESecurityController {
   private boolean initialized = false;
 
+  private static final Class<?> PKG = IUIAbsRole.class;
+
   private ResourceBundle messages = new ResourceBundle() {
 
     @Override
@@ -65,7 +68,7 @@ public class AbsController extends EESecurityController {
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(IUIAbsRole.class, key);
+      return BaseMessages.getString(PKG, key);
     }
 
   };
@@ -207,14 +210,14 @@ public class AbsController extends EESecurityController {
         throw new IllegalStateException();
       }
       ((IAbsSecurityManager) service).setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
-      messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(messages.getString("AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Success"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG, "AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
       messageBox.open();
     } catch (KettleException e) {
-      messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(IUIAbsRole.class,
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG,
           "AbsController.RoleActionPermission.UnableToApplyPermissions", role.getName(), e.getLocalizedMessage()));//$NON-NLS-1$
       messageBox.open();
     }
@@ -235,14 +238,14 @@ public class AbsController extends EESecurityController {
         throw new IllegalStateException();
       }
       ((IAbsSecurityManager) service).setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
-      messageBox.setTitle(messages.getString("Dialog.Success"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(messages.getString("AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Success"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG, "AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
       messageBox.open();
     } catch (KettleException e) {
-      messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(IUIAbsRole.class,
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG,
           "AbsController.RoleActionPermission.UnableToApplyPermissions", role.getName(), e.getLocalizedMessage()));//$NON-NLS-1$
       messageBox.open();
     }

@@ -36,6 +36,9 @@ import org.pentaho.ui.xul.swt.custom.DialogConstant;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
 public class RevisionController  extends AbstractXulEventHandler implements IUISupportController {
+
+  private static final Class<?> PKG = IUIEEUser.class;
+
   protected XulTree folderTree;
   protected XulTree fileTable;
   protected XulTab historyTab;
@@ -59,7 +62,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(IUIEEUser.class, key);
+      return BaseMessages.getString(PKG, key);
     }
 
   };
@@ -132,7 +135,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
               if(rc instanceof IRevisionObject) {
                 revisions = ((IRevisionObject)rc).getRevisions();
               } else {
-                throw new IllegalStateException(messages.getString("RevisionsController.RevisionsNotSupported")); //$NON-NLS-1$
+                throw new IllegalStateException(BaseMessages.getString(PKG, "RevisionsController.RevisionsNotSupported")); //$NON-NLS-1$
               }
             } catch (KettleException e) {
               // convert to runtime exception so it bubbles up through the UI
@@ -222,7 +225,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
                 objects.add(contentToRestore);
                 browseController.setRepositoryObjects(objects);    
               } else {
-                throw new IllegalStateException(messages.getString("RevisionsController.RevisionsNotSupported")); //$NON-NLS-1$
+                throw new IllegalStateException(BaseMessages.getString(PKG, "RevisionsController.RevisionsNotSupported")); //$NON-NLS-1$
               }
             } catch (Exception e) {
               // convert to runtime exception so it bubbles up through the UI
@@ -247,12 +250,12 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
       String defaultMessage) throws XulException {
     XulPromptBox prompt = (XulPromptBox) document.createElement("promptbox"); //$NON-NLS-1$
 
-    prompt.setTitle(messages.getString("RepositoryExplorer.CommitTitle"));//$NON-NLS-1$
+    prompt.setTitle(BaseMessages.getString(PKG, "RepositoryExplorer.CommitTitle"));//$NON-NLS-1$
     prompt.setButtons(new DialogConstant[] { DialogConstant.OK, DialogConstant.CANCEL });
 
-    prompt.setMessage(messages.getString("RepositoryExplorer.CommitLabel"));//$NON-NLS-1$
+    prompt.setMessage(BaseMessages.getString(PKG, "RepositoryExplorer.CommitLabel"));//$NON-NLS-1$
     prompt
-        .setValue(defaultMessage == null ? messages.getString("RepositoryExplorer.DefaultCommitMessage") : defaultMessage); //$NON-NLS-1$
+        .setValue(defaultMessage == null ? BaseMessages.getString(PKG, "RepositoryExplorer.DefaultCommitMessage") : defaultMessage); //$NON-NLS-1$
     return prompt;
   }
 }

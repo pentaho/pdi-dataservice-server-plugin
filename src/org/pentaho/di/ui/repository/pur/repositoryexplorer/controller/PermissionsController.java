@@ -36,6 +36,7 @@ import org.pentaho.di.repository.pur.model.ObjectAcl;
 import org.pentaho.di.repository.pur.model.ObjectPermission;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IAclObject;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAcl;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAclModel;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAcls;
@@ -70,6 +71,9 @@ import org.pentaho.ui.xul.util.XulDialogCallback;
  *
  */
 public class PermissionsController extends AbstractXulEventHandler implements ContextChangeVetoer, IUISupportController {
+
+  private static final Class<?> PKG = IUIEEUser.class;
+
   public static final String NEWLINE = "\n"; //$NON-NLS-1$
 
   private ResourceBundle messages = new ResourceBundle() {
@@ -81,7 +85,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
 
     @Override
     protected Object handleGetObject(String key) {
-      return BaseMessages.getString(IUIEEUser.class, key);
+      return BaseMessages.getString(PKG, key);
     }
 
   };
@@ -165,16 +169,16 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       if (rep != null && rep.hasService(RepositorySecurityProvider.class)) {
         service = (RepositorySecurityProvider) rep.getService(RepositorySecurityProvider.class);
       } else {
-        throw new ControllerInitializationException(BaseMessages.getString(IUIEEUser.class,
+        throw new ControllerInitializationException(BaseMessages.getString(PKG,
             "PermissionsController.ERROR_0001_UNABLE_TO_INITIAL_REPOSITORY_SERVICE", RepositorySecurityManager.class)); //$NON-NLS-1$
 
       }
 
       confirmBox = (XulConfirmBox) document.createElement("confirmbox");//$NON-NLS-1$
-      confirmBox.setTitle(messages.getString("PermissionsController.RemoveAclWarning")); //$NON-NLS-1$
-      confirmBox.setMessage(messages.getString("PermissionsController.RemoveAclWarningText")); //$NON-NLS-1$
-      confirmBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
-      confirmBox.setCancelLabel(messages.getString("Dialog.Cancel")); //$NON-NLS-1$
+      confirmBox.setTitle(BaseMessages.getString(PKG, "PermissionsController.RemoveAclWarning")); //$NON-NLS-1$
+      confirmBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.RemoveAclWarningText")); //$NON-NLS-1$
+      confirmBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+      confirmBox.setCancelLabel(BaseMessages.getString(PKG, "Dialog.Cancel")); //$NON-NLS-1$
       confirmBox.addDialogCallback(new XulDialogCallback() {
 
         public void onClose(XulComponent sender, Status returnCode, Object retVal) {
@@ -423,24 +427,24 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
           if(repoObject instanceof IAclObject) {
             ((IAclObject) repoObject).getAcls(viewAclsModel);  
           } else {
-            throw new IllegalStateException(messages.getString("PermissionsController.NoAclSupport")); //$NON-NLS-1$
+            throw new IllegalStateException(BaseMessages.getString(PKG, "PermissionsController.NoAclSupport")); //$NON-NLS-1$
           }          
           
-          fileFolderLabel.setValue(BaseMessages.getString(IUIEEUser.class,
+          fileFolderLabel.setValue(BaseMessages.getString(PKG,
               "AclTab.UserRolePermission", repoObject.getName())); //$NON-NLS-1$
           bf.setBindingType(Binding.Type.ONE_WAY);
           bf.createBinding(viewAclsModel, "acls", userRoleList, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
         } catch (AccessDeniedException ade) {
-          messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-          messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PKG,
               "PermissionsController.UnableToGetAcls", repoObject.getName(), ade.getLocalizedMessage()));//$NON-NLS-1$
 
           messageBox.open();
         } catch (Exception e) {
-          messageBox.setTitle(messages.getString("Dialog.Error"));//$NON-NLS-1$
-          messageBox.setAcceptLabel(messages.getString("Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PKG,
               "PermissionsController.UnableToGetAcls", repoObject.getName(), e.getLocalizedMessage())); //$NON-NLS-1$
           messageBox.open();
         }
@@ -558,9 +562,9 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       manageAclsModel.clear();
       manageAclsModel.setAclsList(service.getAllUsers(), service.getAllRoles());
     } catch (KettleException ke) {
-      messageBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(IUIEEUser.class,
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG,
           "PermissionsController.UnableToGetUserOrRole", ke.getLocalizedMessage()));//$NON-NLS-1$
 
       messageBox.open();
@@ -617,7 +621,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
         if (rd instanceof IAclObject) {
           ((IAclObject) rd).setAcls(viewAclsModel);
         } else {
-          throw new IllegalStateException(messages.getString("PermissionsController.NoAclSupport")); //$NON-NLS-1$
+          throw new IllegalStateException(BaseMessages.getString(PKG, "PermissionsController.NoAclSupport")); //$NON-NLS-1$
         }
 
       } else {
@@ -625,23 +629,23 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
         if (rc instanceof IAclObject) {
           ((IAclObject) rc).setAcls(viewAclsModel);
         } else {
-          throw new IllegalStateException(messages.getString("PermissionsController.NoAclSupport")); //$NON-NLS-1$
+          throw new IllegalStateException(BaseMessages.getString(PKG, "PermissionsController.NoAclSupport")); //$NON-NLS-1$
         }
       }
       /*if (hideDialog) {
         applyAclConfirmationDialog.hide();
       }*/
       viewAclsModel.setModelDirty(false);
-      messageBox.setTitle(messages.getString("Dialog.Success")); //$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
-      messageBox.setMessage(messages.getString("PermissionsController.PermissionAppliedSuccessfully")); //$NON-NLS-1$
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Success")); //$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.PermissionAppliedSuccessfully")); //$NON-NLS-1$
       messageBox.open();
     } catch (AccessDeniedException ade) {
       /*if (hideDialog) {
         applyAclConfirmationDialog.hide();
       }*/
-      messageBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
       messageBox.setMessage(ade.getLocalizedMessage());
       messageBox.open();
     }
@@ -675,9 +679,9 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     /*} else {
       // TODO We will call the the server apply method that applies this acls changes on the current object and its children
       applyAclConfirmationDialog.hide();
-      messageBox.setTitle(messages.getString("Dialog.Error")); //$NON-NLS-1$
-      messageBox.setAcceptLabel(messages.getString("Dialog.Ok")); //$NON-NLS-1$
-      messageBox.setMessage(messages.getString("PermissionsController.Error.FunctionalityNotSupported")); //$NON-NLS-1$
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+      messageBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.Error.FunctionalityNotSupported")); //$NON-NLS-1$
       messageBox.open();
     }*/
   }
@@ -799,10 +803,10 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
   @SuppressWarnings("unchecked")
   public TYPE onContextChange() {
     if (viewAclsModel.isModelDirty()) {
-      confirmBox.setTitle(messages.getString("PermissionsController.ContextChangeWarning")); //$NON-NLS-1$
-      confirmBox.setMessage(messages.getString("PermissionsController.ContextChangeWarningText")); //$NON-NLS-1$
-      confirmBox.setAcceptLabel(messages.getString("Dialog.Yes")); //$NON-NLS-1$
-      confirmBox.setCancelLabel(messages.getString("Dialog.No")); //$NON-NLS-1$
+      confirmBox.setTitle(BaseMessages.getString(PKG, "PermissionsController.ContextChangeWarning")); //$NON-NLS-1$
+      confirmBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.ContextChangeWarningText")); //$NON-NLS-1$
+      confirmBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Yes")); //$NON-NLS-1$
+      confirmBox.setCancelLabel(BaseMessages.getString(PKG, "Dialog.No")); //$NON-NLS-1$
       confirmBox.addDialogCallback(new XulDialogCallback() {
 
         public void onClose(XulComponent sender, Status returnCode, Object retVal) {
