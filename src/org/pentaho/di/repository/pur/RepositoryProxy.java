@@ -13,6 +13,8 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.IRepositoryExporter;
+import org.pentaho.di.repository.IRepositoryImporter;
 import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
@@ -635,6 +637,14 @@ public class RepositoryProxy implements Repository, ILockService {
   }
 
   public String[] getTransformationsUsingDatabase(ObjectId id_database) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public IRepositoryExporter getExporter() {
+    throw new UnsupportedOperationException();
+  }
+
+  public IRepositoryImporter getImporter() {
     throw new UnsupportedOperationException();
   }
 }
