@@ -670,20 +670,10 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   }
 
   @SuppressWarnings("unchecked")
-  public SharedObjects loadSharedObjects(final RepositoryElementInterface element) throws KettleException {
+  public SharedObjects loadSharedObjects(final RepositoryElementInterface element,
+      final Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType) throws KettleException {
     TransMeta transMeta = (TransMeta) element;
     transMeta.setSharedObjects(transMeta.readSharedObjects());
-
-    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = null;
-    try {
-      sharedObjectsByType = repo
-          .readSharedObjects(RepositoryObjectType.DATABASE, RepositoryObjectType.PARTITION_SCHEMA,
-              RepositoryObjectType.SLAVE_SERVER, RepositoryObjectType.CLUSTER_SCHEMA);
-    } catch (Exception e) {
-      // TODO Create this property
-      throw new KettleException(BaseMessages.getString(PKG,
-          "JCRRepository.Exception.UnableToReadSharedObjectsFromRepository"), e); //$NON-NLS-1$
-    }
 
     // Repository objects take priority so let's overwrite them...
     //

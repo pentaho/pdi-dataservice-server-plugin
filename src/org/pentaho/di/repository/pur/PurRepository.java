@@ -171,8 +171,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
    */
   private SoftReference<RepositoryDirectory> rootRef = null;
 
-  private SoftReference<SharedObjects> transSharedObjects = null;
-  private SoftReference<SharedObjects> jobSharedObjects = null;
+  private Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = null;
+
   
   
   /** 
@@ -1000,8 +1000,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public void clearSharedObjectCache() {
-    transSharedObjects = null;
-    jobSharedObjects = null;
+    sharedObjectsByType = null;
   }
   
   /**
@@ -1517,19 +1516,25 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return pur.canUnlockFile(id.getId());
   }
 
+  protected Map<RepositoryObjectType, List<? extends SharedObjectInterface>> loadAndCacheSharedObjects() throws KettleException {
+    if (sharedObjectsByType == null) {
+      try {
+        sharedObjectsByType = readSharedObjects(RepositoryObjectType.DATABASE, RepositoryObjectType.PARTITION_SCHEMA,
+                RepositoryObjectType.SLAVE_SERVER, RepositoryObjectType.CLUSTER_SCHEMA);
+      } catch (Exception e) {
+        // TODO i18n
+        throw new KettleException("Unable to read shared objects from repository", e); //$NON-NLS-1$
+      }
+    }
+    return sharedObjectsByType;
+  }
   
   public SharedObjects readJobMetaSharedObjects(final JobMeta jobMeta) throws KettleException {
-    if (jobSharedObjects == null || jobSharedObjects.get() == null ) {
-      jobSharedObjects = new SoftReference<SharedObjects>(jobDelegate.loadSharedObjects(jobMeta));
-    }
-    return jobSharedObjects.get();
+    return jobDelegate.loadSharedObjects(jobMeta, loadAndCacheSharedObjects());
   }
-
+  
   public SharedObjects readTransSharedObjects(final TransMeta transMeta) throws KettleException {
-    if (transSharedObjects == null || transSharedObjects.get() == null ) {
-      transSharedObjects = new SoftReference<SharedObjects>(transDelegate.loadSharedObjects(transMeta));
-    }
-    return transSharedObjects.get();
+    return transDelegate.loadSharedObjects(transMeta, loadAndCacheSharedObjects());
   }
 
   public ObjectId renameJob(final ObjectId idJob, final RepositoryDirectoryInterface newDirectory, final String newName)
@@ -1884,6 +1889,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       //jobMeta.setRepositoryLock(getLock(file));
       // Additional obfuscation through obscurity
       if (dscContent != null) {
+        readJobMetaSharedObjects(jobMeta);
         jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class)
             .getNode(), jobMeta);
         jobMeta.clearChanged();

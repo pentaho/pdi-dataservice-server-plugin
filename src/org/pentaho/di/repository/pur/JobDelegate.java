@@ -137,18 +137,12 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
   // ~ Methods =========================================================================================================
   @SuppressWarnings("unchecked")
-  public SharedObjects loadSharedObjects(final RepositoryElementInterface element) throws KettleException {
+  public SharedObjects loadSharedObjects(final RepositoryElementInterface element,
+      final Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType)
+      throws KettleException {
     JobMeta jobMeta = (JobMeta) element;
     jobMeta.setSharedObjects(jobMeta.readSharedObjects());
 
-    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = null;
-    try {
-      sharedObjectsByType = repo.readSharedObjects(RepositoryObjectType.DATABASE, RepositoryObjectType.SLAVE_SERVER);
-    } catch (Exception e) {
-      // TODO Create this property
-      throw new KettleException(BaseMessages.getString(PKG,
-          "JCRRepository.Exception.UnableToReadSharedObjectsFromRepository"), e); //$NON-NLS-1$
-    }
     // Repository objects take priority so let's overwrite them...
     //
     readDatabases(jobMeta, true, (List<DatabaseMeta>) sharedObjectsByType.get(RepositoryObjectType.DATABASE));
@@ -195,8 +189,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
     JobMeta jobMeta = (JobMeta) element;
 
-    jobMeta.setSharedObjectsFile(getString(rootNode, "SHARED_FILE"));
-    jobMeta.setSharedObjects(loadSharedObjects(jobMeta));
+    jobMeta.setSharedObjectsFile(getString(rootNode, PROP_SHARED_FILE));
 
     // Keep a unique list of job entries to facilitate in the loading.
     //
