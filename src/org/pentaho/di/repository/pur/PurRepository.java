@@ -171,6 +171,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
    */
   private SoftReference<RepositoryDirectory> rootRef = null;
 
+  private SoftReference<SharedObjects> transSharedObjects = null;
+  private SoftReference<SharedObjects> jobSharedObjects = null;
+  
+  
   /** 
    * We need to cache the fact that the user home is aliased, in order to properly map back to a path known to PUR.
    * This arises specifically because of the use case where a 
@@ -368,7 +372,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       final String directoryPath) throws KettleException {
     try {
       PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));      
-      RepositoryDirectoryInterface refreshedParentDir = loadRepositoryDirectoryTree().findDirectory(parentDirectory.getPath());
+      RepositoryDirectoryInterface refreshedParentDir = findDirectory(parentDirectory.getPath());
       // update the passed in repository directory with the children recently loaded from the repo
       parentDirectory.setChildren(refreshedParentDir.getChildren());
       String[] path = Const.splitPath(directoryPath, RepositoryDirectory.DIRECTORY_SEPARATOR);
@@ -448,10 +452,15 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public RepositoryDirectoryInterface loadRepositoryDirectoryTree() throws KettleException {
+    // this method forces a reload of the repository directory tree structure
+    // a new rootRef will be obtained - this is a SoftReference which will be used
+    // by any calls to getRootDir()
+    
     RepositoryFile rootFolder = pur.getFile(ClientRepositoryPaths.getRootFolderPath());
     RepositoryDirectory rootDir = new RepositoryDirectory();
     rootRef = new SoftReference<RepositoryDirectory>(rootDir);
     rootDir.setObjectId(new StringObjectId(rootFolder.getId().toString()));
+    
     RepositoryFileTree rootFileTree = pur.getTree(ClientRepositoryPaths.getRootFolderPath(), -1, null);
     loadRepositoryDirectory(rootDir, rootFolder, rootFileTree);
 
@@ -990,6 +999,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     sharedObjectAssemblerMap.put(RepositoryObjectType.SLAVE_SERVER, slaveTransformer);
   }
 
+  public void clearSharedObjectCache() {
+    transSharedObjects = null;
+    jobSharedObjects = null;
+  }
+  
   /**
    * Read shared objects of the types provided from the repository.  Every {@link SharedObjectInterface} that is read will be
    * fully loaded as if it has been loaded through {@link #loadDatabaseMeta(ObjectId, String)}, {@link #loadClusterSchema(ObjectId, List, String)}, etc.
@@ -1001,12 +1015,14 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
    */
   public Map<RepositoryObjectType, List<? extends SharedObjectInterface>> readSharedObjects(
       RepositoryObjectType... types) throws KettleException {
+
     // Overview:  
     //  1) We will fetch RepositoryFile, NodeRepositoryFileData, and VersionSummary for all types provided.  
     //  2) We assume that unless an exception is thrown every RepositoryFile returned by getFilesByType(..) have a 
     //     matching NodeRepositoryFileData and VersionSummary.
     //  3) With all files, node data, and versions in hand we will iterate over them, merging them back into usable shared objects
     Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+    
     List<RepositoryFile> allFiles = new ArrayList<RepositoryFile>();
     // Since type is not preserved in the RepositoryFile we fetch files by type so we don't rely on parsing the name to determine type afterward
     // Map must be ordered or we can't match up files with data and version summary
@@ -1501,12 +1517,19 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return pur.canUnlockFile(id.getId());
   }
 
+  
   public SharedObjects readJobMetaSharedObjects(final JobMeta jobMeta) throws KettleException {
-    return jobDelegate.loadSharedObjects(jobMeta);
+    if (jobSharedObjects == null || jobSharedObjects.get() == null ) {
+      jobSharedObjects = new SoftReference<SharedObjects>(jobDelegate.loadSharedObjects(jobMeta));
+    }
+    return jobSharedObjects.get();
   }
 
   public SharedObjects readTransSharedObjects(final TransMeta transMeta) throws KettleException {
-    return transDelegate.loadSharedObjects(transMeta);
+    if (transSharedObjects == null || transSharedObjects.get() == null ) {
+      transSharedObjects = new SoftReference<SharedObjects>(transDelegate.loadSharedObjects(transMeta));
+    }
+    return transSharedObjects.get();
   }
 
   public ObjectId renameJob(final ObjectId idJob, final RepositoryDirectoryInterface newDirectory, final String newName)
@@ -1831,7 +1854,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         transMeta.setRepositoryDirectory(parentDir);
       }
       //transMeta.setRepositoryLock(getLock(file));
-      transDelegate.loadSharedObjects(transMeta);
+      readTransSharedObjects(transMeta);
       transDelegate.dataNodeToElement(pur
           .getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), transMeta);
       transMeta.clearChanged();
@@ -2432,8 +2455,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public RepositoryDirectoryInterface getUserHomeDirectory() throws KettleException {
-    loadRepositoryDirectoryTree();
-    return getRootDir().findDirectory(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
+    return findDirectory(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
   }
   
   public RepositoryObject getObjectInformation(ObjectId objectId, RepositoryObjectType objectType)
@@ -2449,13 +2471,37 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       Date modifiedDate = repositoryFile.getLastModifiedDate();
       String ownerName = repositoryFile.getOwner().getName();
       boolean deleted = repositoryFile.getOriginalParentFolderPath() != null;
-      RepositoryDirectoryInterface directory = loadRepositoryDirectoryTree().findDirectory(aliasPurPathIfNecessary(parentPath));
+      RepositoryDirectoryInterface directory = findDirectory(aliasPurPathIfNecessary(parentPath));
       return new RepositoryObject(objectId, name, directory, ownerName, modifiedDate, objectType, description, deleted);
     } catch(Exception e) {
       throw new KettleException("Unable to get object information for object with id="+objectId, e);
     }
   }
 
+  public RepositoryDirectoryInterface findDirectory(String directory) throws KettleException {
+    RepositoryDirectoryInterface repositoryDirectoryInterface = null;
+    // check if we have a rootRef cached
+    boolean usingRootDirCache = rootRef != null && rootRef.get() != null;
+    repositoryDirectoryInterface = getRootDir().findDirectory(directory);  
+    // if we are using a cached version of the repository interface, allow a reload if we do not find
+    if (repositoryDirectoryInterface == null && usingRootDirCache) {
+      repositoryDirectoryInterface = loadRepositoryDirectoryTree().findDirectory(directory);
+    } 
+    return repositoryDirectoryInterface;
+  }
+
+  public RepositoryDirectoryInterface findDirectory(ObjectId directory) throws KettleException {
+    RepositoryDirectoryInterface repositoryDirectoryInterface = null;
+    // check if we have a rootRef cached
+    boolean usingRootDirCache = rootRef != null && rootRef.get() != null;
+    repositoryDirectoryInterface = getRootDir().findDirectory(directory);  
+    // if we are using a cached version of the repository interface, allow a reload if we do not find
+    if (repositoryDirectoryInterface == null && usingRootDirCache) {
+      repositoryDirectoryInterface = loadRepositoryDirectoryTree().findDirectory(directory);
+    } 
+    return repositoryDirectoryInterface;
+  }
+  
   public JobMeta loadJob(ObjectId idJob, String versionLabel) throws KettleException {
     try {
       PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
@@ -2470,7 +2516,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       jobMeta.setDescription(file.getDescription());
       jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
       jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
-      jobMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
+      jobMeta.setRepositoryDirectory(findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
+
+      readJobMetaSharedObjects(jobMeta);
       // Additional obfuscation through obscurity
       if (dscContent != null) {
     	  jobMeta.setRepositoryLock(getLock(file));
@@ -2498,9 +2546,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       transMeta.setDescription(file.getDescription());
       transMeta.setObjectId(new StringObjectId(file.getId().toString()));
       transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
-      transMeta.setRepositoryDirectory(loadRepositoryDirectoryTree().findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
+      transMeta.setRepositoryDirectory(findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
       transMeta.setRepositoryLock(getLock(file));
-      transDelegate.loadSharedObjects(transMeta);
+      
+      readTransSharedObjects(transMeta);
       // Additional obfuscation through obscurity
       if (dscContent != null) {
     	  transDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idTransformation.getId(), versionLabel,

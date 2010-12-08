@@ -418,6 +418,14 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
+  public RepositoryDirectoryInterface findDirectory(String directory) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
+  public RepositoryDirectoryInterface findDirectory(ObjectId directory) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
   public SlaveServer loadSlaveServer(ObjectId idSlaveServer, String versionLabel) throws KettleException {
     throw new UnsupportedOperationException();
   }
@@ -439,6 +447,10 @@ public class RepositoryProxy implements Repository, ILockService {
     throw new UnsupportedOperationException();
   }
 
+  public void clearSharedObjectCache() {
+    // no op
+  }
+  
   public SharedObjects readJobMetaSharedObjects(JobMeta jobMeta) throws KettleException {
     throw new UnsupportedOperationException();
   }
