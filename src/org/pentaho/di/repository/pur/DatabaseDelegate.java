@@ -45,11 +45,11 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer, 
 
   // ~ Instance fields =================================================================================================
   
-  private Repository repo;
+  private PurRepository repo;
   
   // ~ Constructors ====================================================================================================
 
-  public DatabaseDelegate(final Repository repo) {
+  public DatabaseDelegate(final PurRepository repo) {
     super();
     this.repo = repo;
   }
@@ -128,7 +128,7 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer, 
     DatabaseMeta databaseMeta = (DatabaseMeta) dataNodeToElement(data.getNode());
     databaseMeta.setName(file.getTitle());
     databaseMeta.setObjectId(new StringObjectId(file.getId().toString()));
-    databaseMeta.setObjectRevision(createObjectRevision(version));
+    databaseMeta.setObjectRevision(repo.createObjectRevision(version));
     databaseMeta.clearChanged();
     return databaseMeta;
   }

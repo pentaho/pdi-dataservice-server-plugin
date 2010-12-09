@@ -35,11 +35,11 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer, S
 
   // ~ Instance fields =================================================================================================
 
-  private Repository repo;
+  private PurRepository repo;
 
   // ~ Constructors ====================================================================================================
 
-  public ClusterDelegate(final Repository repo) {
+  public ClusterDelegate(final PurRepository repo) {
     super();
     this.repo = repo;
   }
@@ -118,7 +118,7 @@ public class ClusterDelegate extends AbstractDelegate implements ITransformer, S
     ClusterSchema clusterSchema = (ClusterSchema) dataNodeToElement(data.getNode());
     clusterSchema.setName(file.getTitle());
     clusterSchema.setObjectId(new StringObjectId(file.getId().toString()));
-    clusterSchema.setObjectRevision(createObjectRevision(version));
+    clusterSchema.setObjectRevision(repo.createObjectRevision(version));
     clusterSchema.clearChanged();
     return clusterSchema;
   }

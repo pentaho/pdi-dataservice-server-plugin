@@ -36,11 +36,11 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer, Sha
 
   // ~ Instance fields =================================================================================================
 
-  private Repository repo;
+  private PurRepository repo;
 
   // ~ Constructors ====================================================================================================
 
-  public SlaveDelegate(final Repository repo) {
+  public SlaveDelegate(final PurRepository repo) {
     super();
     this.repo = repo;
   }
@@ -101,7 +101,7 @@ public class SlaveDelegate extends AbstractDelegate implements ITransformer, Sha
     SlaveServer slaveServer = (SlaveServer) dataNodeToElement(data.getNode());
     slaveServer.setName(file.getTitle());
     slaveServer.setObjectId(new StringObjectId(file.getId().toString()));
-    slaveServer.setObjectRevision(createObjectRevision(version));
+    slaveServer.setObjectRevision(repo.createObjectRevision(version));
     slaveServer.clearChanged();
     return slaveServer;
   }

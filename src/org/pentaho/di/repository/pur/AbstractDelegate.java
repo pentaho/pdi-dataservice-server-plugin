@@ -4,8 +4,6 @@ import java.util.Date;
 
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.repository.ObjectRevision;
-import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 
 public abstract class AbstractDelegate {
@@ -71,13 +69,5 @@ public abstract class AbstractDelegate {
     } else {
       return null;
     }
-  }
-
-  /**
-   * @return Wrapped {@link VersionSummary} with a {@link ObjectRevision}.
-   */
-  protected ObjectRevision createObjectRevision(final VersionSummary versionSummary) {
-    return new PurObjectRevision(versionSummary.getId(), versionSummary.getAuthor(), versionSummary.getDate(),
-        versionSummary.getMessage());
   }
 }

@@ -26,11 +26,11 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer,
   private static final String PROP_NB_PARTITION_SCHEMA = "NB_PARTITION_SCHEMA"; //$NON-NLS-1$
   // ~ Instance fields =================================================================================================
 
-  private Repository repo;
+  private PurRepository repo;
 
   // ~ Constructors ====================================================================================================
 
-  public PartitionDelegate(final Repository repo) {
+  public PartitionDelegate(final PurRepository repo) {
     super();
     this.repo = repo;
   }
@@ -87,7 +87,7 @@ public class PartitionDelegate extends AbstractDelegate implements ITransformer,
     PartitionSchema partitionSchema = (PartitionSchema) dataNodeToElement(data.getNode());
     partitionSchema.setName(file.getTitle());
     partitionSchema.setObjectId(new StringObjectId(file.getId().toString()));
-    partitionSchema.setObjectRevision(createObjectRevision(version));
+    partitionSchema.setObjectRevision(repo.createObjectRevision(version));
     partitionSchema.clearChanged();
     return partitionSchema;
   }

@@ -2093,7 +2093,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   private ObjectRevision getObjectRevision(final ObjectId elementId, final String versionId) {
-    VersionSummary versionSummary = pur.getVersionSummary(elementId.getId(), versionId);
+    return createObjectRevision(pur.getVersionSummary(elementId.getId(), versionId));
+  }
+
+  /**
+   * @return Wrapped {@link VersionSummary} with a {@link ObjectRevision}.
+   */
+  protected ObjectRevision createObjectRevision(final VersionSummary versionSummary) {
     return new PurObjectRevision(versionSummary.getId(), versionSummary.getAuthor(), versionSummary.getDate(),
         versionSummary.getMessage());
   }
