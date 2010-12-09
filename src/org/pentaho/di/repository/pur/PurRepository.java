@@ -1640,9 +1640,46 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
-  private void rename(final RepositoryElementInterface element) throws KettleException {
+  private boolean isRenamed(final RepositoryElementInterface element, final RepositoryFile file) throws KettleException {
+    if (element.getObjectId() == null) {
+      return false; // never been saved
+    }
+    String filename = element.getName();
+    switch (element.getRepositoryElementType()) {
+      case TRANSFORMATION:
+        filename += RepositoryObjectType.TRANSFORMATION.getExtension();
+        break;
+      case JOB:
+        filename += RepositoryObjectType.JOB.getExtension();
+        break;
+      case DATABASE:
+        filename += RepositoryObjectType.DATABASE.getExtension();
+        break;
+      case SLAVE_SERVER:
+        filename += RepositoryObjectType.SLAVE_SERVER.getExtension();
+        break;
+      case CLUSTER_SCHEMA:
+        filename += RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
+        break;
+      case PARTITION_SCHEMA:
+        filename += RepositoryObjectType.PARTITION_SCHEMA.getExtension();
+        break;
+      default:
+        throw new KettleException("unknown element type [" + element.getClass().getName()
+            + "]");
+    }
+    if (!file.getName().equals(filename)) {
+      return true;
+    }
+    return false;
+  }
+  
+  private void renameIfNecessary(final RepositoryElementInterface element, final RepositoryFile file) throws KettleException {
+    if (!isRenamed(element, file)) {
+      return;
+    }
+    
     ObjectId id = element.getObjectId();
-    RepositoryFile file = pur.getFileById(id.getId());
     StringBuilder buf = new StringBuilder(file.getPath().length());
     buf.append(getParentPath(file.getPath()));
     buf.append(RepositoryFile.SEPARATOR);
@@ -1669,16 +1706,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   private void saveJob(final RepositoryElementInterface element, final String versionComment) throws KettleException {
     jobDelegate.saveSharedObjects(element, versionComment);
-    boolean renameRequired = false;
     boolean isUpdate = element.getObjectId() != null;
-    try {
-      JobMeta jobMeta = loadJob(element.getObjectId(), null);
-      if (jobMeta != null && jobMeta.getName() != null) {
-        renameRequired = !jobMeta.getName().equals(element.getName());
-      }
-    } catch (KettleException ke) {
-      renameRequired = false;
-    }
     RepositoryFile file = null;
     if (isUpdate) {
       ObjectId id = element.getObjectId();
@@ -1696,6 +1724,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
            );
       } else {
         throw new KettleException("File is currently locked by another user for editing");
+      }
+      if (isRenamed(element, file)) {
+        renameJob(element.getObjectId(), null, element.getName());
       }
     } else {
       file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.JOB.getExtension()))
@@ -1717,25 +1748,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (element instanceof ChangedFlagInterface) {
       ((ChangedFlagInterface)element).clearChanged();
     }
-    if (renameRequired) {
-      renameJob(element.getObjectId(), null, element.getName());
-    }
   }
 
   protected void saveTrans(final RepositoryElementInterface element, final String versionComment)
       throws KettleException {
     transDelegate.saveSharedObjects(element, versionComment);
-    boolean renameRequired = false;
     boolean isUpdate = element.getObjectId() != null;
     RepositoryFile file = null;
-    try {
-      TransMeta transMeta = loadTransformation(element.getObjectId(), null);
-      if (transMeta != null && transMeta.getName() != null) {
-        renameRequired = !transMeta.getName().equals(element.getName());
-      }
-    } catch (KettleException ke) {
-      renameRequired = false;
-    }
     if (isUpdate) {
       ObjectId id = element.getObjectId();
       file = pur.getFileById(id.getId());
@@ -1752,6 +1771,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
            );
       } else {
         throw new KettleException("File is currently locked by another user for editing");
+      }
+      if (isRenamed(element, file)) {
+        renameTransformation(element.getObjectId(), null, element.getName());
       }
     } else {
       file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.TRANSFORMATION.getExtension()))
@@ -1772,29 +1794,18 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (element instanceof ChangedFlagInterface) {
       ((ChangedFlagInterface)element).clearChanged();
     }
-    if (renameRequired) {
-      renameTransformation(element.getObjectId(), null, element.getName());
-    }
   }
 
   protected void saveDatabaseMeta(final RepositoryElementInterface element, final String versionComment)
       throws KettleException {
-
+    try {
     // Even if the object id is null, we still have to check if the element is not present in the PUR
-    // For example, if we import data from an XML file and there is a database with the same name in it.
+    // For example, if we import data from an XML file and there is a element with the same name in it.
     //
-    boolean renameRequired = false;
     if (element.getObjectId() == null) {
       element.setObjectId(getDatabaseID(element.getName()));
     }
-    try {
-      DatabaseMeta databaseMeta = loadDatabaseMeta(element.getObjectId(), null);
-      if (databaseMeta != null && databaseMeta.getName() != null) {
-        renameRequired = !databaseMeta.getName().equals(element.getName());
-      }
-    } catch (KettleException ke) {
-      renameRequired = false;
-    }
+
     boolean isUpdate = element.getObjectId() != null;
     RepositoryFile file = null;
     if (isUpdate) {
@@ -1803,6 +1814,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
       file = pur.updateFile(file, new NodeRepositoryFileData(databaseMetaTransformer.elementToDataNode(element)),
           versionComment);
+      renameIfNecessary(element, file);
     } else {
       file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.DATABASE.getExtension())).title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(
           VERSION_SHARED_OBJECTS).build();
@@ -1816,9 +1828,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (element instanceof ChangedFlagInterface) {
       ((ChangedFlagInterface)element).clearChanged();
     }
-    if (renameRequired) {
-      rename(element);
+    } catch (KettleException ke) {
+      ke.printStackTrace();
     }
+    
   }
 
   public DatabaseMeta loadDatabaseMeta(final ObjectId databaseId, final String versionId) throws KettleException {
@@ -1946,26 +1959,23 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   protected void savePartitionSchema(final RepositoryElementInterface element, final String versionComment) {
-    boolean isUpdate = element.getObjectId() != null;
-    boolean renameRequired = false;
-    RepositoryFile file = null;
-
     try {
-      try {
-        PartitionSchema partitionSchema = loadPartitionSchema(element.getObjectId(), null);
-        if (partitionSchema != null && partitionSchema.getName() != null) {
-          renameRequired = !partitionSchema.getName().equals(element.getName());
-        }
-      } catch (KettleException ke) {
-        renameRequired = false;
+      // Even if the object id is null, we still have to check if the element is not present in the PUR
+      // For example, if we import data from an XML file and there is a element with the same name in it.
+      //
+      if (element.getObjectId() == null) {
+        element.setObjectId(getPartitionSchemaID(element.getName()));
       }
-
+      
+      boolean isUpdate = element.getObjectId() != null;
+      RepositoryFile file = null;
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         // update title
         file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(partitionSchemaTransformer.elementToDataNode(element)),
             versionComment);
+        renameIfNecessary(element, file);
       } else {
         file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.PARTITION_SCHEMA.getExtension()))
         .title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
@@ -1979,9 +1989,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       if (element instanceof ChangedFlagInterface) {
         ((ChangedFlagInterface)element).clearChanged();
       }
-      if (renameRequired) {
-        rename(element);
-      }
 
     } catch (KettleException ke) {
       ke.printStackTrace();
@@ -1989,32 +1996,24 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   protected void saveSlaveServer(final RepositoryElementInterface element, final String versionComment) throws KettleException {
-    
-    // Even if the object id is null, we still have to check if the element is not present in the PUR
-    // For example, if we import data from an XML file and there is a slave with the same name in it.
-    //
-    boolean renameRequired = false;
-    if (element.getObjectId() == null) {
-      element.setObjectId(getSlaveID(element.getName()));
-    }
-
-    boolean isUpdate = element.getObjectId() != null;
-    RepositoryFile file = null;
     try {
-      try {
-        SlaveServer slaveServer = loadSlaveServer(element.getObjectId(), null);
-        if (slaveServer != null && slaveServer.getName() != null) {
-          renameRequired = !slaveServer.getName().equals(element.getName());
-        }
-      } catch (KettleException ke) {
-        renameRequired = false;
+      // Even if the object id is null, we still have to check if the element is not present in the PUR
+      // For example, if we import data from an XML file and there is a element with the same name in it.
+      //
+      if (element.getObjectId() == null) {
+        element.setObjectId(getSlaveID(element.getName()));
       }
+  
+      boolean isUpdate = element.getObjectId() != null;
+      RepositoryFile file = null;
+
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         // update title
         file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(slaveTransformer.elementToDataNode(element)),
             versionComment);
+        renameIfNecessary(element, file);
       } else {
         file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.SLAVE_SERVER.getExtension()))
         .title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
@@ -2028,9 +2027,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       if (element instanceof ChangedFlagInterface) {
         ((ChangedFlagInterface)element).clearChanged();
       }
-      if (renameRequired) {
-        rename(element);
-      }
     } catch (KettleException ke) {
       ke.printStackTrace();
     }
@@ -2038,18 +2034,16 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   protected void saveClusterSchema(final RepositoryElementInterface element, final String versionComment) {
-    boolean isUpdate = element.getObjectId() != null;
-    boolean renameRequired = false;
-    RepositoryFile file = null;
     try {
-      try {
-        ClusterSchema clusterSchema = loadClusterSchema(element.getObjectId(), getSlaveServers(), null);
-        if (clusterSchema != null && clusterSchema.getName() != null) {
-          renameRequired = !clusterSchema.getName().equals(element.getName());
-        }
-      } catch (KettleException ke) {
-        renameRequired = false;
+      // Even if the object id is null, we still have to check if the element is not present in the PUR
+      // For example, if we import data from an XML file and there is a element with the same name in it.
+      //
+      if (element.getObjectId() == null) {
+        element.setObjectId(getClusterID(element.getName()));
       }
+      
+      boolean isUpdate = element.getObjectId() != null;
+      RepositoryFile file = null;
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         // update title
@@ -2062,6 +2056,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)),
             versionComment
            );
+        renameIfNecessary(element, file);
       } else {
         file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.CLUSTER_SCHEMA.getExtension()))
           .title(RepositoryFile.ROOT_LOCALE, element.getName())
@@ -2081,10 +2076,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       element.setObjectRevision(getObjectRevision(objectId, null));
       if (element instanceof ChangedFlagInterface) {
         ((ChangedFlagInterface)element).clearChanged();
-      }
-      
-      if (renameRequired) {
-        rename(element);
       }
     } catch (KettleException ke) {
       ke.printStackTrace();
@@ -2630,5 +2621,5 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public IRepositoryImporter getImporter() {
     return new RepositoryImporter(this);
   }
-
+  
 }
