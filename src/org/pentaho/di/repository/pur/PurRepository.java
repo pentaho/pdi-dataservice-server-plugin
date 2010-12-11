@@ -1520,7 +1520,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return pur.canUnlockFile(id.getId());
   }
 
-  protected Map<RepositoryObjectType, List<? extends SharedObjectInterface>> loadAndCacheSharedObjects() throws KettleException {
+  protected Map<RepositoryObjectType, List<? extends SharedObjectInterface>> loadAndCacheSharedObjects(final boolean deepCopy) throws KettleException {
     if (sharedObjectsByType == null) {
       try {
         sharedObjectsByType = readSharedObjects(RepositoryObjectType.DATABASE, RepositoryObjectType.PARTITION_SCHEMA,
@@ -1530,7 +1530,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         throw new KettleException("Unable to read shared objects from repository", e); //$NON-NLS-1$
       }
     }
-    return deepCopy(sharedObjectsByType);
+    return deepCopy ? deepCopy(sharedObjectsByType) : sharedObjectsByType;
+  }
+  
+  protected Map<RepositoryObjectType, List<? extends SharedObjectInterface>> loadAndCacheSharedObjects() throws KettleException {
+    return loadAndCacheSharedObjects(true);
   }
   
   private Map<RepositoryObjectType, List<? extends SharedObjectInterface>> deepCopy(Map<RepositoryObjectType, List<? extends SharedObjectInterface>> orig) throws KettleException {
@@ -2152,6 +2156,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (element != null && (element.getObjectId() == null || element.getObjectId().getId() == null)) {
       throw new IllegalArgumentException(element.getName() + " has a null id");
     }
+    
+    loadAndCacheSharedObjects(false);
+    
     boolean remove = element == null;
     ObjectId idToFind = element != null ? element.getObjectId() : id;
     RepositoryObjectType typeToUpdate = element != null ? element.getRepositoryElementType() : type;
