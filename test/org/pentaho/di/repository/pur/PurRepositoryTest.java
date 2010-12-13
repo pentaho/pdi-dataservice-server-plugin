@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -285,8 +286,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
     repository.save(dbMeta, VERSION_COMMENT_V1, null);
 
-    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = repo
-        .readSharedObjects(RepositoryObjectType.DATABASE);
+    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+    repo.readSharedObjects(sharedObjectsByType, RepositoryObjectType.DATABASE);
     assertNotNull(sharedObjectsByType);
     @SuppressWarnings("unchecked")
     List<DatabaseMeta> databaseMetas = (List<DatabaseMeta>) sharedObjectsByType.get(RepositoryObjectType.DATABASE);
@@ -305,8 +306,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     SlaveServer slave = createSlaveServer(""); //$NON-NLS-1$
     repository.save(slave, VERSION_COMMENT_V1, null);
 
-    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = repo
-        .readSharedObjects(RepositoryObjectType.SLAVE_SERVER);
+    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+    repo.readSharedObjects(sharedObjectsByType, RepositoryObjectType.SLAVE_SERVER);
     assertNotNull(sharedObjectsByType);
     @SuppressWarnings("unchecked")
     List<SlaveServer> slaveServers = (List<SlaveServer>) sharedObjectsByType.get(RepositoryObjectType.SLAVE_SERVER);
@@ -325,8 +326,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     PartitionSchema partSchema = createPartitionSchema(""); //$NON-NLS-1$
     repository.save(partSchema, VERSION_COMMENT_V1, null);
 
-    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = repo
-        .readSharedObjects(RepositoryObjectType.PARTITION_SCHEMA);
+    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+    repo.readSharedObjects(sharedObjectsByType, RepositoryObjectType.PARTITION_SCHEMA);
     assertNotNull(sharedObjectsByType);
     @SuppressWarnings("unchecked")
     List<PartitionSchema> partitionSchemas = (List<PartitionSchema>) sharedObjectsByType
@@ -346,8 +347,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     ClusterSchema clusterSchema = createClusterSchema(EXP_CLUSTER_SCHEMA_NAME);
     repository.save(clusterSchema, VERSION_COMMENT_V1, null);
 
-    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = repo
-        .readSharedObjects(RepositoryObjectType.CLUSTER_SCHEMA);
+    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+    repo.readSharedObjects(sharedObjectsByType, RepositoryObjectType.CLUSTER_SCHEMA);
     assertNotNull(sharedObjectsByType);
     @SuppressWarnings("unchecked")
     List<ClusterSchema> clusterSchemas = (List<ClusterSchema>) sharedObjectsByType
@@ -369,8 +370,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     ClusterSchema clusterSchema = createClusterSchema(EXP_CLUSTER_SCHEMA_NAME);
     repository.save(clusterSchema, VERSION_COMMENT_V1, null);
 
-    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = repo.readSharedObjects(
-        RepositoryObjectType.CLUSTER_SCHEMA, RepositoryObjectType.DATABASE);
+    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+    repo.readSharedObjects(sharedObjectsByType, RepositoryObjectType.CLUSTER_SCHEMA, RepositoryObjectType.DATABASE);
     assertNotNull(sharedObjectsByType);
     assertEquals(2, sharedObjectsByType.size());
 

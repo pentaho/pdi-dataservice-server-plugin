@@ -927,20 +927,16 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
    * fully loaded as if it has been loaded through {@link #loadDatabaseMeta(ObjectId, String)}, {@link #loadClusterSchema(ObjectId, List, String)}, etc.
    * <p>This method was introduced to reduce the number of server calls for loading shared objects to a constant number: {@code 2 + n, where n is the number of types requested}.</p>
    * 
+   * @param sharedObjectsByType Map of type to shared objects.  Each map entry will contain a non-null {@link List} of {@link RepositoryObjectType}s for every type provided.  Only entries for types provided will be altered.
    * @param types Types of repository objects to read from the repository
-   * @return Map of type to shared objects.  Each map entry will contain a non-null {@link List} of {@link RepositoryObjectType}s for every type provided.
    * @throws KettleException
    */
-  public Map<RepositoryObjectType, List<? extends SharedObjectInterface>> readSharedObjects(
-      RepositoryObjectType... types) throws KettleException {
-
+  protected void readSharedObjects(Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType, RepositoryObjectType... types) throws KettleException {
     // Overview:  
     //  1) We will fetch RepositoryFile, NodeRepositoryFileData, and VersionSummary for all types provided.  
     //  2) We assume that unless an exception is thrown every RepositoryFile returned by getFilesByType(..) have a 
     //     matching NodeRepositoryFileData and VersionSummary.
     //  3) With all files, node data, and versions in hand we will iterate over them, merging them back into usable shared objects
-    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
-    
     List<RepositoryFile> allFiles = new ArrayList<RepositoryFile>();
     // Since type is not preserved in the RepositoryFile we fetch files by type so we don't rely on parsing the name to determine type afterward
     // Map must be ordered or we can't match up files with data and version summary
@@ -976,7 +972,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       // TODO i18n
       throw new KettleException("Unable to load shared objects", ex); //$NON-NLS-1$
     }
-    return sharedObjectsByType;
   }
 
   /**
@@ -1192,19 +1187,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
+  @SuppressWarnings("unchecked")
   public List<SlaveServer> getSlaveServers() throws KettleException {
-    try {
-      List<SlaveServer> list = new ArrayList<SlaveServer>();
-
-      ObjectId[] ids = getSlaveIDs(false);
-      for (ObjectId id : ids) {
-        list.add(loadSlaveServer(id, null)); // the last version
-      }
-
-      return list;
-    } catch (Exception e) {
-      throw new KettleException("Unable to load all slave servers from the repository", e);
-    }
+    loadAndCacheSharedObjects();
+    return (List<SlaveServer>) sharedObjectsByType.get(RepositoryObjectType.SLAVE_SERVER);
   }
 
   public boolean getStepAttributeBoolean(ObjectId idStep, String code) throws KettleException {
@@ -1440,9 +1426,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   protected Map<RepositoryObjectType, List<? extends SharedObjectInterface>> loadAndCacheSharedObjects(final boolean deepCopy) throws KettleException {
     if (sharedObjectsByType == null) {
       try {
-        sharedObjectsByType = readSharedObjects(RepositoryObjectType.DATABASE, RepositoryObjectType.PARTITION_SCHEMA,
+        sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+        // Slave Servers are referenced by Cluster Schemas so they must be loaded first 
+        readSharedObjects(sharedObjectsByType, RepositoryObjectType.DATABASE, RepositoryObjectType.PARTITION_SCHEMA,
                 RepositoryObjectType.SLAVE_SERVER, RepositoryObjectType.CLUSTER_SCHEMA);
       } catch (Exception e) {
+        sharedObjectsByType = null;
         // TODO i18n
         throw new KettleException("Unable to read shared objects from repository", e); //$NON-NLS-1$
       }
