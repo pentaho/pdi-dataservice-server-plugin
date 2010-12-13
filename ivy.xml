@@ -14,6 +14,7 @@
   <dependencies defaultconf="default->default">
 
     <!-- pentaho -->
+    <dependency org="commons-vfs" name="commons-vfs" rev="20091118-pentaho" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-engine-core" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-api" rev="${dependency.bi-platform.revision}"
@@ -59,7 +60,6 @@
     <dependency org="junit" name="junit" rev="4.4" conf="test->default" />
     <dependency org="commons-logging" name="commons-logging" rev="1.1" conf="test->default" />
     <dependency org="commons-digester" name="commons-digester" rev="1.8" conf="test->default" />
-    <dependency org="commons-vfs" name="commons-vfs" rev="1.0" conf="test->default" />
     <dependency org="commons-lang" name="commons-lang" rev="2.4" conf="test->default" />
     <dependency org="commons-httpclient" name="commons-httpclient" rev="3.0.1" conf="test->default" />
     <dependency org="ognl" name="ognl" rev="2.6.9" conf="test->default" />
@@ -85,6 +85,7 @@
     <dependency org="org.scannotation" name="scannotation" rev="1.0.2" conf="test->default" transitive="false"/>
     <dependency org="pentaho" name="pentaho-bi-platform-test-foundation" rev="${dependency.bi-platform.revision}" changing="true" 
       conf="test->default" />
+    <dependency org="javax.jcr" name="jcr" rev="1.0" conf="test->default"/>
 
 
 
