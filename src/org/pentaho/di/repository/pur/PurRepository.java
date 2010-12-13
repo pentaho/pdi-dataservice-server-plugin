@@ -172,19 +172,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   private Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = null;
 
-  
-  
-  /** 
-   * We need to cache the fact that the user home is aliased, in order to properly map back to a path known to PUR.
-   * This arises specifically because of the use case where a 
-   * folder the same name as a user home folder can be created at the tenant root level; if that happens, then we 
-   * don't alias the user's home directory, but we still have a folder at the tenant root level that LOOKS like and 
-   * aliased user home folder. 
-   */
-  private boolean isUserHomeDirectoryAliased = false;
-
-  protected Serializable userHomeAlias = null;
-
   private Map<Class<? extends IRepositoryService>, IRepositoryService> serviceMap;
 
   private List<Class<? extends IRepositoryService>> serviceList;
@@ -237,7 +224,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       user1.setName(username);
       this.user = user1;
       pur = PentahoSystem.get(IUnifiedRepository.class);
-      userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
     }
     // for now, there is no need to support the security manager
     // what about security provider?
@@ -315,7 +301,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         registerRepositoryService(ITrashService.class, this);
         registerRepositoryService(ILockService.class, this);
       }
-      userHomeAlias = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())).getId();
       connected = true;
     } catch (Throwable e) {
       connected = false;
@@ -463,92 +448,22 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     RepositoryFileTree rootFileTree = pur.getTree(ClientRepositoryPaths.getRootFolderPath(), -1, null);
     loadRepositoryDirectory(rootDir, rootFolder, rootFileTree);
 
-    /** HACK AND SLASH HERE ***/
-    /**
-    * This code accomodates the following parenting logic for display and navigation
-    * of the Enterprise repository:
-    * 
-    * 1. Admin's perspective in Repository Explorer:
-    *   a. The admin will see all folders in the PUR root folder as siblings, with an unnamed root. One of these folders 
-    *   will be the home (e.g. /home) folder. Under this node, the admin can see and access all users' home folders 
-    *   (dictated by ACLs, not business logic). 
-    *   EXAMPLE: Admin logs in...
-    *   ===================
-    *   /
-    *   /home/user2
-    *   /home/user3
-    *   /home/admin
-    *   /public
-    *   /extra1
-    *   /extra2
-    * 2. User's perspective in Repository Explorer:
-    *   a. The user should see her home folder (e.g. /suzy), and a public (e.g. /public) folder. The user's home folder 
-    *   will appear as the user's login, aliased from its actual PUR path.  
-    *   EXAMPLE: Suzy logs in...
-    *   ===================
-    *   /
-    *   /public
-    *   /suzy (physically stored as /home/suzy)
-    *   b. In the case where the admin has created a folder with the same name as the user's home folder alias, the 
-    *   user's home folder will appear as it's PUR path and name.
-    *   EXAMPLE: Admin logs in... and creates /suzy folder...
-    *   ===================
-    *   /
-    *   /home/user2
-    *   /home/suzy
-    *   /home/admin
-    *   /public
-    *   /suzy
-    *   /extra2
-    *   ... then suzy logs in ...
-    *   ===================
-    *   /
-    *   /public
-    *   /suzy (the folder admin created)
-    *   /home/suzy (suzy's home folder)
-    **********************************************************************************************/
-
-    // Example: /home
-    RepositoryDirectory homeDir = rootDir.findDirectory(ClientRepositoryPaths.getHomeFolderPath());
-    // Example: /home/suzy
-    RepositoryDirectory userHomeDir = rootDir.findDirectory(ClientRepositoryPaths
-        .getUserHomeFolderPath(user.getLogin()));
     // Example: /etc
     RepositoryDirectory etcDir = rootDir.findDirectory(ClientRepositoryPaths.getEtcFolderPath());
-    String alias = userHomeDir.getName();
 
-    boolean hasHomeWriteAccess = pur.hasAccess(ClientRepositoryPaths.getHomeFolderPath(), EnumSet
-        .of(RepositoryFilePermission.WRITE));
-
-    // Skip aliasing the user's home directory if:
-    // a. the user has write access to the home directory (signifying admin access) or
-    // b. an admin has created a sibling folder with the same name as the alias we want to use. 
-
-
-    isUserHomeDirectoryAliased = !(hasHomeWriteAccess || (rootDir.findChild(alias) != null));
-
-
-    // List<Directory> children = new ArrayList<Directory>();
     RepositoryDirectory newRoot = new RepositoryDirectory();
     newRoot.setObjectId(rootDir.getObjectId());
     newRoot.setVisible(false);
 
     for (int i = 0; i < rootDir.getNrSubdirectories(); i++) {
       RepositoryDirectory childDir = rootDir.getSubdirectory(i);
+      // Don't show /etc
       boolean isEtcChild = childDir.equals(etcDir);
       if (isEtcChild) {
         continue;
       }
-      boolean isHomeChild = childDir.equals(homeDir);
-      // We are now re-parenting to serve up the view that the UI would like to display...
-      // We revert to the paths needed for PUR methods in the getPath() method....
-      if (isHomeChild && isUserHomeDirectoryAliased) {
-        newRoot.addSubdirectory(userHomeDir);
-      } else {
-        newRoot.addSubdirectory(childDir);
-      }
+      newRoot.addSubdirectory(childDir);
     }
-    /** END HACK AND SLASH HERE ***/
     return newRoot;
   }
 
@@ -665,9 +580,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (repositoryDirectory != null && repositoryDirectory.getObjectId() != null) {
       ObjectId id = repositoryDirectory.getObjectId();
       path = repositoryDirectory.getPath();
-      if ((isUserHomeDirectoryAliased) && (id.getId().equals(userHomeAlias.toString()))) {
-        path = ClientRepositoryPaths.getHomeFolderPath() + path;
-      }
     }
 
     // return the directory path
@@ -2605,7 +2517,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       Date modifiedDate = repositoryFile.getLastModifiedDate();
       String ownerName = repositoryFile.getOwner().getName();
       boolean deleted = repositoryFile.getOriginalParentFolderPath() != null;
-      RepositoryDirectoryInterface directory = findDirectory(aliasPurPathIfNecessary(parentPath));
+      RepositoryDirectoryInterface directory = findDirectory(parentPath);
       return new RepositoryObject(objectId, name, directory, ownerName, modifiedDate, objectType, description, deleted);
     } catch(Exception e) {
       throw new KettleException("Unable to get object information for object with id="+objectId, e);
@@ -2650,7 +2562,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       jobMeta.setDescription(file.getDescription());
       jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
       jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
-      jobMeta.setRepositoryDirectory(findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
+      jobMeta.setRepositoryDirectory(findDirectory(getParentPath(file.getPath())));
 
       readJobMetaSharedObjects(jobMeta);
       // Additional obfuscation through obscurity
@@ -2680,7 +2592,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       transMeta.setDescription(file.getDescription());
       transMeta.setObjectId(new StringObjectId(file.getId().toString()));
       transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
-      transMeta.setRepositoryDirectory(findDirectory(aliasPurPathIfNecessary(getParentPath(file.getPath()))));
+      transMeta.setRepositoryDirectory(findDirectory(getParentPath(file.getPath())));
       transMeta.setRepositoryLock(getLock(file));
       
       readTransSharedObjects(transMeta);
@@ -2693,14 +2605,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       return transMeta;
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation with id [" + idTransformation + "]", e);
-    }
-  }
-  
-  protected String aliasPurPathIfNecessary(String purPath) {
-    if (purPath.startsWith(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin())) && isUserHomeDirectoryAliased) {
-      return purPath.substring(ClientRepositoryPaths.getHomeFolderPath().length());
-    } else {
-      return purPath;
     }
   }
 
