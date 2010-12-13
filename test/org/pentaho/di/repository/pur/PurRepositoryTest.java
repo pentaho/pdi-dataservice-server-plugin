@@ -6,10 +6,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.parsers.SAXParserFactory;
+
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.vfs.FileObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -18,16 +22,23 @@ import org.junit.runner.RunWith;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.KettleEnvironment;
+import org.pentaho.di.core.ProgressMonitorListener;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.plugins.JobEntryPluginType;
 import org.pentaho.di.core.plugins.StepPluginType;
+import org.pentaho.di.core.vfs.KettleVFS;
+import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositoryTestBase;
 import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.shared.SharedObjectInterface;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository2.unified.IBackingRepositoryLifecycleManager;
@@ -50,6 +61,10 @@ import org.springframework.security.userdetails.User;
 import org.springframework.security.userdetails.UserDetails;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.ext.DefaultHandler2;
 
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
@@ -66,7 +81,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   private IRoleAuthorizationPolicyRoleBindingDao roleBindingDao;
 
   private static IAuthorizationPolicy authorizationPolicy;
-
+  
   @BeforeClass
   public static void setUpClass() throws Exception {
     // folder cannot be deleted at teardown shutdown hooks have not yet necessarily completed
@@ -378,5 +393,125 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
     repository.deleteDatabaseMeta(EXP_DBMETA_NAME);
     repository.deleteClusterSchema(clusterSchema.getObjectId());
+  }
+
+  private class MockProgressMonitorListener implements ProgressMonitorListener {
+
+    @Override
+    public void beginTask(String arg0, int arg1) {
+    }
+
+    @Override
+    public void done() {
+    }
+
+    @Override
+    public boolean isCanceled() {
+      return false;
+    }
+
+    @Override
+    public void setTaskName(String arg0) {
+    }
+
+    @Override
+    public void subTask(String arg0) {
+    }
+
+    @Override
+    public void worked(int arg0) {
+    }
+  }
+
+  private class MockRepositoryExportParser extends DefaultHandler2 {
+    private List<String> nodeNames = new ArrayList<String>();
+    private SAXParseException fatalError;
+    private List<String> nodesToCapture = Arrays.asList("repository", "transformations", "transformation", "jobs", "job"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+    
+    @Override
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+      // Only capture nodes we care about
+      if (nodesToCapture.contains(qName)) {
+        nodeNames.add(qName);
+      }
+    }
+    
+    @Override
+    public void fatalError(SAXParseException e) throws SAXException {
+      fatalError = e;
+    }
+    
+    public List<String> getNodesWithName(String name) {
+      List<String> nodes = new ArrayList<String>();
+      for (String node : nodeNames) {
+        if(node.equals(name)) {
+          nodes.add(name);
+        }
+      }
+      return nodes;
+    }
+    
+    public List<String> getNodeNames() {
+      return nodeNames;
+    }
+    
+    public SAXParseException getFatalError() {
+      return fatalError;
+    }
+  }
+  
+  @Test
+  public void testExport() throws Exception {
+    final String exportFileName = new File("test.export").getAbsolutePath(); //$NON-NLS-1$
+
+    RepositoryDirectoryInterface rootDir = initRepo();
+    String uniqueTransName = EXP_TRANS_NAME.concat(EXP_DBMETA_NAME);
+    TransMeta transMeta = createTransMeta(EXP_DBMETA_NAME);
+
+    // Create a database association
+    DatabaseMeta dbMeta = createDatabaseMeta(EXP_DBMETA_NAME);
+    repository.save(dbMeta, VERSION_COMMENT_V1, null);
+
+    TableInputMeta tableInputMeta = new TableInputMeta();
+    tableInputMeta.setDatabaseMeta(dbMeta);
+
+    transMeta.addStep(new StepMeta(EXP_TRANS_STEP_1_NAME, tableInputMeta));
+
+    RepositoryDirectoryInterface transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
+    repository.save(transMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(transMeta); // So this transformation is cleaned up afterward
+    assertNotNull(transMeta.getObjectId());
+    ObjectRevision version = transMeta.getObjectRevision();
+    assertNotNull(version);
+    assertTrue(hasVersionWithComment(transMeta, VERSION_COMMENT_V1));
+    assertTrue(repository.exists(uniqueTransName, transDir, RepositoryObjectType.TRANSFORMATION));
+
+    JobMeta jobMeta = createJobMeta(EXP_JOB_NAME);
+    RepositoryDirectoryInterface jobsDir = rootDir.findDirectory(DIR_JOBS);
+    repository.save(jobMeta, VERSION_COMMENT_V1, null);
+    deleteStack.push(jobMeta);
+    assertNotNull(jobMeta.getObjectId());
+    version = jobMeta.getObjectRevision();
+    assertNotNull(version);
+    assertTrue(hasVersionWithComment(jobMeta, VERSION_COMMENT_V1));
+    assertTrue(repository.exists(EXP_JOB_NAME, jobsDir, RepositoryObjectType.JOB));
+
+    try {
+      repository.getExporter().exportAllObjects(new MockProgressMonitorListener(), exportFileName, null, "all"); //$NON-NLS-1$
+      FileObject exportFile = KettleVFS.getFileObject(exportFileName);
+      assertNotNull(exportFile);      
+      MockRepositoryExportParser parser = new MockRepositoryExportParser();
+      SAXParserFactory.newInstance().newSAXParser().parse(KettleVFS.getInputStream(exportFile), parser);
+      if (parser.getFatalError() != null) {
+        throw parser.getFatalError();
+      }
+      assertNotNull("No nodes found in export", parser.getNodeNames()); //$NON-NLS-1$
+      assertTrue("No nodes found in export", !parser.getNodeNames().isEmpty()); //$NON-NLS-1$
+      assertEquals("Incorrect number of nodes", 5, parser.getNodeNames().size()); //$NON-NLS-1$
+      assertEquals("Incorrect number of transformations", 1, parser.getNodesWithName("transformation").size()); //$NON-NLS-1$ //$NON-NLS-2$
+      assertEquals("Incorrect number of jobs", 1, parser.getNodesWithName("job").size()); //$NON-NLS-1$ //$NON-NLS-2$
+    } finally {
+      KettleVFS.getFileObject(exportFileName).delete();
+    }
   }
 }

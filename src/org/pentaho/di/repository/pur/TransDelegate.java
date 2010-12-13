@@ -441,7 +441,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       if (log.isDetailed())
         log.logDetailed(toString(), PROP_ID_DIRECTORY + "=" + id_directory); //$NON-NLS-1$
       // Set right directory...
-      transMeta.setRepositoryDirectory(repo.loadRepositoryDirectoryTree().findDirectory(
+      transMeta.setRepositoryDirectory(repo.findDirectory(
           new StringObjectId(id_directory))); // always reload the folder structure
     }
 

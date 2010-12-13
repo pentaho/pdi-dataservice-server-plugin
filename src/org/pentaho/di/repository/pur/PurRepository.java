@@ -44,7 +44,6 @@ import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryElementMetaInterface;
-import org.pentaho.di.repository.RepositoryExporter;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectInterface;
@@ -168,7 +167,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
    * We cache the root directory of the loaded tree, to save retrievals when the findDirectory() method 
    * is called.
    */
-  private SoftReference<RepositoryDirectory> rootRef = null;
+  private SoftReference<RepositoryDirectoryInterface> rootRef = null;
 
   private Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = null;
 
@@ -435,18 +434,25 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
+  protected RepositoryFileTree loadRepositoryFileTree(String path) {
+    return pur.getTree(path, -1, null);
+  }
+
   public RepositoryDirectoryInterface loadRepositoryDirectoryTree() throws KettleException {
     // this method forces a reload of the repository directory tree structure
     // a new rootRef will be obtained - this is a SoftReference which will be used
     // by any calls to getRootDir()
-    
-    RepositoryFile rootFolder = pur.getFile(ClientRepositoryPaths.getRootFolderPath());
+    RepositoryFileTree rootFileTree = loadRepositoryFileTree(ClientRepositoryPaths.getRootFolderPath());
+    RepositoryDirectoryInterface rootDir = initRepositoryDirectoryTree(rootFileTree);
+    rootRef = new SoftReference<RepositoryDirectoryInterface>(rootDir);
+    return rootDir;
+  }
+
+  private RepositoryDirectoryInterface initRepositoryDirectoryTree(RepositoryFileTree repoTree) throws KettleException {
+    RepositoryFile rootFolder = repoTree.getFile();
     RepositoryDirectory rootDir = new RepositoryDirectory();
-    rootRef = new SoftReference<RepositoryDirectory>(rootDir);
     rootDir.setObjectId(new StringObjectId(rootFolder.getId().toString()));
-    
-    RepositoryFileTree rootFileTree = pur.getTree(ClientRepositoryPaths.getRootFolderPath(), -1, null);
-    loadRepositoryDirectory(rootDir, rootFolder, rootFileTree);
+    loadRepositoryDirectory(rootDir, rootFolder, repoTree);
 
     // Example: /etc
     RepositoryDirectory etcDir = rootDir.findDirectory(ClientRepositoryPaths.getEtcFolderPath());
@@ -578,7 +584,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
     // need to check for null id since shared objects return a non-null repoDir (see partSchema.getRepositoryDirectory())
     if (repositoryDirectory != null && repositoryDirectory.getObjectId() != null) {
-      ObjectId id = repositoryDirectory.getObjectId();
       path = repositoryDirectory.getPath();
     }
 
@@ -1829,26 +1834,73 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         // need to go back to server to get versioned info
         file = pur.getFileAtVersion(file.getId(), versionId);
       }
-      TransMeta transMeta = new TransMeta();
-      transMeta.setName(file.getTitle());
-      transMeta.setDescription(file.getDescription());
+      NodeRepositoryFileData data = null;
+      ObjectRevision revision = null;
       // Additional obfuscation through obscurity
       if (dscContent != null) {
-      transMeta.setObjectId(new StringObjectId(file.getId().toString()));
-      transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
-        transMeta.setRepositoryDirectory(parentDir);
+        data = pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class);
+        revision = getObjectRevision(new StringObjectId(file.getId().toString()), versionId);
       }
-      //transMeta.setRepositoryLock(getLock(file));
-      readTransSharedObjects(transMeta);
-      transDelegate.dataNodeToElement(pur
-          .getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class).getNode(), transMeta);
-      transMeta.clearChanged();
-      return transMeta;
+      return buildTransMeta(file, parentDir, data, revision);
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
     }
   }
 
+  private TransMeta buildTransMeta(final RepositoryFile file, final RepositoryDirectoryInterface parentDir,
+      final NodeRepositoryFileData data, final ObjectRevision revision) throws KettleException {
+    TransMeta transMeta = new TransMeta();
+    transMeta.setName(file.getTitle());
+    transMeta.setDescription(file.getDescription());
+    transMeta.setObjectId(new StringObjectId(file.getId().toString()));
+    transMeta.setObjectRevision(revision);
+    transMeta.setRepositoryDirectory(parentDir);
+    readTransSharedObjects(transMeta); // This should read from the local cache
+    transDelegate.dataNodeToElement(data.getNode(), transMeta);
+    transMeta.clearChanged();
+    return transMeta;
+  }
+
+  /**
+   * Load all transformations referenced by {@code files}.
+   * 
+   * @param monitor
+   * @param log
+   * @param files Transformation files to load.
+   * @param setInternalVariables Should internal variables be set when loading?  (Note: THIS IS IGNORED, they are always set)
+   * @return Loaded transformations
+   * 
+   * @throws KettleException Error loading data for transformations from repository
+   */
+  protected List<TransMeta> loadTransformations(final ProgressMonitorListener monitor, final LogChannelInterface log,
+      final List<RepositoryFile> files, final boolean setInternalVariables) throws KettleException {
+    List<TransMeta> transformations = new ArrayList<TransMeta>(files.size());
+    List<NodeRepositoryFileData> filesData = pur.getDataForReadInBatch(files, NodeRepositoryFileData.class);
+    List<VersionSummary> versions = pur.getVersionSummaryInBatch(files);
+    Iterator<RepositoryFile> filesIter = files.iterator();
+    Iterator<NodeRepositoryFileData> filesDataIter = filesData.iterator();
+    Iterator<VersionSummary> versionsIter = versions.iterator();
+    while ((monitor == null || !monitor.isCanceled()) && filesIter.hasNext()) {
+      RepositoryFile file = filesIter.next();
+      NodeRepositoryFileData fileData = filesDataIter.next();
+      VersionSummary version = versionsIter.next();
+      String dirPath = file.getPath().substring(0, file.getPath().lastIndexOf(RepositoryDirectory.DIRECTORY_SEPARATOR));
+      try {
+        log.logDetailed("Loading/Exporting transformation [{0} : {1}]  ({2})", dirPath, file.getTitle(), file.getPath()); //$NON-NLS-1$
+        if (monitor!=null) {
+          monitor.subTask("Exporting transformation [" + file.getPath() + "]"); //$NON-NLS-1$ //$NON-NLS-2$
+        }
+        transformations
+            .add(buildTransMeta(file, findDirectory(dirPath), fileData, createObjectRevision(version)));
+      } catch (Exception ex) {
+        log.logDetailed("Unable to load transformation [" + file.getPath() + "]", ex); //$NON-NLS-1$ //$NON-NLS-2$
+        log.logError("An error occurred reading transformation [" + file.getTitle() + "] from directory ["+dirPath+"] : " + ex.getMessage()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        log.logError("Transformation [" + file.getTitle() + "] from directory [" + dirPath + "] was not exported because of a loading error!"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      }
+    }
+    return transformations;
+  }
+  
   public JobMeta loadJob(String jobname, RepositoryDirectoryInterface parentDir, ProgressMonitorListener monitor,
       String versionId) throws KettleException {
     String absPath = null;
@@ -1860,24 +1912,70 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         file = pur.getFileAtVersion(file.getId(), versionId);
       }
       PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
-      JobMeta jobMeta = new JobMeta();
-      jobMeta.setName(file.getTitle());
-      jobMeta.setDescription(file.getDescription());
-      jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
-      jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionId));
-      jobMeta.setRepositoryDirectory(parentDir);
-      //jobMeta.setRepositoryLock(getLock(file));
+      NodeRepositoryFileData data = null;
+      ObjectRevision revision = null;
       // Additional obfuscation through obscurity
       if (dscContent != null) {
-        readJobMetaSharedObjects(jobMeta);
-        jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class)
-            .getNode(), jobMeta);
-        jobMeta.clearChanged();
+        data = pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class);
+        revision = getObjectRevision(new StringObjectId(file.getId().toString()), versionId);
       }
-      return jobMeta;
+      return buildJobMeta(file, parentDir, data, revision);
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
     }
+  }
+
+  private JobMeta buildJobMeta(final RepositoryFile file, final RepositoryDirectoryInterface parentDir,
+      final NodeRepositoryFileData data, final ObjectRevision revision) throws KettleException {
+    JobMeta jobMeta = new JobMeta();
+    jobMeta.setName(file.getTitle());
+    jobMeta.setDescription(file.getDescription());
+    jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
+    jobMeta.setObjectRevision(revision);
+    jobMeta.setRepositoryDirectory(parentDir);
+    readJobMetaSharedObjects(jobMeta); // This should read from the local cache
+    jobDelegate.dataNodeToElement(data.getNode(), jobMeta);
+    jobMeta.clearChanged();
+    return jobMeta;
+  }
+  
+  /**
+   * Load all jobs referenced by {@code files}.
+   * 
+   * @param monitor
+   * @param log
+   * @param files Job files to load.
+   * @param setInternalVariables Should internal variables be set when loading?  (Note: THIS IS IGNORED, they are always set)
+   * @return Loaded jobs
+   * 
+   * @throws KettleException Error loading data for jobs from repository
+   */
+  protected List<JobMeta> loadJobs(final ProgressMonitorListener monitor, final LogChannelInterface log,
+      final List<RepositoryFile> files, final boolean setInternalVariables) throws KettleException {
+    List<JobMeta> transformations = new ArrayList<JobMeta>(files.size());
+    List<NodeRepositoryFileData> filesData = pur.getDataForReadInBatch(files, NodeRepositoryFileData.class);
+    List<VersionSummary> versions = pur.getVersionSummaryInBatch(files);
+    Iterator<RepositoryFile> filesIter = files.iterator();
+    Iterator<NodeRepositoryFileData> filesDataIter = filesData.iterator();
+    Iterator<VersionSummary> versionsIter = versions.iterator();
+    while ((monitor == null || !monitor.isCanceled()) && filesIter.hasNext()) {
+      RepositoryFile file = filesIter.next();
+      NodeRepositoryFileData fileData = filesDataIter.next();
+      VersionSummary version = versionsIter.next();
+      try {
+        String dirPath = file.getPath().substring(0, file.getPath().lastIndexOf(RepositoryDirectory.DIRECTORY_SEPARATOR));
+        log.logDetailed("Loading/Exporting job [{0} : {1}]  ({2})", dirPath, file.getTitle(), file.getPath()); //$NON-NLS-1$
+        if (monitor!=null) {
+          monitor.subTask("Exporting job [" + file.getPath() + "]"); //$NON-NLS-1$ //$NON-NLS-2$
+        }
+        transformations
+            .add(buildJobMeta(file, findDirectory(dirPath), fileData, createObjectRevision(version)));
+      } catch (Exception ex) {
+        log.logError("Unable to load job [" + file.getPath() + "]", ex); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+    }
+    return transformations;
+
   }
   
   /**
@@ -2650,7 +2748,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
   
   public IRepositoryExporter getExporter() {
-    return new RepositoryExporter(this);
+    return new PurRepositoryExporter(this);
   }
   
   public IRepositoryImporter getImporter() {
