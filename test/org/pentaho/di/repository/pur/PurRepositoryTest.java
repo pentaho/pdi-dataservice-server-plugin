@@ -398,28 +398,22 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
   private class MockProgressMonitorListener implements ProgressMonitorListener {
 
-    @Override
     public void beginTask(String arg0, int arg1) {
     }
 
-    @Override
     public void done() {
     }
 
-    @Override
     public boolean isCanceled() {
       return false;
     }
 
-    @Override
     public void setTaskName(String arg0) {
     }
 
-    @Override
     public void subTask(String arg0) {
     }
 
-    @Override
     public void worked(int arg0) {
     }
   }

@@ -181,17 +181,14 @@ public class PurRepositoryExporter implements IRepositoryExporter {
    */
   private class TransformationBatchExporter implements RepositoryFileBatchExporter {
 
-    @Override
     public String getFriendlyTypeName() {
       return "transformations"; //$NON-NLS-1$
     }
 
-    @Override
     public boolean canExport(RepositoryFile file) throws KettleException {
       return RepositoryObjectType.TRANSFORMATION.equals(repository.getObjectType(file.getName()));
     }
 
-    @Override
     public void export(ProgressMonitorListener monitor, List<RepositoryFile> files, OutputStreamWriter writer)
         throws KettleException {
       List<TransMeta> transformations = repository.loadTransformations(monitor, log, files, true);
@@ -211,17 +208,14 @@ public class PurRepositoryExporter implements IRepositoryExporter {
   }
 
   private class JobBatchExporter implements RepositoryFileBatchExporter {
-    @Override
     public String getFriendlyTypeName() {
       return "jobs"; //$NON-NLS-1$
     }
 
-    @Override
     public boolean canExport(RepositoryFile file) throws KettleException {
       return RepositoryObjectType.JOB.equals(repository.getObjectType(file.getName()));
     }
 
-    @Override
     public void export(ProgressMonitorListener monitor, List<RepositoryFile> files, OutputStreamWriter writer)
         throws KettleException {
       List<JobMeta> jobs = repository.loadJobs(monitor, log, files, true);
