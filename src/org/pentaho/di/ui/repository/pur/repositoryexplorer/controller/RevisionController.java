@@ -1,10 +1,6 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
@@ -120,10 +116,10 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
             UIRepositoryObjectRevisions revisions = new UIRepositoryObjectRevisions();
 
             if (ro == null) {
-              return null;
+              return new UIRepositoryObjectRevisions();
             }
             if (ro.size() <= 0) {
-              return null;
+              return new UIRepositoryObjectRevisions();
             }
             if (ro.get(0) instanceof UIRepositoryDirectory) {
               historyTab.setVisible(false);
