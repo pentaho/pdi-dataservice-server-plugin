@@ -133,6 +133,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
           DatabaseMeta existing = transMeta.getDatabase(index);
           existing.replaceMeta(databaseMeta);
           existing.setObjectId(databaseMeta.getObjectId());
+          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+          existing.clearChanged();
         }
       }
 
@@ -148,6 +150,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
           SlaveServer existing = transMeta.getSlaveServers().get(index);
           existing.replaceMeta(slaveServer);
           existing.setObjectId(slaveServer.getObjectId());
+          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+          existing.clearChanged();
         }
       }
 
@@ -163,6 +167,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
           ClusterSchema existing = transMeta.getClusterSchemas().get(index);
           existing.replaceMeta(clusterSchema);
           existing.setObjectId(clusterSchema.getObjectId());
+          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+          existing.clearChanged();
         }
       }
 
@@ -178,6 +184,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
           PartitionSchema existing = transMeta.getPartitionSchemas().get(index);
           existing.replaceMeta(partitionSchema);
           existing.setObjectId(partitionSchema.getObjectId());
+          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+          existing.clearChanged();
         }
       }
 
@@ -197,6 +205,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
           DatabaseMeta existing = transMeta.getDatabase(index);
           existing.replaceMeta(databaseMeta);
           existing.setObjectId(databaseMeta.getObjectId());
+          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+          existing.clearChanged();
         }
       }
 
@@ -212,6 +222,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
           SlaveServer existing = transMeta.getSlaveServers().get(index);
           existing.replaceMeta(slaveServer);
           existing.setObjectId(slaveServer.getObjectId());
+          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+          existing.clearChanged();
         }
       }
   }
@@ -284,7 +296,9 @@ public class PurRepositoryImporter implements IRepositoryImporter {
     //
     // Load transformation from XML into a directory, possibly created!
     //
-    TransMeta transMeta = new TransMeta(transnode, rep);
+    // passing the repository to the TransMeta constructor will result in some expensive server hits
+    // for things we are specifically doing in this code, such as transMeta.setRepositoryDirectory(targetDirectory);
+    TransMeta transMeta = new TransMeta(transnode, null);
     replaceSharedObjects(transMeta);
     feedback.setLabel(BaseMessages.getString(PKG, "PurRepositoryImporter.ImportTrans.Label", Integer.toString(transformationNumber), transMeta.getName()));
 
@@ -326,11 +340,7 @@ public class PurRepositoryImporter implements IRepositoryImporter {
             transMeta.setCreatedUser(null);
           }
         }
-        if (transformationNumber == 1) {
-          saveSharedObjects(transMeta.getDatabases(), transMeta.getSlaveServers(), transMeta.getClusterSchemas(), transMeta.getPartitionSchemas(), versionComment);
-        } else {
-          rep.saveTrans0(transMeta, versionComment, false, false, false, false);
-        }
+        rep.saveTrans0(transMeta, versionComment, true, false, false, false);
         feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.TransSaved.Log", Integer.toString(transformationNumber), transMeta.getName()));
       } catch (Exception e) {
         feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorSavingTrans.Log", Integer.toString(transformationNumber), transMeta.getName(), e.toString()));
@@ -342,34 +352,10 @@ public class PurRepositoryImporter implements IRepositoryImporter {
     return true;
   }
 
-  private void saveSharedObjects(List<DatabaseMeta> databases, List<SlaveServer> slaveServers,
-      List<ClusterSchema> clusterSchemas, List<PartitionSchema> partitionSchemas, String versionComment) throws KettleException {
-    if (databases != null) {
-      for (DatabaseMeta databaseMeta : databases) {
-        rep.saveDatabaseMeta(databaseMeta, versionComment);
-      }
-    }
-    if (slaveServers != null) {
-      for (SlaveServer slaveServer : slaveServers) {
-        rep.saveSlaveServer(slaveServer, versionComment);
-      }
-    }
-    if (clusterSchemas != null) {
-      for (ClusterSchema clusterSchema : clusterSchemas) {
-        rep.saveClusterSchema(clusterSchema, versionComment);
-      }
-    }
-    if (partitionSchemas != null) {
-      for (PartitionSchema partitionSchema : partitionSchemas) {
-        rep.savePartitionSchema(partitionSchema, versionComment);
-      }
-    }
-  }
-
   private boolean importJob(Node jobnode, RepositoryImportFeedbackInterface feedback) throws KettleException {
     // Load the job from the XML node.
     //                
-    JobMeta jobMeta = new JobMeta(jobnode, rep, false, SpoonFactory.getInstance());
+    JobMeta jobMeta = new JobMeta(jobnode, null, false, SpoonFactory.getInstance());
     replaceSharedObjects(jobMeta);
     feedback.setLabel(BaseMessages.getString(PKG, "PurRepositoryImporter.ImportJob.Label", Integer.toString(jobNumber), jobMeta.getName()));
 
@@ -398,11 +384,7 @@ public class PurRepositoryImporter implements IRepositoryImporter {
       jobMeta.setRepositoryDirectory(targetDirectory);
       jobMeta.setObjectId(existintId);
       patchJobEntries(jobMeta);
-      if (jobNumber == 1) { // only save shared objects on the first job
-        saveSharedObjects(jobMeta.getDatabases(), jobMeta.getSlaveServers(), null, null, versionComment);
-      } else {
-        rep.saveJob0(jobMeta, versionComment, false, false, false, false);
-      }
+      rep.saveJob0(jobMeta, versionComment, true, false, false, false);
       feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.JobSaved.Log", Integer.toString(jobNumber), jobMeta.getName()));
     } else {
       feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorSavingJob.Log", jobMeta.getName()));
@@ -410,12 +392,12 @@ public class PurRepositoryImporter implements IRepositoryImporter {
     return true;
   }
 
-
   private int transformationNumber = 1;
   public boolean transformationElementRead(String xml, RepositoryImportFeedbackInterface feedback) {
     try {
       Document doc = XMLHandler.loadXMLString(xml);
       Node transformationNode = XMLHandler.getSubNode(doc, RepositoryExportSaxParser.STRING_TRANSFORMATION);
+      
       if (!importTransformation(transformationNode, feedback)) {
         return false;
       }

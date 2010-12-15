@@ -774,7 +774,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         // Only save the connection if it's actually used in the transformation...
         //
         if (transMeta.isDatabaseConnectionUsed(databaseMeta)) {
-          repo.save(databaseMeta, versionComment, null);
+          repo.saveDatabaseMeta(databaseMeta, versionComment);
         }
       }
     }
@@ -784,7 +784,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     for (SlaveServer slaveServer : transMeta.getSlaveServers()) {
       if (slaveServer.hasChanged() || slaveServer.getObjectId() == null) {
         if (transMeta.isUsingSlaveServer(slaveServer)) {
-          repo.save(slaveServer, versionComment, null);
+          repo.saveSlaveServer(slaveServer, versionComment);
         }
       }
     }
@@ -794,7 +794,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     for (ClusterSchema clusterSchema : transMeta.getClusterSchemas()) {
       if (clusterSchema.hasChanged() || clusterSchema.getObjectId() == null) {
         if (transMeta.isUsingClusterSchema(clusterSchema)) {
-          repo.save(clusterSchema, versionComment, null);
+          repo.saveClusterSchema(clusterSchema, versionComment);
         }
       }
     }
@@ -804,7 +804,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     for (PartitionSchema partitionSchema : transMeta.getPartitionSchemas()) {
       if (partitionSchema.hasChanged() || partitionSchema.getObjectId() == null) {
         if (transMeta.isUsingPartitionSchema(partitionSchema)) {
-          repo.save(partitionSchema, versionComment, null);
+          repo.savePartitionSchema(partitionSchema, versionComment);
         }
       }
     }

@@ -600,7 +600,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             + RepositoryObjectType.DATABASE.getExtension();
       }
       case TRANSFORMATION: {
-        return path + RepositoryFile.SEPARATOR + sanitizedName + RepositoryObjectType.TRANSFORMATION.getExtension();
+        return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.TRANSFORMATION.getExtension();
       }
       case PARTITION_SCHEMA: {
         return getPartitionSchemaParentFolderPath() + RepositoryFile.SEPARATOR + sanitizedName
@@ -615,7 +615,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
       }
       case JOB: {
-        return path + RepositoryFile.SEPARATOR + sanitizedName + RepositoryObjectType.JOB.getExtension();
+        return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.JOB.getExtension();
       }
       default: {
         throw new UnsupportedOperationException("not implemented");
@@ -1453,18 +1453,22 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         if(obj instanceof DatabaseMeta) {
           DatabaseMeta databaseMeta = (DatabaseMeta) ((DatabaseMeta) obj).clone();
           databaseMeta.setObjectId(((DatabaseMeta) obj).getObjectId());
+          databaseMeta.clearChanged();
           newValueItem = databaseMeta;
         } else if (obj instanceof SlaveServer) {
           SlaveServer slaveServer = (SlaveServer) ((SlaveServer) obj).clone();
           slaveServer.setObjectId(((SlaveServer) obj).getObjectId());
+          slaveServer.clearChanged();
           newValueItem = slaveServer;
         } else if (obj instanceof PartitionSchema) {
           PartitionSchema partitionSchema = (PartitionSchema) ((PartitionSchema) obj).clone();
           partitionSchema.setObjectId(((PartitionSchema) obj).getObjectId());
+          partitionSchema.clearChanged();
           newValueItem = partitionSchema;
         } else if (obj instanceof ClusterSchema) {
           ClusterSchema clusterSchema = (ClusterSchema) ((ClusterSchema) obj).clone();
           clusterSchema.setObjectId(((ClusterSchema) obj).getObjectId());
+          clusterSchema.clearChanged();
           newValueItem = clusterSchema;
         } else {
           throw new KettleException("unknown shared object class");
