@@ -405,6 +405,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         throw new KettleException("You are not allowed to delete your home folder.");
       }
       pur.deleteFile(dir.getObjectId().getId(), null);
+      rootRef = null;
     } catch (Exception e) {
       throw new KettleException("Unable to delete directory with path [" + getPath(null, dir, null) + "]", e);
     }
@@ -427,6 +428,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       interimFolderPath = getParentPath(folder.getPath());
       finalParentPath = (newParent != null ? getPath(null, newParent, null) : interimFolderPath);
       pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName, null);
+      rootRef = null;
       return dirId;
     } catch (Exception e) {
       throw new KettleException("Unable to move/rename directory with id [" + dirId + "] to new parent ["
@@ -526,6 +528,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public void deleteJob(ObjectId jobId, String versionId) throws KettleException {
     pur.deleteFileAtVersion(jobId.getId(), versionId);
+    rootRef = null;
   }
 
   protected void permanentlyDeleteSharedObject(final ObjectId id) throws KettleException {
@@ -539,6 +542,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public void deleteFileById(final ObjectId id) throws KettleException {
     try {
       pur.deleteFile(id.getId(), null);
+      rootRef = null;
     } catch (Exception e) {
       throw new KettleException("Unable to delete object with id [" + id + "]", e);
     }
@@ -546,11 +550,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public void restoreJob(ObjectId idJob, String versionId, String versionComment) {
     pur.restoreFileAtVersion(idJob.getId(), versionId, versionComment);
+    rootRef = null;
   }
 
   public void restoreTransformation(ObjectId idTransformation, String versionId, String versionComment)
       throws KettleException {
     pur.restoreFileAtVersion(idTransformation.getId(), versionId, versionComment);
+    rootRef = null;
   }
 
   public void deletePartitionSchema(ObjectId idPartitionSchema) throws KettleException {
@@ -565,6 +571,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public void deleteTransformation(ObjectId idTransformation) throws KettleException {
     deleteFileById(idTransformation);
+    rootRef = null;
   }
 
   public boolean exists(final String name, final RepositoryDirectoryInterface repositoryDirectory,
@@ -1499,6 +1506,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       file = pur.updateFile(file, data, null);
     }
     pur.moveFile(idJob.getId(), calcDestAbsPath(idJob, newDirectory, newName, RepositoryObjectType.JOB), null);
+    rootRef = null;
     return idJob;
   }
 
@@ -1513,7 +1521,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       file = pur.updateFile(file, data, null);
     }
     pur.moveFile(idTransformation.getId(), calcDestAbsPath(idTransformation, newDirectory, newName,
-        RepositoryObjectType.TRANSFORMATION), null);
+        RepositoryObjectType.TRANSFORMATION), null);   
+    rootRef = null;
     return idTransformation;
   }
 
@@ -2391,6 +2400,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (!deletedChildren.isEmpty()) {
       pur.undeleteFile(deletedChildren.get(0).getId(), null);
     }
+    rootRef = null;
   }
 
   public void unlockJob(ObjectId idJob) throws KettleException {
