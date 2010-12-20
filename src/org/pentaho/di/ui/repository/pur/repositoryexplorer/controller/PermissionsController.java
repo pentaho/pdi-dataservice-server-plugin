@@ -22,6 +22,7 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.List;
@@ -421,6 +422,9 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
         }
         setSelectedRepositoryObject(ro);
         viewAclsModel.setRemoveEnabled(false);
+        List<UIRepositoryObjectAcl> selectedAclList = Collections.emptyList();
+        // we've moved to a new file/folder; need to clear out what the model thinks is selected
+        viewAclsModel.setSelectedAclList(selectedAclList);
         uncheckAllPermissionBox();
         UIRepositoryObject repoObject = (UIRepositoryObject) ro.get(0);
         try {
@@ -696,7 +700,10 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
    */
   public void setRecipientChanged(UIRepositoryObjectAcl acl) throws Exception {
     List<UIRepositoryObjectAcl> acls = new ArrayList<UIRepositoryObjectAcl>();
-    acls.add(acl);
+    // acl == null when user deselects recipient (CTRL-click)
+    if (acl != null) {
+      acls.add(acl);
+    }
     viewAclsModel.setSelectedAclList(acls);
   }
 
@@ -742,36 +749,37 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
    */
   public void updatePermission() {
     UIRepositoryObjectAcl acl = (UIRepositoryObjectAcl) userRoleList.getSelectedItem();
-    if (acl != null) {
-      EnumSet<ObjectPermission> permissions = acl.getPermissionSet();
-      if (permissions == null) {
-        permissions = EnumSet.noneOf(ObjectPermission.class);
-      } else if(permissions.contains(ObjectPermission.ALL)) {
-        permissions.remove(ObjectPermission.ALL);
-      }
-        if (readCheckbox.isChecked()) {
-          permissions.add(ObjectPermission.READ);
-        } else {
-          permissions.remove(ObjectPermission.READ);
-        }
-        if (writeCheckbox.isChecked()) {
-          permissions.add(ObjectPermission.WRITE);
-        } else {
-          permissions.remove(ObjectPermission.WRITE);
-        }
-        if (modifyCheckbox.isChecked()) {
-          permissions.add(ObjectPermission.WRITE_ACL);
-        } else {
-          permissions.remove(ObjectPermission.WRITE_ACL);
-        }
-        if (viewCheckbox.isChecked()) {
-          permissions.add(ObjectPermission.READ_ACL);
-        } else {
-          permissions.remove(ObjectPermission.READ_ACL);
-        }        
-      acl.setPermissionSet(permissions);
-      viewAclsModel.updateAcl(acl);
+    if (acl == null) {
+      throw new IllegalStateException(BaseMessages.getString(PKG, "PermissionsController.NoSelectedRecipient"));
     }
+    EnumSet<ObjectPermission> permissions = acl.getPermissionSet();
+    if (permissions == null) {
+      permissions = EnumSet.noneOf(ObjectPermission.class);
+    } else if (permissions.contains(ObjectPermission.ALL)) {
+      permissions.remove(ObjectPermission.ALL);
+    }
+    if (readCheckbox.isChecked()) {
+      permissions.add(ObjectPermission.READ);
+    } else {
+      permissions.remove(ObjectPermission.READ);
+    }
+    if (writeCheckbox.isChecked()) {
+      permissions.add(ObjectPermission.WRITE);
+    } else {
+      permissions.remove(ObjectPermission.WRITE);
+    }
+    if (modifyCheckbox.isChecked()) {
+      permissions.add(ObjectPermission.WRITE_ACL);
+    } else {
+      permissions.remove(ObjectPermission.WRITE_ACL);
+    }
+    if (viewCheckbox.isChecked()) {
+      permissions.add(ObjectPermission.READ_ACL);
+    } else {
+      permissions.remove(ObjectPermission.READ_ACL);
+    }
+    acl.setPermissionSet(permissions);
+    viewAclsModel.updateAcl(acl);
   }
 
   /*

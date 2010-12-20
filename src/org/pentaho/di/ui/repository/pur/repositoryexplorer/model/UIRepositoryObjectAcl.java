@@ -7,6 +7,9 @@ import org.pentaho.di.repository.pur.model.ObjectAce;
 import org.pentaho.di.repository.pur.model.ObjectPermission;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
+/**
+ * TODO mlowery This class represents an ACE, not an ACL.
+ */
 public class UIRepositoryObjectAcl extends XulEventSourceAdapter{
 	
 	@Override

@@ -10,6 +10,9 @@ import org.pentaho.di.repository.pur.model.ObjectAcl;
 import org.pentaho.di.repository.pur.model.ObjectPermission;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
+/**
+ * TODO mlowery This class represents an ACL, not an ACLs.
+ */
 public class UIRepositoryObjectAcls extends XulEventSourceAdapter {
 
   protected ObjectAcl obj;
@@ -129,6 +132,12 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter {
     UIRepositoryObjectAcl acl = getAcl(aclToUpdate.getRecipientName());
     acl.setPermissionSet(aclToUpdate.getPermissionSet());
     this.firePropertyChange("acls", null, getAcls()); //$NON-NLS-1$
+    
+    // above firePropertyChange replaces all elements in the listBox and therefore clears any selected elements; 
+    //   however, the selectedAclList field is never updated because no selectedIndices event is ever called; manually
+    //   update it to reflect the selected state of the user/role list now (no selection)
+    selectedAclList.clear();
+    
     // Setting the selected index
     List<UIRepositoryObjectAcl> aclList = new ArrayList<UIRepositoryObjectAcl>();
     aclList.add(aclToUpdate);
