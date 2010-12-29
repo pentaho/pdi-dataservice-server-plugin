@@ -129,6 +129,10 @@ public class TrashBrowseController extends BrowseController {
       return new UIRepositoryDirectories();
     }
 
+    @Override
+    public UIRepositoryObjects getRepositoryObjects() throws KettleException {
+      return new UIRepositoryObjects();
+    }
   }
 
   @Override
@@ -240,6 +244,18 @@ public class TrashBrowseController extends BrowseController {
 
   public List<RepositoryObjectInterface> getTrash() {
     return trash;
+  }
+
+  @Override
+  protected void moveFiles(List<UIRepositoryObject> objects, UIRepositoryDirectory targetDirectory) throws Exception {
+    // If we're moving into the trash it's really a delete
+    if (targetDirectory != trashDir) {
+      super.moveFiles(objects, targetDirectory);
+    } else {
+      for (UIRepositoryObject o : objects) {
+        deleteContent(o);
+      }
+    }
   }
 
   public void delete() {
