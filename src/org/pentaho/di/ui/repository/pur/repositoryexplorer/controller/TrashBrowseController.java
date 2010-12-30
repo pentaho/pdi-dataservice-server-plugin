@@ -293,18 +293,15 @@ public class TrashBrowseController extends BrowseController {
       try {
         trashService.undelete(ids);
         setTrash(trashService.getTrash());
-        Set<ObjectId> refreshedFolderIds = new HashSet<ObjectId>();
+        // Refresh the root directory once by refreshing the first directory or directory a trans/job was restored to
         for (UIRepositoryObject uiObj : selectedTrashFileItemsSnapshot) {
           if (uiObj instanceof UIRepositoryDirectory) {
             // refresh the whole tree since XUL cannot refresh a portion of the tree at this time
             ((UIRepositoryDirectory) uiObj).refresh();
+            break;
           } else {
-            UIRepositoryDirectory parent = uiObj.getParent();
-            // refresh the affected folders once
-            if (!refreshedFolderIds.contains(parent.getObjectId())) {
-              parent.refresh();
-              refreshedFolderIds.add(parent.getObjectId());
-            }
+            uiObj.getParent().refresh();
+            break;
           }
         }
         deck.setSelectedIndex(1);
