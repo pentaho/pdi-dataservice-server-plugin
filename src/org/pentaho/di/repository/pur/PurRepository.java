@@ -2555,12 +2555,14 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     for (ObjectId id : ids) {
       pur.deleteFile(id.getId(), true, null);
     }
+    rootRef = null;
   }
 
   public void undelete(final List<ObjectId> ids) throws KettleException {
     for (ObjectId id : ids) {
       pur.undeleteFile(id.getId(), null);
     }
+    rootRef = null;
   }
 
   public List<RepositoryObjectInterface> getTrash() throws KettleException {

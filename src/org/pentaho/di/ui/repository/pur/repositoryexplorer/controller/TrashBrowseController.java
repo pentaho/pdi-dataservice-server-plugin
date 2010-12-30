@@ -2,16 +2,18 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
-import org.pentaho.di.repository.RepositoryObjectInterface;
 import org.pentaho.di.repository.RepositoryObject;
+import org.pentaho.di.repository.RepositoryObjectInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEERepositoryDirectory;
@@ -291,13 +293,18 @@ public class TrashBrowseController extends BrowseController {
       try {
         trashService.undelete(ids);
         setTrash(trashService.getTrash());
+        Set<ObjectId> refreshedFolderIds = new HashSet<ObjectId>();
         for (UIRepositoryObject uiObj : selectedTrashFileItemsSnapshot) {
           if (uiObj instanceof UIRepositoryDirectory) {
             // refresh the whole tree since XUL cannot refresh a portion of the tree at this time
             ((UIRepositoryDirectory) uiObj).refresh();
           } else {
-            // refresh the files in the folder but only the affected folders
-            uiObj.getParent().getRepositoryObjects().add(uiObj);
+            UIRepositoryDirectory parent = uiObj.getParent();
+            // refresh the affected folders once
+            if (!refreshedFolderIds.contains(parent.getObjectId())) {
+              parent.refresh();
+              refreshedFolderIds.add(parent.getObjectId());
+            }
           }
         }
         deck.setSelectedIndex(1);
