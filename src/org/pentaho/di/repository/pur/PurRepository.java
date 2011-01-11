@@ -2495,38 +2495,40 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public void setAcl(ObjectId fileId, ObjectAcl objectAcl) throws KettleException {
     try {
       RepositoryFileAcl acl = pur.getAcl(fileId.getId());
-      RepositoryFileAcl newAcl = new RepositoryFileAcl.Builder(acl).entriesInheriting(objectAcl.isEntriesInheriting())
-          .clearAces().build();
-      List<ObjectAce> aces = objectAcl.getAces();
-      for (ObjectAce objectAce : aces) {
-
-        EnumSet<ObjectPermission> permissions = objectAce.getPermissions();
-        EnumSet<RepositoryFilePermission> permissionSet = EnumSet.noneOf(RepositoryFilePermission.class);
-        ObjectRecipient recipient = objectAce.getRecipient();
-        RepositoryFileSid sid;
-        if (recipient.getType().equals(Type.ROLE)) {
-          sid = new RepositoryFileSid(recipient.getName(), RepositoryFileSid.Type.ROLE);
-        } else {
-          sid = new RepositoryFileSid(recipient.getName());
-        }
-        if (permissions != null) {
-          for (ObjectPermission perm : permissions) {
-            if (perm.equals(ObjectPermission.READ)) {
-              permissionSet.add(RepositoryFilePermission.READ);
-            } else if (perm.equals(ObjectPermission.READ_ACL)) {
-              permissionSet.add(RepositoryFilePermission.READ_ACL);
-            } else if (perm.equals(ObjectPermission.WRITE)) {
-              permissionSet.add(RepositoryFilePermission.WRITE);
-            } else if (perm.equals(ObjectPermission.WRITE_ACL)) {
-              permissionSet.add(RepositoryFilePermission.WRITE_ACL);
-            } else if (perm.equals(ObjectPermission.ALL)) {
-              permissionSet.add(RepositoryFilePermission.ALL);
+      RepositoryFileAcl.Builder newAclBuilder = new RepositoryFileAcl.Builder(acl).entriesInheriting(objectAcl.isEntriesInheriting())
+          .clearAces();
+      if (!objectAcl.isEntriesInheriting()) {
+        List<ObjectAce> aces = objectAcl.getAces();
+        for (ObjectAce objectAce : aces) {
+  
+          EnumSet<ObjectPermission> permissions = objectAce.getPermissions();
+          EnumSet<RepositoryFilePermission> permissionSet = EnumSet.noneOf(RepositoryFilePermission.class);
+          ObjectRecipient recipient = objectAce.getRecipient();
+          RepositoryFileSid sid;
+          if (recipient.getType().equals(Type.ROLE)) {
+            sid = new RepositoryFileSid(recipient.getName(), RepositoryFileSid.Type.ROLE);
+          } else {
+            sid = new RepositoryFileSid(recipient.getName());
+          }
+          if (permissions != null) {
+            for (ObjectPermission perm : permissions) {
+              if (perm.equals(ObjectPermission.READ)) {
+                permissionSet.add(RepositoryFilePermission.READ);
+              } else if (perm.equals(ObjectPermission.READ_ACL)) {
+                permissionSet.add(RepositoryFilePermission.READ_ACL);
+              } else if (perm.equals(ObjectPermission.WRITE)) {
+                permissionSet.add(RepositoryFilePermission.WRITE);
+              } else if (perm.equals(ObjectPermission.WRITE_ACL)) {
+                permissionSet.add(RepositoryFilePermission.WRITE_ACL);
+              } else if (perm.equals(ObjectPermission.ALL)) {
+                permissionSet.add(RepositoryFilePermission.ALL);
+              }
             }
           }
+          newAclBuilder.ace(sid, permissionSet);
         }
-        newAcl = new RepositoryFileAcl.Builder(newAcl).ace(sid, permissionSet).build();
       }
-      pur.updateAcl(newAcl);
+      pur.updateAcl(newAclBuilder.build());
     } catch (Exception drfe) {
       // The user does not have rights to view or set the acl information. 
       throw new KettleException(drfe);
