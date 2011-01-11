@@ -59,4 +59,9 @@ public class UIEERepositoryDirectory extends UIRepositoryDirectory implements IA
     } 
 
   }
+
+  @Override
+  public void clearAcl() {
+    // Nothing cached so nothing to clear
+  }
 }

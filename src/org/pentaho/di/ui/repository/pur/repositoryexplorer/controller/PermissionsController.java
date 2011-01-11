@@ -821,6 +821,11 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
           if (returnCode == Status.ACCEPT) {
             returnType = TYPE.OK;
             viewAclsModel.clear();
+            // Clear the ACL from the backing repo object
+            UIRepositoryObject ro = (UIRepositoryObject) repoObject.get(0);
+            if (ro instanceof IAclObject) {
+              ((IAclObject) ro).clearAcl();
+            }
             viewAclsModel.setModelDirty(false);
           } else {
             returnType = TYPE.CANCEL;

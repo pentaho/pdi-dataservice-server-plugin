@@ -141,4 +141,9 @@ public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAcl
       throw new AccessDeniedException(e);
     }
   }
+
+  @Override
+  public void clearAcl() {
+    acl = null;
+  }
 }

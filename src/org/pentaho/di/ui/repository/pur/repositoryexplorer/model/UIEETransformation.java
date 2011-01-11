@@ -139,4 +139,9 @@ public class UIEETransformation extends UITransformation implements ILockObject,
       throw new AccessDeniedException(e);
     }
   }
+
+  @Override
+  public void clearAcl() {
+    acl = null;
+  }
 }
