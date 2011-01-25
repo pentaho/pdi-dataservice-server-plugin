@@ -159,12 +159,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     //
     for (DatabaseMeta databaseMeta : jobMeta.getDatabases()) {
       if (databaseMeta.hasChanged() || databaseMeta.getObjectId() == null) {
-
-        // Only save the connection if it's actually used in the transformation...
-        //
-        if (jobMeta.isDatabaseConnectionUsed(databaseMeta)) {
-          repo.saveDatabaseMeta(databaseMeta, versionComment);
-        }
+        repo.saveDatabaseMeta(databaseMeta, versionComment);
       }
     }
 

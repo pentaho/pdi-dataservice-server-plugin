@@ -770,12 +770,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for (DatabaseMeta databaseMeta : transMeta.getDatabases()) {
       if (databaseMeta.hasChanged() || databaseMeta.getObjectId() == null) {
-
-        // Only save the connection if it's actually used in the transformation...
-        //
-        if (transMeta.isDatabaseConnectionUsed(databaseMeta)) {
-          repo.saveDatabaseMeta(databaseMeta, versionComment);
-        }
+        repo.saveDatabaseMeta(databaseMeta, versionComment);
       }
     }
 
@@ -783,9 +778,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for (SlaveServer slaveServer : transMeta.getSlaveServers()) {
       if (slaveServer.hasChanged() || slaveServer.getObjectId() == null) {
-        if (transMeta.isUsingSlaveServer(slaveServer)) {
-          repo.saveSlaveServer(slaveServer, versionComment);
-        }
+        repo.saveSlaveServer(slaveServer, versionComment);
       }
     }
 
@@ -793,9 +786,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for (ClusterSchema clusterSchema : transMeta.getClusterSchemas()) {
       if (clusterSchema.hasChanged() || clusterSchema.getObjectId() == null) {
-        if (transMeta.isUsingClusterSchema(clusterSchema)) {
-          repo.saveClusterSchema(clusterSchema, versionComment);
-        }
+        repo.saveClusterSchema(clusterSchema, versionComment);
       }
     }
 
@@ -803,9 +794,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for (PartitionSchema partitionSchema : transMeta.getPartitionSchemas()) {
       if (partitionSchema.hasChanged() || partitionSchema.getObjectId() == null) {
-        if (transMeta.isUsingPartitionSchema(partitionSchema)) {
-          repo.savePartitionSchema(partitionSchema, versionComment);
-        }
+        repo.savePartitionSchema(partitionSchema, versionComment);
       }
     }
 
