@@ -130,11 +130,16 @@ public class PurRepositoryImporter implements IRepositoryImporter {
         if (index<0) {
           transMeta.addDatabase(databaseMeta);
         } else {
-          DatabaseMeta existing = transMeta.getDatabase(index);
-          existing.replaceMeta(databaseMeta);
-          existing.setObjectId(databaseMeta.getObjectId());
-          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
-          existing.clearChanged();
+          DatabaseMeta imported = transMeta.getDatabase(index);
+          if (overwrite) {
+            // Preserve the object id so we can update without having to look up the id
+            imported.setObjectId(databaseMeta.getObjectId());
+            imported.setChanged();
+          } else {
+            imported.replaceMeta(databaseMeta);
+            // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+            imported.clearChanged();
+          }
         }
       }
 
@@ -147,11 +152,16 @@ public class PurRepositoryImporter implements IRepositoryImporter {
         if (index<0) {
           transMeta.getSlaveServers().add(slaveServer);
         } else {
-          SlaveServer existing = transMeta.getSlaveServers().get(index);
-          existing.replaceMeta(slaveServer);
-          existing.setObjectId(slaveServer.getObjectId());
-          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
-          existing.clearChanged();
+          SlaveServer imported = transMeta.getSlaveServers().get(index);
+          if (overwrite) {
+            // Preserve the object id so we can update without having to look up the id
+            imported.setObjectId(slaveServer.getObjectId());
+            imported.setChanged();
+          } else {
+            imported.replaceMeta(slaveServer);
+            // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+            imported.clearChanged();
+          }
         }
       }
 
@@ -164,11 +174,16 @@ public class PurRepositoryImporter implements IRepositoryImporter {
         if (index<0) {
           transMeta.getClusterSchemas().add(clusterSchema);
         } else {
-          ClusterSchema existing = transMeta.getClusterSchemas().get(index);
-          existing.replaceMeta(clusterSchema);
-          existing.setObjectId(clusterSchema.getObjectId());
-          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
-          existing.clearChanged();
+          ClusterSchema imported = transMeta.getClusterSchemas().get(index);
+          if (overwrite) {
+            // Preserve the object id so we can update without having to look up the id
+            imported.setObjectId(clusterSchema.getObjectId());
+            imported.setChanged();
+          } else {
+            imported.replaceMeta(clusterSchema);
+            // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+            imported.clearChanged();
+          }
         }
       }
 
@@ -181,11 +196,16 @@ public class PurRepositoryImporter implements IRepositoryImporter {
         if (index<0) {
           transMeta.getPartitionSchemas().add(partitionSchema);
         } else {
-          PartitionSchema existing = transMeta.getPartitionSchemas().get(index);
-          existing.replaceMeta(partitionSchema);
-          existing.setObjectId(partitionSchema.getObjectId());
-          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
-          existing.clearChanged();
+          PartitionSchema imported = transMeta.getPartitionSchemas().get(index);
+          if (overwrite) {
+            // Preserve the object id so we can update without having to look up the id
+            imported.setObjectId(partitionSchema.getObjectId());
+            imported.setChanged();
+          } else {
+            imported.replaceMeta(partitionSchema);
+            // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+            imported.clearChanged();
+          }
         }
       }
 
@@ -202,11 +222,16 @@ public class PurRepositoryImporter implements IRepositoryImporter {
         if (index<0) {
           transMeta.addDatabase(databaseMeta);
         } else {
-          DatabaseMeta existing = transMeta.getDatabase(index);
-          existing.replaceMeta(databaseMeta);
-          existing.setObjectId(databaseMeta.getObjectId());
-          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
-          existing.clearChanged();
+          DatabaseMeta imported = transMeta.getDatabase(index);
+          if (overwrite) {
+            // Preserve the object id so we can update without having to look up the id
+            imported.setObjectId(databaseMeta.getObjectId());
+            imported.setChanged();
+          } else {
+            imported.replaceMeta(databaseMeta);
+            //replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+            imported.clearChanged();
+          }
         }
       }
 
@@ -219,11 +244,16 @@ public class PurRepositoryImporter implements IRepositoryImporter {
         if (index<0) {
           transMeta.getSlaveServers().add(slaveServer);
         } else {
-          SlaveServer existing = transMeta.getSlaveServers().get(index);
-          existing.replaceMeta(slaveServer);
-          existing.setObjectId(slaveServer.getObjectId());
-          // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
-          existing.clearChanged();
+          SlaveServer imported = transMeta.getSlaveServers().get(index);
+          if (overwrite) {
+            // Preserve the object id so we can update without having to look up the id
+            imported.setObjectId(slaveServer.getObjectId());
+            imported.setChanged();
+          } else {
+            imported.replaceMeta(slaveServer);
+            // replaceMeta sets the changed flag for the existing (unchanged - from repo) meta
+            imported.clearChanged();
+          }
         }
       }
   }

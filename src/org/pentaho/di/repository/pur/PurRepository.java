@@ -1565,6 +1565,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public void save(final RepositoryElementInterface element, final String versionComment,
+      final ProgressMonitorListener monitor, final boolean overwriteAssociated) throws KettleException {
+    // We already overwrite all associated objects, no need to do anything differently
+    save(element, versionComment, monitor);
+  }
+  
+  public void save(final RepositoryElementInterface element, final String versionComment,
       final ProgressMonitorListener monitor) throws KettleException {
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     if (dscContent.getSubject() == null) {
