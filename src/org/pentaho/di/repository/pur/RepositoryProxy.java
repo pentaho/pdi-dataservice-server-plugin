@@ -477,6 +477,11 @@ public class RepositoryProxy implements Repository, ILockService {
       throws KettleException {
     throw new UnsupportedOperationException();
   }
+  
+  public void save(RepositoryElementInterface repositoryElement, String versionComment, ProgressMonitorListener monitor, boolean overwrite)
+  throws KettleException {
+    throw new UnsupportedOperationException();
+  }
 
   public void saveConditionStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, Condition condition)
       throws KettleException {
