@@ -81,5 +81,16 @@
     <dirset dir="${testclasses.dir}" />
     <dirset dir="${classes.dir}" />
   </path>
+  
+  <!--=======================================================================
+      obftest
+      
+      Verifies obfuscation in distributions. (dist target must be run first.)
+      ====================================================================-->
+  <target name="obftest">
+    <exec executable="build-res/obftest.sh" osfamily="unix" failonerror="true">
+      <arg value="${dist.dir}" />
+    </exec>
+  </target>
 
 </project>
