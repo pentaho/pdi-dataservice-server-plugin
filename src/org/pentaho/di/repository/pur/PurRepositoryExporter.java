@@ -14,9 +14,11 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.vfs.KettleVFS;
 import org.pentaho.di.core.xml.XMLHandler;
+import org.pentaho.di.imp.ImportRules;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.repository.IRepositoryExporter;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
+import org.pentaho.di.repository.RepositoryImporter;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
@@ -44,6 +46,8 @@ public class PurRepositoryExporter implements IRepositoryExporter {
   private PurRepository repository;
 
   private LogChannelInterface log;
+  
+  private ImportRules importRules;
 
   public PurRepositoryExporter(PurRepository repository) {
     this.repository = repository;
@@ -194,14 +198,29 @@ public class PurRepositoryExporter implements IRepositoryExporter {
       List<TransMeta> transformations = repository.loadTransformations(monitor, log, files, true);
       Iterator<TransMeta> transMetasIter = transformations.iterator();
       Iterator<RepositoryFile> filesIter = files.iterator();
+      boolean continueOnError=true;
       while ((monitor == null || !monitor.isCanceled()) && transMetasIter.hasNext()) {
         TransMeta trans = transMetasIter.next();
         RepositoryFile file = filesIter.next();
         try {
+          
+          // Validate against the import rules first!
+          //
+          try {
+            RepositoryImporter.validateImportedElement(importRules, trans);
+          } catch(KettleException ve) {
+            continueOnError=false;
+            throw(ve);
+          }
+          
           writer.write(trans.getXML() + Const.CR);
-        } catch (IOException ex) {
-          log.logError(
-              "An error occured while saving transformation [" + trans.getName() + "] from [" + file.getPath() + "]", ex); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        } catch (Exception ex) {
+          String message = "An error occured while saving transformation [" + trans.getName() + "] from [" + file.getPath() + "]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+          if (continueOnError) {
+            log.logError(message, ex);
+          } else {
+            throw new KettleException(message, ex);
+          }
         }
       }
     }
@@ -221,13 +240,29 @@ public class PurRepositoryExporter implements IRepositoryExporter {
       List<JobMeta> jobs = repository.loadJobs(monitor, log, files, true);
       Iterator<JobMeta> jobsMeta = jobs.iterator();
       Iterator<RepositoryFile> filesIter = files.iterator();
+      boolean continueOnError=true;
       while ((monitor == null || !monitor.isCanceled()) && jobsMeta.hasNext()) {
         JobMeta trans = jobsMeta.next();
         RepositoryFile file = filesIter.next();
         try {
+          
+          // Validate against the import rules first!
+          //
+          try {
+            RepositoryImporter.validateImportedElement(importRules, trans);
+          } catch(KettleException ve) {
+            continueOnError=false;
+            throw(ve);
+          }
+          
           writer.write(trans.getXML() + Const.CR);
-        } catch (IOException ex) {
-          log.logError("An error occured while saving job [" + trans.getName() + "] from [" + file.getPath() + "]", ex); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        } catch (Exception ex) {
+          String message = "An error occured while saving job [" + trans.getName() + "] from [" + file.getPath() + "]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+          if (continueOnError) {
+            log.logError(message, ex);
+          } else {
+            throw new KettleException(message, ex);
+          }
         }
       }
     }
@@ -291,4 +326,13 @@ public class PurRepositoryExporter implements IRepositoryExporter {
       }
     }
   }
+  
+  public void setImportRulesToValidate(ImportRules importRules) {
+    this.importRules = importRules;
+  }
+  
+  public ImportRules getImportRules() {
+    return importRules;
+  }
+  
 }
