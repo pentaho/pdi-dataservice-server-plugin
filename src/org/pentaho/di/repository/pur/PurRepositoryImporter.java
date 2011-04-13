@@ -15,6 +15,7 @@ import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.imp.ImportRules;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.job.entries.job.JobEntryJob;
 import org.pentaho.di.job.entries.trans.JobEntryTrans;
@@ -26,6 +27,7 @@ import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryExportSaxParser;
 import org.pentaho.di.repository.RepositoryImportFeedbackInterface;
 import org.pentaho.di.repository.RepositoryImportLocation;
+import org.pentaho.di.repository.RepositoryImporter;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.trans.TransMeta;
@@ -49,6 +51,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
   private String versionComment;
 
   private boolean continueOnError;
+
+  private ImportRules importRules;
 
   public PurRepositoryImporter(PurRepository repository) {
       this.log = new LogChannel("Repository import"); //$NON-NLS-1$
@@ -332,6 +336,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
     replaceSharedObjects(transMeta);
     feedback.setLabel(BaseMessages.getString(PKG, "PurRepositoryImporter.ImportTrans.Label", Integer.toString(transformationNumber), transMeta.getName()));
 
+    RepositoryImporter.validateImportedElement(importRules, transMeta);
+
     // What's the directory path?
     String directoryPath = XMLHandler.getTagValue(transnode, "info", "directory");
     // remove the leading root, we don't need it.
@@ -370,6 +376,7 @@ public class PurRepositoryImporter implements IRepositoryImporter {
             transMeta.setCreatedUser(null);
           }
         }
+        
         rep.saveTrans0(transMeta, versionComment, true, false, false, false);
         feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.TransSaved.Log", Integer.toString(transformationNumber), transMeta.getName()));
       } catch (Exception e) {
@@ -388,6 +395,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
     JobMeta jobMeta = new JobMeta(jobnode, null, false, SpoonFactory.getInstance());
     replaceSharedObjects(jobMeta);
     feedback.setLabel(BaseMessages.getString(PKG, "PurRepositoryImporter.ImportJob.Label", Integer.toString(jobNumber), jobMeta.getName()));
+
+    RepositoryImporter.validateImportedElement(importRules, jobMeta);
 
     // What's the directory path?
     String directoryPath = Const.NVL(XMLHandler.getTagValue(jobnode, "directory"), Const.FILE_SEPARATOR);
@@ -505,5 +514,13 @@ public class PurRepositoryImporter implements IRepositoryImporter {
   }
 
   public void worked(int nrWorks) {
+  }
+  
+  public void setImportRules(ImportRules importRules) {
+    this.importRules = importRules;
+  }
+  
+  public ImportRules getImportRules() {
+    return importRules;
   }
 }
