@@ -51,6 +51,7 @@ public class PurRepositoryExporter implements IRepositoryExporter {
 
   public PurRepositoryExporter(PurRepository repository) {
     this.repository = repository;
+    this.importRules = new ImportRules();
     this.log = repository.getLog();
   }
 

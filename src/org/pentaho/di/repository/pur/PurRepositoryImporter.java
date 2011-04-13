@@ -56,6 +56,7 @@ public class PurRepositoryImporter implements IRepositoryImporter {
 
   public PurRepositoryImporter(PurRepository repository) {
       this.log = new LogChannel("Repository import"); //$NON-NLS-1$
+      this.importRules = new ImportRules();
       this.rep = repository;
   }
   
