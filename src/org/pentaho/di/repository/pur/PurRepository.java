@@ -1862,6 +1862,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     transMeta.setDescription(file.getDescription());
     transMeta.setObjectId(new StringObjectId(file.getId().toString()));
     transMeta.setObjectRevision(revision);
+    transMeta.setRepository(this);
     transMeta.setRepositoryDirectory(parentDir);
     readTransSharedObjects(transMeta); // This should read from the local cache
     transDelegate.dataNodeToElement(data.getNode(), transMeta);
@@ -2703,6 +2704,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       transMeta.setDescription(file.getDescription());
       transMeta.setObjectId(new StringObjectId(file.getId().toString()));
       transMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
+      transMeta.setRepository(this);
       transMeta.setRepositoryDirectory(findDirectory(getParentPath(file.getPath())));
       transMeta.setRepositoryLock(getLock(file));
       
