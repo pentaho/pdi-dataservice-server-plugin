@@ -524,4 +524,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
   public ImportRules getImportRules() {
     return importRules;
   }
+
+  public boolean isAskingOverwriteConfirmation() {
+    return askOverwrite;
+  }
 }
