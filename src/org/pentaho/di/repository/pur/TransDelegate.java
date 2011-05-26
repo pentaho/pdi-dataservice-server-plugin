@@ -8,7 +8,6 @@ import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.NotePadMeta;
 import org.pentaho.di.core.database.DatabaseMeta;
-import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepLoaderException;
 import org.pentaho.di.core.logging.LogTableInterface;
@@ -348,8 +347,12 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
       StepMeta stepFrom = StepMeta.findStep(transMeta.getSteps(), stepFromName);
       StepMeta stepTo = StepMeta.findStep(transMeta.getSteps(), stepToName);
-
-      transMeta.addTransHop(new TransHopMeta(stepFrom, stepTo, enabled));
+      
+      // Make sure to only accept valid hops PDI-5519
+      //
+      if (stepFrom!=null && stepTo!=null) {
+        transMeta.addTransHop(new TransHopMeta(stepFrom, stepTo, enabled));
+      }
 
     }
     if (transMeta.nrTransHops() != nrHops) {
