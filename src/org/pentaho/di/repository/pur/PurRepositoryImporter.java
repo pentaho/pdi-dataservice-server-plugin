@@ -358,6 +358,7 @@ public class PurRepositoryImporter implements IRepositoryImporter {
     ObjectId existingId = rep.getTransformationID(transMeta.getName(), targetDirectory);
     if (existingId!=null && askOverwrite) {
       overwrite = feedback.transOverwritePrompt(transMeta);
+      askOverwrite = feedback.isAskingOverwriteConfirmation();
     } else {
       updateDisplay();
     }
@@ -416,6 +417,7 @@ public class PurRepositoryImporter implements IRepositoryImporter {
     ObjectId existintId = rep.getJobId(jobMeta.getName(), targetDirectory);
     if (existintId != null && askOverwrite) {
       overwrite = feedback.jobOverwritePrompt(jobMeta);
+      askOverwrite = feedback.isAskingOverwriteConfirmation();
     } else {
       updateDisplay();
     }
