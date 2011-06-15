@@ -1,5 +1,6 @@
 package org.pentaho.di.repository.pur;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import org.pentaho.di.repository.RepositoryExportSaxParser;
 import org.pentaho.di.repository.RepositoryImportFeedbackInterface;
 import org.pentaho.di.repository.RepositoryImportLocation;
 import org.pentaho.di.repository.RepositoryImporter;
+import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.trans.TransMeta;
@@ -53,6 +55,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
   private boolean continueOnError;
 
   private ImportRules importRules;
+  
+  private List<RepositoryObject> referencingObjects;
 
   public PurRepositoryImporter(PurRepository repository) {
       this.log = new LogChannel("Repository import"); //$NON-NLS-1$
@@ -66,6 +70,8 @@ public class PurRepositoryImporter implements IRepositoryImporter {
     this.continueOnError = continueOnError;
     this.versionComment = versionComment;
 
+    referencingObjects=new ArrayList<RepositoryObject>();
+    
     feedback.setLabel(BaseMessages.getString(PKG, "PurRepositoryImporter.ImportXML.Label"));
     try {
       
@@ -91,6 +97,22 @@ public class PurRepositoryImporter implements IRepositoryImporter {
               BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Message"), e);
         }        
       }
+      
+      // Correct those jobs and transformations that contain references to other objects.
+      //
+      for (RepositoryObject ro : referencingObjects) {
+        if (ro.getObjectType()==RepositoryObjectType.TRANSFORMATION) {
+          TransMeta transMeta = rep.loadTransformation(ro.getObjectId(), null);
+          transMeta.lookupRepositoryReferences(rep);
+          rep.save(transMeta, "import object reference specification", null);
+        }
+        if (ro.getObjectType()==RepositoryObjectType.JOB) {
+          JobMeta jobMeta = rep.loadJob(ro.getObjectId(), null);
+          jobMeta.lookupRepositoryReferences(rep);
+          rep.save(jobMeta, "import object reference specification", null);
+        }
+      }
+
       feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.ImportFinished.Log"));
     } catch (Exception e) {
       feedback.showError(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Title"), 
@@ -381,6 +403,11 @@ public class PurRepositoryImporter implements IRepositoryImporter {
         
         rep.saveTrans0(transMeta, versionComment, true, false, false, false);
         feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.TransSaved.Log", Integer.toString(transformationNumber), transMeta.getName()));
+        
+        if (transMeta.hasRepositoryReferences()) {
+          referencingObjects.add(new RepositoryObject(transMeta.getObjectId(), transMeta.getName(), transMeta.getRepositoryDirectory(), null, null, RepositoryObjectType.TRANSFORMATION, null, false));
+        }
+        
       } catch (Exception e) {
         feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorSavingTrans.Log", Integer.toString(transformationNumber), transMeta.getName(), e.toString()));
         feedback.addLog(Const.getStackTracker(e));
@@ -427,6 +454,11 @@ public class PurRepositoryImporter implements IRepositoryImporter {
       jobMeta.setObjectId(existintId);
       patchJobEntries(jobMeta);
       rep.saveJob0(jobMeta, versionComment, true, false, false, false);
+      
+      if (jobMeta.hasRepositoryReferences()) {
+        referencingObjects.add(new RepositoryObject(jobMeta.getObjectId(), jobMeta.getName(), jobMeta.getRepositoryDirectory(), null, null, RepositoryObjectType.JOB, null, false));
+      }
+
       feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.JobSaved.Log", Integer.toString(jobNumber), jobMeta.getName()));
     } else {
       feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorSavingJob.Log", jobMeta.getName()));
