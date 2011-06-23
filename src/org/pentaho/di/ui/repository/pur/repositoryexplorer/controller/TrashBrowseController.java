@@ -2,10 +2,8 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
@@ -15,6 +13,7 @@ import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
+import org.pentaho.di.repository.pur.RepositoryObjectAccessException;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEERepositoryDirectory;
 import org.pentaho.di.ui.repository.pur.services.ITrashService;
@@ -28,12 +27,17 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirecto
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObjects;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UITransformation;
+import org.pentaho.ui.xul.XulComponent;
+import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.components.XulButton;
-import org.pentaho.ui.xul.components.XulMessageBox;
+import org.pentaho.ui.xul.components.XulConfirmBox;
+import org.pentaho.ui.xul.components.XulPromptBox;
 import org.pentaho.ui.xul.containers.XulDeck;
 import org.pentaho.ui.xul.containers.XulTree;
+import org.pentaho.ui.xul.dom.Document;
+import org.pentaho.ui.xul.util.XulDialogCallback;
 
 public class TrashBrowseController extends BrowseController {
 
@@ -75,7 +79,6 @@ public class TrashBrowseController extends BrowseController {
   
   protected XulButton deleteButton;
   
-  protected XulMessageBox messageBox;
   // ~ Constructors ====================================================================================================
 
   public TrashBrowseController() {
@@ -141,7 +144,6 @@ public class TrashBrowseController extends BrowseController {
   public void init(Repository repository) throws ControllerInitializationException {
     super.init(repository);
     try {
-      messageBox = (XulMessageBox) document.createElement("messagebox");//$NON-NLS-1$
       trashService = (ITrashService) repository.getService(ITrashService.class);
     } catch (Throwable e) {
       throw new ControllerInitializationException(e);
@@ -270,11 +272,8 @@ public class TrashBrowseController extends BrowseController {
         trashService.delete(ids);
         setTrash(trashService.getTrash());
       } catch(Throwable th) {
-        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(PKG,
+        displayExceptionMessage(BaseMessages.getString(PKG,
             "TrashBrowseController.UnableToDeleteFile", th.getLocalizedMessage())); //$NON-NLS-1$
-        messageBox.open();
       }
     } else {
       // ui probably allowed the button to be enabled when it shouldn't have been enabled
@@ -306,11 +305,8 @@ public class TrashBrowseController extends BrowseController {
         }
         deck.setSelectedIndex(1);
       } catch(Throwable th) {
-        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(PKG,
+        displayExceptionMessage(BaseMessages.getString(PKG,
             "TrashBrowseController.UnableToRestoreFile", th.getLocalizedMessage())); //$NON-NLS-1$
-        messageBox.open();
       }
     } else {
       // ui probably allowed the button to be enabled when it shouldn't have been enabled
@@ -320,6 +316,127 @@ public class TrashBrowseController extends BrowseController {
 
   public void setSelectedTrashFileItems(List<UIRepositoryObject> selectedTrashFileItems) {
     this.selectedTrashFileItems = selectedTrashFileItems;
+  }
+  
+  @Override
+  protected void deleteFolder(UIRepositoryDirectory repoDir) throws Exception{
+    deleteContent(repoDir);
+  }
+   
+  @Override
+  protected void deleteContent(final UIRepositoryObject repoObject) throws Exception {
+    try {
+      repoObject.delete();
+    } catch (KettleException ke) { 
+      moveDeletePrompt(ke, repoObject, new XulDialogCallback<Object>() {
+
+        public void onClose(XulComponent sender, Status returnCode, Object retVal) {
+          if (returnCode == Status.ACCEPT) {
+            try{
+              ((UIEERepositoryDirectory)repoObject).delete(true);
+            } catch (Exception e) {
+              displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+            }
+          }
+        }
+
+        public void onError(XulComponent sender, Throwable t) {
+          throw new RuntimeException(t);
+        }
+        
+      });
+    }
+    
+    if (repoObject instanceof UIRepositoryDirectory) {
+      directoryBinding.fireSourceChanged();
+      if(repoDir != null) {
+        repoDir.refresh();        
+      }
+    }
+    selectedItemsBinding.fireSourceChanged();
+  }
+  
+  @Override
+  protected void renameRepositoryObject(final UIRepositoryObject repoObject) throws XulException {
+    final Document doc = document;
+    XulPromptBox prompt = promptForName(repoObject);
+    prompt.addDialogCallback(new XulDialogCallback<String>() {
+      public void onClose(XulComponent component, Status status, String value) {
+        if (status == Status.ACCEPT) {
+          final String newName = value;
+          try {
+            repoObject.setName(newName);
+          } catch (KettleException ke) {
+            moveDeletePrompt(ke, repoObject, new XulDialogCallback<Object>() {
+
+              public void onClose(XulComponent sender, Status returnCode, Object retVal) {
+                if (returnCode == Status.ACCEPT) {
+                  try{
+                   ((UIEERepositoryDirectory)repoObject).setName(newName, true);
+                  } catch (Exception e) {
+                    displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+                  }
+                }
+              }
+
+              public void onError(XulComponent sender, Throwable t) {
+                throw new RuntimeException(t);
+              }
+              
+            });
+          } catch (Exception e) {
+            // convert to runtime exception so it bubbles up through the UI
+            throw new RuntimeException(e);
+          }
+        }
+      }
+
+      public void onError(XulComponent component, Throwable err) {
+        throw new RuntimeException(err);
+      }
+    });
+
+    prompt.open();
+  }
+  
+  
+  
+  protected boolean moveDeletePrompt(final KettleException ke, final UIRepositoryObject repoObject, final XulDialogCallback<Object> action) {
+    if(ke.getCause() instanceof RepositoryObjectAccessException &&
+        ((RepositoryObjectAccessException)ke.getCause()).getObjectAccessType().equals(RepositoryObjectAccessException.AccessExceptionType.USER_HOME_DIR) && 
+        repoObject instanceof UIEERepositoryDirectory) {
+        
+      try {
+        confirmBox = (XulConfirmBox) document.createElement("confirmbox");//$NON-NLS-1$
+        confirmBox.setTitle(BaseMessages.getString(PKG, "TrashBrowseController.DeleteHomeFolderWarningTitle")); //$NON-NLS-1$
+        confirmBox.setMessage(BaseMessages.getString(PKG, "TrashBrowseController.DeleteHomeFolderWarningMessage")); //$NON-NLS-1$
+        confirmBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+        confirmBox.setCancelLabel(BaseMessages.getString(PKG, "Dialog.Cancel")); //$NON-NLS-1$
+        confirmBox.addDialogCallback(new XulDialogCallback<Object>() {
+
+          public void onClose(XulComponent sender, Status returnCode, Object retVal) {
+            if (returnCode == Status.ACCEPT) {
+              action.onClose(sender, returnCode, retVal);
+            }
+          }
+
+          public void onError(XulComponent sender, Throwable t) {
+            throw new RuntimeException(t);
+          }
+        });
+        confirmBox.open();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return false;
+  }
+  
+  protected void displayExceptionMessage(String msg) {
+    messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+    messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+    messageBox.setMessage(msg);
+    messageBox.open();
   }
 
 }

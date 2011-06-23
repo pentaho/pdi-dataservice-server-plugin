@@ -397,13 +397,100 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     }
   }
 
+  /**
+   * Determine if "baseFolder" is the same as "folder" or if "folder" is a descendant of "baseFolder"
+   * 
+   * @param folder Folder to test for similarity / ancestory; Must not be null
+   * @param baseFolder Folder that may be the same or an ancestor; Must not be null
+   * @return True if folder is a descendant of baseFolder or False if not; False if either folder or baseFolder are null
+   */
+  protected boolean isSameOrAncestorFolder(RepositoryFile folder, RepositoryFile baseFolder) {
+    // If either folder is null, return false. We cannot do a proper comparison
+    if(folder != null && baseFolder != null) {
+        
+      if (
+          // If the folders are equal
+          baseFolder.getId().equals(folder.getId())
+       || (
+          // OR if the folders are NOT siblings AND the folder to move IS an ancestor to the users home folder
+           baseFolder.getPath().lastIndexOf(RepositoryDirectory.DIRECTORY_SEPARATOR) != folder.getPath().lastIndexOf(RepositoryDirectory.DIRECTORY_SEPARATOR) 
+           && baseFolder.getPath().startsWith(folder.getPath())
+          )
+      ) {
+        return true;
+      }
+      
+    }
+    return false;
+  }
+  
+  /**
+   * Test to see if the folder is a user's home directory
+   * If it is an ancestor to a user's home directory, false will be returned. (It is not actually a user's home directory)
+   * @param folder The folder to test; Must not be null
+   * @return True if the directory is a users home directory and False if it is not; False if folder is null
+   */
+  protected boolean isUserHomeDirectory(RepositoryFile folder) {
+    if(folder != null) {
+    
+      // Get the root of all home folders
+      RepositoryFile homeRootFolder = pur.getFile(ClientRepositoryPaths.getHomeFolderPath());
+      if(homeRootFolder != null) {
+        // Strip the final RepositoryDirectory.DIRECTORY_SEPARATOR from the paths
+        String temp = homeRootFolder.getPath();
+        String homeRootPath = temp.endsWith(RepositoryDirectory.DIRECTORY_SEPARATOR) && temp.length() > RepositoryDirectory.DIRECTORY_SEPARATOR.length() ? temp.substring(0, temp.length() - RepositoryDirectory.DIRECTORY_SEPARATOR.length()) : temp;
+        temp = folder.getPath();
+        String folderPath = temp.endsWith(RepositoryDirectory.DIRECTORY_SEPARATOR) && temp.length() > RepositoryDirectory.DIRECTORY_SEPARATOR.length() ? temp.substring(0, temp.length() - RepositoryDirectory.DIRECTORY_SEPARATOR.length()) : temp;
+  
+        // Is the folder in a user's home directory?
+        if(folderPath.startsWith(homeRootPath)) {
+          if(folderPath.equals(homeRootPath)) {
+            return false;
+          }
+          
+          // If there is exactly one more RepositoryDirectory.DIRECTORY_SEPARATOR in folderPath than homeRootFolder, then the user is trying to delete another user's home directory
+          int folderPathDirCount = 0;
+          int homeRootPathDirCount = 0;
+          
+          for(int x = 0; x >= 0; folderPathDirCount++) {
+            x = folderPath.indexOf(RepositoryDirectory.DIRECTORY_SEPARATOR, x + 1);
+          }
+          for(int x = 0; x >= 0; homeRootPathDirCount++) {
+            x = homeRootPath.indexOf(RepositoryDirectory.DIRECTORY_SEPARATOR, x + 1);
+          }
+          
+          if(folderPathDirCount == (homeRootPathDirCount +1)) {
+            return true;
+          }
+        }
+      }    
+    }
+    
+    return false;
+  }
+  
   public void deleteRepositoryDirectory(final RepositoryDirectoryInterface dir) throws KettleException {
+    deleteRepositoryDirectory(dir, false);
+  }
+  
+  public void deleteRepositoryDirectory(final RepositoryDirectoryInterface dir, final boolean deleteHomeDirectories) throws KettleException {
     try {
-      RepositoryFile homeFolder = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
+      // Fetch the folder to be deleted
       RepositoryFile folder = pur.getFileById(dir.getObjectId().getId());
-      if (homeFolder.getId().equals(folder.getId()) || homeFolder.getPath().startsWith(folder.getPath())) {
+
+      // Fetch the user's home directory 
+      RepositoryFile homeFolder = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
+      
+      // Make sure the user is not trying to delete their own home directory
+      if (isSameOrAncestorFolder(folder, homeFolder)) {
+        // Then throw an exception that the user cannot delete their own home directory
         throw new KettleException("You are not allowed to delete your home folder.");
       }
+
+      if(!deleteHomeDirectories && isUserHomeDirectory(folder)) {
+          throw new RepositoryObjectAccessException("Cannot delete another users home directory", RepositoryObjectAccessException.AccessExceptionType.USER_HOME_DIR);
+      }
+      
       pur.deleteFile(dir.getObjectId().getId(), null);
       rootRef = null;
     } catch (Exception e) {
@@ -413,6 +500,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public ObjectId renameRepositoryDirectory(final ObjectId dirId, final RepositoryDirectoryInterface newParent,
       final String newName) throws KettleException {
+    return renameRepositoryDirectory(dirId, newParent, newName, false);
+  }
+  
+  public ObjectId renameRepositoryDirectory(final ObjectId dirId, final RepositoryDirectoryInterface newParent,
+      final String newName, final boolean renameHomeDirectories) throws KettleException {
     // dir ID is used to find orig obj; new parent is used as new parent (might be null meaning no change in parent); 
     // new name is used as new file name (might be null meaning no change in name)
     String finalName = null;
@@ -421,12 +513,19 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     try {
       RepositoryFile homeFolder = pur.getFile(ClientRepositoryPaths.getUserHomeFolderPath(user.getLogin()));
       RepositoryFile folder = pur.getFileById(dirId.getId());
-      if (homeFolder.getId().equals(dirId.getId()) || homeFolder.getPath().startsWith(folder.getPath())) {
+      // Make sure the user is not trying to move their own home directory
+      if (isSameOrAncestorFolder(folder, homeFolder)) {
+        // Then throw an exception that the user cannot move their own home directory
         throw new KettleException("You are not allowed to move/rename your home folder.");
       }
       finalName = (newName != null ? newName : folder.getName());
       interimFolderPath = getParentPath(folder.getPath());
       finalParentPath = (newParent != null ? getPath(null, newParent, null) : interimFolderPath);
+      
+      if(!renameHomeDirectories && isUserHomeDirectory(folder)) {
+        throw new RepositoryObjectAccessException("Cannot move another users home directory", RepositoryObjectAccessException.AccessExceptionType.USER_HOME_DIR);
+      }
+      
       pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName, null);
       rootRef = null;
       return dirId;
