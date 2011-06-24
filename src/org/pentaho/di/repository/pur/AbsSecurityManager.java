@@ -123,7 +123,7 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
       authorizationPolicyRoleBindingService.setRoleBindings(rolename, logicalRoles);
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
-          "AbsSecurityManager.ERROR_0004_UNABLE_TO_APPLY_LOGICAL_ROLES_TO_RUNTIME_ROLE"), e); //$NON-NLS-1$
+          "AbsSecurityManager.ERROR_0004_UNABLE_TO_APPLY_LOGICAL_ROLES_TO_RUNTIME_ROLE", rolename), e); //$NON-NLS-1$
     }
     } else {
       throw new KettleException(BaseMessages.getString(AbsSecurityManager.class,
