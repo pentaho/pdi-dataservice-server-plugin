@@ -103,6 +103,8 @@ import com.pentaho.pdi.ws.RepositorySyncException;
 @RepositoryPlugin(id = "PentahoEnterpriseRepository", name = "Enterprise Repository", description = "i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository", metaClass = "org.pentaho.di.repository.pur.PurRepositoryMeta")
 public class PurRepository implements Repository, IRevisionService, IAclService, ITrashService, ILockService {
 
+  private static final String SINGLE_DI_SERVER_INSTANCE = "singleDiServerInstance";
+
   // ~ Static fields/initializers ======================================================================================
 
   // private static final Log logger = LogFactory.getLog(PurRepository.class);
@@ -244,20 +246,26 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       
       if (!isTest()) {
         if (PentahoSystem.getApplicationContext() != null) {
-          if (PentahoSystem.getApplicationContext().getBaseUrl() != null) {
-            String repoUrl = repositoryMeta.getRepositoryLocation().getUrl();
-            String baseUrl = PentahoSystem.getApplicationContext().getBaseUrl();
-            if (repoUrl.endsWith("/")) {
-              repoUrl = repoUrl.substring(0, repoUrl.length() - 1);
+          boolean inProcess = false;
+          if ("true".equals(PentahoSystem.getSystemSetting(SINGLE_DI_SERVER_INSTANCE, "true"))) { //$NON-NLS-1$ //$NON-NLS-2$
+            inProcess = true;
+          } else {
+            if (PentahoSystem.getApplicationContext().getBaseUrl() != null) {
+              String repoUrl = repositoryMeta.getRepositoryLocation().getUrl();
+              String baseUrl = PentahoSystem.getApplicationContext().getBaseUrl();
+              if (repoUrl.endsWith("/")) {
+                repoUrl = repoUrl.substring(0, repoUrl.length() - 1);
+              }
+              if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+              }
+              inProcess = true;
             }
-            if (baseUrl.endsWith("/")) {
-              baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-            }
-            if (repoUrl.startsWith(baseUrl)) {
-              connectInProcess();
-              connected = true;
-              return;
-            }
+          }
+          if (inProcess) {
+            connectInProcess();
+            connected = true;
+            return;
           }
         }
 
