@@ -1,6 +1,10 @@
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -9,25 +13,21 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryDirectory;
-import org.pentaho.di.repository.RepositoryObject;
-import org.pentaho.di.repository.RepositoryObjectInterface;
+import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.pur.RepositoryObjectAccessException;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEERepositoryDirectory;
 import org.pentaho.di.ui.repository.pur.services.ITrashService;
+import org.pentaho.di.ui.repository.pur.services.ITrashService.IDeletedObject;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIJob;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectCreationException;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistry;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectories;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObjects;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UITransformation;
 import org.pentaho.ui.xul.XulComponent;
+import org.pentaho.ui.xul.XulEventSourceAdapter;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -65,16 +65,14 @@ public class TrashBrowseController extends BrowseController {
 
   protected XulDeck deck;
 
-  protected List<UIRepositoryObject> selectedTrashFileItems;
+  protected List<UIDeletedObject> selectedTrashFileItems;
 
   protected TrashDirectory trashDir = new TrashDirectory();
 
   protected ITrashService trashService;
 
-  protected List<RepositoryObjectInterface> trash;
+  protected List<IDeletedObject> trash;
 
-  protected Repository repository;
-  
   protected XulButton undeleteButton;
   
   protected XulButton deleteButton;
@@ -158,10 +156,10 @@ public class TrashBrowseController extends BrowseController {
     undeleteButton = (XulButton) document.getElementById("undelete-button"); //$NON-NLS-1$
     
     bf.setBindingType(Binding.Type.ONE_WAY);
-    BindingConvertor<List<UIRepositoryObject>, Boolean> buttonConverter = new BindingConvertor<List<UIRepositoryObject>, Boolean>() {
+    BindingConvertor<List<UIDeletedObject>, Boolean> buttonConverter = new BindingConvertor<List<UIDeletedObject>, Boolean>() {
 
       @Override
-      public Boolean sourceToTarget(List<UIRepositoryObject> value) {
+      public Boolean sourceToTarget(List<UIDeletedObject> value) {
         if (value != null && value.size() > 0) {
           return true;
         }
@@ -169,8 +167,7 @@ public class TrashBrowseController extends BrowseController {
       }
 
       @Override
-      public List<UIRepositoryObject> targetToSource(Boolean value) {
-        // TODO Auto-generated method stub
+      public List<UIDeletedObject> targetToSource(Boolean value) {
         return null;
       }
     };
@@ -182,50 +179,104 @@ public class TrashBrowseController extends BrowseController {
     
     bf.setBindingType(Binding.Type.ONE_WAY);
     bf.createBinding(this, "trash", trashFileTable, "elements", //$NON-NLS-1$  //$NON-NLS-2$
-        new BindingConvertor<List<RepositoryObjectInterface>, UIRepositoryObjects>() {
+        new BindingConvertor<List<IDeletedObject>, List<UIDeletedObject>>() {
           @Override
-          public UIRepositoryObjects sourceToTarget(List<RepositoryObjectInterface> trash) {
-            UIRepositoryObjects listOfObjects = new UIRepositoryObjects();
-
-            for (RepositoryObjectInterface elem : trash) {
-              if (elem instanceof RepositoryDirectory) {
-                RepositoryDirectory dir = (RepositoryDirectory) elem;
-                // TODO fetch parent dir from somewhere
-                try {
-                  listOfObjects.add(UIObjectRegistry.getInstance().constructUIRepositoryDirectory(dir, dirMap.get(dir.getParent() != null ? dir.getParent()
-                      .getObjectId() : null), repository));
-                } catch (UIObjectCreationException e) {
-                  listOfObjects.add(new UIRepositoryDirectory(dir, dirMap.get(dir.getParent() != null ? dir.getParent()
-                      .getObjectId() : null), repository));
-                }
-              } else {
-                RepositoryObject c = (RepositoryObject) elem;
-                if (c.getObjectType() == RepositoryObjectType.JOB) {
-                  try {
-                    listOfObjects.add(UIObjectRegistry.getInstance().constructUIJob(c, dirMap.get(c.getRepositoryDirectory().getObjectId()), repository));
-                  } catch (UIObjectCreationException e) {
-                    listOfObjects.add(new UIJob(c, dirMap.get(c.getRepositoryDirectory().getObjectId()), repository));
-                  }
-                  
-                } else {
-                  try {
-                    listOfObjects.add(UIObjectRegistry.getInstance().constructUITransformation(c, dirMap.get(c.getRepositoryDirectory().getObjectId()),repository));
-                  } catch (UIObjectCreationException e) {
-                    listOfObjects.add(new UITransformation(c, dirMap.get(c.getRepositoryDirectory().getObjectId()),repository));
-                  }
-                }
-              }
+          public List<UIDeletedObject> sourceToTarget(List<IDeletedObject> trash) {
+            List<UIDeletedObject> newList = new ArrayList<UIDeletedObject>(trash.size());
+            for (IDeletedObject obj : trash) {
+              newList.add(new UIDeletedObject(obj));
             }
-            return listOfObjects;
+            Collections.sort(newList, new UIDeletedObjectComparator());
+            return newList;
           }
 
           @Override
-          public List<RepositoryObjectInterface> targetToSource(UIRepositoryObjects elements) {
+          public List<IDeletedObject> targetToSource(List<UIDeletedObject> elements) {
             return null;
           }
         });
   }
 
+  /**
+   * An IDeletedObject that is also a XulEventSource.
+   */
+  public static class UIDeletedObject extends XulEventSourceAdapter {
+ 
+    private IDeletedObject obj;
+    
+    private static Comparator<UIDeletedObject> comparator = new UIDeletedObjectComparator();
+    
+    public UIDeletedObject(final IDeletedObject obj) {
+      this.obj = obj;
+    }
+    
+    public String getOriginalParentPath() {
+      return obj.getOriginalParentPath();
+    }
+
+    public String getDeletedDate() {
+      Date date = obj.getDeletedDate();
+      String str = null;
+      if (date != null){
+        SimpleDateFormat sdf = new SimpleDateFormat("d MMM yyyy HH:mm:ss z"); //$NON-NLS-1$
+        str = sdf.format(date);
+      }
+      return str;
+    }
+
+    public String getType() {
+      return obj.getType();  
+    }
+
+    public ObjectId getId() {
+      return obj.getId();  
+    }
+
+    public String getName() {
+      return obj.getName();
+    }
+    
+    public String getImage() {
+      if (RepositoryObjectType.TRANSFORMATION.name().equals(obj.getType())) {
+        return "images/transformation.png"; //$NON-NLS-1$
+      } else if (RepositoryObjectType.JOB.name().equals(obj.getType())) {
+        return "images/job.png"; //$NON-NLS-1$
+      } else {
+        return "images/treeClosed.png"; //$NON-NLS-1$
+      }
+    }
+    
+    public Comparator<UIDeletedObject> getComparator() {
+      return comparator;
+    }
+    
+  }
+  
+  public static class UIDeletedObjectComparator implements Comparator<UIDeletedObject> {
+
+    public int compare(UIDeletedObject o1, UIDeletedObject o2) {
+      int cat1 = getValue(o1.getType());
+      int cat2 = getValue(o2.getType());
+      if (cat1 != cat2) {
+        return cat1 - cat2;
+      }
+      String t1 = o1.getName();
+      String t2 = o2.getName();
+      if (t1 == null) t1 = ""; //$NON-NLS-1$
+      if (t2 == null) t2 = ""; //$NON-NLS-1$
+      return t1.compareToIgnoreCase(t2);
+    }
+    
+    private int getValue(final String type) {
+      if (type == null) {
+        return 10;
+      } else {
+        return 20;
+      }
+    }
+    
+  }
+  
   @Override
   public void setSelectedFolderItems(List<UIRepositoryDirectory> selectedFolderItems) {
     if (selectedFolderItems != null && selectedFolderItems.size() == 1 && selectedFolderItems.get(0).equals(trashDir)) {
@@ -241,12 +292,12 @@ public class TrashBrowseController extends BrowseController {
     }
   }
 
-  public void setTrash(List<RepositoryObjectInterface> trash) {
+  public void setTrash(List<IDeletedObject> trash) {
     this.trash = trash;
     firePropertyChange("trash", null, trash); //$NON-NLS-1$
   }
 
-  public List<RepositoryObjectInterface> getTrash() {
+  public List<IDeletedObject> getTrash() {
     return trash;
   }
 
@@ -265,8 +316,8 @@ public class TrashBrowseController extends BrowseController {
   public void delete() {
     if (selectedTrashFileItems != null && selectedTrashFileItems.size() > 0) {
       List<ObjectId> ids = new ArrayList<ObjectId>();
-      for (UIRepositoryObject uiObj : selectedTrashFileItems) {
-        ids.add(uiObj.getObjectId());
+      for (UIDeletedObject uiObj : selectedTrashFileItems) {
+        ids.add(uiObj.getId());
       }
       try {
         trashService.delete(ids);
@@ -283,24 +334,24 @@ public class TrashBrowseController extends BrowseController {
 
   public void undelete(){
     // make a copy because the selected trash items changes as soon as trashService.undelete is called
-    List<UIRepositoryObject> selectedTrashFileItemsSnapshot = new ArrayList<UIRepositoryObject>(selectedTrashFileItems);
+    List<UIDeletedObject> selectedTrashFileItemsSnapshot = new ArrayList<UIDeletedObject>(selectedTrashFileItems);
     if (selectedTrashFileItemsSnapshot != null && selectedTrashFileItemsSnapshot.size() > 0) {
       List<ObjectId> ids = new ArrayList<ObjectId>();
-      for (UIRepositoryObject uiObj : selectedTrashFileItemsSnapshot) {
-        ids.add(uiObj.getObjectId());
+      for (UIDeletedObject uiObj : selectedTrashFileItemsSnapshot) {
+        ids.add(uiObj.getId());
       }
       try {
         trashService.undelete(ids);
         setTrash(trashService.getTrash());
-        // Refresh the root directory once by refreshing the first directory or directory a trans/job was restored to
-        for (UIRepositoryObject uiObj : selectedTrashFileItemsSnapshot) {
-          if (uiObj instanceof UIRepositoryDirectory) {
-            // refresh the whole tree since XUL cannot refresh a portion of the tree at this time
-            ((UIRepositoryDirectory) uiObj).refresh();
-            break;
-          } else {
-            uiObj.getParent().refresh();
-            break;
+        for (UIDeletedObject uiObj : selectedTrashFileItemsSnapshot) {
+          // find the closest UIRepositoryDirectory that is in the dirMap
+          RepositoryDirectoryInterface dir = repository.findDirectory(uiObj.getOriginalParentPath());
+          while (dir != null && dirMap.get(dir.getObjectId()) == null) {
+            dir = dir.getParent();
+          }
+          // now refresh that UIRepositoryDirectory so that the file/folders deck instantly refreshes on undelete
+          if (dir != null) {
+            dirMap.get(dir.getObjectId()).refresh();
           }
         }
         deck.setSelectedIndex(1);
@@ -314,7 +365,7 @@ public class TrashBrowseController extends BrowseController {
     }
   }
 
-  public void setSelectedTrashFileItems(List<UIRepositoryObject> selectedTrashFileItems) {
+  public void setSelectedTrashFileItems(List<UIDeletedObject> selectedTrashFileItems) {
     this.selectedTrashFileItems = selectedTrashFileItems;
   }
   

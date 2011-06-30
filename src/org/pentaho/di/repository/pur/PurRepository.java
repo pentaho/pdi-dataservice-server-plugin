@@ -793,7 +793,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       switch (objectType) {
         case DATABASE: {
           // file either never existed or has been deleted
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getDatabaseMetaParentFolderId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getDatabaseMetaParentFolderPath(), name
               + RepositoryObjectType.DATABASE.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -813,7 +813,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         }
         case PARTITION_SCHEMA: {
           // file either never existed or has been deleted
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getPartitionSchemaParentFolderId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getPartitionSchemaParentFolderPath(), name
               + RepositoryObjectType.PARTITION_SCHEMA.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -823,7 +823,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         }
         case SLAVE_SERVER: {
           // file either never existed or has been deleted
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getSlaveServerParentFolderId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getSlaveServerParentFolderPath(), name
               + RepositoryObjectType.SLAVE_SERVER.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -833,7 +833,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         }
         case CLUSTER_SCHEMA: {
           // file either never existed or has been deleted
-          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getClusterSchemaParentFolderId(), name
+          List<RepositoryFile> deletedChildren = pur.getDeletedFiles(getClusterSchemaParentFolderPath(), name
               + RepositoryObjectType.CLUSTER_SCHEMA.getExtension());
           if (!deletedChildren.isEmpty()) {
             return new StringObjectId(deletedChildren.get(0).getId().toString());
@@ -885,7 +885,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     List<RepositoryFile> children = getAllFilesOfType(dirId, objectTypes);
     allChildren.addAll(children);
     if (includeDeleted) {
-      List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(dirId, objectTypes);
+      String dirPath = null;
+      if (dirId != null) {
+        // derive path using id
+        dirPath = pur.getFileById(dirId.getId()).getPath();
+      }
+      List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(dirPath, objectTypes);
       allChildren.addAll(deletedChildren);
       Collections.sort(allChildren);
     }
@@ -950,39 +955,39 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return allFiles;
   }
 
-  protected List<RepositoryFile> getAllDeletedFilesOfType(final ObjectId dirId,
+  protected List<RepositoryFile> getAllDeletedFilesOfType(final String dirPath,
       final List<RepositoryObjectType> objectTypes) throws KettleException {
-    Set<Serializable> parentFolderIds = new HashSet<Serializable>();
+    Set<String> parentFolderPaths = new HashSet<String>();
     List<String> filters = new ArrayList<String>();
     for (RepositoryObjectType objectType : objectTypes) {
       switch (objectType) {
         case DATABASE: {
-          parentFolderIds.add(getDatabaseMetaParentFolderId());
+          parentFolderPaths.add(getDatabaseMetaParentFolderPath());
           filters.add("*" + RepositoryObjectType.DATABASE.getExtension()); //$NON-NLS-1$
           break;
         }
         case TRANSFORMATION: {
-          parentFolderIds.add(dirId.getId());
+          parentFolderPaths.add(dirPath);
           filters.add("*" + RepositoryObjectType.TRANSFORMATION.getExtension()); //$NON-NLS-1$
           break;
         }
         case PARTITION_SCHEMA: {
-          parentFolderIds.add(getPartitionSchemaParentFolderId());
+          parentFolderPaths.add(getPartitionSchemaParentFolderPath());
           filters.add("*" + RepositoryObjectType.PARTITION_SCHEMA.getExtension()); //$NON-NLS-1$
           break;
         }
         case SLAVE_SERVER: {
-          parentFolderIds.add(getSlaveServerParentFolderId());
+          parentFolderPaths.add(getSlaveServerParentFolderPath());
           filters.add("*" + RepositoryObjectType.SLAVE_SERVER.getExtension()); //$NON-NLS-1$
           break;
         }
         case CLUSTER_SCHEMA: {
-          parentFolderIds.add(getClusterSchemaParentFolderId());
+          parentFolderPaths.add(getClusterSchemaParentFolderPath());
           filters.add("*" + RepositoryObjectType.CLUSTER_SCHEMA.getExtension()); //$NON-NLS-1$
           break;
         }
         case JOB: {
-          parentFolderIds.add(dirId.getId());
+          parentFolderPaths.add(dirPath);
           filters.add("*" + RepositoryObjectType.JOB.getExtension()); //$NON-NLS-1$
           break;
         }
@@ -1001,8 +1006,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       mergedFilterBuf.append(filter);
     }
     List<RepositoryFile> allFiles = new ArrayList<RepositoryFile>();
-    for (Serializable parentFolderId : parentFolderIds) {
-      allFiles.addAll(pur.getDeletedFiles(parentFolderId, mergedFilterBuf.toString()));
+    for (String parentFolderPath : parentFolderPaths) {
+      allFiles.addAll(pur.getDeletedFiles(parentFolderPath, mergedFilterBuf.toString()));
     }
     Collections.sort(allFiles);
     return allFiles;
@@ -1398,7 +1403,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             objectType, null, lock, false));
       }
       if (includeDeleted) {
-        List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(dirId, objectTypes);
+        String dirPath = null;
+        if (dirId != null) {
+          // derive path using id
+          dirPath = pur.getFileById(dirId.getId()).getPath();
+        }
+        List<RepositoryFile> deletedChildren = getAllDeletedFilesOfType(dirPath, objectTypes);
         for (RepositoryFile file : deletedChildren) {
           RepositoryLock lock = getLock(file);
           RepositoryObjectType objectType = getObjectType(file.getName());
@@ -2507,13 +2517,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   public void undeleteObject(final RepositoryElementMetaInterface element) throws KettleException {
-
-    RepositoryFile originalParentFolder = pur.getFile(getPath(null, element.getRepositoryDirectory(), null));
-    List<RepositoryFile> deletedChildren = pur.getDeletedFiles(originalParentFolder.getId(), checkAndSanitize(element.getName()
-        + element.getObjectType().getExtension()));
-    if (!deletedChildren.isEmpty()) {
-      pur.undeleteFile(deletedChildren.get(0).getId(), null);
-    }
+    pur.undeleteFile(element.getObjectId().getId(), null);
     rootRef = null;
   }
 
@@ -2681,36 +2685,47 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     rootRef = null;
   }
 
-  public List<RepositoryObjectInterface> getTrash() throws KettleException {
-    List<RepositoryObjectInterface> trash = new ArrayList<RepositoryObjectInterface>();
+  public List<IDeletedObject> getTrash() throws KettleException {
+    List<IDeletedObject> trash = new ArrayList<IDeletedObject>();
     List<RepositoryFile> deletedChildren = pur.getDeletedFiles();
+    
     for (final RepositoryFile file : deletedChildren) {
-      final Serializable originalParentFolderId = file.getOriginalParentFolderId();
-      final RepositoryDirectory origParentDir = new RepositoryDirectory() {
-        public ObjectId getObjectId() {
-          return new StringObjectId(originalParentFolderId.toString());
+      trash.add(new IDeletedObject() {
+
+        @Override
+        public String getOriginalParentPath() {
+          return file.getOriginalParentFolderPath();  
         }
-      };
-      if (file.isFolder()) {
-        trash.add(new RepositoryDirectory() {
-          public String getName() {
-            return file.getName();
-          }
 
-          public ObjectId getObjectId() {
-            return new StringObjectId(file.getId().toString());
-          }
+        @Override
+        public Date getDeletedDate() {
+          return file.getDeletedDate(); 
+        }
 
-          public RepositoryDirectoryInterface getParent() {
-            return origParentDir;
+        @Override
+        public String getType() {
+          if (file.getName().endsWith(RepositoryObjectType.TRANSFORMATION.getExtension())) {
+            return RepositoryObjectType.TRANSFORMATION.name();
+          } else if (file.getName().endsWith(RepositoryObjectType.JOB.getExtension())) {
+            return RepositoryObjectType.JOB.name();
+          } else {
+            return null;
           }
-        });
-      } else {
-        RepositoryObjectType objectType = getObjectType(file.getName());
-        trash.add(new EERepositoryObject(new StringObjectId(file.getId().toString()), file.getTitle(), origParentDir, null, file.getDeletedDate(),
-            objectType, null, null, true));
-      }
+        }
+
+        @Override
+        public ObjectId getId() {
+          return new StringObjectId(file.getId().toString());
+        }
+
+        @Override
+        public String getName() {
+          return file.getTitle();
+        }
+        
+      });
     }
+    
     return trash;
   }
 
