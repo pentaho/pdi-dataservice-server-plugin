@@ -876,7 +876,7 @@ public abstract class RepositoryTestBase {
     transMeta.addParameterDefinition(EXP_TRANS_PARAM_1_NAME, EXP_TRANS_PARAM_1_DEF, EXP_TRANS_PARAM_1_DESC);
 
     // TODO mlowery other transLogTable fields could be set for testing here  
-    TransLogTable transLogTable = TransLogTable.getDefault(transMeta, transMeta);
+    TransLogTable transLogTable = TransLogTable.getDefault(transMeta, transMeta, new ArrayList<StepMeta>(0));
     transLogTable.setConnectionName(EXP_TRANS_LOG_TABLE_CONN_NAME);
     transLogTable.setLogInterval(EXP_TRANS_LOG_TABLE_INTERVAL);
     transLogTable.setSchemaName(EXP_TRANS_LOG_TABLE_SCHEMA_NAME);
