@@ -52,7 +52,8 @@
 		    		resizable="true"
 		    		height="500" width="400">
 		    	<vbox flex="1">
-			    	<groupbox id="user-section" flex="1">
+            <!-- height hard-coded due to PDI-5155 -->
+			    	<groupbox id="user-section" flex="1" height="175">
 			    		<caption label="${ManageAclsDialog.UserLabel}" />
 			    		<hbox flex="1">
 				    		<vbox flex="2">
