@@ -379,23 +379,27 @@ public class TrashBrowseController extends BrowseController {
     try {
       repoObject.delete();
     } catch (KettleException ke) { 
-      moveDeletePrompt(ke, repoObject, new XulDialogCallback<Object>() {
-
-        public void onClose(XulComponent sender, Status returnCode, Object retVal) {
-          if (returnCode == Status.ACCEPT) {
-            try{
-              ((UIEERepositoryDirectory)repoObject).delete(true);
-            } catch (Exception e) {
-              displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+      if (ke.getCause() instanceof RepositoryObjectAccessException) {
+        moveDeletePrompt(ke, repoObject, new XulDialogCallback<Object>() {
+  
+          public void onClose(XulComponent sender, Status returnCode, Object retVal) {
+            if (returnCode == Status.ACCEPT) {
+              try{
+                ((UIEERepositoryDirectory)repoObject).delete(true);
+              } catch (Exception e) {
+                displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+              }
             }
           }
-        }
-
-        public void onError(XulComponent sender, Throwable t) {
-          throw new RuntimeException(t);
-        }
-        
-      });
+  
+          public void onError(XulComponent sender, Throwable t) {
+            throw new RuntimeException(t);
+          }
+          
+        });
+      } else {
+        throw ke;
+      }
     }
     
     if (repoObject instanceof UIRepositoryDirectory) {
@@ -418,23 +422,27 @@ public class TrashBrowseController extends BrowseController {
           try {
             repoObject.setName(newName);
           } catch (KettleException ke) {
-            moveDeletePrompt(ke, repoObject, new XulDialogCallback<Object>() {
-
-              public void onClose(XulComponent sender, Status returnCode, Object retVal) {
-                if (returnCode == Status.ACCEPT) {
-                  try{
-                   ((UIEERepositoryDirectory)repoObject).setName(newName, true);
-                  } catch (Exception e) {
-                    displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+            if (ke.getCause() instanceof RepositoryObjectAccessException) {
+              moveDeletePrompt(ke, repoObject, new XulDialogCallback<Object>() {
+  
+                public void onClose(XulComponent sender, Status returnCode, Object retVal) {
+                  if (returnCode == Status.ACCEPT) {
+                    try{
+                     ((UIEERepositoryDirectory)repoObject).setName(newName, true);
+                    } catch (Exception e) {
+                      displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+                    }
                   }
                 }
-              }
-
-              public void onError(XulComponent sender, Throwable t) {
-                throw new RuntimeException(t);
-              }
-              
-            });
+  
+                public void onError(XulComponent sender, Throwable t) {
+                  throw new RuntimeException(t);
+                }
+                
+              });
+            } else {
+              throw new RuntimeException(ke);
+            }
           } catch (Exception e) {
             // convert to runtime exception so it bubbles up through the UI
             throw new RuntimeException(e);
