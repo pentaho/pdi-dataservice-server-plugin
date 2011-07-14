@@ -1787,7 +1787,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     pur.moveFile(file.getId(), buf.toString(), null);
   }
 
-  protected void saveJob0(final RepositoryElementInterface element, final String versionComment, final boolean saveSharedObjects, final boolean checkLock, final boolean checkRename, final boolean loadRevision) throws KettleException {
+  protected void saveJob0(final RepositoryElementInterface element, final String versionComment, final boolean saveSharedObjects, final boolean checkLock, final boolean checkRename, final boolean loadRevision, final boolean checkDeleted) throws KettleException {
     if (saveSharedObjects) {
       jobDelegate.saveSharedObjects(element, versionComment);
     }
@@ -1798,6 +1798,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       file = pur.getFileById(id.getId());
       if (checkLock && file.isLocked() && !canUnlockFileById(id)) {
         throw new KettleException("File is currently locked by another user for editing");
+      }
+      if (checkDeleted && isInTrash(file)) {
+        // absolutely awful to have UI references in this class :(
+        throw new KettleException("File is in the Trash. Use Save As.");
       }
       // update title and description
       file = new RepositoryFile.Builder(file)
@@ -1836,10 +1840,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
   
   protected void saveJob(final RepositoryElementInterface element, final String versionComment) throws KettleException {
-    saveJob0(element, versionComment, true, true, true, true);
+    saveJob0(element, versionComment, true, true, true, true, true);
   }
 
-  protected void saveTrans0(final RepositoryElementInterface element, final String versionComment, final boolean saveSharedObjects, final boolean checkLock, final boolean checkRename, final boolean loadRevision) throws KettleException {
+  protected void saveTrans0(final RepositoryElementInterface element, final String versionComment, final boolean saveSharedObjects, final boolean checkLock, final boolean checkRename, final boolean loadRevision, final boolean checkDeleted) throws KettleException {
     if (saveSharedObjects) {
       transDelegate.saveSharedObjects(element, versionComment);
     }
@@ -1850,6 +1854,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       file = pur.getFileById(id.getId());
       if (checkLock && file.isLocked() && !canUnlockFileById(id)) {
         throw new KettleException("File is currently locked by another user for editing");
+      }
+      if (checkDeleted && isInTrash(file)) {
+        // absolutely awful to have UI references in this class :(
+        throw new KettleException("File is in the Trash. Use Save As.");
       }
       // update title and description
       file = new RepositoryFile.Builder(file)
@@ -1887,9 +1895,18 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   }
   
+  protected boolean isInTrash(final RepositoryFile file) {
+    // pretty hacky solution
+    if (file.getPath().contains("/.trash/")) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
   protected void saveTrans(final RepositoryElementInterface element, final String versionComment)
       throws KettleException {
-    saveTrans0(element, versionComment, true, true, true, true);
+    saveTrans0(element, versionComment, true, true, true, true, true);
   }
 
   protected void saveDatabaseMeta(final RepositoryElementInterface element, final String versionComment)

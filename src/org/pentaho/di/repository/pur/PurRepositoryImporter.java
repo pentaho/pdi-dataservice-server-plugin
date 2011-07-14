@@ -406,7 +406,7 @@ public class PurRepositoryImporter implements IRepositoryImporter {
           }
         }
         
-        rep.saveTrans0(transMeta, versionComment, true, false, false, false);
+        rep.saveTrans0(transMeta, versionComment, true, false, false, false, false);
         feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.TransSaved.Log", Integer.toString(transformationNumber), transMeta.getName()));
         
         if (transMeta.hasRepositoryReferences()) {
@@ -461,7 +461,7 @@ public class PurRepositoryImporter implements IRepositoryImporter {
       jobMeta.setRepositoryDirectory(targetDirectory);
       jobMeta.setObjectId(existintId);
       patchJobEntries(jobMeta);
-      rep.saveJob0(jobMeta, versionComment, true, false, false, false);
+      rep.saveJob0(jobMeta, versionComment, true, false, false, false, false);
       
       if (jobMeta.hasRepositoryReferences()) {
         referencingObjects.add(new RepositoryObject(jobMeta.getObjectId(), jobMeta.getName(), jobMeta.getRepositoryDirectory(), null, null, RepositoryObjectType.JOB, null, false));
