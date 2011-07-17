@@ -37,13 +37,13 @@
       changing="true" />      
 
     <!-- kettle -->
-    <dependency org="pentaho.kettle" name="kettle-core" rev="${dependency.kettle.revision}" transitive="false"
+    <dependency org="pentaho-kettle" name="kettle-core" rev="${dependency.kettle.revision}" transitive="false"
       changing="true" />
-    <dependency org="pentaho.kettle" name="kettle-db" rev="${dependency.kettle.revision}" transitive="false"
+    <dependency org="pentaho-kettle" name="kettle-db" rev="${dependency.kettle.revision}" transitive="false"
       changing="true" />
-    <dependency org="pentaho.kettle" name="kettle-engine" rev="${dependency.kettle.revision}" transitive="false"
+    <dependency org="pentaho-kettle" name="kettle-engine" rev="${dependency.kettle.revision}" transitive="false"
       changing="true" />
-    <dependency org="pentaho.kettle" name="kettle-ui-swt" rev="${dependency.kettle.revision}" transitive="false"
+    <dependency org="pentaho-kettle" name="kettle-ui-swt" rev="${dependency.kettle.revision}" transitive="false"
       changing="true" />
 
     <!-- misc third-party -->
