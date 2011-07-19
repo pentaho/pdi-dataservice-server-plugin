@@ -218,6 +218,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public void connectInProcess() throws KettleException, KettleSecurityException {
     // connect to the IUnifiedRepository through PentahoSystem
     // this assumes we're running in a BI Platform
+    if (log.isDebug()) {
+      log.logDebug("begin connectInProcess()");
+    }
     if (!isTest()) {
       String username = PentahoSessionHolder.getSession().getName();
       IUser user1 = new EEUserInfo();
@@ -225,6 +228,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       user1.setName(username);
       this.user = user1;
       pur = PentahoSystem.get(IUnifiedRepository.class);
+      
+      if (log.isDebug()) {
+        log.logDebug("connected in process as '" + username +"' pur repository = " + pur);
+      }
+
     }
     // for now, there is no need to support the security manager
     // what about security provider?
