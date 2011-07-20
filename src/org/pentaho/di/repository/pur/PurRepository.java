@@ -372,6 +372,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     try {
       PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));      
       RepositoryDirectoryInterface refreshedParentDir = findDirectory(parentDirectory.getPath());
+      
+      if (refreshedParentDir.findDirectory(directoryPath) != null) {
+        // dir already exists
+        throw new KettleException("Unable to create directory with path [" + directoryPath + "]; already exists");
+      }
+      
       // update the passed in repository directory with the children recently loaded from the repo
       parentDirectory.setChildren(refreshedParentDir.getChildren());
       String[] path = Const.splitPath(directoryPath, RepositoryDirectory.DIRECTORY_SEPARATOR);
