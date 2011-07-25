@@ -2089,6 +2089,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     jobMeta.setDescription(file.getDescription());
     jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
     jobMeta.setObjectRevision(revision);
+    jobMeta.setRepository(this);
     jobMeta.setRepositoryDirectory(parentDir);
     readJobMetaSharedObjects(jobMeta); // This should read from the local cache
     jobDelegate.dataNodeToElement(data.getNode(), jobMeta);
@@ -2827,6 +2828,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       jobMeta.setDescription(file.getDescription());
       jobMeta.setObjectId(new StringObjectId(file.getId().toString()));
       jobMeta.setObjectRevision(getObjectRevision(new StringObjectId(file.getId().toString()), versionLabel));
+      jobMeta.setRepository(this);
       jobMeta.setRepositoryDirectory(findDirectory(getParentPath(file.getPath())));
 
       readJobMetaSharedObjects(jobMeta);
