@@ -146,7 +146,6 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     GrantedAuthority[] authorities = authList.toArray(new GrantedAuthority[0]);
     UserDetails userDetails = new User("joe", password, true, true, true, true, authorities);
     Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, password, authorities);
-    SecurityHelper.setPrincipal(auth, pentahoSession);
     PentahoSessionHolder.setSession(pentahoSession);
     // this line necessary for Spring Security's MethodSecurityInterceptor
     SecurityContextHolder.getContext().setAuthentication(auth);
