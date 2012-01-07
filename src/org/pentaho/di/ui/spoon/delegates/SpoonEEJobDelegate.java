@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.spoon.delegates;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -9,7 +14,9 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.TabMapEntry;
 import org.pentaho.xul.swt.tab.TabItem;
 
-public class SpoonEEJobDelegate extends SpoonJobDelegate{
+public class SpoonEEJobDelegate extends SpoonJobDelegate implements java.io.Serializable {
+
+  private static final long serialVersionUID = 5658845199854709546L; /* EESOURCE: UPDATE SERIALVERUID */
   ILockService service;
   public SpoonEEJobDelegate(Spoon spoon) {
     super(spoon);

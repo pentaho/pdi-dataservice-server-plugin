@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.List;
@@ -19,7 +24,9 @@ import org.pentaho.di.ui.repository.repositoryexplorer.AccessDeniedException;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIJob;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 
-public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAclObject{
+public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAclObject, java.io.Serializable {
+
+  private static final long serialVersionUID = 1137552553918382891L; /* EESOURCE: UPDATE SERIALVERUID */
   private ILockService lockService;
   private IRevisionService revisionService;
   private IAclService aclService;

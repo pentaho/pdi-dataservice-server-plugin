@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.HashSet;
@@ -15,7 +20,9 @@ import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
 import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
 import org.pentaho.platform.engine.security.userroledao.ws.UserRoleSecurityInfo;
 
-public class UserRoleLookupCache {
+public class UserRoleLookupCache implements java.io.Serializable {
+
+  private static final long serialVersionUID = -5922614423981595812L; /* EESOURCE: UPDATE SERIALVERUID */
   Set<IUser> userInfoSet;
 
   Set<IRole> roleInfoSet;

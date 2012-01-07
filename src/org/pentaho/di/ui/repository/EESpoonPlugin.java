@@ -1,18 +1,7 @@
-/*
- * This program is free software; you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
- * Foundation.
- *
- * You should have received a copy of the GNU Lesser General Public License along with this
- * program; if not, you can obtain a copy at http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
- * or from the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU Lesser General Public License for more details.
- *
- * Copyright (c) 2009 Pentaho Corporation..  All rights reserved.
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
  */
 package org.pentaho.di.ui.repository;
 
@@ -23,7 +12,7 @@ import org.eclipse.swt.SWT;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.pur.PluginLicenseVerifier;
+import org.pentaho.di.repository.pur.PluginLicenseVerifier; // LICENSE CHECK
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.ui.repository.pur.controller.SpoonLockController;
 import org.pentaho.di.ui.repository.pur.controller.SpoonMenuLockController;
@@ -70,7 +59,9 @@ import org.pentaho.ui.xul.dom.Document;
 
 @SpoonPlugin(id = "EESpoonPlugin", image = "")
 @SpoonPluginCategories( { "spoon", "trans-graph", "job-graph" })
-public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener {
+public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener, java.io.Serializable {
+
+  private static final long serialVersionUID = -5672306503357631444L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static Class<?> PKG = EESpoonPlugin.class;
 
@@ -91,7 +82,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
   };
 
   public EESpoonPlugin() {
-    PluginLicenseVerifier.verify();
+    PluginLicenseVerifier.verify(); // LICENSE CHECK
   }
 
   public SpoonLifecycleListener getLifecycleListener() {

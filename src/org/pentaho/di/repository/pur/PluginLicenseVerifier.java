@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.Enumeration;
@@ -16,7 +21,9 @@ import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
 import com.pentaho.commons.dsc.tlsup.util.ObfuscatedString;
 
-public class PluginLicenseVerifier {
+public class PluginLicenseVerifier implements java.io.Serializable {
+
+  private static final long serialVersionUID = 7324261459822440599L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static ResourceBundle messages = new ResourceBundle() {
 

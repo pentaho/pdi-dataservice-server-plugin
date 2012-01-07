@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.io.BufferedOutputStream;
@@ -33,7 +38,9 @@ import com.pentaho.commons.dsc.params.KParam;
  * 
  * @author jganoff
  */
-public class PurRepositoryExporter implements IRepositoryExporter {
+public class PurRepositoryExporter implements IRepositoryExporter, java.io.Serializable {
+
+  private static final long serialVersionUID = -8972308694755905930L; /* EESOURCE: UPDATE SERIALVERUID */
   /**
    * Amount of repository files and content to load from the repository at once.
    */
@@ -64,10 +71,10 @@ public class PurRepositoryExporter implements IRepositoryExporter {
     OutputStream os = null;
     OutputStreamWriter writer = null;
     try {
-      if (dscContent != null) {
+      if (dscContent != null) { // LICENSE CHECK
         os = new BufferedOutputStream(KettleVFS.getOutputStream(xmlFilename, false));
         writer = new OutputStreamWriter(os, Const.XML_ENCODING);
-      }
+      } // LICENSE CHECK
       if (monitor != null) {
         monitor.beginTask("Exporting the repository to XML...", 3); //$NON-NLS-1$
       }
@@ -75,13 +82,13 @@ public class PurRepositoryExporter implements IRepositoryExporter {
       String path = root.getPath();
       RepositoryFileTree repoTree = repository.loadRepositoryFileTree(path);
 
-      if (dscContent != null) {
+      if (dscContent != null) { // LICENSE CHECK
         writer.write(XMLHandler.getXMLHeader());
         writer.write("<repository>" + Const.CR + Const.CR); //$NON-NLS-1$
         if (monitor != null) {
           monitor.worked(1);
         }
-      }
+      } // LICENSE CHECK
 
       if (exportType.equals("all") || exportType.equals("trans")) { //$NON-NLS-1$ //$NON-NLS-2$
         // Dump the transformations...

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur.model;
 
 import java.util.HashSet;
@@ -5,7 +10,9 @@ import java.util.Set;
 
 import org.pentaho.di.repository.UserInfo;
 
-public class EEUserInfo extends UserInfo implements IEEUser {
+public class EEUserInfo extends UserInfo implements IEEUser, java.io.Serializable {
+
+  private static final long serialVersionUID = -5327929320581502511L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private Set<IRole> roles;
   

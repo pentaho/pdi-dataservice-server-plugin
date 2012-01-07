@@ -1,10 +1,17 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur.model;
 
 import java.util.EnumSet;
 
 import org.pentaho.di.repository.ObjectRecipient;
 
-public class RepositoryObjectAce implements ObjectAce {
+public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
+
+  private static final long serialVersionUID = 765743714498377456L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private ObjectRecipient recipient;
 

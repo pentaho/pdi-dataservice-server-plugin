@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.List;
@@ -35,7 +40,9 @@ import org.pentaho.di.trans.step.StepPartitioningMeta;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 
-public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer {
+public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer, java.io.Serializable {
+
+  private static final long serialVersionUID = 3766852226384368923L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static final String PROP_STEP_ERROR_HANDLING_MIN_PCT_ROWS = "step_error_handling_min_pct_rows";
 

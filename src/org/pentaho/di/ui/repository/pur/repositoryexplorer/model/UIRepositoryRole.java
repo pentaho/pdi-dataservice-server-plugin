@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.HashSet;
@@ -11,7 +16,9 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectCreationExc
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectRegistry;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
-public class UIRepositoryRole extends XulEventSourceAdapter implements IUIRole{
+public class UIRepositoryRole extends XulEventSourceAdapter implements IUIRole, java.io.Serializable {
+
+  private static final long serialVersionUID = 6397782451758458788L; /* EESOURCE: UPDATE SERIALVERUID */
 
 	private IRole rri;
 

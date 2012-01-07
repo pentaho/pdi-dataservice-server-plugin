@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.controller;
 
 import org.pentaho.di.core.EngineMetaInterface;
@@ -14,7 +19,9 @@ import org.pentaho.ui.xul.components.XulMenuitem;
 import org.pentaho.ui.xul.components.XulToolbarbutton;
 import org.pentaho.ui.xul.dom.Document;
 
-public class SpoonMenuLockController implements ISpoonMenuController {
+public class SpoonMenuLockController implements ISpoonMenuController, java.io.Serializable {
+
+  private static final long serialVersionUID = -1007051375792274091L; /* EESOURCE: UPDATE SERIALVERUID */
 
   public String getName() {
     return "spoonMenuLockController"; //$NON-NLS-1$

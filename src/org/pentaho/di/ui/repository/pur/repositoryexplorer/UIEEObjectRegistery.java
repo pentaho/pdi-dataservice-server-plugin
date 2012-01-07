@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer;
 
 import java.lang.reflect.Constructor;
@@ -6,7 +11,9 @@ import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryRole;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectCreationException;
 
-public class UIEEObjectRegistery {
+public class UIEEObjectRegistery implements java.io.Serializable {
+
+  private static final long serialVersionUID = 1405941020109398651L; /* EESOURCE: UPDATE SERIALVERUID */
 
   public static final Class<?> DEFAULT_UIREPOSITORYROLE_CLASS = UIRepositoryRole.class;
   

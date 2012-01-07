@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.List;
@@ -8,7 +13,9 @@ import org.pentaho.di.repository.IUser;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
 import org.pentaho.platform.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 
-public class AbsSecurityProvider extends PurRepositorySecurityProvider implements IAbsSecurityProvider{
+public class AbsSecurityProvider extends PurRepositorySecurityProvider implements IAbsSecurityProvider, java.io.Serializable {
+
+  private static final long serialVersionUID = -41954375242408881L; /* EESOURCE: UPDATE SERIALVERUID */
   private IAuthorizationPolicyWebService authorizationPolicyWebService = null;
 
   public AbsSecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, IUser userInfo) {

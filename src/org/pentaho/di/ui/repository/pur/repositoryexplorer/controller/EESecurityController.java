@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 /*
  * This program is free software; you can redistribute it and/or modify it under the
@@ -69,7 +74,9 @@ import org.pentaho.ui.xul.util.XulDialogCallback;
  * 
  * @see org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.AbsController
  */
-public class EESecurityController extends SecurityController {
+public class EESecurityController extends SecurityController implements java.io.Serializable {
+
+  private static final long serialVersionUID = -4011949721807392436L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static final Class<?> PKG = IUIEEUser.class;
 

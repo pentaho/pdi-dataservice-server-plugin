@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur.model;
 
 import java.util.ArrayList;
@@ -5,7 +10,9 @@ import java.util.List;
 
 import org.pentaho.di.repository.ObjectRecipient;
 
-public class RepositoryObjectAcl implements ObjectAcl{
+public class RepositoryObjectAcl implements ObjectAcl, java.io.Serializable {
+
+  private static final long serialVersionUID = 3717895033941725273L; /* EESOURCE: UPDATE SERIALVERUID */
 
 	private List<ObjectAce> aces = new ArrayList<ObjectAce>();
 

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import org.pentaho.di.cluster.SlaveServer;
@@ -11,7 +16,9 @@ import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
 
-public class SlaveDelegate extends AbstractDelegate implements ITransformer, SharedObjectAssembler<SlaveServer> {
+public class SlaveDelegate extends AbstractDelegate implements ITransformer, SharedObjectAssembler<SlaveServer>, java.io.Serializable {
+
+  private static final long serialVersionUID = -8084266831877112729L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static final String NODE_ROOT = "Slave"; //$NON-NLS-1$
 

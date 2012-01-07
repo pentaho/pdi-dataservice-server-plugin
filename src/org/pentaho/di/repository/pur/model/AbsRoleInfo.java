@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur.model;
 
 import java.util.ArrayList;
@@ -6,7 +11,9 @@ import java.util.Set;
 
 import org.pentaho.di.repository.IUser;
 
-public class AbsRoleInfo extends EERoleInfo implements IAbsRole {
+public class AbsRoleInfo extends EERoleInfo implements IAbsRole, java.io.Serializable {
+
+  private static final long serialVersionUID = -4260995958866269607L; /* EESOURCE: UPDATE SERIALVERUID */
 
   // logical roles bound to a given runtime role
   private List<String> logicalRoles;

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
 import java.util.*;
@@ -31,7 +36,9 @@ import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import org.pentaho.ui.xul.swt.custom.DialogConstant;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
-public class RevisionController  extends AbstractXulEventHandler implements IUISupportController {
+public class RevisionController  extends AbstractXulEventHandler implements IUISupportController, java.io.Serializable {
+
+  private static final long serialVersionUID = 4072800373062217146L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static final Class<?> PKG = IUIEEUser.class;
 

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.uisupport;
 
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
@@ -5,7 +10,9 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.controller.Permission
 import org.pentaho.di.ui.repository.repositoryexplorer.uisupport.AbstractRepositoryExplorerUISupport;
 import org.pentaho.di.ui.repository.repositoryexplorer.uisupport.RepositoryExplorerDefaultXulOverlay;
 
-public class AclUISupport extends AbstractRepositoryExplorerUISupport {
+public class AclUISupport extends AbstractRepositoryExplorerUISupport implements java.io.Serializable {
+
+  private static final long serialVersionUID = 3699454343113328922L; /* EESOURCE: UPDATE SERIALVERUID */
 
   @Override
   protected void setup() {

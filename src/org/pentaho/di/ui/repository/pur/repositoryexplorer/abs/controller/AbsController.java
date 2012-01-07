@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 
 /*
@@ -53,7 +58,9 @@ import org.pentaho.ui.xul.containers.XulVbox;
  * {@link EESecurityController} handles roles. 
  * </p>
  */
-public class AbsController extends EESecurityController {
+public class AbsController extends EESecurityController implements java.io.Serializable {
+
+  private static final long serialVersionUID = -9005536054475853743L; /* EESOURCE: UPDATE SERIALVERUID */
   private boolean initialized = false;
 
   private static final Class<?> PKG = IUIAbsRole.class;

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 
 import java.util.List;
@@ -9,7 +14,9 @@ import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationE
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.PartitionsController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIPartition;
 
-public class AbsPartitionsController extends PartitionsController{
+public class AbsPartitionsController extends PartitionsController implements java.io.Serializable {
+
+  private static final long serialVersionUID = 614159990679085176L; /* EESOURCE: UPDATE SERIALVERUID */
   IAbsSecurityProvider service;
   boolean isAllowed = false;
   

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -9,9 +14,9 @@ import org.pentaho.di.ui.repository.pur.services.IAclService;
 import org.pentaho.di.ui.repository.repositoryexplorer.AccessDeniedException;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 
-public class UIEERepositoryDirectory extends UIRepositoryDirectory implements IAclObject{
+public class UIEERepositoryDirectory extends UIRepositoryDirectory implements IAclObject, java.io.Serializable {
 
-  private static final long serialVersionUID = -6273975748634580673L;
+  private static final long serialVersionUID = -6273975748634580673L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private IAclService aclService;
 

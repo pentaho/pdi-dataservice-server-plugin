@@ -1,9 +1,16 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur.model;
 
 import org.pentaho.di.repository.ObjectRecipient;
 
 
-public class RepositoryObjectRecipient implements ObjectRecipient{
+public class RepositoryObjectRecipient implements ObjectRecipient, java.io.Serializable {
+
+  private static final long serialVersionUID = 3948870815049027653L; /* EESOURCE: UPDATE SERIALVERUID */
 
 	@Override
   public boolean equals(Object obj) {

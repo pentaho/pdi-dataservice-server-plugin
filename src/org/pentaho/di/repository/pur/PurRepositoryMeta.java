@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.List;
@@ -14,7 +19,9 @@ import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
 
-public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryMeta {
+public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryMeta, java.io.Serializable {
+
+  private static final long serialVersionUID = -2456840196232185649L; /* EESOURCE: UPDATE SERIALVERUID */
 
 	/** The id as specified in the repository plugin meta, used for backward compatibility only */
 	public static String REPOSITORY_TYPE_ID = "PentahoEnterpriseRepository";
@@ -66,11 +73,12 @@ public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
 
 
 	public RepositoryCapabilities getRepositoryCapabilities() {
-	  
+	  /* START LICENSE CHECK */
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(BUNDLE_REF_NAME));
     if (dscContent.getSubject()==null){
       return null;
     }
+    /* END LICENSE CHECK */
   	return new RepositoryCapabilities() {
   		public boolean supportsUsers() { return true; }
   		public boolean managesUsers() { return true; }

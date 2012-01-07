@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.controller;
 
 import java.util.Enumeration;
@@ -39,7 +44,9 @@ import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import org.pentaho.ui.xul.swt.custom.DialogConstant;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
-public class SpoonLockController extends AbstractXulEventHandler {
+public class SpoonLockController extends AbstractXulEventHandler implements java.io.Serializable {
+
+  private static final long serialVersionUID = -8466323408581425803L; /* EESOURCE: UPDATE SERIALVERUID */
   
   private static final Class<?> PKG = PurRepositoryDialog.class;
   

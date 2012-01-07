@@ -1,8 +1,15 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur.model;
 
 import org.pentaho.di.job.JobMeta;
 
-public class EEJobMeta extends JobMeta implements ILockable{
+public class EEJobMeta extends JobMeta implements ILockable, java.io.Serializable {
+
+  private static final long serialVersionUID = -8474422291164154884L; /* EESOURCE: UPDATE SERIALVERUID */
   private RepositoryLock repositoryLock;
 
   /**

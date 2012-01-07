@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 
 import java.util.List;
@@ -11,7 +16,9 @@ import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.ClustersController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UICluster;
 
-public class AbsClustersController extends ClustersController{
+public class AbsClustersController extends ClustersController implements java.io.Serializable {
+
+  private static final long serialVersionUID = -8073486897745053639L; /* EESOURCE: UPDATE SERIALVERUID */
   IAbsSecurityProvider service;
   boolean isAllowed = false;
   

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import org.pentaho.di.core.Const;
@@ -13,7 +18,9 @@ import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
 
-public class PartitionDelegate extends AbstractDelegate implements ITransformer, SharedObjectAssembler<PartitionSchema> {
+public class PartitionDelegate extends AbstractDelegate implements ITransformer, SharedObjectAssembler<PartitionSchema>, java.io.Serializable {
+
+  private static final long serialVersionUID = -6069812592810099251L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static final String NODE_ROOT = "partitionSchema"; //$NON-NLS-1$
 

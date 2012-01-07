@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.io.Serializable;
@@ -101,7 +106,9 @@ import com.pentaho.pdi.ws.RepositorySyncException;
  * @author mlowery
  */
 @RepositoryPlugin(id = "PentahoEnterpriseRepository", name = "Enterprise Repository", description = "i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository", metaClass = "org.pentaho.di.repository.pur.PurRepositoryMeta")
-public class PurRepository implements Repository, IRevisionService, IAclService, ITrashService, ILockService {
+public class PurRepository implements Repository, IRevisionService, IAclService, ITrashService, ILockService, java.io.Serializable {
+
+  private static final long serialVersionUID = 7460109109707189479L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static final String SINGLE_DI_SERVER_INSTANCE = "singleDiServerInstance";
 
@@ -385,11 +392,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
           // create this one
           //
           child = new RepositoryDirectory(follow, path[level]);
-          if (dscContent.getHolder() != null) {
+          if (dscContent.getHolder() != null) { // LICENSE CHECK
             saveRepositoryDirectory(child);
             // link this with the parent directory
             follow.addSubdirectory(child);
-          }
+          } // LICENSE CHECK
         }
 
         follow = child;
@@ -403,12 +410,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public void saveRepositoryDirectory(final RepositoryDirectoryInterface dir) throws KettleException {
     try {
       PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
-      if (dscContent.getSubject() != null) {
+      if (dscContent.getSubject() != null) { // LICENSE CHECK
         // id of root dir is null--check for it
         RepositoryFile newFolder = pur.createFolder(dir.getParent().getObjectId() != null ? dir.getParent()
             .getObjectId().getId() : null, new RepositoryFile.Builder(dir.getName()).folder(true).build(), null);
         dir.setObjectId(new StringObjectId(newFolder.getId().toString()));
-      }
+      } // LICENSE CHECK
     } catch (Exception e) {
       throw new KettleException("Unable to save repository directory with path [" + getPath(null, dir, null) + "]", e);
     }
@@ -1698,10 +1705,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   
   public void save(final RepositoryElementInterface element, final String versionComment,
       final ProgressMonitorListener monitor) throws KettleException {
+    /* START LICENSE CHECK */
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     if (dscContent.getSubject() == null) {
       return;
     }
+    /* END LICENSE CHECK */
 
     try {
       switch (element.getRepositoryElementType()) {
@@ -1988,10 +1997,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       NodeRepositoryFileData data = null;
       ObjectRevision revision = null;
       // Additional obfuscation through obscurity
-      if (dscContent != null) {
+      if (dscContent != null) { // LICENSE CHECK
         data = pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class);
         revision = getObjectRevision(new StringObjectId(file.getId().toString()), versionId);
-      }
+      } // LICENSE CHECK
       return buildTransMeta(file, parentDir, data, revision);
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
@@ -2067,10 +2076,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       NodeRepositoryFileData data = null;
       ObjectRevision revision = null;
       // Additional obfuscation through obscurity
-      if (dscContent != null) {
+      if (dscContent != null) { // LICENSE CHECK
         data = pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class);
         revision = getObjectRevision(new StringObjectId(file.getId().toString()), versionId);
-      }
+      } // LICENSE CHECK
       return buildJobMeta(file, parentDir, data, revision);
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
@@ -2828,9 +2837,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
       readJobMetaSharedObjects(jobMeta);
       // Additional obfuscation through obscurity
-      if (dscContent != null) {
+      if (dscContent != null) { // LICENSE CHECK
         jobMeta.setRepositoryLock(getLock(file));
-      }
+      } // LICENSE CHECK
       jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idJob.getId(), versionLabel,
           NodeRepositoryFileData.class).getNode(), jobMeta);
       jobMeta.clearChanged();
@@ -2860,10 +2869,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       
       readTransSharedObjects(transMeta);
       // Additional obfuscation through obscurity
-      if (dscContent != null) {
+      if (dscContent != null) { // LICENSE CHECK
         transDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idTransformation.getId(), versionLabel,
             NodeRepositoryFileData.class).getNode(), transMeta);
-      }
+      } // LICENSE CHECK
       transMeta.clearChanged();
       return transMeta;
     } catch (Exception e) {

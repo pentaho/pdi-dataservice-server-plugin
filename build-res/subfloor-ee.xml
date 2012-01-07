@@ -1,4 +1,4 @@
-<project name="subfloor-ee" basedir="." default="default">
+<project name="subfloor-ee" basedir="." default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
   
   <!-- This property is here to make Eclipse happy. File that imports this file should set the property. -->
   <property name="subfloor-ee.parent.file" value="subfloor.xml" />
@@ -8,6 +8,16 @@
   <property name="prepared.src.dir" value="${bin.dir}/prepared-src" description="Modified source" />
   <property name="groovy.url" value="http://dist.groovy.codehaus.org/distributions/groovy-binary-1.7.4.zip" 
     description="URL to download Groovy Ant task." />
+	
+  <!-- begin remove for the customer src dist -->
+  <property name="customer.stage.dir" value="${bin.dir}/customer-stage" />
+  <property name="customer.id" value="1" />
+  <property name="customer.source.build.cache.dir"
+            value="${subfloor.resources.dir}/customer-source"
+            description="Directory where the customer source modification task is placed after it is auto-downloaded by the build" />
+  <property file="customers.properties"
+            description="This file contains a list of customers and their associated ids" />
+  <!-- end remove for the customer src dist -->
   
   <!--=======================================================================
       compile.compile
@@ -60,11 +70,13 @@
       Modifies source before compilation.
       ====================================================================-->
   <target name="compile.pre.src_prepare" depends="install.groovy">
+    <!-- begin remove for the customer src dist -->
     <!-- sets a property called project.revision.obf -->
-    <groovy src="build-res/replace.groovy">
+  	<groovy src="build-res/replace.groovy">
       <classpath refid="classpath" />
     </groovy>
     <replace file="${prepared.src.dir}/${version.for.license.class}" token="&quot;@VERSION_FOR_LICENSE@&quot;" value="${version.for.license.obf}"/>
+  	<!-- end remove for the customer src dist -->
   </target>
   
   <!-- Override to put mock license JAR first -->
@@ -82,6 +94,167 @@
     <dirset dir="${classes.dir}" />
   </path>
   
+	
+  <!--=======================================================================
+      install-proguard
+  
+      (Fetches and) installs proguard task
+    ====================================================================-->
+  <target name="install-proguard" depends="install-ivy">
+	    <if>
+	      <istrue value="${proguard.isinstalled}" />
+	      <then>
+	        <echo message="Skipping proguard install.  Proguard has already been configured by the build" />
+	      </then>
+	      <else>
+	        <echo message="Installing proguard..." />
+	        <taskdef-with-ivy organisation="net.sf.proguard"
+	                          module="proguard"
+	                          revision="4.3"
+	                          task-name="proguard"
+	        	              resource="proguard/ant/task.properties"
+	                          classname="proguard.ant.ProGuardTask" />
+	          <property name="proguard.isinstalled" value="true" />
+	      </else>
+	    </if>
+	  </target>	
+	
+	
+	<target name="obfuscate" depends="install-proguard, obfuscate.pre">
+
+		<copy file="proguard.pro" todir="${dist.dir}" overwrite="true"/>
+		
+		<replace file="${dist.dir}/proguard.pro" value="${dist.dir}">
+		  <replacetoken><![CDATA[${dist.dir}]]></replacetoken>
+		</replace>		
+
+		  <!-- begin remove for the customer src dist -->
+		<replace file="${dist.dir}/proguard.pro" value="${dependency.pentaho-ee-dsc.revision}">
+		  <replacetoken><![CDATA[${dependency.pentaho-ee-dsc.revision}]]></replacetoken>
+		</replace>		
+		  <!-- end remove for the customer src dist -->
+
+		<replace file="${dist.dir}/proguard.pro" value="${lib.dir}">
+		  <replacetoken><![CDATA[${lib.dir}]]></replacetoken>
+		</replace>		
+		
+	    <move todir="${dist.dir}">
+	      <fileset dir="${dist.dir}">
+	        <include name="**/*.jar" />
+	      	<exclude name="**/*-orig.jar" />
+	      </fileset>
+	    	<mapper type="glob" from="*.jar" to="*-orig.jar"/>
+		</move>		
+		
+		<!-- this project requires the platform ee assembly proguard file being present -->
+		<copy failonerror="false" todir="${dist.dir}" file="${bi-platform-ee-assembly.dir}/dist/proguard-biserver-ee-${dependency.bi-platform.revision}.map" />
+		
+      <proguard verbose="true" configuration="${dist.dir}/proguard.pro">
+			<![CDATA[
+    -useuniqueclassmembernames
+    -dontoptimize
+    -dontshrink
+    -dontnote
+    -renamesourcefileattribute SourceFile
+    -ignorewarnings        	
+   	-dontskipnonpubliclibraryclassmembers
+    -keepattributes Exceptions, InnerClasses, *Annotation*, Signature, EnclosingMethod, SourceFile, LineNumberTable
+    -printseeds
+
+    -printmapping ${dist.dir}/${ivy.artifact.id}-${project.revision}.map
+      	
+    -libraryjars "${java.home}/lib/rt.jar"
+    -libraryjars "${java.home}/lib/jsse.jar"
+    -libraryjars "${java.home}/lib/jce.jar"
+    -libraryjars ${lib.dir}(!pentaho-ee-dsc-core-*.jar)
+   	-libraryjars ${devlib.dir}
+    
+    -injars      ${dist.dir}/${ivy.artifact.id}-${project.revision}-orig.jar
+    -outjars     ${dist.dir}/${ivy.artifact.id}-${project.revision}.jar
+      	
+ 	-keepclassmembers enum * {
+       public static **[] values();
+       public static ** valueOf(java.lang.String);
+    }
+
+    -keepclassmembers class * implements java.io.Serializable {
+      static final long serialVersionUID;
+      private void writeObject(java.io.ObjectOutputStream);
+      private void readObject(java.io.ObjectInputStream);
+      java.lang.Object writeReplace();
+      java.lang.Object readResolve();
+    }
+     
+   	-keep !abstract class * extends javax.servlet.** { }
+   	-keep !abstract class * extends javax.ejb.** { }
+   	-keep !abstract class * extends javax.jms.** { }
+
+   	-keep !abstract class * implements org.pentaho.platform.api.** { }
+
+   	-keep interface com.pentaho.commons.dsc.IPentahoDscParam,!com.pentaho.commons.dsc.** {
+   	  <fields>;
+   	  <methods>;
+   	}
+
+   	-keep class com.pentaho.commons.dsc.PentahoDscContent {
+   	  <init>();
+   	  *** get*();
+   	  void set*(***);
+   	}
+
+   	-keep class com.pentaho.commons.dsc.tlsup.core.DscContent {
+   	  <init>();
+   	  *** get*();
+   	  void set*(***);
+   	}
+      	
+   	-keep !abstract class * extends com.pentaho.commons.dsc.tlsup.core.DscContent {
+   	  <init>();
+   	  *** get*();
+   	  void set*(***);
+   	}
+
+   	-keep class com.pentaho.commons.dsc.tlsup.xml.GenericDocument {
+   	  <init>();
+   	  *** get*();
+   	  void set*(***);
+   	}
+      	
+   	-keep !abstract class * implements com.pentaho.commons.dsc.IPentahoDscParam { }
+      	
+    ]]>
+		</proguard>
+
+		<!-- delete original non-obfuscated files from dist -->
+	    <delete dir="${dist.dir}" includes="**/*-orig.jar" />
+		
+		<!-- publish the map to artifactory file generated ???
+			-printmapping ${dist.dir}/proguard-${ivy.artifact.id}-${project.revision}.map
+		-->
+		
+		<antcall target="obfuscate.post"/>
+		
+	</target>
+	
+	<!--=======================================================================
+    obfuscate.pre
+    
+    Perform any project specific pre-obfuscation tasks
+    ====================================================================-->
+	<target name="obfuscate.pre">
+		<echo>Pre-obfuscation</echo>
+	</target>	
+	
+	<!--=======================================================================
+    obfuscate.post
+    
+    Perform any project specific post-obfuscation tasks (such as deleting original jars)
+    ====================================================================-->
+	<target name="obfuscate.post">
+	</target>
+	
+	
+	
   <!--=======================================================================
       obftest
       
@@ -92,5 +265,240 @@
       <arg value="${dist.dir}" />
     </exec>
   </target>
+	
 
+    <!-- begin remove for the customer src dist -->
+	
+    <!-- 
+    	 The following targets generate a source distribution for a specific EE customer.
+         These tasks remove all DSC license code and package up a src distribution. 
+      -->  
+	
+  <!--=======================================================================
+      customer-src-init
+      
+      initializes the customer source staging area
+      ====================================================================-->
+  <target name="customer-src-init" depends="install-antcontrib,init">
+  	<delete dir="${customer.stage.dir}"/>
+    <mkdir dir="${customer.stage.dir}/src" />
+    <if>
+      <available file="test-src"/>
+      <then>
+        <mkdir dir="${customer.stage.dir}/test-src" />
+      </then>
+    </if>
+    <if>
+      <available file="test"/>
+      <then>
+        <mkdir dir="${customer.stage.dir}/test" />
+      </then>
+    </if>
+    <if>
+      <available file="test-res"/>
+      <then>
+      	<mkdir dir="${customer.stage.dir}/test-res" />
+      </then>
+    </if>
+
+    <mkdir dir="${customer.stage.dir}/dist" />
+    <mkdir dir="${customer.stage.dir}/classes" />
+  </target>
+
+  <!--=======================================================================
+      customer-src-compile.pre
+      
+      copies over the related source files for the customer distribution
+      ====================================================================-->
+  <target name="customer-src-stage" depends="install-antcontrib,customer-src-init">
+    <copy todir="${customer.stage.dir}/src" flatten="false" overwrite="true">
+      <fileset dir="${src.dir}"/>
+    </copy>
+    <if>
+      <available file="test-src"/>
+      <then>
+        <copy todir="${customer.stage.dir}/test-src" flatten="false" overwrite="true">
+          <fileset dir="test-src"/>
+        </copy>
+      </then>
+    </if>
+    <if>
+      <available file="test"/>
+      <then>
+        <copy todir="${customer.stage.dir}/test" flatten="false" overwrite="true">
+          <fileset dir="test"/>
+        </copy>
+      </then>
+    </if>
+
+    <if>
+      <available file="package-res"/>
+      <then>
+        <copy todir="${customer.stage.dir}/package-res" flatten="false" overwrite="true">
+          <fileset dir="package-res"/>
+        </copy>
+      </then>
+    </if>
+    <if>
+      <available file="test-res"/>
+      <then>
+        <copy todir="${customer.stage.dir}/test-res" flatten="false" overwrite="true">
+          <fileset dir="test-res"/>
+        </copy>
+      </then>
+    </if>
+    <copy todir="${customer.stage.dir}/build-res" file="build-res/subfloor.xml" overwrite="true"/>
+    <copy todir="${customer.stage.dir}/build-res" file="build-res/subfloor-ee.xml" overwrite="true"/>
+    <copy todir="${customer.stage.dir}/build-res" file="build-res/subfloor-pkg.xml" overwrite="true"/>
+    <if>
+      <available file="build-res/subfloor-gwt.xml"/>
+      <then>
+        <copy todir="${customer.stage.dir}/build-res" file="build-res/subfloor-gwt.xml" overwrite="true"/>
+      </then>
+    </if>
+    <if>
+      <available file="proguard.pro"/>
+      <then>
+        <copy todir="${customer.stage.dir}" file="proguard.pro" overwrite="true"/>
+      </then>
+    </if>
+    <copy todir="${customer.stage.dir}" file="ivy.xml" overwrite="true"/>
+    <if>
+      <available file="package-ivy.xml"/>
+      <then>
+        <copy todir="${customer.stage.dir}" file="package-ivy.xml" overwrite="true"/>
+      </then>
+    </if>
+    <copy todir="${customer.stage.dir}" file="ivysettings.xml" overwrite="true"/>
+    <copy todir="${customer.stage.dir}" file="build.properties" overwrite="true"/>
+    <copy todir="${customer.stage.dir}" file="build.xml" overwrite="true"/>
+    
+    <!-- let's see if we really need this yet or not
+  	<if>
+  	  <available file="customer-res"/>
+      <then>
+        <copy todir="${customer.stage.dir}" overwrite="true">
+          <fileset dir="customer-res"/>
+        </copy>
+      </then>
+    </if>
+    -->
+  </target>
+
+  <!--=======================================================================
+      customer-src-codechanges
+      
+      modifies the source as necessary for customer source distribution
+      ====================================================================-->
+  <target name="customer-src-codechanges" depends="install-antcontrib,customer-src-stage,install-serialver-updater">
+    <!-- remove licensing imports -->
+    <replaceregexp match="import com[.]pentaho[.]commons[.]dsc[.].*?;" replace="" flags="gs">
+      <fileset dir="${customer.stage.dir}" includes="**/*.java"/>
+    </replaceregexp>
+		
+    <!-- remove multi-line license check declarations -->
+    <replaceregexp match="/[*] START LICENSE CHECK [*]/.*?/[*] END LICENSE CHECK [*]/" replace="" flags="gs">
+      <fileset dir="${customer.stage.dir}" includes="**/*.java"/>
+    </replaceregexp>
+
+    <!-- remove single line license check code declarations -->
+    <replaceregexp match=".*// LICENSE CHECK" replace="" flags="g">
+      <fileset dir="${customer.stage.dir}" includes="**/*.java"/>
+    </replaceregexp>
+
+    <!-- remove single line license check code declarations -->
+    <replaceregexp match=".*PentahoLicenseVerifier.*" replace="" flags="g">
+      <fileset dir="${customer.stage.dir}" includes="**/*.java"/>
+    </replaceregexp>
+
+  	
+    <!-- remove dsc jars from ivy file license check code declarations -->
+    <replaceregexp match=".*dsc.*" replace="" flags="g">
+      <fileset dir="${customer.stage.dir}" includes="ivy.xml"/>
+    </replaceregexp>
+		
+    <!-- remove ee license build.properties declarations -->
+    <replaceregexp match="# subfloor-ee properties.*" replace="" flags="gs">
+      <fileset dir="${customer.stage.dir}" includes="build.properties"/>
+    </replaceregexp>
+	
+  	
+    <!-- remove multi-line customer-src-dist sections from XML files -->
+    <replaceregexp match="&lt;!-- begin remove for the customer src dist .*? end remove for the customer src dist --&gt;" replace="" flags="gs">
+      <fileset dir="${customer.stage.dir}" includes="**/*.xml"/>
+    </replaceregexp>  	
+  	
+    <!-- remove dsc ref from obfuscation lib dir -->
+    <replaceregexp match="\(\!pentaho-ee-dsc-core-\*[.]jar\)" replace="" flags="gs">
+      <fileset dir="${customer.stage.dir}" includes="build-res/subfloor-ee.xml"/>
+    </replaceregexp>  	  	
+  	
+    <!-- remove dsc references from plugin.xml -->
+    <replaceregexp match=".*dependency.pentaho-ee-dsc.revision@[.]jar&quot;/&gt;" replace="" flags="g">
+      <fileset dir="${customer.stage.dir}" includes="**/plugin.xml"/>
+    </replaceregexp>  	
+  	
+    <!-- remove dsc references from proguard.pro -->
+    <replaceregexp match=".*\$\{dependency[.]pentaho-ee-dsc[.]revision\}[.]jar" replace="" flags="g">
+      <fileset dir="${customer.stage.dir}" includes="proguard.pro"/>
+    </replaceregexp>  
+  	
+    <!--
+      Important - must have defined customer.id - this is the identifier for the
+      customer. For now, Yahoo is 1, and it's set above...
+    -->
+    <serialverUpdater customerId="${customer.id}">
+      <fileset dir="${customer.stage.dir}" includes="**/*.java" />
+    </serialverUpdater>
+  	
+  	<!-- allow any project specific source cleansing to take place -->
+	<antcall target="customer-src-codechanges.post"/>
+  </target>
+	
+  <!--=======================================================================
+      customer-src-codechanges.post
+
+      this is called immediately after customer-src-codechanges
+      ====================================================================-->
+  <target name="customer-src-codechanges.post"/>
+	
+  <!--=======================================================================
+      customer-src-dist
+      
+      creates a customer source distribution of this project.
+      ====================================================================-->
+  <target name="customer-src-dist" depends="customer-src-codechanges">
+    <zip destfile="${dist.dir}/${ivy.artifact.id}-customer-src-${project.revision}.zip">
+      <zipfileset dir="${customer.stage.dir}" />
+    </zip>
+  </target>
+	
+  <!--=======================================================================
+      install-serialver-updater-1.0
+  
+      (Fetches and) installs serialveruid updater task
+	    ====================================================================-->
+  <target name="install-serialver-updater" depends="install-ivy">
+    <if>
+      <istrue value="${serialver.isinstalled}" />
+      <then>
+        <echo message="Skipping serialver install.  Serialver updater has already been configured by the build" />
+      </then>
+      <else>
+        <taskdef-with-ivy organisation="pentaho-ee-source-anttask"
+                          module="serialver.updater"
+                          revision="1.0"
+                          task-name="serialverUpdater"
+                          classname="org.pentaho.anttasks.CustomerSerialVerUidTask" />
+          <property name="serialver.isinstalled" value="true" />
+      </else>
+    </if>
+  </target>
+	
+  <!-- TODO: build and test the customer source build, also automate a scan for illegal files / terms / etc -->
+  <!-- TODO: handle obfuscation as an EE customer option or default? -->
+	
+  <!-- end remove for the customer src dist -->
+	
+	
 </project>

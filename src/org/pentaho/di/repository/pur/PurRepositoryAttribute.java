@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.List;
@@ -10,7 +15,9 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 
-public class PurRepositoryAttribute implements RepositoryAttributeInterface {
+public class PurRepositoryAttribute implements RepositoryAttributeInterface, java.io.Serializable {
+
+  private static final long serialVersionUID = -5787096049770518000L; /* EESOURCE: UPDATE SERIALVERUID */
 
 	private DataNode	dataNode;
 	private List<DatabaseMeta>	databases;

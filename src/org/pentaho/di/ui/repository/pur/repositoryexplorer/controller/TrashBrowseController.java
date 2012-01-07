@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
 import java.text.SimpleDateFormat;
@@ -39,7 +44,9 @@ import org.pentaho.ui.xul.containers.XulTree;
 import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
-public class TrashBrowseController extends BrowseController {
+public class TrashBrowseController extends BrowseController implements java.io.Serializable {
+
+  private static final long serialVersionUID = -3822571463115111325L; /* EESOURCE: UPDATE SERIALVERUID */
 
   // ~ Static fields/initializers ======================================================================================
 

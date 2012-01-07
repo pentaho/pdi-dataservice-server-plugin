@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.ArrayList;
@@ -16,7 +21,9 @@ import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
 import org.pentaho.platform.security.policy.rolebased.RoleBindingStruct;
 import org.pentaho.platform.security.policy.rolebased.ws.IRoleAuthorizationPolicyRoleBindingDaoWebService;
 
-public class AbsSecurityManager extends PurRepositorySecurityManager implements IAbsSecurityManager {
+public class AbsSecurityManager extends PurRepositorySecurityManager implements IAbsSecurityManager, java.io.Serializable {
+
+  private static final long serialVersionUID = -7472721270945456826L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private IRoleAuthorizationPolicyRoleBindingDaoWebService authorizationPolicyRoleBindingService = null;
 

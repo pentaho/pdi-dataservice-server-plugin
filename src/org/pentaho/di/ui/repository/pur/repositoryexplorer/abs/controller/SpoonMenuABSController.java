@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 
 import org.pentaho.di.core.EngineMetaInterface;
@@ -18,7 +23,9 @@ import org.pentaho.ui.xul.components.XulToolbarbutton;
 import org.pentaho.ui.xul.containers.XulMenu;
 import org.pentaho.ui.xul.dom.Document;
 
-public class SpoonMenuABSController implements ISpoonMenuController {
+public class SpoonMenuABSController implements ISpoonMenuController, java.io.Serializable {
+
+  private static final long serialVersionUID = -5878581743406400314L; /* EESOURCE: UPDATE SERIALVERUID */
 
   protected LogChannelInterface log;
   protected LogLevel logLevel = DefaultLogLevel.getLogLevel();

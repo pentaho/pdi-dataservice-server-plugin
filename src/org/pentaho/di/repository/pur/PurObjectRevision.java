@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.io.Serializable;
@@ -5,7 +10,9 @@ import java.util.Date;
 
 import org.pentaho.di.repository.ObjectRevision;
 
-public class PurObjectRevision implements ObjectRevision {
+public class PurObjectRevision implements ObjectRevision, java.io.Serializable {
+
+  private static final long serialVersionUID = -7857510728831225268L; /* EESOURCE: UPDATE SERIALVERUID */
 
   // ~ Static fields/initializers ======================================================================================
 

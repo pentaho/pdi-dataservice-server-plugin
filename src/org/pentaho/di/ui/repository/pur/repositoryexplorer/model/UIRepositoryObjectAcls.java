@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.ArrayList;
@@ -13,7 +18,9 @@ import org.pentaho.ui.xul.XulEventSourceAdapter;
 /**
  * TODO mlowery This class represents an ACL, not an ACLs.
  */
-public class UIRepositoryObjectAcls extends XulEventSourceAdapter {
+public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements java.io.Serializable {
+
+  private static final long serialVersionUID = -4576328356619980808L; /* EESOURCE: UPDATE SERIALVERUID */
 
   protected ObjectAcl obj;
 

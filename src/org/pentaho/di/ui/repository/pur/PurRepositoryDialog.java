@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur;
 
 import java.util.Enumeration;
@@ -25,7 +30,9 @@ import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 
-public class PurRepositoryDialog implements RepositoryDialogInterface {
+public class PurRepositoryDialog implements RepositoryDialogInterface, java.io.Serializable {
+
+  private static final long serialVersionUID = -4642068735574655692L; /* EESOURCE: UPDATE SERIALVERUID */
   private RepositoryMeta repositoryMeta;
   private RepositoriesMeta repositoriesMeta;
   private RepositoriesMeta masterRepositoriesMeta;

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.ArrayList;
@@ -28,7 +33,9 @@ import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 
-public class JobDelegate extends AbstractDelegate implements ISharedObjectsTransformer {
+public class JobDelegate extends AbstractDelegate implements ISharedObjectsTransformer, java.io.Serializable {
+
+  private static final long serialVersionUID = -1006715561242639895L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static final String PROP_SHARED_FILE = "SHARED_FILE";
 

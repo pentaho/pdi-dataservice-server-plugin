@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 
 import java.util.List;
@@ -11,7 +16,9 @@ import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
-public class AbsContextMenuController extends AbstractXulEventHandler   implements IUISupportController {
+public class AbsContextMenuController extends AbstractXulEventHandler   implements IUISupportController, java.io.Serializable {
+
+  private static final long serialVersionUID = 8878231461011554114L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private IAbsSecurityProvider service;
   private boolean isAllowed = false;

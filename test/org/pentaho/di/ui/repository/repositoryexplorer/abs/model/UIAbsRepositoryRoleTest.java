@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.repositoryexplorer.abs.model;
 
 import java.util.ArrayList;
@@ -10,7 +15,9 @@ import org.pentaho.di.repository.pur.model.AbsRoleInfo;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsRepositoryRole;
 
-public class UIAbsRepositoryRoleTest {
+public class UIAbsRepositoryRoleTest implements java.io.Serializable {
+  static final long serialVersionUID = -3922751737899149745L; /* EESOURCE: UPDATE SERIALVERUID */
+
   public final static String CREATE_CONTENT = "org.pentaho.di.creator"; //$NON-NLS-1$
   public final static String READ_CONTENT = "org.pentaho.di.reader";//$NON-NLS-1$
   public final static String ADMINISTER_SECURITY = "org.pentaho.di.securityAdministrator";//$NON-NLS-1$

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.List;
@@ -9,7 +14,9 @@ import org.pentaho.di.repository.BaseRepositorySecurityProvider;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 
-public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider , IUserRoleListChangeListener{
+public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvider implements RepositorySecurityProvider , IUserRoleListChangeListener, java.io.Serializable {
+
+  private static final long serialVersionUID = -1774142691342083217L; /* EESOURCE: UPDATE SERIALVERUID */
 
 	private PurRepository	repository;
   private UserRoleListDelegate userRoleListDelegate;

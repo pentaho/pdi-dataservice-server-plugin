@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.ArrayList;
@@ -9,7 +14,9 @@ import org.junit.Test;
 import org.pentaho.platform.engine.security.userrole.ws.IUserDetailsRoleListWebService;
 import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
 
-public class UserRoleListDelegateTest {
+public class UserRoleListDelegateTest implements java.io.Serializable {
+  static final long serialVersionUID = -125535373810768433L; /* EESOURCE: UPDATE SERIALVERUID */
+
   UserRoleListDelegate listDelegate;
   IUserDetailsRoleListWebService service;
   static List<String> roles;

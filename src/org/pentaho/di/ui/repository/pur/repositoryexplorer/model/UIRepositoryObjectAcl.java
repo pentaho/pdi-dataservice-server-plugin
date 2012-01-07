@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.EnumSet;
@@ -10,7 +15,9 @@ import org.pentaho.ui.xul.XulEventSourceAdapter;
 /**
  * TODO mlowery This class represents an ACE, not an ACL.
  */
-public class UIRepositoryObjectAcl extends XulEventSourceAdapter{
+public class UIRepositoryObjectAcl extends XulEventSourceAdapter implements java.io.Serializable {
+
+  private static final long serialVersionUID = 8320176731576605496L; /* EESOURCE: UPDATE SERIALVERUID */
 	
 	@Override
   public boolean equals(Object obj) {

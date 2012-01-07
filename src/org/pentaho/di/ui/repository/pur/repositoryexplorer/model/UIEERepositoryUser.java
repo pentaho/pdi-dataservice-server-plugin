@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.HashSet;
@@ -12,7 +17,9 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIObjectCreationException;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
 
-public class UIEERepositoryUser extends UIRepositoryUser implements IUIEEUser{
+public class UIEERepositoryUser extends UIRepositoryUser implements IUIEEUser, java.io.Serializable {
+
+  private static final long serialVersionUID = -4653578043082025692L; /* EESOURCE: UPDATE SERIALVERUID */
   private IEEUser eeUser;
   public UIEERepositoryUser() {
     super();

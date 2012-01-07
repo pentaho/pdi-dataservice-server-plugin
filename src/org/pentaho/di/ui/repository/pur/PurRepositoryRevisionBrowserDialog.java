@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur;
 
 import java.util.List;
@@ -35,7 +40,9 @@ import org.pentaho.di.ui.repository.dialog.RepositoryRevisionBrowserDialogInterf
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 
-public class PurRepositoryRevisionBrowserDialog implements RepositoryRevisionBrowserDialogInterface {
+public class PurRepositoryRevisionBrowserDialog implements RepositoryRevisionBrowserDialogInterface, java.io.Serializable {
+
+  private static final long serialVersionUID = -1596062300653831848L; /* EESOURCE: UPDATE SERIALVERUID */
 	private static Class<?> PKG = PurRepositoryRevisionBrowserDialog.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
 
     private Label wlFields;

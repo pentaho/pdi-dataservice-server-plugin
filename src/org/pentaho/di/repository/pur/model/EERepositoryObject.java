@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur.model;
 
 import java.util.Date;
@@ -8,7 +13,9 @@ import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryObject;
 import org.pentaho.di.repository.RepositoryObjectType;
 
-public class EERepositoryObject extends RepositoryObject implements ILockObject{
+public class EERepositoryObject extends RepositoryObject implements ILockObject, java.io.Serializable {
+
+  private static final long serialVersionUID = -566113926064789982L; /* EESOURCE: UPDATE SERIALVERUID */
   private String lockMessage;
   private RepositoryLock lock;
   

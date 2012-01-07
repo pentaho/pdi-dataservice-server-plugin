@@ -1,5 +1,7 @@
 /**
- * 
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
  */
 package org.pentaho.di.ui.repository.pur.model;
 
@@ -9,7 +11,9 @@ import org.pentaho.ui.xul.XulEventSourceAdapter;
  * @author rmansoor
  *
  */
-public class RepositoryConfigModel extends XulEventSourceAdapter{
+public class RepositoryConfigModel extends XulEventSourceAdapter implements java.io.Serializable {
+
+  private static final long serialVersionUID = 1018425117620046943L; /* EESOURCE: UPDATE SERIALVERUID */
   private String url;
   private String id;
   private String name;

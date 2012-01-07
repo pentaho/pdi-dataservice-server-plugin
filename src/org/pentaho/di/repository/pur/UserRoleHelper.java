@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.ArrayList;
@@ -19,7 +24,9 @@ import org.pentaho.platform.engine.security.userroledao.ws.UserRoleException;
 import org.pentaho.platform.engine.security.userroledao.ws.UserRoleSecurityInfo;
 import org.pentaho.platform.engine.security.userroledao.ws.UserToRoleAssignment;
 
-public class UserRoleHelper {
+public class UserRoleHelper implements java.io.Serializable {
+
+  private static final long serialVersionUID = -8850597631894280354L; /* EESOURCE: UPDATE SERIALVERUID */
 
   public static List<IUser> convertFromProxyPentahoUsers(UserRoleSecurityInfo info, IRoleSupportSecurityManager rsm) {
     List<IUser> userList = new ArrayList<IUser>();

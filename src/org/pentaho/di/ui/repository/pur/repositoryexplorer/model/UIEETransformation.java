@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.List;
@@ -19,7 +24,9 @@ import org.pentaho.di.ui.repository.repositoryexplorer.AccessDeniedException;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UITransformation;
 
-public class UIEETransformation extends UITransformation implements ILockObject, IRevisionObject, IAclObject {
+public class UIEETransformation extends UITransformation implements ILockObject, IRevisionObject, IAclObject, java.io.Serializable {
+
+  private static final long serialVersionUID = 3460651955586659084L; /* EESOURCE: UPDATE SERIALVERUID */
   private ILockService lockService;
   private IAclService aclService;
   private IRevisionService revisionService;

@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.List;
@@ -8,7 +13,9 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.ui.xul.util.AbstractModelNode;
 
-public class UIRepositoryRoles extends AbstractModelNode<IUIRole> {
+public class UIRepositoryRoles extends AbstractModelNode<IUIRole> implements java.io.Serializable {
+
+  private static final long serialVersionUID = -3386655857939500874L; /* EESOURCE: UPDATE SERIALVERUID */
   
     public UIRepositoryRoles(){
     }

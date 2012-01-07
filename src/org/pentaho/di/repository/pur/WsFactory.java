@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.net.MalformedURLException;
@@ -22,7 +27,9 @@ import com.sun.xml.ws.developer.JAXWSProperties;
  * 
  * @author mlowery
  */
-public class WsFactory {
+public class WsFactory implements java.io.Serializable {
+
+  private static final long serialVersionUID = 8992058861677534797L; /* EESOURCE: UPDATE SERIALVERUID */
 
   /**
    * Header name must match that specified in ProxyTrustingFilter. Note that an header has the following form: initial

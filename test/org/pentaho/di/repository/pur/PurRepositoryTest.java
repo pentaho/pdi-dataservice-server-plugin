@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import static org.junit.Assert.assertEquals;
@@ -73,7 +78,9 @@ import com.pentaho.commons.dsc.util.TestLicenseStream;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/repository.spring.xml",
     "classpath:/repository-test-override.spring.xml" })
-public class PurRepositoryTest extends RepositoryTestBase implements ApplicationContextAware {
+public class PurRepositoryTest extends RepositoryTestBase implements ApplicationContextAware, java.io.Serializable {
+  
+  static final long serialVersionUID = 2064159405078106703L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private IUnifiedRepository pur;
 

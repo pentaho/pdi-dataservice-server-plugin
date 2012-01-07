@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.List;
@@ -43,7 +48,9 @@ import org.pentaho.platform.api.repository2.unified.data.node.DataNode.DataPrope
  * A {@link Repository} that stands in for the real repository, collecting entry and step attributes and loading or
  * saving them as a batch. Use one instance of this class per entry or step!
  */
-public class RepositoryProxy implements Repository, ILockService {
+public class RepositoryProxy implements Repository, ILockService, java.io.Serializable {
+
+  private static final long serialVersionUID = -8017798761569450448L; /* EESOURCE: UPDATE SERIALVERUID */
 
   public static final String PROP_CODE_NR_SEPARATOR = "_#_"; //$NON-NLS-1$
 

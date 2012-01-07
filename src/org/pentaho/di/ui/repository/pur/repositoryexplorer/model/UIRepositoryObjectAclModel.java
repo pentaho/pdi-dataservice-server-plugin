@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
 import java.util.ArrayList;
@@ -10,7 +15,9 @@ import org.pentaho.di.repository.pur.model.RepositoryObjectAce;
 import org.pentaho.di.repository.pur.model.RepositoryObjectRecipient;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
-public class UIRepositoryObjectAclModel extends XulEventSourceAdapter {
+public class UIRepositoryObjectAclModel extends XulEventSourceAdapter implements java.io.Serializable {
+
+  private static final long serialVersionUID = 2403228456811971640L; /* EESOURCE: UPDATE SERIALVERUID */
   private List<String> masterAvailableUserList;
 
   private List<String> masterAvailableRoleList;

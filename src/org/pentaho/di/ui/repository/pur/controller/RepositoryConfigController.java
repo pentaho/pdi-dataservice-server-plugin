@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.pur.controller;
 
 import java.io.File;
@@ -29,7 +34,9 @@ import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
-public class RepositoryConfigController extends AbstractXulEventHandler{
+public class RepositoryConfigController extends AbstractXulEventHandler implements java.io.Serializable {
+
+  private static final long serialVersionUID = 1882563488501980590L; /* EESOURCE: UPDATE SERIALVERUID */
  
   public String getName() {
     return "repositoryConfigController"; //$NON-NLS-1$

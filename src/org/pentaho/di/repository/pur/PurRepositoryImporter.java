@@ -1,3 +1,8 @@
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.repository.pur;
 
 import java.util.ArrayList;
@@ -39,7 +44,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXParseException;
 
-public class PurRepositoryImporter implements IRepositoryImporter {
+public class PurRepositoryImporter implements IRepositoryImporter, java.io.Serializable {
+
+  private static final long serialVersionUID = 2853810493291696227L; /* EESOURCE: UPDATE SERIALVERUID */
   private static Class<?>              PKG           = PurRepositoryImporter.class; 
 
   private PurRepository rep;
