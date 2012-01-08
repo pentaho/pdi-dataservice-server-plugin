@@ -335,7 +335,10 @@
       <available file="package-res"/>
       <then>
         <copy todir="${customer.stage.dir}/package-res" flatten="false" overwrite="true">
-          <fileset dir="package-res"/>
+          <fileset dir="package-res">
+            <exclude name="set-pentaho-env.sh"/>
+          	<exclude name="set-pentaho-env.bat"/>
+          </fileset>
         </copy>
       </then>
     </if>
@@ -373,16 +376,14 @@
     <copy todir="${customer.stage.dir}" file="build.properties" overwrite="true"/>
     <copy todir="${customer.stage.dir}" file="build.xml" overwrite="true"/>
     
-    <!-- let's see if we really need this yet or not
-  	<if>
-  	  <available file="customer-res"/>
+    <if>
+      <available file="customer-res"/>
       <then>
         <copy todir="${customer.stage.dir}" overwrite="true">
           <fileset dir="customer-res"/>
         </copy>
       </then>
     </if>
-    -->
   </target>
 
   <!--=======================================================================
@@ -426,7 +427,17 @@
     <!-- remove multi-line customer-src-dist sections from XML files -->
     <replaceregexp match="&lt;!-- begin remove for the customer src dist .*? end remove for the customer src dist --&gt;" replace="" flags="gs">
       <fileset dir="${customer.stage.dir}" includes="**/*.xml"/>
-    </replaceregexp>  	
+    </replaceregexp>
+  	
+    <!-- remove multi-line customer-src-dist sections from .bat files -->
+    <replaceregexp match="REM START LICENSE CHECK.*?REM END LICENSE CHECK" replace="" flags="gs">
+      <fileset dir="${customer.stage.dir}" includes="**/*.bat"/>
+    </replaceregexp>
+  	
+    <!-- remove multi-line customer-src-dist sections from .sh files -->
+    <replaceregexp match="# START LICENSE CHECK.*?# END LICENSE CHECK" replace="" flags="gs">
+      <fileset dir="${customer.stage.dir}" includes="**/*.sh"/>
+    </replaceregexp>
   	
     <!-- remove dsc ref from obfuscation lib dir -->
     <replaceregexp match="\(\!pentaho-ee-dsc-core-\*[.]jar\)" replace="" flags="gs">
