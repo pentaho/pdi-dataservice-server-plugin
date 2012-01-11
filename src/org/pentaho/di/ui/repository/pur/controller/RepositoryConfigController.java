@@ -111,7 +111,8 @@ public class RepositoryConfigController extends AbstractXulEventHandler implemen
   }
   
   public void test() {
-    final String url = model.getUrl() + "/webservices/unifiedRepository?wsdl"; //$NON-NLS-1$
+    //  build the url handling whether or not the model's url ends wirth a slash
+    final String url = model.getUrl() + (model.getUrl().endsWith("/")?"":"/")+"webservices/unifiedRepository?wsdl"; //$NON-NLS-1$
     Service service;
     try {
       service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", "unifiedRepository")); //$NON-NLS-1$ //$NON-NLS-2$

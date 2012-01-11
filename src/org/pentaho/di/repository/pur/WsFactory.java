@@ -54,7 +54,9 @@ public class WsFactory implements java.io.Serializable {
       lastUsername = username;
     }
 
-    URL url = new URL(repositoryMeta.getRepositoryLocation().getUrl() + "/webservices/" + serviceName + "?wsdl"); //$NON-NLS-1$ //$NON-NLS-2$
+    //  build the url handling whether or not baseUrl ends with a slash
+    String baseUrl = repositoryMeta.getRepositoryLocation().getUrl();
+    URL url = new URL(baseUrl + (baseUrl.endsWith("/")?"":"/")+ "webservices/" + serviceName + "?wsdl"); //$NON-NLS-1$ //$NON-NLS-2$
 
     String key = makeKey(url, serviceName, clazz);
     if (serviceCache.containsKey(key)) {
