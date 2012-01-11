@@ -1507,6 +1507,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     throw new UnsupportedOperationException();
   }
 
+  public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId idJobentry,
+        String nameCode, int nr, String idCode, List<DatabaseMeta> databases)
+        throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+
   public DatabaseMeta loadDatabaseMetaFromStepAttribute(ObjectId idStep, String code, List<DatabaseMeta> databases)
       throws KettleException {
     // implemented by RepositoryProxy
@@ -2462,6 +2468,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     throw new UnsupportedOperationException();
   }
 
+  public void saveDatabaseMetaJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String nameCode, String idCode,
+        DatabaseMeta database) throws KettleException {
+      // implemented by RepositoryProxy
+      throw new UnsupportedOperationException();
+    }  
+  
   public void saveDatabaseMetaStepAttribute(ObjectId idTransformation, ObjectId idStep, String code,
       DatabaseMeta database) throws KettleException {
     // implemented by RepositoryProxy

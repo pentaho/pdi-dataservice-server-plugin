@@ -403,6 +403,12 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
     return null;
   }
 
+  public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId idJobentry, String nameCode, int nr, 
+       String code, List<DatabaseMeta> databases) throws KettleException {
+     
+     return loadDatabaseMetaFromJobEntryAttribute(idJobentry, nameCode , code + PROP_CODE_NR_SEPARATOR + nr, databases);
+  }
+
   public DatabaseMeta loadDatabaseMetaFromStepAttribute(ObjectId idStep, String code, List<DatabaseMeta> databases)
       throws KettleException {
     if (code != null && node.hasProperty(code)) {
@@ -503,6 +509,14 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
       node.setProperty(code, ref);
     }
   }
+
+  public void saveDatabaseMetaJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String nameCode, String code,
+        DatabaseMeta database) throws KettleException {
+      if (database != null && database.getObjectId() != null) {
+        DataNodeRef ref = new DataNodeRef(database.getObjectId().getId());
+        node.setProperty(code + PROP_CODE_NR_SEPARATOR + nr, ref);
+      }
+    }
 
   public void saveDatabaseMetaStepAttribute(ObjectId idTransformation, ObjectId idStep, String code,
       DatabaseMeta database) throws KettleException {
