@@ -39,7 +39,7 @@ public abstract class AbstractDelegate {
         case ')':
         case '(':
         case '\\':
-          result.append('_');
+          result.append(' ');
           break;
         default:
           if (Character.isLetterOrDigit(c)) {
