@@ -243,7 +243,8 @@ TYPICAL TARGET SEQUENCE
             description="Directory that holds resources not included in the source tree" />
   <property name="source.zip.filename" value="${ivy.artifact.id}-${project.revision}-sources.zip" />
   <property name="source.tar.filename" value="${ivy.artifact.id}-${project.revision}-sources.tar.gz" />
-
+  <property name="source.publish" value="true" />
+	
   <!-- Ivy properties -->
   <property name="ivy.settingsurl"
             value="file:${basedir}/ivysettings.xml"
@@ -775,11 +776,19 @@ TYPICAL TARGET SEQUENCE
         </antcall>
       </then>
     </if>
+  	<antcall target="publish-local-nojar.post"/>
   </target>
 
+  <!--=======================================================================
+      publish-local-nojar.post this target is invoked after the normal set of publish-local-nojar
+      is completed, override this to perform additional publishing in extensions of subfloor, etc
+      ====================================================================-->
+  <target name="publish-local-nojar.post">
+  </target>
+	
   <target name="publish-local-nojar.internal" depends="install-ivy">
     <ivy:resolve file="${ivy.artifact.ivyfilename}" />
-    <ivy:publish resolver="local" pubrevision="${project.revision}" overwrite="true" forcedeliver="true">
+    <ivy:publish resolver="local" pubrevision="${project.revision}" overwrite="true" forcedeliver="true" warnonmissing="yes" haltonmissing="no">
       <artifacts pattern="${dist.dir}/[artifact]-[revision](-[classifier]).[ext]" />
     </ivy:publish>
   </target>
@@ -830,20 +839,31 @@ TYPICAL TARGET SEQUENCE
       <param name="publish.file" value="${ivy.artifact.ivypathname}" />
     </antcall>
 
-    <antcall target="maven-publish-sources">
-      <param name="publish.groupId" value="${ivy.artifact.group}" />
-      <param name="publish.artifactId" value="${ivy.artifact.id}" />
-      <param name="publish.version" value="${project.revision}" />
-      <param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}-sources.jar" />
-    </antcall>
+    <if>
+      <equals arg1="${source.publish}" arg2="true" />
+        <then>
+          <antcall target="maven-publish-sources">
+            <param name="publish.groupId" value="${ivy.artifact.group}" />
+            <param name="publish.artifactId" value="${ivy.artifact.id}" />
+            <param name="publish.version" value="${project.revision}" />
+            <param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}-sources.jar" />
+          </antcall>
+        </then>
+    </if>
 
     <antcall target="maven-publish-artifact">
       <param name="publish.pomFile" value="${ivy.artifact.pomfile}" />
       <param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
     </antcall>
+
+   	<antcall target="maven-publish.post"/>
+  	
   </target>
 
-
+  <!-- Override this if anything is needed to be done after the standard parts of publish are completed -->
+  <!-- Such as:  publishing non-standard/extended artifacts, etc -->
+  <target name="maven-publish.post"/>
+	
   <!--=======================================================================
         ivy.deliver
     

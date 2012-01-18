@@ -1,10 +1,9 @@
 <project name="PUR Repository Plugin" basedir="." default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
 
   <property name="approot.stage.lib.dir" value="lib" />
-  <property name="assemble.copy-libs.includes" value="**/pentaho-ee-dsc-core-*.jar" />
   <property name="assemble.copy-libs.includes.obf" value="" />
-  <property name="assemble.copy-libs.excludes" value="kettle-*.jar, pentaho-xul-*.jar, metro-*.jar, log4j-*.jar, pentaho-bi-platform-ee-*.jar, jface*.jar, groovy*.jar, gwt*.jar"/>
-  <property name="assemble.copy-libs.excludes.obf" value="kettle-*.jar, pentaho-xul-*.jar, metro-*.jar, log4j-*.jar, pentaho-ee-dsc-core-*.jar, pentaho-bi-platform-ee-*.jar, jface*.jar, groovy*.jar, gwt*.jar"/>
+  <property name="assemble.copy-libs.excludes" value="kettle-*.jar, pentaho-xul-*.jar, metro-*.jar, log4j-*.jar, pentaho-bi-platform-ee-*.jar"/>
+  <property name="assemble.copy-libs.excludes.obf" value="kettle-*.jar, pentaho-xul-*.jar, metro-*.jar, log4j-*.jar, pentaho-bi-platform-ee-*.jar"/>
 	
   <property name="subfloor-ee.parent.file" value="subfloor-pkg.xml" />
   
