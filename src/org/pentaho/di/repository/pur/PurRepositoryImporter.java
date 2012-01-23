@@ -5,6 +5,7 @@
  */
 package org.pentaho.di.repository.pur;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -19,6 +20,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.gui.SpoonFactory;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.imp.ImportRules;
@@ -70,6 +72,8 @@ public class PurRepositoryImporter implements IRepositoryImporter, java.io.Seria
   
   private List<RepositoryObject> referencingObjects;
 
+  private List<Exception> exceptions;
+
   public PurRepositoryImporter(PurRepository repository) {
       this.log = new LogChannel("Repository import"); //$NON-NLS-1$
       this.importRules = new ImportRules();
@@ -104,7 +108,20 @@ public class PurRepositoryImporter implements IRepositoryImporter, java.io.Seria
         try {
           RepositoryExportSaxParser parser = new RepositoryExportSaxParser(filename, feedback);          
           parser.parse(this);
-        } catch(Exception e) {
+        }
+        catch (FileNotFoundException fnfe) {
+          addException(fnfe);
+          feedback.showError(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Title"), 
+                BaseMessages.getString(PKG, "PurRepositoryImporter.FileNotFound.Message", filename), fnfe);
+          
+        }
+        catch (SAXParseException spe) {
+          addException(spe);
+          feedback.showError(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Title"), 
+                 BaseMessages.getString(PKG, "PurRepositoryImporter.ParseError.Message", filename), spe);
+        }
+        catch(Exception e) {
+          addException(e);
           feedback.showError(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Title"), 
               BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Message"), e);
         }        
@@ -137,6 +154,7 @@ public class PurRepositoryImporter implements IRepositoryImporter, java.io.Seria
 
       feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.ImportFinished.Log"));
     } catch (Exception e) {
+      addException(e);
       feedback.showError(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Title"), 
           BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Message"), e);
     } finally {
@@ -628,6 +646,17 @@ public class PurRepositoryImporter implements IRepositoryImporter, java.io.Seria
       root = rep.loadRepositoryDirectoryTree();
     }
     return root;
+  }
+  
+  private void addException(Exception exception) {
+     if (this.exceptions == null) {
+        this.exceptions = new ArrayList<Exception>();
+     }
+     exceptions.add(exception);
+  }
+  
+  public List<Exception> getExceptions() {
+     return this.exceptions;
   }
   
 }
