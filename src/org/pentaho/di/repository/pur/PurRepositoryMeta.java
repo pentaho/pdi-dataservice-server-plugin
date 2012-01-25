@@ -26,7 +26,9 @@ public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
 	/** The id as specified in the repository plugin meta, used for backward compatibility only */
 	public static String REPOSITORY_TYPE_ID = "PentahoEnterpriseRepository";
 	
+    /* START LICENSE CHECK */
 	public static String BUNDLE_REF_NAME = "@VERSION_FOR_LICENSE@";
+    /* END LICENSE CHECK */
 	
 	private PurRepositoryLocation repositoryLocation;
 

@@ -17,6 +17,7 @@
   
   <property name="obf.libdir.filter" value="!*-obf.jar"/>
   <property name="obf.artifact.injar.filter" value=""/>
+  <property name="proguard.file" value="proguard.pro"/>
   
   <!-- begin remove for the customer src dist -->
   <property name="customer.stage.dir" value="${bin.dir}/customer-stage" />
@@ -169,10 +170,10 @@
       </sequential>
     </target> 
   
-  <target name="obfuscate" depends="install-proguard, resolve-obf, obfuscate.pre, jar">
+  <target name="obfuscate" depends="install-proguard, resolve-obf, obfuscate.pre">
 
-    <copy file="proguard.pro" todir="${dist.dir}" overwrite="true" failonerror="false"/>
-    <touch file="${dist.dir}/proguard.pro"/>
+    <copy file="${proguard.file}" todir="${dist.dir}" overwrite="true" failonerror="false"/>
+    <touch file="${dist.dir}/${proguard.file}"/>
 
     <!-- copy all .map files from obf-lib into a singular map file -->
     <delete file="${dist.dir}/proguard-merged.map"/>
@@ -181,29 +182,29 @@
           <fileset dir="${obflib.dir}" includes="**/*.map"/>
         </concat>
     
-    <replace file="${dist.dir}/proguard.pro" value="${dist.dir}">
+    <replace file="${dist.dir}/${proguard.file}" value="${dist.dir}">
       <replacetoken><![CDATA[${dist.dir}]]></replacetoken>
     </replace>    
 
-    <replace file="${dist.dir}/proguard.pro" value="${ivy.artifact.id}">
+    <replace file="${dist.dir}/${proguard.file}" value="${ivy.artifact.id}">
       <replacetoken><![CDATA[${ivy.artifact.id}]]></replacetoken>
     </replace>      
 
-    <replace file="${dist.dir}/proguard.pro" value="${project.revision}">
+    <replace file="${dist.dir}/${proguard.file}" value="${project.revision}">
       <replacetoken><![CDATA[${project.revision}]]></replacetoken>
     </replace>      
     
         <!-- begin remove for the customer src dist -->
-    <replace file="${dist.dir}/proguard.pro" value="${dependency.pentaho-ee-dsc.revision}">
+    <replace file="${dist.dir}/${proguard.file}" value="${dependency.pentaho-ee-dsc.revision}">
       <replacetoken><![CDATA[${dependency.pentaho-ee-dsc.revision}]]></replacetoken>
     </replace>    
     <!-- end remove for the customer src dist -->
     
-    <replace file="${dist.dir}/proguard.pro" value="${lib.dir}">
+    <replace file="${dist.dir}/${proguard.file}" value="${lib.dir}">
       <replacetoken><![CDATA[${lib.dir}]]></replacetoken>
     </replace>    
     
-      <proguard verbose="true" configuration="${dist.dir}/proguard.pro">
+      <proguard verbose="true" configuration="${dist.dir}/${proguard.file}">
       <![CDATA[
     -useuniqueclassmembernames
     -dontoptimize
@@ -392,6 +393,9 @@
     <copy todir="${customer.stage.dir}/package-res"  failonerror="no" flatten="false" overwrite="true">
         <fileset dir="package-res" excludes="set-pentaho-env.sh, set-pentaho-env.bat"/>
   </copy>
+    <copy todir="${customer.stage.dir}/res"  failonerror="no" flatten="false" overwrite="true">
+      <fileset dir="res" />
+    </copy>
     <copy todir="${customer.stage.dir}/test-res" failonerror="no" flatten="false" overwrite="true">
         <fileset dir="test-res"/>
   </copy>
@@ -477,13 +481,13 @@
     </replaceregexp>        
     
     <!-- remove dsc references from plugin.xml -->
-    <replaceregexp match=".*dependency.pentaho-ee-dsc.revision@.*[.]jar&quot;/&gt;" replace="" flags="g">
+    <replaceregexp match=".*dependency.pentaho-ee-dsc.revision@.*[.]jar&quot;.?/&gt;" replace="" flags="g">
       <fileset dir="${customer.stage.dir}" includes="**/plugin.xml"/>
     </replaceregexp>    
     
-    <!-- remove dsc references from proguard.pro -->
+    <!-- remove dsc references from ${proguard.file} -->
     <replaceregexp match=".*\$\{dependency[.]pentaho-ee-dsc[.]revision\}[.]jar" replace="" flags="g">
-      <fileset dir="${customer.stage.dir}" includes="proguard.pro"/>
+      <fileset dir="${customer.stage.dir}" includes="${proguard.file}"/>
     </replaceregexp>  
     
     <!--

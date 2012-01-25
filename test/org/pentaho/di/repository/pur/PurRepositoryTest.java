@@ -109,8 +109,11 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     PentahoSessionHolder.removeSession();
     SecurityContextHolder.getContext().setAuthentication(null);
 
+    /* START LICENSE CHECK */
     // test calls into local "unified" repository which requires biserver-ee license
     PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
+    /* END LICENSE CHECK */
+
     KettleEnvironment.init();
 
     // programmatically register plugins, annotation based plugins do not get loaded unless

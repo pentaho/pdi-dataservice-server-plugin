@@ -65,8 +65,10 @@ public class PurRepositoryExporter implements IRepositoryExporter, java.io.Seria
   public synchronized void exportAllObjects(ProgressMonitorListener monitor, String xmlFilename,
       RepositoryDirectoryInterface root, String exportType) throws KettleException {
     initBatchSize();
+    /* START LICENSE CHECK */
     // Perform a single license check for entire export process
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
+    /* END LICENSE CHECK */
 
     OutputStream os = null;
     OutputStreamWriter writer = null;
