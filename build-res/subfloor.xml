@@ -243,7 +243,8 @@ TYPICAL TARGET SEQUENCE
             description="Directory that holds resources not included in the source tree" />
   <property name="source.zip.filename" value="${ivy.artifact.id}-${project.revision}-sources.zip" />
   <property name="source.tar.filename" value="${ivy.artifact.id}-${project.revision}-sources.tar.gz" />
-
+  <property name="source.publish" value="true" />
+	
   <!-- Ivy properties -->
   <property name="ivy.settingsurl"
             value="file:${basedir}/ivysettings.xml"
@@ -838,12 +839,17 @@ TYPICAL TARGET SEQUENCE
       <param name="publish.file" value="${ivy.artifact.ivypathname}" />
     </antcall>
 
-    <antcall target="maven-publish-sources">
-      <param name="publish.groupId" value="${ivy.artifact.group}" />
-      <param name="publish.artifactId" value="${ivy.artifact.id}" />
-      <param name="publish.version" value="${project.revision}" />
-      <param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}-sources.jar" />
-    </antcall>
+    <if>
+      <equals arg1="${source.publish}" arg2="true" />
+        <then>
+          <antcall target="maven-publish-sources">
+            <param name="publish.groupId" value="${ivy.artifact.group}" />
+            <param name="publish.artifactId" value="${ivy.artifact.id}" />
+            <param name="publish.version" value="${project.revision}" />
+            <param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}-sources.jar" />
+          </antcall>
+        </then>
+    </if>
 
     <antcall target="maven-publish-artifact">
       <param name="publish.pomFile" value="${ivy.artifact.pomfile}" />
