@@ -1,9 +1,8 @@
 <project name="PUR Repository Plugin" basedir="." default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
 
   <property name="approot.stage.lib.dir" value="lib" />
-  <property name="assemble.copy-libs.includes.obf" value="" />
-  <property name="assemble.copy-libs.excludes" value="kettle-*.jar, pentaho-xul-*.jar, metro-*.jar, log4j-*.jar, pentaho-bi-platform-ee-*.jar"/>
-  <property name="assemble.copy-libs.excludes.obf" value="kettle-*.jar, pentaho-xul-*.jar, metro-*.jar, log4j-*.jar, pentaho-bi-platform-ee-*.jar"/>
+  <property name="assemble.copy-libs.excludes" value="kettle-*.jar, metro-*.jar, pentaho-xul-*.jar, log4j-*.jar, jface*.jar, groovy*.jar"/>
+  <property name="assemble.copy-libs.excludes.obf" value="kettle-*.jar, metro-*.jar, pentaho-xul-*.jar, log4j-*.jar, pentaho-ee-dsc-core-*.jar, pentaho-bi-platform-ee-*.jar, jface*.jar, groovy*.jar"/>
 	
   <property name="subfloor-ee.parent.file" value="subfloor-pkg.xml" />
   
@@ -24,9 +23,6 @@
     <replace file="${approot.stage.dir}/plugin.xml">
       <replacefilter token="@project.revision@" value="${project.revision}" />
       <replacefilter token="@dependency.bi-platform.revision@" value="${dependency.bi-platform.revision}" />
-      <!-- begin remove for the customer src dist -->
-      <replacefilter token="@dependency.pentaho-ee-dsc.revision@" value="${dependency.pentaho-ee-dsc.revision}" />
-      <!-- end remove for the customer src dist -->
     </replace>
   </target>
 
@@ -42,20 +38,4 @@
   process to delete the "lib" dir -->
   <!--target name="clean-all" depends="clean"/-->
 
-  <!-- begin remove for the customer src dist -->
-  <target name="customer-src-codechanges.post">
-    <delete>
-      <fileset dir="${customer.stage.dir}">
-        <include name="**/PluginLicenseVerifier.java" />
-      </fileset>
-    </delete>
-    <copy todir="${customer.stage.dir}/libswt" flatten="false" overwrite="true">
-      <fileset dir="libswt"/>
-    </copy>
-    <copy todir="${customer.stage.dir}/testfiles" flatten="false" overwrite="true">
-      <fileset dir="testfiles"/>
-    </copy>
-
-  </target>
-  <!-- end remove for the customer src dist -->
 </project>

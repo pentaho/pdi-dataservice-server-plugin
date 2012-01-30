@@ -7,6 +7,7 @@
 
   <property name="prepared.src.dir" value="${bin.dir}/prepared-src" description="Modified source" />
 
+  <property name="proguard.revision" value="4.3" />
   <property name="approot.stage.lib.dir" value=""/>
   <property name="approot.stage.artifact.dir" value=""/>
   <property name="assemble.copy-libs.includes" value="**/*.jar" />
@@ -80,8 +81,8 @@
         <else>
           <echo message="Installing proguard..." />
           <taskdef-with-ivy organisation="net.sf.proguard"
-                            module="proguard"
-                            revision="4.3"
+                            module="proguard-anttask"
+                            revision="${proguard.revision}"
                             task-name="proguard"
                           resource="proguard/ant/task.properties"
                             classname="proguard.ant.ProGuardTask" />
@@ -485,9 +486,9 @@
       <fileset dir="${customer.stage.dir}" includes="**/plugin.xml"/>
     </replaceregexp>    
     
-    <!-- remove dsc references from ${proguard.file} -->
+    <!-- remove dsc references from *.pro -->
     <replaceregexp match=".*\$\{dependency[.]pentaho-ee-dsc[.]revision\}[.]jar" replace="" flags="g">
-      <fileset dir="${customer.stage.dir}" includes="${proguard.file}"/>
+      <fileset dir="${customer.stage.dir}" includes="*.pro"/>
     </replaceregexp>  
     
     <!--
@@ -535,7 +536,7 @@
         <taskdef-with-ivy organisation="pentaho"
                           module="pentaho-ee-ant-tasks"
                           revision="1.1.0"
-                          classname="org.pentaho.anttasks.CustomerSerialVerUidTask"
+                          classname="com.pentaho.anttasks.CustomerSerialVerUidTask"
                           resource="com/pentaho/anttasks/pentaho-anttasks.xml" />
           <property name="serialver.isinstalled" value="true" />
       </else>
