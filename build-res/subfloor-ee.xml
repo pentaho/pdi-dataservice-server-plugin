@@ -467,12 +467,12 @@
     </replaceregexp>
   
     <!-- remove multi-line customer-src-dist sections from .bat files -->
-    <replaceregexp match="REM START LICENSE CHECK.*?REM END LICENSE CHECK" replace="" flags="gs">
+    <replaceregexp match="REM START PENTAHO LICENSE.*?REM END PENTAHO LICENSE" replace="" flags="gs">
       <fileset dir="${customer.stage.dir}" includes="**/*.bat"/>
     </replaceregexp>
     
     <!-- remove multi-line customer-src-dist sections from .sh files -->
-    <replaceregexp match="# START LICENSE CHECK.*?# END LICENSE CHECK" replace="" flags="gs">
+        <replaceregexp match="# START PENTAHO LICENSE.*?# END PENTAHO LICENSE" replace="" flags="gs">
       <fileset dir="${customer.stage.dir}" includes="**/*.sh"/>
     </replaceregexp>
     
