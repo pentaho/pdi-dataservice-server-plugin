@@ -392,7 +392,7 @@
         <fileset dir="test"/>
     </copy>
     <copy todir="${customer.stage.dir}/package-res"  failonerror="no" flatten="false" overwrite="true">
-        <fileset dir="package-res" excludes="set-pentaho-env.sh, set-pentaho-env.bat"/>
+        <fileset dir="package-res" />
   </copy>
     <copy todir="${customer.stage.dir}/res"  failonerror="no" flatten="false" overwrite="true">
       <fileset dir="res" />
