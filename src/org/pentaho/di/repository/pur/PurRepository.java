@@ -34,6 +34,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.IRepositoryExporter;
@@ -110,6 +111,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   private static final long serialVersionUID = 7460109109707189479L; /* EESOURCE: UPDATE SERIALVERUID */
 
+  private static Class<?> PKG = PurRepository.class;
+  
   private static final String SINGLE_DI_SERVER_INSTANCE = "singleDiServerInstance";
 
   // ~ Static fields/initializers ======================================================================================
@@ -324,7 +327,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         registerRepositoryService(ILockService.class, this);
       }
       connected = true;
-    } catch (Throwable e) {
+    }
+    catch (NullPointerException npe) {
+    	 throw new KettleException(BaseMessages.getString(PKG, "PurRepository.LoginException.Message"));
+    }
+    catch (Throwable e) {
       connected = false;
       WsFactory.clearServices();
       throw new KettleException(e);
