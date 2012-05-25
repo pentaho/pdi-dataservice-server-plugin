@@ -51,7 +51,7 @@
     <target name="resolve-obf" depends="resolve-init">
       <mkdir dir="${obflib.dir}" />
       <ivy:resolve file="${ivyfile}" conf="obf" />
-      <ivy:retrieve conf="obf" pattern="${obflib.dir}/[module]-[revision](-[classifier]).[ext]" />
+      <ivy:retrieve conf="obf" pattern="${obflib.dir}/[module]-[revision](-[classifier]).[ext]" symlink="${ivy.use.symlinks.internal}" />
       
       <!-- extract *-proguard-*.jar, delete -->
     <foreach target="proguard-artifact-extract" param="file">
