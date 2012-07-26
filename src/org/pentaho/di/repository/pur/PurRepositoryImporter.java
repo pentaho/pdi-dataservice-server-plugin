@@ -20,7 +20,6 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.gui.SpoonFactory;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.imp.ImportRules;
@@ -628,13 +627,13 @@ public class PurRepositoryImporter implements IRepositoryImporter, java.io.Seria
     if (dirOverride != null) {
       targetDirectory = rep.findDirectory(directoryPath);
       if (targetDirectory == null) {
-        feedback.addLog(BaseMessages.getString(PKG, "RepositoryImporter.CreateDir.Log", directoryPath, getRepositoryRoot().toString()));
+        feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.CreateDir.Log", directoryPath, getRepositoryRoot().toString()));
         targetDirectory = rep.createRepositoryDirectory(getRepositoryRoot(), directoryPath);
       }
     } else {
       targetDirectory = baseDirectory.findDirectory(directoryPath);
       if (targetDirectory == null) {
-        feedback.addLog(BaseMessages.getString(PKG, "RepositoryImporter.CreateDir.Log", directoryPath, baseDirectory.toString()));
+        feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.CreateDir.Log", directoryPath, baseDirectory.toString()));
         targetDirectory = rep.createRepositoryDirectory(baseDirectory, directoryPath);
       }
     }
