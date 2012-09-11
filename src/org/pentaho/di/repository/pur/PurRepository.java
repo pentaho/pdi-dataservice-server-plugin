@@ -31,6 +31,7 @@ import org.pentaho.di.core.annotations.RepositoryPlugin;
 import org.pentaho.di.core.changed.ChangedFlagInterface;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleFileException;
 import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -722,6 +723,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     // need to check for null id since shared objects return a non-null repoDir (see partSchema.getRepositoryDirectory())
     if (repositoryDirectory != null && repositoryDirectory.getObjectId() != null) {
       path = repositoryDirectory.getPath();
+    }
+    
+    // Check for null path
+    if(path == null) {
+    	return null;
     }
 
     // return the directory path
@@ -2001,6 +2007,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     String absPath = null;
     try {
       absPath = getPath(transName, parentDir, RepositoryObjectType.TRANSFORMATION);
+      if(absPath == null) {
+    	  // Couldn't resolve path, throw an exception
+    	  throw new KettleFileException(BaseMessages.getString(PKG, "PurRepository.ERROR_0002_TRANSFORMATION_NOT_FOUND",transName));
+      }
       PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
       RepositoryFile file = pur.getFile(absPath);
       if (versionId != null) {
@@ -2080,6 +2090,10 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     String absPath = null;
     try {
       absPath = getPath(jobname, parentDir, RepositoryObjectType.JOB);
+      if(absPath == null) {
+    	  // Couldn't resolve path, throw an exception
+    	  throw new KettleFileException(BaseMessages.getString(PKG, "PurRepository.ERROR_0003_JOB_NOT_FOUND",jobname));
+      }
       RepositoryFile file = pur.getFile(absPath);
       if (versionId != null) {
         // need to go back to server to get versioned info
