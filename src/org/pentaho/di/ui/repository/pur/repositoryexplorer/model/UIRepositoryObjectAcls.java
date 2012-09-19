@@ -194,7 +194,10 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
       obj.setEntriesInheriting(entriesInheriting);
       this.firePropertyChange("entriesInheriting", previousVal, entriesInheriting); //$NON-NLS-1$
       setRemoveEnabled((!entriesInheriting && !isEmpty()));
-      setModelDirty(true);
+      
+      // Only dirty the model if the value has changed
+      if(previousVal != entriesInheriting)
+    	  setModelDirty(true);
     }
   }
 
