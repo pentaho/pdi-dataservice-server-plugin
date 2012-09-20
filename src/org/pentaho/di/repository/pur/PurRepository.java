@@ -725,11 +725,6 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       path = repositoryDirectory.getPath();
     }
     
-    // Check for null path
-    if(path == null) {
-    	return null;
-    }
-
     // return the directory path
     if (objectType == null) {
       return path;
@@ -743,7 +738,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             + RepositoryObjectType.DATABASE.getExtension();
       }
       case TRANSFORMATION: {
-        return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.TRANSFORMATION.getExtension();
+    	  // Check for null path
+    	  if(path == null) {
+    		  return null;
+    	  } else {
+    		  return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.TRANSFORMATION.getExtension();
+    	  }
       }
       case PARTITION_SCHEMA: {
         return getPartitionSchemaParentFolderPath() + RepositoryFile.SEPARATOR + sanitizedName
@@ -758,7 +758,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
       }
       case JOB: {
-        return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.JOB.getExtension();
+    	  // Check for null path
+    	  if(path == null) {
+    		  return null;
+    	  } else {
+    		  return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.JOB.getExtension();
+    	  }
       }
       default: {
         throw new UnsupportedOperationException("not implemented");
