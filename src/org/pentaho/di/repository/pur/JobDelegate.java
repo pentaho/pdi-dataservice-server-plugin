@@ -19,7 +19,6 @@ import org.pentaho.di.core.plugins.JobEntryPluginType;
 import org.pentaho.di.core.plugins.PluginInterface;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.xml.XMLHandler;
-import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.job.entry.JobEntryCopy;
@@ -77,6 +76,8 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
   private static final String PROP_PARALLEL = "PARALLEL";
 
+  private static final String PROP_CHECKPOINT = "CHECKPOINT";
+
   private static final String PROP_GUI_DRAW = "GUI_DRAW";
 
   private static final String PROP_GUI_LOCATION_Y = "GUI_LOCATION_Y";
@@ -129,7 +130,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
   private static final String PROP_LOG_SIZE_LIMIT = "LOG_SIZE_LIMIT";
 
-  private static Class<?> PKG = JobDelegate.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
+  // private static Class<?> PKG = JobDelegate.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
 
   // ~ Instance fields =================================================================================================
 
@@ -223,6 +224,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       copy.setLocation(x, y);
       copy.setDrawn(copyNode.getProperty(PROP_GUI_DRAW).getBoolean());
       copy.setLaunchingInParallel(copyNode.getProperty(PROP_PARALLEL).getBoolean());
+      copy.setCheckpoint(copyNode.getProperty(PROP_CHECKPOINT).getBoolean());
 
       jobMeta.getJobCopies().add(copy);
 
@@ -238,7 +240,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     DataNode notesNode = rootNode.getNode(NODE_NOTES);
     int nrNotes = (int) notesNode.getProperty(PROP_NR_NOTES).getLong();
     for (DataNode noteNode : notesNode.getNodes()) {
-      String name = noteNode.getName();
+      // String name = noteNode.getName();
       String xml = getString(noteNode, PROP_XML);
       jobMeta.addNote(new NotePadMeta(XMLHandler.getSubNode(XMLHandler.loadXMLString(xml), NotePadMeta.XML_TAG)));
     }
@@ -252,7 +254,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     DataNode hopsNode = rootNode.getNode(NODE_HOPS);
     int nrHops = (int) hopsNode.getProperty(PROP_NR_HOPS).getLong();
     for (DataNode hopNode : hopsNode.getNodes()) {
-      String name = hopNode.getName();
+      // String name = hopNode.getName();
       String copyFromName = getString(hopNode, JOB_HOP_FROM);
       int copyFromNr = (int) hopNode.getProperty(JOB_HOP_FROM_NR).getLong();
       String copyToName = getString(hopNode, JOB_HOP_TO);
@@ -411,6 +413,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       copyNode.setProperty(PROP_GUI_LOCATION_Y, copy.getLocation().y);
       copyNode.setProperty(PROP_GUI_DRAW, copy.isDrawn());
       copyNode.setProperty(PROP_PARALLEL, copy.isLaunchingInParallel());
+      copyNode.setProperty(PROP_CHECKPOINT, copy.isCheckpoint());
 
       // Save the entry information here as well, for completeness.  TODO: since this slightly stores duplicate information, figure out how to store this separately.
       //

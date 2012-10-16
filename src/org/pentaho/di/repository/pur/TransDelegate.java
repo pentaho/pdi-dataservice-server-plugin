@@ -162,6 +162,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
   private static final String PROP_STEP_DISTRIBUTE = "STEP_DISTRIBUTE";
 
+  private static final String PROP_STEP_LOADBALANCE = "STEP_LOADBALANCE";
+
   private static final String PROP_STEP_GUI_DRAW = "STEP_GUI_DRAW";
 
   private static final String PROP_STEP_GUI_LOCATION_Y = "STEP_GUI_LOCATION_Y";
@@ -169,6 +171,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   private static final String PROP_STEP_GUI_LOCATION_X = "STEP_GUI_LOCATION_X";
 
   private static final String PROP_STEP_COPIES = "STEP_COPIES";
+
+  private static final String PROP_STEP_COPIES_STRING = "STEP_COPIES_STRING";
 
   private static final String PROP_STEP_TYPE = "STEP_TYPE";
 
@@ -230,9 +234,16 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         stepMeta.setDescription(getString(stepNode, PROP_DESCRIPTION));
       }
       stepMeta.setDistributes(stepNode.getProperty(PROP_STEP_DISTRIBUTE).getBoolean());
+      stepMeta.setLoadBalancing(stepNode.getProperty(PROP_STEP_LOADBALANCE).getBoolean());
       stepMeta.setDraw(stepNode.getProperty(PROP_STEP_GUI_DRAW).getBoolean());
-      stepMeta.setCopies((int) stepNode.getProperty(PROP_STEP_COPIES).getLong());
-
+      int copies = (int) stepNode.getProperty(PROP_STEP_COPIES).getLong();
+      String copiesString = stepNode.getProperty(PROP_STEP_COPIES_STRING).getString();
+      if (!Const.isEmpty(copiesString)) {
+        stepMeta.setCopiesString(copiesString);
+      } else {
+        stepMeta.setCopies(copies); // for backward compatibility
+      }
+      
       int x = (int) stepNode.getProperty(PROP_STEP_GUI_LOCATION_X).getLong();
       int y = (int) stepNode.getProperty(PROP_STEP_GUI_LOCATION_Y).getLong();
       stepMeta.setLocation(x, y);
@@ -511,7 +522,9 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       stepNode.setProperty(PROP_DESCRIPTION, step.getDescription());
       stepNode.setProperty(PROP_STEP_TYPE, step.getStepID());
       stepNode.setProperty(PROP_STEP_DISTRIBUTE, step.isDistributes());
+      stepNode.setProperty(PROP_STEP_LOADBALANCE, step.isLoadBalancing());
       stepNode.setProperty(PROP_STEP_COPIES, step.getCopies());
+      stepNode.setProperty(PROP_STEP_COPIES_STRING, step.getCopiesString());
       stepNode.setProperty(PROP_STEP_GUI_LOCATION_X, step.getLocation().x);
       stepNode.setProperty(PROP_STEP_GUI_LOCATION_Y, step.getLocation().y);
       stepNode.setProperty(PROP_STEP_GUI_DRAW, step.isDrawn());
