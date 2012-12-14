@@ -53,7 +53,6 @@ import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryElementMetaInterface;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryObject;
-import org.pentaho.di.repository.RepositoryObjectInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
@@ -71,6 +70,7 @@ import org.pentaho.di.repository.pur.model.RepositoryObjectAcl;
 import org.pentaho.di.repository.pur.model.RepositoryObjectRecipient;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
+import org.pentaho.di.trans.DataServiceMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
@@ -249,6 +249,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     // what about security provider?
   }
 
+  @SuppressWarnings("deprecation")
   public void connect(String username, String password) throws KettleException, KettleSecurityException {
     try {
       /*
@@ -568,7 +569,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   protected RepositoryFileTree loadRepositoryFileTree(String path) {
-    return pur.getTree(path, -1, null);
+    return pur.getTree(path, -1, null, false);
   }
 
   public RepositoryDirectoryInterface loadRepositoryDirectoryTree() throws KettleException {
@@ -965,6 +966,11 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         case JOB: {
           parentFolderIds.add(dirId.getId());
           filters.add("*" + RepositoryObjectType.JOB.getExtension()); //$NON-NLS-1$
+          break;
+        }
+        case TRANS_DATA_SERVICE: {
+          parentFolderIds.add(dirId.getId());
+          filters.add("*" + RepositoryObjectType.TRANS_DATA_SERVICE.getExtension()); //$NON-NLS-1$
           break;
         }
         default: {
@@ -1804,7 +1810,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       return;
     }
     
-    ObjectId id = element.getObjectId();
+    // ObjectId id = element.getObjectId();
     StringBuilder buf = new StringBuilder(file.getPath().length());
     buf.append(getParentPath(file.getPath()));
     buf.append(RepositoryFile.SEPARATOR);
@@ -2823,7 +2829,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       String name = repositoryFile.getTitle();
       String description = repositoryFile.getDescription();
       Date modifiedDate = repositoryFile.getLastModifiedDate();
-      String ownerName = repositoryFile.getOwner().getName();
+      String creatorId = repositoryFile.getCreatorId();
+      String ownerName = creatorId; // TODO: verify this!!
       boolean deleted = repositoryFile.getOriginalParentFolderPath() != null;
       RepositoryDirectoryInterface directory = findDirectory(parentPath);
       return new RepositoryObject(objectId, name, directory, ownerName, modifiedDate, objectType, description, deleted);
@@ -2965,6 +2972,27 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   
   public IRepositoryImporter getImporter() {
     return new PurRepositoryImporter(this);
+  }
+
+  @Override
+  public List<DataServiceMeta> listDataServices() throws KettleException {
+    List<DataServiceMeta> list = new ArrayList<DataServiceMeta>();
+    
+    /*
+    RepositoryFileCondition rfc = new RepositoryFileCondition();
+    rfc.getPropertyValues().put(TransDelegate.PROP_TRANS_DATA_SERVICE_NAME, null);
+    rfc.getPropertyValues().put(TransDelegate.PROP_TRANS_DATA_SERVICE_STEPNAME, null);
+    
+    List<RepositoryFile> files = pur.searchFiles(rfc);
+    for (RepositoryFile file : files) {
+      // This is rather inefficient, let's try to serialize DataServiceMeta itself or at least pass along the requested properties.
+      //
+      TransMeta transMeta = loadTransformation(new StringObjectId(file.getId().toString()), null);
+      list.add(transMeta.getDataService());
+    }
+    */
+    
+    return list; 
   }
   
 }
