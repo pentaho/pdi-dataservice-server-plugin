@@ -19,6 +19,7 @@ import org.pentaho.di.core.logging.LogTableInterface;
 import org.pentaho.di.core.plugins.PluginInterface;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.plugins.StepPluginType;
+import org.pentaho.di.core.sql.ServiceCacheMethod;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.partition.PartitionSchema;
@@ -30,6 +31,7 @@ import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
+import org.pentaho.di.trans.DataServiceMeta;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransMeta.TransformationType;
@@ -67,7 +69,14 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   private static final String PROP_LOG_INTERVAL = "LOG_INTERVAL";
 
   private static final String PROP_TRANSFORMATION_TYPE = "TRANSFORMATION_TYPE";
+  
+  public static final String PROP_TRANS_DATA_SERVICE_NAME = "DATA_SERVICE_NAME";
+  public static final String PROP_TRANS_DATA_SERVICE_STEPNAME = "DATA_SERVICE_STEPNAME";
+  private static final String PROP_TRANS_DATA_SERVICE_OUTPUT = "DATA_SERVICE_OUTPUT";
+  private static final String PROP_TRANS_DATA_SERVICE_ALLOW_OPTIMIZATION = "DATA_SERVICE_ALLOW_OPTIMIZATION";
+  private static final String PROP_TRANS_DATA_SERVICE_CACHE_METHOD = "DATA_SERVICE_CACHE_METHOD";
 
+  
   private static final String PROP_STEP_PERFORMANCE_LOG_TABLE = "STEP_PERFORMANCE_LOG_TABLE";
 
   private static final String PROP_STEP_PERFORMANCE_CAPTURING_DELAY = "STEP_PERFORMANCE_CAPTURING_DELAY";
@@ -500,6 +509,16 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     for (LogTableInterface logTable : transMeta.getLogTables()) {
       logTable.loadFromRepository(attributeInterface);
     }
+    
+    // Load the data service metadata 
+    //
+    DataServiceMeta dataService = new DataServiceMeta();
+    dataService.setName(getString(rootNode, PROP_TRANS_DATA_SERVICE_NAME));
+    dataService.setStepname(getString(rootNode, PROP_TRANS_DATA_SERVICE_STEPNAME));
+    dataService.setOutput(getBoolean(rootNode, PROP_TRANS_DATA_SERVICE_OUTPUT, true));
+    dataService.setOptimizationAllowed(getBoolean(rootNode, PROP_TRANS_DATA_SERVICE_ALLOW_OPTIMIZATION, false));
+    dataService.setCacheMethod(ServiceCacheMethod.getMethodByName(getString(rootNode, PROP_TRANS_DATA_SERVICE_CACHE_METHOD)));
+    transMeta.setDataService(dataService);
   }
 
   public DataNode elementToDataNode(final RepositoryElementInterface element) throws KettleException {
@@ -689,6 +708,17 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   	RepositoryAttributeInterface attributeInterface = new PurRepositoryAttribute(rootNode, transMeta.getDatabases());
   	for (LogTableInterface logTable : transMeta.getLogTables()) {
   	  logTable.saveToRepository(attributeInterface);
+  	}
+  	
+  	// Save the data service metadata if there's any
+  	//
+  	DataServiceMeta dataService = transMeta.getDataService();
+  	if (dataService.isDefined()) {
+  	  rootNode.setProperty(PROP_TRANS_DATA_SERVICE_NAME, dataService.getName());
+      rootNode.setProperty(PROP_TRANS_DATA_SERVICE_STEPNAME, dataService.getStepname());
+      rootNode.setProperty(PROP_TRANS_DATA_SERVICE_OUTPUT, dataService.isOutput());
+      rootNode.setProperty(PROP_TRANS_DATA_SERVICE_ALLOW_OPTIMIZATION, dataService.isOptimizationAllowed());
+      rootNode.setProperty(PROP_TRANS_DATA_SERVICE_CACHE_METHOD, dataService.getCacheMethod()==null ? null : dataService.getCacheMethod().name());
   	}
   }
 

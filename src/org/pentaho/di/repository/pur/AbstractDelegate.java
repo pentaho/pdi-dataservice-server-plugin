@@ -75,4 +75,12 @@ public abstract class AbstractDelegate {
       return null;
     }
   }
+
+  protected boolean getBoolean(DataNode node, String name, boolean defaultValue) {
+    if (node.hasProperty(name)) {
+      return node.getProperty(name).getBoolean();
+    } else {
+      return defaultValue;
+    }
+  }
 }

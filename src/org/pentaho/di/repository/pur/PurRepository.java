@@ -569,7 +569,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   protected RepositoryFileTree loadRepositoryFileTree(String path) {
-    return pur.getTree(path, -1, null, false);
+    return pur.getTree(path, -1, null);
   }
 
   public RepositoryDirectoryInterface loadRepositoryDirectoryTree() throws KettleException {
@@ -2829,8 +2829,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       String name = repositoryFile.getTitle();
       String description = repositoryFile.getDescription();
       Date modifiedDate = repositoryFile.getLastModifiedDate();
-      String creatorId = repositoryFile.getCreatorId();
-      String ownerName = creatorId; // TODO: verify this!!
+      // String creatorId = repositoryFile.getCreatorId();
+      String ownerName = repositoryFile.getOwner().getName();
       boolean deleted = repositoryFile.getOriginalParentFolderPath() != null;
       RepositoryDirectoryInterface directory = findDirectory(parentPath);
       return new RepositoryObject(objectId, name, directory, ownerName, modifiedDate, objectType, description, deleted);

@@ -37,6 +37,7 @@ import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
 import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.shared.SharedObjects;
+import org.pentaho.di.trans.DataServiceMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
@@ -683,6 +684,11 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
   }
 
   public IRepositoryImporter getImporter() {
+    throw new UnsupportedOperationException();
+  }
+  
+  @Override
+  public List<DataServiceMeta> listDataServices() throws KettleException {
     throw new UnsupportedOperationException();
   }
 }
