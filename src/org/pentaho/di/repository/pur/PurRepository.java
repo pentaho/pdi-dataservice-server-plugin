@@ -1476,7 +1476,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     } else if (filename.endsWith(RepositoryObjectType.PARTITION_SCHEMA.getExtension())) {
       return RepositoryObjectType.PARTITION_SCHEMA;
     } else {
-      throw new KettleException("Unable to get object type");
+      return RepositoryObjectType.UNKNOWN;
     }
   }
 
