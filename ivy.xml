@@ -99,6 +99,7 @@
     <dependency org="pentaho" name="pentaho-bi-platform-test-foundation" rev="${dependency.bi-platform.revision}" changing="true" 
       conf="test->default" />
     <dependency org="javax.jcr" name="jcr" rev="1.0" conf="test->default"/>
+    <dependency org="org.owasp.esapi" name="esapi" rev="2.0.1" transitive="false" conf="test->default"/>
 
 
 
