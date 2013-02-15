@@ -11,13 +11,13 @@ import org.apache.commons.logging.Log;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IUser;
-import org.pentaho.platform.engine.security.userrole.ws.IUserDetailsRoleListWebService;
-import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
+import org.pentaho.platform.api.engine.security.userroledao.UserRoleInfo;
+import org.pentaho.platform.security.userrole.ws.IUserRoleListWebService;
 
 public class UserRoleListDelegate implements java.io.Serializable {
 
   private static final long serialVersionUID = -2895663865550206386L; /* EESOURCE: UPDATE SERIALVERUID */
-  IUserDetailsRoleListWebService userDetailsRoleListWebService;
+  IUserRoleListWebService userDetailsRoleListWebService;
   UserRoleInfo userRoleInfo;
   Log logger;
   public UserRoleListDelegate() {
@@ -27,7 +27,7 @@ public class UserRoleListDelegate implements java.io.Serializable {
     try {
       this.logger = logger;
       userDetailsRoleListWebService = WsFactory.createService(repositoryMeta, "userRoleListService", userInfo //$NON-NLS-1$
-          .getLogin(), userInfo.getPassword(), IUserDetailsRoleListWebService.class);
+          .getLogin(), userInfo.getPassword(), IUserRoleListWebService.class);
       updateUserRoleList();
     } catch (Exception e) {
       this.logger.error(BaseMessages.getString("UserRoleListDelegate.ERROR_0001_UNABLE_TO_INITIALIZE_USER_ROLE_LIST_WEBSVC"), e); //$NON-NLS-1$
@@ -45,10 +45,10 @@ public class UserRoleListDelegate implements java.io.Serializable {
   public void updateUserRoleList() {
     userRoleInfo = userDetailsRoleListWebService.getUserRoleInfo();
   }
-  public IUserDetailsRoleListWebService getUserDetailsRoleListWebService() {
+  public IUserRoleListWebService getUserDetailsRoleListWebService() {
     return userDetailsRoleListWebService;
   }
-  public void setUserDetailsRoleListWebService(IUserDetailsRoleListWebService userDetailsRoleListWebService) {
+  public void setUserDetailsRoleListWebService(IUserRoleListWebService userDetailsRoleListWebService) {
     this.userDetailsRoleListWebService = userDetailsRoleListWebService;
   }
   public UserRoleInfo getUserRoleInfo() {

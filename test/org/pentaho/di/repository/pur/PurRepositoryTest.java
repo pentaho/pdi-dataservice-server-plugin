@@ -10,6 +10,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -77,7 +78,7 @@ import com.pentaho.commons.dsc.util.TestLicenseStream;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/repository.spring.xml",
-    "classpath:/repository-test-override.spring.xml" })
+    "classpath:/org/pentaho/di/repository/pur/pur-repository-test.spring.xml"})
 public class PurRepositoryTest extends RepositoryTestBase implements ApplicationContextAware, java.io.Serializable {
   
   static final long serialVersionUID = 2064159405078106703L; /* EESOURCE: UPDATE SERIALVERUID */
@@ -92,6 +93,11 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   
   @BeforeClass
   public static void setUpClass() throws Exception {
+    
+    System.out.println("Repository: " + PurRepositoryTest.class.getClassLoader().getResource("repository.spring.xml").getPath());
+    System.out.println("Pur Overrides: " + PurRepositoryTest.class.getClassLoader().getResource("org/pentaho/di/repository/pur/pur-repository-test.spring.xml").getPath());
+    
+    
     // folder cannot be deleted at teardown shutdown hooks have not yet necessarily completed
     // parent folder must match jcrRepository.homeDir bean property in repository-test-override.spring.xml
     FileUtils.deleteDirectory(new File("/tmp/jackrabbit-test"));
@@ -136,7 +142,10 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     ((PurRepository) repository).setTest(pur);
     repository.connect(EXP_LOGIN, "password");
     
-    List<RepositoryFile> files = pur.getChildren(pur.getFile("/public").getId());
+    System.out.println("PUR NAME!!!: " + pur.getClass().getCanonicalName());
+    RepositoryFile repositoryFile = pur.getFile("/public");
+    Serializable repositoryFileId = repositoryFile.getId();
+    List<RepositoryFile> files = pur.getChildren(repositoryFileId);
     StringBuilder buf = new StringBuilder();
     for (RepositoryFile file : files) {
       buf.append("\n").append(file);
@@ -187,7 +196,9 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     super.tearDown();
     try {
       // clean up after test
-      List<RepositoryFile> dirs = pur.getChildren(pur.getFile("/public").getId());
+      RepositoryFile rf = pur.getFile("/public");
+      Serializable rfId = rf.getId();
+      List<RepositoryFile> dirs = pur.getChildren(rfId);
       for (RepositoryFile file : dirs) {
         pur.deleteFile(file.getId(), true, null);
       }

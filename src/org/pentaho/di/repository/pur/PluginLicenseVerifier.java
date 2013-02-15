@@ -8,8 +8,6 @@ package org.pentaho.di.repository.pur;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
 
-import javax.swing.JOptionPane;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.pentaho.di.i18n.BaseMessages;

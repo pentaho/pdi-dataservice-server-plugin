@@ -569,7 +569,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   }
 
   protected RepositoryFileTree loadRepositoryFileTree(String path) {
-    return pur.getTree(path, -1, null);
+    return pur.getTree(path, -1, null, true);
   }
 
   public RepositoryDirectoryInterface loadRepositoryDirectoryTree() throws KettleException {
@@ -2825,12 +2825,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       if (repositoryFile==null) {
         return null;
       }
+      RepositoryFileAcl repositoryFileAcl = pur.getAcl(repositoryFile);
       String parentPath = getParentPath(repositoryFile.getPath());
       String name = repositoryFile.getTitle();
       String description = repositoryFile.getDescription();
       Date modifiedDate = repositoryFile.getLastModifiedDate();
       // String creatorId = repositoryFile.getCreatorId();
-      String ownerName = repositoryFile.getOwner().getName();
+      String ownerName = repositoryFileAcl != null ? repositoryFileAcl.getOwner().getName() : "";
       boolean deleted = repositoryFile.getOriginalParentFolderPath() != null;
       RepositoryDirectoryInterface directory = findDirectory(parentPath);
       return new RepositoryObject(objectId, name, directory, ownerName, modifiedDate, objectType, description, deleted);

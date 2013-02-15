@@ -15,13 +15,13 @@ import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.pur.model.IEEUser;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
-import org.pentaho.platform.engine.security.userrole.ws.IUserDetailsRoleListWebService;
-import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
-import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
-import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
-import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
-import org.pentaho.platform.engine.security.userroledao.ws.UserRoleException;
-import org.pentaho.platform.engine.security.userroledao.ws.UserRoleSecurityInfo;
+import org.pentaho.platform.api.engine.security.userroledao.UserRoleInfo;
+import org.pentaho.platform.security.userrole.ws.IUserRoleListWebService;
+import org.pentaho.platform.security.userroledao.ws.IUserRoleWebService;
+import org.pentaho.platform.security.userroledao.ws.ProxyPentahoRole;
+import org.pentaho.platform.security.userroledao.ws.ProxyPentahoUser;
+import org.pentaho.platform.security.userroledao.ws.UserRoleException;
+import org.pentaho.platform.security.userroledao.ws.UserRoleSecurityInfo;
 
 public class UserRoleDelegate implements java.io.Serializable {
 
@@ -30,7 +30,7 @@ public class UserRoleDelegate implements java.io.Serializable {
 
   IUserRoleWebService userRoleWebService;
 
-  IUserDetailsRoleListWebService userDetailsRoleListWebService;
+  IUserRoleListWebService userDetailsRoleListWebService;
 
   IRoleSupportSecurityManager rsm;
 
@@ -49,7 +49,7 @@ public class UserRoleDelegate implements java.io.Serializable {
     try {
       this.logger = logger;
       userDetailsRoleListWebService = WsFactory.createService(repositoryMeta, "userRoleListService", userInfo //$NON-NLS-1$
-          .getLogin(), userInfo.getPassword(), IUserDetailsRoleListWebService.class);
+          .getLogin(), userInfo.getPassword(), IUserRoleListWebService.class);
       userRoleWebService = WsFactory.createService(repositoryMeta, "userRoleService", userInfo.getLogin(), userInfo //$NON-NLS-1$
           .getPassword(), IUserRoleWebService.class);
       this.rsm = rsm;

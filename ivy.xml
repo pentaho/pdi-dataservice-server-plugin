@@ -17,23 +17,25 @@
 
     <!-- pentaho -->
     <dependency org="commons-vfs" name="commons-vfs" rev="20091118-pentaho" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-engine-core" rev="${dependency.bi-platform.revision}"
+    <dependency org="pentaho" name="pentaho-platform-core" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-api" rev="${dependency.bi-platform.revision}"
+    <dependency org="pentaho" name="pentaho-platform-api" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-repository" rev="${dependency.bi-platform.revision}"
+    <dependency org="pentaho" name="pentaho-platform-repository" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-engine-security" rev="${dependency.bi-platform.revision}"
+    <dependency org="pentaho" name="pentaho-platform-extensions" rev="${dependency.bi-platform.revision}"
+      changing="true" transitive="false" />
+    <dependency org="pentaho" name="pentaho-bi-platform-ee" rev="${dependency.bi-platform-ee.revision}" 
+      changing="true" transitive="false" />
+    <dependency org="pentaho"        name="pentaho-bi-platform-ee-proguard" rev="${dependency.bi-platform-ee.revision}" changing="true"   transitive="true" conf="obf->default">
+      <artifact name="pentaho-bi-platform-ee-proguard" type="zip"/>
+    </dependency>
+    <!-- <dependency org="pentaho" name="pentaho-bi-platform-engine-security" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-security-userroledao" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-util" rev="${dependency.bi-platform.revision}"
-      changing="true" transitive="false" />
-      
-    <dependency org="pentaho" name="pentaho-bi-platform-ee" rev="${dependency.bi-platform-ee.revision}" changing="true" transitive="false" />
-    <dependency org="pentaho"        name="pentaho-bi-platform-ee-proguard" rev="${dependency.bi-platform-ee.revision}" changing="true"   transitive="true" conf="obf->default">
-      <artifact name="pentaho-bi-platform-ee-proguard" type="zip"/>
-    </dependency>        
+      changing="true" transitive="false" /> -->
 
     <!-- begin remove for the customer src dist -->		
     <dependency org="pentaho"        name="pentaho-ee-dsc-core-proguard" rev="${dependency.pentaho-ee-dsc.revision}" changing="true"   transitive="true" conf="obf->default">
@@ -68,11 +70,11 @@
 
     <!--  test dependencies -->
     <dependency org="org.springframework.security" name="spring-security-core" rev="2.0.5.RELEASE"
-      transitive="false" conf="test->default" />
+      transitive="false" />
     <dependency org="junit" name="junit" rev="4.4" conf="test->default" />
     <dependency org="commons-logging" name="commons-logging" rev="1.1" conf="test->default" />
     <dependency org="commons-digester" name="commons-digester" rev="1.8" conf="test->default" />
-    <dependency org="commons-lang" name="commons-lang" rev="2.1" conf="test->default" />
+    <dependency org="commons-lang" name="commons-lang" rev="2.4" conf="test->default" />
     <dependency org="commons-httpclient" name="commons-httpclient" rev="3.0.1" conf="test->default" />
     <dependency org="ognl" name="ognl" rev="2.6.9" conf="test->default" />
     
@@ -85,22 +87,20 @@
       <exclude org="org.apache.jackrabbit" name="jackrabbit-jcr-rmi" />
     </dependency>
     <dependency org="com.google.collections" name="google-collections" rev="1.0-rc5" conf="test->default" />
-    <dependency org="pentaho" name="pentaho-bi-platform-engine-security" rev="${dependency.bi-platform.revision}" changing="true"
-      conf="test->default" />
     <dependency org="org.aspectj" name="aspectjrt" rev="1.6.6" conf="test->default" />
     <dependency org="jta" name="jta" rev="1.0.1b" conf="test->default" />
-    <dependency org="org.apache.jackrabbit" name="jackrabbit-core" rev="1.6.0" conf="test->default">
+    <dependency org="org.apache.jackrabbit" name="jackrabbit-core" rev="2.4.2" conf="test->default">
       <!-- transitive dependency that is not needed and not fetchable by Ivy -->
       <exclude org="org.apache.jackrabbit" name="jackrabbit-jcr-rmi" />
     </dependency>
-    <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.5.8" conf="test->default" />
+    <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.4" conf="test->default" />
     <dependency org="javassist" name="javassist" rev="3.4.GA" conf="test->default" transitive="false" />
     <dependency org="org.scannotation" name="scannotation" rev="1.0.2" conf="test->default" transitive="false"/>
-    <dependency org="pentaho" name="pentaho-bi-platform-test-foundation" rev="${dependency.bi-platform.revision}" changing="true" 
-      conf="test->default" />
-    <dependency org="javax.jcr" name="jcr" rev="1.0" conf="test->default"/>
-    <dependency org="org.owasp.esapi" name="esapi" rev="2.0.1" transitive="false" conf="test->default"/>
-
+    <dependency org="javax.jcr" name="jcr" rev="2.0" conf="test->default"/>
+	<dependency org="org.owasp.esapi" name="esapi" rev="2.0.1" transitive="false" conf="test->default"/>
+	<dependency org="org.mockito" name="mockito-all" rev="1.8.4" transitive="false" conf="test->default"/>
+	<dependency org="pentaho" name="pentaho-platform-core-test" rev="${dependency.bi-platform.revision}"
+      changing="true" transitive="false" conf="test->default" />
 
 
     <!-- excludes -->

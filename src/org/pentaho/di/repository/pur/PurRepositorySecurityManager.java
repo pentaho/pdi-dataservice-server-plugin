@@ -16,7 +16,7 @@ import org.pentaho.di.repository.pur.model.EERoleInfo;
 import org.pentaho.di.repository.pur.model.EEUserInfo;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
-import org.pentaho.platform.engine.security.userroledao.ws.UserRoleException;
+import org.pentaho.platform.security.userroledao.ws.UserRoleException;
 
 public class PurRepositorySecurityManager implements IRoleSupportSecurityManager, IUserRoleListChangeListener, java.io.Serializable {
 

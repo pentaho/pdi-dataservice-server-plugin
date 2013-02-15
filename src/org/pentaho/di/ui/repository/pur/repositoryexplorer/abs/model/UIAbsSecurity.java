@@ -8,7 +8,6 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model;
 import java.util.List;
 
 import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.repository.pur.AbsSecurityManager;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEESecurity;

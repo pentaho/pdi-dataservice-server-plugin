@@ -10,6 +10,7 @@ import java.util.Properties;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
@@ -75,7 +76,7 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer, 
     rootNode.setProperty(PROP_DATABASE_NAME, databaseMeta.getDatabaseName());
     rootNode.setProperty(PROP_PORT, new Long(Const.toInt(databaseMeta.getDatabasePortNumberString(), -1)));
     rootNode.setProperty(PROP_USERNAME, databaseMeta.getUsername());
-    rootNode.setProperty(PROP_PASSWORD, databaseMeta.getPassword());
+    rootNode.setProperty(PROP_PASSWORD, Encr.encryptPasswordIfNotUsingVariables(databaseMeta.getPassword()));
     rootNode.setProperty(PROP_SERVERNAME, databaseMeta.getServername());
     rootNode.setProperty(PROP_DATA_TBS, databaseMeta.getDataTablespace());
     rootNode.setProperty(PROP_INDEX_TBS, databaseMeta.getIndexTablespace());
@@ -112,7 +113,7 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer, 
     databaseMeta.setDBName(getString(rootNode, PROP_DATABASE_NAME));
     databaseMeta.setDBPort(getString(rootNode, PROP_PORT));
     databaseMeta.setUsername(getString(rootNode, PROP_USERNAME));
-    databaseMeta.setPassword(getString(rootNode, PROP_PASSWORD));
+    databaseMeta.setPassword(Encr.decryptPasswordOptionallyEncrypted(getString(rootNode, PROP_PASSWORD)));
     databaseMeta.setServername(getString(rootNode, PROP_SERVERNAME));
     databaseMeta.setDataTablespace(getString(rootNode, PROP_DATA_TBS));
     databaseMeta.setIndexTablespace(getString(rootNode, PROP_INDEX_TBS));
