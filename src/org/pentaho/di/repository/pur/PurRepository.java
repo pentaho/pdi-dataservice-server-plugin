@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.xml.ws.WebServiceException;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
@@ -192,6 +193,9 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   private String connectMessage = null;
   
+  //  The servers (DI Server, BA Server) that a user can authenticate to
+  private enum RepositoryServers {DIS, POBS};
+  
   // ~ Constructors ====================================================================================================
 
   public PurRepository() {
@@ -292,18 +296,33 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         IRepositorySyncWebService syncWebService = WsFactory.createService(repositoryMeta, "repositorySync", //$NON-NLS-1$
             username, password, IRepositorySyncWebService.class);
         
+        IUnifiedRepositoryJaxwsWebService repoWebService = null;
+        
         try {
           syncWebService.sync(repositoryMeta.getName(), repositoryMeta.getRepositoryLocation().getUrl());
+          repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
+    			username, password, IUnifiedRepositoryJaxwsWebService.class);
+        
         } catch (RepositorySyncException e) {
           log.logError(e.getMessage(), e);
           // this message will be presented to the user in spoon
           connectMessage = e.getMessage();
         }
-        
-        IUnifiedRepositoryJaxwsWebService repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
-            username, password, IUnifiedRepositoryJaxwsWebService.class);
 
-        pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
+        try {
+        	pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
+        	String serverProductID = pur.getProductID();
+            if (serverProductID.equalsIgnoreCase(RepositoryServers.POBS.toString())) {            	 
+            	throw new Exception(BaseMessages.getString(PKG, "PurRepository.BAServerLogin.Message"));
+            }
+            else if (!serverProductID.equalsIgnoreCase(RepositoryServers.DIS.toString())) {
+            	throw new Exception(BaseMessages.getString(PKG, "PurRepository.UnsupportedRepository.Message", serverProductID));
+            }
+        }
+        catch (WebServiceException wse) {
+        	log.logError(wse.getMessage());
+        	throw wse;
+        }
 
         // We need to add the service class in the list in the order of dependencies
         // IRoleSupportSecurityManager depends RepositorySecurityManager to be present
