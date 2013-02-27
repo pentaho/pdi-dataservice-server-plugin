@@ -15,6 +15,20 @@
     <unzip src="${dist.dir}/${package.basename}.zip" dest="${kettle.plugin.dir}" overwrite="true">
     </unzip>
   </target>
+	
+	<path id="test.classpath">
+	    <pathelement path="${testclasses.dir}" />
+	    <fileset dir="${devlib.dir}">
+	      <include name="**/*.jar" />
+	    </fileset>
+	    <fileset dir="${lib.dir}">
+	      <include name="**/*.jar" />
+	    </fileset>
+	    <fileset dir="${testlib.dir}">
+	      <include name="**/*.jar" />
+	    </fileset>
+	    <pathelement path="${classes.dir}" />
+	  </path>
 
   <!-- Override assemble to build plugin.xml afterwards -->
   <target name="assemble" depends="subfloor-pkg.assemble, update-plugin-xml" />

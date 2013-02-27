@@ -4,10 +4,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
                       http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-2.0.1.xsd">
-
   
-  <!-- Bean definitions in this file override bean definitions in repository.spring.xml. -->
-
   <sec:authentication-provider>
     <sec:user-service id="userDetailsService">
       <sec:user password="password" name="joe" authorities="Authenticated, Admin" />
@@ -16,24 +13,6 @@
   </sec:authentication-provider>
 
   <sec:authentication-manager alias="authenticationManager" />
-  
-  <bean id="defaultAclHandler" class="org.pentaho.platform.repository2.unified.jcr.InheritDefaultAclHandler" />
-
-  <bean id="repositoryFileDao" class="org.pentaho.platform.repository2.unified.jcr.JcrRepositoryFileDao">
-    <constructor-arg ref="jcrTemplate"/>
-    <constructor-arg ref="transformers"/>
-    <constructor-arg ref="lockHelper"/>
-    <constructor-arg>
-      <bean class="org.pentaho.platform.repository2.unified.jcr.DefaultDeleteHelper">
-        <constructor-arg ref="lockHelper"/>
-        <constructor-arg ref="pathConversionHelper"/>
-	<constructor-arg ref="tenantedUserNameUtils"/>        
-      </bean>
-    </constructor-arg>
-    <constructor-arg ref="pathConversionHelper"/>
-    <constructor-arg ref="repositoryFileAclDao"/>
-    <constructor-arg ref="defaultAclHandler" />
-  </bean>
 
   <bean id="jcrRepository" class="org.springframework.extensions.jcr.jackrabbit.RepositoryFactoryBean">
     <property name="configuration" value="classpath:/org/pentaho/di/repository/pur/pur-repository-test-jackrabbit.xml" />
@@ -44,10 +23,9 @@
   <bean id="backingRepositoryLifecycleManager" class="org.pentaho.platform.repository2.unified.lifecycle.DelegatingBackingRepositoryLifecycleManager">
     <constructor-arg>
       <list>
+        <ref bean="defaultBackingRepositoryLifecycleManager" />
         <ref bean="pdiBackingRepositoryLifecycleManager" />
       </list>
     </constructor-arg>
   </bean>
-
-  <!-- end authorization policy -->
 </beans>

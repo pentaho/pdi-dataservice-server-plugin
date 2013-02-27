@@ -80,6 +80,8 @@ public abstract class RepositoryTestBase {
   protected static final String EXP_USERNAME = "Apache Tomcat";
 
   protected static final String EXP_LOGIN = "joe";
+  
+  protected static final String EXP_LOGIN_PLUS_TENANT = EXP_LOGIN + "-/pentaho/" + EXP_LOGIN;
 
   protected static final String VERSION_COMMENT_V1 = "hello";
 
@@ -586,7 +588,7 @@ public abstract class RepositoryTestBase {
     service.lockJob(jobMeta.getObjectId(), EXP_JOB_LOCK_MSG);
     assertEquals(EXP_JOB_LOCK_MSG, service.getJobLock(jobMeta.getObjectId()).getMessage());
     assertEquals(new Date().getDate(), service.getJobLock(jobMeta.getObjectId()).getLockDate().getDate());
-    assertEquals(EXP_LOGIN, service.getJobLock(jobMeta.getObjectId()).getLogin());
+    assertEquals(EXP_LOGIN_PLUS_TENANT, service.getJobLock(jobMeta.getObjectId()).getLogin());
     // TODO mlowery currently PUR lock only stores "login"; why do we need username too? 
     //    assertEquals(EXP_USERNAME, repository.getJobLock(jobMeta.getObjectId()).getUsername());
     assertEquals(jobMeta.getObjectId(), service.getJobLock(jobMeta.getObjectId()).getObjectId());
@@ -823,7 +825,7 @@ public abstract class RepositoryTestBase {
     assertEquals(EXP_TRANS_LOCK_MSG, service.getTransformationLock(transMeta.getObjectId()).getMessage());
     assertEquals(new Date().getDate(), service.getTransformationLock(transMeta.getObjectId()).getLockDate()
         .getDate());
-    assertEquals(EXP_LOGIN, service.getTransformationLock(transMeta.getObjectId()).getLogin());
+    assertEquals(EXP_LOGIN_PLUS_TENANT, service.getTransformationLock(transMeta.getObjectId()).getLogin());
     // TODO mlowery currently PUR lock only stores "login"; why do we need username too? 
     //    assertEquals(EXP_USERNAME, repository.getTransformationLock(transMeta.getObjectId()).getUsername());
     assertEquals(transMeta.getObjectId(), service.getTransformationLock(transMeta.getObjectId()).getObjectId());
