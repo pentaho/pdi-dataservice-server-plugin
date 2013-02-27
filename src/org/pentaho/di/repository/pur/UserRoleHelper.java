@@ -16,13 +16,13 @@ import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.pur.model.IEEUser;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
-import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
-import org.pentaho.platform.engine.security.userroledao.ws.IUserRoleWebService;
-import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoRole;
-import org.pentaho.platform.engine.security.userroledao.ws.ProxyPentahoUser;
-import org.pentaho.platform.engine.security.userroledao.ws.UserRoleException;
-import org.pentaho.platform.engine.security.userroledao.ws.UserRoleSecurityInfo;
-import org.pentaho.platform.engine.security.userroledao.ws.UserToRoleAssignment;
+import org.pentaho.platform.api.engine.security.userroledao.UserRoleInfo;
+import org.pentaho.platform.security.userroledao.ws.IUserRoleWebService;
+import org.pentaho.platform.security.userroledao.ws.ProxyPentahoRole;
+import org.pentaho.platform.security.userroledao.ws.ProxyPentahoUser;
+import org.pentaho.platform.security.userroledao.ws.UserRoleException;
+import org.pentaho.platform.security.userroledao.ws.UserRoleSecurityInfo;
+import org.pentaho.platform.security.userroledao.ws.UserToRoleAssignment;
 
 public class UserRoleHelper implements java.io.Serializable {
 

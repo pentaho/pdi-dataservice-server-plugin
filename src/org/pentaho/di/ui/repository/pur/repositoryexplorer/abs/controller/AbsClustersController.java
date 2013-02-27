@@ -8,11 +8,7 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
-import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
-import org.pentaho.di.ui.repository.repositoryexplorer.RepositoryExplorer;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.ClustersController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UICluster;
 

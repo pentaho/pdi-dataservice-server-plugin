@@ -11,14 +11,15 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.pentaho.platform.engine.security.userrole.ws.IUserDetailsRoleListWebService;
-import org.pentaho.platform.engine.security.userrole.ws.UserRoleInfo;
+import org.pentaho.platform.api.engine.security.userroledao.UserRoleInfo;
+import org.pentaho.platform.core.mt.Tenant;
+import org.pentaho.platform.security.userrole.ws.IUserRoleListWebService;
 
 public class UserRoleListDelegateTest implements java.io.Serializable {
   static final long serialVersionUID = -125535373810768433L; /* EESOURCE: UPDATE SERIALVERUID */
 
   UserRoleListDelegate listDelegate;
-  IUserDetailsRoleListWebService service;
+  IUserRoleListWebService service;
   static List<String> roles;
   static List<String> users; 
   @Before
@@ -49,7 +50,7 @@ public class UserRoleListDelegateTest implements java.io.Serializable {
     Assert.assertEquals(listDelegate.getUserRoleInfo().getUsers().size(), 4);
   }
   
-  public static class UserDetailsRoleListService implements IUserDetailsRoleListWebService  {
+  public static class UserDetailsRoleListService implements IUserRoleListWebService  {
 
     public List<String> getAllRoles() {
       return roles;
@@ -65,6 +66,18 @@ public class UserRoleListDelegateTest implements java.io.Serializable {
       info.setRoles(roles);
       info.setUsers(users);
       return info;
+    }
+
+    @Override
+    public List<String> getAllRolesForTenant(Tenant arg0) {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+    @Override
+    public List<String> getAllUsersForTenant(Tenant arg0) {
+      // TODO Auto-generated method stub
+      return null;
     }
     
   }
