@@ -18,13 +18,13 @@
 	
 	<path id="test.classpath">
 	    <pathelement path="${testclasses.dir}" />
+	    <fileset dir="${testlib.dir}">
+	      <include name="**/*.jar" />
+	    </fileset>
 	    <fileset dir="${devlib.dir}">
 	      <include name="**/*.jar" />
 	    </fileset>
 	    <fileset dir="${lib.dir}">
-	      <include name="**/*.jar" />
-	    </fileset>
-	    <fileset dir="${testlib.dir}">
 	      <include name="**/*.jar" />
 	    </fileset>
 	    <pathelement path="${classes.dir}" />
