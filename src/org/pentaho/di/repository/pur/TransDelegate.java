@@ -269,7 +269,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         stepMetaInterface = (StepMetaInterface)registry.loadClass(stepPlugin);
         stepType = stepPlugin.getIds()[0]; // revert to the default in case we loaded an alternate version
       } else {
-        throw new KettleStepLoaderException(BaseMessages.getString(PKG, "StepMeta.Exception.UnableToLoadClass", stepType)); //$NON-NLS-1$
+        throw new KettleException(BaseMessages.getString(PKG, "StepMeta.Exception.UnableToLoadClass", stepType)); //$NON-NLS-1$
       }
 
       stepMeta.setStepID(stepType);
