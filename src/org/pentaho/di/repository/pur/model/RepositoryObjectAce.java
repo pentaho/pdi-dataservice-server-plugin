@@ -8,6 +8,7 @@ package org.pentaho.di.repository.pur.model;
 import java.util.EnumSet;
 
 import org.pentaho.di.repository.ObjectRecipient;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 
 public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
 
@@ -15,7 +16,7 @@ public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
 
   private ObjectRecipient recipient;
 
-  private EnumSet<ObjectPermission> permissions;
+  private EnumSet<RepositoryFilePermission> permissions;
 
   @Override
   public boolean equals(Object obj) {
@@ -44,11 +45,11 @@ public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
     this.recipient = recipient;
   }
 
-  public RepositoryObjectAce(ObjectRecipient recipient, ObjectPermission first, ObjectPermission... rest) {
+  public RepositoryObjectAce(ObjectRecipient recipient, RepositoryFilePermission first, RepositoryFilePermission... rest) {
     this(recipient, EnumSet.of(first, rest));
   }
 
-  public RepositoryObjectAce(ObjectRecipient recipient, EnumSet<ObjectPermission> permissions) {
+  public RepositoryObjectAce(ObjectRecipient recipient, EnumSet<RepositoryFilePermission> permissions) {
     this(recipient);
     this.permissions = permissions;
   }
@@ -57,7 +58,7 @@ public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
     return recipient;
   }
 
-  public EnumSet<ObjectPermission> getPermissions() {
+  public EnumSet<RepositoryFilePermission> getPermissions() {
     return permissions;
   }
 
@@ -65,11 +66,11 @@ public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
     this.recipient = recipient;
   }
 
-  public void setPermissions(EnumSet<ObjectPermission> permissions) {
+  public void setPermissions(EnumSet<RepositoryFilePermission> permissions) {
     this.permissions = permissions;
   }
 
-  public void setPermissions(ObjectPermission first, ObjectPermission... rest) {
+  public void setPermissions(RepositoryFilePermission first, RepositoryFilePermission... rest) {
     this.permissions = EnumSet.of(first, rest);
   }
 

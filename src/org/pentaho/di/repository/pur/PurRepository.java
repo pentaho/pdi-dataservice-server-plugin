@@ -64,7 +64,6 @@ import org.pentaho.di.repository.pur.model.EETransMeta;
 import org.pentaho.di.repository.pur.model.EEUserInfo;
 import org.pentaho.di.repository.pur.model.ObjectAce;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
-import org.pentaho.di.repository.pur.model.ObjectPermission;
 import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.repository.pur.model.RepositoryObjectAce;
 import org.pentaho.di.repository.pur.model.RepositoryObjectAcl;
@@ -2665,7 +2664,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     List<ObjectAce> objectAces = new ArrayList<ObjectAce>();
     for (RepositoryFileAce ace : aces) {
       EnumSet<RepositoryFilePermission> permissions = ace.getPermissions();
-      EnumSet<ObjectPermission> permissionSet = EnumSet.noneOf(ObjectPermission.class);
+      EnumSet<RepositoryFilePermission> permissionSet = EnumSet.noneOf(RepositoryFilePermission.class);
       RepositoryFileSid aceSid = ace.getSid();
       ObjectRecipient recipient = new RepositoryObjectRecipient(aceSid.getName());
       if (aceSid.getType().equals(RepositoryFileSid.Type.USER)) {
@@ -2673,19 +2672,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       } else {
         recipient.setType(Type.ROLE);
       }
-      for (RepositoryFilePermission perm : permissions) {
-        if (perm.equals(RepositoryFilePermission.READ)) {
-          permissionSet.add(ObjectPermission.READ);
-        } else if (perm.equals(RepositoryFilePermission.READ_ACL)) {
-          permissionSet.add(ObjectPermission.READ_ACL);
-        } else if (perm.equals(RepositoryFilePermission.WRITE)) {
-          permissionSet.add(ObjectPermission.WRITE);
-        } else if (perm.equals(RepositoryFilePermission.WRITE_ACL)) {
-          permissionSet.add(ObjectPermission.WRITE_ACL);
-        } else if (perm.equals(RepositoryFilePermission.ALL)) {
-          permissionSet.add(ObjectPermission.ALL);
-        }
-      }
+      permissionSet.addAll(permissions);
 
       objectAces.add(new RepositoryObjectAce(recipient, permissionSet));
 
@@ -2718,7 +2705,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         List<ObjectAce> aces = objectAcl.getAces();
         for (ObjectAce objectAce : aces) {
   
-          EnumSet<ObjectPermission> permissions = objectAce.getPermissions();
+          EnumSet<RepositoryFilePermission> permissions = objectAce.getPermissions();
           EnumSet<RepositoryFilePermission> permissionSet = EnumSet.noneOf(RepositoryFilePermission.class);
           ObjectRecipient recipient = objectAce.getRecipient();
           RepositoryFileSid sid;
@@ -2728,19 +2715,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
             sid = new RepositoryFileSid(recipient.getName());
           }
           if (permissions != null) {
-            for (ObjectPermission perm : permissions) {
-              if (perm.equals(ObjectPermission.READ)) {
-                permissionSet.add(RepositoryFilePermission.READ);
-              } else if (perm.equals(ObjectPermission.READ_ACL)) {
-                permissionSet.add(RepositoryFilePermission.READ_ACL);
-              } else if (perm.equals(ObjectPermission.WRITE)) {
-                permissionSet.add(RepositoryFilePermission.WRITE);
-              } else if (perm.equals(ObjectPermission.WRITE_ACL)) {
-                permissionSet.add(RepositoryFilePermission.WRITE_ACL);
-              } else if (perm.equals(ObjectPermission.ALL)) {
-                permissionSet.add(RepositoryFilePermission.ALL);
-              }
-            }
+            permissionSet.addAll(permissions);
           }
           newAclBuilder.ace(sid, permissionSet);
         }

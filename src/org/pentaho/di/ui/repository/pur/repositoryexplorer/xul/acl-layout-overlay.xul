@@ -25,8 +25,8 @@
   							<checkbox id="write-checkbox" command="permissionsController.updatePermission()" flex="1" label="${AclTab.Write}" disabled="true"/>
   						</vbox>																																								
   						<vbox id="permission-column-2" flex="1"> 
-  							<checkbox id="view-checkbox" command="permissionsController.updatePermission()" flex="1" label="${AclTab.ReadAcl}" disabled="true"/>
-  							<checkbox id="modify-checkbox" command="permissionsController.updatePermission()" flex="1" label="${AclTab.WriteAcl}" disabled="true"/>
+  							<checkbox id="delete-checkbox" command="permissionsController.updatePermission()" flex="1" label="${AclTab.Delete}" disabled="true"/>
+  							<checkbox id="manage-checkbox" command="permissionsController.updatePermission()" flex="1" label="${AclTab.ManageAcl}" disabled="true"/>
   						</vbox>
   					</hbox>
   			</groupbox>												

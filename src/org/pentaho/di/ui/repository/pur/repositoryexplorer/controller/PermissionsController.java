@@ -19,10 +19,8 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
-import org.pentaho.di.repository.pur.model.ObjectPermission;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IAclObject;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
-import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAcl;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAclModel;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAcls;
@@ -34,6 +32,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.controllers.IBrowseContro
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -104,9 +103,9 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
 
   private XulButton removeAclButton;
 
-  private XulCheckbox modifyCheckbox;
+  private XulCheckbox manageAclCheckbox;
   
-  private XulCheckbox viewCheckbox;
+  private XulCheckbox deleteCheckbox;
 
   private XulDialog manageAclsDialog;
 
@@ -202,8 +201,8 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     readCheckbox = (XulCheckbox) document.getElementById("read-checkbox");//$NON-NLS-1$ 
 
     inheritParentPermissionCheckbox = (XulCheckbox) document.getElementById("inherit-from-parent-permission-checkbox");//$NON-NLS-1$ 
-    modifyCheckbox = (XulCheckbox) document.getElementById("modify-checkbox");//$NON-NLS-1$ 
-    viewCheckbox = (XulCheckbox) document.getElementById("view-checkbox");//$NON-NLS-1$
+    manageAclCheckbox = (XulCheckbox) document.getElementById("manage-checkbox");//$NON-NLS-1$ 
+    deleteCheckbox = (XulCheckbox) document.getElementById("delete-checkbox");//$NON-NLS-1$
     manageAclsDialog = (XulDialog) document.getElementById("manage-acls-dialog");//$NON-NLS-1$ 
     addAclButton = (XulButton) document.getElementById("add-acl-button");//$NON-NLS-1$ 
     removeAclButton = (XulButton) document.getElementById("remove-acl-button");//$NON-NLS-1$ 
@@ -470,7 +469,8 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     bf.createBinding(viewAclsModel, "removeEnabled", removeAclButton, "!disabled"); //$NON-NLS-1$  //$NON-NLS-2$ 
     bf.createBinding(viewAclsModel, "removeEnabled", writeCheckbox, "!disabled"); //$NON-NLS-1$  //$NON-NLS-2$
     //bf.createBinding(viewAclsModel, "removeEnabled", readCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
-    bf.createBinding(viewAclsModel, "removeEnabled", modifyCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
+    bf.createBinding(viewAclsModel, "removeEnabled", manageAclCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
+    bf.createBinding(viewAclsModel, "removeEnabled", deleteCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     //bf.createBinding(viewAclsModel, "removeEnabled", viewCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     bf.setBindingType(Binding.Type.ONE_WAY);
     // Binding when the user select from the list
@@ -697,18 +697,18 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
   public void setAclState(UIRepositoryObjectAcl acl) {
     uncheckAllPermissionBox();
     if (acl != null && acl.getPermissionSet() != null) {
-      for (ObjectPermission permission : acl.getPermissionSet()) {
-        if (permission.equals(ObjectPermission.ALL)) {
+      for (RepositoryFilePermission permission : acl.getPermissionSet()) {
+        if (permission.equals(RepositoryFilePermission.ALL)) {
           checkAllPermissionBox();
           break;
-        } else if (permission.equals(ObjectPermission.READ)) {
+        } else if (permission.equals(RepositoryFilePermission.READ)) {
           readCheckbox.setChecked(true);
-        } else if (permission.equals(ObjectPermission.WRITE)) {
+        } else if (permission.equals(RepositoryFilePermission.WRITE)) {
           writeCheckbox.setChecked(true);
-        } else if (permission.equals(ObjectPermission.WRITE_ACL)) {
-          modifyCheckbox.setChecked(true);
-        } else if (permission.equals(ObjectPermission.READ_ACL)) {
-          viewCheckbox.setChecked(true);
+        } else if (permission.equals(RepositoryFilePermission.ACL_MANAGEMENT)) {
+          manageAclCheckbox.setChecked(true);
+        } else if (permission.equals(RepositoryFilePermission.DELETE)) {
+          deleteCheckbox.setChecked(true);
         }
       }
     } else {
@@ -719,15 +719,15 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
   private void uncheckAllPermissionBox() {
     readCheckbox.setChecked(false);
     writeCheckbox.setChecked(false);
-    modifyCheckbox.setChecked(false);
-    viewCheckbox.setChecked(false);
+    manageAclCheckbox.setChecked(false);
+    deleteCheckbox.setChecked(false);
   }
 
   private void checkAllPermissionBox() {
     readCheckbox.setChecked(true);
     writeCheckbox.setChecked(true);
-    modifyCheckbox.setChecked(true);
-    viewCheckbox.setChecked(true);
+    manageAclCheckbox.setChecked(true);
+    deleteCheckbox.setChecked(true);
   }
 
   /*
@@ -739,31 +739,31 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     if (acl == null) {
       throw new IllegalStateException(BaseMessages.getString(PKG, "PermissionsController.NoSelectedRecipient"));
     }
-    EnumSet<ObjectPermission> permissions = acl.getPermissionSet();
+    EnumSet<RepositoryFilePermission> permissions = acl.getPermissionSet();
     if (permissions == null) {
-      permissions = EnumSet.noneOf(ObjectPermission.class);
-    } else if (permissions.contains(ObjectPermission.ALL)) {
-      permissions.remove(ObjectPermission.ALL);
+      permissions = EnumSet.noneOf(RepositoryFilePermission.class);
+    } else {
+      permissions.remove(RepositoryFilePermission.ALL);
     }
     if (readCheckbox.isChecked()) {
-      permissions.add(ObjectPermission.READ);
+      permissions.add(RepositoryFilePermission.READ);
     } else {
-      permissions.remove(ObjectPermission.READ);
+      permissions.remove(RepositoryFilePermission.READ);
     }
     if (writeCheckbox.isChecked()) {
-      permissions.add(ObjectPermission.WRITE);
+      permissions.add(RepositoryFilePermission.WRITE);
     } else {
-      permissions.remove(ObjectPermission.WRITE);
+      permissions.remove(RepositoryFilePermission.WRITE);
     }
-    if (modifyCheckbox.isChecked()) {
-      permissions.add(ObjectPermission.WRITE_ACL);
+    if (manageAclCheckbox.isChecked()) {
+      permissions.add(RepositoryFilePermission.ACL_MANAGEMENT);
     } else {
-      permissions.remove(ObjectPermission.WRITE_ACL);
+      permissions.remove(RepositoryFilePermission.ACL_MANAGEMENT);
     }
-    if (viewCheckbox.isChecked()) {
-      permissions.add(ObjectPermission.READ_ACL);
+    if (deleteCheckbox.isChecked()) {
+      permissions.add(RepositoryFilePermission.DELETE);
     } else {
-      permissions.remove(ObjectPermission.READ_ACL);
+      permissions.remove(RepositoryFilePermission.DELETE);
     }
     acl.setPermissionSet(permissions);
     viewAclsModel.updateAcl(acl);
@@ -795,7 +795,6 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
    * @see org.pentaho.di.ui.repository.repositoryexplorer.ContextChangeListener#onContextChange()
    * This method is called whenever user change the folder or file selection
    */
-  @SuppressWarnings("unchecked")
   public TYPE onContextChange() {
     if (viewAclsModel.isModelDirty()) {
       confirmBox.setTitle(BaseMessages.getString(PKG, "PermissionsController.ContextChangeWarning")); //$NON-NLS-1$

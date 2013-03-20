@@ -384,7 +384,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
                 RepositoryFileSid tenantAuthenticatedRoleSid = new RepositoryFileSid(tenantAuthenticatedRoleId, Type.ROLE);
                 
                 aclsForTenantHomeFolder = new RepositoryFileAcl.Builder(userSid)
-                  .ace(tenantAuthenticatedRoleSid, EnumSet.of(RepositoryFilePermission.READ, RepositoryFilePermission.READ_ACL));
+                  .ace(tenantAuthenticatedRoleSid, EnumSet.of(RepositoryFilePermission.READ));
 
                 aclsForUserHomeFolder = new RepositoryFileAcl.Builder(userSid).ace(ownerSid, EnumSet.of(RepositoryFilePermission.ALL));
                 tenantHomeFolder = repositoryFileDao.createFolder(tenantRootFolder.getId(), new RepositoryFile.Builder(

@@ -53,7 +53,6 @@ import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.ObjectRecipient.Type;
 import org.pentaho.di.repository.pur.model.ObjectAce;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
-import org.pentaho.di.repository.pur.model.ObjectPermission;
 import org.pentaho.di.repository.pur.model.RepositoryObjectAce;
 import org.pentaho.di.repository.pur.model.RepositoryObjectRecipient;
 import org.pentaho.di.trans.SlaveStepCopyPartitionDistribution;
@@ -71,6 +70,7 @@ import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 import org.pentaho.di.ui.repository.pur.services.IAclService;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.w3c.dom.Node;
 
 public abstract class RepositoryTestBase {
@@ -1517,7 +1517,7 @@ public abstract class RepositoryTestBase {
     ObjectAcl acl = ((IAclService)repository).getAcl(jobMeta.getObjectId(), false);
     assertNotNull(acl);
     acl.setEntriesInheriting(false);
-    ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER),EnumSet.of(ObjectPermission.READ, ObjectPermission.READ_ACL));
+    ObjectAce ace = new RepositoryObjectAce(new RepositoryObjectRecipient("suzy", Type.USER),EnumSet.of(RepositoryFilePermission.READ));
     List<ObjectAce> aceList = new ArrayList<ObjectAce>();
     aceList.add(ace);
     acl.setAces(aceList);
@@ -1527,8 +1527,7 @@ public abstract class RepositoryTestBase {
     assertEquals(1, acl1.getAces().size());
     ObjectAce ace1 = acl1.getAces().get(0);
     assertEquals(ace1.getRecipient().getName(), "suzy");
-    assertTrue(ace1.getPermissions().contains(ObjectPermission.READ));
-    assertTrue(ace1.getPermissions().contains(ObjectPermission.READ_ACL));
+    assertTrue(ace1.getPermissions().contains(RepositoryFilePermission.READ));
   }
   
   @Test
