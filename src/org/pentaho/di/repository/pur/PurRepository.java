@@ -1681,7 +1681,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (newName != null) {
       // set new title
       RepositoryFile file = pur.getFileById(idJob.getId());
-      file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, newName).build();
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, newName).build();
       NodeRepositoryFileData data = pur
       .getDataAtVersionForRead(file.getId(), null, NodeRepositoryFileData.class);
       file = pur.updateFile(file, data, null);
@@ -1696,7 +1696,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (newName != null) {
       // set new title
       RepositoryFile file = pur.getFileById(idTransformation.getId());
-      file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, newName).build();
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, newName).build();
       NodeRepositoryFileData data = pur
       .getDataAtVersionForRead(file.getId(), null, NodeRepositoryFileData.class);
       file = pur.updateFile(file, data, null);
@@ -1871,8 +1871,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       }
       // update title and description
       file = new RepositoryFile.Builder(file)
-        .title(RepositoryFile.ROOT_LOCALE, element.getName())
-        .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+        .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+        .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), ""))
         .build();
       file = pur.updateFile(
           file, 
@@ -1885,8 +1885,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     } else {
       file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.JOB.getExtension()))
           .versioned(true)
-          .title(RepositoryFile.ROOT_LOCALE, element.getName())
-          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+          .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+          .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), ""))
           .build();
       file = pur.createFile(element.getRepositoryDirectory().getObjectId().getId(), 
           file,
@@ -1927,8 +1927,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       }
       // update title and description
       file = new RepositoryFile.Builder(file)
-        .title(RepositoryFile.ROOT_LOCALE, element.getName())
-        .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+        .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+        .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), ""))
         .build();
       file = pur.updateFile(
           file, 
@@ -1941,8 +1941,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     } else {
       file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.TRANSFORMATION.getExtension()))
           .versioned(true)
-          .title(RepositoryFile.ROOT_LOCALE, element.getName())
-          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), "")).build();
+          .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+          .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), "")).build();
       file = pur.createFile(element.getRepositoryDirectory().getObjectId().getId(),
                 file,
                 new NodeRepositoryFileData(transDelegate.elementToDataNode(element)), 
@@ -1990,12 +1990,12 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     if (isUpdate) {
       file = pur.getFileById(element.getObjectId().getId());
       // update title
-      file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, element.getName()).build();
       file = pur.updateFile(file, new NodeRepositoryFileData(databaseMetaTransformer.elementToDataNode(element)),
           versionComment);
       renameIfNecessary(element, file);
     } else {
-      file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.DATABASE.getExtension())).title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(
+      file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.DATABASE.getExtension())).title(RepositoryFile.DEFAULT_LOCALE, element.getName()).versioned(
           VERSION_SHARED_OBJECTS).build();
       file = pur.createFile(getDatabaseMetaParentFolderId(), file, new NodeRepositoryFileData(databaseMetaTransformer
           .elementToDataNode(element)), versionComment);
@@ -2255,13 +2255,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         // update title
-        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
+        file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, element.getName()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(partitionSchemaTransformer.elementToDataNode(element)),
             versionComment);
         renameIfNecessary(element, file);
       } else {
         file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.PARTITION_SCHEMA.getExtension()))
-        .title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
+        .title(RepositoryFile.DEFAULT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
         file = pur.createFile(getPartitionSchemaParentFolderId(), file, new NodeRepositoryFileData(
             partitionSchemaTransformer.elementToDataNode(element)), versionComment);
       }
@@ -2293,13 +2293,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         // update title
-        file = new RepositoryFile.Builder(file).title(RepositoryFile.ROOT_LOCALE, element.getName()).build();
+        file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, element.getName()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(slaveTransformer.elementToDataNode(element)),
             versionComment);
         renameIfNecessary(element, file);
       } else {
         file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.SLAVE_SERVER.getExtension()))
-        .title(RepositoryFile.ROOT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
+        .title(RepositoryFile.DEFAULT_LOCALE, element.getName()).versioned(VERSION_SHARED_OBJECTS).build();
         file = pur.createFile(getSlaveServerParentFolderId(), file, new NodeRepositoryFileData(slaveTransformer
             .elementToDataNode(element)), versionComment);
       }
@@ -2332,8 +2332,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         file = pur.getFileById(element.getObjectId().getId());
         // update title
         file = new RepositoryFile.Builder(file)
-          .title(RepositoryFile.ROOT_LOCALE, element.getName())
-          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+          .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+          .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), ""))
           .build();
         file = pur.updateFile(
             file, 
@@ -2343,8 +2343,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
         renameIfNecessary(element, file);
       } else {
         file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.CLUSTER_SCHEMA.getExtension()))
-          .title(RepositoryFile.ROOT_LOCALE, element.getName())
-          .description(RepositoryFile.ROOT_LOCALE, Const.NVL(element.getDescription(), ""))
+          .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+          .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), ""))
           .versioned(VERSION_SHARED_OBJECTS)
           .build();
         file = pur.createFile(
