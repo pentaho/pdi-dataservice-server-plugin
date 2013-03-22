@@ -71,6 +71,8 @@ import org.pentaho.platform.engine.core.system.StandaloneSession;
 import org.pentaho.platform.repository2.ClientRepositoryPaths;
 import org.pentaho.platform.repository2.unified.IRepositoryFileDao;
 import org.pentaho.platform.repository2.unified.ServerRepositoryPaths;
+import org.pentaho.platform.repository2.unified.jcr.JcrRepositoryDumpToFile;
+import org.pentaho.platform.repository2.unified.jcr.JcrRepositoryDumpToFile.Mode;
 import org.pentaho.platform.repository2.unified.jcr.JcrTenantUtils;
 import org.pentaho.platform.repository2.unified.jcr.SimpleJcrTestUtils;
 import org.pentaho.platform.repository2.unified.jcr.jackrabbit.security.TestPrincipalProvider;
@@ -130,7 +132,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   
   IUserRoleDao userRoleDao;
   
-  private String tenantAdminRoleName;
+  private String singleTenantAdminRoleName;
   private String tenantAuthenticatedRoleName;
   private String sysAdminUserName;
   private String superAdminRoleName;
@@ -167,7 +169,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     mp = new MicroPlatform();
     // used by DefaultPentahoJackrabbitAccessControlHelper
     mp.defineInstance("tenantedUserNameUtils", userNameUtils);
-    mp.defineInstance("tenantedRoleNameUtils", roleNameUtils);    
+    mp.defineInstance("tenantedRoleNameUtils", roleNameUtils);
     mp.defineInstance(IAuthorizationPolicy.class, authorizationPolicy);
     mp.defineInstance(ITenantManager.class, tenantManager);
     mp.defineInstance("roleAuthorizationPolicyRoleBindingDaoTarget", roleBindingDaoTarget);
@@ -175,8 +177,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     // Start the micro-platform
     mp.start();
     loginAsRepositoryAdmin();
-    systemTenant = tenantManager.createTenant(null, ServerRepositoryPaths.getPentahoRootFolderName(), tenantAdminRoleName, tenantAuthenticatedRoleName, "Anonymous");
-    userRoleDao.createUser(systemTenant, sysAdminUserName, "password", "", new String[]{tenantAdminRoleName});
+    systemTenant = tenantManager.createTenant(null, ServerRepositoryPaths.getPentahoRootFolderName(), singleTenantAdminRoleName, tenantAuthenticatedRoleName, "Anonymous");
+    userRoleDao.createUser(systemTenant, sysAdminUserName, "password", "", new String[]{singleTenantAdminRoleName});
     logout();
     
     super.setUp();
@@ -202,16 +204,16 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     repository = new PurRepository();
     repository.init(repositoryMeta);
 
-    login(sysAdminUserName, systemTenant, new String[]{tenantAdminRoleName, tenantAuthenticatedRoleName});
-    ITenant tenantAcme = tenantManager.createTenant(systemTenant, EXP_LOGIN, tenantAdminRoleName, tenantAuthenticatedRoleName, "Anonymous");
-    userRoleDao.createUser(tenantAcme, EXP_LOGIN, "password", "", new String[]{tenantAdminRoleName});
+    login(sysAdminUserName, systemTenant, new String[]{singleTenantAdminRoleName, tenantAuthenticatedRoleName});
+    ITenant tenantAcme = tenantManager.createTenant(systemTenant, EXP_LOGIN, singleTenantAdminRoleName, tenantAuthenticatedRoleName, "Anonymous");
+    userRoleDao.createUser(tenantAcme, EXP_LOGIN, "password", "", new String[]{singleTenantAdminRoleName});
     logout();
     
     setUpUser();
     
     ((PurRepository) repository).setTest(repo);
     repository.connect(EXP_LOGIN, "password");
-    login(EXP_LOGIN, tenantAcme, new String[]{tenantAdminRoleName, tenantAuthenticatedRoleName});
+    login(EXP_LOGIN, tenantAcme, new String[]{singleTenantAdminRoleName, tenantAuthenticatedRoleName});
     
     System.out.println("PUR NAME!!!: " + repo.getClass().getCanonicalName());
     RepositoryFile repositoryFile = repo.getFile(ClientRepositoryPaths.getPublicFolderPath());
@@ -227,7 +229,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   protected void setUpUser() {
     StandaloneSession pentahoSession = new StandaloneSession(userInfo.getLogin());
     pentahoSession.setAuthenticated(userInfo.getLogin());
-    pentahoSession.setAttribute(IPentahoSession.TENANT_ID_KEY, "acme");
+    pentahoSession.setAttribute(IPentahoSession.TENANT_ID_KEY, "/pentaho/joe");
     final GrantedAuthority[] authorities = new GrantedAuthority[2];
     authorities[0] = new GrantedAuthorityImpl("Authenticated");
     authorities[1] = new GrantedAuthorityImpl("acme_Authenticated");
@@ -426,12 +428,12 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   public void tearDown() throws Exception {
     // null out fields to get back memory
     authorizationPolicy = null;
-    login(sysAdminUserName, systemTenant, new String[]{tenantAdminRoleName, tenantAuthenticatedRoleName});
+    login(sysAdminUserName, systemTenant, new String[]{singleTenantAdminRoleName, tenantAuthenticatedRoleName});
     ITenant tenant = tenantManager.getTenant("/" + ServerRepositoryPaths.getPentahoRootFolderName() + "/" + TENANT_ID_ACME);
     if (tenant != null) {
       cleanupUserAndRoles(tenant);
     }
-    login(sysAdminUserName, systemTenant, new String[]{tenantAdminRoleName, tenantAuthenticatedRoleName});
+    login(sysAdminUserName, systemTenant, new String[]{singleTenantAdminRoleName, tenantAuthenticatedRoleName});
     tenant = tenantManager.getTenant("/" + ServerRepositoryPaths.getPentahoRootFolderName() + "/" + TENANT_ID_DUFF);
     if (tenant != null) {
       cleanupUserAndRoles(tenant);
@@ -441,7 +443,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     logout();
 
     repositoryAdminUsername = null;
-    tenantAdminRoleName = null;
+    singleTenantAdminRoleName = null;
     tenantAuthenticatedRoleName = null;
 //    roleBindingDao = null;
     authorizationPolicy = null;
@@ -519,8 +521,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     repositoryAdminUsername = (String) applicationContext.getBean("repositoryAdminUsername");
     superAdminRoleName = (String) applicationContext.getBean("superAdminAuthorityName");
     sysAdminUserName = (String) applicationContext.getBean("superAdminUserName");
-    tenantAuthenticatedRoleName = (String) applicationContext.getBean("tenantAuthenticatedAuthorityNamePattern");
-    tenantAdminRoleName = (String) applicationContext.getBean("tenantAdminAuthorityNamePattern");
+    tenantAuthenticatedRoleName = (String) applicationContext.getBean("tenantAuthenticatedAuthorityName");
+    singleTenantAdminRoleName = (String) applicationContext.getBean("singleTenantAdminAuthorityName");
     tenantManager = (ITenantManager) applicationContext.getBean("tenantMgrProxy");
     roleBindingDaoTarget = (IRoleAuthorizationPolicyRoleBindingDao) applicationContext.getBean("roleAuthorizationPolicyRoleBindingDaoTarget");
     authorizationPolicy = (IAuthorizationPolicy) applicationContext.getBean("authorizationPolicy");
