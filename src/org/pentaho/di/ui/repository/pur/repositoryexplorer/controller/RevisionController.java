@@ -10,6 +10,7 @@ import java.util.*;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.ILockObject;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IRevisionObject;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectRevision;
@@ -28,6 +29,7 @@ import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
+import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
 import org.pentaho.ui.xul.components.XulTab;
 import org.pentaho.ui.xul.containers.XulTabbox;
@@ -55,6 +57,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
   protected UIRepositoryObjectRevisions revisions;
   protected Binding revisionBinding;
 
+  private XulMessageBox messageBox;
 
   protected ResourceBundle messages = new ResourceBundle() {
 
@@ -83,6 +86,7 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
       bf = new DefaultBindingFactory();
       bf.setDocument(this.getXulDomContainer().getDocumentRoot());
 
+      messageBox = (XulMessageBox) document.createElement("messagebox");//$NON-NLS-1$
       createBindings();
     } catch (Exception e) {
       throw new ControllerInitializationException(e);
@@ -216,6 +220,15 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
       final UIRepositoryObjectRevision versionToRestore = versions.iterator().next();
       
       XulPromptBox commitPrompt = promptCommitComment(document, messages, null);
+
+      if (((ILockObject)contentToRestore).isLocked()) {
+        // Cannot restore revision of locked content
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG, "RevisionsController.RestoreLockedFileNotAllowed")); //$NON-NLS-1$
+        messageBox.open();
+        return;
+      }
 
       commitPrompt.addDialogCallback(new XulDialogCallback<String>() {
         public void onClose(XulComponent component, Status status, String value) {
