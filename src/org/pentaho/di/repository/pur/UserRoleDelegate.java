@@ -8,7 +8,11 @@ package org.pentaho.di.repository.pur;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.ws.rs.core.MediaType;
+
 import org.apache.commons.logging.Log;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IUser;
@@ -16,12 +20,17 @@ import org.pentaho.di.repository.pur.model.IEEUser;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.platform.api.engine.security.userroledao.UserRoleInfo;
+import org.pentaho.platform.config.PentahoSpringBeansConfig.AuthenticationProvider;
 import org.pentaho.platform.security.userrole.ws.IUserRoleListWebService;
 import org.pentaho.platform.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.security.userroledao.ws.ProxyPentahoRole;
 import org.pentaho.platform.security.userroledao.ws.ProxyPentahoUser;
 import org.pentaho.platform.security.userroledao.ws.UserRoleException;
 import org.pentaho.platform.security.userroledao.ws.UserRoleSecurityInfo;
+
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 
 public class UserRoleDelegate implements java.io.Serializable {
 
@@ -53,11 +62,25 @@ public class UserRoleDelegate implements java.io.Serializable {
       userRoleWebService = WsFactory.createService(repositoryMeta, "userRoleService", userInfo.getLogin(), userInfo //$NON-NLS-1$
           .getPassword(), IUserRoleWebService.class);
       this.rsm = rsm;
+      initManaged(repositoryMeta, userInfo);
       updateUserRoleInfo();
     } catch (Exception e) {
       this.logger.error(BaseMessages.getString(UserRoleDelegate.class,
           "UserRoleDelegate.ERROR_0001_UNABLE_TO_INITIALIZE_USER_ROLE_WEBSVC"), e); //$NON-NLS-1$
     }
+  }
+  
+  private void initManaged(PurRepositoryMeta repositoryMeta, IUser userInfo) throws JSONException {
+    String baseUrl = repositoryMeta.getRepositoryLocation().getUrl();
+    String webService = baseUrl + "/api/system/authentication-provider";
+    HTTPBasicAuthFilter authFilter = new HTTPBasicAuthFilter(userInfo.getLogin(), userInfo.getPassword());
+    Client client = new Client();
+    client.addFilter(authFilter);
+    WebResource resource = client.resource(webService);
+    String response = resource.accept(MediaType.APPLICATION_JSON_TYPE).get(String.class);
+    AuthenticationProvider provider = 
+        AuthenticationProvider.valueOf(new JSONObject(response).getString("authenticationType")); 
+    managed = provider != AuthenticationProvider.LDAP_BASED_AUTHENTICATION;
   }
 
   public void updateUserRoleInfo() throws UserRoleException {
@@ -65,11 +88,9 @@ public class UserRoleDelegate implements java.io.Serializable {
       userRoleSecurityInfo = userRoleWebService.getUserRoleSecurityInfo();
       lookupCache = new UserRoleLookupCache(userRoleSecurityInfo, rsm);
       hasNecessaryPermissions = true;
-      managed = true;
     } catch (UserRoleException e) {
       userRoleInfo = userDetailsRoleListWebService.getUserRoleInfo();
       hasNecessaryPermissions = false;
-      managed = false;
     }
   }
   public boolean isManaged() {
