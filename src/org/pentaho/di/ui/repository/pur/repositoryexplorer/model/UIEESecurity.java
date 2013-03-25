@@ -54,7 +54,7 @@ public class UIEESecurity extends UISecurity implements java.io.Serializable {
         // For a NON-MANAGED SERVER( I.E LDAP) We don't want to show
         // Authenticated and Anonymous in the Roles List. These will appear in the
         // System Roles Deck
-        if(!rsm.isManaged() && (role.getName().equals(AUTHENTICATED) || role.getName().equals(ANONYMOUS))) {
+        if(role.getName().equals(AUTHENTICATED) || role.getName().equals(ANONYMOUS)) {
           continue;
         } else {
           IUIRole newRole = UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role);
