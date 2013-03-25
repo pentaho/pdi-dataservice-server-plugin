@@ -20,6 +20,7 @@ import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IAclObject;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.ILockObject;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIEEUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAcl;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAclModel;
@@ -617,7 +618,15 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
 
       } else {
         UIRepositoryContent rc = (UIRepositoryContent) roList.get(0);
-        if (rc instanceof IAclObject) {
+        if (rc instanceof ILockObject
+            && ((ILockObject)rc).isLocked()) {
+            messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+            messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+            messageBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.LockedObjectWarning")); //$NON-NLS-1$
+            messageBox.open();
+            viewAclsModel.setModelDirty(false);
+            return;
+        } else if (rc instanceof IAclObject) {
           ((IAclObject) rc).setAcls(viewAclsModel);
         } else {
           throw new IllegalStateException(BaseMessages.getString(PKG, "PermissionsController.NoAclSupport")); //$NON-NLS-1$
@@ -639,6 +648,11 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
       messageBox.setMessage(ade.getLocalizedMessage());
       messageBox.open();
+    } catch (KettleException kex) {
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+        messageBox.setMessage(kex.getLocalizedMessage());
+        messageBox.open();
     }
   }
 
