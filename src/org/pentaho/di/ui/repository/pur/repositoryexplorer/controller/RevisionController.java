@@ -221,7 +221,8 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
       
       XulPromptBox commitPrompt = promptCommitComment(document, messages, null);
 
-      if (((ILockObject)contentToRestore).isLocked()) {
+      if (contentToRestore instanceof ILockObject &&
+          ((ILockObject)contentToRestore).isLocked()) {
         // Cannot restore revision of locked content
         messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
         messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$

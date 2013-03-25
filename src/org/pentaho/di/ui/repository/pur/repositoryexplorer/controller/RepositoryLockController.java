@@ -21,7 +21,6 @@ import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationE
 import org.pentaho.di.ui.repository.repositoryexplorer.IUISupportController;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.BrowseController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
-import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectories;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObjects;
@@ -120,7 +119,7 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       for (Object object: selectedItems) {
         if (object instanceof UIRepositoryDirectory) {
           try {
-            if(!(doesAnyRepositoryDirectoryHasLockedObject(event, (UIRepositoryDirectory) object))) {
+            if(!(repositoryDirectoryHasLockedObject(event, (UIRepositoryDirectory) object))) {
               // All the contents in the folder are not locked, check default permissions
               browseController.onDragFromGlobalTree(event);              
             }
@@ -131,14 +130,14 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       }  
     }
   }
-  private boolean doesAnyRepositoryDirectoryHasLockedObject(DropEvent event, UIRepositoryDirectory dir)  throws KettleException{
+  private boolean repositoryDirectoryHasLockedObject(DropEvent event, UIRepositoryDirectory dir)  throws KettleException{
     if (areAnyRepositoryObjectsLocked(event, dir.getRepositoryObjects())) {
       return true;
     } 
     for(UIRepositoryObject ro: dir.getChildren()) {
       if(ro instanceof UIRepositoryDirectory) {
         UIRepositoryDirectory directory = (UIRepositoryDirectory) ro;
-        doesAnyRepositoryDirectoryHasLockedObject(event, directory);
+        repositoryDirectoryHasLockedObject(event, directory);
       }
     }
     return false;
@@ -148,17 +147,13 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
       if (ro instanceof ILockObject) {
         final UIRepositoryContent contentToLock = (UIRepositoryContent) ro;
         if (((ILockObject) contentToLock).isLocked()) {
-          // Content is locked. Lets check if the lock belongs to the current logged in user
-          if (!((ILockObject) contentToLock).getRepositoryLock().getLogin().equalsIgnoreCase(
-              repository.getUserInfo().getLogin())) {
-            // Current user does not own the lock
-            event.setAccepted(false);
-            messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-            messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-            messageBox.setMessage(BaseMessages.getString(PKG, "BrowseController.FolderMoveNotAllowed")); //$NON-NLS-1$
-            messageBox.open();
-            return true;
-          }
+          // Content is locked, move is not allowed.
+          event.setAccepted(false);
+          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PKG, "BrowseController.FolderMoveNotAllowed")); //$NON-NLS-1$
+          messageBox.open();
+          return true;
         }
       }
     }
@@ -173,24 +168,23 @@ public class RepositoryLockController extends AbstractXulEventHandler implements
           if (ro instanceof UIRepositoryObject && ro instanceof ILockObject) {
             final UIRepositoryContent contentToLock = (UIRepositoryContent) ro;
             if (((ILockObject) contentToLock).isLocked()) {
-              // Content is locked. Lets check if the lock belongs to the current logged in user
-              if (((ILockObject) contentToLock).getRepositoryLock().getLogin().equalsIgnoreCase(
-                  repository.getUserInfo().getLogin())) {
-                // Current user owns the lock, check default permissions
-                browseController.onDragFromLocalTable(event);
-              } else {
-                // Current user does not own the lock
-                event.setAccepted(false);
-                messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-                messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-                messageBox.setMessage(BaseMessages.getString(PKG, "BrowseController.MoveNotAllowed")); //$NON-NLS-1$
-                messageBox.open();
-                break;
-              }
+              // Content is locked, not allowed to move
+              event.setAccepted(false);
+              messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+              messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+              messageBox.setMessage(BaseMessages.getString(PKG, "BrowseController.MoveNotAllowed")); //$NON-NLS-1$
+              messageBox.open();
+              break;
             } else {
               // Content is not locked, check default permissions
               browseController.onDragFromLocalTable(event);
             }
+          } else if (ro instanceof UIRepositoryDirectory
+              && repositoryDirectoryHasLockedObject(event, (UIRepositoryDirectory) ro))
+          {
+              // locked content nested in this directory.  move not allowed.
+              event.setAccepted(false);
+              break;
           }
         }
       }
