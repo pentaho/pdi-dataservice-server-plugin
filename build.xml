@@ -17,7 +17,7 @@
   </target>
   <property name="compilelib.dir"
             value="${basedir}/compile-lib"
-            description="Directory for developer to place development Jar files (not affected by clean targets)" />
+            description="Directory for compilation dependencies that shouldn't make it into the distribution" />
 	
   <!-- Setup the compile classpath -->
   <path id="classpath">
