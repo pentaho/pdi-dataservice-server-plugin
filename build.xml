@@ -15,20 +15,70 @@
     <unzip src="${dist.dir}/${package.basename}.zip" dest="${kettle.plugin.dir}" overwrite="true">
     </unzip>
   </target>
+  <property name="compilelib.dir"
+            value="${basedir}/compile-lib"
+            description="Directory for developer to place development Jar files (not affected by clean targets)" />
 	
-	<path id="test.classpath">
-	    <pathelement path="${testclasses.dir}" />
-	    <fileset dir="${testlib.dir}">
-	      <include name="**/*.jar" />
-	    </fileset>
-	    <fileset dir="${devlib.dir}">
-	      <include name="**/*.jar" />
-	    </fileset>
-	    <fileset dir="${lib.dir}">
-	      <include name="**/*.jar" />
-	    </fileset>
-	    <pathelement path="${classes.dir}" />
-	  </path>
+  <!-- Setup the compile classpath -->
+  <path id="classpath">
+    <fileset dir="${devlib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+  	<fileset dir="${compilelib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    <fileset dir="${lib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+  </path>
+	
+  <path id="test.classpath">
+    <pathelement path="${testclasses.dir}" />
+    <fileset dir="${testlib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+	<fileset dir="${devlib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    <fileset dir="${compilelib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    <fileset dir="${lib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    <pathelement path="${classes.dir}" />
+  </path>
+
+  <target name="clean-jars" depends="subfloor.clean-jars">
+  	<delete dir="${compilelib.dir}" />
+  </target>
+	
+  <target name="create-dot-classpath" depends="install-pentaho-ant-tasks,init">
+    <dot-classpath>
+      <!-- Include all lib dirs -->
+    	<classpath>
+          <fileset dir="${lib.dir}">
+            <include name="*.jar" />
+          </fileset>
+          <fileset dir="${devlib.dir}">
+            <include name="*.jar" />
+          </fileset>
+  		  <fileset dir="${compilelib.dir}">
+  		    <include name="**/*.jar" />
+  		  </fileset>
+          <fileset dir="${testlib.dir}">
+            <include name="*.jar" />
+          </fileset>
+        </classpath>
+    </dot-classpath>
+  </target>
+	
+  <target name="resolve" depends="subfloor.resolve, resolve-compiletime" />
+	
+  <target name="resolve-compiletime" depends="resolve-init">
+    <ivy:resolve file="${ivyfile}" conf="compile" />
+    <ivy:retrieve conf="compile" pattern="${compilelib.dir}/[module]-[revision](-[classifier]).[ext]" symlink="${ivy.use.symlinks.internal}" />
+  </target>
 
   <!-- Override assemble to build plugin.xml afterwards -->
   <target name="assemble" depends="subfloor-pkg.assemble, update-plugin-xml" />
