@@ -84,14 +84,14 @@ public class UserRoleDelegate implements java.io.Serializable {
   }
 
   public void updateUserRoleInfo() throws UserRoleException {
-    try {
-      userRoleSecurityInfo = userRoleWebService.getUserRoleSecurityInfo();
-      lookupCache = new UserRoleLookupCache(userRoleSecurityInfo, rsm);
-      hasNecessaryPermissions = true;
-    } catch (UserRoleException e) {
-      userRoleInfo = userDetailsRoleListWebService.getUserRoleInfo();
-      hasNecessaryPermissions = false;
-    }
+      if (isManaged()) {
+          userRoleSecurityInfo = userRoleWebService.getUserRoleSecurityInfo();
+          lookupCache = new UserRoleLookupCache(userRoleSecurityInfo, rsm);
+          hasNecessaryPermissions = true;
+      } else {
+          userRoleInfo = userDetailsRoleListWebService.getUserRoleInfo();
+          hasNecessaryPermissions = false;
+      }
   }
   public boolean isManaged() {
     return managed;
