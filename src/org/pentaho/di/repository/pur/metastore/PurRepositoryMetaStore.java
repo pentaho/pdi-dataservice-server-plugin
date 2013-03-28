@@ -97,7 +97,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   }
   
   protected RepositoryFile buildFolder(String path, String foldername) {
-    return new RepositoryFile(null, foldername, false, false, false, null, path, new Date(), new Date(), false, null, null, null, null, null, null, null, null, 0L, null, null);  
+    return new RepositoryFile(null, foldername, true, false, false, null, path, new Date(), new Date(), false, null, null, null, null, null, null, null, null, 0L, null, null);  
   }
 
 
