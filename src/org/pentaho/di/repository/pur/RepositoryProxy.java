@@ -37,13 +37,13 @@ import org.pentaho.di.repository.UserInfo;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
 import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.shared.SharedObjects;
-import org.pentaho.di.trans.DataServiceMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
+import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
+import org.pentaho.platform.api.repository2.unified.data.node.DataNode.DataPropertyType;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
-import org.pentaho.platform.api.repository2.unified.data.node.DataNode.DataPropertyType;
 
 /**
  * A {@link Repository} that stands in for the real repository, collecting entry and step attributes and loading or
@@ -686,9 +686,9 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
   public IRepositoryImporter getImporter() {
     throw new UnsupportedOperationException();
   }
-  
-  @Override
-  public List<DataServiceMeta> listDataServices() throws KettleException {
-    throw new UnsupportedOperationException();
+
+  public IMetaStore getMetaStore() {
+    return null;
   }
+
 }

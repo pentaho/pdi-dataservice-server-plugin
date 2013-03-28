@@ -155,7 +155,7 @@ public class RepositoryPerformanceApp extends RepositoryTestBase implements java
     @Override
     public void setUp() throws Exception {
       super.setUp();  
-      PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
+      // PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
     }
     
 

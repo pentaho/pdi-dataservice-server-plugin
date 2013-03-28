@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.xml.ws.WebServiceException;
+
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
@@ -58,6 +59,7 @@ import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositorySecurityManager;
 import org.pentaho.di.repository.RepositorySecurityProvider;
 import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.di.repository.pur.metastore.PurRepositoryMetaStore;
 import org.pentaho.di.repository.pur.model.EEJobMeta;
 import org.pentaho.di.repository.pur.model.EERepositoryObject;
 import org.pentaho.di.repository.pur.model.EETransMeta;
@@ -70,7 +72,6 @@ import org.pentaho.di.repository.pur.model.RepositoryObjectAcl;
 import org.pentaho.di.repository.pur.model.RepositoryObjectRecipient;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
-import org.pentaho.di.trans.DataServiceMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
@@ -79,6 +80,7 @@ import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.pur.services.ITrashService;
+import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAce;
@@ -191,6 +193,8 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   private boolean connected = false;
 
   private String connectMessage = null;
+  
+  protected PurRepositoryMetaStore metaStore;
   
   //  The servers (DI Server, BA Server) that a user can authenticate to
   private enum RepositoryServers {DIS, POBS};
@@ -349,12 +353,17 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
       connected = true;
     }
     catch (NullPointerException npe) {
-    	 throw new KettleException(BaseMessages.getString(PKG, "PurRepository.LoginException.Message"));
+      connected = false;
+    	throw new KettleException(BaseMessages.getString(PKG, "PurRepository.LoginException.Message"));
     }
     catch (Throwable e) {
       connected = false;
       WsFactory.clearServices();
       throw new KettleException(e);
+    } finally {
+      if (connected) {
+        metaStore = new PurRepositoryMetaStore(this);
+      }
     }
   }
 
@@ -388,6 +397,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
 
   public void disconnect() {
     connected = false;
+    metaStore = null;
     WsFactory.clearServices();
   }
 
@@ -2458,7 +2468,7 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
     return ClientRepositoryPaths.getEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_PDI + RepositoryFile.SEPARATOR
         + FOLDER_DATABASES;
   }
-
+  
   private Serializable getDatabaseMetaParentFolderId() {
     if (cachedDatabaseMetaParentFolderId == null) {
       RepositoryFile f = pur.getFile(getDatabaseMetaParentFolderPath());
@@ -2968,26 +2978,13 @@ public class PurRepository implements Repository, IRevisionService, IAclService,
   public IRepositoryImporter getImporter() {
     return new PurRepositoryImporter(this);
   }
+  
+  public IUnifiedRepository getPur() {
+    return pur;
+  }
 
-  @Override
-  public List<DataServiceMeta> listDataServices() throws KettleException {
-    List<DataServiceMeta> list = new ArrayList<DataServiceMeta>();
-    
-    /*
-    RepositoryFileCondition rfc = new RepositoryFileCondition();
-    rfc.getPropertyValues().put(TransDelegate.PROP_TRANS_DATA_SERVICE_NAME, null);
-    rfc.getPropertyValues().put(TransDelegate.PROP_TRANS_DATA_SERVICE_STEPNAME, null);
-    
-    List<RepositoryFile> files = pur.searchFiles(rfc);
-    for (RepositoryFile file : files) {
-      // This is rather inefficient, let's try to serialize DataServiceMeta itself or at least pass along the requested properties.
-      //
-      TransMeta transMeta = loadTransformation(new StringObjectId(file.getId().toString()), null);
-      list.add(transMeta.getDataService());
-    }
-    */
-    
-    return list; 
+  public IMetaStore getMetaStore() {
+    return metaStore;
   }
   
 }

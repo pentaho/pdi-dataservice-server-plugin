@@ -59,6 +59,9 @@
     <dependency org="pentaho-kettle" name="kettle-ui-swt" rev="${dependency.kettle.revision}" transitive="false"
       changing="true" />
 
+    <!-- Metastore -->
+    <dependency org="pentaho" name="metastore" rev="${dependency.metastore.revision}" transitive="false" changing="true" />
+
     <!-- misc third-party -->
     <dependency org="commons-logging" name="commons-logging" rev="1.1" />
     <dependency org="commons-io" name="commons-io" rev="2.1" conf="default->default;test->default" />
