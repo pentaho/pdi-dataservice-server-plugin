@@ -64,7 +64,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
 
   public static final String NEWLINE = "\n"; //$NON-NLS-1$
 
-  private ResourceBundle messages = new ResourceBundle() {
+  protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
     public Enumeration<String> getKeys() {
@@ -167,7 +167,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       confirmBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.RemoveAclWarningText")); //$NON-NLS-1$
       confirmBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
       confirmBox.setCancelLabel(BaseMessages.getString(PKG, "Dialog.Cancel")); //$NON-NLS-1$
-      confirmBox.addDialogCallback(new XulDialogCallback() {
+      confirmBox.addDialogCallback(new XulDialogCallback<Object>() {
 
         public void onClose(XulComponent sender, Status returnCode, Object retVal) {
           if (returnCode == Status.ACCEPT) {
@@ -398,7 +398,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
 
     bf.setBindingType(Binding.Type.ONE_WAY);
 
-    BindingConvertor securityBindingConverter = new BindingConvertor<List<UIRepositoryObject>, List<UIRepositoryObjectAcl>>() {
+    BindingConvertor<List<UIRepositoryObject>, List<UIRepositoryObjectAcl>> securityBindingConverter = new BindingConvertor<List<UIRepositoryObject>, List<UIRepositoryObjectAcl>>() {
       @Override
       public List<UIRepositoryObjectAcl> sourceToTarget(List<UIRepositoryObject> ro) {
         if (ro == null) {
@@ -815,7 +815,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       confirmBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.ContextChangeWarningText")); //$NON-NLS-1$
       confirmBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Yes")); //$NON-NLS-1$
       confirmBox.setCancelLabel(BaseMessages.getString(PKG, "Dialog.No")); //$NON-NLS-1$
-      confirmBox.addDialogCallback(new XulDialogCallback() {
+      confirmBox.addDialogCallback(new XulDialogCallback<Object>() {
 
         public void onClose(XulComponent sender, Status returnCode, Object retVal) {
           if (returnCode == Status.ACCEPT) {

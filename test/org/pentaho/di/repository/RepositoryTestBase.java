@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 
 import org.apache.commons.logging.Log;
@@ -29,7 +28,6 @@ import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.NotePadMeta;
 import org.pentaho.di.core.Result;
 import org.pentaho.di.core.annotations.JobEntry;
@@ -70,6 +68,7 @@ import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 import org.pentaho.di.ui.repository.pur.services.IAclService;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
+import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.w3c.dom.Node;
 
@@ -540,7 +539,7 @@ public abstract class RepositoryTestBase {
     assertEquals(1, fetchedJob.listParameters().length);
     assertEquals(EXP_JOB_PARAM_1_DEF, fetchedJob.getParameterDefault(EXP_JOB_PARAM_1_NAME));
     assertEquals(EXP_JOB_PARAM_1_DESC, fetchedJob.getParameterDescription(EXP_JOB_PARAM_1_NAME));
-    JobLogTable jobLogTable = fetchedJob.getJobLogTable();
+    // JobLogTable jobLogTable = fetchedJob.getJobLogTable();
     // TODO mlowery why doesn't this work?
     //    assertEquals(EXP_LOG_TABLE_CONN_NAME, jobLogTable.getConnectionName());
     //    assertEquals(EXP_JOB_LOG_TABLE_INTERVAL, jobLogTable.getLogInterval());
@@ -548,13 +547,13 @@ public abstract class RepositoryTestBase {
     //    assertEquals(EXP_LOG_TABLE_SIZE_LIMIT, jobLogTable.getLogSizeLimit());
     //    assertEquals(EXP_LOG_TABLE_TABLE_NAME, jobLogTable.getTableName());
     //    assertEquals(EXP_LOG_TABLE_TIMEOUT_IN_DAYS, jobLogTable.getTimeoutInDays());
-    JobEntryLogTable jobEntryLogTable = fetchedJob.getJobEntryLogTable();
+    // JobEntryLogTable jobEntryLogTable = fetchedJob.getJobEntryLogTable();
     // TODO mlowery why doesn't this work?
     //    assertEquals(EXP_LOG_TABLE_CONN_NAME, jobEntryLogTable.getConnectionName());
     //    assertEquals(EXP_LOG_TABLE_SCHEMA_NAME, jobEntryLogTable.getSchemaName());
     //    assertEquals(EXP_LOG_TABLE_TABLE_NAME, jobEntryLogTable.getTableName());
     //    assertEquals(EXP_LOG_TABLE_TIMEOUT_IN_DAYS, jobEntryLogTable.getTimeoutInDays());
-    ChannelLogTable channelLogTable = fetchedJob.getChannelLogTable();
+    // ChannelLogTable channelLogTable = fetchedJob.getChannelLogTable();
     // TODO mlowery why doesn't this work?
     //    assertEquals(EXP_LOG_TABLE_CONN_NAME, channelLogTable.getConnectionName());
     //    assertEquals(EXP_LOG_TABLE_SCHEMA_NAME, channelLogTable.getSchemaName());
@@ -563,17 +562,17 @@ public abstract class RepositoryTestBase {
     assertEquals(EXP_JOB_BATCH_ID_PASSED, fetchedJob.isBatchIdPassed());
     assertEquals(EXP_JOB_SHARED_OBJECTS_FILE, fetchedJob.getSharedObjectsFile());
     assertEquals(2, fetchedJob.getJobCopies().size());
-    assertEquals("JobEntryAttributeTester", fetchedJob.getJobEntry(0).getEntry().getTypeId());
+    assertEquals("JobEntryAttributeTester", fetchedJob.getJobEntry(0).getEntry().getPluginId());
     assertEquals(EXP_JOB_ENTRY_1_COPY_X_LOC, fetchedJob.getJobEntry(0).getLocation().x);
     assertEquals(EXP_JOB_ENTRY_1_COPY_Y_LOC, fetchedJob.getJobEntry(0).getLocation().y);
-    assertEquals("JobEntryAttributeTester", fetchedJob.getJobEntry(1).getEntry().getTypeId());
+    assertEquals("JobEntryAttributeTester", fetchedJob.getJobEntry(1).getEntry().getPluginId());
     assertEquals(EXP_JOB_ENTRY_2_COPY_X_LOC, fetchedJob.getJobEntry(1).getLocation().x);
     assertEquals(EXP_JOB_ENTRY_2_COPY_Y_LOC, fetchedJob.getJobEntry(1).getLocation().y);
     assertEquals(1, fetchedJob.getJobhops().size());
     assertEquals(EXP_JOB_ENTRY_1_NAME, fetchedJob.getJobHop(0).getFromEntry().getEntry().getName());
-    assertEquals("JobEntryAttributeTester", fetchedJob.getJobHop(0).getFromEntry().getEntry().getTypeId());
+    assertEquals("JobEntryAttributeTester", fetchedJob.getJobHop(0).getFromEntry().getEntry().getPluginId());
     assertEquals(EXP_JOB_ENTRY_2_NAME, fetchedJob.getJobHop(0).getToEntry().getEntry().getName());
-    assertEquals("JobEntryAttributeTester", fetchedJob.getJobHop(0).getToEntry().getEntry().getTypeId());
+    assertEquals("JobEntryAttributeTester", fetchedJob.getJobHop(0).getToEntry().getEntry().getPluginId());
     assertEquals(1, fetchedJob.getNotes().size());
     assertTrue(fetchedJob.getNote(0).getNote().startsWith(EXP_NOTEPAD_NOTE));
     assertEquals(EXP_NOTEPAD_X, fetchedJob.getNote(0).getLocation().x);
@@ -587,7 +586,7 @@ public abstract class RepositoryTestBase {
     assertNull(service.getJobLock(jobMeta.getObjectId()));
     service.lockJob(jobMeta.getObjectId(), EXP_JOB_LOCK_MSG);
     assertEquals(EXP_JOB_LOCK_MSG, service.getJobLock(jobMeta.getObjectId()).getMessage());
-    assertEquals(new Date().getDate(), service.getJobLock(jobMeta.getObjectId()).getLockDate().getDate());
+    assertEquals(getDate(new Date()), getDate(service.getJobLock(jobMeta.getObjectId()).getLockDate()));
     assertEquals(EXP_LOGIN_PLUS_TENANT, service.getJobLock(jobMeta.getObjectId()).getLogin());
     // TODO mlowery currently PUR lock only stores "login"; why do we need username too? 
     //    assertEquals(EXP_USERNAME, repository.getJobLock(jobMeta.getObjectId()).getUsername());
@@ -626,6 +625,11 @@ public abstract class RepositoryTestBase {
     assertEquals(0, repository.getJobNames(jobsDir.getObjectId(), false).length);
     assertEquals(1, repository.getJobNames(jobsDir.getObjectId(), true).length);
     assertEquals(jobMeta.getName(), repository.getJobNames(jobsDir.getObjectId(), true)[0]);
+  }
+
+  @SuppressWarnings("deprecation")
+  private int getDate(Date date) {
+    return date.getDate();
   }
 
   protected JobMeta createJobMeta(String jobName) throws Exception {
@@ -737,7 +741,7 @@ public abstract class RepositoryTestBase {
     assertEquals(1, transformations.length);
     assertTrue(transformations[0].contains(fetchedTrans.getName()));
     
-    TransLogTable transLogTable = fetchedTrans.getTransLogTable();
+    // TransLogTable transLogTable = fetchedTrans.getTransLogTable();
     // TODO mlowery why doesn't this work?
     //    assertEquals(EXP_TRANS_LOG_TABLE_CONN_NAME, transLogTable.getConnectionName());
     //    assertEquals(EXP_TRANS_LOG_TABLE_INTERVAL, transLogTable.getLogInterval());
@@ -745,20 +749,20 @@ public abstract class RepositoryTestBase {
     //    assertEquals(EXP_TRANS_LOG_TABLE_SIZE_LIMIT, transLogTable.getLogSizeLimit());
     //    assertEquals(EXP_TRANS_LOG_TABLE_TABLE_NAME, transLogTable.getTableName());
     //    assertEquals(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS, transLogTable.getTimeoutInDays());
-    PerformanceLogTable perfLogTable = fetchedTrans.getPerformanceLogTable();
+    // PerformanceLogTable perfLogTable = fetchedTrans.getPerformanceLogTable();
     // TODO mlowery why doesn't this work?
     //    assertEquals(EXP_TRANS_LOG_TABLE_CONN_NAME, perfLogTable.getConnectionName());
     //    assertEquals(EXP_TRANS_LOG_TABLE_INTERVAL, perfLogTable.getLogInterval());
     //    assertEquals(EXP_TRANS_LOG_TABLE_SCHEMA_NAME, perfLogTable.getSchemaName());
     //    assertEquals(EXP_TRANS_LOG_TABLE_TABLE_NAME, perfLogTable.getTableName());
     //    assertEquals(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS, perfLogTable.getTimeoutInDays());
-    ChannelLogTable channelLogTable = fetchedTrans.getChannelLogTable();
+    // ChannelLogTable channelLogTable = fetchedTrans.getChannelLogTable();
     // TODO mlowery why doesn't this work?
     //    assertEquals(EXP_TRANS_LOG_TABLE_CONN_NAME, channelLogTable.getConnectionName());
     //    assertEquals(EXP_TRANS_LOG_TABLE_SCHEMA_NAME, channelLogTable.getSchemaName());
     //    assertEquals(EXP_TRANS_LOG_TABLE_TABLE_NAME, channelLogTable.getTableName());
     //    assertEquals(EXP_TRANS_LOG_TABLE_TIMEOUT_IN_DAYS, channelLogTable.getTimeoutInDays());
-    StepLogTable stepLogTable = fetchedTrans.getStepLogTable();
+    // StepLogTable stepLogTable = fetchedTrans.getStepLogTable();
     // TODO mlowery why doesn't this work?
     //    assertEquals(EXP_TRANS_LOG_TABLE_CONN_NAME, stepLogTable.getConnectionName());
     //    assertEquals(EXP_TRANS_LOG_TABLE_SCHEMA_NAME, stepLogTable.getSchemaName());
@@ -823,8 +827,7 @@ public abstract class RepositoryTestBase {
     assertNull(service.getTransformationLock(transMeta.getObjectId()));
     service.lockTransformation(transMeta.getObjectId(), EXP_TRANS_LOCK_MSG);
     assertEquals(EXP_TRANS_LOCK_MSG, service.getTransformationLock(transMeta.getObjectId()).getMessage());
-    assertEquals(new Date().getDate(), service.getTransformationLock(transMeta.getObjectId()).getLockDate()
-        .getDate());
+    assertEquals(getDate(new Date()), getDate(service.getTransformationLock(transMeta.getObjectId()).getLockDate()));
     assertEquals(EXP_LOGIN_PLUS_TENANT, service.getTransformationLock(transMeta.getObjectId()).getLogin());
     // TODO mlowery currently PUR lock only stores "login"; why do we need username too? 
     //    assertEquals(EXP_USERNAME, repository.getTransformationLock(transMeta.getObjectId()).getUsername());
@@ -980,7 +983,8 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testPartitionSchemas() throws Exception {
-    RepositoryDirectoryInterface rootDir = initRepo();
+    // RepositoryDirectoryInterface rootDir = 
+    initRepo();
     PartitionSchema partSchema = createPartitionSchema("");
     repository.save(partSchema, VERSION_COMMENT_V1, null);
     assertNotNull(partSchema.getObjectId());
@@ -1040,7 +1044,8 @@ public abstract class RepositoryTestBase {
    */
   @Test
   public void testClusterSchemas() throws Exception {
-    RepositoryDirectoryInterface rootDir = initRepo();
+    // RepositoryDirectoryInterface rootDir = 
+    initRepo();
     ClusterSchema clusterSchema = createClusterSchema(EXP_CLUSTER_SCHEMA_NAME);
     repository.save(clusterSchema, VERSION_COMMENT_V1, null);
     assertNotNull(clusterSchema.getObjectId());
@@ -1601,7 +1606,7 @@ public abstract class RepositoryTestBase {
     }
 
     @Override
-    public void loadRep(final Repository rep, final ObjectId idJobentry, final List<DatabaseMeta> databases,
+    public void loadRep(final Repository rep, final IMetaStore metaStore, final ObjectId idJobentry, final List<DatabaseMeta> databases,
         final List<SlaveServer> slaveServers) throws KettleException {
       assertEquals(2, rep.countNrJobEntryAttributes(idJobentry, ATTR_BOOL_MULTI));
       assertEquals(VALUE_BOOL, rep.getJobEntryAttributeBoolean(idJobentry, ATTR_BOOL));
@@ -1619,7 +1624,7 @@ public abstract class RepositoryTestBase {
     }
 
     @Override
-    public void saveRep(final Repository rep, final ObjectId idJob) throws KettleException {
+    public void saveRep(final Repository rep, final IMetaStore metaStore, final ObjectId idJob) throws KettleException {
       rep.saveJobEntryAttribute(idJob, getObjectId(), ATTR_BOOL, VALUE_BOOL);
       rep.saveJobEntryAttribute(idJob, getObjectId(), 0, ATTR_BOOL_MULTI, VALUE_BOOL_MULTI_0);
       rep.saveJobEntryAttribute(idJob, getObjectId(), 1, ATTR_BOOL_MULTI, VALUE_BOOL_MULTI_1);
@@ -1638,7 +1643,7 @@ public abstract class RepositoryTestBase {
     }
 
     public void loadXML(final Node entrynode, final List<DatabaseMeta> databases, final List<SlaveServer> slaveServers,
-        final Repository rep) throws KettleXMLException {
+        final Repository rep, final IMetaStore metaStore) throws KettleXMLException {
       throw new UnsupportedOperationException();
     }
 
@@ -1674,11 +1679,11 @@ public abstract class RepositoryTestBase {
 
     }
 
-    public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
+    public void loadXML(Node stepnode, List<DatabaseMeta> databases, final IMetaStore metaStore)
         throws KettleXMLException {
     }
 
-    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases, Map<String, Counter> counters)
+    public void readRep(Repository rep, final IMetaStore metaStore, ObjectId idStep, List<DatabaseMeta> databases)
         throws KettleException {
       assertEquals(2, rep.countNrStepAttributes(idStep, ATTR_BOOL_MULTI));
       assertEquals(VALUE_BOOL, rep.getStepAttributeBoolean(idStep, ATTR_BOOL));
@@ -1696,7 +1701,7 @@ public abstract class RepositoryTestBase {
       assertNotNull(rep.loadConditionFromStepAttribute(idStep, ATTR_COND));
     }
 
-    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep) throws KettleException {
+    public void saveRep(Repository rep, final IMetaStore metaStore, ObjectId idTransformation, ObjectId idStep) throws KettleException {
       rep.saveStepAttribute(idTransformation, idStep, ATTR_BOOL, VALUE_BOOL);
       rep.saveStepAttribute(idTransformation, idStep, 0, ATTR_BOOL_MULTI, VALUE_BOOL_MULTI_0);
       rep.saveStepAttribute(idTransformation, idStep, 1, ATTR_BOOL_MULTI, VALUE_BOOL_MULTI_1);

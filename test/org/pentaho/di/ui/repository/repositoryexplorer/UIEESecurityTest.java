@@ -116,7 +116,7 @@ public class UIEESecurityTest implements java.io.Serializable {
       security.setRoleList(rroles);
 
   }
-  private IUIUser findUser(String username) {
+  protected IUIUser findUser(String username) {
     for(IUIUser user:security.getUserList()) {
       if(user.getName().equals(username)) {
         return user;
@@ -203,7 +203,7 @@ public class UIEESecurityTest implements java.io.Serializable {
       userToAdd.setRoles(rolesToAssign);
       security.addUser(userToAdd);      
 
-      IUIUser selectedUser = security.getSelectedUser();
+      // IUIUser selectedUser = security.getSelectedUser();
       int removeUserIndex = security.getSelectedUserIndex();
       security.removeUser("newuser");
       assertEquals(security.getSelectedUserIndex(), removeUserIndex-1);
@@ -273,7 +273,7 @@ public class UIEESecurityTest implements java.io.Serializable {
       usersToAssign.add(joeUser);
       security.addRole(roleToAdd);
 
-      IUIRole selectedRole = security.getSelectedRole();
+      // IUIRole selectedRole = security.getSelectedRole();
       int removeRoleIndex = security.getSelectedRoleIndex();
       security.removeRole("newrole");
       assertEquals(security.getSelectedRoleIndex(), removeRoleIndex-1);

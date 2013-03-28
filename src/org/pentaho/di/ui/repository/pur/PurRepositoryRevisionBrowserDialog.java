@@ -56,7 +56,7 @@ public class PurRepositoryRevisionBrowserDialog implements RepositoryRevisionBro
 	private Shell         shell;
 	private PropsUI         props;
 	
-	private Repository	repository;
+	protected Repository	repository;
 	private IRevisionService revisionService;
 	private RepositoryElementInterface element;
 

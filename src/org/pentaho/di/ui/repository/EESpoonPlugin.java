@@ -12,7 +12,7 @@ import org.eclipse.swt.SWT;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.pur.PluginLicenseVerifier; // LICENSE CHECK
+import org.pentaho.di.repository.pur.PluginLicenseVerifier;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.di.ui.repository.pur.controller.SpoonLockController;
 import org.pentaho.di.ui.repository.pur.controller.SpoonMenuLockController;
@@ -56,6 +56,7 @@ import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulToolbarbutton;
 import org.pentaho.ui.xul.containers.XulMenu;
 import org.pentaho.ui.xul.dom.Document;
+// LICENSE CHECK
 
 @SpoonPlugin(id = "EESpoonPlugin", image = "")
 @SpoonPluginCategories( { "spoon", "trans-graph", "job-graph" })
@@ -63,11 +64,11 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
 
   private static final long serialVersionUID = -5672306503357631444L; /* EESOURCE: UPDATE SERIALVERUID */
 
-  private static Class<?> PKG = EESpoonPlugin.class;
+  protected static Class<?> PKG = EESpoonPlugin.class;
 
-  private XulDomContainer spoonXulContainer = null;
+  protected XulDomContainer spoonXulContainer = null;
 
-  private ResourceBundle messages = new ResourceBundle() {
+  protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
     public Enumeration<String> getKeys() {

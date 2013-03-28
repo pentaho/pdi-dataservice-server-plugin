@@ -276,7 +276,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       // Read the metadata from the repository too...
       //
       RepositoryProxy proxy = new RepositoryProxy(stepNode.getNode(NODE_STEP_CUSTOM));
-      stepMetaInterface.readRep(proxy, null, transMeta.getDatabases(), transMeta.getCounters());
+      stepMetaInterface.readRep(proxy, proxy.getMetaStore(), null, transMeta.getDatabases());
       stepMeta.setStepMetaInterface(stepMetaInterface);
 
       // Get the partitioning as well...
@@ -553,7 +553,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       StepMetaInterface stepMetaInterface = step.getStepMetaInterface();
       DataNode stepCustomNode = new DataNode(NODE_STEP_CUSTOM);
       Repository proxy = new RepositoryProxy(stepCustomNode);
-      stepMetaInterface.saveRep(proxy, null, null);
+      stepMetaInterface.saveRep(proxy, proxy.getMetaStore(), null, null);
       stepNode.addNode(stepCustomNode);
 
       // Save the partitioning information by reference as well...

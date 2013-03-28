@@ -41,7 +41,6 @@ import org.pentaho.ui.xul.components.XulConfirmBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
 import org.pentaho.ui.xul.containers.XulDeck;
 import org.pentaho.ui.xul.containers.XulTree;
-import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
 public class TrashBrowseController extends BrowseController implements java.io.Serializable {
@@ -54,7 +53,7 @@ public class TrashBrowseController extends BrowseController implements java.io.S
 
   // ~ Instance fields =================================================================================================
 
-  private ResourceBundle messages = new ResourceBundle() {
+  protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
     public Enumeration<String> getKeys() {
@@ -123,6 +122,8 @@ public class TrashBrowseController extends BrowseController implements java.io.S
   }
 
   protected class TrashDirectory extends UIEERepositoryDirectory {
+
+    private static final long serialVersionUID = 6184312253116517468L;
 
     @Override
     public String getImage() {
@@ -420,7 +421,7 @@ public class TrashBrowseController extends BrowseController implements java.io.S
   
   @Override
   protected void renameRepositoryObject(final UIRepositoryObject repoObject) throws XulException {
-    final Document doc = document;
+    // final Document doc = document;
     XulPromptBox prompt = promptForName(repoObject);
     prompt.addDialogCallback(new XulDialogCallback<String>() {
       public void onClose(XulComponent component, Status status, String value) {

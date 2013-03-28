@@ -17,7 +17,6 @@ import org.pentaho.di.repository.pur.model.AbsRoleInfo;
 import org.pentaho.di.repository.pur.model.EEUserInfo;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
-import org.pentaho.di.ui.repository.pur.repositoryexplorer.UIEEObjectRegistery;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsRepositoryRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEESecurity;

@@ -66,7 +66,7 @@ public class EESecurityController extends SecurityController implements java.io.
 
   public static final int ROLE_DECK = 1;
 
-  private ResourceBundle messages = new ResourceBundle() {
+  protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
     public Enumeration<String> getKeys() {
@@ -95,7 +95,7 @@ public class EESecurityController extends SecurityController implements java.io.
 
   private XulListbox roleListBox;
 
-  private XulListbox userListBox;
+  protected XulListbox userListBox;
 
   private XulListbox availableRoles;
 
@@ -131,9 +131,9 @@ public class EESecurityController extends SecurityController implements java.io.
 
   private XulButton unassignUserFromRoleButton;
   
-  private Binding roleDetailBinding;
+  protected Binding roleDetailBinding;
   
-  private Binding userDetailBinding;
+  protected Binding userDetailBinding;
 
   protected UIEESecurityUser eeSecurityUser;
 

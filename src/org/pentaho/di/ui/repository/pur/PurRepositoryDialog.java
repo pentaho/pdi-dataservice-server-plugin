@@ -33,13 +33,13 @@ import org.pentaho.ui.xul.swt.SwtXulRunner;
 public class PurRepositoryDialog implements RepositoryDialogInterface, java.io.Serializable {
 
   private static final long serialVersionUID = -4642068735574655692L; /* EESOURCE: UPDATE SERIALVERUID */
-  private RepositoryMeta repositoryMeta;
-  private RepositoriesMeta repositoriesMeta;
-  private RepositoriesMeta masterRepositoriesMeta;
-  private String masterRepositoryName;
-  private Shell parent;
+  protected RepositoryMeta repositoryMeta;
+  protected RepositoriesMeta repositoriesMeta;
+  protected RepositoriesMeta masterRepositoriesMeta;
+  protected String masterRepositoryName;
+  protected Shell parent;
 
-  private int style;
+  protected int style;
 
   private static final Class<?> PKG = PurRepositoryDialog.class;
 

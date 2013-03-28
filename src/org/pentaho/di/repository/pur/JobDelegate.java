@@ -364,7 +364,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       entry.setDescription(getString(copyNode, PROP_DESCRIPTION));
       entry.setObjectId(new StringObjectId(copyNode.getId().toString()));
       RepositoryProxy proxy = new RepositoryProxy(copyNode.getNode(NODE_CUSTOM));
-      entry.loadRep(proxy, null, jobMeta.getDatabases(), jobMeta.getSlaveServers());
+      entry.loadRep(proxy, proxy.getMetaStore(), null, jobMeta.getDatabases(), jobMeta.getSlaveServers());
       jobentries.add(entry);
       return entry;
     } catch (Exception e) {
@@ -420,7 +420,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       copyNode.setProperty(PROP_JOBENTRY_TYPE, entry.getPluginId());
       DataNode customNode = new DataNode(NODE_CUSTOM);
       RepositoryProxy proxy = new RepositoryProxy(customNode);
-      entry.saveRep(proxy, null);
+      entry.saveRep(proxy, proxy.getMetaStore(), null);
       copyNode.addNode(customNode);
     }
 

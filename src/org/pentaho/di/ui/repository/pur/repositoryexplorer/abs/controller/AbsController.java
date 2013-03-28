@@ -17,7 +17,6 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.i18n.GlobalMessages;
 import org.pentaho.di.i18n.LanguageChoice;
 import org.pentaho.di.repository.RepositorySecurityManager;
-import org.pentaho.di.ui.repository.pur.PurRepositoryDialog;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.IUIRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.IUIAbsRole;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsSecurity;
@@ -44,11 +43,11 @@ import org.pentaho.ui.xul.containers.XulVbox;
 public class AbsController extends EESecurityController implements java.io.Serializable {
 
   private static final long serialVersionUID = -9005536054475853743L; /* EESOURCE: UPDATE SERIALVERUID */
-  private boolean initialized = false;
+  protected boolean initialized = false;
 
   private static final Class<?> PKG = IUIAbsRole.class;
 
-  private ResourceBundle messages = new ResourceBundle() {
+  protected ResourceBundle messages = new ResourceBundle() {
 
     @Override
     public Enumeration<String> getKeys() {

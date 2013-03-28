@@ -12,9 +12,6 @@ import org.pentaho.di.repository.pur.PurRepositoryLocation;
 import org.pentaho.di.repository.pur.PurRepositoryMeta;
 import org.pentaho.di.trans.TransMeta;
 
-import com.pentaho.commons.dsc.PentahoLicenseVerifier;
-import com.pentaho.commons.dsc.util.TestLicenseStream;
-
 /**
  * This test class is not meant to be run automated. It provides two simple purposes:
  * 1. to bulk load a PUR repository

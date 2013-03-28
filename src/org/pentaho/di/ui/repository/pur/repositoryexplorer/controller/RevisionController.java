@@ -5,7 +5,11 @@
  */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.ResourceBundle;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
