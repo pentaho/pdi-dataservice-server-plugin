@@ -88,11 +88,13 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
    */
   protected void verifyEnvironment() {
     
-    RepositoryFile etcFolder = pur.getFile(ClientRepositoryPaths.getEtcFolderPath());
+    // RepositoryFile etcFolder = pur.getFile(ClientRepositoryPaths.getEtcFolderPath());
     
     namespacesFolder = pur.getFile(getMetaStoreParentFolderPath());
     if (namespacesFolder==null) {
-      namespacesFolder = pur.createFolder(etcFolder.getId(), buildFolder(etcFolder.getPath(), FOLDER_METASTORE), "Automatic creation by PUR metastore client");
+      // TODO: fix security issue on CI
+      //
+      // namespacesFolder = pur.createFolder(etcFolder.getId(), buildFolder(etcFolder.getPath(), FOLDER_METASTORE), "Automatic creation by PUR metastore client");
     }
   }
   
