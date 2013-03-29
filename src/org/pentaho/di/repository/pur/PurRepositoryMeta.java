@@ -90,6 +90,7 @@ public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
   		public boolean supportsLocking() { return true; }
   		public boolean hasVersionRegistry() { return true; }
       public boolean supportsAcls() { return true;}
+      public boolean supportsReferences() { return true; }
   	};
 	}
 
