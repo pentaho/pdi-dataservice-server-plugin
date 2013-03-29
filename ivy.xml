@@ -60,7 +60,7 @@
       changing="true" />
 
     <!-- Metastore -->
-    <dependency org="pentaho" name="metastore" rev="${dependency.metastore.revision}" transitive="false" changing="true" />
+    <dependency org="pentaho" name="metastore" rev="${dependency.metastore.revision}" transitive="false" changing="true" conf="compile->default" />
 
     <!-- misc third-party -->
     <dependency org="commons-logging" name="commons-logging" rev="1.1" />
