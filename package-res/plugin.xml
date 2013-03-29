@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin id="PentahoEnterpriseRepository" name="Enterprise Repository" description="Enterprise Repository" tooltip="Enterprise Repository"
+<plugin id="PentahoEnterpriseRepository" name="lib/Enterprise Repository" description="Enterprise Repository" tooltip="Enterprise Repository"
   classname="org.pentaho.di.repository.pur.PurRepository" meta-classname="org.pentaho.di.repository.pur.PurRepositoryMeta"
-  dialog-classname="org.pentaho.di.ui.repository.pur.PurRepositoryDialog" version-browser-classname="org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog">
+  dialog-classname="lib/org.pentaho.di.ui.repository.pur.PurRepositoryDialog" version-browser-classname="lib/org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog">
   <libraries>
+    <library name="pur-repository-plugin-TRUNK-SNAPSHOT.jar" />
     <library name="lib/avalon-framework-4.1.3.jar" />
-    <library name="lib/commons-io-1.4.jar" />
+    <library name="lib/commands-3.3.0-I20070605-0010.jar" />
+    <library name="lib/commons-beanutils-1.6.jar" />
+    <library name="lib/commons-codec-1.3.jar" />
+    <library name="lib/commons-collections-3.2.jar" />
+    <library name="lib/commons-io-2.1.jar" />
+    <library name="lib/commons-lang-2.2.jar" />
     <library name="lib/commons-logging-1.1.jar" />
-    <library name="pur-repository-plugin-@project.revision@.jar" />
-    <library name="lib/log4j-1.2.12.jar" />
-    <library name="lib/logkit-1.0.1.jar" />
-    <library name="lib/metro-jsr173-2.0.jar" />
-    <library name="lib/metro-webservices-api-2.0.jar" />
-    <library name="lib/metro-webservices-extra-2.0.jar" />
-    <library name="lib/metro-webservices-extra-api-2.0.jar" />
-    <library name="lib/metro-webservices-rt-2.0.jar" />
-    <library name="lib/metro-webservices-tools-2.0.jar" />
-    <library name="lib/pentaho-bi-platform-api-@dependency.bi-platform.revision@.jar" />
-    <library name="lib/pentaho-bi-platform-engine-core-@dependency.bi-platform.revision@.jar" />
-    <library name="lib/pentaho-bi-platform-ee-@dependency.bi-platform.revision@.jar" />
-    <library name="lib/pentaho-bi-platform-repository-@dependency.bi-platform.revision@.jar" />
-    <library name="lib/pentaho-bi-platform-util-@dependency.bi-platform.revision@.jar" />
-    <library name="lib/pentaho-bi-platform-engine-security-@dependency.bi-platform.revision@.jar" />
-    <library name="lib/pentaho-bi-platform-security-userroledao-@dependency.bi-platform.revision@.jar" />
-    <library name="lib/pentaho-ee-dsc-core-@dependency.pentaho-ee-dsc.revision@.jar" />
+    <library name="lib/commons-vfs-20091118-pentaho.jar" />
+    <library name="lib/dom4j-1.6.1.jar" />
     <library name="lib/gwt-servlet-2.0.3.jar" />
-  </libraries>
-
+    <library name="lib/jaxen-1.1.jar" />
+    <library name="lib/json-TRUNK-SNAPSHOT.jar" />
+    <library name="lib/logkit-1.0.1.jar" />
+    <library name="lib/pentaho-bi-platform-ee-TRUNK-SNAPSHOT.jar" />
+    <library name="lib/pentaho-ee-dsc-core-TRUNK-SNAPSHOT.jar" />
+    <library name="lib/pentaho-platform-api-TRUNK-SNAPSHOT.jar" />
+    <library name="lib/pentaho-platform-core-TRUNK-SNAPSHOT.jar" />
+    <library name="lib/pentaho-platform-extensions-TRUNK-SNAPSHOT.jar" />
+    <library name="lib/pentaho-platform-repository-TRUNK-SNAPSHOT.jar" />
+    <library name="lib/spring-security-core-2.0.5.RELEASE.jar" />
+</libraries>
   <!-- PART BELOW IS NO USED YET -->
 
   <localized_name>
