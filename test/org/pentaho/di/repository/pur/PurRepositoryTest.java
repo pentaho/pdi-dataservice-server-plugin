@@ -100,6 +100,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.ext.DefaultHandler2;
 
+import com.pentaho.commons.dsc.PentahoLicenseVerifier;
+import com.pentaho.commons.dsc.util.TestLicenseStream;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/repository.spring.xml",
     "classpath:/org/pentaho/di/repository/pur/pur-repository-test.spring.xml"})
@@ -179,7 +182,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     super.setUp();
     // START LICENSE CHECK 
     // test calls into local "unified" repository which requires biserver-ee license
-    // PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
+    PentahoLicenseVerifier.setStreamOpener(new TestLicenseStream("biserver-ee=true\npdi-ee=true")); //$NON-NLS-1$
     // END LICENSE CHECK 
 
     KettleEnvironment.init();
