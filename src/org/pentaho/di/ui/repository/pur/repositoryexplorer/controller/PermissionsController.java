@@ -793,6 +793,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       UIRepositoryObject ro = repoObject.get(0);
       if (ro instanceof IAclObject) {
         // force inherit to true to get effective ACLs before apply...
+        ((IAclObject) ro).clearAcl();
         ((IAclObject) ro).getAcls(viewAclsModel, true);
       }
     }
