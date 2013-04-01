@@ -2,8 +2,19 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:util="http://www.springframework.org/schema/util"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd"
+       xmlns:pen="http://www.pentaho.com/schema/pentaho-system"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd http://www.pentaho.com/schema/pentaho-system http://www.pentaho.com/schema/pentaho-system.xsd"
        default-lazy-init="true">
+
+    <bean class="org.pentaho.platform.engine.core.system.objfac.spring.ApplicationContextPentahoSystemRegisterer" lazy-init="false"/>
+
+
+    <bean id="propertyPlaceholderConfigurerRepository"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" lazy-init="false">
+        <property name="location" value="repository.spring.properties" />
+        <property name="placeholderPrefix" value="%{" />
+    </bean>
+
   <!--
     default-lazy-init makes all of the beans in this file lazy-init=true which means they are not instantiated until
     they are referenced; this allows PentahoSystem to be fully initialized (which is used internally in
@@ -58,6 +69,7 @@
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.createFolder=PROPAGATION_REQUIRED
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.getChildren=PROPAGATION_REQUIRED,readOnly
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.updateFile=PROPAGATION_REQUIRED
+        org.pentaho.platform.api.repository2.unified.IUnifiedRepository.updateFolder=PROPAGATION_REQUIRED
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.getAcl=PROPAGATION_REQUIRED,readOnly
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.hasAccess=PROPAGATION_REQUIRED,readOnly
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.getEffectiveAces=PROPAGATION_REQUIRED,readOnly
@@ -188,7 +200,7 @@
 
   <!-- The name of the authority which is granted to all admin users of a particular tenant. -->
   <bean id="tenantAdminAuthorityName" class="java.lang.String">
-    <constructor-arg value="Admin"/>
+    <constructor-arg value="TenantAdmin"/>
   </bean>
 
   <!-- The name of the authority which is granted to all authenticated users in single-tenancy mode. -->
@@ -198,7 +210,7 @@
 
   <!-- The name of the authority which is granted to all admin users in single-tenancy mode. -->
   <bean id="singleTenantAdminAuthorityName" class="java.lang.String">
-    <constructor-arg value="Administrator" />
+    <constructor-arg value="%{singleTenantAdminAuthorityName}" />
   </bean>
 
   <bean id="superAdminAuthorityName" class="java.lang.String">
@@ -214,7 +226,7 @@
   </bean>
   
   <bean id="singleTenantAdminUserName" class="java.lang.String">
-    <constructor-arg value="admin"/>
+    <constructor-arg value="%{singleTenantAdminUserName}"/>
   </bean>
   
   <!-- Used in code that doesn't use Spring's transaction interception. -->
@@ -338,6 +350,7 @@
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.createFolder=VOTE_AUTHZ_POLICY_org.pentaho.repository.create
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.getChildren=VOTE_AUTHZ_POLICY_org.pentaho.repository.read
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.updateFile=VOTE_AUTHZ_POLICY_org.pentaho.repository.create
+        org.pentaho.platform.api.repository2.unified.IUnifiedRepository.updateFolder=VOTE_AUTHZ_POLICY_org.pentaho.repository.create
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.getAcl=VOTE_AUTHZ_POLICY_org.pentaho.repository.read
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.hasAccess=VOTE_AUTHZ_POLICY_org.pentaho.repository.read
         org.pentaho.platform.api.repository2.unified.IUnifiedRepository.getEffectiveAces=VOTE_AUTHZ_POLICY_org.pentaho.repository.read
@@ -458,7 +471,7 @@
         class="org.pentaho.platform.repository2.unified.jcr.JcrRepositoryFileAclDao">
     <constructor-arg ref="jcrTemplate"/>
     <constructor-arg ref="pathConversionHelper"/>
-	<constructor-arg ref="singleTenantAdminAuthorityName"/>    
+    <constructor-arg ref="singleTenantAdminAuthorityName"/>
   </bean>
 
   <!-- begin authorization policy -->
@@ -491,7 +504,56 @@
     <constructor-arg ref="bootstrapRoleBindingMap"/>
     <constructor-arg ref="superAdminAuthorityName"/>
     <constructor-arg ref="tenantedRoleNameUtils"/>
+    <constructor-arg>
+      <pen:list class="org.pentaho.platform.api.engine.IAuthorizationAction"/>
+    </constructor-arg>
   </bean>
+
+
+  <!-- Built-In ABS Logical Roles -->
+  <bean class="org.pentaho.platform.security.policy.rolebased.actions.RepositoryReadAction">
+    <pen:publish as-type="INTERFACES">
+      <pen:attributes>
+        <pen:attr key="priority" value="50"/>
+      </pen:attributes>
+    </pen:publish>
+  </bean>
+  <bean class="org.pentaho.platform.security.policy.rolebased.actions.RepositoryCreateAction">
+    <pen:publish as-type="INTERFACES">
+      <pen:attributes>
+        <pen:attr key="priority" value="40"/>
+      </pen:attributes>
+    </pen:publish>
+  </bean>
+  <bean class="org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction">
+    <pen:publish as-type="INTERFACES">
+      <pen:attributes>
+        <pen:attr key="priority" value="30"/>
+      </pen:attributes>
+    </pen:publish>
+  </bean>
+  <bean class="org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction">
+    <pen:publish as-type="INTERFACES">
+      <pen:attributes>
+        <pen:attr key="priority" value="20"/>
+      </pen:attributes>
+    </pen:publish>
+  </bean>
+  <bean class="org.pentaho.platform.security.policy.rolebased.actions.CreateTenantsAction">
+    <pen:publish as-type="INTERFACES">
+      <pen:attributes>
+        <pen:attr key="priority" value="10"/>
+      </pen:attributes>
+    </pen:publish>
+  </bean>
+  <bean class="org.pentaho.platform.security.policy.rolebased.actions.PublishAction">
+    <pen:publish as-type="INTERFACES">
+      <pen:attributes>
+        <pen:attr key="priority" value="0"/>
+      </pen:attributes>
+    </pen:publish>
+  </bean>
+
 
   <util:map id="immutableRoleBindingMap">
     <entry key-ref="singleTenantAdminAuthorityName">
