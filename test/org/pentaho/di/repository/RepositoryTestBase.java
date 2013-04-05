@@ -42,6 +42,7 @@ import org.pentaho.di.core.logging.PerformanceLogTable;
 import org.pentaho.di.core.logging.StepLogTable;
 import org.pentaho.di.core.logging.TransLogTable;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.job.entry.JobEntryBase;
@@ -1665,7 +1666,8 @@ public abstract class RepositoryTestBase {
     private Condition condition;
 
     public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
-        RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
+        RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info, 
+        VariableSpace space, Repository repository, IMetaStore metaStore) {
     }
 
     public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,

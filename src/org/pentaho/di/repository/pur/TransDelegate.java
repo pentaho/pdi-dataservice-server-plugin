@@ -18,7 +18,6 @@ import org.pentaho.di.core.logging.LogTableInterface;
 import org.pentaho.di.core.plugins.PluginInterface;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.plugins.StepPluginType;
-import org.pentaho.di.core.sql.ServiceCacheMethod;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.partition.PartitionSchema;
@@ -70,11 +69,6 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   private static final String PROP_TRANSFORMATION_TYPE = "TRANSFORMATION_TYPE";
   
   public static final String PROP_TRANS_DATA_SERVICE_NAME = "DATA_SERVICE_NAME";
-  public static final String PROP_TRANS_DATA_SERVICE_STEPNAME = "DATA_SERVICE_STEPNAME";
-  private static final String PROP_TRANS_DATA_SERVICE_OUTPUT = "DATA_SERVICE_OUTPUT";
-  private static final String PROP_TRANS_DATA_SERVICE_ALLOW_OPTIMIZATION = "DATA_SERVICE_ALLOW_OPTIMIZATION";
-  private static final String PROP_TRANS_DATA_SERVICE_CACHE_METHOD = "DATA_SERVICE_CACHE_METHOD";
-
   
   private static final String PROP_STEP_PERFORMANCE_LOG_TABLE = "STEP_PERFORMANCE_LOG_TABLE";
 
@@ -276,6 +270,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       // Read the metadata from the repository too...
       //
       RepositoryProxy proxy = new RepositoryProxy(stepNode.getNode(NODE_STEP_CUSTOM));
+      readRepCompatibleStepMeta(stepMetaInterface, proxy, null, transMeta.getDatabases());
       stepMetaInterface.readRep(proxy, proxy.getMetaStore(), null, transMeta.getDatabases());
       stepMeta.setStepMetaInterface(stepMetaInterface);
 
@@ -403,6 +398,20 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       transMeta.addParameterDefinition(key, def, desc);
     }
   }
+  
+  /**
+   * Compatible loading of metadata for v4 style plugins using deprecated methods.
+   * @param stepMetaInterface
+   * @param repository
+   * @param objectId
+   * @param databases
+   * @throws KettleException
+   */
+  @SuppressWarnings("deprecation")
+  private void readRepCompatibleStepMeta(StepMetaInterface stepMetaInterface, Repository repository,
+      ObjectId objectId, List<DatabaseMeta> databases) throws KettleException {
+    stepMetaInterface.readRep(repository, objectId, databases, null);
+  }
 
   protected void loadTransformationDetails(final DataNode rootNode, final TransMeta transMeta) throws KettleException {
     transMeta.setExtendedDescription(getString(rootNode, PROP_EXTENDED_DESCRIPTION));
@@ -512,12 +521,22 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     // Load the data service metadata 
     //
     DataServiceMeta dataService = new DataServiceMeta();
-    dataService.setName(getString(rootNode, PROP_TRANS_DATA_SERVICE_NAME));
+    String dataServiceName = getString(rootNode, PROP_TRANS_DATA_SERVICE_NAME);
+    if (dataServiceName!=null) {
+      // Load Kettle data service from store
+      //
+      // DataServiceMetaStoreUtil.  
+    }
+    transMeta.setDataService(dataService);
+
+    /*
+    dataService.setName();
     dataService.setStepname(getString(rootNode, PROP_TRANS_DATA_SERVICE_STEPNAME));
     dataService.setOutput(getBoolean(rootNode, PROP_TRANS_DATA_SERVICE_OUTPUT, true));
     dataService.setOptimizationAllowed(getBoolean(rootNode, PROP_TRANS_DATA_SERVICE_ALLOW_OPTIMIZATION, false));
     dataService.setCacheMethod(ServiceCacheMethod.getMethodByName(getString(rootNode, PROP_TRANS_DATA_SERVICE_CACHE_METHOD)));
-    transMeta.setDataService(dataService);
+    */
+    
   }
 
   public DataNode elementToDataNode(final RepositoryElementInterface element) throws KettleException {
@@ -553,6 +572,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       StepMetaInterface stepMetaInterface = step.getStepMetaInterface();
       DataNode stepCustomNode = new DataNode(NODE_STEP_CUSTOM);
       Repository proxy = new RepositoryProxy(stepCustomNode);
+      compatibleSaveRep(stepMetaInterface, proxy, null, null);
       stepMetaInterface.saveRep(proxy, proxy.getMetaStore(), null, null);
       stepNode.addNode(stepCustomNode);
 
@@ -645,6 +665,12 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     return rootNode;
   }
 
+  @SuppressWarnings("deprecation")
+  private void compatibleSaveRep(StepMetaInterface stepMetaInterface, Repository repository,
+      ObjectId id_transformation, ObjectId objectId) throws KettleException {
+    stepMetaInterface.saveRep(repository, id_transformation, objectId);
+  }
+
   private void saveTransformationDetails(final DataNode rootNode, final TransMeta transMeta) throws KettleException {
 
     rootNode.setProperty(PROP_EXTENDED_DESCRIPTION, transMeta.getExtendedDescription());
@@ -713,11 +739,13 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   	//
   	DataServiceMeta dataService = transMeta.getDataService();
   	if (dataService.isDefined()) {
+  	  /*
   	  rootNode.setProperty(PROP_TRANS_DATA_SERVICE_NAME, dataService.getName());
       rootNode.setProperty(PROP_TRANS_DATA_SERVICE_STEPNAME, dataService.getStepname());
       rootNode.setProperty(PROP_TRANS_DATA_SERVICE_OUTPUT, dataService.isOutput());
       rootNode.setProperty(PROP_TRANS_DATA_SERVICE_ALLOW_OPTIMIZATION, dataService.isOptimizationAllowed());
       rootNode.setProperty(PROP_TRANS_DATA_SERVICE_CACHE_METHOD, dataService.getCacheMethod()==null ? null : dataService.getCacheMethod().name());
+      */
   	}
   }
 

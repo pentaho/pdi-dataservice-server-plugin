@@ -8,6 +8,7 @@ package org.pentaho.di.repository.pur;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.Serializable;
@@ -49,6 +50,14 @@ import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
+import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.metastore.api.IMetaStoreAttribute;
+import org.pentaho.metastore.api.IMetaStoreElement;
+import org.pentaho.metastore.api.IMetaStoreElementType;
+import org.pentaho.metastore.api.exceptions.MetaStoreDependenciesExistsException;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.metastore.api.exceptions.MetaStoreNamespaceExistsException;
+import org.pentaho.metastore.util.PentahoDefaults;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.engine.security.userroledao.IPentahoRole;
@@ -786,6 +795,177 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
       assertEquals("Incorrect number of jobs", 1, parser.getNodesWithName("job").size()); //$NON-NLS-1$ //$NON-NLS-2$
     } finally {
       KettleVFS.getFileObject(exportFileName).delete();
+    }
+  }
+  
+  @Test
+  public void testMetaStoreNamespaces() throws MetaStoreException {
+    IMetaStore metaStore = repository.getMetaStore();
+    assertNotNull(metaStore);
+
+    // We start with a clean slate...
+    //
+    assertEquals(0,  metaStore.getNamespaces().size());
+    
+    String ns = PentahoDefaults.NAMESPACE;
+    assertEquals(false, metaStore.namespaceExists(ns));
+    
+    metaStore.createNamespace(ns);
+    assertEquals(true, metaStore.namespaceExists(ns));
+    
+    List<String> namespaces = metaStore.getNamespaces();
+    assertEquals(1, namespaces.size());
+    assertEquals(ns, namespaces.get(0));
+    
+    try {
+      metaStore.createNamespace(ns);
+      fail("Exception expected when a namespace already exists and where we try to create it again");
+    } catch(MetaStoreNamespaceExistsException e) {
+      // OK, we expected this.
+    }
+    
+    metaStore.deleteNamespace(ns);
+    assertEquals(false, metaStore.namespaceExists(ns));
+    assertEquals(0,  metaStore.getNamespaces().size());
+  }
+  
+  @Test
+  public void testMetaStoreElementTypes() throws MetaStoreException {
+    IMetaStore metaStore = repository.getMetaStore();
+    assertNotNull(metaStore);
+    String ns = PentahoDefaults.NAMESPACE;
+
+    // We start with a clean slate...
+    //
+    assertEquals(0,  metaStore.getNamespaces().size());
+    assertEquals(false, metaStore.namespaceExists(ns));
+
+    // Create the namespace
+    metaStore.createNamespace(ns);
+    assertEquals(true, metaStore.namespaceExists(ns));
+    
+    // Now create an element type
+    //
+    IMetaStoreElementType elementType = metaStore.newElementType(ns);
+    elementType.setName(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME);
+    elementType.setDescription(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION);
+    
+    metaStore.createElementType(ns, elementType);
+    
+    IMetaStoreElementType verifyElementType = metaStore.getElementType(ns, elementType.getId());
+    assertEquals(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME, verifyElementType.getName());
+    assertEquals(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION, verifyElementType.getDescription());
+    
+    verifyElementType = metaStore.getElementTypeByName(ns, PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME);
+    assertEquals(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME, verifyElementType.getName());
+    assertEquals(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION, verifyElementType.getDescription());    
+    
+    // Get the list of element type ids.
+    //
+    List<String> ids = metaStore.getElementTypeIds(ns);
+    assertNotNull(ids);
+    assertEquals(1, ids.size());
+    assertEquals(elementType.getId(), ids.get(0));
+    
+    // Verify that we can't delete the namespace since it has content in it!
+    //
+    try {
+      metaStore.deleteNamespace(ns);
+      fail("The namespace deletion didn't cause an exception because there are still an element type in it");
+    } catch(MetaStoreDependenciesExistsException e) {
+      assertNotNull(e.getDependencies());
+      assertEquals(1, e.getDependencies().size());
+      assertEquals(elementType.getId(), e.getDependencies().get(0));
+    }
+    
+    metaStore.deleteElementType(ns, elementType.getId());
+    assertEquals(0, metaStore.getElementTypes(ns).size());
+    
+    metaStore.deleteNamespace(ns);
+  }
+  
+  @Test
+  public void testMetaStoreElements() throws MetaStoreException {
+    // Set up a namespace
+    //
+    String ns = PentahoDefaults.NAMESPACE;
+    IMetaStore metaStore = repository.getMetaStore();
+    metaStore.createNamespace(ns);
+    
+    // And an element type
+    //
+    IMetaStoreElementType elementType = metaStore.newElementType(ns);
+    elementType.setName(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME);
+    elementType.setDescription(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION);
+    metaStore.createElementType(ns, elementType);
+    
+    // Now we play with elements...
+    //
+    IMetaStoreElement oneElement = populateElement(metaStore, "one");
+    metaStore.createElement(ns, elementType.getId(), oneElement);
+    
+    IMetaStoreElement verifyOneElement = metaStore.getElement(ns, elementType.getId(), oneElement.getId());
+    assertNotNull(verifyOneElement);
+    validateElement(verifyOneElement, "one");
+    
+    assertEquals(1, metaStore.getElements(ns, elementType.getId()).size());
+    
+    IMetaStoreElement twoElement = populateElement(metaStore, "two");
+    metaStore.createElement(ns, elementType.getId(), twoElement);
+    
+    IMetaStoreElement verifyTwoElement = metaStore.getElement(ns, elementType.getId(), twoElement.getId());
+    assertNotNull(verifyTwoElement);
+    
+    assertEquals(2, metaStore.getElements(ns, elementType.getId()).size());
+
+    try {
+      metaStore.deleteElementType(ns, elementType.getId());
+      fail("Delete element type failed to properly detect element dependencies");
+    } catch(MetaStoreDependenciesExistsException e) {
+      List<String> ids = e.getDependencies();
+      assertEquals(2, ids.size());
+      assertTrue( ids.contains(oneElement.getId()) );
+      assertTrue( ids.contains(twoElement.getId()) );
+    }
+    
+    metaStore.deleteElement(ns, elementType.getId(), oneElement.getId());
+    
+    assertEquals(1, metaStore.getElements(ns, elementType.getId()).size());
+    
+    metaStore.deleteElement(ns, elementType.getId(), twoElement.getId());
+    
+    assertEquals(0, metaStore.getElements(ns, elementType.getId()).size());
+  }
+  
+  protected IMetaStoreElement populateElement(IMetaStore metaStore, String name) throws MetaStoreException {
+    IMetaStoreElement element = metaStore.newElement();
+    element.setName(name);
+    for (int i=1;i<=5;i++) {
+      element.addChild(metaStore.newAttribute("id "+i, "value "+i));
+    }
+    IMetaStoreAttribute subAttr = metaStore.newAttribute("sub-attr", null);
+    for (int i=101;i<=110;i++) {
+      subAttr.addChild(metaStore.newAttribute("sub-id "+i, "sub-value "+i));
+    }
+    element.addChild(subAttr);
+    
+    return element;
+  }
+  
+  protected void validateElement(IMetaStoreElement element, String name) throws MetaStoreException {
+    assertEquals(name, element.getName());
+    assertEquals(6, element.getChildren().size());
+    for (int i=1;i<=5;i++) {
+      IMetaStoreAttribute child = element.getChild("id "+i);
+      assertEquals("value "+i, child.getValue());
+    }
+    IMetaStoreAttribute subAttr = element.getChild("sub-attr");
+    assertNotNull(subAttr);
+    assertEquals(10, subAttr.getChildren().size());
+    for (int i=101;i<=110;i++) {
+      IMetaStoreAttribute child = subAttr.getChild("sub-id "+i);
+      assertNotNull(child);
+      assertEquals("sub-value "+i, child.getValue());
     }
   }
 }

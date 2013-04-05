@@ -23,6 +23,8 @@ import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
+import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryAttributeInterface;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.RepositoryObjectType;
@@ -364,12 +366,22 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       entry.setDescription(getString(copyNode, PROP_DESCRIPTION));
       entry.setObjectId(new StringObjectId(copyNode.getId().toString()));
       RepositoryProxy proxy = new RepositoryProxy(copyNode.getNode(NODE_CUSTOM));
+      
+      compatibleJobEntryLoadRep(entry, proxy, null, jobMeta.getDatabases(), jobMeta.getSlaveServers());
       entry.loadRep(proxy, proxy.getMetaStore(), null, jobMeta.getDatabases(), jobMeta.getSlaveServers());
       jobentries.add(entry);
       return entry;
     } catch (Exception e) {
       throw new KettleException("Unable to read job entry interface information from repository", e);
     }
+  }
+  
+  @SuppressWarnings("deprecation")
+  private void compatibleJobEntryLoadRep(JobEntryInterface jobEntry, Repository repository,
+      ObjectId id_jobentry_type, List<DatabaseMeta> databases, List<SlaveServer> slaveServers) throws KettleException {
+    
+    jobEntry.loadRep(repository, id_jobentry_type, databases, slaveServers);
+    
   }
 
   public DataNode elementToDataNode(final RepositoryElementInterface element) throws KettleException {
@@ -421,6 +433,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       DataNode customNode = new DataNode(NODE_CUSTOM);
       RepositoryProxy proxy = new RepositoryProxy(customNode);
       entry.saveRep(proxy, proxy.getMetaStore(), null);
+      compatibleEntrySaveRep(entry, proxy, null);
       copyNode.addNode(customNode);
     }
 
@@ -463,6 +476,12 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
     return rootNode;
   }
+  
+  @SuppressWarnings("deprecation")
+  private void compatibleEntrySaveRep(JobEntryInterface entry, Repository repository, ObjectId id_job) throws KettleException {
+    entry.saveRep(repository, id_job);
+  }
+
 
   private void saveJobDetails(DataNode rootNode, JobMeta jobMeta) throws KettleException {
     rootNode.setProperty(PROP_EXTENDED_DESCRIPTION, jobMeta.getExtendedDescription());
