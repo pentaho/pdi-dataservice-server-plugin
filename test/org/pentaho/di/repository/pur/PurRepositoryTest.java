@@ -57,7 +57,7 @@ import org.pentaho.metastore.api.IMetaStoreElementType;
 import org.pentaho.metastore.api.exceptions.MetaStoreDependenciesExistsException;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.api.exceptions.MetaStoreNamespaceExistsException;
-import org.pentaho.metastore.test.MetaStoreTestBase;
+import org.pentaho.metastore.util.MetaStoreTestBase;
 import org.pentaho.metastore.util.PentahoDefaults;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
