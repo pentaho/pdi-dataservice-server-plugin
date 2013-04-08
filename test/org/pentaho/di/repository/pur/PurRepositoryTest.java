@@ -57,6 +57,7 @@ import org.pentaho.metastore.api.IMetaStoreElementType;
 import org.pentaho.metastore.api.exceptions.MetaStoreDependenciesExistsException;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.api.exceptions.MetaStoreNamespaceExistsException;
+import org.pentaho.metastore.test.MetaStoreTestBase;
 import org.pentaho.metastore.util.PentahoDefaults;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
@@ -797,6 +798,16 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
       KettleVFS.getFileObject(exportFileName).delete();
     }
   }
+
+  @Test
+  public void testMetaStoreBasics() throws MetaStoreException {
+    IMetaStore metaStore = repository.getMetaStore();
+    assertNotNull(metaStore);
+
+    MetaStoreTestBase base = new MetaStoreTestBase();
+    base.testFunctionality(metaStore);
+  }
+
   
   @Test
   public void testMetaStoreNamespaces() throws MetaStoreException {
@@ -878,7 +889,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
       assertEquals(elementType.getId(), e.getDependencies().get(0));
     }
     
-    metaStore.deleteElementType(ns, elementType.getId());
+    metaStore.deleteElementType(ns, elementType);
     assertEquals(0, metaStore.getElementTypes(ns).size());
     
     metaStore.deleteNamespace(ns);
@@ -901,25 +912,25 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     
     // Now we play with elements...
     //
-    IMetaStoreElement oneElement = populateElement(metaStore, "one");
-    metaStore.createElement(ns, elementType.getId(), oneElement);
+    IMetaStoreElement oneElement = populateElement(metaStore, elementType, "one");
+    metaStore.createElement(ns, elementType, oneElement);
     
-    IMetaStoreElement verifyOneElement = metaStore.getElement(ns, elementType.getId(), oneElement.getId());
+    IMetaStoreElement verifyOneElement = metaStore.getElement(ns, elementType, oneElement.getId());
     assertNotNull(verifyOneElement);
     validateElement(verifyOneElement, "one");
     
-    assertEquals(1, metaStore.getElements(ns, elementType.getId()).size());
+    assertEquals(1, metaStore.getElements(ns, elementType).size());
     
-    IMetaStoreElement twoElement = populateElement(metaStore, "two");
-    metaStore.createElement(ns, elementType.getId(), twoElement);
+    IMetaStoreElement twoElement = populateElement(metaStore, elementType, "two");
+    metaStore.createElement(ns, elementType, twoElement);
     
-    IMetaStoreElement verifyTwoElement = metaStore.getElement(ns, elementType.getId(), twoElement.getId());
+    IMetaStoreElement verifyTwoElement = metaStore.getElement(ns, elementType, twoElement.getId());
     assertNotNull(verifyTwoElement);
     
-    assertEquals(2, metaStore.getElements(ns, elementType.getId()).size());
+    assertEquals(2, metaStore.getElements(ns, elementType).size());
 
     try {
-      metaStore.deleteElementType(ns, elementType.getId());
+      metaStore.deleteElementType(ns, elementType);
       fail("Delete element type failed to properly detect element dependencies");
     } catch(MetaStoreDependenciesExistsException e) {
       List<String> ids = e.getDependencies();
@@ -928,17 +939,18 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
       assertTrue( ids.contains(twoElement.getId()) );
     }
     
-    metaStore.deleteElement(ns, elementType.getId(), oneElement.getId());
+    metaStore.deleteElement(ns, elementType, oneElement.getId());
     
-    assertEquals(1, metaStore.getElements(ns, elementType.getId()).size());
+    assertEquals(1, metaStore.getElements(ns, elementType).size());
     
-    metaStore.deleteElement(ns, elementType.getId(), twoElement.getId());
+    metaStore.deleteElement(ns, elementType, twoElement.getId());
     
-    assertEquals(0, metaStore.getElements(ns, elementType.getId()).size());
+    assertEquals(0, metaStore.getElements(ns, elementType).size());
   }
   
-  protected IMetaStoreElement populateElement(IMetaStore metaStore, String name) throws MetaStoreException {
+  protected IMetaStoreElement populateElement(IMetaStore metaStore, IMetaStoreElementType elementType, String name) throws MetaStoreException {
     IMetaStoreElement element = metaStore.newElement();
+    element.setElementType(elementType);
     element.setName(name);
     for (int i=1;i<=5;i++) {
       element.addChild(metaStore.newAttribute("id "+i, "value "+i));

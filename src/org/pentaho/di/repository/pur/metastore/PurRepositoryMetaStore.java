@@ -61,7 +61,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     
     namespacesFolder = pur.getFile(METASTORE_FOLDER_PATH);
     if (namespacesFolder==null) {
-      // throw new KettleException(METASTORE_FOLDER_PATH+" folder is not available"); TODO FIXME - Re-enable test 
+      throw new KettleException(METASTORE_FOLDER_PATH+" folder is not available"); // TODO FIXME - Re-enable test 
     }
   }
   
@@ -162,7 +162,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   
   @Override
   public IMetaStoreElementType getElementType(String namespace, String elementTypeId) throws MetaStoreException {
-    RepositoryFile elementTypeFolder = getElementTypeRepositoryFolder(elementTypeId);
+    RepositoryFile elementTypeFolder = pur.getFileById(elementTypeId);
     if (elementTypeFolder==null) {
       return null;
     }
@@ -216,20 +216,20 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   }
   
   @Override
-  public void deleteElementType(String namespace, String elementTypeId) throws MetaStoreException,
+  public void deleteElementType(String namespace, IMetaStoreElementType elementType) throws MetaStoreException,
       MetaStoreDependenciesExistsException {
     
-    validateNamespace(namespace);
+    RepositoryFile namespaceRepositoryFile = validateNamespace(namespace);
     
-    RepositoryFile elementTypeFile = pur.getFileById(elementTypeId);
+    RepositoryFile elementTypeFile = findChild(namespaceRepositoryFile.getId(), elementType.getName());
     List<RepositoryFile> children = pur.getChildren(elementTypeFile.getId());
     removeHiddenFilesFromList(children);
     
     if (children.isEmpty()) {
       pur.deleteFile(elementTypeFile.getId(), true, null);
     } else {
-      List<String> ids = getElementIds(namespace, elementTypeId);
-      throw new MetaStoreDependenciesExistsException(ids, "Can't delete element type with id '"+elementTypeId+"' because it is not empty");
+      List<String> ids = getElementIds(namespace, elementType);
+      throw new MetaStoreDependenciesExistsException(ids, "Can't delete element type with name '"+elementType.getName()+"' because it is not empty");
     }
   }
   
@@ -247,9 +247,9 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
 
   // The elements
   
-  public void createElement(String namespace, String elementTypeId, 
+  public void createElement(String namespace, IMetaStoreElementType elementType, 
       IMetaStoreElement element) throws MetaStoreException, MetaStoreElementExistException {
-    RepositoryFile elementTypeFolder = validateElementTypeRepositoryFolder(elementTypeId);
+    RepositoryFile elementTypeFolder = validateElementTypeRepositoryFolder(namespace, elementType);
     
     RepositoryFile elementFile = new RepositoryFile.Builder(element.getName()).build();
     
@@ -262,11 +262,11 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   
 
   @Override
-  public IMetaStoreElement getElement(String namespace, String elementTypeId, String elementId)
+  public IMetaStoreElement getElement(String namespace, IMetaStoreElementType elementType, String elementId)
       throws MetaStoreException {
     
     RepositoryFile elementFile = pur.getFileById(elementId);
-    IMetaStoreElement element = newElement(getElementType(namespace, elementTypeId), elementId, null);
+    IMetaStoreElement element = newElement(getElementTypeByName(namespace, elementType.getName()), elementId, null);
     element.setName(elementFile.getName());
     NodeRepositoryFileData data = pur.getDataForRead(elementId, NodeRepositoryFileData.class);
     dataNodeToAttribute(data.getNode(), element);
@@ -275,14 +275,14 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   }
   
   @Override
-  public List<IMetaStoreElement> getElements(String namespace, String elementTypeId) throws MetaStoreException {
+  public List<IMetaStoreElement> getElements(String namespace, IMetaStoreElementType elementType) throws MetaStoreException {
     List<IMetaStoreElement> elements = new ArrayList<IMetaStoreElement>();
     
-    RepositoryFile typeFolder = validateElementTypeRepositoryFolder(elementTypeId);
+    RepositoryFile typeFolder = validateElementTypeRepositoryFolder(namespace, elementType);
     List<RepositoryFile> children = pur.getChildren(typeFolder.getId());
     removeHiddenFilesFromList(children);
     for (RepositoryFile child : children) {
-      IMetaStoreElement element = getElement(namespace, elementTypeId, child.getId().toString());
+      IMetaStoreElement element = getElement(namespace, elementType, child.getId().toString());
       elements.add(element);
     }
     
@@ -292,7 +292,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   @Override
   public IMetaStoreElement getElementByName(String namespace, IMetaStoreElementType elementType, String name)
       throws MetaStoreException {
-    for (IMetaStoreElement element : getElements(namespace, elementType.getId())) {
+    for (IMetaStoreElement element : getElements(namespace, elementType)) {
       if (element.getName().equals(name)) {
         return element;
       }
@@ -301,8 +301,8 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   }
   
   @Override
-  public List<String> getElementIds(String namespace, String elementTypeId) throws MetaStoreException {
-    RepositoryFile folder = validateElementTypeRepositoryFolder(elementTypeId);
+  public List<String> getElementIds(String namespace, IMetaStoreElementType elementType) throws MetaStoreException {
+    RepositoryFile folder = validateElementTypeRepositoryFolder(namespace, elementType);
     List<RepositoryFile> children = pur.getChildren(folder.getId());
     removeHiddenFilesFromList(children);
     List<String> ids = new ArrayList<String>();
@@ -313,7 +313,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   }
   
   @Override
-  public void deleteElement(String namespace, String elementTypeId, String elementId) throws MetaStoreException {
+  public void deleteElement(String namespace, IMetaStoreElementType elementType, String elementId) throws MetaStoreException {
     
     pur.deleteFile(elementId, true, null);
     
@@ -381,10 +381,10 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     return namespaceFile;
   }
   
-  protected RepositoryFile validateElementTypeRepositoryFolder(String elementTypeId) throws MetaStoreException {
-    RepositoryFile elementTypeFolder = getElementTypeRepositoryFolder(elementTypeId);
+  protected RepositoryFile validateElementTypeRepositoryFolder(String namespace, IMetaStoreElementType elementType) throws MetaStoreException {
+    RepositoryFile elementTypeFolder = getElementTypeRepositoryFolder(namespace, elementType);
     if (elementTypeFolder==null) {
-      throw new MetaStoreException("The element type with id '"+elementTypeId+" doesn't exist");
+      throw new MetaStoreException("The element type with name '"+elementType.getName()+" doesn't exist");
     }
     return elementTypeFolder;
   }
@@ -393,8 +393,9 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     return findChild(namespacesFolder.getId(), namespace);
   }
 
-  protected RepositoryFile getElementTypeRepositoryFolder(String elementTypeId) {
-    return pur.getFileById(elementTypeId);    
+  protected RepositoryFile getElementTypeRepositoryFolder(String namespace, IMetaStoreElementType elementType) throws MetaStoreException {
+    RepositoryFile namespaceRepositoryFile = validateNamespace(namespace);
+    return findChild(namespaceRepositoryFile.getId(), elementType.getName());
   }
 
   protected RepositoryFile getElementTypeRepositoryFileByName(String namespace, String elementTypeName) {
