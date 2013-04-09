@@ -7,6 +7,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.metastore.api.IMetaStore;
@@ -83,7 +85,12 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     if (namespaceExists(namespace)) {
       throw new MetaStoreNamespaceExistsException("Namespace '"+namespace+"' can not be created, it already exists");
     }
-    pur.createFolder(namespacesFolder.getId(), buildFolder(namespacesFolder.getPath(), namespace), "Created namespace");
+    RepositoryFile namespaceFolder = new RepositoryFile.Builder(namespace)
+      .folder(true)
+      .versioned(false)
+      .build();
+
+    pur.createFolder(namespacesFolder.getId(), namespaceFolder, "Created namespace");
   }
   
   @Override
@@ -131,15 +138,18 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   public void createElementType(String namespace, IMetaStoreElementType elementType) throws MetaStoreException,
       MetaStoreElementTypeExistsException {
 
+    RepositoryFile namespaceFile = validateNamespace(namespace);
+
     IMetaStoreElementType existingType = getElementTypeByName(namespace, elementType.getName());
     if (existingType!=null) {
       throw new MetaStoreElementTypeExistsException(Arrays.asList(existingType), "Can not create element type with id '"+elementType.getId()+"' because it already exists");
     }
-    RepositoryFile namespaceFile = validateNamespace(namespace);
+    
     RepositoryFile elementTypeFile = new RepositoryFile.Builder(elementType.getName())
       .folder(true)
+      .versioned(false)
       .build();
-    
+
     RepositoryFile folder = pur.createFolder(namespaceFile.getId(), elementTypeFile, null);
     elementType.setId(folder.getId().toString());
     
@@ -148,18 +158,40 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     //
     RepositoryFile detailsFile = new RepositoryFile.Builder(ELEMENT_TYPE_DETAILS_FILENAME)
       .folder(false)
+      .title(ELEMENT_TYPE_DETAILS_FILENAME)
       .description(elementType.getDescription())
       .hidden(true)
       .build();
     
+    DataNode dataNode = getElementTypeDataNode(elementType);
+    
+    pur.createFile(folder.getId(), detailsFile, new NodeRepositoryFileData(dataNode), null);    
+    
+    elementType.setMetaStoreName(getName());
+  }
+  
+  @Override
+  public synchronized void updateElementType(String namespace, IMetaStoreElementType elementType)
+      throws MetaStoreException {
+    RepositoryFile folder = getElementTypeRepositoryFolder(namespace, elementType);
+    
+    RepositoryFile detailsFile = findChildByName(folder.getId(), ELEMENT_TYPE_DETAILS_FILENAME);
+  
+    DataNode dataNode = getElementTypeDataNode(elementType);
+    
+    pur.updateFile(detailsFile, new NodeRepositoryFileData(dataNode), null);    
+    
+    elementType.setMetaStoreName(getName());
+  }
+  
+  private DataNode getElementTypeDataNode(IMetaStoreElementType elementType) {
     DataNode dataNode = new DataNode(ELEMENT_TYPE_DETAILS_FILENAME);
     dataNode.setProperty(PROP_ELEMENT_TYPE_DESCRIPTION, elementType.getDescription());
     dataNode.setProperty(PROP_ELEMENT_TYPE_NAME, elementType.getName());
-    dataNode.setProperty(PROP_NAME, elementType.getName());
-    
-    pur.createFile(folder.getId(), detailsFile, new NodeRepositoryFileData(dataNode), null);
+    dataNode.setProperty(PROP_NAME, elementType.getName());  
+    return dataNode;
   }
-  
+
   @Override
   public IMetaStoreElementType getElementType(String namespace, String elementTypeId) throws MetaStoreException {
     RepositoryFile elementTypeFolder = pur.getFileById(elementTypeId);
@@ -170,7 +202,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     elementType.setId(elementTypeFolder.getId().toString());
     elementType.setName(elementTypeFolder.getName());
     
-    RepositoryFile detailsFile = findChild(elementTypeFolder.getId(), ELEMENT_TYPE_DETAILS_FILENAME);
+    RepositoryFile detailsFile = findChildByName(elementTypeFolder.getId(), ELEMENT_TYPE_DETAILS_FILENAME);
     if (detailsFile!=null) {
       NodeRepositoryFileData data = pur.getDataForRead(detailsFile.getId(), NodeRepositoryFileData.class);
       DataProperty property = data.getNode().getProperty("element_type_description");
@@ -188,7 +220,9 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     RepositoryFile namespaceFile = validateNamespace(namespace);
     List<RepositoryFile> children = pur.getChildren(namespaceFile.getId());
     for (RepositoryFile child : children) {
-      elementTypes.add(getElementType(namespace, child.getId().toString()));
+      if (!child.isHidden()) {
+        elementTypes.add(getElementType(namespace, child.getId().toString()));
+      }
     }
     
     return elementTypes;
@@ -221,7 +255,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     
     RepositoryFile namespaceRepositoryFile = validateNamespace(namespace);
     
-    RepositoryFile elementTypeFile = findChild(namespaceRepositoryFile.getId(), elementType.getName());
+    RepositoryFile elementTypeFile = findChildByName(namespaceRepositoryFile.getId(), elementType.getName());
     List<RepositoryFile> children = pur.getChildren(elementTypeFile.getId());
     removeHiddenFilesFromList(children);
     
@@ -251,25 +285,56 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
       IMetaStoreElement element) throws MetaStoreException, MetaStoreElementExistException {
     RepositoryFile elementTypeFolder = validateElementTypeRepositoryFolder(namespace, elementType);
     
-    RepositoryFile elementFile = new RepositoryFile.Builder(element.getName()).build();
+    RepositoryFile elementFile = new RepositoryFile.Builder(checkAndSanitize(element.getName()))
+      .title(element.getName())
+      .versioned(false)
+      .build();
     
     DataNode elementDataNode = new DataNode(element.getName());
     elementToDataNode(element, elementDataNode);
   
     RepositoryFile createdFile = pur.createFile(elementTypeFolder.getId(), elementFile, new NodeRepositoryFileData(elementDataNode), null);
     element.setId(createdFile.getId().toString());
+    
+    // Verify existence.
+    if (pur.getFileById(createdFile.getId())==null) {
+      throw new RuntimeException("Unable to verify creation of element '"+element.getName()+"' in folder: "+elementTypeFolder.getPath());
+    }
   };
+  
+  @Override
+  public synchronized void updateElement(String namespace, IMetaStoreElementType elementType, String elementId,
+      IMetaStoreElement element) throws MetaStoreException {
+    
+    // verify that the element type belongs to this meta store
+    //
+    if (elementType.getMetaStoreName()==null || !elementType.getName().equals(getName())) {
+      throw new MetaStoreException("The element type '"+elementType.getName()+"' needs to explicitly belong to the meta store in which you are updating.");
+    }
+    
+    RepositoryFile existingFile = pur.getFileById(elementId);
+    if (existingFile==null) {
+      throw new MetaStoreException("The element to update with id "+elementId+" could not be found in the store");
+    }
+    
+    DataNode elementDataNode = new DataNode(element.getName());
+    elementToDataNode(element, elementDataNode);
+    
+    RepositoryFile updatedFile = pur.updateFile(existingFile, new NodeRepositoryFileData(elementDataNode), null);
+    element.setId(updatedFile.getId().toString());
+  }
   
 
   @Override
   public IMetaStoreElement getElement(String namespace, IMetaStoreElementType elementType, String elementId)
       throws MetaStoreException {
     
-    RepositoryFile elementFile = pur.getFileById(elementId);
-    IMetaStoreElement element = newElement(getElementTypeByName(namespace, elementType.getName()), elementId, null);
-    element.setName(elementFile.getName());
+    IMetaStoreElement element = newElement();
+    element.setElementType(elementType);
     NodeRepositoryFileData data = pur.getDataForRead(elementId, NodeRepositoryFileData.class);
+    element.setName(data.getNode().getName());
     dataNodeToAttribute(data.getNode(), element);
+    element.setId(elementId);
     
     return element;
   }
@@ -382,20 +447,38 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   }
   
   protected RepositoryFile validateElementTypeRepositoryFolder(String namespace, IMetaStoreElementType elementType) throws MetaStoreException {
-    RepositoryFile elementTypeFolder = getElementTypeRepositoryFolder(namespace, elementType);
+    // The element type needs to be known in this repository, we need to have a match by ID
+    //
+    RepositoryFile elementTypeFolder = pur.getFileById(elementType.getId());
     if (elementTypeFolder==null) {
-      throw new MetaStoreException("The element type with name '"+elementType.getName()+" doesn't exist");
+      StringBuilder builder = new StringBuilder();
+      builder.append(namespacesFolder.getPath()).append(Const.CR);
+      String available = getMetaStoreFolders(builder, namespacesFolder, 0);
+      throw new MetaStoreException("The element type with name '"+elementType.getName()+" doesn't exist in namespace '"+namespace+"'."+Const.CR+"Available nodes:"+Const.CR+available);
     }
     return elementTypeFolder;
   }
     
+  private String getMetaStoreFolders(StringBuilder builder, RepositoryFile folder, int level) {
+    String spaces = Const.rightPad(" ", level*2);
+    builder.append(spaces);
+    if (folder.isFolder()) {
+      builder.append("/");
+    }
+    builder.append(folder.getName()).append(Const.CR);
+    for (RepositoryFile file : pur.getChildren(folder.getId())) {
+      getMetaStoreFolders(builder, file, level+1);
+    }
+    return builder.toString();
+  }
+
   protected RepositoryFile getNamespaceRepositoryFile(String namespace) {
-    return findChild(namespacesFolder.getId(), namespace);
+    return findChildByName(namespacesFolder.getId(), namespace);
   }
 
   protected RepositoryFile getElementTypeRepositoryFolder(String namespace, IMetaStoreElementType elementType) throws MetaStoreException {
     RepositoryFile namespaceRepositoryFile = validateNamespace(namespace);
-    return findChild(namespaceRepositoryFile.getId(), elementType.getName());
+    return findChildByName(namespaceRepositoryFile.getId(), elementType.getName());
   }
 
   protected RepositoryFile getElementTypeRepositoryFileByName(String namespace, String elementTypeName) {
@@ -403,7 +486,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     if (namespace==null) {
       return null;
     }
-    return findChild(namespaceFolder.getId(), elementTypeName);
+    return findChildByName(namespaceFolder.getId(), elementTypeName);
   }
 
   protected RepositoryFile buildFolder(String path, String foldername) {
@@ -418,7 +501,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     return ClientRepositoryPaths.getEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_METASTORE;
   }
 
-  protected RepositoryFile findChild(Serializable folderId, String childName) {
+  protected RepositoryFile findChildByName(Serializable folderId, String childName) {
     for (RepositoryFile child : pur.getChildren(folderId)) {
       if (child.getName().equals(childName)) {
         return child;
@@ -426,8 +509,43 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     }
     return null;
   }
-  
+
+  protected RepositoryFile findChildByTitle(Serializable folderId, String childTitle) {
+    for (RepositoryFile child : pur.getChildren(folderId)) {
+      if (child.getTitle().equals(childTitle)) {
+        return child;
+      }
+    }
+    return null;
+  }
+
   protected RepositoryFileAcl getAcls() {
     return null; // new RepositoryFileAcl.Builder(RepositoryFileAcl.Builder).entriesInheriting(true).build()
   }
+  
+  /**
+   * Performs one-way conversion on incoming String to produce a syntactically valid JCR path (section 4.6 Path Syntax). 
+   */
+  protected static String checkAndSanitize(final String in) {
+    if (in == null) {
+      throw new IllegalArgumentException();
+    }
+    String out = in;
+    if (out.contains("/") || out.equals("..") || out.equals(".") || StringUtils.isBlank(out)) {
+      throw new IllegalArgumentException();
+    }
+    out = out.replaceAll("[/:\\[\\]\\*'\"\\|\\s\\.]", "_");  //$NON-NLS-1$//$NON-NLS-2$
+    return out;
+  }
+  
+  
+  
+  
+  @Override
+  public IMetaStoreElementType newElementType(String namespace) throws MetaStoreException {
+    IMetaStoreElementType elementType = super.newElementType(namespace);
+    elementType.setMetaStoreName(getName());
+    return elementType;
+  }
+  
 }
