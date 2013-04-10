@@ -18,6 +18,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
+import org.pentaho.di.repository.AbstractRepository;
 import org.pentaho.di.repository.IRepositoryExporter;
 import org.pentaho.di.repository.IRepositoryImporter;
 import org.pentaho.di.repository.IRepositoryService;
@@ -41,7 +42,6 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
-import org.pentaho.platform.api.repository2.unified.data.node.DataNode.DataPropertyType;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 
@@ -49,7 +49,7 @@ import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
  * A {@link Repository} that stands in for the real repository, collecting entry and step attributes and loading or
  * saving them as a batch. Use one instance of this class per entry or step!
  */
-public class RepositoryProxy implements Repository, ILockService, java.io.Serializable {
+public class RepositoryProxy extends AbstractRepository implements Repository, ILockService, java.io.Serializable {
 
   private static final long serialVersionUID = -8017798761569450448L; /* EESOURCE: UPDATE SERIALVERUID */
 
@@ -155,28 +155,14 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
   public String[] getDirectoryNames(ObjectId idDirectory) throws KettleException {
     throw new UnsupportedOperationException();
   }
-
-  public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, String code) throws KettleException {
-    return getJobEntryAttributeBoolean(idJobentry, code, false);
-  }
-
-  public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, int nr, String code) throws KettleException {
-    return getJobEntryAttributeBoolean(idJobentry, code + PROP_CODE_NR_SEPARATOR + nr);
-  }
-
-  public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, String code, boolean def) throws KettleException {
-    if (node.hasProperty(code)) {
-      return node.getProperty(code).getBoolean();
+  
+  @Override
+  public boolean getJobEntryAttributeBoolean(ObjectId idJobentry, int nr, String code, boolean def) throws KettleException {
+    String attribute = code + PROP_CODE_NR_SEPARATOR + nr;
+    if (node.hasProperty(attribute)) {
+      return node.getProperty(attribute).getBoolean();
     } else {
       return def;
-    }
-  }
-
-  public long getJobEntryAttributeInteger(ObjectId idJobentry, String code) throws KettleException {
-    if (node.hasProperty(code)) {
-      return node.getProperty(code).getLong();
-    } else {
-      return 0;
     }
   }
 
@@ -185,14 +171,6 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getLong();
     } else {
       return 0;
-    }
-  }
-
-  public String getJobEntryAttributeString(ObjectId idJobentry, String code) throws KettleException {
-    if (node.hasProperty(code)) {
-      return node.getProperty(code).getString();
-    } else {
-      return null;
     }
   }
 
@@ -269,18 +247,6 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
     throw new UnsupportedOperationException();
   }
 
-  public boolean getStepAttributeBoolean(ObjectId idStep, String code) throws KettleException {
-    if (node.hasProperty(code)) {
-      return node.getProperty(code).getBoolean();
-    } else {
-      return false;
-    }
-  }
-
-  public boolean getStepAttributeBoolean(ObjectId idStep, int nr, String code) throws KettleException {
-    return getStepAttributeBoolean(idStep, nr, code, false);
-  }
-
   public boolean getStepAttributeBoolean(ObjectId idStep, int nr, String code, boolean def) throws KettleException {
     if (node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getBoolean();
@@ -289,32 +255,11 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
     }
   }
 
-  public long getStepAttributeInteger(ObjectId idStep, String code) throws KettleException {
-    if (node.hasProperty(code)) {
-      DataProperty property = node.getProperty(code);
-      if (property.getType().equals(DataPropertyType.LONG)) {
-    	  return property.getLong();
-      } else {
-    	  return 0;
-      }
-    } else {
-      return 0;
-    }
-  }
-
   public long getStepAttributeInteger(ObjectId idStep, int nr, String code) throws KettleException {
     if (node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getLong();
     } else {
       return 0;
-    }
-  }
-
-  public String getStepAttributeString(ObjectId idStep, String code) throws KettleException {
-    if (node.hasProperty(code)) {
-      return node.getProperty(code).getString();
-    } else {
-      return null;
     }
   }
 
@@ -395,19 +340,14 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
     throw new UnsupportedOperationException();
   }
 
-  public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId idJobentry, String nameCode, String code,
-      List<DatabaseMeta> databases) throws KettleException {
-    if (code != null && node.hasProperty(code)) {
-      ObjectId databaseId = new StringObjectId(node.getProperty(code).getRef().getId().toString());
-      return DatabaseMeta.findDatabase(databases, databaseId);
-    }
-    return null;
-  }
-
   public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId idJobentry, String nameCode, int nr, 
        String code, List<DatabaseMeta> databases) throws KettleException {
-     
-     return loadDatabaseMetaFromJobEntryAttribute(idJobentry, nameCode , code + PROP_CODE_NR_SEPARATOR + nr, databases);
+     String attribute = code + PROP_CODE_NR_SEPARATOR + nr;
+     if (attribute != null && node.hasProperty(attribute)) {
+       ObjectId databaseId = new StringObjectId(node.getProperty(attribute).getRef().getId().toString());
+       return DatabaseMeta.findDatabase(databases, databaseId);
+     }
+     return null;
   }
 
   public DatabaseMeta loadDatabaseMetaFromStepAttribute(ObjectId idStep, String code, List<DatabaseMeta> databases)
@@ -486,11 +426,6 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
       throws KettleException {
     throw new UnsupportedOperationException();
   }
-
-  public void save(RepositoryElementInterface repositoryElement, String versionComment, ProgressMonitorListener monitor)
-      throws KettleException {
-    throw new UnsupportedOperationException();
-  }
   
   public void save(RepositoryElementInterface repositoryElement, String versionComment, ProgressMonitorListener monitor, boolean overwrite)
   throws KettleException {
@@ -501,14 +436,6 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
       throws KettleException {
     DataNode conditionNode = node.addNode(code);
     conditionNode.setProperty(PROPERTY_XML, condition.getXML());
-  }
-
-  public void saveDatabaseMetaJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String nameCode, String code,
-      DatabaseMeta database) throws KettleException {
-    if (database != null && database.getObjectId() != null) {
-      DataNodeRef ref = new DataNodeRef(database.getObjectId().getId());
-      node.setProperty(code, ref);
-    }
   }
 
   public void saveDatabaseMetaJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String nameCode, String code,
@@ -525,21 +452,6 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
       DataNodeRef ref = new DataNodeRef(database.getObjectId().getId());
       node.setProperty(code, ref);
     }
-  }
-
-  public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, String value)
-      throws KettleException {
-    node.setProperty(code, value);
-  }
-
-  public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, boolean value)
-      throws KettleException {
-    node.setProperty(code, value);
-  }
-
-  public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, String code, long value)
-      throws KettleException {
-    node.setProperty(code, value);
   }
 
   public void saveJobEntryAttribute(ObjectId idJob, ObjectId idJobentry, int nr, String code, String value)
@@ -559,26 +471,6 @@ public class RepositoryProxy implements Repository, ILockService, java.io.Serial
 
   public void saveRepositoryDirectory(RepositoryDirectoryInterface dir) throws KettleException {
     throw new UnsupportedOperationException();
-  }
-
-  public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, String value)
-      throws KettleException {
-    node.setProperty(code, value);
-  }
-
-  public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, boolean value)
-      throws KettleException {
-    node.setProperty(code, value);
-  }
-
-  public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, long value)
-      throws KettleException {
-    node.setProperty(code, value);
-  }
-
-  public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, String code, double value)
-      throws KettleException {
-    node.setProperty(code, value);
   }
 
   public void saveStepAttribute(ObjectId idTransformation, ObjectId idStep, int nr, String code, String value)
