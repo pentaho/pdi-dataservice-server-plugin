@@ -49,7 +49,7 @@ import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
  * A {@link Repository} that stands in for the real repository, collecting entry and step attributes and loading or
  * saving them as a batch. Use one instance of this class per entry or step!
  */
-public class RepositoryProxy extends AbstractRepository implements Repository, ILockService, java.io.Serializable {
+public class RepositoryProxy extends AbstractRepository implements ILockService, java.io.Serializable {
 
   private static final long serialVersionUID = -8017798761569450448L; /* EESOURCE: UPDATE SERIALVERUID */
 
@@ -161,6 +161,9 @@ public class RepositoryProxy extends AbstractRepository implements Repository, I
     String attribute = code + PROP_CODE_NR_SEPARATOR + nr;
     if (node.hasProperty(attribute)) {
       return node.getProperty(attribute).getBoolean();
+    } else if (nr == 0 && node.hasProperty(code)) {
+      //Old pur stored elements with no nr when not specified
+      return node.getProperty(code).getBoolean();
     } else {
       return def;
     }
@@ -169,6 +172,9 @@ public class RepositoryProxy extends AbstractRepository implements Repository, I
   public long getJobEntryAttributeInteger(ObjectId idJobentry, int nr, String code) throws KettleException {
     if (node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getLong();
+    } else if (nr == 0 && node.hasProperty(code)) {
+      //Old pur stored elements with no nr when not specified
+      return node.getProperty(code).getLong();
     } else {
       return 0;
     }
@@ -178,6 +184,9 @@ public class RepositoryProxy extends AbstractRepository implements Repository, I
     String propName = code + PROP_CODE_NR_SEPARATOR + nr;
     if (node.hasProperty(propName)) {
       return node.getProperty(propName).getString();
+    } else if (nr == 0 && node.hasProperty(code)) {
+      //Old pur stored elements with no nr when not specified
+      return node.getProperty(code).getString();
     } else {
       return null;
     }
@@ -250,6 +259,9 @@ public class RepositoryProxy extends AbstractRepository implements Repository, I
   public boolean getStepAttributeBoolean(ObjectId idStep, int nr, String code, boolean def) throws KettleException {
     if (node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getBoolean();
+    } else if (nr == 0 && node.hasProperty(code)) {
+      //Old pur stored elements with no nr when not specified
+      return node.getProperty(code).getBoolean();
     } else {
       return def;
     }
@@ -258,6 +270,9 @@ public class RepositoryProxy extends AbstractRepository implements Repository, I
   public long getStepAttributeInteger(ObjectId idStep, int nr, String code) throws KettleException {
     if (node.hasProperty(code + PROP_CODE_NR_SEPARATOR + nr)) {
       return node.getProperty(code + PROP_CODE_NR_SEPARATOR + nr).getLong();
+    } else if (nr == 0 && node.hasProperty(code)) {
+      //Old pur stored elements with no nr when not specified
+      return node.getProperty(code).getLong();
     } else {
       return 0;
     }
@@ -267,6 +282,9 @@ public class RepositoryProxy extends AbstractRepository implements Repository, I
     String propName = code + PROP_CODE_NR_SEPARATOR + nr;
     if (node.hasProperty(propName)) {
       return node.getProperty(propName).getString();
+    } else if (nr == 0 && node.hasProperty(code)) {
+      //Old pur stored elements with no nr when not specified
+      return node.getProperty(code).getString();
     } else {
       return null;
     }
@@ -345,6 +363,9 @@ public class RepositoryProxy extends AbstractRepository implements Repository, I
      String attribute = code + PROP_CODE_NR_SEPARATOR + nr;
      if (attribute != null && node.hasProperty(attribute)) {
        ObjectId databaseId = new StringObjectId(node.getProperty(attribute).getRef().getId().toString());
+       return DatabaseMeta.findDatabase(databases, databaseId);
+     } else if (code != null && node.hasProperty(code)) {
+       ObjectId databaseId = new StringObjectId(node.getProperty(code).getRef().getId().toString());
        return DatabaseMeta.findDatabase(databases, databaseId);
      }
      return null;
