@@ -290,7 +290,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
       .versioned(false)
       .build();
     
-    DataNode elementDataNode = new DataNode(element.getName());
+    DataNode elementDataNode = new DataNode(checkAndSanitize(element.getName()));
     elementToDataNode(element, elementDataNode);
   
     RepositoryFile createdFile = pur.createFile(elementTypeFolder.getId(), elementFile, new NodeRepositoryFileData(elementDataNode), null);
