@@ -912,16 +912,16 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     
     // Now we play with elements...
     //
-    IMetaStoreElement oneElement = populateElement(metaStore, elementType, "one");
+    IMetaStoreElement oneElement = populateElement(metaStore, elementType, "Element One");
     metaStore.createElement(ns, elementType, oneElement);
     
     IMetaStoreElement verifyOneElement = metaStore.getElement(ns, elementType, oneElement.getId());
     assertNotNull(verifyOneElement);
-    validateElement(verifyOneElement, "one");
+    validateElement(verifyOneElement, "Element One");
     
     assertEquals(1, metaStore.getElements(ns, elementType).size());
     
-    IMetaStoreElement twoElement = populateElement(metaStore, elementType, "two");
+    IMetaStoreElement twoElement = populateElement(metaStore, elementType, "Element Two");
     metaStore.createElement(ns, elementType, twoElement);
     
     IMetaStoreElement verifyTwoElement = metaStore.getElement(ns, elementType, twoElement.getId());

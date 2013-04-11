@@ -41,9 +41,9 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   
   public static final String ELEMENT_TYPE_DETAILS_FILENAME = "ElementTypeDetails";
   
-  protected static final String PROP_NAME = "NAME"; //$NON-NLS-1$
-  
-  protected static final String PROP_ELEMENT_TYPE_NAME = "element_type_name"; //$NON-NLS-1$
+  protected static final String PROP_NAME = "NAME";
+  protected static final String PROP_ELEMENT_TYPE_NAME = "element_type_name";
+  protected static final String PROP_ELEMENT_CHILDREN = "element_children";
 
   protected static final String PROP_ELEMENT_TYPE_DESCRIPTION = "element_type_description"; //$NON-NLS-1$
 
@@ -302,6 +302,12 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     }
   };
   
+  protected void elementToDataNode(IMetaStoreElement element, DataNode elementDataNode) {
+    elementDataNode.setProperty(PROP_NAME, element.getName());
+    DataNode childrenNode = elementDataNode.addNode(PROP_ELEMENT_CHILDREN);
+    attributeToDataNode(element, childrenNode);
+  }
+
   @Override
   public synchronized void updateElement(String namespace, IMetaStoreElementType elementType, String elementId,
       IMetaStoreElement element) throws MetaStoreException {
@@ -317,7 +323,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
       throw new MetaStoreException("The element to update with id "+elementId+" could not be found in the store");
     }
     
-    DataNode elementDataNode = new DataNode(element.getName());
+    DataNode elementDataNode = new DataNode(checkAndSanitize(element.getName()));
     elementToDataNode(element, elementDataNode);
     
     RepositoryFile updatedFile = pur.updateFile(existingFile, new NodeRepositoryFileData(elementDataNode), null);
@@ -332,8 +338,11 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     IMetaStoreElement element = newElement();
     element.setElementType(elementType);
     NodeRepositoryFileData data = pur.getDataForRead(elementId, NodeRepositoryFileData.class);
-    element.setName(data.getNode().getName());
-    dataNodeToAttribute(data.getNode(), element);
+    DataNode dataNode = data.getNode();
+    DataProperty nameProperty = dataNode.getProperty(PROP_NAME);
+    element.setName(nameProperty!=null ? nameProperty.getString() : null);
+    DataNode childrenNode = dataNode.getNode(PROP_ELEMENT_CHILDREN);
+    dataNodeToAttribute(childrenNode, element);
     element.setId(elementId);
     
     return element;
@@ -392,7 +401,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   
   
   
-  protected void elementToDataNode(IMetaStoreAttribute attribute, DataNode dataNode) {
+  protected void attributeToDataNode(IMetaStoreAttribute attribute, DataNode dataNode) {
     for (IMetaStoreAttribute child: attribute.getChildren()) {
       Object value = child.getValue();
       if (child.getChildren().isEmpty()) {
@@ -410,7 +419,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
         }
       } else {
         DataNode subNode = new DataNode(child.getId());
-        elementToDataNode(child, subNode);
+        attributeToDataNode(child, subNode);
         dataNode.addNode(subNode);
       }
     }
