@@ -20,7 +20,6 @@ import org.pentaho.di.repository.pur.model.IEEUser;
 import org.pentaho.di.repository.pur.model.IRole;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.platform.api.engine.security.userroledao.UserRoleInfo;
-import org.pentaho.platform.config.PentahoSpringBeansConfig.AuthenticationProvider;
 import org.pentaho.platform.security.userrole.ws.IUserRoleListWebService;
 import org.pentaho.platform.security.userroledao.ws.IUserRoleWebService;
 import org.pentaho.platform.security.userroledao.ws.ProxyPentahoRole;
@@ -78,9 +77,8 @@ public class UserRoleDelegate implements java.io.Serializable {
     client.addFilter(authFilter);
     WebResource resource = client.resource(webService);
     String response = resource.accept(MediaType.APPLICATION_JSON_TYPE).get(String.class);
-    AuthenticationProvider provider = 
-        AuthenticationProvider.valueOf(new JSONObject(response).getString("authenticationType")); 
-    managed = provider != AuthenticationProvider.LDAP_BASED_AUTHENTICATION;
+    String provider = new JSONObject(response).getString("authenticationType");
+    managed = "jackrabbit".equals(provider);
   }
 
   public void updateUserRoleInfo() throws UserRoleException {
