@@ -2025,7 +2025,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         revision = getObjectRevision(new StringObjectId(file.getId().toString()), versionId);
       } // LICENSE CHECK
       TransMeta transMeta = buildTransMeta(file, parentDir, data, revision);
-      ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.TransformationMetaLoaded.id, transMeta);
+      ExtensionPointHandler.callExtensionPoint(log, KettleExtensionPoint.TransformationMetaLoaded.id, transMeta);
       return transMeta;
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
@@ -2077,7 +2077,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
           monitor.subTask("Exporting transformation [" + file.getPath() + "]"); //$NON-NLS-1$ //$NON-NLS-2$
         }
         TransMeta transMeta = buildTransMeta(file, findDirectory(dirPath), fileData, createObjectRevision(version));
-        ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.TransformationMetaLoaded.id, transMeta);
+        ExtensionPointHandler.callExtensionPoint(log, KettleExtensionPoint.TransformationMetaLoaded.id, transMeta);
         transformations.add(transMeta);
       } catch (Exception ex) {
         log.logDetailed("Unable to load transformation [" + file.getPath() + "]", ex); //$NON-NLS-1$ //$NON-NLS-2$
@@ -2111,7 +2111,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         revision = getObjectRevision(new StringObjectId(file.getId().toString()), versionId);
       } // LICENSE CHECK
       JobMeta jobMeta = buildJobMeta(file, parentDir, data, revision);
-      ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.JobMetaLoaded.id, jobMeta);
+      ExtensionPointHandler.callExtensionPoint(log, KettleExtensionPoint.JobMetaLoaded.id, jobMeta);
       return jobMeta;
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
@@ -2163,7 +2163,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
           monitor.subTask("Exporting job [" + file.getPath() + "]"); //$NON-NLS-1$ //$NON-NLS-2$
         }
         JobMeta jobMeta = buildJobMeta(file, findDirectory(dirPath), fileData, createObjectRevision(version));
-        ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.JobMetaLoaded.id, jobMeta);
+        ExtensionPointHandler.callExtensionPoint(log, KettleExtensionPoint.JobMetaLoaded.id, jobMeta);
         jobs.add(jobMeta);
       } catch (Exception ex) {
         log.logError("Unable to load job [" + file.getPath() + "]", ex); //$NON-NLS-1$ //$NON-NLS-2$
@@ -2812,7 +2812,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
       jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idJob.getId(), versionLabel,
           NodeRepositoryFileData.class).getNode(), jobMeta);
 
-      ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.JobMetaLoaded.id, jobMeta);
+      ExtensionPointHandler.callExtensionPoint(log, KettleExtensionPoint.JobMetaLoaded.id, jobMeta);
       
       jobMeta.clearChanged();
       return jobMeta;
@@ -2846,7 +2846,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
             NodeRepositoryFileData.class).getNode(), transMeta);
       } // LICENSE CHECK
 
-      ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.TransformationMetaLoaded.id, transMeta);
+      ExtensionPointHandler.callExtensionPoint(log, KettleExtensionPoint.TransformationMetaLoaded.id, transMeta);
 
       transMeta.clearChanged();
       return transMeta;
