@@ -7,6 +7,11 @@
 	<classpathentry kind="output" path="eclipse-bin"/>
 	<classpathentry kind="lib" path="compile-lib/jersey-apache-client-1.16.jar" />
 	<classpathentry kind="lib" path="compile-lib/jersey-bundle-1.16.jar" />
+	<classpathentry kind="lib" path="compile-lib/metastore-TRUNK-SNAPSHOT.jar" />
+	<classpathentry kind="lib" path="compile-lib/pentaho-bi-platform-ee-TRUNK-SNAPSHOT.jar" />
+	<classpathentry kind="lib" path="compile-lib/pentaho-platform-api-TRUNK-SNAPSHOT.jar" />
+	<classpathentry kind="lib" path="compile-lib/pentaho-platform-core-TRUNK-SNAPSHOT.jar" />
+	<classpathentry kind="lib" path="compile-lib/pentaho-platform-extensions-TRUNK-SNAPSHOT.jar" />
 	<classpathentry kind="lib" path="lib/avalon-framework-4.1.3.jar" />
 	<classpathentry kind="lib" path="lib/commands-3.3.0-I20070605-0010.jar" />
 	<classpathentry kind="lib" path="lib/commons-beanutils-1.6.jar" />
@@ -27,14 +32,9 @@
 	<classpathentry kind="lib" path="lib/kettle-ui-swt-TRUNK-SNAPSHOT.jar" />
 	<classpathentry kind="lib" path="lib/log4j-1.2.12.jar" />
 	<classpathentry kind="lib" path="lib/logkit-1.0.1.jar" />
-	<classpathentry kind="lib" path="lib/metastore-TRUNK-SNAPSHOT.jar" />
 	<classpathentry kind="lib" path="lib/metro-webservices-api-2.0.jar" />
 	<classpathentry kind="lib" path="lib/metro-webservices-rt-2.0.jar" />
-	<classpathentry kind="lib" path="lib/pentaho-bi-platform-ee-TRUNK-SNAPSHOT.jar" />
 	<classpathentry kind="lib" path="lib/pentaho-ee-dsc-core-TRUNK-SNAPSHOT.jar" />
-	<classpathentry kind="lib" path="lib/pentaho-platform-api-TRUNK-SNAPSHOT.jar" />
-	<classpathentry kind="lib" path="lib/pentaho-platform-core-TRUNK-SNAPSHOT.jar" />
-	<classpathentry kind="lib" path="lib/pentaho-platform-extensions-TRUNK-SNAPSHOT.jar" />
 	<classpathentry kind="lib" path="lib/pentaho-platform-repository-TRUNK-SNAPSHOT.jar" />
 	<classpathentry kind="lib" path="lib/pentaho-xul-core-3.2.1.jar" />
 	<classpathentry kind="lib" path="lib/pentaho-xul-swt-3.2.1.jar" />

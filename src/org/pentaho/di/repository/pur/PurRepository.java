@@ -35,6 +35,8 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleFileException;
 import org.pentaho.di.core.exception.KettleSecurityException;
+import org.pentaho.di.core.extension.ExtensionPointHandler;
+import org.pentaho.di.core.extension.KettleExtensionPoint;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
@@ -296,16 +298,19 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
             return;
           }
         }
-
+        LogChannel.GENERAL.logBasic("Creating repository sync web service");
         IRepositorySyncWebService syncWebService = WsFactory.createService(repositoryMeta, "repositorySync", //$NON-NLS-1$
             username, password, IRepositorySyncWebService.class);
         
         IUnifiedRepositoryJaxwsWebService repoWebService = null;
         
         try {
+          LogChannel.GENERAL.logBasic("Synchronizzing repository web service");
           syncWebService.sync(repositoryMeta.getName(), repositoryMeta.getRepositoryLocation().getUrl());
+          LogChannel.GENERAL.logBasic("Creating repository web service");
           repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
     			username, password, IUnifiedRepositoryJaxwsWebService.class);
+          LogChannel.GENERAL.logBasic("Repository web service created");
         
         } catch (RepositorySyncException e) {
           log.logError(e.getMessage(), e);
@@ -314,6 +319,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         }
 
         try {
+          LogChannel.GENERAL.logBasic("Creating unified repository to web service adapter");
         	pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
         	String serverProductID = pur.getProductID();
             if (serverProductID.equalsIgnoreCase(RepositoryServers.POBS.toString())) {            	 
@@ -330,7 +336,9 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
 
         // We need to add the service class in the list in the order of dependencies
         // IRoleSupportSecurityManager depends RepositorySecurityManager to be present
+        LogChannel.GENERAL.logBasic("Creating security provider");
         securityProvider = new AbsSecurityProvider(this, this.repositoryMeta, user);
+        LogChannel.GENERAL.logBasic("Registering security provider");
         registerRepositoryService(RepositorySecurityProvider.class, securityProvider);
         registerRepositoryService(IAbsSecurityProvider.class, securityProvider);
         // If the user does not have access to administer security we do not
@@ -350,6 +358,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         registerRepositoryService(IAclService.class, this);
         registerRepositoryService(ITrashService.class, this);
         registerRepositoryService(ILockService.class, this);
+        LogChannel.GENERAL.logBasic("Repository services registered");
       }
       connected = true;
     }
@@ -363,7 +372,9 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
       throw new KettleException(e);
     } finally {
       if (connected) {
+        LogChannel.GENERAL.logBasic("Creating repository meta store interface");
         metaStore = new PurRepositoryMetaStore(this);
+        LogChannel.GENERAL.logBasic("Connected to the enterprise repository");
       }
     }
   }
@@ -2013,7 +2024,9 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         data = pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class);
         revision = getObjectRevision(new StringObjectId(file.getId().toString()), versionId);
       } // LICENSE CHECK
-      return buildTransMeta(file, parentDir, data, revision);
+      TransMeta transMeta = buildTransMeta(file, parentDir, data, revision);
+      ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.TransformationMetaLoaded.id, transMeta);
+      return transMeta;
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
     }
@@ -2029,7 +2042,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
     transMeta.setRepository(this);
     transMeta.setRepositoryDirectory(parentDir);
     readTransSharedObjects(transMeta); // This should read from the local cache
-    transDelegate.dataNodeToElement(data.getNode(), transMeta);
+    transDelegate.dataNodeToElement(data.getNode(), transMeta);    
     transMeta.clearChanged();
     return transMeta;
   }
@@ -2063,8 +2076,9 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         if (monitor!=null) {
           monitor.subTask("Exporting transformation [" + file.getPath() + "]"); //$NON-NLS-1$ //$NON-NLS-2$
         }
-        transformations
-            .add(buildTransMeta(file, findDirectory(dirPath), fileData, createObjectRevision(version)));
+        TransMeta transMeta = buildTransMeta(file, findDirectory(dirPath), fileData, createObjectRevision(version));
+        ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.TransformationMetaLoaded.id, transMeta);
+        transformations.add(transMeta);
       } catch (Exception ex) {
         log.logDetailed("Unable to load transformation [" + file.getPath() + "]", ex); //$NON-NLS-1$ //$NON-NLS-2$
         log.logError("An error occurred reading transformation [" + file.getTitle() + "] from directory ["+dirPath+"] : " + ex.getMessage()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -2096,7 +2110,9 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         data = pur.getDataAtVersionForRead(file.getId(), versionId, NodeRepositoryFileData.class);
         revision = getObjectRevision(new StringObjectId(file.getId().toString()), versionId);
       } // LICENSE CHECK
-      return buildJobMeta(file, parentDir, data, revision);
+      JobMeta jobMeta = buildJobMeta(file, parentDir, data, revision);
+      ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.JobMetaLoaded.id, jobMeta);
+      return jobMeta;
     } catch (Exception e) {
       throw new KettleException("Unable to load transformation from path [" + absPath + "]", e);
     }
@@ -2130,7 +2146,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
    */
   protected List<JobMeta> loadJobs(final ProgressMonitorListener monitor, final LogChannelInterface log,
       final List<RepositoryFile> files, final boolean setInternalVariables) throws KettleException {
-    List<JobMeta> transformations = new ArrayList<JobMeta>(files.size());
+    List<JobMeta> jobs = new ArrayList<JobMeta>(files.size());
     List<NodeRepositoryFileData> filesData = pur.getDataForReadInBatch(files, NodeRepositoryFileData.class);
     List<VersionSummary> versions = pur.getVersionSummaryInBatch(files);
     Iterator<RepositoryFile> filesIter = files.iterator();
@@ -2146,13 +2162,14 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         if (monitor!=null) {
           monitor.subTask("Exporting job [" + file.getPath() + "]"); //$NON-NLS-1$ //$NON-NLS-2$
         }
-        transformations
-            .add(buildJobMeta(file, findDirectory(dirPath), fileData, createObjectRevision(version)));
+        JobMeta jobMeta = buildJobMeta(file, findDirectory(dirPath), fileData, createObjectRevision(version));
+        ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.JobMetaLoaded.id, jobMeta);
+        jobs.add(jobMeta);
       } catch (Exception ex) {
         log.logError("Unable to load job [" + file.getPath() + "]", ex); //$NON-NLS-1$ //$NON-NLS-2$
       }
     }
-    return transformations;
+    return jobs;
 
   }
   
@@ -2794,6 +2811,9 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
       } // LICENSE CHECK
       jobDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idJob.getId(), versionLabel,
           NodeRepositoryFileData.class).getNode(), jobMeta);
+
+      ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.JobMetaLoaded.id, jobMeta);
+      
       jobMeta.clearChanged();
       return jobMeta;
     } catch (Exception e) {
@@ -2825,6 +2845,9 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         transDelegate.dataNodeToElement(pur.getDataAtVersionForRead(idTransformation.getId(), versionLabel,
             NodeRepositoryFileData.class).getNode(), transMeta);
       } // LICENSE CHECK
+
+      ExtensionPointHandler.callExtensionPoint(KettleExtensionPoint.TransformationMetaLoaded.id, transMeta);
+
       transMeta.clearChanged();
       return transMeta;
     } catch (Exception e) {
