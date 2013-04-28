@@ -529,7 +529,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     repositoryAdminUsername = (String) applicationContext.getBean("repositoryAdminUsername");
     superAdminRoleName = (String) applicationContext.getBean("superAdminAuthorityName");
     sysAdminUserName = (String) applicationContext.getBean("superAdminUserName");
-    tenantAuthenticatedRoleName = (String) applicationContext.getBean("tenantAuthenticatedAuthorityName");
+    tenantAuthenticatedRoleName = (String) applicationContext.getBean("singleTenantAuthenticatedAuthorityName");
     singleTenantAdminRoleName = (String) applicationContext.getBean("singleTenantAdminAuthorityName");
     tenantManager = (ITenantManager) applicationContext.getBean("tenantMgrProxy");
     roleBindingDaoTarget = (IRoleAuthorizationPolicyRoleBindingDao) applicationContext.getBean("roleAuthorizationPolicyRoleBindingDaoTarget");
