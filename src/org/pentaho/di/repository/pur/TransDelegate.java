@@ -41,6 +41,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.step.StepPartitioningMeta;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
+import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 
 public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer, java.io.Serializable {
 
@@ -166,7 +167,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
   private static final String PROP_STEP_DISTRIBUTE = "STEP_DISTRIBUTE";
 
-  private static final String PROP_STEP_LOADBALANCE = "STEP_LOADBALANCE";
+  private static final String PROP_STEP_ROW_DISTRIBUTION = "STEP_ROW_DISTRIBUTION";
 
   private static final String PROP_STEP_GUI_DRAW = "STEP_GUI_DRAW";
 
@@ -238,7 +239,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         stepMeta.setDescription(getString(stepNode, PROP_DESCRIPTION));
       }
       stepMeta.setDistributes(stepNode.getProperty(PROP_STEP_DISTRIBUTE).getBoolean());
-      String rowDistributionCode = stepNode.getProperty(PROP_STEP_LOADBALANCE).getString();
+      DataProperty rowDistributionProperty = stepNode.getProperty(PROP_STEP_ROW_DISTRIBUTION);
+      String rowDistributionCode = rowDistributionProperty==null ? null : rowDistributionProperty.getString();
       RowDistributionInterface rowDistribution = PluginRegistry.getInstance().loadClass(
           RowDistributionPluginType.class, rowDistributionCode, RowDistributionInterface.class); 
       stepMeta.setRowDistribution(rowDistribution);
@@ -564,7 +566,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       stepNode.setProperty(PROP_DESCRIPTION, step.getDescription());
       stepNode.setProperty(PROP_STEP_TYPE, step.getStepID());
       stepNode.setProperty(PROP_STEP_DISTRIBUTE, step.isDistributes());
-      stepNode.setProperty(PROP_STEP_LOADBALANCE, step.getRowDistribution()==null ? null : step.getRowDistribution().getCode());
+      stepNode.setProperty(PROP_STEP_ROW_DISTRIBUTION, step.getRowDistribution()==null ? null : step.getRowDistribution().getCode());
       stepNode.setProperty(PROP_STEP_COPIES, step.getCopies());
       stepNode.setProperty(PROP_STEP_COPIES_STRING, step.getCopiesString());
       stepNode.setProperty(PROP_STEP_GUI_LOCATION_X, step.getLocation().x);
