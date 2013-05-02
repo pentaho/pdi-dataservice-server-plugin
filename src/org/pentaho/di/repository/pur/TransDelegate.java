@@ -33,6 +33,8 @@ import org.pentaho.di.trans.DataServiceMeta;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransMeta.TransformationType;
+import org.pentaho.di.trans.step.RowDistributionInterface;
+import org.pentaho.di.trans.step.RowDistributionPluginType;
 import org.pentaho.di.trans.step.StepErrorMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
@@ -236,7 +238,10 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         stepMeta.setDescription(getString(stepNode, PROP_DESCRIPTION));
       }
       stepMeta.setDistributes(stepNode.getProperty(PROP_STEP_DISTRIBUTE).getBoolean());
-      stepMeta.setLoadBalancing(stepNode.getProperty(PROP_STEP_LOADBALANCE).getBoolean());
+      String rowDistributionCode = stepNode.getProperty(PROP_STEP_LOADBALANCE).getString();
+      RowDistributionInterface rowDistribution = PluginRegistry.getInstance().loadClass(
+          RowDistributionPluginType.class, rowDistributionCode, RowDistributionInterface.class); 
+      stepMeta.setRowDistribution(rowDistribution);
       stepMeta.setDraw(stepNode.getProperty(PROP_STEP_GUI_DRAW).getBoolean());
       int copies = (int) stepNode.getProperty(PROP_STEP_COPIES).getLong();
       String copiesString = stepNode.getProperty(PROP_STEP_COPIES_STRING).getString();
@@ -559,7 +564,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       stepNode.setProperty(PROP_DESCRIPTION, step.getDescription());
       stepNode.setProperty(PROP_STEP_TYPE, step.getStepID());
       stepNode.setProperty(PROP_STEP_DISTRIBUTE, step.isDistributes());
-      stepNode.setProperty(PROP_STEP_LOADBALANCE, step.isLoadBalancing());
+      stepNode.setProperty(PROP_STEP_LOADBALANCE, step.getRowDistribution()==null ? null : step.getRowDistribution().getCode());
       stepNode.setProperty(PROP_STEP_COPIES, step.getCopies());
       stepNode.setProperty(PROP_STEP_COPIES_STRING, step.getCopiesString());
       stepNode.setProperty(PROP_STEP_GUI_LOCATION_X, step.getLocation().x);
