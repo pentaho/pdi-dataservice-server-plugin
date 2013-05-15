@@ -207,7 +207,6 @@
     
       <proguard verbose="true" configuration="${dist.dir}/${proguard.file}">
       <![CDATA[
-    -useuniqueclassmembernames
     -dontoptimize
     -dontshrink
     -dontnote
