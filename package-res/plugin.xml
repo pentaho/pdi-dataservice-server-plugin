@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin id="PentahoEnterpriseRepository" name="lib/Enterprise Repository" description="Enterprise Repository" tooltip="Enterprise Repository"
+<plugin id="PentahoEnterpriseRepository" name="lib/Enterprise Repository" description="DI Repository" tooltip="DI Repository"
   classname="org.pentaho.di.repository.pur.PurRepository" meta-classname="org.pentaho.di.repository.pur.PurRepositoryMeta"
   dialog-classname="lib/org.pentaho.di.ui.repository.pur.PurRepositoryDialog" version-browser-classname="lib/org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog">
   <libraries>
@@ -29,11 +29,11 @@
   <!-- PART BELOW IS NO USED YET -->
 
   <localized_name>
-    <name locale="en_US">Enterprise Repository</name>
+    <name locale="en_US">DI Repository</name>
   </localized_name>
 
   <localized_description>
-    <description locale="en_US">Enterprise Repository</description>
+    <description locale="en_US">DI Repository</description>
   </localized_description>
 
 </plugin>

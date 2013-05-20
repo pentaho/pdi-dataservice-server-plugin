@@ -112,7 +112,7 @@ import com.pentaho.pdi.ws.RepositorySyncException;
  * @author Matt
  * @author mlowery
  */
-@RepositoryPlugin(id = "PentahoEnterpriseRepository", name = "Enterprise Repository", description = "i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository", metaClass = "org.pentaho.di.repository.pur.PurRepositoryMeta")
+@RepositoryPlugin(id = "PentahoEnterpriseRepository", name = "DI Repository", description = "i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository", metaClass = "org.pentaho.di.repository.pur.PurRepositoryMeta")
 public class PurRepository extends AbstractRepository implements Repository, IRevisionService, IAclService, ITrashService, ILockService, java.io.Serializable {
 
   private static final long serialVersionUID = 7460109109707189479L; /* EESOURCE: UPDATE SERIALVERUID */
