@@ -30,6 +30,7 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.DataServiceMeta;
+import org.pentaho.di.trans.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransMeta.TransformationType;
@@ -39,6 +40,7 @@ import org.pentaho.di.trans.step.StepErrorMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.step.StepPartitioningMeta;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
@@ -256,6 +258,10 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       int x = (int) stepNode.getProperty(PROP_STEP_GUI_LOCATION_X).getLong();
       int y = (int) stepNode.getProperty(PROP_STEP_GUI_LOCATION_Y).getLong();
       stepMeta.setLocation(x, y);
+      
+      // Load the group attributes map
+      //
+      AttributesMapUtil.loadAttributesMap(stepNode, stepMeta);
 
       String stepType = getString(stepNode, PROP_STEP_TYPE);
 
@@ -528,22 +534,19 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     // Load the data service metadata 
     //
     DataServiceMeta dataService = new DataServiceMeta();
+    transMeta.setDataService(dataService);
     String dataServiceName = getString(rootNode, PROP_TRANS_DATA_SERVICE_NAME);
     if (dataServiceName!=null) {
       // Load Kettle data service from store
       //
-      // DataServiceMetaStoreUtil.  
-    }
-    transMeta.setDataService(dataService);
-
-    /*
-    dataService.setName();
-    dataService.setStepname(getString(rootNode, PROP_TRANS_DATA_SERVICE_STEPNAME));
-    dataService.setOutput(getBoolean(rootNode, PROP_TRANS_DATA_SERVICE_OUTPUT, true));
-    dataService.setOptimizationAllowed(getBoolean(rootNode, PROP_TRANS_DATA_SERVICE_ALLOW_OPTIMIZATION, false));
-    dataService.setCacheMethod(ServiceCacheMethod.getMethodByName(getString(rootNode, PROP_TRANS_DATA_SERVICE_CACHE_METHOD)));
-    */
+      try {
+        DataServiceMetaStoreUtil.loadDataService(repo.getMetaStore(), dataServiceName, dataService);
+      } catch(MetaStoreException e) {
+        throw new KettleException("Unable to load data service details from the PUR metastore", e);
+      }
+    }    
     
+    AttributesMapUtil.loadAttributesMap(rootNode, transMeta);
   }
 
   public DataNode elementToDataNode(final RepositoryElementInterface element) throws KettleException {
@@ -572,6 +575,10 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       stepNode.setProperty(PROP_STEP_GUI_LOCATION_X, step.getLocation().x);
       stepNode.setProperty(PROP_STEP_GUI_LOCATION_Y, step.getLocation().y);
       stepNode.setProperty(PROP_STEP_GUI_DRAW, step.isDrawn());
+      
+      // Also save the step group attributes map
+      //
+      AttributesMapUtil.saveAttributesMap(stepNode, step);
 
       // Save the step metadata using the repository save method, NOT XML
       // That is because we want to keep the links to databases, conditions, etc by ID, not name.
@@ -742,18 +749,16 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   	  logTable.saveToRepository(attributeInterface);
   	}
   	
-  	// Save the data service metadata if there's any
+  	// Save the reference to the data service metadata if there's any
   	//
   	DataServiceMeta dataService = transMeta.getDataService();
   	if (dataService.isDefined()) {
-  	  /*
   	  rootNode.setProperty(PROP_TRANS_DATA_SERVICE_NAME, dataService.getName());
-      rootNode.setProperty(PROP_TRANS_DATA_SERVICE_STEPNAME, dataService.getStepname());
-      rootNode.setProperty(PROP_TRANS_DATA_SERVICE_OUTPUT, dataService.isOutput());
-      rootNode.setProperty(PROP_TRANS_DATA_SERVICE_ALLOW_OPTIMIZATION, dataService.isOptimizationAllowed());
-      rootNode.setProperty(PROP_TRANS_DATA_SERVICE_CACHE_METHOD, dataService.getCacheMethod()==null ? null : dataService.getCacheMethod().name());
-      */
   	}
+  	
+  	// Save the transformation attribute groups map
+  	//
+  	AttributesMapUtil.saveAttributesMap(rootNode, transMeta);
   }
 
   @SuppressWarnings("unchecked")

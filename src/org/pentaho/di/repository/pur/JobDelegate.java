@@ -21,6 +21,7 @@ import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
+import org.pentaho.di.job.entry.JobEntryBase;
 import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
 import org.pentaho.di.repository.ObjectId;
@@ -77,8 +78,6 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   private static final String PROP_JOBENTRY_TYPE = "JOBENTRY_TYPE";
 
   private static final String PROP_PARALLEL = "PARALLEL";
-
-  private static final String PROP_CHECKPOINT = "CHECKPOINT";
 
   private static final String PROP_GUI_DRAW = "GUI_DRAW";
 
@@ -226,10 +225,14 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       copy.setLocation(x, y);
       copy.setDrawn(copyNode.getProperty(PROP_GUI_DRAW).getBoolean());
       copy.setLaunchingInParallel(copyNode.getProperty(PROP_PARALLEL).getBoolean());
-      copy.setCheckpoint(copyNode.getProperty(PROP_CHECKPOINT).getBoolean());
-
+      
+      // Also save the step group attributes map
+      //
+      if (jobEntry instanceof JobEntryBase) {
+        AttributesMapUtil.loadAttributesMap(copyNode, (JobEntryBase)jobEntry);
+      }
+      
       jobMeta.getJobCopies().add(copy);
-
     }
 
     if (jobMeta.getJobCopies().size() != nrCopies) {
@@ -339,6 +342,11 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       for (LogTableInterface logTable : jobMeta.getLogTables()) {
         logTable.loadFromRepository(attributeInterface);
       }
+      
+      // Load the attributes map
+      //
+      AttributesMapUtil.loadAttributesMap(rootNode, jobMeta);
+      
     } catch (Exception e) {
       throw new KettleException("Error loading job details", e);
     }
@@ -425,15 +433,22 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       copyNode.setProperty(PROP_GUI_LOCATION_Y, copy.getLocation().y);
       copyNode.setProperty(PROP_GUI_DRAW, copy.isDrawn());
       copyNode.setProperty(PROP_PARALLEL, copy.isLaunchingInParallel());
-      copyNode.setProperty(PROP_CHECKPOINT, copy.isCheckpoint());
 
-      // Save the entry information here as well, for completeness.  TODO: since this slightly stores duplicate information, figure out how to store this separately.
+      // Also save the step group attributes map
+      //
+      if (entry instanceof JobEntryBase) {
+        AttributesMapUtil.saveAttributesMap(copyNode, (JobEntryBase)entry);
+      }
+      
+      // Save the entry information here as well, for completeness.  
+      // TODO: since this slightly stores duplicate information, figure out how to store this separately.
       //
       copyNode.setProperty(PROP_JOBENTRY_TYPE, entry.getPluginId());
       DataNode customNode = new DataNode(NODE_CUSTOM);
       RepositoryProxy proxy = new RepositoryProxy(customNode);
       entry.saveRep(proxy, proxy.getMetaStore(), null);
       compatibleEntrySaveRep(entry, proxy, null);
+
       copyNode.addNode(customNode);
     }
 
@@ -511,6 +526,10 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     for (LogTableInterface logTable : jobMeta.getLogTables()) {
       logTable.saveToRepository(attributeInterface);
     }
+    
+    // Load the attributes map
+    //
+    AttributesMapUtil.saveAttributesMap(rootNode, jobMeta);
   }
 
   /**

@@ -38,6 +38,10 @@
     <dependency org="pentaho" name="pentaho-bi-platform-util" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" /> -->
 
+    <dependency org="pentaho"               name="pentaho-xul-core"    rev="${dependency.pentaho-xul.revision}" changing="true"/>
+    <dependency org="pentaho"               name="pentaho-xul-swt"     rev="${dependency.pentaho-xul.revision}" changing="true"/>
+    
+
     <!-- begin remove for the customer src dist -->		
     <dependency org="pentaho"        name="pentaho-ee-dsc-core-proguard" rev="${dependency.pentaho-ee-dsc.revision}" changing="true"   transitive="true" conf="obf->default">
       <artifact name="pentaho-ee-dsc-core-proguard" type="zip"/>
@@ -70,6 +74,8 @@
     <dependency org="metro" name="metro-webservices-api" rev="2.0" />
     <dependency org="metro" name="metro-webservices-rt" rev="2.0" />
 
+    <dependency org="javax.servlet"           name="servlet-api"          rev="2.5"  transitive="false" conf="compile->default"/>
+ 
     <!--  test dependencies -->
     <dependency org="org.springframework.security" name="spring-security-core" rev="2.0.5.RELEASE"
       transitive="false" />
@@ -109,8 +115,9 @@
 
     <dependency org="com.sun.jersey.contribs" name="jersey-apache-client" rev="1.16" transitive="false" conf="compile->default"/>
     <dependency org="com.sun.jersey"          name="jersey-bundle"        rev="1.16" transitive="false" conf="compile->default"/>
- 
-    <!-- excludes -->
+
+    <!-- excludes 
     <exclude org="javax.servlet" module="servlet-api" />
+    -->
   </dependencies>
 </ivy-module>

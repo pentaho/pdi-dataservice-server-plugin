@@ -1,4 +1,4 @@
-package org.pentaho.di.trans.step;
+package com.pentaho.di.trans.step;
 
 import org.pentaho.di.core.RowSet;
 import org.pentaho.di.core.exception.KettleStepException;
