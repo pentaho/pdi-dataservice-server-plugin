@@ -21,7 +21,7 @@ public class PluginLicenseVerifier implements java.io.Serializable {
   private static final long serialVersionUID = 7324261459822440599L; /* EESOURCE: UPDATE SERIALVERUID */
   private static final Log logger = LogFactory.getLog(PluginLicenseVerifier.class);
 
-  private static ResourceBundle messages = new ResourceBundle() {
+  protected static ResourceBundle messages = new ResourceBundle() {
 
     @Override
     public Enumeration<String> getKeys() {
