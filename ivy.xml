@@ -37,9 +37,6 @@
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-bi-platform-util" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" /> -->
-
-    <dependency org="pentaho"               name="pentaho-xul-core"    rev="${dependency.pentaho-xul.revision}" changing="true"/>
-    <dependency org="pentaho"               name="pentaho-xul-swt"     rev="${dependency.pentaho-xul.revision}" changing="true"/>
     
 
     <!-- begin remove for the customer src dist -->		
@@ -50,10 +47,10 @@
     <!-- end remove for the customer src dist -->	
 
     
-    <dependency org="pentaho" name="pentaho-xul-core" rev="${dependency.pentaho-xul.revision}" conf="default->default"
-      changing="true" />
-    <dependency org="pentaho" name="pentaho-xul-swt" rev="${dependency.pentaho-xul.revision}" conf="default->default"
-      changing="true" />      
+    <dependency org="pentaho" name="pentaho-xul-core" rev="${dependency.pentaho-xul.revision}"
+      changing="true" conf="compile->default" />
+    <dependency org="pentaho" name="pentaho-xul-swt" rev="${dependency.pentaho-xul.revision}"
+      changing="true" conf="compile->default" />      
 
     <!-- kettle -->
     <dependency org="pentaho-kettle" name="kettle-core" rev="${dependency.kettle.revision}" transitive="false"
