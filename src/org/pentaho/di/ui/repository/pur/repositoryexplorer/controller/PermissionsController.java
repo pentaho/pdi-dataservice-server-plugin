@@ -468,11 +468,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     bf.createBinding(viewAclsModel, "entriesInheriting", addAclButton, "disabled");//$NON-NLS-1$  //$NON-NLS-2$ 
     // Only enable remove Acl button if the entries checkbox is unchecked and acl is selected from the list
     bf.createBinding(viewAclsModel, "removeEnabled", removeAclButton, "!disabled"); //$NON-NLS-1$  //$NON-NLS-2$ 
-    bf.createBinding(viewAclsModel, "removeEnabled", writeCheckbox, "!disabled"); //$NON-NLS-1$  //$NON-NLS-2$
-    //bf.createBinding(viewAclsModel, "removeEnabled", readCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     bf.createBinding(viewAclsModel, "removeEnabled", manageAclCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
-    bf.createBinding(viewAclsModel, "removeEnabled", deleteCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
-    //bf.createBinding(viewAclsModel, "removeEnabled", viewCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     bf.setBindingType(Binding.Type.ONE_WAY);
     // Binding when the user select from the list
 
@@ -719,14 +715,21 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
           readCheckbox.setChecked(true);
         } else if (permission.equals(RepositoryFilePermission.WRITE)) {
           writeCheckbox.setChecked(true);
+          readCheckbox.setChecked(true);
+          readCheckbox.setDisabled(true);
         } else if (permission.equals(RepositoryFilePermission.ACL_MANAGEMENT)) {
-          manageAclCheckbox.setChecked(true);
+          checkAllPermissionBox();
         } else if (permission.equals(RepositoryFilePermission.DELETE)) {
           deleteCheckbox.setChecked(true);
+          writeCheckbox.setChecked(true);
+          readCheckbox.setChecked(true);
+          writeCheckbox.setDisabled(true);
+          readCheckbox.setDisabled(true);
         }
       }
     } else {
       uncheckAllPermissionBox();
+      disableReadWriteDeletePermissionBoxes(false);
     }
   }
 
@@ -771,8 +774,10 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     }
     if (manageAclCheckbox.isChecked()) {
       permissions.add(RepositoryFilePermission.ACL_MANAGEMENT);
+      disableReadWriteDeletePermissionBoxes(true);
     } else {
       permissions.remove(RepositoryFilePermission.ACL_MANAGEMENT);
+      disableReadWriteDeletePermissionBoxes(false);
     }
     if (deleteCheckbox.isChecked()) {
       permissions.add(RepositoryFilePermission.DELETE);
@@ -783,6 +788,12 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     viewAclsModel.updateAcl(acl);
   }
 
+  public void disableReadWriteDeletePermissionBoxes(boolean onOff) {
+	  deleteCheckbox.setDisabled(onOff);
+	  readCheckbox.setDisabled(onOff);
+	  writeCheckbox.setDisabled(onOff); 
+  }
+  
   /*
    * If the user check or unchecks the inherit from parent checkbox, this method is called.
    */
