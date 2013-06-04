@@ -7,7 +7,7 @@
 
   <property name="prepared.src.dir" value="${bin.dir}/prepared-src" description="Modified source" />
 
-  <property name="proguard.revision" value="4.3" />
+  <property name="proguard.revision" value="4.9" />
   <property name="approot.stage.lib.dir" value=""/>
   <property name="approot.stage.artifact.dir" value=""/>
   <property name="assemble.copy-libs.includes" value="**/*.jar" />
@@ -171,6 +171,9 @@
       </sequential>
     </target> 
   
+  
+
+  
   <target name="obfuscate" depends="install-proguard, resolve-obf, obfuscate.pre">
 
     <copy file="${proguard.file}" todir="${dist.dir}" overwrite="true" failonerror="false"/>
@@ -279,6 +282,115 @@
   
   
   
+  <!-- ======================================== EULA assembly packaging ========================================= -->
+
+  <property name="pentaho-eula-assembly-pom.version" value="1.0.3" />
+  
+  <target name="package-eula" depends="install-antcontrib,package">
+    
+    <if>
+      <not>
+        <available file="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" type="file" />
+      </not>
+      <then>
+        <get src="http://repo.pentaho.org/artifactory/private-release/com/pentaho/pentaho-eula-assembly-pom/${pentaho-eula-assembly-pom.version}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
+          dest="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
+          verbose="true" />
+      </then>
+    </if>
+    
+    <echo>
+      mvn
+      -f
+      ${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml
+      -DgroupId=${ivy.artifact.group}
+      -DartifactId=${package.id}
+      -Dversion=${project.revision}
+      package
+    </echo>
+    <if>
+      <isset property="isWindows" />
+      <then>
+        <exec executable="cmd">
+          <arg value="/c" />
+          <arg value="mvn.bat" />
+          <arg value="-f" />
+          <arg value="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" />
+          <arg value="-DgroupId=${ivy.artifact.group}" />
+          <arg value="-DartifactId=${package.id}" />
+          <arg value="-Dversion=${project.revision}" />
+          <arg value="package" />
+        </exec>
+      </then>
+      <else>
+        <exec executable="mvn">
+          <arg value="-f" />
+          <arg value="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" />
+          <arg value="-DgroupId=${ivy.artifact.group}" />
+          <arg value="-DartifactId=${package.id}" />
+          <arg value="-Dversion=${project.revision}" />
+          <arg value="package" />
+        </exec>
+      </else>
+    </if>
+  </target>
+
+  <target name="maven-publish-eula-artifact" depends="install-antcontrib">
+    <sequential>
+      <fail message="No file found at: ${dist.dir}/${package.id}-${project.revision}-eula-pkg.jar">
+        <condition>
+          <not>
+            <available file="${dist.dir}/${package.id}-${project.revision}-eula-pkg.jar" />
+          </not>
+        </condition>
+      </fail>
+      <echo message="Publishing ${package.id}-${project.revision}-eula-pkg.jar to ${ivy.repository.publish}..." />
+      <echo>
+        mvn
+        deploy:deploy-file
+        -DrepositoryId=${ivy.repository.id}
+        -Durl=${ivy.repository.publish}
+        -DgroupId=${ivy.artifact.group}
+        -DartifactId=${package.id}
+        -Dversion=${project.revision}
+        -Dclassifier=eula-pkg
+        -Dfile=${dist.dir}/${package.id}-${project.revision}-eula-pkg.jar
+      </echo>
+      <if>
+        <isset property="isWindows" />
+        <then>
+          <exec executable="cmd" failonerror="true">
+            <arg value="/c" />
+            <arg value="mvn.bat" />
+            <arg value="deploy:deploy-file" />
+            <arg value="-DrepositoryId=${ivy.repository.id}" />
+            <arg value="-Durl=${ivy.repository.publish}" />
+            <arg value="-DgroupId=${ivy.artifact.group}" />
+            <arg value="-DartifactId=${package.id}" />
+            <arg value="-Dversion=${project.revision}" />
+            <arg value="-Dclassifier=eula-pkg" />
+            <arg value="-Dfile=${dist.dir}/${package.id}-${project.revision}-eula-pkg.jar" />
+          </exec>
+        </then>
+        <else>
+          <exec executable="mvn" failonerror="true">
+            <arg value="deploy:deploy-file" />
+            <arg value="-DrepositoryId=${ivy.repository.id}" />
+            <arg value="-Durl=${ivy.repository.publish}" />
+            <arg value="-DgroupId=${ivy.artifact.group}" />
+            <arg value="-DartifactId=${ivy.artifact.id}" />
+            <arg value="-Dversion=${project.revision}" />
+            <arg value="-Dclassifier=eula-pkg" />
+            <arg value="-Dfile=${dist.dir}/${package.id}-${project.revision}-eula-pkg.jar" />
+          </exec>
+        </else>
+      </if>
+    </sequential>
+  </target>
+  
+  
+  
+  
   <!--=======================================================================
       obftest
       
@@ -330,6 +442,7 @@
     <antcall target="assemble.copy-libs.post"/>
   </target>
   
+    
   <!--=======================================================================
       assemble.copy-libs.post
      
