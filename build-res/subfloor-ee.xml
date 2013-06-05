@@ -289,52 +289,77 @@
   <target name="package-eula" depends="install-antcontrib,package">
     
     <if>
-      <not>
-        <available file="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" type="file" />
-      </not>
+      <available file="pom.xml" />
       <then>
-        <get src="http://repo.pentaho.org/artifactory/private-release/com/pentaho/pentaho-eula-assembly-pom/${pentaho-eula-assembly-pom.version}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
-          dest="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
-          verbose="true" />
-      </then>
-    </if>
-    
-    <echo>
-      mvn
-      -f
-      ${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml
-      -DgroupId=${ivy.artifact.group}
-      -DartifactId=${package.id}
-      -Dversion=${project.revision}
-      package
-    </echo>
-    <if>
-      <isset property="isWindows" />
-      <then>
-        <exec executable="cmd">
-          <arg value="/c" />
-          <arg value="mvn.bat" />
-          <arg value="-f" />
-          <arg value="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" />
-          <arg value="-DgroupId=${ivy.artifact.group}" />
-          <arg value="-DartifactId=${package.id}" />
-          <arg value="-Dversion=${project.revision}" />
-          <arg value="package" />
-        </exec>
+        <if>
+          <isset property="isWindows" />
+          <then>
+            <exec executable="cmd">
+              <arg value="/c" />
+              <arg value="mvn.bat" />
+              <arg value="package" />
+            </exec>
+          </then>
+          <else>
+            <exec executable="mvn">
+              <arg value="package" />
+            </exec>
+          </else>
+        </if>
       </then>
       <else>
-        <exec executable="mvn">
-          <arg value="-f" />
-          <arg value="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" />
-          <arg value="-DgroupId=${ivy.artifact.group}" />
-          <arg value="-DartifactId=${package.id}" />
-          <arg value="-Dversion=${project.revision}" />
-          <arg value="package" />
-        </exec>
+        <if>
+          <not>
+            <available file="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" type="file" />
+          </not>
+          <then>
+            <get src="http://repo.pentaho.org/artifactory/private-release/com/pentaho/pentaho-eula-assembly-pom/${pentaho-eula-assembly-pom.version}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
+              dest="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
+              verbose="true" />
+          </then>
+        </if>
+        
+        <echo>
+          mvn
+          -f
+          ${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml
+          -DgroupId=${ivy.artifact.group}
+          -DartifactId=${package.id}
+          -Dversion=${project.revision}
+          package
+        </echo>
+        <if>
+          <isset property="isWindows" />
+          <then>
+            <exec executable="cmd">
+              <arg value="/c" />
+              <arg value="mvn.bat" />
+              <arg value="-f" />
+              <arg value="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" />
+              <arg value="-DgroupId=${ivy.artifact.group}" />
+              <arg value="-DartifactId=${package.id}" />
+              <arg value="-Dversion=${project.revision}" />
+              <arg value="package" />
+            </exec>
+          </then>
+          <else>
+            <exec executable="mvn">
+              <arg value="-f" />
+              <arg value="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" />
+              <arg value="-DgroupId=${ivy.artifact.group}" />
+              <arg value="-DartifactId=${package.id}" />
+              <arg value="-Dversion=${project.revision}" />
+              <arg value="package" />
+            </exec>
+          </else>
+        </if>
+        
       </else>
     </if>
+    
   </target>
 
+  
   <target name="maven-publish-eula-artifact" depends="install-antcontrib">
     <sequential>
       <fail message="No file found at: ${dist.dir}/${package.id}-${project.revision}-eula-pkg.jar">
