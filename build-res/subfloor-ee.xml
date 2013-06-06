@@ -15,9 +15,10 @@
   <property name="assemble.copy-libs.excludes" value="" />
   <property name="assemble.copy-libs.excludes.obf" value="" />
   <property name="assemble.copy-obflibs.includes" value="*-obf.jar" />
-  
   <property name="obf.libdir.filter" value="!*-obf.jar"/>
   <property name="obf.artifact.injar.filter" value=""/>
+  <!-- The value for obf.libraryjars is an entire proguard parameter line, not just the lib itself -->
+  <property name="obf.libraryjars" value=""/>
   <property name="proguard.file" value="proguard.pro"/>
   
   <!-- begin remove for the customer src dist -->
@@ -228,7 +229,8 @@
     -libraryjars ${obflib.dir}(*-obf.jar)
     -libraryjars ${lib.dir}(${obf.libdir.filter})
     -libraryjars ${devlib.dir}
-    
+    ${obf.libraryjars}
+      	
     -injars      ${dist.dir}/${ivy.artifact.id}-${project.revision}.jar(${obf.artifact.injar.filter})
     -outjars     ${dist.dir}/${ivy.artifact.id}-${project.revision}-obf.jar
         
