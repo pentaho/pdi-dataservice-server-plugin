@@ -230,7 +230,7 @@
     -libraryjars ${lib.dir}(${obf.libdir.filter})
     -libraryjars ${devlib.dir}
     ${obf.libraryjars}
-      	
+        
     -injars      ${dist.dir}/${ivy.artifact.id}-${project.revision}.jar(${obf.artifact.injar.filter})
     -outjars     ${dist.dir}/${ivy.artifact.id}-${project.revision}-obf.jar
         
