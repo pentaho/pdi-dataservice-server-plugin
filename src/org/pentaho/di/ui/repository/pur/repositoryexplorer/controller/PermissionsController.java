@@ -412,7 +412,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
         List<UIRepositoryObjectAcl> selectedAclList = Collections.emptyList();
         // we've moved to a new file/folder; need to clear out what the model thinks is selected
         viewAclsModel.setSelectedAclList(selectedAclList);
-        uncheckAllPermissionBox();
+        setPermissionBox(false);
         UIRepositoryObject repoObject = (UIRepositoryObject) ro.get(0);
         try {
           if(repoObject instanceof IAclObject) {
@@ -702,49 +702,66 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
       acls.add(acl);
     }
     viewAclsModel.setSelectedAclList(acls);
+    synchronizeCheckboxes();
   }
 
   public void setAclState(UIRepositoryObjectAcl acl) {
-    uncheckAllPermissionBox();
+	setPermissionBox(false);
     if (acl != null && acl.getPermissionSet() != null) {
       for (RepositoryFilePermission permission : acl.getPermissionSet()) {
         if (permission.equals(RepositoryFilePermission.ALL)) {
-          checkAllPermissionBox();
+          setPermissionBox(true);
           break;
         } else if (permission.equals(RepositoryFilePermission.READ)) {
           readCheckbox.setChecked(true);
         } else if (permission.equals(RepositoryFilePermission.WRITE)) {
           writeCheckbox.setChecked(true);
           readCheckbox.setChecked(true);
-          readCheckbox.setDisabled(true);
         } else if (permission.equals(RepositoryFilePermission.ACL_MANAGEMENT)) {
-          checkAllPermissionBox();
+          setPermissionBox(true);
         } else if (permission.equals(RepositoryFilePermission.DELETE)) {
           deleteCheckbox.setChecked(true);
           writeCheckbox.setChecked(true);
           readCheckbox.setChecked(true);
-          writeCheckbox.setDisabled(true);
-          readCheckbox.setDisabled(true);
         }
       }
     } else {
-      uncheckAllPermissionBox();
+      setPermissionBox(false);
       disableReadWriteDeletePermissionBoxes(false);
     }
+    synchronizeCheckboxes();
+  }
+  
+  private void synchronizeCheckboxes() {
+	  
+	  if (userRoleList.getSelectedIndex() >=0 ){
+		  if (manageAclCheckbox.isChecked()) {
+			  deleteCheckbox.setDisabled(true);
+			  writeCheckbox.setDisabled(true);
+			  readCheckbox.setDisabled(true);
+			  return;
+		  }
+		  if (deleteCheckbox.isChecked()) {
+			  writeCheckbox.setDisabled(true);
+			  readCheckbox.setDisabled(true);
+			  return;
+		  }
+		  
+		  readCheckbox.setDisabled(true);
+	  }
+	  else {
+		  manageAclCheckbox.setDisabled(true);
+	      deleteCheckbox.setDisabled(true);
+		  writeCheckbox.setDisabled(true);
+		  readCheckbox.setDisabled(true);
+	  }
   }
 
-  private void uncheckAllPermissionBox() {
-    readCheckbox.setChecked(false);
-    writeCheckbox.setChecked(false);
-    manageAclCheckbox.setChecked(false);
-    deleteCheckbox.setChecked(false);
-  }
-
-  private void checkAllPermissionBox() {
-    readCheckbox.setChecked(true);
-    writeCheckbox.setChecked(true);
-    manageAclCheckbox.setChecked(true);
-    deleteCheckbox.setChecked(true);
+  private void setPermissionBox(boolean onOff) {
+    readCheckbox.setChecked(onOff);
+    writeCheckbox.setChecked(onOff);
+    manageAclCheckbox.setChecked(onOff);
+    deleteCheckbox.setChecked(onOff);
   }
 
   /*
@@ -808,7 +825,7 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
         ((IAclObject) ro).getAcls(viewAclsModel, true);
       }
     }
-
+    
     /*
     if (inheritParentPermissionCheckbox.isChecked()) {
       uncheckAllPermissionBox();
@@ -816,6 +833,13 @@ public class PermissionsController extends AbstractXulEventHandler implements Co
     */
   }
 
+  private void disableAllCheckboxes() {
+	  manageAclCheckbox.setDisabled(true);
+	  deleteCheckbox.setDisabled(true);
+	  writeCheckbox.setDisabled(true);
+	  readCheckbox.setDisabled(true);
+  }
+  
   /*
    * (non-Javadoc)
    * @see org.pentaho.di.ui.repository.repositoryexplorer.ContextChangeListener#onContextChange()
