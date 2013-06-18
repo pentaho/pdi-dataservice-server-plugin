@@ -79,6 +79,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
 import org.pentaho.di.ui.repository.pur.services.IAclService;
+import org.pentaho.di.ui.repository.pur.services.IConnectionAclService;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
@@ -113,7 +114,7 @@ import com.pentaho.pdi.ws.RepositorySyncException;
  * @author mlowery
  */
 @RepositoryPlugin(id = "PentahoEnterpriseRepository", name = "DI Repository", description = "i18n:org.pentaho.di.ui.repository.pur:RepositoryType.Description.EnterpriseRepository", metaClass = "org.pentaho.di.repository.pur.PurRepositoryMeta")
-public class PurRepository extends AbstractRepository implements Repository, IRevisionService, IAclService, ITrashService, ILockService, java.io.Serializable {
+public class PurRepository extends AbstractRepository implements Repository, IRevisionService, IAclService, IConnectionAclService, ITrashService, ILockService, java.io.Serializable {
 
   private static final long serialVersionUID = 7460109109707189479L; /* EESOURCE: UPDATE SERIALVERUID */
 
@@ -356,6 +357,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         }
         registerRepositoryService(IRevisionService.class, this);
         registerRepositoryService(IAclService.class, this);
+        registerRepositoryService(IConnectionAclService.class, this);
         registerRepositoryService(ITrashService.class, this);
         registerRepositoryService(ILockService.class, this);
         LogChannel.GENERAL.logBasic("Repository services registered");

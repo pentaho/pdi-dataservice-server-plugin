@@ -12,6 +12,13 @@ import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.ConnectionsController;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIDatabaseConnection;
 
+/**
+ * This class acts as a controller in the Connections Repository Explorer tab, for managing the ACLs of 
+ * each database connection.
+ * 
+ * @author Will Gorman (wgorman@pentaho.com)
+ *
+ */
 public class AbsConnectionsController extends ConnectionsController implements java.io.Serializable {
 
   private static final long serialVersionUID = 9193044362018565483L; /* EESOURCE: UPDATE SERIALVERUID */
@@ -45,9 +52,9 @@ public class AbsConnectionsController extends ConnectionsController implements j
   }
 
   @Override
-  public void setEnableButtons(List<UIDatabaseConnection> connections) {
+  public void setSelectedConnections(List<UIDatabaseConnection> connections) {
       if(isAllowed) {
-        super.setEnableButtons(connections);
+        super.setSelectedConnections(connections);
       } else {
         enableButtons(false, false, false);
       }

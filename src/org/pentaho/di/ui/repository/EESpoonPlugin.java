@@ -21,11 +21,13 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.AbsSecurityManage
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.AbsSecurityProviderUISupport;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.SpoonMenuABSController;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsRepositoryRole;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEEDatabaseConnection;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEEJob;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEERepositoryDirectory;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEERepositoryUser;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIEETransformation;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.uisupport.AclUISupport;
+import org.pentaho.di.ui.repository.pur.repositoryexplorer.uisupport.ConnectionAclUISupport;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.uisupport.ManageRolesUISupport;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.uisupport.RepositoryLockUISupport;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.uisupport.RevisionsUISupport;
@@ -33,6 +35,7 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.uisupport.TrashUISupp
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
 import org.pentaho.di.ui.repository.pur.services.IAclService;
+import org.pentaho.di.ui.repository.pur.services.IConnectionAclService;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
@@ -152,6 +155,8 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     // Repository Directory
     if(repository != null && repository.hasService(IAclService.class)) {
       UIObjectRegistry.getInstance().registerUIRepositoryDirectoryClass(UIEERepositoryDirectory.class);
+      UIObjectRegistry.getInstance().registerUIDatabaseConnectionClass(UIEEDatabaseConnection.class);
+
     } else {
       UIObjectRegistry.getInstance().registerUIRepositoryDirectoryClass(UIObjectRegistry.DEFAULT_UIDIR_CLASS);
     }
@@ -193,6 +198,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
   private void registerUISuppportForRepositoryExplorer() {
     UISupportRegistery.getInstance().registerUISupport(IRevisionService.class, RevisionsUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAclService.class, AclUISupport.class);
+    UISupportRegistery.getInstance().registerUISupport(IConnectionAclService.class, ConnectionAclUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IRoleSupportSecurityManager.class, ManageRolesUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsSecurityManagerUISupport.class);
     UISupportRegistery.getInstance().registerUISupport(IAbsSecurityProvider.class, AbsSecurityProviderUISupport.class);
