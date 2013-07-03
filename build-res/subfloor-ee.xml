@@ -286,9 +286,9 @@
   
   <!-- ======================================== EULA assembly packaging ========================================= -->
 
-  <property name="pentaho-eula-assembly-pom.version" value="1.0.3" />
+  <property name="pentaho-eula-assembly-pom.version" value="1.0.6" />
   
-  <target name="package-eula" depends="install-antcontrib,package">
+  <target name="package-eula" depends="install-antcontrib">
     
     <if>
       <available file="pom.xml" />
@@ -299,11 +299,13 @@
             <exec executable="cmd">
               <arg value="/c" />
               <arg value="mvn.bat" />
+              <arg value="-P${profile}" />
               <arg value="package" />
             </exec>
           </then>
           <else>
             <exec executable="mvn">
+              <arg value="-P${profile}" />
               <arg value="package" />
             </exec>
           </else>
@@ -328,6 +330,7 @@
           -DgroupId=${ivy.artifact.group}
           -DartifactId=${package.id}
           -Dversion=${project.revision}
+          -Ddist.dir=${dist.dir}
           package
         </echo>
         <if>
@@ -341,6 +344,7 @@
               <arg value="-DgroupId=${ivy.artifact.group}" />
               <arg value="-DartifactId=${package.id}" />
               <arg value="-Dversion=${project.revision}" />
+              <arg value="-Ddist.dir=${dist.dir}" />
               <arg value="package" />
             </exec>
           </then>
@@ -351,6 +355,7 @@
               <arg value="-DgroupId=${ivy.artifact.group}" />
               <arg value="-DartifactId=${package.id}" />
               <arg value="-Dversion=${project.revision}" />
+              <arg value="-Ddist.dir=${dist.dir}" />
               <arg value="package" />
             </exec>
           </else>
