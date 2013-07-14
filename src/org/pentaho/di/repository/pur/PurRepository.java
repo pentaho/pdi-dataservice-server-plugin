@@ -299,40 +299,32 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
             return;
           }
         }
-        LogChannel.GENERAL.logBasic("Creating repository sync web service");
-        IRepositorySyncWebService syncWebService = WsFactory.createService(repositoryMeta, "repositorySync", //$NON-NLS-1$
-            username, password, IRepositorySyncWebService.class);
-        
-        IUnifiedRepositoryJaxwsWebService repoWebService = null;
-        
+
         try {
-          LogChannel.GENERAL.logBasic("Synchronizzing repository web service");
+          IUnifiedRepositoryJaxwsWebService repoWebService = null;
+          LogChannel.GENERAL.logBasic("Creating repository web service"); //$NON-NLS-1$
+          repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", username, password, IUnifiedRepositoryJaxwsWebService.class); //$NON-NLS-1$
+          LogChannel.GENERAL.logBasic("Repository web service created"); //$NON-NLS-1$
+          LogChannel.GENERAL.logBasic("Creating unified repository to web service adapter"); //$NON-NLS-1$
+          pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
+        } catch (WebServiceException wse) {
+          log.logError(wse.getMessage());
+          throw new Exception(BaseMessages.getString(PKG, "PurRepository.FailedLogin.Message"), wse);
+        }
+
+        try {
+          LogChannel.GENERAL.logBasic("Creating repository sync web service");
+          IRepositorySyncWebService syncWebService = WsFactory.createService(repositoryMeta, "repositorySync", username, password, IRepositorySyncWebService.class); //$NON-NLS-1$
+          LogChannel.GENERAL.logBasic("Synchronizzing repository web service"); //$NON-NLS-1$
           syncWebService.sync(repositoryMeta.getName(), repositoryMeta.getRepositoryLocation().getUrl());
-          LogChannel.GENERAL.logBasic("Creating repository web service");
-          repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", //$NON-NLS-1$
-    			username, password, IUnifiedRepositoryJaxwsWebService.class);
-          LogChannel.GENERAL.logBasic("Repository web service created");
-        
         } catch (RepositorySyncException e) {
           log.logError(e.getMessage(), e);
           // this message will be presented to the user in spoon
           connectMessage = e.getMessage();
-        }
-
-        try {
-          LogChannel.GENERAL.logBasic("Creating unified repository to web service adapter");
-        	pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
-        	String serverProductID = pur.getProductID();
-            if (serverProductID.equalsIgnoreCase(RepositoryServers.POBS.toString())) {            	 
-            	throw new Exception(BaseMessages.getString(PKG, "PurRepository.BAServerLogin.Message"));
-            }
-            else if (!serverProductID.equalsIgnoreCase(RepositoryServers.DIS.toString())) {
-            	throw new Exception(BaseMessages.getString(PKG, "PurRepository.UnsupportedRepository.Message", serverProductID));
-            }
-        }
-        catch (WebServiceException wse) {
-        	log.logError(wse.getMessage());
-        	throw wse;
+        } catch (Exception e) {
+          // if we can speak to the repository okay but not the sync service, assume we're talking to a BA Server
+          log.logError(e.getMessage(), e);
+          throw new Exception(BaseMessages.getString(PKG, "PurRepository.BAServerLogin.Message"), e);
         }
 
         // We need to add the service class in the list in the order of dependencies
