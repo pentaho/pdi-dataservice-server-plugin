@@ -123,7 +123,8 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   private IUnifiedRepository repo;
   
   private ITenantedPrincipleNameResolver userNameUtils = new DefaultTenantedPrincipleNameResolver();
-  private ITenantedPrincipleNameResolver roleNameUtils = new DefaultTenantedPrincipleNameResolver();
+  private ITenantedPrincipleNameResolver roleNameUtils = new DefaultTenantedPrincipleNameResolver(
+      DefaultTenantedPrincipleNameResolver.ALTERNATE_DELIMETER);
   
   private ITenantManager tenantManager;
   
@@ -213,7 +214,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     repository.init(repositoryMeta);
 
     login(sysAdminUserName, systemTenant, new String[]{singleTenantAdminRoleName, tenantAuthenticatedRoleName});
-    ITenant tenantAcme = tenantManager.createTenant(systemTenant, EXP_LOGIN, singleTenantAdminRoleName, tenantAuthenticatedRoleName, "Anonymous");
+    ITenant tenantAcme = tenantManager.createTenant(systemTenant, EXP_TENANT, singleTenantAdminRoleName, tenantAuthenticatedRoleName, "Anonymous");
     userRoleDao.createUser(tenantAcme, EXP_LOGIN, "password", "", new String[]{singleTenantAdminRoleName});
     logout();
     
@@ -237,7 +238,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   protected void setUpUser() {
     StandaloneSession pentahoSession = new StandaloneSession(userInfo.getLogin());
     pentahoSession.setAuthenticated(userInfo.getLogin());
-    pentahoSession.setAttribute(IPentahoSession.TENANT_ID_KEY, "/pentaho/joe");
+    pentahoSession.setAttribute(IPentahoSession.TENANT_ID_KEY, "/pentaho/" + EXP_TENANT);
     final GrantedAuthority[] authorities = new GrantedAuthority[2];
     authorities[0] = new GrantedAuthorityImpl("Authenticated");
     authorities[1] = new GrantedAuthorityImpl("acme_Authenticated");

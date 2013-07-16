@@ -20,8 +20,8 @@
     they are referenced; this allows PentahoSystem to be fully initialized (which is used internally in
     SpringSecurityLoginModule and SpringSecurityPrincipalProvider (pentaho-third-party-security project)
   -->
-    <bean id="IPasswordService" class="org.pentaho.platform.util.Base64PasswordService" scope="singleton" />
 
+  <bean id="IPasswordService" class="org.pentaho.platform.util.Base64PasswordService" scope="singleton" />
   <!-- An access decision manager used by the business objects. -->
   <bean id="businessAccessDecisionManager" class="org.springframework.security.vote.UnanimousBased">
     <property name="allowIfAllAbstainDecisions" value="false"/>
@@ -45,7 +45,6 @@
     <property name="transactionManager" ref="jcrTransactionManager"/>
     <property name="transactionAttributeSource">
       <value>
-        org.pentaho.platform.api.mt.ITenantManager.createTenant=PROPAGATION_REQUIRED
         org.pentaho.platform.api.mt.ITenantManager.getChildTenants=PROPAGATION_REQUIRED,readOnly
         org.pentaho.platform.api.mt.ITenantManager.updateTentant=PROPAGATION_REQUIRED
         org.pentaho.platform.api.mt.ITenantManager.deleteTenant=PROPAGATION_REQUIRED
@@ -313,6 +312,7 @@
 	<property name="singleTenantAdminPassword" ref="defaultAdminUserPassword" />
 	<property name="nonAdminPassword" ref="defaultNonAdminUserPassword" />
   </bean>
+  
   <bean id="mondrianBackingRepositoryLifecycleManager"
         class="org.pentaho.platform.repository2.unified.lifecycle.MondrianBackingRepositoryLifecycleManager">
     <constructor-arg ref="repositoryFileDao"/>
@@ -336,9 +336,8 @@
       </list>
     </constructor-arg>
   </bean>
-
   <bean id="tenantedRoleNameUtils" class="org.pentaho.platform.security.userroledao.DefaultTenantedPrincipleNameResolver">
-  	<property name="delimeter" value="_" />  
+  	<property name="delimeter" value="_" />
   </bean>
   
   <bean id="tenantedUserNameUtils" class="org.pentaho.platform.security.userroledao.DefaultTenantedPrincipleNameResolver">
@@ -459,10 +458,18 @@
   
   <bean id="jcrTemplate" class="org.pentaho.platform.repository2.unified.jcr.sejcr.PentahoJcrTemplate">
     <property name="sessionFactory" ref="jcrSessionFactory"/>
-    <property name="allowCreate" value="false"/>
+    <property name="allowCreate" value="true"/>
     <property name="exposeNativeSession" value="true"/>
   </bean>
 
+  <bean id="repositoryAccessVoterManager"
+          class="org.pentaho.platform.repository2.unified.RepositoryAccessVoterManager">
+      <constructor-arg ref="authorizationPolicy"/>
+      <constructor-arg ref="repositoryAdminUsername"/>
+  </bean>
+  <!--
+  	The repository file dao implementation. 
+   -->
   <bean id="repositoryFileDao" class="org.pentaho.platform.repository2.unified.jcr.JcrRepositoryFileDao">
     <constructor-arg ref="jcrTemplate"/>
     <constructor-arg ref="transformers"/>
@@ -471,11 +478,12 @@
       <bean class="org.pentaho.platform.repository2.unified.jcr.DefaultDeleteHelper">
         <constructor-arg ref="lockHelper"/>
         <constructor-arg ref="pathConversionHelper"/>
-	</bean>
+      </bean>
     </constructor-arg>
     <constructor-arg ref="pathConversionHelper"/>
     <constructor-arg ref="repositoryFileAclDao"/>
     <constructor-arg ref="defaultAclHandler" />
+    <constructor-arg ref="repositoryAccessVoterManager" />
   </bean>
 
   <util:list id="transformers">
@@ -572,23 +580,12 @@
     </pen:publish>
   </bean>
 
-
   <util:map id="immutableRoleBindingMap">
     <entry key-ref="singleTenantAdminAuthorityName">
-      <util:list>
-        <value>org.pentaho.repository.read</value>
-        <value>org.pentaho.repository.create</value>
-        <value>org.pentaho.scheduler.manage</value>
-        <value>org.pentaho.security.administerSecurity</value>
-      </util:list>
+	<pen:list class="org.pentaho.platform.api.engine.IAuthorizationAction"/> 
     </entry>
     <entry key-ref="superAdminAuthorityName">
-      <util:list>
-        <value>org.pentaho.repository.read</value>
-        <value>org.pentaho.repository.create</value>
-		<value>org.pentaho.scheduler.manage</value>        
-        <value>org.pentaho.security.administerSecurity</value>
-	  </util:list>
+	<pen:list class="org.pentaho.platform.api.engine.IAuthorizationAction"/> 
     </entry>
   </util:map>
 

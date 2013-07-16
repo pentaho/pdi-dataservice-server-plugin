@@ -79,9 +79,10 @@ public abstract class RepositoryTestBase {
 
   protected static final String EXP_USERNAME = "Apache Tomcat";
 
-  protected static final String EXP_LOGIN = "joe";
+  protected static final String EXP_LOGIN = "admin";
+  protected static final String EXP_TENANT = "acme";
   
-  protected static final String EXP_LOGIN_PLUS_TENANT = EXP_LOGIN + "-/pentaho/" + EXP_LOGIN;
+  protected static final String EXP_LOGIN_PLUS_TENANT = EXP_LOGIN + "-/pentaho/" + EXP_TENANT;
 
   protected static final String VERSION_COMMENT_V1 = "hello";
 
