@@ -105,29 +105,27 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
     // Add possible services from the repository...
     //
     Repository repository = transformationMap.getSlaveServerConfig().getRepository();
-    if (repository!=null) {
-      try {
-        List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices(metaStore);
-        for (DataServiceMeta dataService : dataServices) {
-          if (!Const.isEmpty(dataService.getName()) && !Const.isEmpty(dataService.getStepname())) {
+    try {
+      List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices(metaStore);
+      for (DataServiceMeta dataService : dataServices) {
+        if (!Const.isEmpty(dataService.getName()) && !Const.isEmpty(dataService.getStepname())) {
 
-            dataService.lookupTransObjectId(repository);
-            if (!Const.isEmpty(dataService.getTransFilename()) || dataService.getTransObjectId()!=null) {
-              if (Const.isEmpty(dataService.getStepname())) {
-                log.logError("A data service without a stepname specification was found : '"+dataService.getName()+"'"); 
-              } else if (Const.isEmpty(dataService.getName())) {
-                log.logError("A data service without a name was found'"); 
-              } else {
-                services.add(new TransDataService(dataService.getName(), dataService.getTransFilename(), dataService.getTransObjectId(), dataService.getStepname()));
-              }
+          dataService.lookupTransObjectId(repository);
+          if (!Const.isEmpty(dataService.getTransFilename()) || dataService.getTransObjectId()!=null) {
+            if (Const.isEmpty(dataService.getStepname())) {
+              log.logError("A data service without a stepname specification was found : '"+dataService.getName()+"'"); 
+            } else if (Const.isEmpty(dataService.getName())) {
+              log.logError("A data service without a name was found'"); 
             } else {
-              log.logError("The transformation specification for data service '"+dataService.getName()+"' could not be found");
+              services.add(new TransDataService(dataService.getName(), dataService.getTransFilename(), dataService.getTransObjectId(), dataService.getStepname()));
             }
+          } else {
+            log.logError("The transformation specification for data service '"+dataService.getName()+"' could not be found");
           }
         }
-      } catch(Exception e) {
-        log.logError("Unable to list extra repository services", e);
       }
+    } catch(Exception e) {
+      log.logError("Unable to list extra repository services", e);
     }
     
     for (TransDataService service : services) {

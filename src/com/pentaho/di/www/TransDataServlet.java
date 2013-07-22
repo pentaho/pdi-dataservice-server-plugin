@@ -128,26 +128,24 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       // Add possible services from the repository...
       //
       Repository repository = transformationMap.getSlaveServerConfig().getRepository();
-      if (repository!=null) {
-        DelegatingMetaStore metaStore = transformationMap.getSlaveServerConfig().getMetaStore();
-        List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices(metaStore);
-        for (DataServiceMeta dataService : dataServices) {
-          
-          dataService.lookupTransObjectId(repository);
-          
-          if (!Const.isEmpty(dataService.getTransFilename()) || dataService.getTransObjectId()!=null) {
-            if (!Const.isEmpty(dataService.getName()) && !Const.isEmpty(dataService.getStepname())) {
-              services.add(
-                  new TransDataService(
-                      dataService.getName(), 
-                      dataService.getTransFilename(), 
-                      dataService.getTransObjectId(), 
-                      dataService.getStepname())
-                    );
-            }
-          } else {
-            log.logError("The transformation specification for data service '"+dataService.getName()+"' could not be found");
+      DelegatingMetaStore metaStore = transformationMap.getSlaveServerConfig().getMetaStore();
+      List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices(metaStore);
+      for (DataServiceMeta dataService : dataServices) {
+        
+        dataService.lookupTransObjectId(repository);
+        
+        if (!Const.isEmpty(dataService.getTransFilename()) || dataService.getTransObjectId()!=null) {
+          if (!Const.isEmpty(dataService.getName()) && !Const.isEmpty(dataService.getStepname())) {
+            services.add(
+                new TransDataService(
+                    dataService.getName(), 
+                    dataService.getTransFilename(), 
+                    dataService.getTransObjectId(), 
+                    dataService.getStepname())
+                  );
           }
+        } else {
+          log.logError("The transformation specification for data service '"+dataService.getName()+"' could not be found");
         }
       }
       
