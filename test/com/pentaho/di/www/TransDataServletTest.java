@@ -6,6 +6,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
+import org.junit.Ignore;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.database.Database;
@@ -24,7 +25,8 @@ public class TransDataServletTest extends TestCase {
   private SlaveServer slaveServer;
   private DatabaseMeta databaseMeta;
   private Database database;
-    
+
+  @Ignore
   public void test01_BasicQuery() throws Exception {
     startServer();
     try {
@@ -47,6 +49,7 @@ public class TransDataServletTest extends TestCase {
     }
   }
   
+  @Ignore
   public void test02_NoData() throws Exception {
     startServer();
     try {
@@ -79,7 +82,7 @@ public class TransDataServletTest extends TestCase {
    *          
    * @throws Exception
    */
-  
+  @Ignore
   public void test03_MondrianQuery() throws Exception {
     startServer();
     try {
