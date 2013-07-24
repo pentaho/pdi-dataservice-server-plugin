@@ -201,7 +201,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
   protected PurRepositoryMetaStore metaStore;
   
   //  The servers (DI Server, BA Server) that a user can authenticate to
-  private enum RepositoryServers {DIS, POBS};
+  protected enum RepositoryServers {DIS, POBS};
   
   // ~ Constructors ====================================================================================================
 

@@ -40,14 +40,15 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
-import org.pentaho.di.trans.DataServiceMeta;
-import org.pentaho.di.trans.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
 import org.pentaho.di.www.JobMap;
 import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.api.IMetaStore;
+
+import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.
  * 

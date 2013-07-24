@@ -51,8 +51,6 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.trans.DataServiceMeta;
-import org.pentaho.di.trans.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
@@ -64,6 +62,9 @@ import org.pentaho.di.www.CartePluginInterface;
 import org.pentaho.di.www.JobMap;
 import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
+
+import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.

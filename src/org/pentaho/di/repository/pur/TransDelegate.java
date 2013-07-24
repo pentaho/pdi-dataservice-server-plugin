@@ -29,8 +29,6 @@ import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
-import org.pentaho.di.trans.DataServiceMeta;
-import org.pentaho.di.trans.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransMeta.TransformationType;
@@ -44,6 +42,9 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
+
+import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 
 public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer, java.io.Serializable {
 
@@ -534,13 +535,13 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     // Load the data service metadata 
     //
     DataServiceMeta dataService = new DataServiceMeta();
-    transMeta.setDataService(dataService);
     String dataServiceName = getString(rootNode, PROP_TRANS_DATA_SERVICE_NAME);
     if (dataServiceName!=null) {
       // Load Kettle data service from store
       //
       try {
         DataServiceMetaStoreUtil.loadDataService(repo.getMetaStore(), dataServiceName, dataService);
+        DataServiceMetaStoreUtil.toTransMeta(transMeta, repo.getMetaStore(), dataService, false);
       } catch(MetaStoreException e) {
         throw new KettleException("Unable to load data service details from the PUR metastore", e);
       }
@@ -751,9 +752,13 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   	
   	// Save the reference to the data service metadata if there's any
   	//
-  	DataServiceMeta dataService = transMeta.getDataService();
-  	if (dataService.isDefined()) {
-  	  rootNode.setProperty(PROP_TRANS_DATA_SERVICE_NAME, dataService.getName());
+  	try {
+    	DataServiceMeta dataService = DataServiceMetaStoreUtil.fromTransMeta(transMeta, transMeta.getMetaStore());
+    	if (dataService.isDefined()) {
+    	  rootNode.setProperty(PROP_TRANS_DATA_SERVICE_NAME, dataService.getName());
+    	}
+  	} catch(Exception e) {
+  	  throw new KettleException("Unable to get data service from transformation", e);
   	}
   	
   	// Save the transformation attribute groups map
