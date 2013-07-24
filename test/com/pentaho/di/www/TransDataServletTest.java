@@ -18,7 +18,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.www.Carte;
 import org.pentaho.di.www.SlaveServerConfig;
 
-public class TransDataServletTest extends TestCase {
+public class TransDataServletTest  {
 
   private CarteLauncher carteLauncher;
   private Carte carte;
@@ -26,7 +26,6 @@ public class TransDataServletTest extends TestCase {
   private DatabaseMeta databaseMeta;
   private Database database;
 
-  @Ignore
   public void test01_BasicQuery() throws Exception {
     startServer();
     try {
@@ -35,14 +34,14 @@ public class TransDataServletTest extends TestCase {
       ResultSet resultSet = database.openQuery("SELECT * FROM Service");
       List<Object[]> rows = database.getRows(resultSet, 0, null);
       RowMetaInterface rowMeta = database.getReturnRowMeta();
-      assertNotNull(rowMeta);
-      assertEquals(8, rows.size());
+      TestCase.assertNotNull(rowMeta);
+      TestCase.assertEquals(8, rows.size());
       
       database.disconnect();
     }
     catch(Exception e) {
       e.printStackTrace();
-      fail("Unexpected exception: "+e.getLocalizedMessage());
+      TestCase.fail("Unexpected exception: "+e.getLocalizedMessage());
     }
     finally {
       stopServer();
@@ -58,13 +57,13 @@ public class TransDataServletTest extends TestCase {
       ResultSet resultSet = database.openQuery("SELECT * FROM Service WHERE Country = 'NoCountry'");
       List<Object[]> rows = database.getRows(resultSet, 0, null);
       RowMetaInterface rowMeta = database.getReturnRowMeta();
-      assertNotNull(rowMeta);
-      assertEquals(0, rows.size());
+      TestCase.assertNotNull(rowMeta);
+      TestCase.assertEquals(0, rows.size());
       
       database.disconnect();
     }
     catch(Exception e) {
-      fail("Unexpected exception: "+e.getLocalizedMessage());
+      TestCase.fail("Unexpected exception: "+e.getLocalizedMessage());
     }
     finally {
       stopServer();
@@ -92,13 +91,13 @@ public class TransDataServletTest extends TestCase {
       ResultSet resultSet = database.openQuery(query);
       List<Object[]> rows = database.getRows(resultSet, 0, null);
       RowMetaInterface rowMeta = database.getReturnRowMeta();
-      assertNotNull(rowMeta);
-      assertEquals(6, rows.size());
+      TestCase.assertNotNull(rowMeta);
+      TestCase.assertEquals(6, rows.size());
       
       database.disconnect();
     }
     catch(Exception e) {
-      fail("Unexpected exception: "+e.getLocalizedMessage());
+      TestCase.fail("Unexpected exception: "+e.getLocalizedMessage());
     }
     finally {
       stopServer();
@@ -106,8 +105,8 @@ public class TransDataServletTest extends TestCase {
   }
   
   
-  
-  protected void startServer() throws Exception {
+  @Ignore
+  private void startServer() throws Exception {
     KettleEnvironment.init();
     launchSlaveServer();
     databaseMeta = new DatabaseMeta("TestConnection", "KettleThin", "JDBC", slaveServer.getHostname(), "kettle", slaveServer.getPort(), "cluster", "cluster");
@@ -116,10 +115,12 @@ public class TransDataServletTest extends TestCase {
     database = new Database(loggingObject, databaseMeta);
   }
   
-  protected void stopServer() throws Exception {
+  @Ignore
+  private void stopServer() throws Exception {
     carte.getWebServer().stopServer();
   }
 
+  @Ignore
   private CarteLauncher launchSlaveServer() throws Exception {
     slaveServer = new SlaveServer("test-localhost-8686-master", "127.0.0.1", "8686", "cluster", "cluster", null, null, null, true);
     SlaveServerConfig slaveServerConfig = new SlaveServerConfig();
@@ -149,6 +150,7 @@ public class TransDataServletTest extends TestCase {
     return carteLauncher;
   }
 
+  @Ignore
   private List<TransDataService> getServicesMap() {
     List<TransDataService> servicesMap = new ArrayList<TransDataService>();
     TransDataService service = new TransDataService("Service", "testfiles/sql-transmeta-test-data.ktr", null, "Output");
