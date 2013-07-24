@@ -16,6 +16,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
 import org.pentaho.di.repository.AbstractRepository;
@@ -52,6 +53,8 @@ import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 public class RepositoryProxy extends AbstractRepository implements ILockService, java.io.Serializable {
 
   private static final long serialVersionUID = -8017798761569450448L; /* EESOURCE: UPDATE SERIALVERUID */
+
+  private static Class<?> PKG = RepositoryProxy.class;
 
   public static final String PROP_CODE_NR_SEPARATOR = "_#_"; //$NON-NLS-1$
 
@@ -362,20 +365,25 @@ public class RepositoryProxy extends AbstractRepository implements ILockService,
        String code, List<DatabaseMeta> databases) throws KettleException {
      String attribute = code + PROP_CODE_NR_SEPARATOR + nr;
      if (attribute != null && node.hasProperty(attribute)) {
-       ObjectId databaseId = new StringObjectId(node.getProperty(attribute).getRef().getId().toString());
-       return DatabaseMeta.findDatabase(databases, databaseId);
+       return loadDatabaseMeta(attribute, databases);
      } else if (code != null && node.hasProperty(code)) {
-       ObjectId databaseId = new StringObjectId(node.getProperty(code).getRef().getId().toString());
-       return DatabaseMeta.findDatabase(databases, databaseId);
+       return loadDatabaseMeta(code, databases);
      }
      return null;
   }
 
+  private DatabaseMeta loadDatabaseMeta(String code, List<DatabaseMeta> databases) throws KettleException {
+    if (DataNodeRef.REF_MISSING.equals(node.getProperty(code).getRef().getId()) && System.getProperty("kettle.allow_missing_refs") == null) {
+      throw new KettleException(BaseMessages.getString(PKG, "RepositoryProxy.ERROR_0001_MISSING_REF"));
+    }
+    ObjectId databaseId = new StringObjectId(node.getProperty(code).getRef().getId().toString());
+    return DatabaseMeta.findDatabase(databases, databaseId);
+  }
+  
   public DatabaseMeta loadDatabaseMetaFromStepAttribute(ObjectId idStep, String code, List<DatabaseMeta> databases)
       throws KettleException {
     if (code != null && node.hasProperty(code)) {
-      ObjectId databaseId = new StringObjectId(node.getProperty(code).getRef().getId().toString());
-      return DatabaseMeta.findDatabase(databases, databaseId);
+      return loadDatabaseMeta(code, databases);
     }
     return null;
   }

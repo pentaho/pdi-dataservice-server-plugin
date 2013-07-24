@@ -80,11 +80,28 @@ public class ConnectionPermissionsController extends AbstractPermissionsControll
           return null;
         }
         setSelectedDatabaseConnections(ro);
+        
+        if (!hasManageAclAccess()) {
+          applyAclButton.setDisabled(true);
+          addAclButton.setDisabled(true);
+          removeAclButton.setDisabled(true);
+          manageAclCheckbox.setDisabled(true);
+          deleteCheckbox.setDisabled(true);
+          writeCheckbox.setDisabled(true);
+          readCheckbox.setDisabled(true);
+          viewAclsModel.setHasManageAclAccess(false);
+        } else {
+          applyAclButton.setDisabled(false);
+          addAclButton.setDisabled(false);
+          viewAclsModel.setHasManageAclAccess(true);
+        }
+        
         viewAclsModel.setRemoveEnabled(false);
         List<UIRepositoryObjectAcl> selectedAclList = Collections.emptyList();
         // we've moved to a connection; need to clear out what the model thinks is selected
         viewAclsModel.setSelectedAclList(selectedAclList);
         setPermissionBox(false);
+        synchronizeCheckboxes();
         UIDatabaseConnection dbconnObject = ro.get(0);
         try {
           if(dbconnObject instanceof IAclObject) {

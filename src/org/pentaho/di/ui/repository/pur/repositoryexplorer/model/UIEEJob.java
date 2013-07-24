@@ -5,7 +5,9 @@
  */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectRevision;
@@ -23,6 +25,7 @@ import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.di.ui.repository.repositoryexplorer.AccessDeniedException;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIJob;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 
 public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAclObject, java.io.Serializable {
 
@@ -33,6 +36,7 @@ public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAcl
   private UIRepositoryObjectRevisions revisions;
   private EERepositoryObject repObj;
   private ObjectAcl acl;
+  private Map<RepositoryFilePermission,Boolean> hasAccess = null;
 
   public UIEEJob(RepositoryElementMetaInterface rc, UIRepositoryDirectory parent, Repository rep) {
     super(rc, parent, rep);
@@ -152,5 +156,17 @@ public class UIEEJob extends UIJob implements ILockObject, IRevisionObject, IAcl
   @Override
   public void clearAcl() {
     acl = null;
+    hasAccess = null;
+  }
+
+  @Override
+  public boolean hasAccess(RepositoryFilePermission perm) throws KettleException {
+    if (hasAccess == null) {
+      hasAccess = new HashMap<RepositoryFilePermission, Boolean>();
+    }
+    if (hasAccess.get(perm) == null) {
+      hasAccess.put(perm, new Boolean(aclService.hasAccess(repObj.getObjectId(), perm)));
+    }
+    return hasAccess.get(perm).booleanValue();
   }
 }

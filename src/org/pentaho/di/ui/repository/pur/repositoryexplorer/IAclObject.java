@@ -5,8 +5,10 @@
  */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer;
 
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAcls;
 import org.pentaho.di.ui.repository.repositoryexplorer.AccessDeniedException;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 
 public interface IAclObject {
 
@@ -20,4 +22,6 @@ public interface IAclObject {
    * Clear the cached ACL so it is refreshed upon next request.
    */
   public void clearAcl();
+  
+  public boolean hasAccess(RepositoryFilePermission perm) throws KettleException;
 }

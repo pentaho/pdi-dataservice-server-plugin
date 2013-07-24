@@ -9,6 +9,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.IRepositoryService;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 /**
  * Repository service which adds ACL feature to the repository. Using this feature, the user
  * of the repository can retrieve and update ACL for a particular object in the repository
@@ -37,4 +38,6 @@ public interface IAclService extends IRepositoryService{
    * @throws KettleException in case something goes horribly wrong
    */
   public  void setAcl(ObjectId id, ObjectAcl aclObject) throws KettleException;
+  
+  public boolean hasAccess(ObjectId id, RepositoryFilePermission perm) throws KettleException;
 }

@@ -19,6 +19,7 @@ import org.pentaho.di.core.plugins.JobEntryPluginType;
 import org.pentaho.di.core.plugins.PluginInterface;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.xml.XMLHandler;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.JobHopMeta;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.job.entry.JobEntryBase;
@@ -32,6 +33,7 @@ import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 
@@ -39,6 +41,9 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
   private static final long serialVersionUID = -1006715561242639895L; /* EESOURCE: UPDATE SERIALVERUID */
 
+  private static Class<?> PKG = JobDelegate.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
+
+  
   private static final String PROP_SHARED_FILE = "SHARED_FILE";
 
   private static final String PROP_USE_LOGFIELD = "USE_LOGFIELD";
@@ -168,7 +173,11 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     //
     for (DatabaseMeta databaseMeta : jobMeta.getDatabases()) {
       if (databaseMeta.hasChanged() || databaseMeta.getObjectId() == null) {
-        repo.saveDatabaseMeta(databaseMeta, versionComment);
+        if (databaseMeta.getObjectId() == null || repo.hasAccess(databaseMeta.getObjectId(), RepositoryFilePermission.WRITE)) { 
+          repo.saveDatabaseMeta(databaseMeta, versionComment);
+        } else {
+          log.logError(BaseMessages.getString(PKG, "PurRepository.ERROR_0004_DATABASE_UPDATE_ACCESS_DENIED", databaseMeta.getName()));
+        }
       }
     }
 

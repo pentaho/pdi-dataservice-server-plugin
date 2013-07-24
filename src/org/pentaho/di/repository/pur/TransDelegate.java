@@ -39,6 +39,7 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.step.StepPartitioningMeta;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
@@ -867,7 +868,11 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for (DatabaseMeta databaseMeta : transMeta.getDatabases()) {
       if (databaseMeta.hasChanged() || databaseMeta.getObjectId() == null) {
-        repo.saveDatabaseMeta(databaseMeta, versionComment);
+        if (databaseMeta.getObjectId() == null || repo.hasAccess(databaseMeta.getObjectId(), RepositoryFilePermission.WRITE)) { 
+          repo.saveDatabaseMeta(databaseMeta, versionComment);
+        } else {
+          log.logError(BaseMessages.getString(PKG, "PurRepository.ERROR_0004_DATABASE_UPDATE_ACCESS_DENIED", databaseMeta.getName()));
+        }
       }
     }
 

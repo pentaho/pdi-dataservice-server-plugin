@@ -105,6 +105,7 @@ import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
 import com.pentaho.pdi.ws.IRepositorySyncWebService;
 import com.pentaho.pdi.ws.RepositorySyncException;
+import com.sun.xml.ws.client.ClientTransportException;
 
 /**
  * Implementation of {@link Repository} that delegates to the Pentaho unified repository (PUR), an instance of
@@ -321,7 +322,10 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
           log.logError(e.getMessage(), e);
           // this message will be presented to the user in spoon
           connectMessage = e.getMessage();
-        } catch (Exception e) {
+        } catch (ClientTransportException e) {
+          // caused by authentication errors, etc
+          throw e;
+        } catch (WebServiceException e) {
           // if we can speak to the repository okay but not the sync service, assume we're talking to a BA Server
           log.logError(e.getMessage(), e);
           throw new Exception(BaseMessages.getString(PKG, "PurRepository.BAServerLogin.Message"), e);
@@ -1973,8 +1977,11 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
       ((ChangedFlagInterface)element).clearChanged();
     }
     updateSharedObjectCache(element);
-    } catch (KettleException ke) {
-      ke.printStackTrace();
+    } catch (Exception e) {
+      // determine if there is an "access denied" issue and throw a nicer error message.
+      if (e.getMessage().indexOf("access denied") >= 0) {
+        throw new KettleException(BaseMessages.getString(PKG, "PurRepository.ERROR_0004_DATABASE_UPDATE_ACCESS_DENIED",element.getName()), e);
+      }
     }
     
   }
@@ -2619,6 +2626,11 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
     }
   }
 
+  public boolean hasAccess(ObjectId fileId, RepositoryFilePermission perm) throws KettleException {
+    RepositoryFile repositoryFile = pur.getFileById(fileId.getId());
+    return pur.hasAccess(repositoryFile.getPath(), EnumSet.of(perm));
+  }
+  
   public void setAcl(ObjectId fileId, ObjectAcl objectAcl) throws KettleException {
     try {
       RepositoryFileAcl acl = pur.getAcl(fileId.getId());

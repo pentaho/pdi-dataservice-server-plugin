@@ -84,11 +84,29 @@ public class PermissionsController extends AbstractPermissionsController impleme
           return null;
         }
         setSelectedRepositoryObject(ro);
+        if (!hasManageAclAccess()) {
+          // disable everything
+          applyAclButton.setDisabled(true);
+          addAclButton.setDisabled(true);
+          removeAclButton.setDisabled(true);
+          inheritParentPermissionCheckbox.setDisabled(true);
+          manageAclCheckbox.setDisabled(true);
+          deleteCheckbox.setDisabled(true);
+          writeCheckbox.setDisabled(true);
+          readCheckbox.setDisabled(true);
+          viewAclsModel.setHasManageAclAccess(false);
+        } else {
+          applyAclButton.setDisabled(false);
+          inheritParentPermissionCheckbox.setDisabled(false);
+          viewAclsModel.setHasManageAclAccess(true);
+
+        }
         viewAclsModel.setRemoveEnabled(false);
         List<UIRepositoryObjectAcl> selectedAclList = Collections.emptyList();
         // we've moved to a new file/folder; need to clear out what the model thinks is selected
         viewAclsModel.setSelectedAclList(selectedAclList);
         setPermissionBox(false);
+        synchronizeCheckboxes();
         UIRepositoryObject repoObject = (UIRepositoryObject) ro.get(0);
         try {
           if(repoObject instanceof IAclObject) {
@@ -133,7 +151,7 @@ public class PermissionsController extends AbstractPermissionsController impleme
 
     // Binding Add Remove button to the inherit check box. If the checkbox is checked that disable add remove
     bf.createBinding(viewAclsModel, "entriesInheriting", inheritParentPermissionCheckbox, "checked"); //$NON-NLS-1$  //$NON-NLS-2$
-    
+
     // Setting the default Deck to show no permission
     aclDeck.setSelectedIndex(NO_ACL);
     try {
@@ -268,21 +286,31 @@ public class PermissionsController extends AbstractPermissionsController impleme
    * If the user check or unchecks the inherit from parent checkbox, this method is called.
    */
   public void updateInheritFromParentPermission() throws Exception {
-    // viewAclsModel.clear();
     viewAclsModel.setEntriesInheriting(inheritParentPermissionCheckbox.isChecked());
     if (inheritParentPermissionCheckbox.isChecked()) {
+      addAclButton.setDisabled(true); 
       UIRepositoryObject ro = repoObject.get(0);
       if (ro instanceof IAclObject) {
         // force inherit to true to get effective ACLs before apply...
         ((IAclObject) ro).clearAcl();
         ((IAclObject) ro).getAcls(viewAclsModel, true);
       }
-    }
-
-    /*
-    if (inheritParentPermissionCheckbox.isChecked()) {
       setPermissionBox(false);
+      synchronizeCheckboxes();
+    } else {
+      addAclButton.setDisabled(false);
     }
-    */
+  }
+  
+  @Override
+  protected void synchronizeCheckboxes() {
+    if (inheritParentPermissionCheckbox.isChecked()) {
+      manageAclCheckbox.setDisabled(true);
+      deleteCheckbox.setDisabled(true);
+      writeCheckbox.setDisabled(true);
+      readCheckbox.setDisabled(true);
+    } else {
+      super.synchronizeCheckboxes();
+    }
   }
 }

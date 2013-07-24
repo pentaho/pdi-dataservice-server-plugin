@@ -29,6 +29,8 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
   private boolean removeEnabled;
 
   private boolean modelDirty;
+  
+  private boolean hasManageAclAccess;
 
   public UIRepositoryObjectAcls() {
     super();
@@ -82,7 +84,7 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
       aclList.add(new UIRepositoryObjectAcl(getAceAtIndex(0)));
       setSelectedAclList(aclList);
     }
-    setRemoveEnabled((!obj.isEntriesInheriting() && !isEmpty()));
+    setRemoveEnabled(!obj.isEntriesInheriting() && !isEmpty() && hasManageAclAccess());
     setModelDirty(true);
   }
   public void addAcl(UIRepositoryObjectAcl aclToAdd) {
@@ -105,7 +107,7 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
     } else {
       setSelectedAclList(null);
     }
-    setRemoveEnabled((!obj.isEntriesInheriting() && !isEmpty()));
+    setRemoveEnabled(!obj.isEntriesInheriting() && !isEmpty() && hasManageAclAccess());
     setModelDirty(true);
   }
 
@@ -178,7 +180,7 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
       selectedAclList.addAll(list);
       this.firePropertyChange("selectedAclList", previousVal, list); //$NON-NLS-1$
     }
-    setRemoveEnabled((!isEntriesInheriting() && !isEmpty()));
+    setRemoveEnabled(!isEntriesInheriting() && !isEmpty() && hasManageAclAccess());
   }
 
   public boolean isEntriesInheriting() {
@@ -193,8 +195,8 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
       boolean previousVal = isEntriesInheriting();
       obj.setEntriesInheriting(entriesInheriting);
       this.firePropertyChange("entriesInheriting", previousVal, entriesInheriting); //$NON-NLS-1$
-      setRemoveEnabled((!entriesInheriting && !isEmpty()));
-      
+      setSelectedAclList(null);
+      setRemoveEnabled(!entriesInheriting && !isEmpty() && hasManageAclAccess());
       // Only dirty the model if the value has changed
       if(previousVal != entriesInheriting)
     	  setModelDirty(true);
@@ -244,11 +246,20 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
     return modelDirty;
   }
   
+  public boolean hasManageAclAccess() {
+    return hasManageAclAccess;
+  }
+  
+  public void setHasManageAclAccess(boolean hasManageAclAccess) {
+    this.hasManageAclAccess = hasManageAclAccess;
+  }
+  
   public void clear() {
     setRemoveEnabled(false);
     setModelDirty(false);
     setAcls(null);
     setSelectedAclList(null);
+    setHasManageAclAccess(false);
   }
   
   private boolean isEmpty() {

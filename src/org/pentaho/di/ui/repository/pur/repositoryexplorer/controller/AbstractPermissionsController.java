@@ -66,6 +66,7 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
   protected XulButton unassignUserButton;
   protected XulButton assignRoleButton;
   protected XulButton unassignRoleButton;
+  protected XulButton applyAclButton;
   protected Binding securityBinding;
   protected UIRepositoryObjectAcls viewAclsModel;
   protected UIRepositoryObjectAclModel manageAclsModel;
@@ -127,7 +128,8 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
     unassignRoleButton = (XulButton) document.getElementById(getXulPrefix() + "unassign-role");//$NON-NLS-1$ 
     assignUserButton = (XulButton) document.getElementById(getXulPrefix() + "assign-user");//$NON-NLS-1$ 
     unassignUserButton = (XulButton) document.getElementById(getXulPrefix() + "unassign-user");//$NON-NLS-1$ 
-        
+    applyAclButton = (XulButton) document.getElementById(getXulPrefix() + "apply-acl");//$NON-NLS-1$ 
+
     // Binding the model user or role list to the ui user or role list
     bf.setBindingType(Binding.Type.ONE_WAY);
     bf.createBinding(manageAclsModel, "availableUserList", availableUserList, "elements");//$NON-NLS-1$ //$NON-NLS-2$
@@ -303,11 +305,8 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
     bf.createBinding(manageAclsModel, "roleUnassignmentPossible", unassignRoleButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
     bf.createBinding(manageAclsModel, "roleAssignmentPossible", assignRoleButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
 
-    // Only enable add Acl button if the entries checkbox is unchecked
-    bf.createBinding(viewAclsModel, "entriesInheriting", addAclButton, "disabled");//$NON-NLS-1$  //$NON-NLS-2$ 
     // Only enable remove Acl button if the entries checkbox is unchecked and acl is selected from the list
     bf.createBinding(viewAclsModel, "removeEnabled", removeAclButton, "!disabled"); //$NON-NLS-1$  //$NON-NLS-2$ 
-    bf.createBinding(viewAclsModel, "removeEnabled", manageAclCheckbox, "!disabled");//$NON-NLS-1$  //$NON-NLS-2$
     
     // Binding when the user select from the list
     bf.createBinding(viewAclsModel, "selectedAclList", this, "aclState", //$NON-NLS-1$  //$NON-NLS-2$
@@ -387,6 +386,8 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
    */
   public void updateAcls() throws Exception {
     manageAclsModel.updateSelectedAcls();
+    viewAclsModel.setSelectedAclList(null);
+    setAclState(null);
     closeManageAclsDialog();
   }
 
@@ -441,19 +442,43 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
     synchronizeCheckboxes();
   }
 
+  protected boolean hasManageAclAccess() {
+    try {
+      Object ro = getSelectedObjects().get(0);
+      if (ro instanceof IAclObject) {
+        return ((IAclObject) ro).hasAccess(RepositoryFilePermission.ACL_MANAGEMENT);
+      }
+    } catch (Exception e) {
+      // convert to runtime exception so it bubbles up through the UI
+      throw new RuntimeException(e);
+    }
+    return false;
+  }
+  
+  private void clearSelectedObjAcl() {
+    Object ro = getSelectedObjects().get(0);
+    if (ro instanceof IAclObject) {
+      ((IAclObject) ro).clearAcl();
+    }
+  }
 
-  private void synchronizeCheckboxes() {
-    if (userRoleList.getSelectedIndex() >= 0) {
-      disableReadWriteDeletePermissionBoxes(false);
+  protected void synchronizeCheckboxes() {
+    if (hasManageAclAccess() && viewAclsModel.getSelectedAclList().size() > 0) {
       if (manageAclCheckbox.isChecked()) {
+        readCheckbox.setDisabled(true);
+        writeCheckbox.setDisabled(true);
         deleteCheckbox.setDisabled(true);
-        writeCheckbox.setDisabled(true);
-        readCheckbox.setDisabled(true);
+        manageAclCheckbox.setDisabled(false);
       } else if (deleteCheckbox.isChecked()) {
-        writeCheckbox.setDisabled(true);
         readCheckbox.setDisabled(true);
+        writeCheckbox.setDisabled(true);
+        deleteCheckbox.setDisabled(false);
+        manageAclCheckbox.setDisabled(false);
       } else {
         readCheckbox.setDisabled(true);
+        writeCheckbox.setDisabled(false);
+        deleteCheckbox.setDisabled(false);
+        manageAclCheckbox.setDisabled(true);
       }
     } else {
       manageAclCheckbox.setDisabled(true);
@@ -526,6 +551,19 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
   
   public TYPE onContextChange() {
     if (viewAclsModel.isModelDirty()) {
+
+      if (!hasManageAclAccess()) {
+        // if the user does not have permission to modify the acls, 
+        // ignore any changes, although this code shouldn't be executed 
+        // because all buttons should be disabled.
+        
+        viewAclsModel.clear();
+        // Clear the ACL from the backing repo object
+        clearSelectedObjAcl();
+        viewAclsModel.setModelDirty(false);
+        return TYPE.OK;
+      }
+      
       XulConfirmBox confirmBox = null;
       try {
         confirmBox = (XulConfirmBox) document.createElement("confirmbox");//$NON-NLS-1$
@@ -538,22 +576,17 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
       confirmBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Yes")); //$NON-NLS-1$
       confirmBox.setCancelLabel(BaseMessages.getString(PKG, "Dialog.No")); //$NON-NLS-1$
       confirmBox.addDialogCallback(new XulDialogCallback<Object>() {
-
         public void onClose(XulComponent sender, Status returnCode, Object retVal) {
           if (returnCode == Status.ACCEPT) {
             returnType = TYPE.OK;
             viewAclsModel.clear();
             // Clear the ACL from the backing repo object
-            Object ro = getSelectedObjects().get(0);
-            if (ro instanceof IAclObject) {
-              ((IAclObject) ro).clearAcl();
-            }
+            clearSelectedObjAcl();
             viewAclsModel.setModelDirty(false);
           } else {
             returnType = TYPE.CANCEL;
           }
         }
-
         public void onError(XulComponent sender, Throwable t) {
           returnType = TYPE.NO_OP;
         }

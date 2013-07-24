@@ -5,6 +5,9 @@
  */
 package org.pentaho.di.ui.repository.pur.repositoryexplorer.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
@@ -13,13 +16,15 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.IAclObject;
 import org.pentaho.di.ui.repository.pur.services.IAclService;
 import org.pentaho.di.ui.repository.repositoryexplorer.AccessDeniedException;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 
 public class UIEERepositoryDirectory extends UIRepositoryDirectory implements IAclObject, java.io.Serializable {
 
   private static final long serialVersionUID = -6273975748634580673L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private IAclService aclService;
-
+  private Map<RepositoryFilePermission,Boolean> hasAccess = null;
+  
   public UIEERepositoryDirectory() {
     super();
   }
@@ -96,6 +101,17 @@ public class UIEERepositoryDirectory extends UIRepositoryDirectory implements IA
 
   @Override
   public void clearAcl() {
-    // Nothing cached so nothing to clear
+    hasAccess = null;
+  }
+
+  @Override
+  public boolean hasAccess(RepositoryFilePermission perm) throws KettleException {
+    if (hasAccess == null) {
+      hasAccess = new HashMap<RepositoryFilePermission, Boolean>();
+    }
+    if (hasAccess.get(perm) == null) {
+      hasAccess.put(perm, new Boolean(aclService.hasAccess(getObjectId(), perm)));
+    }
+    return hasAccess.get(perm).booleanValue();
   }
 }
