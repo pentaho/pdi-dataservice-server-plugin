@@ -38,14 +38,10 @@ import org.pentaho.di.trans.step.StepErrorMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.step.StepPartitioningMeta;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
-
-import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 
 public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer, java.io.Serializable {
 
@@ -532,22 +528,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     for (LogTableInterface logTable : transMeta.getLogTables()) {
       logTable.loadFromRepository(attributeInterface);
     }
-    
-    // Load the data service metadata 
-    //
-    DataServiceMeta dataService = new DataServiceMeta();
-    String dataServiceName = getString(rootNode, PROP_TRANS_DATA_SERVICE_NAME);
-    if (dataServiceName!=null) {
-      // Load Kettle data service from store
-      //
-      try {
-        DataServiceMetaStoreUtil.loadDataService(repo.getMetaStore(), dataServiceName, dataService);
-        DataServiceMetaStoreUtil.toTransMeta(transMeta, repo.getMetaStore(), dataService, false);
-      } catch(MetaStoreException e) {
-        throw new KettleException("Unable to load data service details from the PUR metastore", e);
-      }
-    }    
-    
+        
     AttributesMapUtil.loadAttributesMap(rootNode, transMeta);
   }
 
@@ -749,17 +730,6 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
   	RepositoryAttributeInterface attributeInterface = new PurRepositoryAttribute(rootNode, transMeta.getDatabases());
   	for (LogTableInterface logTable : transMeta.getLogTables()) {
   	  logTable.saveToRepository(attributeInterface);
-  	}
-  	
-  	// Save the reference to the data service metadata if there's any
-  	//
-  	try {
-    	DataServiceMeta dataService = DataServiceMetaStoreUtil.fromTransMeta(transMeta, transMeta.getMetaStore());
-    	if (dataService.isDefined()) {
-    	  rootNode.setProperty(PROP_TRANS_DATA_SERVICE_NAME, dataService.getName());
-    	}
-  	} catch(Exception e) {
-  	  throw new KettleException("Unable to get data service from transformation", e);
   	}
   	
   	// Save the transformation attribute groups map
