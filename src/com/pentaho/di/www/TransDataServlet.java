@@ -203,7 +203,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       // For logging and tracking purposes, let's expose both the service transformation as well 
       // as the generated transformation on this very carte instance
       //
-      TransMeta serviceTransMeta = executor.getGenTransMeta();
+      TransMeta serviceTransMeta = executor.getServiceTransMeta();
       Trans serviceTrans = executor.getServiceTrans();
       if (serviceTrans!=null) {
         // not dual
