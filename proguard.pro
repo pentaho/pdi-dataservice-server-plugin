@@ -37,6 +37,10 @@
   	  -keep class org.pentaho.di.ui.repository.pur.PurRepositoryDialog {
     		  public protected *;
       }
+      
+      -keep class org.pentaho.di.ui.repository.pur.repositoryexplorer.controller.ConnectionPermissionsController {
+    		  void apply();
+      }
 
       -keep class org.pentaho.di.ui.repository.EESpoonPlugin {}
 	  -keep class org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.* {
