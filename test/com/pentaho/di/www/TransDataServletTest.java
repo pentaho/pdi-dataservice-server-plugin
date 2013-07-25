@@ -18,7 +18,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.www.Carte;
 import org.pentaho.di.www.SlaveServerConfig;
 
-public class TransDataServletTest  {
+public class TransDataServletTest extends TestCase {
 
   private CarteLauncher carteLauncher;
   private Carte carte;
@@ -48,7 +48,6 @@ public class TransDataServletTest  {
     }
   }
   
-  @Ignore
   public void test02_NoData() throws Exception {
     startServer();
     try {
@@ -81,7 +80,6 @@ public class TransDataServletTest  {
    *          
    * @throws Exception
    */
-  @Ignore
   public void test03_MondrianQuery() throws Exception {
     startServer();
     try {
