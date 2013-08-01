@@ -76,7 +76,7 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
       metaStore.createNamespace(namespace);
     }
     
-    IMetaStoreElementType elementType = metaStore.getElementType(namespace, PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME);
+    IMetaStoreElementType elementType = metaStore.getElementTypeByName(namespace, PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME);
     if (elementType==null) {
       elementType = metaStore.newElementType(namespace);
       elementType.setName(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME);
