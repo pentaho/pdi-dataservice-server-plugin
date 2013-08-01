@@ -7,6 +7,7 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.junit.Ignore;
+import org.junit.Test;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.database.Database;
@@ -18,19 +19,15 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.www.Carte;
 import org.pentaho.di.www.SlaveServerConfig;
 
-public class TransDataServletTest {
+public class TransDataServletTest extends TestCase {
 
   private CarteLauncher carteLauncher;
   private Carte carte;
   private SlaveServer slaveServer;
   private DatabaseMeta databaseMeta;
   private Database database;
-
-  public void testPlaceholder() throws Exception {
-    TestCase.assertNotNull(new Object());
-  }
   
-  @Ignore
+  @Test
   public void test01_BasicQuery() throws Exception {
     startServer();
     try {
@@ -53,7 +50,7 @@ public class TransDataServletTest {
     }
   }
   
-  @Ignore
+  @Test
   public void test02_NoData() throws Exception {
     startServer();
     try {
@@ -86,7 +83,7 @@ public class TransDataServletTest {
    *          
    * @throws Exception
    */
-  @Ignore
+  @Test
   public void test03_MondrianQuery() throws Exception {
     startServer();
     try {
