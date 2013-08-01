@@ -15,6 +15,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
@@ -25,7 +26,8 @@ import org.pentaho.di.ui.trans.dialog.TransDialogPluginInterface;
 @TransDialogPlugin(
     id="DataServiceTransDialogTab",
     name="Data service transformation dialog tab plugin",
-    description="This plugin makes sure there's an extra 'Data Service' tab in the transformation settings dialog"    
+    description="This plugin makes sure there's an extra 'Data Service' tab in the transformation settings dialog",
+    i18nPackageName="com.pentaho.di.trans.dataservice"
     )
 public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
@@ -215,7 +217,11 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       // dataService.setOptimizationAllowed(wServiceAllowOptimization.getSelection());
       // dataService.setCacheMethod(ServiceCacheMethod.getMethodByDescription(wServiceCacheMethod.getText()));
       
-      DataServiceMetaStoreUtil.toTransMeta(transMeta, transMeta.getMetaStore(), dataService, true);
+      if (!Const.isEmpty(dataService.getName()) && !Const.isEmpty(dataService.getStepname())) {
+        LogChannel.GENERAL.logBasic("Saving data service in meta store '"+transMeta.getMetaStore()+"'");
+        DataServiceMetaStoreUtil.toTransMeta(transMeta, transMeta.getMetaStore(), dataService, true);
+        transMeta.setChanged();
+      }
       
     } catch(Exception e) {
       throw new KettleException("Error reading data service metadata", e);

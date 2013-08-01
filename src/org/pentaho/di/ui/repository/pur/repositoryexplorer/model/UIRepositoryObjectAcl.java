@@ -67,6 +67,6 @@ public class UIRepositoryObjectAcl extends XulEventSourceAdapter implements java
 		ace.getPermissions().add(permissionToAdd);
 	}
 	public void removePermission(RepositoryFilePermission permissionToRemove) {
-		ace.getPermissions().remove(permissionToRemove);;
+		ace.getPermissions().remove(permissionToRemove);
 	}
 }

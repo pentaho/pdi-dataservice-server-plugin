@@ -46,7 +46,7 @@ public class JobGraphJobEntrySetMenuExtensionPoint implements ExtensionPointInte
         extension.jobEntry.setChanged();
         extension.jobGraph.redraw();
         Spoon.getInstance().setShellText();
-      };
+      }
     }; 
     
     JfaceMenuitem child = new JfaceMenuitem(null, popupMenu, extension.xulDomContainer, 

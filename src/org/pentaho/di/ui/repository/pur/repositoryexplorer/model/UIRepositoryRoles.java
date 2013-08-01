@@ -30,7 +30,7 @@ public class UIRepositoryRoles extends AbstractModelNode<IUIRole> implements jav
       try {
         roleList = rsm.getRoles();
         for (IRole role : roleList) {
-        this.add((IUIRole) UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role));
+        this.add(UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role));
         }
       } catch (Exception e) {
         // TODO: handle exception; can't get users???

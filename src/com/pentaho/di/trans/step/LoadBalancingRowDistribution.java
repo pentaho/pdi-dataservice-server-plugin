@@ -44,8 +44,9 @@ public class LoadBalancingRowDistribution implements RowDistributionInterface {
 
     // Loop until we find room in the target rowset, could very well all be full so keep trying.
     //
-    while (!rs.putRow(rowMeta, row) && !step.isStopped())
-    ;
+    while (!rs.putRow(rowMeta, row) && !step.isStopped()) {
+      // Wait
+    }
   }
 
   @Override

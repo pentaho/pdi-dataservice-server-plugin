@@ -107,7 +107,7 @@ public class PermissionsController extends AbstractPermissionsController impleme
         viewAclsModel.setSelectedAclList(selectedAclList);
         setPermissionBox(false);
         synchronizeCheckboxes();
-        UIRepositoryObject repoObject = (UIRepositoryObject) ro.get(0);
+        UIRepositoryObject repoObject = ro.get(0);
         try {
           if(repoObject instanceof IAclObject) {
             ((IAclObject) repoObject).getAcls(viewAclsModel);  

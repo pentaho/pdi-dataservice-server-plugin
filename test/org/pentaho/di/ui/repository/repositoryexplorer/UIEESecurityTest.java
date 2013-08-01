@@ -174,10 +174,10 @@ public class UIEESecurityTest implements java.io.Serializable {
       IUIUser selectedUser = security.getSelectedUser();
       selectedUser.setPassword("newpassword123");
       selectedUser.setDescription("new description 123");
-      ((IUIEEUser) selectedUser).addRole((IUIRole) new UIRepositoryRole(ctoRole));
-      ((IUIEEUser) selectedUser).addRole((IUIRole) new UIRepositoryRole(isRole));
-      ((IUIEEUser) selectedUser).removeRole((IUIRole) new UIRepositoryRole(adminRole));
-      ((IUIEEUser) selectedUser).removeRole((IUIRole) new UIRepositoryRole(authenticatedRole));
+      ((IUIEEUser) selectedUser).addRole(new UIRepositoryRole(ctoRole));
+      ((IUIEEUser) selectedUser).addRole(new UIRepositoryRole(isRole));
+      ((IUIEEUser) selectedUser).removeRole(new UIRepositoryRole(adminRole));
+      ((IUIEEUser) selectedUser).removeRole(new UIRepositoryRole(authenticatedRole));
       security.updateUser(selectedUser, rolesToAssign);
       assertEquals(selectedUser.getPassword(), "newpassword123");//$NON-NLS-1$
       assertEquals(selectedUser.getDescription(), "new description 123"); //$NON-NLS-1$

@@ -343,6 +343,8 @@ public class CheckpointLogTable extends BaseLogTable implements Cloneable, LogTa
             case JOB_RUN_START_DATE: value = runStartDate; break;
 						case RESULT_XML: value = result!=null ? result.getXML() : null; break;
             case PARAMETER_XML: value = job==null ? null : getParametersXml(job); break;
+            default:
+              break;
 						}
 					}
 

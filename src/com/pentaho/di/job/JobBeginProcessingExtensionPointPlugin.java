@@ -30,7 +30,7 @@ import org.w3c.dom.Node;
 @ExtensionPoint(
     extensionPointId="JobBeginProcessing", 
     id="JobBeginProcessingExtensionPointPlugin", 
-    description="Look up extension point information and much more during the beginning of the processing of a job"
+    description="Look up checkpoint information and much more during the beginning of the processing of a job"
   )
 public class JobBeginProcessingExtensionPointPlugin implements ExtensionPointInterface {
 

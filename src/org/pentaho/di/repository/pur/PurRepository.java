@@ -206,7 +206,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
   protected PurRepositoryMetaStore metaStore;
   
   //  The servers (DI Server, BA Server) that a user can authenticate to
-  protected enum RepositoryServers {DIS, POBS};
+  protected enum RepositoryServers {DIS, POBS}
   
   // ~ Constructors ====================================================================================================
 
@@ -1674,7 +1674,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
           partitionSchema.clearChanged();
           newValueItem = partitionSchema;
         } else if (obj instanceof ClusterSchema) {
-          ClusterSchema clusterSchema = (ClusterSchema) ((ClusterSchema) obj).clone();
+          ClusterSchema clusterSchema = ((ClusterSchema) obj).clone();
           clusterSchema.setObjectId(((ClusterSchema) obj).getObjectId());
           clusterSchema.clearChanged();
           newValueItem = clusterSchema;
@@ -2087,6 +2087,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
     transMeta.setObjectRevision(revision);
     transMeta.setRepository(this);
     transMeta.setRepositoryDirectory(parentDir);
+    transMeta.setMetaStore(getMetaStore());
     readTransSharedObjects(transMeta); // This should read from the local cache
     transDelegate.dataNodeToElement(data.getNode(), transMeta);    
     transMeta.clearChanged();
@@ -2173,6 +2174,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
     jobMeta.setObjectRevision(revision);
     jobMeta.setRepository(this);
     jobMeta.setRepositoryDirectory(parentDir);
+    jobMeta.setMetaStore(getMetaStore());
     readJobMetaSharedObjects(jobMeta); // This should read from the local cache
     jobDelegate.dataNodeToElement(data.getNode(), jobMeta);
     jobMeta.clearChanged();
@@ -2431,7 +2433,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
       case CLUSTER_SCHEMA:
         origSharedObjects = sharedObjectsByType.get(RepositoryObjectType.CLUSTER_SCHEMA);
         if (!remove) {
-          elementToUpdate = (RepositoryElementInterface) ((ClusterSchema) element).clone();
+          elementToUpdate = ((ClusterSchema) element).clone();
         }
         break;
       case PARTITION_SCHEMA:

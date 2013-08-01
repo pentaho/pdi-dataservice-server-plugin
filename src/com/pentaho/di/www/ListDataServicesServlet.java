@@ -105,8 +105,9 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
 
     // Add possible services from the repository...
     //
-    Repository repository = transformationMap.getSlaveServerConfig().getRepository();
+    Repository repository = null;
     try {
+      repository = transformationMap.getSlaveServerConfig().getRepository(); // loaded lazily
       List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices(metaStore);
       for (DataServiceMeta dataService : dataServices) {
         if (!Const.isEmpty(dataService.getName()) && !Const.isEmpty(dataService.getStepname())) {

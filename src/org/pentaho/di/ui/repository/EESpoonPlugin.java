@@ -117,6 +117,8 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
         case SHUTDOWN:
           doOnShutdown();
           break;
+        default:
+          break;
       }
     } catch (KettleException e) {
       try {

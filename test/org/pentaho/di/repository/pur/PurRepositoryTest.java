@@ -112,6 +112,8 @@ import org.xml.sax.ext.DefaultHandler2;
 
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
+import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/repository.spring.xml",
@@ -947,6 +949,24 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     metaStore.deleteElement(ns, elementType, twoElement.getId());
     
     assertEquals(0, metaStore.getElements(ns, elementType).size());
+  }
+  
+  @Test
+  public void testKettleDataServices() throws MetaStoreException {
+    // Set up a namespace
+    //
+    String ns = PentahoDefaults.NAMESPACE;
+    IMetaStore metaStore = repository.getMetaStore();
+    metaStore.createNamespace(ns);
+    
+    DataServiceMeta dataServiceMeta = new DataServiceMeta();
+    dataServiceMeta.setName("table1");
+    dataServiceMeta.setTransFilename("/test/fictive/trans.ktr");
+    dataServiceMeta.setStepname("Output-step");
+    IMetaStoreElement element = DataServiceMetaStoreUtil.createOrUpdateDataServiceElement(metaStore, dataServiceMeta);
+    
+    assertNotNull(element);
+    assertNotNull(element.getId());
   }
   
   protected IMetaStoreElement populateElement(IMetaStore metaStore, IMetaStoreElementType elementType, String name) throws MetaStoreException {

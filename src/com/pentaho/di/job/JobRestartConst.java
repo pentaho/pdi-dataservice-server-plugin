@@ -152,6 +152,7 @@ public class JobRestartConst {
         // This is the first attempt to run this job
         // 
         logStatus = LogStatus.START;
+        JobRestartConst.setCheckpointRunId(job, runId);
       }
 
       db.writeLogRecord(checkpointLogTable, logStatus, result, job);

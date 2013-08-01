@@ -300,7 +300,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     if (pur.getFileById(createdFile.getId())==null) {
       throw new RuntimeException("Unable to verify creation of element '"+element.getName()+"' in folder: "+elementTypeFolder.getPath());
     }
-  };
+  }
   
   protected void elementToDataNode(IMetaStoreElement element, DataNode elementDataNode) {
     elementDataNode.setProperty(PROP_NAME, element.getName());
@@ -315,7 +315,11 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     // verify that the element type belongs to this meta store
     //
     if (elementType.getMetaStoreName()==null || !elementType.getName().equals(getName())) {
-      throw new MetaStoreException("The element type '"+elementType.getName()+"' needs to explicitly belong to the meta store in which you are updating.");
+      String elementTypeName = elementType.getName();
+      elementType = getElementTypeByName(namespace, elementTypeName);
+      if (elementType==null) {
+        throw new MetaStoreException("The element type '"+elementTypeName+"' could not be found in the meta store in which you are updating.");
+      }
     }
     
     RepositoryFile existingFile = pur.getFileById(elementId);
@@ -435,6 +439,8 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
         case DATE : attribute.addChild(newAttribute(property.getName(), property.getDate())); break;
         case DOUBLE: attribute.addChild(newAttribute(property.getName(), property.getDouble())); break;
         case STRING: attribute.addChild(newAttribute(property.getName(), property.getString())); break;
+        default:
+          break;
       }
     }
     
