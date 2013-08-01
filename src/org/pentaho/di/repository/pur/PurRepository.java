@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import javax.xml.ws.WebServiceException;
 
@@ -39,6 +42,7 @@ import org.pentaho.di.core.extension.ExtensionPointHandler;
 import org.pentaho.di.core.extension.KettleExtensionPoint;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.util.ExecutorUtil;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.partition.PartitionSchema;
@@ -262,7 +266,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
   }
 
   @SuppressWarnings("deprecation")
-  public void connect(String username, String password) throws KettleException, KettleSecurityException {
+  public void connect(final String username, final String password) throws KettleException, KettleSecurityException {
     try {
       /*
       Three scenarios:
@@ -300,62 +304,103 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
             return;
           }
         }
+        
+        ExecutorService executor = ExecutorUtil.getExecutor();
+        
+        Future<Boolean> authorizationWebserviceFuture = executor.submit(new Callable<Boolean>() {
 
-        try {
-          IUnifiedRepositoryJaxwsWebService repoWebService = null;
-          LogChannel.GENERAL.logBasic("Creating repository web service"); //$NON-NLS-1$
-          repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", username, password, IUnifiedRepositoryJaxwsWebService.class); //$NON-NLS-1$
-          LogChannel.GENERAL.logBasic("Repository web service created"); //$NON-NLS-1$
-          LogChannel.GENERAL.logBasic("Creating unified repository to web service adapter"); //$NON-NLS-1$
-          pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
-        } catch (WebServiceException wse) {
-          log.logError(wse.getMessage());
-          throw new Exception(BaseMessages.getString(PKG, "PurRepository.FailedLogin.Message"), wse);
+          @Override
+          public Boolean call() throws Exception {
+            // We need to add the service class in the list in the order of dependencies
+            // IRoleSupportSecurityManager depends RepositorySecurityManager to be present
+            LogChannel.GENERAL.logBasic("Creating security provider");
+            securityProvider = new AbsSecurityProvider(PurRepository.this, PurRepository.this.repositoryMeta, user);
+            LogChannel.GENERAL.logBasic("Security provider created"); //$NON-NLS-1$
+            // If the user does not have access to administer security we do not
+            // need to added them to the service list
+            if (allowedActionsContains((AbsSecurityProvider) securityProvider,
+                IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION)) {
+              securityManager = new AbsSecurityManager(PurRepository.this, PurRepository.this.repositoryMeta, user);
+              // Set the reference of the security manager to security provider for user role list change event
+              ((PurRepositorySecurityProvider) securityProvider)
+                  .setUserRoleDelegate(((PurRepositorySecurityManager) securityManager).getUserRoleDelegate());
+              return true;
+            }
+            return false;
+          }
+        });
+        
+        Future<WebServiceException> repoWebServiceFuture = executor.submit(new Callable<WebServiceException>() {
+
+          @Override
+          public WebServiceException call() throws Exception {
+            try {
+              IUnifiedRepositoryJaxwsWebService repoWebService = null;
+              LogChannel.GENERAL.logBasic("Creating repository web service"); //$NON-NLS-1$
+              repoWebService = WsFactory.createService(repositoryMeta, "unifiedRepository", username, password, IUnifiedRepositoryJaxwsWebService.class); //$NON-NLS-1$
+              LogChannel.GENERAL.logBasic("Repository web service created"); //$NON-NLS-1$
+              LogChannel.GENERAL.logBasic("Creating unified repository to web service adapter"); //$NON-NLS-1$
+              pur = new UnifiedRepositoryToWebServiceAdapter(repoWebService);
+            } catch (WebServiceException wse) {
+              return wse;
+            }
+            return null;
+          }
+        });
+
+        Future<Exception> syncWebserviceFuture = executor.submit(new Callable<Exception>() {
+
+          @Override
+          public Exception call() throws Exception {
+            try {
+              LogChannel.GENERAL.logBasic("Creating repository sync web service");
+              IRepositorySyncWebService syncWebService = WsFactory.createService(repositoryMeta, "repositorySync", username, password, IRepositorySyncWebService.class); //$NON-NLS-1$
+              LogChannel.GENERAL.logBasic("Synchronizing repository web service"); //$NON-NLS-1$
+              syncWebService.sync(repositoryMeta.getName(), repositoryMeta.getRepositoryLocation().getUrl());
+            } catch (RepositorySyncException e) {
+              log.logError(e.getMessage(), e);
+              // this message will be presented to the user in spoon
+              connectMessage = e.getMessage();
+              return null;
+            } catch (ClientTransportException e) {
+              // caused by authentication errors, etc
+              return e;
+            } catch (WebServiceException e) {
+              // if we can speak to the repository okay but not the sync service, assume we're talking to a BA Server
+              log.logError(e.getMessage(), e);
+              return new Exception(BaseMessages.getString(PKG, "PurRepository.BAServerLogin.Message"), e);
+            }
+            return null;
+          }
+        });
+        
+        WebServiceException repoException = repoWebServiceFuture.get();
+        if (repoException != null) {
+          log.logError(repoException.getMessage());
+          throw new Exception(BaseMessages.getString(PKG, "PurRepository.FailedLogin.Message"), repoException);
         }
-
-        try {
-          LogChannel.GENERAL.logBasic("Creating repository sync web service");
-          IRepositorySyncWebService syncWebService = WsFactory.createService(repositoryMeta, "repositorySync", username, password, IRepositorySyncWebService.class); //$NON-NLS-1$
-          LogChannel.GENERAL.logBasic("Synchronizzing repository web service"); //$NON-NLS-1$
-          syncWebService.sync(repositoryMeta.getName(), repositoryMeta.getRepositoryLocation().getUrl());
-        } catch (RepositorySyncException e) {
-          log.logError(e.getMessage(), e);
-          // this message will be presented to the user in spoon
-          connectMessage = e.getMessage();
-        } catch (ClientTransportException e) {
-          // caused by authentication errors, etc
-          throw e;
-        } catch (WebServiceException e) {
-          // if we can speak to the repository okay but not the sync service, assume we're talking to a BA Server
-          log.logError(e.getMessage(), e);
-          throw new Exception(BaseMessages.getString(PKG, "PurRepository.BAServerLogin.Message"), e);
+        
+        Exception syncException = syncWebserviceFuture.get();
+        if (syncException != null) {
+          throw syncException;
         }
-
-        // We need to add the service class in the list in the order of dependencies
-        // IRoleSupportSecurityManager depends RepositorySecurityManager to be present
-        LogChannel.GENERAL.logBasic("Creating security provider");
-        securityProvider = new AbsSecurityProvider(this, this.repositoryMeta, user);
-        LogChannel.GENERAL.logBasic("Registering security provider");
-        registerRepositoryService(RepositorySecurityProvider.class, securityProvider);
-        registerRepositoryService(IAbsSecurityProvider.class, securityProvider);
-        // If the user does not have access to administer security we do not
-        // need to added them to the service list
-        if (allowedActionsContains((AbsSecurityProvider) securityProvider,
-            IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION)) {
-          securityManager = new AbsSecurityManager(this, this.repositoryMeta, user);
-          // Set the reference of the security manager to security provider for user role list change event
-          ((PurRepositorySecurityProvider) securityProvider)
-              .setUserRoleDelegate(((PurRepositorySecurityManager) securityManager).getUserRoleDelegate());
-
-          registerRepositoryService(RepositorySecurityManager.class, securityManager);
-          registerRepositoryService(IRoleSupportSecurityManager.class, securityManager);
-          registerRepositoryService(IAbsSecurityManager.class, securityManager);
-        }
+        
         registerRepositoryService(IRevisionService.class, this);
         registerRepositoryService(IAclService.class, this);
         registerRepositoryService(IConnectionAclService.class, this);
         registerRepositoryService(ITrashService.class, this);
         registerRepositoryService(ILockService.class, this);
+        
+        Boolean isAdmin = authorizationWebserviceFuture.get();
+        
+        LogChannel.GENERAL.logBasic("Registering security provider");
+        registerRepositoryService(RepositorySecurityProvider.class, securityProvider);
+        registerRepositoryService(IAbsSecurityProvider.class, securityProvider);
+        if (isAdmin) {
+          registerRepositoryService(RepositorySecurityManager.class, securityManager);
+          registerRepositoryService(IRoleSupportSecurityManager.class, securityManager);
+          registerRepositoryService(IAbsSecurityManager.class, securityManager);
+        }
         LogChannel.GENERAL.logBasic("Repository services registered");
       }
       connected = true;
