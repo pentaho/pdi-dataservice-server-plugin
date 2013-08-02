@@ -19,7 +19,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.www.Carte;
 import org.pentaho.di.www.SlaveServerConfig;
 
-public class TransDataServletTest extends TestCase {
+public class TransDataServletTest  {
 
   private CarteLauncher carteLauncher;
   private Carte carte;
@@ -29,7 +29,7 @@ public class TransDataServletTest extends TestCase {
   
   @Test
   public void testDummy() throws Exception {
-    assertNotNull(new Object());
+    TestCase.assertNotNull(new Object());
   }
   
   @Ignore
