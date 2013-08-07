@@ -17,7 +17,7 @@
   <dependencies defaultconf="default->default">
 
     <!-- pentaho -->
-    <dependency org="commons-vfs" name="commons-vfs" rev="20091118-pentaho" transitive="false" />
+    <dependency org="commons-vfs" name="commons-vfs" rev="1.0" transitive="false" />
     <dependency org="pentaho" name="pentaho-platform-core" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" conf="compile->default"/>
     <dependency org="pentaho" name="pentaho-platform-api" rev="${dependency.bi-platform.revision}"
