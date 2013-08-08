@@ -49,5 +49,6 @@
       -keep class com.pentaho.di.job.CheckpointLogTable {}
       -keep class com.pentaho.di.job.CheckpointLogTableUserInterface {}
       -keep class com.pentaho.di.job.JobRestart {}
+      -keep class com.pentaho.di.trans.dataservice.DataServiceTransDialogTab {}
       
       -keepnames class org.pentaho.di.repository.pur.PurRepositoryLocation
