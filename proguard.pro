@@ -46,4 +46,8 @@
 	  -keep class org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.controller.* {
   		  public protected *;
       }
+      -keep class com.pentaho.di.job.CheckpointLogTable {}
+      -keep class com.pentaho.di.job.CheckpointLogTableUserInterface {}
+      -keep class com.pentaho.di.job.JobRestart {}
+      
       -keepnames class org.pentaho.di.repository.pur.PurRepositoryLocation
