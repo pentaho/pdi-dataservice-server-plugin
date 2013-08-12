@@ -89,6 +89,9 @@ import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.pur.services.ITrashService;
 import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.metastore.api.exceptions.MetaStoreNamespaceExistsException;
+import org.pentaho.metastore.util.PentahoDefaults;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAce;
@@ -415,9 +418,21 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
       throw new KettleException(e);
     } finally {
       if (connected) {
-        LogChannel.GENERAL.logBasic("Creating repository meta store interface");
+        LogChannel.GENERAL.logBasic(BaseMessages.getString(PKG, "PurRepositoryMetastore.Create.Message"));
         metaStore = new PurRepositoryMetaStore(this);
-        LogChannel.GENERAL.logBasic("Connected to the enterprise repository");
+        // Create the default Pentaho namespace if it does not exist
+        try {
+          metaStore.createNamespace(PentahoDefaults.NAMESPACE);
+          LogChannel.GENERAL.logBasic(
+              BaseMessages.getString(PKG, "PurRepositoryMetastore.NamespaceCreateSuccess.Message", PentahoDefaults.NAMESPACE));
+        } catch (MetaStoreNamespaceExistsException e) {
+          // Ignore this exception, we only use it to save a call to check if the namespace exists, as the createNamespace() 
+          // call will do the check for us and throw this exception.
+        } catch (MetaStoreException e) {
+          LogChannel.GENERAL.logError(
+              BaseMessages.getString(PKG, "PurRepositoryMetastore.NamespaceCreateException.Message", PentahoDefaults.NAMESPACE), e);
+        }
+        LogChannel.GENERAL.logBasic(BaseMessages.getString(PKG, "PurRepository.ConnectSuccess.Message"));
       }
     }
   }
