@@ -12,13 +12,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1287,6 +1281,17 @@ public abstract class RepositoryTestBase {
     return false;
   }
 
+  protected boolean hasVersionWithCal(final RepositoryElementInterface element, final Calendar cal)
+      throws Exception {
+    IRevisionService service = ((IRevisionService)repository);
+    List<ObjectRevision> versions = service.getRevisions(element);
+    for (ObjectRevision version : versions) {
+      if (version.getCreationDate().equals(cal.getTime())) {
+        return true;
+      }
+    }
+    return false;
+  }
   /**
    * save(slave)
    * loadSlaveServer()

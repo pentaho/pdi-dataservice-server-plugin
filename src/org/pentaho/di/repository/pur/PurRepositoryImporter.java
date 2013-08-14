@@ -440,7 +440,7 @@ public class PurRepositoryImporter implements IRepositoryImporter, java.io.Seria
           }
         }
         
-        rep.saveTrans0(transMeta, versionComment, true, false, false, false, false);
+        rep.saveTrans0(transMeta, versionComment, null, true, false, false, false, false);
         feedback.addLog(BaseMessages.getString(PKG, "PurRepositoryImporter.TransSaved.Log", Integer.toString(transformationNumber), transMeta.getName()));
         
         if (transMeta.hasRepositoryReferences()) {

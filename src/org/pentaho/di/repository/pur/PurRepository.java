@@ -7,19 +7,8 @@ package org.pentaho.di.repository.pur;
 
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -1782,6 +1771,11 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
   
   public void save(final RepositoryElementInterface element, final String versionComment,
       final ProgressMonitorListener monitor, final boolean overwriteAssociated) throws KettleException {
+    save(element, versionComment, Calendar.getInstance(), monitor, overwriteAssociated);
+  }
+
+  @Override
+  public void save(RepositoryElementInterface element, String versionComment, Calendar versionDate, ProgressMonitorListener monitor, boolean overwrite) throws KettleException {
     /* START LICENSE CHECK */
     PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
     if (dscContent.getSubject() == null) {
@@ -1792,22 +1786,22 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
     try {
       switch (element.getRepositoryElementType()) {
         case TRANSFORMATION:
-          saveTrans(element, versionComment);
+          saveTrans(element, versionComment, versionDate);
           break;
         case JOB:
-          saveJob(element, versionComment);
+          saveJob(element, versionComment, versionDate);
           break;
         case DATABASE:
-          saveDatabaseMeta(element, versionComment);
+          saveDatabaseMeta(element, versionComment, versionDate);
           break;
         case SLAVE_SERVER:
-          saveSlaveServer(element, versionComment);
+          saveSlaveServer(element, versionComment, versionDate);
           break;
         case CLUSTER_SCHEMA:
-          saveClusterSchema(element, versionComment);
+          saveClusterSchema(element, versionComment, versionDate);
           break;
         case PARTITION_SCHEMA:
-          savePartitionSchema(element, versionComment);
+          savePartitionSchema(element, versionComment, versionDate);
           break;
         default:
           throw new KettleException("It's not possible to save Class [" + element.getClass().getName()
@@ -1934,11 +1928,11 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
     }
   }
   
-  protected void saveJob(final RepositoryElementInterface element, final String versionComment) throws KettleException {
+  protected void saveJob(final RepositoryElementInterface element, final String versionComment, Calendar versionDate) throws KettleException {
     saveJob0(element, versionComment, true, true, true, true, true);
   }
 
-  protected void saveTrans0(final RepositoryElementInterface element, final String versionComment, final boolean saveSharedObjects, final boolean checkLock, final boolean checkRename, final boolean loadRevision, final boolean checkDeleted) throws KettleException {
+  protected void saveTrans0(final RepositoryElementInterface element, final String versionComment, Calendar versionDate, final boolean saveSharedObjects, final boolean checkLock, final boolean checkRename, final boolean loadRevision, final boolean checkDeleted) throws KettleException {
     if (saveSharedObjects) {
       transDelegate.saveSharedObjects(element, versionComment);
     }
@@ -1956,7 +1950,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
       }
       // update title and description
       file = new RepositoryFile.Builder(file)
-        .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+        .title(RepositoryFile.DEFAULT_LOCALE, element.getName()).createdDate(versionDate.getTime())
         .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), ""))
         .build();
       file = pur.updateFile(
@@ -1968,9 +1962,10 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         renameTransformation(element.getObjectId(), null, element.getName());
       }
     } else {
+      Date dtw = (versionDate != null) ? versionDate.getTime() : new Date();
       file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.TRANSFORMATION.getExtension()))
           .versioned(true)
-          .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+          .title(RepositoryFile.DEFAULT_LOCALE, element.getName()).createdDate(dtw)
           .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), "")).build();
       file = pur.createFile(element.getRepositoryDirectory().getObjectId().getId(),
                 file,
@@ -1999,12 +1994,12 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
     }
   }
   
-  protected void saveTrans(final RepositoryElementInterface element, final String versionComment)
+  protected void saveTrans(final RepositoryElementInterface element, final String versionComment, Calendar versionDate)
       throws KettleException {
-    saveTrans0(element, versionComment, true, true, true, true, true);
+    saveTrans0(element, versionComment, versionDate, true, true, true, true, true);
   }
 
-  protected void saveDatabaseMeta(final RepositoryElementInterface element, final String versionComment)
+  protected void saveDatabaseMeta(final RepositoryElementInterface element, final String versionComment, Calendar versionDate)
       throws KettleException {
     try {
     // Even if the object id is null, we still have to check if the element is not present in the PUR
@@ -2281,7 +2276,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
     }
   }
 
-  protected void savePartitionSchema(final RepositoryElementInterface element, final String versionComment) {
+  protected void savePartitionSchema(final RepositoryElementInterface element, final String versionComment, Calendar versionDate) {
     try {
       // Even if the object id is null, we still have to check if the element is not present in the PUR
       // For example, if we import data from an XML file and there is a element with the same name in it.
@@ -2318,7 +2313,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
     }
   }
 
-  protected void saveSlaveServer(final RepositoryElementInterface element, final String versionComment) throws KettleException {
+  protected void saveSlaveServer(final RepositoryElementInterface element, final String versionComment, Calendar versionDate) throws KettleException {
     try {
       // Even if the object id is null, we still have to check if the element is not present in the PUR
       // For example, if we import data from an XML file and there is a element with the same name in it.
@@ -2357,7 +2352,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
 
   }
 
-  protected void saveClusterSchema(final RepositoryElementInterface element, final String versionComment) {
+  protected void saveClusterSchema(final RepositoryElementInterface element, final String versionComment, Calendar versionDate) {
     try {
       // Even if the object id is null, we still have to check if the element is not present in the PUR
       // For example, if we import data from an XML file and there is a element with the same name in it.

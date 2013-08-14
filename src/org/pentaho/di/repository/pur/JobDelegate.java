@@ -174,7 +174,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     for (DatabaseMeta databaseMeta : jobMeta.getDatabases()) {
       if (databaseMeta.hasChanged() || databaseMeta.getObjectId() == null) {
         if (databaseMeta.getObjectId() == null || repo.hasAccess(databaseMeta.getObjectId(), RepositoryFilePermission.WRITE)) { 
-          repo.saveDatabaseMeta(databaseMeta, versionComment);
+          repo.saveDatabaseMeta(databaseMeta, versionComment, null);
         } else {
           log.logError(BaseMessages.getString(PKG, "PurRepository.ERROR_0004_DATABASE_UPDATE_ACCESS_DENIED", databaseMeta.getName()));
         }
@@ -185,7 +185,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     //
     for (SlaveServer slaveServer : jobMeta.getSlaveServers()) {
       if (slaveServer.hasChanged() || slaveServer.getObjectId() == null) {
-        repo.saveSlaveServer(slaveServer, versionComment);
+        repo.saveSlaveServer(slaveServer, versionComment, null);
       }
     }
 

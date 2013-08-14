@@ -839,7 +839,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     for (DatabaseMeta databaseMeta : transMeta.getDatabases()) {
       if (databaseMeta.hasChanged() || databaseMeta.getObjectId() == null) {
         if (databaseMeta.getObjectId() == null || repo.hasAccess(databaseMeta.getObjectId(), RepositoryFilePermission.WRITE)) { 
-          repo.saveDatabaseMeta(databaseMeta, versionComment);
+          repo.saveDatabaseMeta(databaseMeta, versionComment, null);
         } else {
           log.logError(BaseMessages.getString(PKG, "PurRepository.ERROR_0004_DATABASE_UPDATE_ACCESS_DENIED", databaseMeta.getName()));
         }
@@ -850,7 +850,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for (SlaveServer slaveServer : transMeta.getSlaveServers()) {
       if (slaveServer.hasChanged() || slaveServer.getObjectId() == null) {
-        repo.saveSlaveServer(slaveServer, versionComment);
+        repo.saveSlaveServer(slaveServer, versionComment, null);
       }
     }
 
@@ -858,7 +858,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for (ClusterSchema clusterSchema : transMeta.getClusterSchemas()) {
       if (clusterSchema.hasChanged() || clusterSchema.getObjectId() == null) {
-        repo.saveClusterSchema(clusterSchema, versionComment);
+        repo.saveClusterSchema(clusterSchema, versionComment, null);
       }
     }
 
@@ -866,7 +866,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for (PartitionSchema partitionSchema : transMeta.getPartitionSchemas()) {
       if (partitionSchema.hasChanged() || partitionSchema.getObjectId() == null) {
-        repo.savePartitionSchema(partitionSchema, versionComment);
+        repo.savePartitionSchema(partitionSchema, versionComment, null);
       }
     }
 
