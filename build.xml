@@ -34,6 +34,12 @@
 
   <path id="test.classpath">
     <pathelement path="${testclasses.dir}" />
+    <fileset dir="${lib.dir}">
+      <include name="**/pentaho-platform-repository*.jar" />
+    </fileset>
+    <fileset dir="${testlib.dir}">
+      <include name="**/pentaho-platform-repository*.jar" />
+    </fileset>
     <fileset dir="${testlib.dir}">
       <include name="**/*.jar" />
     </fileset>

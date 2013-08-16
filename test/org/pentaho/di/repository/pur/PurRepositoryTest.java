@@ -112,8 +112,7 @@ import com.pentaho.di.trans.dataservice.DataServiceMeta;
 import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:/repository.spring.xml",
-    "classpath:/org/pentaho/di/repository/pur/pur-repository-test.spring.xml"})
+@ContextConfiguration(locations = { "classpath:/repository.spring.xml", "classpath:/repository-test-override.spring.xml" })
 public class PurRepositoryTest extends RepositoryTestBase implements ApplicationContextAware, java.io.Serializable {
   
   static final long serialVersionUID = 2064159405078106703L; /* EESOURCE: UPDATE SERIALVERUID */
@@ -156,7 +155,6 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   @BeforeClass
   public static void setUpClass() throws Exception {
     System.out.println("Repository: " + PurRepositoryTest.class.getClassLoader().getResource("repository.spring.xml").getPath());
-  System.out.println("Pur Overrides: " + PurRepositoryTest.class.getClassLoader().getResource("org/pentaho/di/repository/pur/pur-repository-test.spring.xml").getPath());
   
     // folder cannot be deleted at teardown shutdown hooks have not yet necessarily completed
     // parent folder must match jcrRepository.homeDir bean property in repository-test-override.spring.xml
@@ -816,7 +814,6 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
     RepositoryDirectoryInterface transDir = rootDir.findDirectory(DIR_TRANSFORMATIONS);
     Calendar cal = Calendar.getInstance(Locale.US);
-    Date date = new Date();
 
     SimpleDateFormat df = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
     cal.setTime(df.parse("Wed, 4 Jul 2001 12:08:56 -0700"));
