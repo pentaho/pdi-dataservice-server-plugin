@@ -7,6 +7,7 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -24,6 +25,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.controllers.IBrowseContro
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryContent;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirectory;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.components.XulCheckbox;
@@ -99,14 +101,13 @@ public class PermissionsController extends AbstractPermissionsController impleme
           applyAclButton.setDisabled(false);
           inheritParentPermissionCheckbox.setDisabled(false);
           viewAclsModel.setHasManageAclAccess(true);
-
         }
+        
         viewAclsModel.setRemoveEnabled(false);
         List<UIRepositoryObjectAcl> selectedAclList = Collections.emptyList();
         // we've moved to a new file/folder; need to clear out what the model thinks is selected
         viewAclsModel.setSelectedAclList(selectedAclList);
-        setPermissionBox(false);
-        synchronizeCheckboxes();
+        permissionsCheckboxHandler.updateCheckboxes(EnumSet.noneOf(RepositoryFilePermission.class));
         UIRepositoryObject repoObject = ro.get(0);
         try {
           if(repoObject instanceof IAclObject) {
@@ -118,6 +119,7 @@ public class PermissionsController extends AbstractPermissionsController impleme
           fileFolderLabel.setValue(BaseMessages.getString(PKG, "AclTab.UserRolePermission", repoObject.getName())); //$NON-NLS-1$
           bf.setBindingType(Binding.Type.ONE_WAY);
           bf.createBinding(viewAclsModel, "acls", userRoleList, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
+          updateInheritFromParentPermission();
         } catch (AccessDeniedException ade) {
           messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
           messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
@@ -285,7 +287,7 @@ public class PermissionsController extends AbstractPermissionsController impleme
   /*
    * If the user check or unchecks the inherit from parent checkbox, this method is called.
    */
-  public void updateInheritFromParentPermission() throws Exception {
+  public void updateInheritFromParentPermission() throws AccessDeniedException {
     viewAclsModel.setEntriesInheriting(inheritParentPermissionCheckbox.isChecked());
     if (inheritParentPermissionCheckbox.isChecked()) {
       addAclButton.setDisabled(true); 
@@ -295,22 +297,19 @@ public class PermissionsController extends AbstractPermissionsController impleme
         ((IAclObject) ro).clearAcl();
         ((IAclObject) ro).getAcls(viewAclsModel, true);
       }
-      setPermissionBox(false);
-      synchronizeCheckboxes();
+      permissionsCheckboxHandler.updateCheckboxes(EnumSet.noneOf(RepositoryFilePermission.class));
     } else {
       addAclButton.setDisabled(false);
+      permissionsCheckboxHandler.processCheckboxes();
     }
   }
   
   @Override
-  protected void synchronizeCheckboxes() {
+  protected boolean hasManageAclAccess() {
     if (inheritParentPermissionCheckbox.isChecked()) {
-      manageAclCheckbox.setDisabled(true);
-      deleteCheckbox.setDisabled(true);
-      writeCheckbox.setDisabled(true);
-      readCheckbox.setDisabled(true);
+      return false;
     } else {
-      super.synchronizeCheckboxes();
+      return super.hasManageAclAccess();
     }
   }
 }

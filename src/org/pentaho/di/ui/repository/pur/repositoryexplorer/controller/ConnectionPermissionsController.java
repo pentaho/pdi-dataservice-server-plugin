@@ -100,8 +100,7 @@ public class ConnectionPermissionsController extends AbstractPermissionsControll
         List<UIRepositoryObjectAcl> selectedAclList = Collections.emptyList();
         // we've moved to a connection; need to clear out what the model thinks is selected
         viewAclsModel.setSelectedAclList(selectedAclList);
-        setPermissionBox(false);
-        synchronizeCheckboxes();
+        permissionsCheckboxHandler.setAllChecked(false);
         UIDatabaseConnection dbconnObject = ro.get(0);
         try {
           if(dbconnObject instanceof IAclObject) {

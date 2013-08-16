@@ -7,7 +7,6 @@ package org.pentaho.di.ui.repository.pur.repositoryexplorer.controller;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -74,6 +73,8 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
 
   protected abstract List<? extends Object> getSelectedObjects();
   
+  protected PermissionsCheckboxHandler permissionsCheckboxHandler;
+  
   protected void init(Repository rep) throws Exception {
     if (rep != null && rep.hasService(RepositorySecurityProvider.class)) {
       service = (RepositorySecurityProvider) rep.getService(RepositorySecurityProvider.class);
@@ -117,6 +118,8 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
     addAclButton = (XulButton) document.getElementById(getXulPrefix() + "add-acl-button");//$NON-NLS-1$ 
     removeAclButton = (XulButton) document.getElementById(getXulPrefix() + "remove-acl-button");//$NON-NLS-1$ 
     manageAclsDialog = (XulDialog) document.getElementById(getXulPrefix() + "manage-acls-dialog");//$NON-NLS-1$ 
+    permissionsCheckboxHandler = new PermissionsCheckboxHandler(readCheckbox, writeCheckbox, deleteCheckbox,
+        manageAclCheckbox);
     
     // Add/Remove Acl Binding
     availableUserList = (XulListbox) document.getElementById(getXulPrefix() + "available-user-list");//$NON-NLS-1$ 
@@ -375,7 +378,7 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
     manageAclsDialog.show();
   }
 
-  public void closeManageAclsDialog() throws Exception {
+  public void closeManageAclsDialog() {
     manageAclsDialog.hide();
   }
 
@@ -384,7 +387,7 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
    * the model
    * @throws Exception
    */
-  public void updateAcls() throws Exception {
+  public void updateAcls() {
     manageAclsModel.updateSelectedAcls();
     viewAclsModel.setSelectedAclList(null);
     setAclState(null);
@@ -412,34 +415,15 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
       acls.add(acl);
     }
     viewAclsModel.setSelectedAclList(acls);
-    synchronizeCheckboxes();
   }
 
   public void setAclState(UIRepositoryObjectAcl acl) {
-    setPermissionBox(false);
     if (acl != null && acl.getPermissionSet() != null) {
-      for (RepositoryFilePermission permission : acl.getPermissionSet()) {
-        if (permission.equals(RepositoryFilePermission.ALL)) {
-          setPermissionBox(true);
-          break;
-        } else if (permission.equals(RepositoryFilePermission.READ)) {
-          readCheckbox.setChecked(true);
-        } else if (permission.equals(RepositoryFilePermission.WRITE)) {
-          writeCheckbox.setChecked(true);
-          readCheckbox.setChecked(true);
-        } else if (permission.equals(RepositoryFilePermission.ACL_MANAGEMENT)) {
-          setPermissionBox(true);
-        } else if (permission.equals(RepositoryFilePermission.DELETE)) {
-          deleteCheckbox.setChecked(true);
-          writeCheckbox.setChecked(true);
-          readCheckbox.setChecked(true);
-        }
-      }
+      permissionsCheckboxHandler.updateCheckboxes(hasManageAclAccess(), acl.getPermissionSet());
     } else {
-      setPermissionBox(false);
-      disableReadWriteDeletePermissionBoxes(false);
+      permissionsCheckboxHandler.setAllChecked(false);
+      permissionsCheckboxHandler.setAllDisabled(true);
     }
-    synchronizeCheckboxes();
   }
 
   protected boolean hasManageAclAccess() {
@@ -462,39 +446,6 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
     }
   }
 
-  protected void synchronizeCheckboxes() {
-    if (hasManageAclAccess() && viewAclsModel.getSelectedAclList().size() > 0) {
-      if (manageAclCheckbox.isChecked()) {
-        readCheckbox.setDisabled(true);
-        writeCheckbox.setDisabled(true);
-        deleteCheckbox.setDisabled(true);
-        manageAclCheckbox.setDisabled(false);
-      } else if (deleteCheckbox.isChecked()) {
-        readCheckbox.setDisabled(true);
-        writeCheckbox.setDisabled(true);
-        deleteCheckbox.setDisabled(false);
-        manageAclCheckbox.setDisabled(false);
-      } else {
-        readCheckbox.setDisabled(true);
-        writeCheckbox.setDisabled(false);
-        deleteCheckbox.setDisabled(false);
-        manageAclCheckbox.setDisabled(true);
-      }
-    } else {
-      manageAclCheckbox.setDisabled(true);
-      deleteCheckbox.setDisabled(true);
-      writeCheckbox.setDisabled(true);
-      readCheckbox.setDisabled(true);
-    }
-  }
-  
-  protected void setPermissionBox(boolean onOff) {
-    readCheckbox.setChecked(onOff);
-    writeCheckbox.setChecked(onOff);
-    manageAclCheckbox.setChecked(onOff);
-    deleteCheckbox.setChecked(onOff);
-  }
-
   /*
    * updatePermission method is called when the user checks or uncheck any permission checkbox.
    * This method updates the current model with the update value from the UI
@@ -504,42 +455,9 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
     if (acl == null) {
       throw new IllegalStateException(BaseMessages.getString(PKG, "PermissionsController.NoSelectedRecipient"));
     }
-    EnumSet<RepositoryFilePermission> permissions = acl.getPermissionSet();
-    if (permissions == null) {
-      permissions = EnumSet.noneOf(RepositoryFilePermission.class);
-    } else {
-      permissions.remove(RepositoryFilePermission.ALL);
-    }
-    if (readCheckbox.isChecked()) {
-      permissions.add(RepositoryFilePermission.READ);
-    } else {
-      permissions.remove(RepositoryFilePermission.READ);
-    }
-    if (writeCheckbox.isChecked()) {
-      permissions.add(RepositoryFilePermission.WRITE);
-    } else {
-      permissions.remove(RepositoryFilePermission.WRITE);
-    }
-    if (manageAclCheckbox.isChecked()) {
-      permissions.add(RepositoryFilePermission.ACL_MANAGEMENT);
-      disableReadWriteDeletePermissionBoxes(true);
-    } else {
-      permissions.remove(RepositoryFilePermission.ACL_MANAGEMENT);
-      disableReadWriteDeletePermissionBoxes(false);
-    }
-    if (deleteCheckbox.isChecked()) {
-      permissions.add(RepositoryFilePermission.DELETE);
-    } else {
-      permissions.remove(RepositoryFilePermission.DELETE);
-    }
-    acl.setPermissionSet(permissions);
+    acl.setPermissionSet(permissionsCheckboxHandler.processCheckboxes());
+    clearSelectedObjAcl();
     viewAclsModel.updateAcl(acl);
-  }
-
-  public void disableReadWriteDeletePermissionBoxes(boolean onOff) {
-    deleteCheckbox.setDisabled(onOff);
-    readCheckbox.setDisabled(onOff);
-    writeCheckbox.setDisabled(onOff);
   }
   
   /*
