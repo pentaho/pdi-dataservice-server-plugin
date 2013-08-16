@@ -3,29 +3,7 @@
   classname="org.pentaho.di.repository.pur.PurRepository" meta-classname="org.pentaho.di.repository.pur.PurRepositoryMeta"
   dialog-classname="lib/org.pentaho.di.ui.repository.pur.PurRepositoryDialog" version-browser-classname="lib/org.pentaho.di.ui.repository.pur.PurRepositoryRevisionBrowserDialog">
   <libraries>
-    <library name="pur-repository-plugin-TRUNK-SNAPSHOT.jar" />
-    <library name="lib/avalon-framework-4.1.3.jar" />
-    <library name="lib/commands-3.3.0-I20070605-0010.jar" />
-    <library name="lib/commons-beanutils-1.6.jar" />
-    <library name="lib/commons-codec-1.3.jar" />
-    <library name="lib/commons-collections-3.2.jar" />
-    <library name="lib/commons-io-2.1.jar" />
-    <library name="lib/commons-lang-2.2.jar" />
-    <library name="lib/commons-logging-1.1.jar" />
-    <library name="lib/commons-vfs-20091118-pentaho.jar" />
-    <library name="lib/dom4j-1.6.1.jar" />
-    <library name="lib/gwt-servlet-2.0.3.jar" />
-    <library name="lib/jaxen-1.1.jar" />
-    <library name="lib/json-TRUNK-SNAPSHOT.jar" />
-    <library name="lib/logkit-1.0.1.jar" />
-    <library name="lib/pentaho-bi-platform-ee-TRUNK-SNAPSHOT.jar" />
-    <library name="lib/pentaho-ee-dsc-core-TRUNK-SNAPSHOT.jar" />
-    <library name="lib/pentaho-platform-api-TRUNK-SNAPSHOT.jar" />
-    <library name="lib/pentaho-platform-core-TRUNK-SNAPSHOT.jar" />
-    <library name="lib/pentaho-platform-extensions-TRUNK-SNAPSHOT.jar" />
-    <library name="lib/pentaho-platform-repository-TRUNK-SNAPSHOT.jar" />
-    <library name="lib/spring-security-core-2.0.5.RELEASE.jar" />
-</libraries>
+  @insert-libraries@</libraries>
   <!-- PART BELOW IS NO USED YET -->
 
   <localized_name>

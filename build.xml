@@ -3,9 +3,9 @@
   <property name="approot.stage.lib.dir" value="lib" />
   <property name="assemble.copy-libs.excludes" value="kettle-*.jar, metro-*.jar, pentaho-xul-*.jar, log4j-*.jar, jface*.jar, groovy*.jar"/>
   <property name="assemble.copy-libs.excludes.obf" value="kettle-*.jar, metro-*.jar, pentaho-xul-*.jar, log4j-*.jar, pentaho-ee-dsc-core-*.jar, pentaho-bi-platform-ee-*.jar, jface*.jar, groovy*.jar"/>
-	
+
   <property name="subfloor-ee.parent.file" value="subfloor-pkg.xml" />
-  
+
   <import file="build-res/subfloor-ee.xml" />
   <!-- Import the subfloor-pkg.xml file which contains all the default tasks -->
   <import file="build-res/subfloor-pkg.xml" />
@@ -18,26 +18,26 @@
   <property name="compilelib.dir"
             value="${basedir}/compile-lib"
             description="Directory for compilation dependencies that shouldn't make it into the distribution" />
-	
+
   <!-- Setup the compile classpath -->
   <path id="classpath">
     <fileset dir="${devlib.dir}">
       <include name="**/*.jar" />
     </fileset>
-  	<fileset dir="${compilelib.dir}">
+    <fileset dir="${compilelib.dir}">
       <include name="**/*.jar" />
     </fileset>
     <fileset dir="${lib.dir}">
       <include name="**/*.jar" />
     </fileset>
   </path>
-	
+
   <path id="test.classpath">
     <pathelement path="${testclasses.dir}" />
     <fileset dir="${testlib.dir}">
       <include name="**/*.jar" />
     </fileset>
-	<fileset dir="${devlib.dir}">
+    <fileset dir="${devlib.dir}">
       <include name="**/*.jar" />
     </fileset>
     <fileset dir="${compilelib.dir}">
@@ -50,46 +50,57 @@
   </path>
 
   <target name="clean-jars" depends="subfloor.clean-jars">
-  	<delete dir="${compilelib.dir}" />
+    <delete dir="${compilelib.dir}" />
   </target>
-	
+
   <target name="create-dot-classpath" depends="install-pentaho-ant-tasks,init">
     <dot-classpath>
       <!-- Include all lib dirs -->
-    	<classpath>
-          <fileset dir="${lib.dir}">
-            <include name="*.jar" />
-          </fileset>
-          <fileset dir="${devlib.dir}">
-            <include name="*.jar" />
-          </fileset>
-  		  <fileset dir="${compilelib.dir}">
-  		    <include name="**/*.jar" />
-  		  </fileset>
-          <fileset dir="${testlib.dir}">
-            <include name="*.jar" />
-          </fileset>
-        </classpath>
+      <classpath>
+        <fileset dir="${lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${devlib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${compilelib.dir}">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${testlib.dir}">
+          <include name="*.jar" />
+        </fileset>
+      </classpath>
     </dot-classpath>
   </target>
-	
+
   <target name="resolve" depends="subfloor.resolve, resolve-compiletime" />
-	
+
   <target name="resolve-compiletime" depends="resolve-init">
     <ivy:resolve file="${ivyfile}" conf="compile" />
     <ivy:retrieve conf="compile" pattern="${compilelib.dir}/[module]-[revision](-[classifier]).[ext]" symlink="${ivy.use.symlinks.internal}" />
   </target>
 
   <!-- Override assemble to build plugin.xml afterwards -->
-  <target name="assemble" depends="subfloor-pkg.assemble, update-plugin-xml" />
+  <target name="assemble" depends="update-plugin-xml" />
 
-  <target name="update-plugin-xml">
+  <target name="update-plugin-xml" depends="subfloor-pkg.assemble,install-antcontrib">
+    <var name="libSection.var" value="" />
+    <pathconvert property="jarFile" pathsep="${path.separator}">
+      <map from="${approot.stage.dir}" to="" />
+      <path>
+        <fileset dir="${approot.stage.dir}" includes="**/*.jar" />
+      </path>
+    </pathconvert>
+    <for param="jarIndividual" delimiter="${path.separator}" list="${jarFile}">
+      <sequential>
+        <!-- regex to remove leading slash if you see Error in the plugin.xml something went wrong here -->
+        <propertyregex property="@{jarIndividual}" input="@{jarIndividual}" regexp="${file.separator}}?(.*)" select="\1" defaultvalue="Error" override="true" />
+        <var name="libSection.var" value="${libSection.var}  &lt;library name=&quot;${@{jarIndividual}}&quot; /&gt;${line.separator}  " />
+      </sequential>
+    </for>
+    <property name="libSection" value="${libSection.var}" />
     <replace file="${approot.stage.dir}/plugin.xml">
-      <replacefilter token="@project.revision@" value="${project.revision}" />
-      <replacefilter token="@dependency.bi-platform.revision@" value="${dependency.bi-platform.revision}" />
-      <!-- begin remove for the customer src dist -->
-      <replacefilter token="@dependency.pentaho-ee-dsc.revision@" value="${dependency.pentaho-ee-dsc.revision}" />
-      <!-- end remove for the customer src dist -->
+      <replacefilter token="@insert-libraries@" value="${libSection}" />
     </replace>
   </target>
 
