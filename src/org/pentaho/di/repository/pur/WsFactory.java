@@ -104,6 +104,14 @@ public class WsFactory implements java.io.Serializable {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause != null) {
+        if (cause instanceof RuntimeException) {
+          throw (RuntimeException) cause;
+        } else if (cause instanceof MalformedURLException) {
+          throw (MalformedURLException) cause;
+        }
+      }
       throw new RuntimeException(e);
     }
   }
