@@ -34,6 +34,10 @@
           *** get*(int);
       }
       
+      -keep class org.pentaho.di.repository.pur.PurRepositoryLocation {
+        public *;
+      }
+      
   	  -keep class org.pentaho.di.ui.repository.pur.PurRepositoryDialog {
     		  public protected *;
       }
