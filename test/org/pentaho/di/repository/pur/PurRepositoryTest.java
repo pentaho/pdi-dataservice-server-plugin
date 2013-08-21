@@ -897,11 +897,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
 
     // We start with a clean slate...
     //
-    assertEquals(0,  metaStore.getNamespaces().size());
-    assertEquals(false, metaStore.namespaceExists(ns));
-
-    // Create the namespace
-    metaStore.createNamespace(ns);
+    assertEquals(1,  metaStore.getNamespaces().size());
     assertEquals(true, metaStore.namespaceExists(ns));
     
     // Now create an element type
@@ -950,7 +946,9 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     //
     String ns = PentahoDefaults.NAMESPACE;
     IMetaStore metaStore = repository.getMetaStore();
-    metaStore.createNamespace(ns);
+    if (metaStore.namespaceExists(ns)) {
+      metaStore.createNamespace(ns);
+    }
     
     // And an element type
     //
