@@ -33,7 +33,7 @@ public class TransDataServletTest  {
     TestCase.assertNotNull(new Object());
   }
   
-  @Test
+  @Ignore
   public void test01_BasicQuery() throws Exception {
     startServer();
     try {
@@ -56,7 +56,7 @@ public class TransDataServletTest  {
     }
   }
   
-  @Test
+  @Ignore
   public void test02_NoData() throws Exception {
     startServer();
     try {
@@ -89,7 +89,7 @@ public class TransDataServletTest  {
    *          
    * @throws Exception
    */
-  @Test
+  @Ignore
   public void test03_MondrianQuery() throws Exception {
     startServer();
     try {
