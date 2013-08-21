@@ -859,12 +859,16 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     IMetaStore metaStore = repository.getMetaStore();
     assertNotNull(metaStore);
 
-    // We start with a clean slate...
+    // We start with a clean slate, only the pentaho namespace
     //
-    assertEquals(0,  metaStore.getNamespaces().size());
+    assertEquals(1,  metaStore.getNamespaces().size());
     
     String ns = PentahoDefaults.NAMESPACE;
+    assertEquals(true, metaStore.namespaceExists(ns));
+    
+    metaStore.deleteNamespace(ns);
     assertEquals(false, metaStore.namespaceExists(ns));
+    assertEquals(0,  metaStore.getNamespaces().size());
     
     metaStore.createNamespace(ns);
     assertEquals(true, metaStore.namespaceExists(ns));
@@ -999,7 +1003,9 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     //
     String ns = PentahoDefaults.NAMESPACE;
     IMetaStore metaStore = repository.getMetaStore();
-    metaStore.createNamespace(ns);
+    if (!metaStore.namespaceExists(ns)) {
+      metaStore.createNamespace(ns);
+    }
     
     DataServiceMeta dataServiceMeta = new DataServiceMeta();
     dataServiceMeta.setName("table1");
