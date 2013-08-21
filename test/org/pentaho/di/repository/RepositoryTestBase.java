@@ -471,10 +471,12 @@ public abstract class RepositoryTestBase {
     assertNull(startDir.findDirectory(DIR_TMP));
 
     RepositoryDirectoryInterface moveTestDestDir = repository.createRepositoryDirectory(startDir, "moveTestDest");
+    assertNotNull(moveTestDestDir.getObjectId());
     RepositoryDirectoryInterface moveTestSrcDir = repository.createRepositoryDirectory(startDir, "moveTestSrc");
-    // First rename, then move the folder
-    repository.renameRepositoryDirectory(moveTestSrcDir.getObjectId(), moveTestSrcDir, "moveTestSrcNewName");
+    assertNotNull(moveTestSrcDir.getObjectId());
+    // First move the folder, then rename it
     repository.renameRepositoryDirectory(moveTestSrcDir.getObjectId(), moveTestDestDir, null);
+    repository.renameRepositoryDirectory(moveTestSrcDir.getObjectId(), null, "moveTestSrcNewName");
     startDir = loadStartDirectory();
     assertNull(startDir.findDirectory("moveTestSrc"));
     assertNotNull(startDir.findDirectory("moveTestDest/moveTestSrcNewName"));
