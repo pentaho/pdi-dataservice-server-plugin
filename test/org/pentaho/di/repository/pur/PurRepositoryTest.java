@@ -946,7 +946,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     //
     String ns = PentahoDefaults.NAMESPACE;
     IMetaStore metaStore = repository.getMetaStore();
-    if (metaStore.namespaceExists(ns)) {
+    if (!metaStore.namespaceExists(ns)) {
       metaStore.createNamespace(ns);
     }
     
