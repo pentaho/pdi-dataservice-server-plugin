@@ -645,13 +645,14 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
       if(!renameHomeDirectories && isUserHomeDirectory(folder)) {
         throw new RepositoryObjectAccessException("Cannot move another users home directory", RepositoryObjectAccessException.AccessExceptionType.USER_HOME_DIR);
       }
+      LogChannel.GENERAL.logBasic("PUR_MOVE : id="+dirId.getId()+" --> "+finalParentPath + RepositoryFile.SEPARATOR + finalName);
       
       pur.moveFile(dirId.getId(), finalParentPath + RepositoryFile.SEPARATOR + finalName, null);
       rootRef = null;
       return dirId;
     } catch (Exception e) {
       throw new KettleException("Unable to move/rename directory with id [" + dirId + "] to new parent ["
-          + finalParentPath + "] and new name [nant" + finalName + "]", e);
+          + finalParentPath + "] and new name [" + finalName + "]", e);
     }
   }
 
