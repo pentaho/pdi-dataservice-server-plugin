@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.sql.ServiceCacheMethod;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
@@ -41,10 +42,13 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
     
     // Also make sure the metastore object is stored properly
     //
-    if (dataService!=null && dataService.isDefined()) {
-      transMeta.setAttribute(GROUP_DATA_SERVICE, DATA_SERVICE_NAME, dataService.getName());
-      transMeta.setAttribute(GROUP_DATA_SERVICE, DATA_SERVICE_STEPNAME, dataService.getStepname());
+    transMeta.setAttribute(GROUP_DATA_SERVICE, DATA_SERVICE_NAME, dataService.getName());
+    transMeta.setAttribute(GROUP_DATA_SERVICE, DATA_SERVICE_STEPNAME, dataService.getStepname());
       
+    if (dataService!=null && dataService.isDefined()) {
+      
+      LogChannel.GENERAL.logBasic("Saving data service in meta store '"+transMeta.getMetaStore()+"'");
+
       // Leave trace of this transformation...
       //
       Repository repository = transMeta.getRepository(); 

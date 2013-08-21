@@ -34,6 +34,10 @@ public class JobGraphJobEntrySetMenuExtensionPoint implements ExtensionPointInte
     XulMenuitem checkpointItem = (XulMenuitem) extension.doc.getElementById(ITEM_ID);
     if (checkpointItem!=null) {
       checkpointItem.setDisabled(!enabled);
+      
+      boolean isCheckpoint =JobRestartConst.isCheckpoint(extension.jobEntry); 
+      setLabel((JfaceMenuitem) checkpointItem, !isCheckpoint);
+      
       return; // already there...
     }
     
@@ -51,7 +55,8 @@ public class JobGraphJobEntrySetMenuExtensionPoint implements ExtensionPointInte
     
     JfaceMenuitem child = new JfaceMenuitem(null, popupMenu, extension.xulDomContainer, 
         ITEM_ID, 5, action);
-    setLabel(child, enabled);
+    boolean isCheckpoint =JobRestartConst.isCheckpoint(extension.jobEntry); 
+    setLabel(child, !isCheckpoint);
     child.setInsertafter("job-graph-entry-parallel");
     child.setId(ITEM_ID);
     child.setDisabled(!enabled);

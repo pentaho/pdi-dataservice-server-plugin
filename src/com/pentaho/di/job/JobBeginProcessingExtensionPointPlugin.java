@@ -55,6 +55,7 @@ public class JobBeginProcessingExtensionPointPlugin implements ExtensionPointInt
       final int runAttemptNr = JobRestartConst.getCheckpointAttemptNr(job);
       final JobEntryCopy checkpointJobEntry = JobRestartConst.getCheckpointJobEntry(job);
       final Result checkpointResult = JobRestartConst.getCheckpointResult(job);
+      job.setStartJobEntryResult(checkpointResult);
       
       // Make sure to write the attempt information
       //
@@ -238,7 +239,8 @@ public class JobBeginProcessingExtensionPointPlugin implements ExtensionPointInt
 
         // The result
         //
-        JobRestartConst.setCheckpointResult(job, new Result(XMLHandler.loadXMLString(resultXml, Result.XML_TAG)));
+        Result checkpointResult = new Result(XMLHandler.loadXMLString(resultXml, Result.XML_TAG));
+        JobRestartConst.setCheckpointResult(job, checkpointResult);
         JobRestartConst.setCheckpointParameters(job, extractParameters(parameterXml));
       } catch (Exception e) {
         throw new KettleException("Unable to look up checkpoint information in the check point log table", e);

@@ -1,27 +1,37 @@
 package com.pentaho.di.trans.dataservice;
 
 import java.util.Arrays;
+import java.util.List;
 
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
-import org.pentaho.di.ui.core.widget.TextVar;
+import org.pentaho.di.ui.core.dialog.EnterStringDialog;
+import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.trans.dialog.TransDialogPlugin;
 import org.pentaho.di.ui.trans.dialog.TransDialogPluginInterface;
+import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.metastore.api.IMetaStoreElement;
+import org.pentaho.metastore.api.IMetaStoreElementType;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.metastore.util.PentahoDefaults;
 
 @TransDialogPlugin(
     id="DataServiceTransDialogTab",
@@ -34,7 +44,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private static Class<?> PKG = DataServiceTransDialogTab.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
   
   private CTabItem wDataServiceTab;
-  private TextVar wServiceName;
+  private CCombo wServiceName;
   private CCombo wServiceStep;
   
   /*
@@ -44,7 +54,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   */
   
   @Override
-  public void addTab(TransMeta transMeta, Shell shell, CTabFolder wTabFolder) {
+  public void addTab(final TransMeta transMeta, final Shell shell, final CTabFolder wTabFolder) {
     PropsUI props = PropsUI.getInstance();
     int middle = props.getMiddlePct();
     int margin = Const.MARGIN;
@@ -72,7 +82,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     fdlServiceName.right = new FormAttachment(middle, -margin);
     fdlServiceName.top = new FormAttachment(0, 0);
     wlServiceName.setLayoutData(fdlServiceName);
-    wServiceName = new TextVar(transMeta, wDataServiceComp, SWT.LEFT | SWT.BORDER | SWT.SINGLE);
+    wServiceName = new CCombo(wDataServiceComp, SWT.LEFT | SWT.BORDER | SWT.SINGLE);
     wServiceName.setToolTipText(BaseMessages.getString(PKG, "TransDialog.DataServiceName.Tooltip"));
     props.setLook(wServiceName);
     FormData fdServiceName = new FormData();
@@ -80,6 +90,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     fdServiceName.right = new FormAttachment(100, 0);
     fdServiceName.top = new FormAttachment(0, 0);
     wServiceName.setLayoutData(fdServiceName);
+    wServiceName.setEditable(false);
+    wServiceName.setItems(getDataServiceElementNames(shell, transMeta.getMetaStore()));
     Control lastControl = wServiceName;
 
     // 
@@ -136,7 +148,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     // output service?
     //
     Label wlServiceOutput = new Label(wDataServiceComp, SWT.LEFT);
-    wlServiceOutput.setText(BaseMessages.getString(PKG, "TransDialog.DataServiceOutput.Label")); 
+    wlServiceOutput.setText(BaseMessages.getString(PKG,Modification by user of [Getting Started Transformation] "TransDialog.DataServiceOutput.Label")); 
     props.setLook(wlServiceOutput);
     FormData fdlServiceOutput = new FormData();
     fdlServiceOutput.left = new FormAttachment(0, 0);
@@ -174,7 +186,45 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     wServiceAllowOptimization.setLayoutData(fdServiceAllowOptimization);
     wServiceAllowOptimization.setEnabled(false);
     */
+    
+    Button wNew = new Button(wDataServiceComp, SWT.PUSH);
+    props.setLook(wNew);
+    wNew.setText(BaseMessages.getString(PKG, "TransDialog.NewServiceButton.Label"));
+    FormData fdNew = new FormData();
+    fdNew.left = new FormAttachment(middle, 0);
+    fdNew.top = new FormAttachment(lastControl, margin*2);
+    wNew.setLayoutData(fdNew);
+    wNew.addSelectionListener(new SelectionAdapter() {
+      @Override
+      public void widgetSelected(SelectionEvent e) {
+        String newName = createNewService(shell, transMeta.getMetaStore());
+        if (newName!=null) {
+          wServiceName.setItems(getDataServiceElementNames(shell, transMeta.getMetaStore()));
+          wServiceName.setText(newName);
+        }
+        
+      }
+    });
 
+    Button wRemove = new Button(wDataServiceComp, SWT.PUSH);
+    props.setLook(wRemove);
+    wRemove.setText(BaseMessages.getString(PKG, "TransDialog.RemoveServiceButton.Label"));
+    FormData fdRemove = new FormData();
+    fdRemove.left = new FormAttachment(wNew, margin*2);
+    fdRemove.top = new FormAttachment(lastControl, margin*2);
+    wRemove.setLayoutData(fdRemove);
+    wRemove.addSelectionListener(new SelectionAdapter() {
+      @Override
+      public void widgetSelected(SelectionEvent e) {
+        boolean removed = removeService(shell, transMeta.getMetaStore(), wServiceName.getText());
+        if (removed) {
+          wServiceName.setItems(getDataServiceElementNames(shell, transMeta.getMetaStore()));
+          wServiceName.setText("");
+        }
+        
+      }
+    });
+    
     FormData fdDataServiceComp = new FormData();
     fdDataServiceComp.left = new FormAttachment(0, 0);
     fdDataServiceComp.top = new FormAttachment(0, 0);
@@ -184,6 +234,68 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
     wDataServiceComp.layout();
     wDataServiceTab.setControl(wDataServiceComp);
+  }
+
+
+  protected boolean removeService(Shell shell, IMetaStore metaStore, String elementName) {
+    MessageDialog dialog = new MessageDialog(shell, "Confirm removal", shell.getDisplay().getSystemImage(SWT.ICON_QUESTION), 
+        "Are you sure you want to remove data service '"+elementName+"'?", SWT.NONE, new String[] { "Yes", "No" }, 1);
+    int answerIndex = dialog.open();
+    if (answerIndex==0) {
+      try {
+        IMetaStoreElementType elementType = DataServiceMetaStoreUtil.createDataServiceElementTypeIfNeeded(metaStore);
+        IMetaStoreElement element = metaStore.getElementByName(PentahoDefaults.NAMESPACE, elementType, elementName);
+        if (element!=null) {
+          metaStore.deleteElement(PentahoDefaults.NAMESPACE, elementType, element.getId());
+        }
+        return true;
+      } catch(MetaStoreException e) {
+        new ErrorDialog(shell, "Error", "Error deleting data service with name '"+elementName+"'", e);
+        return false;
+      }
+
+    }
+    
+    return false;
+  }
+
+
+  protected String createNewService(Shell shell, IMetaStore metaStore) {
+    EnterStringDialog dialog = new EnterStringDialog(shell, "table1", "Enter service name", "Enter the name of the new data service (virtual table name)");
+    String name = dialog.open();
+    if (name!=null) {
+      
+      try {
+        IMetaStoreElementType elementType = DataServiceMetaStoreUtil.createDataServiceElementTypeIfNeeded(metaStore);
+        IMetaStoreElement element = metaStore.getElementByName(PentahoDefaults.NAMESPACE, elementType, name);
+        if (element!=null) {
+          throw new MetaStoreException("The data service with name '"+name+"' already exists");
+        }
+      } catch(MetaStoreException e) {
+        new ErrorDialog(shell, "Error", "Error creating new data service", e);
+        return null;
+      }
+      
+      return name;
+    } else {
+      return null;
+    }
+  }
+
+  private String[] getDataServiceElementNames(Shell shell, IMetaStore metaStore) {
+    try {
+      List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices(metaStore);
+      String[] names = new String[dataServices.size()];
+      int i=0;
+      for (DataServiceMeta dataService : dataServices) {
+        names[i] = dataService.getName();
+        i++;
+      }
+      return names;
+    } catch(Exception e) {
+      new ErrorDialog(shell, "Error", "Error getting list of data services", e);
+      return new String[] {};
+    }
   }
 
   @Override
@@ -217,11 +329,9 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       // dataService.setOptimizationAllowed(wServiceAllowOptimization.getSelection());
       // dataService.setCacheMethod(ServiceCacheMethod.getMethodByDescription(wServiceCacheMethod.getText()));
       
-      if (!Const.isEmpty(dataService.getName()) && !Const.isEmpty(dataService.getStepname())) {
-        LogChannel.GENERAL.logBasic("Saving data service in meta store '"+transMeta.getMetaStore()+"'");
-        DataServiceMetaStoreUtil.toTransMeta(transMeta, transMeta.getMetaStore(), dataService, true);
-        transMeta.setChanged();
-      }
+      DataServiceMetaStoreUtil.toTransMeta(transMeta, transMeta.getMetaStore(), dataService, true);
+      
+      transMeta.setChanged();
       
     } catch(Exception e) {
       throw new KettleException("Error reading data service metadata", e);
