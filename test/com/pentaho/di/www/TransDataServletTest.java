@@ -1,5 +1,6 @@
 package com.pentaho.di.www;
 
+import java.net.ServerSocket;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -129,7 +130,11 @@ public class TransDataServletTest  {
 
   @Ignore
   private CarteLauncher launchSlaveServer() throws Exception {
-    slaveServer = new SlaveServer("test-localhost-8686-master", "127.0.0.1", "8686", "cluster", "cluster", null, null, null, true);
+    ServerSocket serverSocket = new ServerSocket(0);
+    int port = serverSocket.getLocalPort();
+    serverSocket.close();
+    
+    slaveServer = new SlaveServer("test-localhost-8686-master", "127.0.0.1", Integer.toString(port), "cluster", "cluster", null, null, null, true);
     SlaveServerConfig slaveServerConfig = new SlaveServerConfig();
     slaveServerConfig.setSlaveServer(slaveServer);
     slaveServerConfig.setServices(getServicesMap());
