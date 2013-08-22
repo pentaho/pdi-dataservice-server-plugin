@@ -6,6 +6,7 @@ import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.job.JobGraphJobEntryMenuExtension;
 import org.pentaho.ui.xul.components.XulMenuitem;
@@ -31,31 +32,43 @@ public class JobGraphJobEntrySetMenuExtensionPoint implements ExtensionPointInte
     CheckpointLogTable checkpointLogTable = JobRestartConst.getCheckpointLogTable(extension.jobMeta);
     boolean enabled = checkpointLogTable!=null && checkpointLogTable.isDefined();
 
+    
     XulMenupopup popupMenu = (XulMenupopup) extension.doc.getElementById("job-graph-entry");
     
-    
-    XulMenuitem checkpointItem = (XulMenuitem) extension.doc.getElementById(ITEM_ID);
-    if (checkpointItem!=null) {
-      popupMenu.removeChild(checkpointItem);
-    }
-    
+    // What do we need to do?
+    //
     Action action = new Action("mark-as-checkpoint", Action.AS_DROP_DOWN_MENU) {
       public void run() {
-        boolean isCheckpoint =JobRestartConst.isCheckpoint(extension.jobEntry); 
-        JobRestartConst.setCheckpoint(extension.jobEntry, !isCheckpoint);
+        JobEntryCopy copy = extension.jobGraph.getJobEntry();
+        if (copy==null) return;
+        
+        boolean isCheckpoint =JobRestartConst.isCheckpoint(copy); 
+        JobRestartConst.setCheckpoint(copy, !isCheckpoint);
         extension.jobEntry.setChanged();
         extension.jobGraph.redraw();
         Spoon.getInstance().setShellText();
       }
     }; 
     
-    JfaceMenuitem child = new JfaceMenuitem(null, popupMenu, extension.xulDomContainer, 
-        ITEM_ID, 5, action);
-    boolean isCheckpoint =JobRestartConst.isCheckpoint(extension.jobEntry); 
-    setLabel(child, !isCheckpoint);
-    child.setInsertafter("job-graph-entry-parallel");
-    child.setId(ITEM_ID);
-    child.setDisabled(!enabled);
+    // Do we already have a menu item for it?
+    //
+    XulMenuitem checkpointItem = (XulMenuitem) extension.doc.getElementById(ITEM_ID);
+    if (checkpointItem!=null) {
+      checkpointItem.setDisabled(!enabled);
+      boolean isCheckpoint =JobRestartConst.isCheckpoint(extension.jobEntry); 
+      setLabel((JfaceMenuitem) checkpointItem, !isCheckpoint);
+    } else {
+      JfaceMenuitem child = new JfaceMenuitem(null, popupMenu, extension.xulDomContainer, 
+          ITEM_ID, 5, action);
+      boolean isCheckpoint =JobRestartConst.isCheckpoint(extension.jobEntry); 
+      setLabel(child, !isCheckpoint);
+      child.setInsertafter("job-graph-entry-parallel");
+      child.setId(ITEM_ID);
+      child.setDisabled(!enabled);
+    }
+    
+    
+    
   }
 
   private void setLabel(JfaceMenuitem child, boolean enabled) {
