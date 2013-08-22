@@ -30,18 +30,14 @@ public class JobGraphJobEntrySetMenuExtensionPoint implements ExtensionPointInte
 
     CheckpointLogTable checkpointLogTable = JobRestartConst.getCheckpointLogTable(extension.jobMeta);
     boolean enabled = checkpointLogTable!=null && checkpointLogTable.isDefined();
+
+    XulMenupopup popupMenu = (XulMenupopup) extension.doc.getElementById("job-graph-entry");
+    
     
     XulMenuitem checkpointItem = (XulMenuitem) extension.doc.getElementById(ITEM_ID);
     if (checkpointItem!=null) {
-      checkpointItem.setDisabled(!enabled);
-      
-      boolean isCheckpoint =JobRestartConst.isCheckpoint(extension.jobEntry); 
-      setLabel((JfaceMenuitem) checkpointItem, !isCheckpoint);
-      
-      return; // already there...
+      popupMenu.removeChild(checkpointItem);
     }
-    
-    XulMenupopup popupMenu = (XulMenupopup) extension.doc.getElementById("job-graph-entry");
     
     Action action = new Action("mark-as-checkpoint", Action.AS_DROP_DOWN_MENU) {
       public void run() {
