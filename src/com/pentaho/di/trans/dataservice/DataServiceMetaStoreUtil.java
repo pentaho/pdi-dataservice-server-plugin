@@ -82,12 +82,15 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
     
     IMetaStoreElementType elementType = metaStore.getElementTypeByName(namespace, PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME);
     if (elementType==null) {
-      elementType = metaStore.newElementType(namespace);
-      elementType.setName(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME);
-      elementType.setDescription(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION);
-      metaStore.createElementType(namespace, elementType);
+      try {
+        elementType = metaStore.newElementType(namespace);
+        elementType.setName(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME);
+        elementType.setDescription(PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION);
+        metaStore.createElementType(namespace, elementType);
+      } catch(MetaStoreException e) {
+        throw new MetaStoreException("Unable to create new data service element type in the metastore", e);
+      }
     }
-    
     return elementType;
   }
   

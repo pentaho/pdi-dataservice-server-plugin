@@ -25,6 +25,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.EnterStringDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
+import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.trans.dialog.TransDialogPlugin;
 import org.pentaho.di.ui.trans.dialog.TransDialogPluginInterface;
 import org.pentaho.metastore.api.IMetaStore;
@@ -55,6 +56,10 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   
   @Override
   public void addTab(final TransMeta transMeta, final Shell shell, final CTabFolder wTabFolder) {
+        
+    transMeta.setRepository(Spoon.getInstance().getRepository());
+    transMeta.setMetaStore(Spoon.getInstance().getMetaStore());
+    
     PropsUI props = PropsUI.getInstance();
     int middle = props.getMiddlePct();
     int margin = Const.MARGIN;
@@ -233,7 +238,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     wDataServiceComp.setLayoutData(fdDataServiceComp);
 
     wDataServiceComp.layout();
-    wDataServiceTab.setControl(wDataServiceComp);
+    wDataServiceTab.setControl(wDataServiceComp);    
   }
 
 
@@ -293,6 +298,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
       return names;
     } catch(Exception e) {
+      e.printStackTrace();
       new ErrorDialog(shell, "Error", "Error getting list of data services", e);
       return new String[] {};
     }
