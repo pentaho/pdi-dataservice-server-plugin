@@ -38,18 +38,25 @@ import org.pentaho.ui.xul.containers.XulDeck;
  * browse functionality.
  *
  */
-public class PermissionsController extends AbstractPermissionsController implements ContextChangeVetoer, IUISupportController, java.io.Serializable {
+public class PermissionsController extends AbstractPermissionsController implements ContextChangeVetoer,
+    IUISupportController, java.io.Serializable {
 
   private static final long serialVersionUID = -6151060931568671109L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private static final Class<?> PKG = IUIEEUser.class;
 
   private static final int NO_ACL = 0;
+
   private static final int ACL = 1;
+
   private XulDeck aclDeck;
+
   private XulCheckbox inheritParentPermissionCheckbox;
+
   private XulLabel fileFolderLabel;
+
   List<UIRepositoryObject> repoObject = new ArrayList<UIRepositoryObject>();
+
   private IBrowseController browseController;
 
   public PermissionsController() {
@@ -58,10 +65,10 @@ public class PermissionsController extends AbstractPermissionsController impleme
   public List<UIRepositoryObject> getSelectedObjects() {
     return repoObject;
   }
-  
+
   public void init(Repository rep) throws ControllerInitializationException {
-    try {      
-      super.init(rep);      
+    try {
+      super.init(rep);
       browseController = (IBrowseController) this.getXulDomContainer().getEventHandler("browseController");
       browseController.addContextChangeVetoer(this);
       createBindings();
@@ -102,7 +109,7 @@ public class PermissionsController extends AbstractPermissionsController impleme
           inheritParentPermissionCheckbox.setDisabled(false);
           viewAclsModel.setHasManageAclAccess(true);
         }
-        
+
         viewAclsModel.setRemoveEnabled(false);
         List<UIRepositoryObjectAcl> selectedAclList = Collections.emptyList();
         // we've moved to a new file/folder; need to clear out what the model thinks is selected
@@ -110,12 +117,12 @@ public class PermissionsController extends AbstractPermissionsController impleme
         permissionsCheckboxHandler.updateCheckboxes(EnumSet.noneOf(RepositoryFilePermission.class));
         UIRepositoryObject repoObject = ro.get(0);
         try {
-          if(repoObject instanceof IAclObject) {
-            ((IAclObject) repoObject).getAcls(viewAclsModel);  
+          if (repoObject instanceof IAclObject) {
+            ((IAclObject) repoObject).getAcls(viewAclsModel);
           } else {
             throw new IllegalStateException(BaseMessages.getString(PKG, "PermissionsController.NoAclSupport")); //$NON-NLS-1$
-          }          
-          
+          }
+
           fileFolderLabel.setValue(BaseMessages.getString(PKG, "AclTab.UserRolePermission", repoObject.getName())); //$NON-NLS-1$
           bf.setBindingType(Binding.Type.ONE_WAY);
           bf.createBinding(viewAclsModel, "acls", userRoleList, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -146,8 +153,10 @@ public class PermissionsController extends AbstractPermissionsController impleme
     };
 
     // Binding between the selected repository objects and the user role list for acls
-    securityBinding = bf.createBinding(browseController, "repositoryObjects", userRoleList, "elements", securityBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    securityBinding = bf.createBinding(browseController, "repositoryDirectories", userRoleList, "elements", securityBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
+    securityBinding = bf.createBinding(browseController,
+        "repositoryObjects", userRoleList, "elements", securityBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
+    securityBinding = bf.createBinding(browseController,
+        "repositoryDirectories", userRoleList, "elements", securityBindingConverter);//$NON-NLS-1$ //$NON-NLS-2$
 
     bf.setBindingType(Binding.Type.BI_DIRECTIONAL);
 
@@ -185,7 +194,7 @@ public class PermissionsController extends AbstractPermissionsController impleme
     /*if (roList != null && roList.size() == 1 && (roList.get(0) instanceof UIRepositoryDirectory)) {
       applyAclConfirmationDialog.show();
     } else {*/
-      applyOnObjectOnly(roList, false);
+    applyOnObjectOnly(roList, false);
     /*}*/
 
   }
@@ -207,14 +216,13 @@ public class PermissionsController extends AbstractPermissionsController impleme
 
       } else {
         UIRepositoryContent rc = (UIRepositoryContent) roList.get(0);
-        if (rc instanceof ILockObject
-            && ((ILockObject)rc).isLocked()) {
-            messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-            messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-            messageBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.LockedObjectWarning")); //$NON-NLS-1$
-            messageBox.open();
-            viewAclsModel.setModelDirty(false);
-            return;
+        if (rc instanceof ILockObject && ((ILockObject) rc).isLocked()) {
+          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.LockedObjectWarning")); //$NON-NLS-1$
+          messageBox.open();
+          viewAclsModel.setModelDirty(false);
+          return;
         } else if (rc instanceof IAclObject) {
           ((IAclObject) rc).setAcls(viewAclsModel);
         } else {
@@ -238,10 +246,10 @@ public class PermissionsController extends AbstractPermissionsController impleme
       messageBox.setMessage(ade.getLocalizedMessage());
       messageBox.open();
     } catch (KettleException kex) {
-        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
-        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
-        messageBox.setMessage(kex.getLocalizedMessage());
-        messageBox.open();
+      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+      messageBox.setMessage(kex.getLocalizedMessage());
+      messageBox.open();
     }
   }
 
@@ -257,7 +265,7 @@ public class PermissionsController extends AbstractPermissionsController impleme
     applyOnlyRadioButton.setSelected(false);
     applyRecursiveRadioButton.setSelected(true);
   }
-*/
+  */
   /**
    * applyAcl is called to save the acls back to the repository
    * @throws Exception
@@ -268,8 +276,8 @@ public class PermissionsController extends AbstractPermissionsController impleme
      *
     // We will call the the server apply method that only applies this acls changes on the current object
     /*if (applyOnlyRadioButton.isSelected()) {*/
-      List<UIRepositoryObject> roList = getSelectedObjects();
-      applyOnObjectOnly(roList, true);
+    List<UIRepositoryObject> roList = getSelectedObjects();
+    applyOnObjectOnly(roList, true);
     /*} else {
       // TODO We will call the the server apply method that applies this acls changes on the current object and its children
       applyAclConfirmationDialog.hide();
@@ -290,7 +298,7 @@ public class PermissionsController extends AbstractPermissionsController impleme
   public void updateInheritFromParentPermission() throws AccessDeniedException {
     viewAclsModel.setEntriesInheriting(inheritParentPermissionCheckbox.isChecked());
     if (inheritParentPermissionCheckbox.isChecked()) {
-      addAclButton.setDisabled(true); 
+      addAclButton.setDisabled(true);
       UIRepositoryObject ro = repoObject.get(0);
       if (ro instanceof IAclObject) {
         // force inherit to true to get effective ACLs before apply...
@@ -299,17 +307,14 @@ public class PermissionsController extends AbstractPermissionsController impleme
       }
       permissionsCheckboxHandler.updateCheckboxes(EnumSet.noneOf(RepositoryFilePermission.class));
     } else {
-      addAclButton.setDisabled(false);
+      addAclButton.setDisabled(!hasManageAclAccess());
       permissionsCheckboxHandler.processCheckboxes();
     }
   }
-  
+
   @Override
-  protected boolean hasManageAclAccess() {
-    if (inheritParentPermissionCheckbox.isChecked()) {
-      return false;
-    } else {
-      return super.hasManageAclAccess();
-    }
+  protected void updateCheckboxes(UIRepositoryObjectAcl acl) {
+    permissionsCheckboxHandler.updateCheckboxes(!inheritParentPermissionCheckbox.isChecked() && hasManageAclAccess(),
+        acl.getPermissionSet());
   }
 }

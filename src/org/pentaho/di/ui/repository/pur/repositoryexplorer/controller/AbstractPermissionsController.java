@@ -416,10 +416,14 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
     }
     viewAclsModel.setSelectedAclList(acls);
   }
+  
+  protected void updateCheckboxes(UIRepositoryObjectAcl acl) {
+    permissionsCheckboxHandler.updateCheckboxes(hasManageAclAccess(), acl.getPermissionSet());
+  }
 
   public void setAclState(UIRepositoryObjectAcl acl) {
     if (acl != null && acl.getPermissionSet() != null) {
-      permissionsCheckboxHandler.updateCheckboxes(hasManageAclAccess(), acl.getPermissionSet());
+      updateCheckboxes(acl);
     } else {
       permissionsCheckboxHandler.setAllChecked(false);
       permissionsCheckboxHandler.setAllDisabled(true);
