@@ -134,7 +134,11 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer, 
 
   public DatabaseMeta assemble(RepositoryFile file, NodeRepositoryFileData data, VersionSummary version) throws KettleException {
     DatabaseMeta databaseMeta = (DatabaseMeta) dataNodeToElement(data.getNode());
-    databaseMeta.setName(file.getTitle());
+    String fileName = file.getName();
+    if (fileName.endsWith(".kdb")) {
+      fileName = fileName.substring(0, fileName.length() - 4);
+    }
+    databaseMeta.setName(fileName);
     databaseMeta.setObjectId(new StringObjectId(file.getId().toString()));
     databaseMeta.setObjectRevision(repo.createObjectRevision(version));
     databaseMeta.clearChanged();
