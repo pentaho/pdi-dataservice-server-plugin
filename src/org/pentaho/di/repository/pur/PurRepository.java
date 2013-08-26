@@ -376,15 +376,9 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         if (syncException != null) {
           throw syncException;
         }
-        
-        registerRepositoryService(IRevisionService.class, this);
-        registerRepositoryService(IAclService.class, this);
-        registerRepositoryService(IConnectionAclService.class, this);
-        registerRepositoryService(ITrashService.class, this);
-        registerRepositoryService(ILockService.class, this);
-        
+
         Boolean isAdmin = authorizationWebserviceFuture.get();
-        
+
         LogChannel.GENERAL.logBasic("Registering security provider");
         registerRepositoryService(RepositorySecurityProvider.class, securityProvider);
         registerRepositoryService(IAbsSecurityProvider.class, securityProvider);
@@ -393,6 +387,14 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
           registerRepositoryService(IRoleSupportSecurityManager.class, securityManager);
           registerRepositoryService(IAbsSecurityManager.class, securityManager);
         }
+        
+        registerRepositoryService(IRevisionService.class, this);
+        registerRepositoryService(IAclService.class, this);
+        registerRepositoryService(IConnectionAclService.class, this);
+        registerRepositoryService(ITrashService.class, this);
+        registerRepositoryService(ILockService.class, this);
+        
+
         LogChannel.GENERAL.logBasic("Repository services registered");
       }
       connected = true;
