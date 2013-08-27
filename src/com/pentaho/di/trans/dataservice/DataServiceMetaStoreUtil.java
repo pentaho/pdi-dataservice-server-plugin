@@ -59,8 +59,9 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
         } else {
           dataService.setTransRepositoryPath(transMeta.getRepositoryDirectory().getPath()+"/"+transMeta.getName());
         }
+      } else {
+        dataService.setTransFilename(transMeta.getFilename());
       }
-      dataService.setTransFilename(transMeta.getFilename());
       if (saveToMetaStore) {
         createOrUpdateDataServiceElement(metaStore, dataService);
       }
