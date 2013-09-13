@@ -33,7 +33,7 @@ public class TransDataServletTest  {
     TestCase.assertNotNull(new Object());
   }
   
-  @Ignore
+  @Test
   public void test01_BasicQuery() throws Exception {
     startServer();
     try {
@@ -56,7 +56,7 @@ public class TransDataServletTest  {
     }
   }
   
-  @Ignore
+  @Test
   public void test02_NoData() throws Exception {
     startServer();
     try {
@@ -89,7 +89,7 @@ public class TransDataServletTest  {
    *          
    * @throws Exception
    */
-  @Ignore
+  @Test
   public void test03_MondrianQuery() throws Exception {
     startServer();
     try {
@@ -112,6 +112,39 @@ public class TransDataServletTest  {
     }
   }
   
+  /**
+   * Test query:
+   *          select "Service"."Category" as "c0", "Service"."Country" as "c1" 
+   *          from "Service" as "Service" 
+   *          where ((not ("Service"."Country" IN ( 'Belgium', 'Netherlands', 'Who''s the boss', 'Semicolons;Rule!') or ("Service"."Country" is null))) 
+   *          group by "Service"."Category", "Service"."Country" 
+   *          order by CASE WHEN "Service"."Category" IS NULL THEN 1 ELSE 0 END, "Service"."Category" ASC, CASE WHEN "Service"."Country" IS NULL THEN 1 ELSE 0 END, "Service"."Country" ASC
+   *          
+   * @throws Exception
+   */
+  @Test
+  public void test03_QuotesAndSemicolons() throws Exception {
+    startServer();
+    try {
+      database.connect();
+      
+      String query = "select \"Service\".\"Category\" as \"c0\", \"Service\".\"Country\" as \"c1\" from \"Service\" as \"Service\" where ((not (\"Service\".\"Country\" IN ( 'Belgium', 'Netherlands', 'Who''s the boss', 'Semicolons;Rule!')) or (\"Service\".\"Country\" is null))) group by \"Service\".\"Category\", \"Service\".\"Country\" order by CASE WHEN \"Service\".\"Category\" IS NULL THEN 1 ELSE 0 END, \"Service\".\"Category\" ASC, CASE WHEN \"Service\".\"Country\" IS NULL THEN 1 ELSE 0 END, \"Service\".\"Country\" ASC"; 
+      ResultSet resultSet = database.openQuery(query);
+      List<Object[]> rows = database.getRows(resultSet, 0, null);
+      RowMetaInterface rowMeta = database.getReturnRowMeta();
+      TestCase.assertNotNull(rowMeta);
+      TestCase.assertEquals(6, rows.size());
+      
+      database.disconnect();
+    }
+    catch(Exception e) {
+      TestCase.fail("Unexpected exception: "+e.getLocalizedMessage());
+    }
+    finally {
+      stopServer();
+    }
+  }
+
   
   @Ignore
   private void startServer() throws Exception {
