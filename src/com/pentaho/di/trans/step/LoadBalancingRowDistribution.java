@@ -1,3 +1,5 @@
+null
+null
 package com.pentaho.di.trans.step;
 
 import org.pentaho.di.core.RowSet;

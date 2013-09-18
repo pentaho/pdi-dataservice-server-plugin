@@ -1,8 +1,13 @@
-/**
- * The Pentaho proprietary code is licensed under the terms and conditions
- * of the software license agreement entered into between the entity licensing
- * such code and Pentaho Corporation. 
- */
+/*!
+* The Pentaho proprietary code is licensed under the terms and conditions
+* of the software license agreement entered into between the entity licensing
+* such code and Pentaho Corporation.
+*
+* This software costs money - it is not free
+*
+* Copyright 2002 - 2013 Pentaho Corporation.  All rights reserved.
+*/
+
 package org.pentaho.di.ui.repository.repositoryexplorer.abs.model;
 
 import java.util.ArrayList;
@@ -25,7 +30,8 @@ import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
 
-public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSupportSecurityManager, IAbsSecurityManager, java.io.Serializable {
+public class RepsitoryUserTestImpl implements RepositorySecurityManager, IRoleSupportSecurityManager, IAbsSecurityManager, java.io.Serializable {
+
   static final long serialVersionUID = -3031163963776739401L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private List<IUser> users;
