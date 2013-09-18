@@ -1,5 +1,3 @@
-null
-null
 package com.pentaho.di.job;
 
 import org.eclipse.swt.SWT;

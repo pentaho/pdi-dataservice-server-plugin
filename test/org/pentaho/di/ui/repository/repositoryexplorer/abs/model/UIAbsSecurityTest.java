@@ -1,13 +1,8 @@
-/*!
-* The Pentaho proprietary code is licensed under the terms and conditions
-* of the software license agreement entered into between the entity licensing
-* such code and Pentaho Corporation.
-*
-* This software costs money - it is not free
-*
-* Copyright 2002 - 2013 Pentaho Corporation.  All rights reserved.
-*/
-
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.repositoryexplorer.abs.model;
 
 import org.junit.Assert;
@@ -18,8 +13,7 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsReposi
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsSecurity;
 import org.pentaho.di.ui.repository.pur.services.IRoleSupportSecurityManager;
 
-public class UIAbsSecurityTest implements java.io.Serializable {
-
+public class UIAbsSecurityTest implements java.io.Serializable {
   static final long serialVersionUID = -8052299792314313987L; /* EESOURCE: UPDATE SERIALVERUID */
 
   IRoleSupportSecurityManager sm; 
