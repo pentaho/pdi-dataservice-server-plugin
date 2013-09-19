@@ -1,13 +1,8 @@
-/*!
-* The Pentaho proprietary code is licensed under the terms and conditions
-* of the software license agreement entered into between the entity licensing
-* such code and Pentaho Corporation.
-*
-* This software costs money - it is not free
-*
-* Copyright 2002 - 2013 Pentaho Corporation.  All rights reserved.
-*/
-
+/**
+ * The Pentaho proprietary code is licensed under the terms and conditions
+ * of the software license agreement entered into between the entity licensing
+ * such code and Pentaho Corporation. 
+ */
 package org.pentaho.di.ui.repository.repositoryexplorer;
 
 import static org.junit.Assert.assertEquals;
@@ -33,8 +28,7 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryRol
 import org.pentaho.di.ui.repository.repositoryexplorer.model.IUIUser;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryUser;
 
-public class UIEESecurityTest implements java.io.Serializable {
-
+public class UIEESecurityTest implements java.io.Serializable {
   static final long serialVersionUID = -7889725393698207931L; /* EESOURCE: UPDATE SERIALVERUID */
 
   private List<IUser> users = new ArrayList<IUser>();

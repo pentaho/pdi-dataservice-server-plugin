@@ -1,4 +1,3 @@
-null
 package com.pentaho.di.trans.dataservice;
 
 import org.pentaho.di.core.Const;

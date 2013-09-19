@@ -1,4 +1,3 @@
-null
 package com.pentaho.di.job;
 
 import org.pentaho.di.core.Const;

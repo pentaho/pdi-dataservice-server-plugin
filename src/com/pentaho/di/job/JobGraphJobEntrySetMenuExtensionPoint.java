@@ -1,4 +1,3 @@
-null
 package com.pentaho.di.job;
 
 import org.eclipse.jface.action.Action;
