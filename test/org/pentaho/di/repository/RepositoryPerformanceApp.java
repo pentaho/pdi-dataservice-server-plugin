@@ -1,8 +1,13 @@
-/**
- * The Pentaho proprietary code is licensed under the terms and conditions
- * of the software license agreement entered into between the entity licensing
- * such code and Pentaho Corporation. 
- */
+/*!
+* The Pentaho proprietary code is licensed under the terms and conditions
+* of the software license agreement entered into between the entity licensing
+* such code and Pentaho Corporation.
+*
+* This software costs money - it is not free
+*
+* Copyright 2002 - 2013 Pentaho Corporation.  All rights reserved.
+*/
+
 package org.pentaho.di.repository;
 
 import org.pentaho.di.core.KettleEnvironment;
@@ -30,7 +35,8 @@ import com.pentaho.commons.dsc.util.TestLicenseStream;
  * @author GMoran
  *
  */
-public class RepositoryPerformanceApp extends RepositoryTestBase implements java.io.Serializable {  static final long serialVersionUID = -5389269822527972858L; /* EESOURCE: UPDATE SERIALVERUID */
+public class RepositoryPerformanceApp extends RepositoryTestBase implements java.io.Serializable {
+  static final long serialVersionUID = -5389269822527972858L; /* EESOURCE: UPDATE SERIALVERUID */
 
   
   public RepositoryPerformanceApp(String url) {
