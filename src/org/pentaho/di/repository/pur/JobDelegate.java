@@ -51,11 +51,11 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
   
   private static final String PROP_SHARED_FILE = "SHARED_FILE";
 
-  private static final String PROP_USE_LOGFIELD = "USE_LOGFIELD";
+  public static final String PROP_USE_LOGFIELD = "USE_LOGFIELD";
 
-  private static final String PROP_PASS_BATCH_ID = "PASS_BATCH_ID";
+  public static final String PROP_PASS_BATCH_ID = "PASS_BATCH_ID";
 
-  private static final String PROP_USE_BATCH_ID = "USE_BATCH_ID";
+  public static final String PROP_USE_BATCH_ID = "USE_BATCH_ID";
 
   private static final String PROP_MODIFIED_DATE = "MODIFIED_DATE";
 
@@ -69,49 +69,49 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
   private static final String PROP_DATABASE_LOG = "DATABASE_LOG";
 
-  private static final String PROP_JOB_STATUS = "JOB_STATUS";
+  public static final String PROP_JOB_STATUS = "JOB_STATUS";
 
   private static final String PROP_JOB_VERSION = "JOB_VERSION";
 
   private static final String PROP_EXTENDED_DESCRIPTION = "EXTENDED_DESCRIPTION";
 
-  private static final String NODE_PARAMETERS = "parameters";
+  public static final String NODE_PARAMETERS = "parameters";
 
-  private static final String PROP_NR_PARAMETERS = "NR_PARAMETERS";
+  public static final String PROP_NR_PARAMETERS = "NR_PARAMETERS";
 
-  private static final String PROP_NR_HOPS = "NR_HOPS";
+  public static final String PROP_NR_HOPS = "NR_HOPS";
 
-  private static final String NODE_HOPS = "hops";
+  public static final String NODE_HOPS = "hops";
 
-  private static final String NODE_CUSTOM = "custom";
+  public static final String NODE_CUSTOM = "custom";
 
-  private static final String PROP_JOBENTRY_TYPE = "JOBENTRY_TYPE";
+  public static final String PROP_JOBENTRY_TYPE = "JOBENTRY_TYPE";
 
-  private static final String PROP_PARALLEL = "PARALLEL";
+  public static final String PROP_PARALLEL = "PARALLEL";
 
-  private static final String PROP_GUI_DRAW = "GUI_DRAW";
+  public static final String PROP_GUI_DRAW = "GUI_DRAW";
 
-  private static final String PROP_GUI_LOCATION_Y = "GUI_LOCATION_Y";
+  public static final String PROP_GUI_LOCATION_Y = "GUI_LOCATION_Y";
 
-  private static final String PROP_GUI_LOCATION_X = "GUI_LOCATION_X";
+  public static final String PROP_GUI_LOCATION_X = "GUI_LOCATION_X";
 
   // ~ Static fields/initializers ======================================================================================
 
-  private static final String PROP_NR = "NR";
+  public static final String PROP_NR = "NR";
 
-  private static final String PROP_NR_JOB_ENTRY_COPIES = "NR_JOB_ENTRY_COPIES";
+  public static final String PROP_NR_JOB_ENTRY_COPIES = "NR_JOB_ENTRY_COPIES";
 
-  private static final String PROP_NR_NOTES = "NR_NOTES";
+  public static final String PROP_NR_NOTES = "NR_NOTES";
 
   private static final String NODE_JOB = "job";
 
-  private static final String NODE_NOTES = "notes";
+  public static final String NODE_NOTES = "notes";
 
   private static final String NOTE_PREFIX = "__NOTE__#";
 
   private static final String PROP_XML = "XML";
 
-  private static final String NODE_ENTRIES = "entries";
+  public static final String NODE_ENTRIES = "entries";
 
   private static final String EXT_JOB_ENTRY_COPY = ".kjc";
 
@@ -245,6 +245,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       if (jobEntry instanceof JobEntryBase) {
         AttributesMapUtil.loadAttributesMap(copyNode, (JobEntryBase)jobEntry);
       }
+      AttributesMapUtil.loadAttributesMap(copyNode, copy);
       
       jobMeta.getJobCopies().add(copy);
     }
@@ -379,7 +380,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
       // load the entry from the node
       //
-      String typeId = getString(copyNode, "JOBENTRY_TYPE");
+      String typeId = getString(copyNode, PROP_JOBENTRY_TYPE);
       
       PluginRegistry registry = PluginRegistry.getInstance();
       PluginInterface jobPlugin = registry.findPluginWithId(JobEntryPluginType.class, typeId);
@@ -453,6 +454,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
       if (entry instanceof JobEntryBase) {
         AttributesMapUtil.saveAttributesMap(copyNode, (JobEntryBase)entry);
       }
+      AttributesMapUtil.saveAttributesMap(copyNode, copy);
       
       // Save the entry information here as well, for completeness.  
       // TODO: since this slightly stores duplicate information, figure out how to store this separately.

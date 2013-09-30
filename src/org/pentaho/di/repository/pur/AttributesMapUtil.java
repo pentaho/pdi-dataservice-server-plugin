@@ -26,9 +26,15 @@ public class AttributesMapUtil {
   public static final void saveAttributesMap(DataNode dataNode, AttributesInterface attributesInterface) throws KettleException {
     Map<String, Map<String, String>> attributesMap = attributesInterface.getAttributesMap();
     
-    DataNode attributeNodes = dataNode.addNode(NODE_ATTRIBUTE_GROUPS);
+    DataNode attributeNodes = dataNode.getNode(NODE_ATTRIBUTE_GROUPS);
+    if (attributeNodes == null) {
+      attributeNodes = dataNode.addNode(NODE_ATTRIBUTE_GROUPS);
+    }
     for (String groupName : attributesMap.keySet()) {
-      DataNode attributeNode = attributeNodes.addNode(groupName);
+      DataNode attributeNode = attributeNodes.getNode(groupName);
+      if (attributeNode == null) {
+        attributeNode = attributeNodes.addNode(groupName);
+      }
       Map<String, String> attributes = attributesMap.get(groupName);
       for (String key : attributes.keySet()) {
         String value = attributes.get(key);
