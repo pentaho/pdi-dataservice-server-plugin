@@ -1956,10 +1956,9 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         throw new KettleException("File is in the Trash. Use Save As.");
       }
       // update title and description
-      file = new RepositoryFile.Builder(file)
-        .title(RepositoryFile.DEFAULT_LOCALE, element.getName()).createdDate(versionDate.getTime())
-        .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), ""))
-        .build();
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+          .createdDate(versionDate != null ? versionDate.getTime() : new Date())
+          .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), "")).build();
       file = pur.updateFile(
           file, 
           new NodeRepositoryFileData(transDelegate.elementToDataNode(element)),
@@ -1969,10 +1968,10 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
         renameTransformation(element.getObjectId(), null, element.getName());
       }
     } else {
-      Date dtw = (versionDate != null) ? versionDate.getTime() : new Date();
-      file = new RepositoryFile.Builder(checkAndSanitize(element.getName() + RepositoryObjectType.TRANSFORMATION.getExtension()))
-          .versioned(true)
-          .title(RepositoryFile.DEFAULT_LOCALE, element.getName()).createdDate(dtw)
+      file = new RepositoryFile.Builder(checkAndSanitize(element.getName()
+          + RepositoryObjectType.TRANSFORMATION.getExtension())).versioned(true)
+          .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+          .createdDate(versionDate != null ? versionDate.getTime() : new Date())
           .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), "")).build();
       file = pur.createFile(element.getRepositoryDirectory().getObjectId().getId(),
                 file,
