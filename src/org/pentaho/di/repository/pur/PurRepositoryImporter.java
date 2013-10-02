@@ -465,7 +465,7 @@ public class PurRepositoryImporter implements IRepositoryImporter, java.io.Seria
   private boolean importJob(Node jobnode, RepositoryImportFeedbackInterface feedback) throws KettleException {
     // Load the job from the XML node.
     //                
-    JobMeta jobMeta = new JobMeta(jobnode, null, false, SpoonFactory.getInstance());
+    JobMeta jobMeta = new JobMeta(jobnode, rep, false, SpoonFactory.getInstance());
     replaceSharedObjects(jobMeta);
     feedback.setLabel(BaseMessages.getString(PKG, "PurRepositoryImporter.ImportJob.Label", Integer.toString(jobNumber), jobMeta.getName()));
 
