@@ -45,10 +45,13 @@
     </dependency>        
     <dependency org="pentaho"        name="pentaho-ee-dsc-core" rev="${dependency.pentaho-ee-dsc.revision}" changing="true"   transitive="true" conf="default->default"/>
     <!-- end remove for the customer src dist -->	
-
     
     <dependency org="pentaho" name="pentaho-xul-core" rev="${dependency.pentaho-xul.revision}"
-      changing="true" conf="compile->default" />
+        changing="true" conf="compile->default" >
+        <!-- Xul dependency on jaxen->xom->icu4j-2.6.1 is breaking the build during obfuscation -->
+      <exclude org="com.ibm.icu" module="icu4j"/>
+    </dependency>
+    
     <dependency org="pentaho" name="pentaho-xul-swt" rev="${dependency.pentaho-xul.revision}"
       changing="true" conf="compile->default" />      
 
