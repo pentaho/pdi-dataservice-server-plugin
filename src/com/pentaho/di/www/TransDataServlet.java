@@ -110,7 +110,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     String sqlQuery = request.getHeader("SQL");
     final int maxRows = Const.toInt(request.getHeader("MaxRows"), -1);
     
-    final String debugTransFile = request.getHeader(ThinConnection.ARG_DEBUGTRANS);
+    final String debugTransFile = request.getParameter(ThinConnection.ARG_DEBUGTRANS);
     
     // Parse the variables in the request header...
     //
@@ -253,12 +253,12 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
 
   public static Map<String, String> getParametersFromRequestHeader(HttpServletRequest request) {
     Map<String, String> parameters = new HashMap<String, String>();
-    Enumeration<?> headerNames = request.getHeaderNames();
-    while (headerNames.hasMoreElements()) {
-      String headerName = (String) headerNames.nextElement();
-      if (headerName.startsWith("PARAMETER_")) {
-        String parameterName = headerName.substring("PARAMETER_".length());
-        String value = request.getHeader(headerName);
+    Enumeration<?> parameterNames = request.getParameterNames();
+    while (parameterNames.hasMoreElements()) {
+      String fullName = (String) parameterNames.nextElement();
+      if (fullName.startsWith("PARAMETER_")) {
+        String parameterName = fullName.substring("PARAMETER_".length());
+        String value = request.getParameter(fullName);
         if (!Const.isEmpty(parameterName)) {
           parameters.put(parameterName, Const.NVL(value, ""));
         }
