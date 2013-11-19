@@ -2817,7 +2817,7 @@ public class PurRepository extends AbstractRepository implements Repository, IRe
       if (repositoryFile==null) {
         return null;
       }
-      RepositoryFileAcl repositoryFileAcl = pur.getAcl(repositoryFile);
+      RepositoryFileAcl repositoryFileAcl = pur.getAcl(repositoryFile.getId());
       String parentPath = getParentPath(repositoryFile.getPath());
       String name = repositoryFile.getTitle();
       String description = repositoryFile.getDescription();
