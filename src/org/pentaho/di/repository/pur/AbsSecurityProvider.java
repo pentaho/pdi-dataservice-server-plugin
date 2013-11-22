@@ -23,21 +23,23 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
   private static final long serialVersionUID = -41954375242408881L; /* EESOURCE: UPDATE SERIALVERUID */
   private IAuthorizationPolicyWebService authorizationPolicyWebService = null;
 
-  public AbsSecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, IUser userInfo) {
-    super(repository, repositoryMeta, userInfo);
+  public AbsSecurityProvider( PurRepository repository, PurRepositoryMeta repositoryMeta, IUser userInfo,
+      ServiceManager serviceManager ) {
+    super( repository, repositoryMeta, userInfo, serviceManager );
     try {
-      authorizationPolicyWebService = WsFactory.createService(repositoryMeta, "authorizationPolicy", userInfo //$NON-NLS-1$
-          .getLogin(), userInfo.getPassword(), IAuthorizationPolicyWebService.class);
-      if (authorizationPolicyWebService == null) {
+      authorizationPolicyWebService =
+          serviceManager.createService( userInfo.getLogin(), userInfo.getPassword(),
+              IAuthorizationPolicyWebService.class );
+      if ( authorizationPolicyWebService == null ) {
         getLogger().error(
-            BaseMessages.getString(AbsSecurityProvider.class,
-                "AbsSecurityProvider.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC")); //$NON-NLS-1$
+            BaseMessages.getString( AbsSecurityProvider.class,
+                "AbsSecurityProvider.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC" ) ); //$NON-NLS-1$
       }
 
-    } catch (Exception e) {
+    } catch ( Exception e ) {
       getLogger().error(
-          BaseMessages.getString(AbsSecurityProvider.class,
-              "AbsSecurityProvider.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC"), e); //$NON-NLS-1$
+          BaseMessages.getString( AbsSecurityProvider.class,
+              "AbsSecurityProvider.ERROR_0001_UNABLE_TO_INITIALIZE_AUTH_POLICY_WEBSVC" ), e ); //$NON-NLS-1$
     }
   }
 

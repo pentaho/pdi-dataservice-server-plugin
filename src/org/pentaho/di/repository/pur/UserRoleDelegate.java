@@ -58,15 +58,15 @@ public class UserRoleDelegate implements java.io.Serializable {
   boolean hasNecessaryPermissions = false;
   boolean managed = true;
 
-  public UserRoleDelegate(IRoleSupportSecurityManager rsm, PurRepositoryMeta repositoryMeta, IUser userInfo, Log logger) {
+  public UserRoleDelegate(IRoleSupportSecurityManager rsm, PurRepositoryMeta repositoryMeta, IUser userInfo, Log logger, ServiceManager serviceManager) {
     try {
       this.logger = logger;
-      userDetailsRoleListWebService = WsFactory.createService(repositoryMeta, "userRoleListService", userInfo //$NON-NLS-1$
-          .getLogin(), userInfo.getPassword(), IUserRoleListWebService.class);
-      userRoleWebService = WsFactory.createService(repositoryMeta, "userRoleService", userInfo.getLogin(), userInfo //$NON-NLS-1$
-          .getPassword(), IUserRoleWebService.class);
+      userDetailsRoleListWebService =
+          serviceManager.createService( userInfo.getLogin(), userInfo.getPassword(), IUserRoleListWebService.class );
+      userRoleWebService =
+          serviceManager.createService( userInfo.getLogin(), userInfo.getPassword(), IUserRoleWebService.class );
       this.rsm = rsm;
-      initManaged(repositoryMeta, userInfo);
+      initManaged( repositoryMeta, userInfo );
       updateUserRoleInfo();
     } catch (Exception e) {
       this.logger.error(BaseMessages.getString(UserRoleDelegate.class,
