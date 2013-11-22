@@ -19,10 +19,15 @@ public class PurRepositoryUnitTest {
   @Test
   public void testGetObjectInformationGetsAclByFileId() throws KettleException {
     PurRepository purRepository = new PurRepository();
+    IUnifiedRepository mockRepo = mock( IUnifiedRepository.class );
+    RepositoryConnectResult result = mock( RepositoryConnectResult.class );
+    when( result.getUnifiedRepository() ).thenReturn( mockRepo );
+    IRepositoryConnector connector = mock( IRepositoryConnector.class );
+    when( connector.connect( anyString(), anyString() ) ).thenReturn( result );
     PurRepositoryMeta mockMeta = mock( PurRepositoryMeta.class );
     purRepository.init( mockMeta );
-    IUnifiedRepository mockRepo = mock( IUnifiedRepository.class );
-    purRepository.setTest( mockRepo );
+    purRepository.setPurRepositoryConnector( connector );
+    // purRepository.setTest( mockRepo );
     ObjectId objectId = mock( ObjectId.class );
     RepositoryFile mockFile = mock( RepositoryFile.class );
     RepositoryFile mockRootFolder = mock( RepositoryFile.class );
@@ -33,10 +38,11 @@ public class PurRepositoryUnitTest {
     when( objectId.getId() ).thenReturn( testId );
     when( mockRepo.getFileById( testId ) ).thenReturn( mockFile );
     when( mockFile.getPath() ).thenReturn( "/home/testuser/path.ktr" );
-    when (mockFile.getId()).thenReturn( testFileId );
+    when( mockFile.getId() ).thenReturn( testFileId );
     when( mockRepo.getTree( anyString(), anyInt(), anyString(), anyBoolean() ) ).thenReturn( mockRepositoryTree );
     when( mockRepositoryTree.getFile() ).thenReturn( mockRootFolder );
     when( mockRootFolder.getId() ).thenReturn( "/" );
+    purRepository.connect( "TEST_USER", "TEST_PASSWORD" );
     purRepository.getObjectInformation( objectId, repositoryObjectType );
     verify( mockRepo ).getAcl( testFileId );
   }

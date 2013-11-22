@@ -17,8 +17,6 @@ import java.util.Map;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IUser;
-import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.pur.model.AbsRoleInfo;
 import org.pentaho.di.repository.pur.model.IAbsRole;
 import org.pentaho.di.repository.pur.model.IRole;
@@ -34,21 +32,22 @@ public class AbsSecurityManager extends PurRepositorySecurityManager implements 
 
   private RoleBindingStruct roleBindingStruct = null;
 
-  public AbsSecurityManager(Repository repository, RepositoryMeta repositoryMeta, IUser userInfo) {
-    super((PurRepository) repository, (PurRepositoryMeta) repositoryMeta, userInfo);
+  public AbsSecurityManager( PurRepository repository, PurRepositoryMeta repositoryMeta, IUser userInfo,
+      ServiceManager serviceManager ) {
+    super( repository, repositoryMeta, userInfo, serviceManager );
     try {
-      authorizationPolicyRoleBindingService = WsFactory.createService((PurRepositoryMeta) repositoryMeta,
-          "roleBindingDao", userInfo.getLogin(), userInfo.getPassword(), //$NON-NLS-1$
-          IRoleAuthorizationPolicyRoleBindingDaoWebService.class);
-        if (authorizationPolicyRoleBindingService == null) {
-          getLogger().error(
-              BaseMessages.getString(AbsSecurityManager.class,
-                  "AbsSecurityManager.ERROR_0001_UNABLE_TO_INITIALIZE_ROLE_BINDING_WEBSVC")); //$NON-NLS-1$
-        }
-    } catch (Exception e) {
+      authorizationPolicyRoleBindingService =
+          serviceManager.createService( userInfo.getLogin(), userInfo.getPassword(),
+              IRoleAuthorizationPolicyRoleBindingDaoWebService.class );
+      if ( authorizationPolicyRoleBindingService == null ) {
+        getLogger().error(
+            BaseMessages.getString( AbsSecurityManager.class,
+                "AbsSecurityManager.ERROR_0001_UNABLE_TO_INITIALIZE_ROLE_BINDING_WEBSVC" ) ); //$NON-NLS-1$
+      }
+    } catch ( Exception e ) {
       getLogger().error(
-          BaseMessages.getString(AbsSecurityManager.class,
-              "AbsSecurityManager.ERROR_0001_UNABLE_TO_INITIALIZE_ROLE_BINDING_WEBSVC"), e); //$NON-NLS-1$
+          BaseMessages.getString( AbsSecurityManager.class,
+              "AbsSecurityManager.ERROR_0001_UNABLE_TO_INITIALIZE_ROLE_BINDING_WEBSVC" ), e ); //$NON-NLS-1$
     }
   }
 

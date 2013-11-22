@@ -31,12 +31,13 @@ public class PurRepositorySecurityManager implements IRoleSupportSecurityManager
 	private UserRoleDelegate	userRoleDelegate;
 	private static final Log logger = LogFactory.getLog(UserRoleDelegate.class);
 	
-  public PurRepositorySecurityManager(PurRepository repository, PurRepositoryMeta repositoryMeta, IUser user) {
-		this.repository = repository;
-    this.userRoleDelegate = new UserRoleDelegate(this, repositoryMeta, user, logger);
-    userRoleDelegate.addUserRoleListChangeListener(this);
-    this.setUserRoleDelegate(userRoleDelegate);
-	}
+  public PurRepositorySecurityManager( PurRepository repository, PurRepositoryMeta repositoryMeta, IUser user,
+      ServiceManager serviceManager ) {
+    this.repository = repository;
+    this.userRoleDelegate = new UserRoleDelegate( this, repositoryMeta, user, logger, serviceManager );
+    userRoleDelegate.addUserRoleListChangeListener( this );
+    this.setUserRoleDelegate( userRoleDelegate );
+  }
 
 	public UserRoleDelegate getUserRoleDelegate() {
 		return userRoleDelegate;

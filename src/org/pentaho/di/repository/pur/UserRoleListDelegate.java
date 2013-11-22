@@ -28,13 +28,13 @@ public class UserRoleListDelegate implements java.io.Serializable {
   public UserRoleListDelegate() {
     
   }
-  public UserRoleListDelegate(PurRepositoryMeta repositoryMeta, IUser userInfo, Log logger) {
+  public UserRoleListDelegate(PurRepositoryMeta repositoryMeta, IUser userInfo, Log logger, ServiceManager serviceManager) {
     try {
       this.logger = logger;
-      userDetailsRoleListWebService = WsFactory.createService(repositoryMeta, "userRoleListService", userInfo //$NON-NLS-1$
-          .getLogin(), userInfo.getPassword(), IUserRoleListWebService.class);
+      userDetailsRoleListWebService =
+          serviceManager.createService( userInfo.getLogin(), userInfo.getPassword(), IUserRoleListWebService.class );
       updateUserRoleList();
-    } catch (Exception e) {
+    } catch ( Exception e ) {
       this.logger.error(BaseMessages.getString("UserRoleListDelegate.ERROR_0001_UNABLE_TO_INITIALIZE_USER_ROLE_LIST_WEBSVC"), e); //$NON-NLS-1$
     }
 

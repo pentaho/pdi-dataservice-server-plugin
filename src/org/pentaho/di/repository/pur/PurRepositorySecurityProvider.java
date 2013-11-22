@@ -28,12 +28,13 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
   private UserRoleDelegate  userRoleDelegate;
 	private static final Log logger = LogFactory.getLog(PurRepositorySecurityProvider.class);
 	
-  public PurRepositorySecurityProvider(PurRepository repository, PurRepositoryMeta repositoryMeta, IUser user) {
-		super(repositoryMeta, user);
-		this.repository = repository;
-    this.userRoleListDelegate = new UserRoleListDelegate(repositoryMeta, user, logger);
-    this.setUserRoleListDelegate(userRoleListDelegate);
-	}
+  public PurRepositorySecurityProvider( PurRepository repository, PurRepositoryMeta repositoryMeta, IUser user,
+      ServiceManager serviceManager ) {
+    super( repositoryMeta, user );
+    this.repository = repository;
+    this.userRoleListDelegate = new UserRoleListDelegate( repositoryMeta, user, logger, serviceManager );
+    this.setUserRoleListDelegate( userRoleListDelegate );
+  }
 
 	public PurRepository getRepository() {
 		return repository;
