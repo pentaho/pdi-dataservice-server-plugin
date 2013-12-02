@@ -286,7 +286,7 @@
   
   <!-- ======================================== EULA assembly packaging ========================================= -->
 
-	<property name="pentaho-eula-assembly-pom.version" value="1.0.9" />
+	<property name="pentaho-eula-assembly-pom.version" value="1.0.13" />
 
 	<target name="package-eula" depends="install-antcontrib">
 
