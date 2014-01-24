@@ -39,9 +39,11 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.ui.repository.pur.services.IConnectionAclService;
+import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 public class JobDelegate extends AbstractDelegate implements ISharedObjectsTransformer, java.io.Serializable {
 
@@ -145,16 +147,16 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
   // ~ Instance fields =================================================================================================
 
-  private final PurRepository repo;
+  private final Repository repo;
 
   private final IConnectionAclService unifiedRepositoryConnectionAclService;
 
   // ~ Constructors ====================================================================================================
 
-  public JobDelegate( final PurRepository repo ) {
+  public JobDelegate( final Repository repo ) {
     super();
     this.repo = repo;
-    unifiedRepositoryConnectionAclService = new UnifiedRepositoryConnectionAclService( repo.getPur() );
+    unifiedRepositoryConnectionAclService = new UnifiedRepositoryConnectionAclService( PentahoSystem.get(IUnifiedRepository.class) );
   }
 
   // ~ Methods =========================================================================================================
@@ -184,7 +186,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
         if ( databaseMeta.getObjectId() == null
             || unifiedRepositoryConnectionAclService.hasAccess( databaseMeta.getObjectId(),
                 RepositoryFilePermission.WRITE ) ) {
-          repo.saveDatabaseMeta( databaseMeta, versionComment, null );
+          repo.save( databaseMeta, versionComment, null );
         } else {
           log.logError( BaseMessages.getString( PKG, "PurRepository.ERROR_0004_DATABASE_UPDATE_ACCESS_DENIED",
               databaseMeta.getName() ) );
@@ -196,7 +198,7 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
     //
     for ( SlaveServer slaveServer : jobMeta.getSlaveServers() ) {
       if ( slaveServer.hasChanged() || slaveServer.getObjectId() == null ) {
-        repo.saveSlaveServer( slaveServer, versionComment, null );
+        repo.save( slaveServer, versionComment, null );
       }
     }
 

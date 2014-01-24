@@ -13,6 +13,7 @@ package org.pentaho.di.repository.pur;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.Const;
@@ -44,10 +45,12 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.step.StepPartitioningMeta;
 import org.pentaho.di.ui.repository.pur.services.IConnectionAclService;
+import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer,
     java.io.Serializable {
@@ -215,14 +218,14 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
   private static final String PARAM_DEFAULT = "PARAM_DEFAULT";
 
-  private final PurRepository repo;
+  private final Repository repo;
 
   private final IConnectionAclService unifiedRepositoryConnectionAclService;
 
-  public TransDelegate( final PurRepository repo ) {
+  public TransDelegate( final Repository repo ) {
     super();
     this.repo = repo;
-    this.unifiedRepositoryConnectionAclService = new UnifiedRepositoryConnectionAclService( repo.getPur() );
+    this.unifiedRepositoryConnectionAclService = new UnifiedRepositoryConnectionAclService( PentahoSystem.get(IUnifiedRepository.class) );
   }
 
   public RepositoryElementInterface dataNodeToElement( final DataNode rootNode ) throws KettleException {
@@ -258,7 +261,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       stepMeta.setRowDistribution( rowDistribution );
       stepMeta.setDraw( stepNode.getProperty( PROP_STEP_GUI_DRAW ).getBoolean() );
       int copies = (int) stepNode.getProperty( PROP_STEP_COPIES ).getLong();
-      String copiesString = stepNode.getProperty( PROP_STEP_COPIES_STRING ).getString();
+      String copiesString = stepNode.getProperty( PROP_STEP_COPIES_STRING ) != null ? stepNode.getProperty( PROP_STEP_COPIES_STRING ).getString() : StringUtils.EMPTY;
       if ( !Const.isEmpty( copiesString ) ) {
         stepMeta.setCopiesString( copiesString );
       } else {
@@ -870,7 +873,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
         if ( databaseMeta.getObjectId() == null
             || unifiedRepositoryConnectionAclService.hasAccess( databaseMeta.getObjectId(),
                 RepositoryFilePermission.WRITE ) ) {
-          repo.saveDatabaseMeta( databaseMeta, versionComment, null );
+          repo.save( databaseMeta, versionComment, null );
         } else {
           log.logError( BaseMessages.getString( PKG, "PurRepository.ERROR_0004_DATABASE_UPDATE_ACCESS_DENIED",
               databaseMeta.getName() ) );
@@ -882,7 +885,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for ( SlaveServer slaveServer : transMeta.getSlaveServers() ) {
       if ( slaveServer.hasChanged() || slaveServer.getObjectId() == null ) {
-        repo.saveSlaveServer( slaveServer, versionComment, null );
+        repo.save( slaveServer, versionComment, null );
       }
     }
 
@@ -890,7 +893,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for ( ClusterSchema clusterSchema : transMeta.getClusterSchemas() ) {
       if ( clusterSchema.hasChanged() || clusterSchema.getObjectId() == null ) {
-        repo.saveClusterSchema( clusterSchema, versionComment, null );
+        repo.save( clusterSchema, versionComment, null );
       }
     }
 
@@ -898,7 +901,7 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
     //
     for ( PartitionSchema partitionSchema : transMeta.getPartitionSchemas() ) {
       if ( partitionSchema.hasChanged() || partitionSchema.getObjectId() == null ) {
-        repo.savePartitionSchema( partitionSchema, versionComment, null );
+        repo.save( partitionSchema, versionComment, null );
       }
     }
 
