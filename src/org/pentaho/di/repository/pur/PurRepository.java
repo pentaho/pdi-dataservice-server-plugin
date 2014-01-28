@@ -1683,19 +1683,10 @@ public class PurRepository extends AbstractRepository implements Repository, jav
         throw new KettleException("File is in the Trash. Use Save As.");
       }
       // update title and description
-      
-      
-      file = new RepositoryFile.Builder( file.getId(), file.getName() )
+      file = new RepositoryFile.Builder(file)
         .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
         .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), ""))
-      .fileSize( file.getFileSize() )
-      .folder( file.isFolder() ).hidden( file.isHidden() ).versioned( file.isVersioned() )
-      .versionId( file.getVersionId() ).path( file.getPath() ).createdDate( file.getCreatedDate() )
-      .lastModificationDate( file.getLastModifiedDate() ).locked( file.isLocked() ).lockOwner( file.getLockOwner() )
-      .lockMessage( file.getLockMessage() ).lockDate( file.getLockDate() ).locale( file.getLocale() )
-      .originalParentFolderPath( file.getOriginalParentFolderPath() ).deletedDate( file.getDeletedDate() )
-      .creatorId( file.getCreatorId() ).localePropertiesMap( file.getLocalePropertiesMap() ).build();
-
+        .build();
       file = pur.updateFile(
           file, 
           new NodeRepositoryFileData(jobDelegate.elementToDataNode(element)), 
@@ -1748,18 +1739,9 @@ public class PurRepository extends AbstractRepository implements Repository, jav
         throw new KettleException("File is in the Trash. Use Save As.");
       }
       // update title and description
-      
-      file = new RepositoryFile.Builder( file.getId(), file.getName() )
-      .title( RepositoryFile.DEFAULT_LOCALE, element.getName() )
-      .description( RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), "") )
-      .fileSize( file.getFileSize() )
-      .folder( file.isFolder() ).hidden( file.isHidden() ).versioned( file.isVersioned() )
-      .versionId( file.getVersionId() ).path( file.getPath() ).createdDate( file.getCreatedDate() )
-      .lastModificationDate( file.getLastModifiedDate() ).locked( file.isLocked() ).lockOwner( file.getLockOwner() )
-      .lockMessage( file.getLockMessage() ).lockDate( file.getLockDate() ).locale( file.getLocale() )
-      .originalParentFolderPath( file.getOriginalParentFolderPath() ).deletedDate( file.getDeletedDate() )
-      .creatorId( file.getCreatorId() ).localePropertiesMap( file.getLocalePropertiesMap() ).build();
-
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, element.getName())
+          .createdDate(versionDate != null ? versionDate.getTime() : new Date())
+          .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), "")).build();
       file = pur.updateFile(
           file, 
           new NodeRepositoryFileData(transDelegate.elementToDataNode(element)),
@@ -1821,17 +1803,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     if (isUpdate) {
       file = pur.getFileById(element.getObjectId().getId());
       // update title
-      file = new RepositoryFile.Builder( file.getId(), file.getName() )
-      .title( RepositoryFile.DEFAULT_LOCALE, element.getName() )
-      .description( RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), "") )
-      .fileSize( file.getFileSize() )
-      .folder( file.isFolder() ).hidden( file.isHidden() ).versioned( file.isVersioned() )
-      .versionId( file.getVersionId() ).path( file.getPath() ).createdDate( file.getCreatedDate() )
-      .lastModificationDate( file.getLastModifiedDate() ).locked( file.isLocked() ).lockOwner( file.getLockOwner() )
-      .lockMessage( file.getLockMessage() ).lockDate( file.getLockDate() ).locale( file.getLocale() )
-      .originalParentFolderPath( file.getOriginalParentFolderPath() ).deletedDate( file.getDeletedDate() )
-      .creatorId( file.getCreatorId() ).localePropertiesMap( file.getLocalePropertiesMap() ).build();
-      
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, element.getName()).build();
       file = pur.updateFile(file, new NodeRepositoryFileData(databaseMetaTransformer.elementToDataNode(element)),
           versionComment);
       renameIfNecessary(element, file);
@@ -2101,17 +2073,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         // update title
-        file = new RepositoryFile.Builder( file.getId(), file.getName() )
-        .title( RepositoryFile.DEFAULT_LOCALE, element.getName() )
-        .description( RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), "") )
-        .fileSize( file.getFileSize() )
-        .folder( file.isFolder() ).hidden( file.isHidden() ).versioned( file.isVersioned() )
-        .versionId( file.getVersionId() ).path( file.getPath() ).createdDate( file.getCreatedDate() )
-        .lastModificationDate( file.getLastModifiedDate() ).locked( file.isLocked() ).lockOwner( file.getLockOwner() )
-        .lockMessage( file.getLockMessage() ).lockDate( file.getLockDate() ).locale( file.getLocale() )
-        .originalParentFolderPath( file.getOriginalParentFolderPath() ).deletedDate( file.getDeletedDate() )
-        .creatorId( file.getCreatorId() ).localePropertiesMap( file.getLocalePropertiesMap() ).build();
-        
+        file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, element.getName()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(partitionSchemaTransformer.elementToDataNode(element)),
             versionComment);
         renameIfNecessary(element, file);
@@ -2149,18 +2111,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         // update title
-        
-        file = new RepositoryFile.Builder( file.getId(), file.getName() )
-        .title( RepositoryFile.DEFAULT_LOCALE, element.getName() )
-        .description( RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), "") )
-        .fileSize( file.getFileSize() )
-        .folder( file.isFolder() ).hidden( file.isHidden() ).versioned( file.isVersioned() )
-        .versionId( file.getVersionId() ).path( file.getPath() ).createdDate( file.getCreatedDate() )
-        .lastModificationDate( file.getLastModifiedDate() ).locked( file.isLocked() ).lockOwner( file.getLockOwner() )
-        .lockMessage( file.getLockMessage() ).lockDate( file.getLockDate() ).locale( file.getLocale() )
-        .originalParentFolderPath( file.getOriginalParentFolderPath() ).deletedDate( file.getDeletedDate() )
-        .creatorId( file.getCreatorId() ).localePropertiesMap( file.getLocalePropertiesMap() ).build();
-
+        file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, element.getName()).build();
         file = pur.updateFile(file, new NodeRepositoryFileData(slaveTransformer.elementToDataNode(element)),
             versionComment);
         renameIfNecessary(element, file);
@@ -2198,18 +2149,10 @@ public class PurRepository extends AbstractRepository implements Repository, jav
       if (isUpdate) {
         file = pur.getFileById(element.getObjectId().getId());
         // update title
-        
-        file = new RepositoryFile.Builder( file.getId(), file.getName() )
+        file = new RepositoryFile.Builder(file)
           .title(RepositoryFile.DEFAULT_LOCALE, element.getName())
           .description(RepositoryFile.DEFAULT_LOCALE, Const.NVL(element.getDescription(), ""))
-        .fileSize( file.getFileSize() )
-        .folder( file.isFolder() ).hidden( file.isHidden() ).versioned( file.isVersioned() )
-        .versionId( file.getVersionId() ).path( file.getPath() ).createdDate( file.getCreatedDate() )
-        .lastModificationDate( file.getLastModifiedDate() ).locked( file.isLocked() ).lockOwner( file.getLockOwner() )
-        .lockMessage( file.getLockMessage() ).lockDate( file.getLockDate() ).locale( file.getLocale() )
-        .originalParentFolderPath( file.getOriginalParentFolderPath() ).deletedDate( file.getDeletedDate() )
-        .creatorId( file.getCreatorId() ).localePropertiesMap( file.getLocalePropertiesMap() ).build();
-
+          .build();
         file = pur.updateFile(
             file, 
             new NodeRepositoryFileData(clusterTransformer.elementToDataNode(element)),
