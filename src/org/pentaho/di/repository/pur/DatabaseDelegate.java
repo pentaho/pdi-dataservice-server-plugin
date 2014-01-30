@@ -37,6 +37,7 @@ import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
+import org.pentaho.platform.repository.RepositoryFilenameUtils;
 
 public class DatabaseDelegate extends AbstractDelegate implements ITransformer, SharedObjectAssembler<DatabaseMeta>, java.io.Serializable {
 
@@ -110,7 +111,9 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer, 
 	
 	  // Save this attribute
 	  //
-	  attrNode.setProperty(code, attribute);
+    // Escape the code as it might contain invalid JCR characters like '/' as in AS/400
+    String escapedCode = RepositoryFilenameUtils.escape(code, repo.getPur().getReservedChars());
+    attrNode.setProperty(escapedCode, attribute);
 	}
     return rootNode;
 
@@ -141,7 +144,10 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer, 
     for (DataProperty property : attrNode.getProperties()) {
       String code = property.getName();
       String attribute = property.getString();
-      databaseMeta.getAttributes().put(code, Const.NVL(attribute, "")); //$NON-NLS-1$
+
+      // We need to unescape the code as it was escaped to handle characters that JCR does not handle
+      String unescapeCode = RepositoryFilenameUtils.unescape(code);
+      databaseMeta.getAttributes().put(unescapeCode, Const.NVL(attribute, "")); //$NON-NLS-1$
     }
   }
 
