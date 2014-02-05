@@ -623,12 +623,12 @@ public class PurRepository extends AbstractRepository implements Repository, jav
             + RepositoryObjectType.DATABASE.getExtension();
       }
       case TRANSFORMATION: {
-    	  // Check for null path
-    	  if(path == null) {
-    		  return null;
-    	  } else {
-    		  return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.TRANSFORMATION.getExtension();
-    	  }
+        // Check for null path
+        if(path == null) {
+          return null;
+        } else {
+          return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.TRANSFORMATION.getExtension();
+        }
       }
       case PARTITION_SCHEMA: {
         return getPartitionSchemaParentFolderPath() + RepositoryFile.SEPARATOR + sanitizedName
@@ -643,12 +643,12 @@ public class PurRepository extends AbstractRepository implements Repository, jav
             + RepositoryObjectType.CLUSTER_SCHEMA.getExtension();
       }
       case JOB: {
-    	  // Check for null path
-    	  if(path == null) {
-    		  return null;
-    	  } else {
-    		  return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.JOB.getExtension();
-    	  }
+        // Check for null path
+        if(path == null) {
+          return null;
+        } else {
+          return path + (path.endsWith(RepositoryFile.SEPARATOR)?"":RepositoryFile.SEPARATOR) + sanitizedName + RepositoryObjectType.JOB.getExtension();
+        }
       }
       default: {
         throw new UnsupportedOperationException("not implemented");
@@ -1867,8 +1867,8 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     try {
       absPath = getPath(transName, parentDir, RepositoryObjectType.TRANSFORMATION);
       if(absPath == null) {
-    	  // Couldn't resolve path, throw an exception
-    	  throw new KettleFileException(BaseMessages.getString(PKG, "PurRepository.ERROR_0002_TRANSFORMATION_NOT_FOUND",transName));
+        // Couldn't resolve path, throw an exception
+        throw new KettleFileException(BaseMessages.getString(PKG, "PurRepository.ERROR_0002_TRANSFORMATION_NOT_FOUND",transName));
       }
       PentahoDscContent dscContent = PentahoLicenseVerifier.verify(new KParam(PurRepositoryMeta.BUNDLE_REF_NAME));
       RepositoryFile file = pur.getFile(absPath);
@@ -1955,8 +1955,8 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     try {
       absPath = getPath(jobname, parentDir, RepositoryObjectType.JOB);
       if(absPath == null) {
-    	  // Couldn't resolve path, throw an exception
-    	  throw new KettleFileException(BaseMessages.getString(PKG, "PurRepository.ERROR_0003_JOB_NOT_FOUND",jobname));
+        // Couldn't resolve path, throw an exception
+        throw new KettleFileException(BaseMessages.getString(PKG, "PurRepository.ERROR_0003_JOB_NOT_FOUND",jobname));
       }
       RepositoryFile file = pur.getFile(absPath);
       if (versionId != null) {
