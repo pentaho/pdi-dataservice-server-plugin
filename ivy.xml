@@ -31,14 +31,6 @@
     <dependency org="pentaho"        name="pentaho-bi-platform-ee-proguard" rev="${dependency.bi-platform-ee.revision}" changing="true"   transitive="true" conf="obf->default">
       <artifact name="pentaho-bi-platform-ee-proguard" type="zip"/>
     </dependency>
-    <!-- <dependency org="pentaho" name="pentaho-bi-platform-engine-security" rev="${dependency.bi-platform.revision}"
-      changing="true" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-security-userroledao" rev="${dependency.bi-platform.revision}"
-      changing="true" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-util" rev="${dependency.bi-platform.revision}"
-      changing="true" transitive="false" /> -->
-    
-
     <!-- begin remove for the customer src dist -->		
     <dependency org="pentaho"        name="pentaho-ee-dsc-core-proguard" rev="${dependency.pentaho-ee-dsc.revision}" changing="true"   transitive="true" conf="obf->default">
       <artifact name="pentaho-ee-dsc-core-proguard" type="zip"/>
