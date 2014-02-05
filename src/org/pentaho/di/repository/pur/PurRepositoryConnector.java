@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 
 import javax.xml.ws.WebServiceException;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.core.logging.LogChannel;
@@ -59,6 +60,7 @@ import com.sun.xml.ws.client.ClientTransportException;
 
 public class PurRepositoryConnector implements IRepositoryConnector {
   private static final String SINGLE_DI_SERVER_INSTANCE = "singleDiServerInstance";
+  private static final String REMOTE_DI_SERVER_INSTANCE = "remoteDiServerInstance";
   private static Class<?> PKG = PurRepository.class;
   private final LogChannelInterface log;
   private final PurRepository purRepository;
@@ -105,9 +107,10 @@ public class PurRepositoryConnector implements IRepositoryConnector {
 
       if ( PentahoSystem.getApplicationContext() != null ) {
         boolean inProcess = false;
+        boolean remoteDiServer = BooleanUtils.toBoolean( PentahoSystem.getSystemSetting( REMOTE_DI_SERVER_INSTANCE, "false" ) ) ;//$NON-NLS-1$
         if ( "true".equals( PentahoSystem.getSystemSetting( SINGLE_DI_SERVER_INSTANCE, "true" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
           inProcess = true;
-        } else if ( PentahoSystem.getApplicationContext().getFullyQualifiedServerURL() != null ) {
+        } else if ( !remoteDiServer && PentahoSystem.getApplicationContext().getFullyQualifiedServerURL() != null ) {
           inProcess = true;
         }
         if ( inProcess ) {
