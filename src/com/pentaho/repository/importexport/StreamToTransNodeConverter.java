@@ -89,13 +89,14 @@ public class StreamToTransNodeConverter implements Converter {
 
   public IRepositoryFileData convert( final InputStream inputStream, final String charset, final String mimeType ) {
     try {
+      long size = inputStream.available();
       TransMeta transMeta = new TransMeta();
       Repository repository = PDIImportUtil.connectToRepository( null );
       Document doc = PDIImportUtil.loadXMLFrom( inputStream );
       transMeta.loadXML( doc.getDocumentElement(), repository, false );
       TransDelegate delegate = new TransDelegate( repository );
       saveSharedObjects( repository, transMeta );
-      return new NodeRepositoryFileData( delegate.elementToDataNode( transMeta ) );
+      return new NodeRepositoryFileData( delegate.elementToDataNode( transMeta ),  size);
     } catch ( Exception e ) {
       e.printStackTrace();
       return null;
