@@ -102,6 +102,7 @@ public class StreamToJobNodeConverter implements Converter {
    */
   public IRepositoryFileData convert( final InputStream inputStream, final String charset, final String mimeType ) {
     try {
+      long size = inputStream.available();
       JobMeta jobMeta = new JobMeta();
       Repository repository = PDIImportUtil.connectToRepository( null );
       Document doc = PDIImportUtil.loadXMLFrom( inputStream );
@@ -109,7 +110,7 @@ public class StreamToJobNodeConverter implements Converter {
         jobMeta.loadXML( doc.getDocumentElement(), repository, null );
         JobDelegate delegate = new JobDelegate( repository );
         delegate.saveSharedObjects( jobMeta, null );
-        return new NodeRepositoryFileData( delegate.elementToDataNode( jobMeta ) );
+        return new NodeRepositoryFileData(delegate.elementToDataNode( jobMeta ), size );
       } else {
         return null;
       }
