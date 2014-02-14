@@ -131,6 +131,11 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   private static final String FOLDER_DATABASES = "databases"; //$NON-NLS-1$
 
   // ~ Instance fields =================================================================================================
+  /**
+   * Indicates that this code should be run in unit test mode (where PUR is passed in instead of created inside this 
+   * class).
+   */
+  private boolean test = false;  
   
   private IUnifiedRepository pur;
 
@@ -199,6 +204,20 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     return ref == null ? loadRepositoryDirectoryTree() : ref;
   }
 
+  /**
+   * public for unit tests.
+   */
+  public void setTest( final IUnifiedRepository pur ) {
+    this.pur = pur;
+    // set this to avoid NPE in connect()
+    this.repositoryMeta.setRepositoryLocation( new PurRepositoryLocation( "doesnotmatch" ) );
+    this.test = true;
+  }  
+  
+  private boolean isTest() {
+    return test;
+  }  
+  
   @Override
   public void init(final RepositoryMeta repositoryMeta) {
     this.log = new LogChannel(this);
@@ -216,6 +235,10 @@ public class PurRepository extends AbstractRepository implements Repository, jav
 
   @Override
   public void connect(final String username, final String password) throws KettleException, KettleSecurityException {
+    if ( isTest() ) {
+      connected = true;
+      return;
+    }
     try {
       RepositoryConnectResult result = purRepositoryConnector.connect( username, password );
       this.user = result.getUser();
