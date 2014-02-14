@@ -28,15 +28,29 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.Workspace;
+import javax.jcr.security.AccessControlException;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.vfs.FileObject;
+import org.apache.jackrabbit.api.JackrabbitWorkspace;
+import org.apache.jackrabbit.api.security.authorization.PrivilegeManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -95,6 +109,8 @@ import org.pentaho.platform.repository2.ClientRepositoryPaths;
 import org.pentaho.platform.repository2.unified.IRepositoryFileDao;
 import org.pentaho.platform.repository2.unified.ServerRepositoryPaths;
 import org.pentaho.platform.repository2.unified.jcr.JcrTenantUtils;
+import org.pentaho.platform.repository2.unified.jcr.PentahoJcrConstants;
+import org.pentaho.platform.repository2.unified.jcr.RepositoryFileProxyFactory;
 import org.pentaho.platform.repository2.unified.jcr.SimpleJcrTestUtils;
 import org.pentaho.platform.repository2.unified.jcr.jackrabbit.security.TestPrincipalProvider;
 import org.pentaho.platform.repository2.unified.jcr.sejcr.CredentialsStrategy;
@@ -104,6 +120,7 @@ import org.pentaho.test.platform.engine.core.MicroPlatform;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.extensions.jcr.JcrCallback;
 import org.springframework.extensions.jcr.JcrTemplate;
 import org.springframework.extensions.jcr.SessionFactory;
 import org.springframework.security.Authentication;
@@ -196,9 +213,11 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     mp.defineInstance(ITenantManager.class, tenantManager);
     mp.defineInstance("roleAuthorizationPolicyRoleBindingDaoTarget", roleBindingDaoTarget);
     mp.defineInstance("repositoryAdminUsername", repositoryAdminUsername);
+    mp.defineInstance( "RepositoryFileProxyFactory", new RepositoryFileProxyFactory(testJcrTemplate, repositoryFileDao) );        
     // Start the micro-platform
     mp.start();
     loginAsRepositoryAdmin();
+    setAclManagement();
     systemTenant = tenantManager.createTenant(null, ServerRepositoryPaths.getPentahoRootFolderName(), singleTenantAdminRoleName, tenantAuthenticatedRoleName, "Anonymous");
     userRoleDao.createUser(systemTenant, sysAdminUserName, "password", "", new String[]{singleTenantAdminRoleName});
     logout();
@@ -249,6 +268,25 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     }
     assertTrue("files not deleted: " + buf, files.isEmpty());
   }
+  
+  private void setAclManagement() {
+    testJcrTemplate.execute( new JcrCallback() {
+      @Override
+      public Object doInJcr( Session session ) throws IOException, RepositoryException {
+        PentahoJcrConstants pentahoJcrConstants = new PentahoJcrConstants( session );
+        Workspace workspace = session.getWorkspace();
+        PrivilegeManager privilegeManager = ( (JackrabbitWorkspace) workspace ).getPrivilegeManager();
+        try {
+          privilegeManager.getPrivilege( pentahoJcrConstants.getPHO_ACLMANAGEMENT_PRIVILEGE() );
+        } catch ( AccessControlException ace ) {
+          privilegeManager.registerPrivilege( pentahoJcrConstants.getPHO_ACLMANAGEMENT_PRIVILEGE(), false,
+              new String[0] );
+        }
+        session.save();
+        return null;
+      }
+    } );
+  }  
   
   protected void setUpUser() {
     StandaloneSession pentahoSession = new StandaloneSession(userInfo.getLogin());
