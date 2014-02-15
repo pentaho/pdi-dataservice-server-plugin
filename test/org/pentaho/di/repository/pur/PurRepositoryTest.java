@@ -255,6 +255,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     PurRepository purRep = (PurRepository) repository;
     purRep.setPurRepositoryConnector( new PurRepositoryConnector( purRep, (PurRepositoryMeta) repositoryMeta, purRep
         .getRootRef() ) );
+    ((PurRepository) repository).setTest( repo );
     repository.connect(EXP_LOGIN, "password");
     login(EXP_LOGIN, tenantAcme, new String[]{singleTenantAdminRoleName, tenantAuthenticatedRoleName});
     
