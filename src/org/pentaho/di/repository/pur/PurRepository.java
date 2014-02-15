@@ -82,6 +82,8 @@ import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.ui.repository.pur.services.ILockService;
+import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.api.exceptions.MetaStoreNamespaceExistsException;
@@ -237,6 +239,9 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   public void connect(final String username, final String password) throws KettleException, KettleSecurityException {
     if ( isTest() ) {
       connected = true;
+      purRepositoryServiceRegistry.registerService( IRevisionService.class, new UnifiedRepositoryRevisionService(
+      		pur, getRootRef() ) );
+      purRepositoryServiceRegistry.registerService( ILockService.class, new UnifiedRepositoryLockService( pur ) );
       return;
     }
     try {
