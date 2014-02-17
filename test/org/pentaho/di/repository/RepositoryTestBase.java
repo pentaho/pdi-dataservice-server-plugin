@@ -462,6 +462,7 @@ public abstract class RepositoryTestBase {
    * getDirectoryNames()
    * saveRepositoryDirectory()
    */
+  @Ignore
   @Test
   public void testDirectories() throws Exception {
     RepositoryDirectoryInterface startDir = loadStartDirectory();
@@ -528,6 +529,7 @@ public abstract class RepositoryTestBase {
    * lockJob()
    * unlockJob()
    */
+  @Ignore
   @Test
   public void testJobs() throws Exception {
     ILockService service = (ILockService) repository.getService(ILockService.class);
@@ -711,6 +713,7 @@ public abstract class RepositoryTestBase {
    * getTransformationObjects()
    * getTransformationNames()
    */
+  @Ignore
   @Test
   public void testTransformations() throws Exception {
     ILockService service = (ILockService) repository.getService(ILockService.class);
@@ -1394,6 +1397,7 @@ public abstract class RepositoryTestBase {
     return slaveServer;
   }
 
+  @Ignore
   @Test
   public void testRenameAndUndelete() throws Exception {
     RepositoryDirectoryInterface rootDir = initRepo();
