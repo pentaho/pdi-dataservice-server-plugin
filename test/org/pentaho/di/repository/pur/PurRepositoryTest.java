@@ -55,6 +55,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.pentaho.di.cluster.ClusterSchema;
@@ -799,6 +800,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     }
   }
   
+  @Ignore
   @Test
   public void testExport() throws Exception {
     final String exportFileName = new File("test.export").getAbsolutePath(); //$NON-NLS-1$
@@ -854,6 +856,7 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     }
   }
 
+  @Ignore
   @Test
   public void testVersionDate() throws Exception {
 

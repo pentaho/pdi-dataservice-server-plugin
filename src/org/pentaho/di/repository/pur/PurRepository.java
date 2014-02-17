@@ -242,6 +242,13 @@ public class PurRepository extends AbstractRepository implements Repository, jav
       purRepositoryServiceRegistry.registerService( IRevisionService.class, new UnifiedRepositoryRevisionService(
       		pur, getRootRef() ) );
       purRepositoryServiceRegistry.registerService( ILockService.class, new UnifiedRepositoryLockService( pur ) );
+      metaStore = new PurRepositoryMetaStore(this);
+      try {
+        metaStore.createNamespace(PentahoDefaults.NAMESPACE);
+      } catch (MetaStoreException e) {
+          LogChannel.GENERAL.logError(
+                  BaseMessages.getString(PKG, "PurRepositoryMetastore.NamespaceCreateException.Message", PentahoDefaults.NAMESPACE), e);
+      }
       return;
     }
     try {
