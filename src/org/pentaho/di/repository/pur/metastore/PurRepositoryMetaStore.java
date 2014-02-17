@@ -197,7 +197,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
       throws MetaStoreException {
     RepositoryFile folder = getElementTypeRepositoryFolder(namespace, elementType);
     
-    RepositoryFile detailsFile = findChildByName(folder.getId(), ELEMENT_TYPE_DETAILS_FILENAME);
+    RepositoryFile detailsFile = findChildByName(folder.getId(), ELEMENT_TYPE_DETAILS_FILENAME, true);
   
     DataNode dataNode = getElementTypeDataNode(elementType);
     
@@ -224,7 +224,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     elementType.setId(elementTypeFolder.getId().toString());
     elementType.setName(elementTypeFolder.getName());
     
-    RepositoryFile detailsFile = findChildByName(elementTypeFolder.getId(), ELEMENT_TYPE_DETAILS_FILENAME);
+    RepositoryFile detailsFile = findChildByName(elementTypeFolder.getId(), ELEMENT_TYPE_DETAILS_FILENAME, true);
     if (detailsFile!=null) {
       NodeRepositoryFileData data = pur.getDataForRead(detailsFile.getId(), NodeRepositoryFileData.class);
       DataProperty property = data.getNode().getProperty("element_type_description");
@@ -538,13 +538,17 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     return ClientRepositoryPaths.getEtcFolderPath() + RepositoryFile.SEPARATOR + FOLDER_METASTORE;
   }
 
-  protected RepositoryFile findChildByName(Serializable folderId, String childName) {
-    for (RepositoryFile child : pur.getChildren(folderId)) {
+  protected RepositoryFile findChildByName(Serializable folderId, String childName, boolean showHiddenFiles) {
+    for (RepositoryFile child : pur.getChildren(folderId, "*", showHiddenFiles)) {
       if (child.getName().equals(childName)) {
         return child;
       }
     }
     return null;
+  }
+  
+  protected RepositoryFile findChildByName(Serializable folderId, String childName) {
+    return findChildByName(folderId, childName, false);
   }
 
   protected RepositoryFile findChildByTitle(Serializable folderId, String childTitle) {
