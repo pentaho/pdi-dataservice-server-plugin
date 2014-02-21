@@ -82,6 +82,8 @@ import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.ui.repository.pur.services.ILockService;
+import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.api.exceptions.MetaStoreNamespaceExistsException;
@@ -131,6 +133,11 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   private static final String FOLDER_DATABASES = "databases"; //$NON-NLS-1$
 
   // ~ Instance fields =================================================================================================
+  /**
+   * Indicates that this code should be run in unit test mode (where PUR is passed in instead of created inside this 
+   * class).
+   */
+  private boolean test = false;  
   
   private IUnifiedRepository pur;
 
@@ -199,6 +206,20 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     return ref == null ? loadRepositoryDirectoryTree() : ref;
   }
 
+  /**
+   * public for unit tests.
+   */
+  public void setTest( final IUnifiedRepository pur ) {
+    this.pur = pur;
+    // set this to avoid NPE in connect()
+    this.repositoryMeta.setRepositoryLocation( new PurRepositoryLocation( "doesnotmatch" ) );
+    this.test = true;
+  }  
+  
+  private boolean isTest() {
+    return test;
+  }  
+  
   @Override
   public void init(final RepositoryMeta repositoryMeta) {
     this.log = new LogChannel(this);
@@ -216,6 +237,20 @@ public class PurRepository extends AbstractRepository implements Repository, jav
 
   @Override
   public void connect(final String username, final String password) throws KettleException, KettleSecurityException {
+    if ( isTest() ) {
+      connected = true;
+      purRepositoryServiceRegistry.registerService( IRevisionService.class, new UnifiedRepositoryRevisionService(
+      		pur, getRootRef() ) );
+      purRepositoryServiceRegistry.registerService( ILockService.class, new UnifiedRepositoryLockService( pur ) );
+      metaStore = new PurRepositoryMetaStore(this);
+      try {
+        metaStore.createNamespace(PentahoDefaults.NAMESPACE);
+      } catch (MetaStoreException e) {
+          LogChannel.GENERAL.logError(
+                  BaseMessages.getString(PKG, "PurRepositoryMetastore.NamespaceCreateException.Message", PentahoDefaults.NAMESPACE), e);
+      }
+      return;
+    }
     try {
       RepositoryConnectResult result = purRepositoryConnector.connect( username, password );
       this.user = result.getUser();
