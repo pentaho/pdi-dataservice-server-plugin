@@ -26,15 +26,17 @@ import java.util.List;
 
 import org.pentaho.platform.api.repository2.unified.IRepositoryFileData;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.plugin.services.importer.IPlatformImportHandler;
+import org.pentaho.platform.plugin.services.importer.mimeType.MimeType;
 import org.pentaho.platform.plugin.services.importer.PlatformImportException;
 import org.pentaho.platform.plugin.services.importer.RepositoryFileImportBundle;
 import org.pentaho.platform.plugin.services.importer.RepositoryFileImportFileHandler;
 
 
-public class PDIImportFileHandler extends RepositoryFileImportFileHandler {
+public class PDIImportFileHandler extends RepositoryFileImportFileHandler implements IPlatformImportHandler {
 
-  public PDIImportFileHandler( List<String> approvedExtensionList, List<String> hiddenExtensionList ) {
-    super( approvedExtensionList, hiddenExtensionList );
+  public PDIImportFileHandler( List<MimeType> mimeTypes ) {
+    super( mimeTypes );
   }
 
   @Override
