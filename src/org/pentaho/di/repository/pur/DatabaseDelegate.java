@@ -162,6 +162,7 @@ public class DatabaseDelegate extends AbstractDelegate implements ITransformer, 
       fileName = fileName.substring(0, fileName.length() - 4);
     }
     databaseMeta.setName(fileName);
+    databaseMeta.setDisplayName( file.getTitle() );
     databaseMeta.setObjectId(new StringObjectId(file.getId().toString()));
     databaseMeta.setObjectRevision(repo.createObjectRevision(version));
     databaseMeta.clearChanged();
