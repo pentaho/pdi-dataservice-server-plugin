@@ -25,6 +25,8 @@ package com.pentaho.repository.importexport;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.cluster.SlaveServer;
@@ -123,12 +125,33 @@ public class StreamToJobNodeConverter implements Converter {
     throws KettleException {
     JobMeta jobMeta = (JobMeta) element;
     // First store the databases and other depending objects in the transformation.
-    for ( DatabaseMeta databaseMeta : jobMeta.getDatabases() ) {
-      if ( databaseMeta.getObjectId() == null || !StringUtils.isEmpty( databaseMeta.getHostname() ) ) {
-        repo.save( databaseMeta, null, null );
+    List<String> databaseNames = Arrays.asList(repo.getDatabaseNames(true));
+
+    int dbIndex = 0;
+    int indexToReplace = 0;
+    boolean  updateMeta = Boolean.FALSE;
+
+    for (DatabaseMeta databaseMeta : jobMeta.getDatabases()) {
+      if (!databaseNames.contains(databaseMeta.getName())) {
+        if (databaseMeta.getObjectId() == null || !StringUtils.isEmpty(databaseMeta.getHostname())) {
+          repo.save(databaseMeta, null, null);
+        }
+      } else if (databaseMeta.getObjectId() == null) {
+        indexToReplace = dbIndex;
+        updateMeta = Boolean.TRUE;
       }
+
+      dbIndex++;
     }
 
+    // if db already exists in repo, get that object id and put it
+    // in the transMeta db collection
+    if(updateMeta){
+      DatabaseMeta dbMetaToReplace = jobMeta.getDatabase(indexToReplace);
+      dbMetaToReplace.setObjectId(repo.getDatabaseID(dbMetaToReplace.getName()));
+      jobMeta.removeDatabase(indexToReplace);
+      jobMeta.addDatabase(dbMetaToReplace);
+    }
     // Store the slave servers...
     //
     for ( SlaveServer slaveServer : jobMeta.getSlaveServers() ) {
