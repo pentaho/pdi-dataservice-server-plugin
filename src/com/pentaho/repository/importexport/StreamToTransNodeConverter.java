@@ -116,26 +116,29 @@ public class StreamToTransNodeConverter implements Converter {
     int indexToReplace = 0;
     boolean  updateMeta = Boolean.FALSE;
 
+    List<Integer> transMetaDatabasesToUpdate = new ArrayList<Integer>();
+
     for (DatabaseMeta databaseMeta : transMeta.getDatabases()) {
       if (!databaseNames.contains(databaseMeta.getName())) {
         if (databaseMeta.getObjectId() == null || !StringUtils.isEmpty(databaseMeta.getHostname())) {
           repo.save(databaseMeta, null, null);
         }
       } else if (databaseMeta.getObjectId() == null) {
-        indexToReplace = dbIndex;
+        // add this to the list to update object Ids later
+        transMetaDatabasesToUpdate.add(dbIndex);
         updateMeta = Boolean.TRUE;
       }
 
       dbIndex++;
     }
 
-    // if db already exists in repo, get that object id and put it
-    // in the transMeta db collection
     if(updateMeta){
-      DatabaseMeta dbMetaToReplace = transMeta.getDatabase(indexToReplace);
-      dbMetaToReplace.setObjectId(repo.getDatabaseID(dbMetaToReplace.getName()));
-      transMeta.removeDatabase(indexToReplace);
-      transMeta.addDatabase(dbMetaToReplace);
+      // make sure to update object ids in the transmeta db collection
+      for(Integer databaseMetaIndex : transMetaDatabasesToUpdate){
+        transMeta.getDatabase(databaseMetaIndex).setObjectId(
+            repo.getDatabaseID(transMeta.getDatabase(databaseMetaIndex).getName())
+        );
+      }
     }
 
     // Store the slave servers...
