@@ -312,7 +312,7 @@
 		<if>
 			<isset property="isWindows" />
 			<then>
-				<exec executable="cmd">
+				<exec executable="cmd" failonerror="true">
 					<arg value="/c" />
 					<arg value="mvn.bat" />
 					<arg value="-f" />
@@ -323,7 +323,7 @@
 				</exec>
 			</then>
 			<else>
-				<exec executable="mvn">
+				<exec executable="mvn" failonerror="true">
 					<arg value="-f" />
 					<arg value="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" />
 					<arg value="-DartifactName=${artifactName}" />
