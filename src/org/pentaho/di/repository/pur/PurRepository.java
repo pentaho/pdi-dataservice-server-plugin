@@ -1849,8 +1849,10 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     RepositoryFile file = null;
     if (isUpdate) {
       file = pur.getFileById(element.getObjectId().getId());
+
       // update title
-      file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, element.getName()).build();
+      final String title = ((DatabaseMeta)element).getDisplayName();
+      file = new RepositoryFile.Builder(file).title(RepositoryFile.DEFAULT_LOCALE, title).build();
       file = pur.updateFile(file, new NodeRepositoryFileData(databaseMetaTransformer.elementToDataNode(element)),
           versionComment);
       renameIfNecessary(element, file);
