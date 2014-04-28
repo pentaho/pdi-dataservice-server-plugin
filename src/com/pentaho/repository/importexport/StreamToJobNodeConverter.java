@@ -37,6 +37,7 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.repository.pur.JobDelegate;
+import org.pentaho.di.repository.pur.PurRepository;
 import org.pentaho.platform.api.repository2.unified.Converter;
 import org.pentaho.platform.api.repository2.unified.IRepositoryFileData;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
@@ -110,9 +111,9 @@ public class StreamToJobNodeConverter implements Converter {
       Document doc = PDIImportUtil.loadXMLFrom( inputStream );
       if ( doc != null ) {
         jobMeta.loadXML( doc.getDocumentElement(), repository, null );
-        JobDelegate delegate = new JobDelegate( repository );
+        JobDelegate delegate = new JobDelegate( repository, this.unifiedRepository );
         delegate.saveSharedObjects( jobMeta, null );
-        return new NodeRepositoryFileData(delegate.elementToDataNode( jobMeta ), size );
+        return new NodeRepositoryFileData( delegate.elementToDataNode( jobMeta ), size );
       } else {
         return null;
       }
@@ -125,18 +126,18 @@ public class StreamToJobNodeConverter implements Converter {
     throws KettleException {
     JobMeta jobMeta = (JobMeta) element;
     // First store the databases and other depending objects in the transformation.
-    List<String> databaseNames = Arrays.asList(repo.getDatabaseNames(true));
+    List<String> databaseNames = Arrays.asList( repo.getDatabaseNames( true ) );
 
     int dbIndex = 0;
     int indexToReplace = 0;
-    boolean  updateMeta = Boolean.FALSE;
+    boolean updateMeta = Boolean.FALSE;
 
-    for (DatabaseMeta databaseMeta : jobMeta.getDatabases()) {
-      if (!databaseNames.contains(databaseMeta.getName())) {
-        if (databaseMeta.getObjectId() == null || !StringUtils.isEmpty(databaseMeta.getHostname())) {
-          repo.save(databaseMeta, null, null);
+    for ( DatabaseMeta databaseMeta : jobMeta.getDatabases() ) {
+      if ( !databaseNames.contains( databaseMeta.getName() ) ) {
+        if ( databaseMeta.getObjectId() == null || !StringUtils.isEmpty( databaseMeta.getHostname() ) ) {
+          repo.save( databaseMeta, null, null );
         }
-      } else if (databaseMeta.getObjectId() == null) {
+      } else if ( databaseMeta.getObjectId() == null ) {
         indexToReplace = dbIndex;
         updateMeta = Boolean.TRUE;
       }
@@ -146,16 +147,16 @@ public class StreamToJobNodeConverter implements Converter {
 
     // if db already exists in repo, get that object id and put it
     // in the transMeta db collection
-    if(updateMeta){
-      DatabaseMeta dbMetaToReplace = jobMeta.getDatabase(indexToReplace);
-      dbMetaToReplace.setObjectId(repo.getDatabaseID(dbMetaToReplace.getName()));
-      jobMeta.removeDatabase(indexToReplace);
-      jobMeta.addDatabase(dbMetaToReplace);
+    if ( updateMeta ) {
+      DatabaseMeta dbMetaToReplace = jobMeta.getDatabase( indexToReplace );
+      dbMetaToReplace.setObjectId( repo.getDatabaseID( dbMetaToReplace.getName() ) );
+      jobMeta.removeDatabase( indexToReplace );
+      jobMeta.addDatabase( dbMetaToReplace );
     }
     // Store the slave servers...
     //
     for ( SlaveServer slaveServer : jobMeta.getSlaveServers() ) {
-      if (slaveServer.getObjectId() == null ) {
+      if ( slaveServer.getObjectId() == null ) {
         repo.save( slaveServer, null, null );
       }
     }
