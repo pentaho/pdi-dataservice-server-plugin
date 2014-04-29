@@ -62,7 +62,6 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
-import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 public class TransDelegate extends AbstractDelegate implements ITransformer, ISharedObjectsTransformer,
     java.io.Serializable {
@@ -234,10 +233,10 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
 
   private final IConnectionAclService unifiedRepositoryConnectionAclService;
 
-  public TransDelegate( final Repository repo ) {
+  public TransDelegate( final Repository repo, final IUnifiedRepository pur ) {
     super();
     this.repo = repo;
-    this.unifiedRepositoryConnectionAclService = new UnifiedRepositoryConnectionAclService( PentahoSystem.get(IUnifiedRepository.class) );
+    this.unifiedRepositoryConnectionAclService = new UnifiedRepositoryConnectionAclService( pur );
   }
 
   public RepositoryElementInterface dataNodeToElement( final DataNode rootNode ) throws KettleException {
@@ -273,7 +272,9 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       stepMeta.setRowDistribution( rowDistribution );
       stepMeta.setDraw( stepNode.getProperty( PROP_STEP_GUI_DRAW ).getBoolean() );
       int copies = (int) stepNode.getProperty( PROP_STEP_COPIES ).getLong();
-      String copiesString = stepNode.getProperty( PROP_STEP_COPIES_STRING ) != null ? stepNode.getProperty( PROP_STEP_COPIES_STRING ).getString() : StringUtils.EMPTY;
+      String copiesString =
+          stepNode.getProperty( PROP_STEP_COPIES_STRING ) != null ? stepNode.getProperty( PROP_STEP_COPIES_STRING )
+              .getString() : StringUtils.EMPTY;
       if ( !Const.isEmpty( copiesString ) ) {
         stepMeta.setCopiesString( copiesString );
       } else {
