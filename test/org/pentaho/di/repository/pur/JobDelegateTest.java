@@ -44,6 +44,7 @@ import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.job.entry.JobEntryBase;
 import org.pentaho.di.job.entry.JobEntryCopy;
 import org.pentaho.di.job.entry.JobEntryInterface;
+import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataProperty;
 
@@ -106,7 +107,8 @@ public class JobDelegateTest {
 
   @Test
   public void testDataNodeToElementCopiesAttributesToJobEntryCopyAndJobEntry() throws KettleException {
-    JobDelegate jobDelegate = new JobDelegate(mockPurRepository);
+    IUnifiedRepository mockUnifiedRepository = mock(IUnifiedRepository.class);
+    JobDelegate jobDelegate = new JobDelegate(mockPurRepository, mockUnifiedRepository);
     DataNode mockDataNode = mock(DataNode.class);
     DataNode entriesNode = addSubnode(mockDataNode, JobDelegate.NODE_ENTRIES);
     DataNode copyNode = mock(DataNode.class);
@@ -153,7 +155,8 @@ public class JobDelegateTest {
   @Test
   public void testElementToDataNodeSavesCopyAttributes() throws KettleException {
     JobMeta mockJobMeta = mock(JobMeta.class);
-    JobDelegate jobDelegate = new JobDelegate(mockPurRepository);
+    IUnifiedRepository mockUnifiedRepository = mock(IUnifiedRepository.class);
+    JobDelegate jobDelegate = new JobDelegate(mockPurRepository, mockUnifiedRepository);
     JobLogTable mockJobLogTable = mock(JobLogTable.class);
     JobEntryCopy mockJobEntryCopy = mock(JobEntryCopy.class);
     Map<String, Map<String, String>> attributes = new HashMap<String, Map<String,String>>();
@@ -183,7 +186,8 @@ public class JobDelegateTest {
   @Test
   public void testElementToDataNodeSavesAttributes() throws KettleException {
     JobMeta mockJobMeta = mock(JobMeta.class);
-    JobDelegate jobDelegate = new JobDelegate(mockPurRepository);
+    IUnifiedRepository mockUnifiedRepository = mock(IUnifiedRepository.class);
+    JobDelegate jobDelegate = new JobDelegate(mockPurRepository, mockUnifiedRepository);
     JobLogTable mockJobLogTable = mock(JobLogTable.class);
     JobEntryCopy mockJobEntryCopy = mock(JobEntryCopy.class);
     Map<String, Map<String, String>> attributes = new HashMap<String, Map<String,String>>();
