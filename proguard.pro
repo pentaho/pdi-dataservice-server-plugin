@@ -61,4 +61,6 @@
       
       -keepnames class org.pentaho.di.repository.pur.PurRepositoryLocation
       
-      -keep class com.pentaho.repository.importexport.* {}
+      -keep class com.pentaho.repository.importexport.* {
+			  public static <methods>;
+		  }
