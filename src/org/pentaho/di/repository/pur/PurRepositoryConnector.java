@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import javax.xml.ws.WebServiceException;
 
 import org.apache.commons.lang.BooleanUtils;
+import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.core.logging.LogChannel;
@@ -93,6 +94,7 @@ public class PurRepositoryConnector implements IRepositoryConnector {
     serviceManager = new WebServiceManager( repositoryMeta.getRepositoryLocation().getUrl(), username );
     RepositoryServiceRegistry purRepositoryServiceRegistry = new RepositoryServiceRegistry();
     IUser user1 = new EEUserInfo();
+    final String decryptedPassword = Encr.decryptPasswordOptionallyEncrypted( password );
     final RepositoryConnectResult result = new RepositoryConnectResult( purRepositoryServiceRegistry );
     try {
       /*
@@ -101,13 +103,14 @@ public class PurRepositoryConnector implements IRepositoryConnector {
        * 3. Connect externally: authentication occurs normally (i.e. password is checked)
        */
       user1.setLogin( username );
-      user1.setPassword( password );
+      user1.setPassword( decryptedPassword );
       user1.setName( username );
       result.setUser( user1 );
 
       if ( PentahoSystem.getApplicationContext() != null ) {
         boolean inProcess = false;
-        boolean remoteDiServer = BooleanUtils.toBoolean( PentahoSystem.getSystemSetting( REMOTE_DI_SERVER_INSTANCE, "false" ) ) ;//$NON-NLS-1$
+        boolean remoteDiServer =
+          BooleanUtils.toBoolean( PentahoSystem.getSystemSetting( REMOTE_DI_SERVER_INSTANCE, "false" ) ); //$NON-NLS-1$
         if ( "true".equals( PentahoSystem.getSystemSetting( SINGLE_DI_SERVER_INSTANCE, "true" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
           inProcess = true;
         } else if ( !remoteDiServer && PentahoSystem.getApplicationContext().getFullyQualifiedServerURL() != null ) {
@@ -172,7 +175,8 @@ public class PurRepositoryConnector implements IRepositoryConnector {
           try {
             IUnifiedRepositoryJaxwsWebService repoWebService = null;
             LogChannel.GENERAL.logBasic( "Creating repository web service" ); //$NON-NLS-1$
-            repoWebService = serviceManager.createService( username, password, IUnifiedRepositoryJaxwsWebService.class ); //$NON-NLS-1$
+            repoWebService = serviceManager
+              .createService( username, decryptedPassword, IUnifiedRepositoryJaxwsWebService.class ); //$NON-NLS-1$
             LogChannel.GENERAL.logBasic( "Repository web service created" ); //$NON-NLS-1$
             LogChannel.GENERAL.logBasic( "Creating unified repository to web service adapter" ); //$NON-NLS-1$
             result.setUnifiedRepository( new UnifiedRepositoryToWebServiceAdapter( repoWebService ) );
@@ -190,7 +194,8 @@ public class PurRepositoryConnector implements IRepositoryConnector {
           try {
             LogChannel.GENERAL.logBasic( "Creating repository sync web service" );
             IRepositorySyncWebService syncWebService =
-                serviceManager.createService( username, password, IRepositorySyncWebService.class ); //$NON-NLS-1$
+              serviceManager
+                .createService( username, decryptedPassword, IRepositorySyncWebService.class ); //$NON-NLS-1$
             LogChannel.GENERAL.logBasic( "Synchronizing repository web service" ); //$NON-NLS-1$
             syncWebService.sync( repositoryMeta.getName(), repositoryMeta.getRepositoryLocation().getUrl() );
           } catch ( RepositorySyncException e ) {
