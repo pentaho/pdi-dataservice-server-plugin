@@ -87,5 +87,10 @@ public class RepositoryObjectAcl implements ObjectAcl, java.io.Serializable {
 
 	public void setEntriesInheriting(boolean entriesInheriting) {
 		this.entriesInheriting = entriesInheriting;
-	}	
+	}
+
+  @Override
+  public String toString() {
+    return owner.getName();
+  }
 }
