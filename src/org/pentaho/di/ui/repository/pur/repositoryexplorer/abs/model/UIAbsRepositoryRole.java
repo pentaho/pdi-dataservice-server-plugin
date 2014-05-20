@@ -64,4 +64,8 @@ public class UIAbsRepositoryRole extends UIRepositoryRole implements IUIAbsRole,
   public boolean containsLogicalRole(String logicalRole) {
     return absRole.containsLogicalRole(logicalRole);
   }
+
+  @Override public String toString() {
+    return absRole.getName();
+  }
 }

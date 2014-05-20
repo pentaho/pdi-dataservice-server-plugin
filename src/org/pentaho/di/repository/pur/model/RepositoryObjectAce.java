@@ -91,4 +91,8 @@ public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
     this.permissions = EnumSet.of(first, rest);
   }
 
+  @Override
+  public String toString() {
+    return recipient.toString();
+  }
 }

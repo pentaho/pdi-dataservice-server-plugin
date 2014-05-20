@@ -87,4 +87,8 @@ public class RepositoryObjectRecipient implements ObjectRecipient, java.io.Seria
 		this.type = type;
 	}
 
+  @Override
+  public String toString() {
+    return name;
+  }
 }
