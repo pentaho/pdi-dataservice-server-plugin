@@ -33,36 +33,38 @@ public class UIAbsRepositoryRole extends UIRepositoryRole implements IUIAbsRole,
 
   private static final long serialVersionUID = -2985868210333283734L; /* EESOURCE: UPDATE SERIALVERUID */
   IAbsRole absRole;
+
   public UIAbsRepositoryRole() {
     super();
   }
-  
-  public UIAbsRepositoryRole(IRole role) {
-    super(role);
-    if(role instanceof IAbsRole) {
+
+  public UIAbsRepositoryRole( IRole role ) {
+    super( role );
+    if ( role instanceof IAbsRole ) {
       absRole = (IAbsRole) role;
     } else {
       throw new IllegalStateException();
     }
   }
+
   public List<String> getLogicalRoles() {
     return absRole.getLogicalRoles();
   }
 
-  public void setLogicalRoles(List<String> logicalRoles) {
-    absRole.setLogicalRoles(logicalRoles);
+  public void setLogicalRoles( List<String> logicalRoles ) {
+    absRole.setLogicalRoles( logicalRoles );
   }
 
-  public void addLogicalRole(String logicalRole) {
-    absRole.addLogicalRole(logicalRole);
+  public void addLogicalRole( String logicalRole ) {
+    absRole.addLogicalRole( logicalRole );
   }
 
-  public void removeLogicalRole(String logicalRole) {
-    absRole.removeLogicalRole(logicalRole);
+  public void removeLogicalRole( String logicalRole ) {
+    absRole.removeLogicalRole( logicalRole );
   }
 
-  public boolean containsLogicalRole(String logicalRole) {
-    return absRole.containsLogicalRole(logicalRole);
+  public boolean containsLogicalRole( String logicalRole ) {
+    return absRole.containsLogicalRole( logicalRole );
   }
 
   @Override public String toString() {

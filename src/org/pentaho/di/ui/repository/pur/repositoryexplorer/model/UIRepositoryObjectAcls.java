@@ -46,7 +46,7 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
   private boolean removeEnabled;
 
   private boolean modelDirty;
-  
+
   private boolean hasManageAclAccess;
 
   public UIRepositoryObjectAcls() {
@@ -56,10 +56,10 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
   // ~ Methods
   // =========================================================================================================
 
-  public void setObjectAcl(ObjectAcl obj) {
+  public void setObjectAcl( ObjectAcl obj ) {
     this.obj = obj;
-    this.firePropertyChange("acls", null, getAcls()); //$NON-NLS-1$
-    this.firePropertyChange("entriesInheriting", null, isEntriesInheriting()); //$NON-NLS-1$
+    this.firePropertyChange( "acls", null, getAcls() ); //$NON-NLS-1$
+    this.firePropertyChange( "entriesInheriting", null, isEntriesInheriting() ); //$NON-NLS-1$
   }
 
   public ObjectAcl getObjectAcl() {
@@ -67,115 +67,117 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
   }
 
   public List<UIRepositoryObjectAcl> getAcls() {
-    if (obj != null) {
+    if ( obj != null ) {
       List<UIRepositoryObjectAcl> acls = new ArrayList<UIRepositoryObjectAcl>();
-      for (ObjectAce ace : obj.getAces()) {
-        acls.add(new UIRepositoryObjectAcl(ace));
+      for ( ObjectAce ace : obj.getAces() ) {
+        acls.add( new UIRepositoryObjectAcl( ace ) );
       }
       return acls;
     }
     return null;
   }
 
-  public void setAcls(List<UIRepositoryObjectAcl> acls) {
+  public void setAcls( List<UIRepositoryObjectAcl> acls ) {
     List<UIRepositoryObjectAcl> prevousVal = new ArrayList<UIRepositoryObjectAcl>();
-    prevousVal.addAll(getAcls());
+    prevousVal.addAll( getAcls() );
 
     this.obj.getAces().clear();
-    if (acls != null) {
-      for (UIRepositoryObjectAcl acl : acls) {
-        obj.getAces().add(acl.getAce());
+    if ( acls != null ) {
+      for ( UIRepositoryObjectAcl acl : acls ) {
+        obj.getAces().add( acl.getAce() );
       }
     }
-    this.firePropertyChange("acls", prevousVal, getAcls()); //$NON-NLS-1$
+    this.firePropertyChange( "acls", prevousVal, getAcls() ); //$NON-NLS-1$
   }
 
-  public void addAcls(List<UIRepositoryObjectAcl> aclsToAdd) {
-    for (UIRepositoryObjectAcl acl : aclsToAdd) {
-      addAcl(acl);
+  public void addAcls( List<UIRepositoryObjectAcl> aclsToAdd ) {
+    for ( UIRepositoryObjectAcl acl : aclsToAdd ) {
+      addAcl( acl );
     }
-    this.firePropertyChange("acls", null, getAcls()); //$NON-NLS-1$
+    this.firePropertyChange( "acls", null, getAcls() ); //$NON-NLS-1$
     // Setting the selected index to the first item in the list
-    if(obj.getAces().size() > 0) {
+    if ( obj.getAces().size() > 0 ) {
       List<UIRepositoryObjectAcl> aclList = new ArrayList<UIRepositoryObjectAcl>();
-      aclList.add(new UIRepositoryObjectAcl(getAceAtIndex(0)));
-      setSelectedAclList(aclList);
+      aclList.add( new UIRepositoryObjectAcl( getAceAtIndex( 0 ) ) );
+      setSelectedAclList( aclList );
     }
-    setRemoveEnabled(!obj.isEntriesInheriting() && !isEmpty() && hasManageAclAccess());
-    setModelDirty(true);
+    setRemoveEnabled( !obj.isEntriesInheriting() && !isEmpty() && hasManageAclAccess() );
+    setModelDirty( true );
   }
-  public void addAcl(UIRepositoryObjectAcl aclToAdd) {
+
+  public void addAcl( UIRepositoryObjectAcl aclToAdd ) {
     // By default the user or role will get a READ, READ_ACL when a user of role is added
-    EnumSet<RepositoryFilePermission> initialialPermisson = EnumSet.of(RepositoryFilePermission.READ);
-    aclToAdd.setPermissionSet(initialialPermisson);
-    this.obj.getAces().add(aclToAdd.getAce());
+    EnumSet<RepositoryFilePermission> initialialPermisson = EnumSet.of( RepositoryFilePermission.READ );
+    aclToAdd.setPermissionSet( initialialPermisson );
+    this.obj.getAces().add( aclToAdd.getAce() );
   }
 
-  public void removeAcls(List<UIRepositoryObjectAcl> aclsToRemove) {
-    for (UIRepositoryObjectAcl acl : aclsToRemove) {
-      removeAcl(acl.getRecipientName());
+  public void removeAcls( List<UIRepositoryObjectAcl> aclsToRemove ) {
+    for ( UIRepositoryObjectAcl acl : aclsToRemove ) {
+      removeAcl( acl.getRecipientName() );
     }
 
-    this.firePropertyChange("acls", null, getAcls()); //$NON-NLS-1$
-    if(obj.getAces().size() > 0) {
+    this.firePropertyChange( "acls", null, getAcls() ); //$NON-NLS-1$
+    if ( obj.getAces().size() > 0 ) {
       List<UIRepositoryObjectAcl> aclList = new ArrayList<UIRepositoryObjectAcl>();
-      aclList.add(new UIRepositoryObjectAcl(getAceAtIndex(0)));
-      setSelectedAclList(aclList);
+      aclList.add( new UIRepositoryObjectAcl( getAceAtIndex( 0 ) ) );
+      setSelectedAclList( aclList );
     } else {
-      setSelectedAclList(null);
+      setSelectedAclList( null );
     }
-    setRemoveEnabled(!obj.isEntriesInheriting() && !isEmpty() && hasManageAclAccess());
-    setModelDirty(true);
+    setRemoveEnabled( !obj.isEntriesInheriting() && !isEmpty() && hasManageAclAccess() );
+    setModelDirty( true );
   }
 
-  public void removeAcl(String recipientName) {
+  public void removeAcl( String recipientName ) {
     ObjectAce aceToRemove = null;
 
-    for (ObjectAce ace : obj.getAces()) {
-      if (ace.getRecipient().getName().equals(recipientName)) {
+    for ( ObjectAce ace : obj.getAces() ) {
+      if ( ace.getRecipient().getName().equals( recipientName ) ) {
         aceToRemove = ace;
         break;
       }
     }
-    obj.getAces().remove(aceToRemove);
+    obj.getAces().remove( aceToRemove );
   }
 
   public void removeSelectedAcls() {
     // side effect deletes multiple acls when only one selected.
     List<UIRepositoryObjectAcl> removalList = new ArrayList<UIRepositoryObjectAcl>();
-    for (UIRepositoryObjectAcl rem : getSelectedAclList()){
-      removalList.add(rem);
+    for ( UIRepositoryObjectAcl rem : getSelectedAclList() ) {
+      removalList.add( rem );
     }
-    removeAcls(removalList);
+    removeAcls( removalList );
   }
-  public void updateAcl(UIRepositoryObjectAcl aclToUpdate) {
+
+  public void updateAcl( UIRepositoryObjectAcl aclToUpdate ) {
     List<ObjectAce> aces = obj.getAces();
-    for (ObjectAce ace : aces) {
-      if (ace.getRecipient().getName().equals(aclToUpdate.getRecipientName())) {
-        ace.setPermissions(aclToUpdate.getPermissionSet());
+    for ( ObjectAce ace : aces ) {
+      if ( ace.getRecipient().getName().equals( aclToUpdate.getRecipientName() ) ) {
+        ace.setPermissions( aclToUpdate.getPermissionSet() );
       }
     }
-    UIRepositoryObjectAcl acl = getAcl(aclToUpdate.getRecipientName());
-    acl.setPermissionSet(aclToUpdate.getPermissionSet());
-    this.firePropertyChange("acls", null, getAcls()); //$NON-NLS-1$
-    
+    UIRepositoryObjectAcl acl = getAcl( aclToUpdate.getRecipientName() );
+    acl.setPermissionSet( aclToUpdate.getPermissionSet() );
+    this.firePropertyChange( "acls", null, getAcls() ); //$NON-NLS-1$
+
     // above firePropertyChange replaces all elements in the listBox and therefore clears any selected elements; 
     //   however, the selectedAclList field is never updated because no selectedIndices event is ever called; manually
     //   update it to reflect the selected state of the user/role list now (no selection)
     selectedAclList.clear();
-    
+
     // Setting the selected index
     List<UIRepositoryObjectAcl> aclList = new ArrayList<UIRepositoryObjectAcl>();
-    aclList.add(aclToUpdate);
-    setSelectedAclList(aclList);
+    aclList.add( aclToUpdate );
+    setSelectedAclList( aclList );
 
-    setModelDirty(true);
+    setModelDirty( true );
   }
 
-  public UIRepositoryObjectAcl getAcl(String recipient) {
-    for (ObjectAce ace : obj.getAces()) {
-      if (ace.getRecipient().getName().equals(recipient)) {
-        return new UIRepositoryObjectAcl(ace);
+  public UIRepositoryObjectAcl getAcl( String recipient ) {
+    for ( ObjectAce ace : obj.getAces() ) {
+      if ( ace.getRecipient().getName().equals( recipient ) ) {
+        return new UIRepositoryObjectAcl( ace );
       }
     }
     return null;
@@ -185,100 +187,102 @@ public class UIRepositoryObjectAcls extends XulEventSourceAdapter implements jav
     return selectedAclList;
   }
 
-  public void setSelectedAclList(List<UIRepositoryObjectAcl> list) {
-    if(this.selectedAclList != null && this.selectedAclList.equals(list)) {
+  public void setSelectedAclList( List<UIRepositoryObjectAcl> list ) {
+    if ( this.selectedAclList != null && this.selectedAclList.equals( list ) ) {
       return;
     }
 
     List<UIRepositoryObjectAcl> previousVal = new ArrayList<UIRepositoryObjectAcl>();
-    previousVal.addAll(selectedAclList);
+    previousVal.addAll( selectedAclList );
     selectedAclList.clear();
-    if(list != null) {
-      selectedAclList.addAll(list);
-      this.firePropertyChange("selectedAclList", previousVal, list); //$NON-NLS-1$
+    if ( list != null ) {
+      selectedAclList.addAll( list );
+      this.firePropertyChange( "selectedAclList", previousVal, list ); //$NON-NLS-1$
     }
-    setRemoveEnabled(!isEntriesInheriting() && !isEmpty() && hasManageAclAccess());
+    setRemoveEnabled( !isEntriesInheriting() && !isEmpty() && hasManageAclAccess() );
   }
 
   public boolean isEntriesInheriting() {
-    if (obj != null) {
+    if ( obj != null ) {
       return obj.isEntriesInheriting();
-    } else
+    } else {
       return false;
+    }
   }
 
-  public void setEntriesInheriting(boolean entriesInheriting) {
-    if (obj != null) {
+  public void setEntriesInheriting( boolean entriesInheriting ) {
+    if ( obj != null ) {
       boolean previousVal = isEntriesInheriting();
-      obj.setEntriesInheriting(entriesInheriting);
-      this.firePropertyChange("entriesInheriting", previousVal, entriesInheriting); //$NON-NLS-1$
-      setSelectedAclList(null);
-      setRemoveEnabled(!entriesInheriting && !isEmpty() && hasManageAclAccess());
+      obj.setEntriesInheriting( entriesInheriting );
+      this.firePropertyChange( "entriesInheriting", previousVal, entriesInheriting ); //$NON-NLS-1$
+      setSelectedAclList( null );
+      setRemoveEnabled( !entriesInheriting && !isEmpty() && hasManageAclAccess() );
       // Only dirty the model if the value has changed
-      if(previousVal != entriesInheriting)
-    	  setModelDirty(true);
+      if ( previousVal != entriesInheriting ) {
+        setModelDirty( true );
+      }
     }
   }
 
   public ObjectRecipient getOwner() {
-    if (obj != null) {
+    if ( obj != null ) {
       return obj.getOwner();
     } else {
       return null;
     }
   }
 
-  public void setRemoveEnabled(boolean removeEnabled) {
+  public void setRemoveEnabled( boolean removeEnabled ) {
     this.removeEnabled = removeEnabled;
-    this.firePropertyChange("removeEnabled", null, removeEnabled); //$NON-NLS-1$
+    this.firePropertyChange( "removeEnabled", null, removeEnabled ); //$NON-NLS-1$
   }
 
   public boolean isRemoveEnabled() {
     return removeEnabled;
   }
 
-  public int getAceIndex(ObjectAce ace) {
+  public int getAceIndex( ObjectAce ace ) {
     List<ObjectAce> aceList = obj.getAces();
-    for (int i = 0; i < aceList.size(); i++) {
-      if (ace.equals(aceList.get(i))) {
+    for ( int i = 0; i < aceList.size(); i++ ) {
+      if ( ace.equals( aceList.get( i ) ) ) {
         return i;
       }
     }
     return -1;
   }
 
-  public ObjectAce getAceAtIndex(int index) {
-    if (index >= 0) {
-      return obj.getAces().get(index);
+  public ObjectAce getAceAtIndex( int index ) {
+    if ( index >= 0 ) {
+      return obj.getAces().get( index );
     } else {
       return null;
     }
   }
 
-  public void setModelDirty(boolean modelDirty) {
+  public void setModelDirty( boolean modelDirty ) {
     this.modelDirty = modelDirty;
   }
 
   public boolean isModelDirty() {
     return modelDirty;
   }
-  
+
   public boolean hasManageAclAccess() {
     return hasManageAclAccess;
   }
-  
-  public void setHasManageAclAccess(boolean hasManageAclAccess) {
+
+  public void setHasManageAclAccess( boolean hasManageAclAccess ) {
     this.hasManageAclAccess = hasManageAclAccess;
   }
-  
+
   public void clear() {
-    setRemoveEnabled(false);
-    setModelDirty(false);
-    setAcls(null);
-    setSelectedAclList(null);
-    setHasManageAclAccess(false);
+    setRemoveEnabled( false );
+    setModelDirty( false );
+    setAcls( null );
+    setSelectedAclList( null );
+    setHasManageAclAccess( false );
   }
-  
+
   private boolean isEmpty() {
     return getSelectedAclList() == null || getSelectedAclList().size() <= 0;
   }
