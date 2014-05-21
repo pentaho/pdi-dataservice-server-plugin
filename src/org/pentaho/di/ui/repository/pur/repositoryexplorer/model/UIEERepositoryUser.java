@@ -99,6 +99,6 @@ public class UIEERepositoryUser extends UIRepositoryUser implements IUIEEUser, j
   }
 
   @Override public String toString() {
-    return eeUser.getUsername();
+    return eeUser.getLogin();
   }
 }
