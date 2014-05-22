@@ -1030,6 +1030,18 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     sharedObjectAssemblerMap.put( RepositoryObjectType.PARTITION_SCHEMA, partitionSchemaTransformer );
     sharedObjectAssemblerMap.put( RepositoryObjectType.SLAVE_SERVER, slaveTransformer );
   }
+  
+  public DatabaseDelegate getDatabaseMetaTransformer() {
+    return databaseMetaTransformer;
+  }
+  
+  public ClusterDelegate getClusterTransformer() {
+    return clusterTransformer;
+  }
+  
+  public PartitionDelegate getPartitionSchemaTransformer() {
+    return partitionSchemaTransformer;
+  }
 
   @Override
   public void clearSharedObjectCache() {
@@ -1311,6 +1323,10 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   public List<SlaveServer> getSlaveServers() throws KettleException {
     loadAndCacheSharedObjects();
     return (List<SlaveServer>) sharedObjectsByType.get( RepositoryObjectType.SLAVE_SERVER );
+  }
+  
+  public SlaveDelegate getSlaveTransformer() {
+    return slaveTransformer;
   }
 
   @Override
