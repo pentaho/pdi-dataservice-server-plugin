@@ -78,6 +78,9 @@ explicitly covering such access.
 
     <!-- Metastore -->
     <dependency org="pentaho" name="metastore" rev="${dependency.metastore.revision}" transitive="false" changing="true" conf="compile->default" />
+    
+    <!-- Metadata -->
+    <dependency org="pentaho" name="pentaho-metadata" rev="${dependency.pentaho-metadata.revision}" transitive="false" changing="true" conf="compile->default" />
 
     <!-- misc third-party -->
     <dependency org="commons-logging" name="commons-logging" rev="1.1" transitive="false" />
