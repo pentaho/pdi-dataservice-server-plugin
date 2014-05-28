@@ -1,3 +1,25 @@
+/*!
+ * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
+ *
+ * Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
+ *
+ * NOTICE: All information including source code contained herein is, and
+ * remains the sole property of Pentaho and its licensors. The intellectual
+ * and technical concepts contained herein are proprietary and confidential
+ * to, and are trade secrets of Pentaho and may be covered by U.S. and foreign
+ * patents, or patents in process, and are protected by trade secret and
+ * copyright laws. The receipt or possession of this source code and/or related
+ * information does not convey or imply any rights to reproduce, disclose or
+ * distribute its contents, or to manufacture, use, or sell anything that it
+ * may describe, in whole or in part. Any reproduction, modification, distribution,
+ * or public display of this information without the express written authorization
+ * from Pentaho is strictly prohibited and in violation of applicable laws and
+ * international treaties. Access to the source code contained herein is strictly
+ * prohibited to anyone except those individuals and entities who have executed
+ * confidentiality and non-disclosure agreements or other agreements with Pentaho,
+ * explicitly covering such access.
+ */
+
 package com.pentaho.di.core.encryption;
 
 import java.util.ArrayList;
@@ -9,12 +31,16 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.vfs.FileObject;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.encryption.KettleTwoWayPasswordEncoder;
+import org.pentaho.di.core.encryption.TwoWayPasswordEncoderInterface;
+import org.pentaho.di.core.encryption.TwoWayPasswordEncoderPlugin;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.util.EnvUtil;
 import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.core.vfs.KettleVFS;
 
-@TwoWayPasswordEncoderPlugin( id = "AES", name = "AES Password Encoder", description = "Encrypts and decrypts passwords using AES" )
+@TwoWayPasswordEncoderPlugin( id = "AES", name = "AES Password Encoder",
+    description = "Encrypts and decrypts passwords using AES" )
 public class AESTwoWayPasswordEncoder implements TwoWayPasswordEncoderInterface {
 
   public static final String DETAIL_AES_SECRET_KEY = "secret_key";
@@ -33,6 +59,9 @@ public class AESTwoWayPasswordEncoder implements TwoWayPasswordEncoderInterface 
   public AESTwoWayPasswordEncoder() throws RuntimeException {
   }
 
+  /* (non-Javadoc)
+   * @see org.pentaho.di.core.encryption.TwoWayPasswordEncoderInterface#init()
+   */
   public void init() throws KettleException {
 
     String keyFile = EnvUtil.getSystemProperty( KETTLE_AES_KEY_FILE );
@@ -43,7 +72,8 @@ public class AESTwoWayPasswordEncoder implements TwoWayPasswordEncoderInterface 
     try {
       FileObject fileObject = KettleVFS.getFileObject( keyFile );
       if ( !fileObject.exists() ) {
-        throw new KettleException( "Unable to find file specified by variable " + KETTLE_AES_KEY_FILE + " : " + keyFile );
+        throw new KettleException(
+            "Unable to find file specified by variable " + KETTLE_AES_KEY_FILE + " : " + keyFile );
       }
 
       String keyString = KettleVFS.getTextFileContent( keyFile, Const.XML_ENCODING );
@@ -59,10 +89,16 @@ public class AESTwoWayPasswordEncoder implements TwoWayPasswordEncoderInterface 
       throw new KettleException( "Unable to initialize AES encoder", e );
     }
 
+    configureDecodeKettlePasswords();
+  }
+
+  protected void configureDecodeKettlePasswords() {
     // See if we need to try to decode Kettle encoded passwords...
     //
     kettleEncoder = new KettleTwoWayPasswordEncoder();
-    String kettlePasswordHandling = Const.NVL( EnvUtil.getSystemProperty( KETTLE_AES_KETTLE_PASSWORD_HANDLING ), KETTLE_AES_KETTLE_PASSWORD_HANDLING_DECODE );
+    String kettlePasswordHandling =
+        Const.NVL( EnvUtil.getSystemProperty( KETTLE_AES_KETTLE_PASSWORD_HANDLING ),
+            KETTLE_AES_KETTLE_PASSWORD_HANDLING_DECODE );
 
     // If the variable is set to anything but "DECODE", a runtime exception will be thrown...
     //
@@ -76,6 +112,7 @@ public class AESTwoWayPasswordEncoder implements TwoWayPasswordEncoderInterface 
     } catch ( Exception e ) {
       throw new KettleException( "Unable to initialize AES encoder", e );
     }
+    configureDecodeKettlePasswords();
   }
 
   private void initSecretKey() throws KettleException {
@@ -98,7 +135,7 @@ public class AESTwoWayPasswordEncoder implements TwoWayPasswordEncoderInterface 
       synchronized ( cipher ) {
         cipher.init( Cipher.ENCRYPT_MODE, secretKey );
         byte[] encryptedBinary = cipher.doFinal( password.getBytes( Const.XML_ENCODING ) );
-        String encryptedString = Base64.encodeBase64String( encryptedBinary );
+        String encryptedString = new String( Base64.encodeBase64( encryptedBinary ), Const.XML_ENCODING );
         return encryptedString;
       }
     } catch ( Exception e ) {
@@ -160,7 +197,7 @@ public class AESTwoWayPasswordEncoder implements TwoWayPasswordEncoderInterface 
     try {
       synchronized ( cipher ) {
         cipher.init( Cipher.DECRYPT_MODE, secretKey );
-        byte[] passwordBinary = Base64.decodeBase64( encodedPassword );
+        byte[] passwordBinary = Base64.decodeBase64( encodedPassword.getBytes( Const.XML_ENCODING ) );
         byte[] encryptedBinary = cipher.doFinal( passwordBinary );
         String encryptedString = new String( encryptedBinary, Const.XML_ENCODING );
         return encryptedString;
