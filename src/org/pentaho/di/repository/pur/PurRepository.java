@@ -82,6 +82,7 @@ import org.pentaho.di.repository.pur.model.RepositoryLock;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.metastore.api.IMetaStore;
@@ -2733,8 +2734,23 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   }
 
   @Override
-  public IRepositoryExporter getExporter() {
-    return new PurRepositoryExporter( this );
+  public IRepositoryExporter getExporter() throws KettleException {
+    final List<String> exportPerms =
+        Arrays.asList( IAbsSecurityProvider.CREATE_CONTENT_ACTION, IAbsSecurityProvider.EXECUTE_CONTENT_ACTION );
+    IAbsSecurityProvider securityProvider = purRepositoryServiceRegistry.getService( IAbsSecurityProvider.class );
+    StringBuilder errorMessage = new StringBuilder( "[" );
+    for ( String perm : exportPerms ) {
+      if ( securityProvider.isAllowed( perm ) ) {
+        return new PurRepositoryExporter( this );
+      }
+      errorMessage.append( perm );
+      errorMessage.append( ", " );
+    }
+    errorMessage.setLength( errorMessage.length() - 2 );
+    errorMessage.append( "]" );
+
+    throw new KettleSecurityException( BaseMessages.getString( PKG, "PurRepository.ERROR_0005_INCORRECT_PERMISSION",
+        errorMessage.toString() ) );
   }
 
   @Override
