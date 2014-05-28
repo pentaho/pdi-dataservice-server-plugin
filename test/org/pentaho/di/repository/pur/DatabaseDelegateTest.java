@@ -1,25 +1,33 @@
-/*
- * This program is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License, version 2 as published by the Free Software
- * Foundation.
+/*!
+ * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
  *
- * You should have received a copy of the GNU General Public License along with this
- * program; if not, you can obtain a copy at http://www.gnu.org/licenses/gpl-2.0.html
- * or from the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
+ * NOTICE: All information including source code contained herein is, and
+ * remains the sole property of Pentaho and its licensors. The intellectual
+ * and technical concepts contained herein are proprietary and confidential
+ * to, and are trade secrets of Pentaho and may be covered by U.S. and foreign
+ * patents, or patents in process, and are protected by trade secret and
+ * copyright laws. The receipt or possession of this source code and/or related
+ * information does not convey or imply any rights to reproduce, disclose or
+ * distribute its contents, or to manufacture, use, or sell anything that it
+ * may describe, in whole or in part. Any reproduction, modification, distribution,
+ * or public display of this information without the express written authorization
+ * from Pentaho is strictly prohibited and in violation of applicable laws and
+ * international treaties. Access to the source code contained herein is strictly
+ * prohibited to anyone except those individuals and entities who have executed
+ * confidentiality and non-disclosure agreements or other agreements with Pentaho,
+ * explicitly covering such access.
  */
+
 package org.pentaho.di.repository.pur;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.pentaho.di.core.KettleClientEnvironment;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 
@@ -36,11 +44,12 @@ public class DatabaseDelegateTest {
   private DatabaseDelegate dbDelegate;
 
   @BeforeClass
-  public static void before() throws KettlePluginException {
+  public static void before() throws KettleException {
   }
 
   @Before
-  public void setup() {
+  public void setup() throws KettleException {
+    KettleClientEnvironment.init();
     mockPurRepository = mock( PurRepository.class );
     dbDelegate = new DatabaseDelegate( mockPurRepository );
   }
@@ -65,7 +74,7 @@ public class DatabaseDelegateTest {
     when( dbMeta.getAttributes() ).thenReturn( extraOptions );
 
     IUnifiedRepository purRepo = mock( IUnifiedRepository.class );
-    when( purRepo.getReservedChars() ).thenReturn( Arrays.asList( new Character[]{'/'} ) );
+    when( purRepo.getReservedChars() ).thenReturn( Arrays.asList( new Character[] { '/' } ) );
     when( mockPurRepository.getPur() ).thenReturn( purRepo );
 
     DataNode escapedAttributes = dbDelegate.elementToDataNode( dbMeta );
@@ -75,7 +84,8 @@ public class DatabaseDelegateTest {
       DataNode options = iter.next();
 
       assertTrue( "Invalid escaped extra options", options.hasProperty( "EXTRA_OPTION_AS%2F400.optionExtraOption" ) );
-      assertFalse( "Should not contain un-escaped option", options.hasProperty( "EXTRA_OPTION_AS/400.optionExtraOption" ) );
+      assertFalse( "Should not contain un-escaped option", options
+          .hasProperty( "EXTRA_OPTION_AS/400.optionExtraOption" ) );
     }
   }
 
