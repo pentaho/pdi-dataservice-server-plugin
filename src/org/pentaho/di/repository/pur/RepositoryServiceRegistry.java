@@ -44,8 +44,8 @@ public class RepositoryServiceRegistry {
     }
   }
 
-  public IRepositoryService getService( Class<? extends IRepositoryService> clazz ) {
-    return serviceMap.get( clazz );
+  public <T extends IRepositoryService> T getService( Class<T> clazz ) {
+    return clazz.cast( serviceMap.get( clazz ) );
   }
 
   public List<Class<? extends IRepositoryService>> getRegisteredInterfaces() {

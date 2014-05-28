@@ -47,6 +47,8 @@ public interface IAbsSecurityProvider extends RepositorySecurityProvider{
 
   public final static String READ_CONTENT_ACTION = "org.pentaho.repository.read";//$NON-NLS-1$
 
+  public final static String EXECUTE_CONTENT_ACTION = "org.pentaho.repository.execute";//$NON-NLS-1$
+
   public final static String ADMINISTER_SECURITY_ACTION = "org.pentaho.security.administerSecurity";//$NON-NLS-1$
 
   public final static String NAMESPACE = "org.pentaho"; //$NON-NLS-1$
