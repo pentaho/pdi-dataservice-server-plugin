@@ -22,9 +22,6 @@
 
 package org.pentaho.di.ui.repository;
 
-import java.util.Enumeration;
-import java.util.ResourceBundle;
-
 import org.eclipse.swt.SWT;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
@@ -76,6 +73,9 @@ import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulToolbarbutton;
 import org.pentaho.ui.xul.containers.XulMenu;
 import org.pentaho.ui.xul.dom.Document;
+
+import java.util.Enumeration;
+import java.util.ResourceBundle;
 // LICENSE CHECK
 
 @SpoonPlugin(id = "EESpoonPlugin", image = "")
@@ -183,9 +183,10 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     if (repository != null && repository.hasService(IAbsSecurityProvider.class)) {
       UIEEObjectRegistery.getInstance().registerUIRepositoryRoleClass(UIAbsRepositoryRole.class);
       IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
-      // Execute credential lookup
+
       enableCreatePermission(securityProvider.isAllowed(IAbsSecurityProvider.CREATE_CONTENT_ACTION));
       enableAdminPermission(securityProvider.isAllowed(IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION));
+      enableExecutePermission( securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) );
     }
     // Job & Transformation =
     if(repository.hasService(ILockService.class)) {
@@ -203,12 +204,19 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
 
   private void doOnSecurityCleanup() {
     updateMenuState(true);
+    updateExecuteMenuState(false);
+
     updateChangedWarningDialog(true);
   }
 
   private void enableCreatePermission(boolean createPermitted) {
     updateMenuState(createPermitted);
     updateChangedWarningDialog(createPermitted);
+  }
+
+  private void enableExecutePermission(boolean executePermitted) {
+    updateExecuteMenuState(executePermitted);
+    updateChangedWarningDialog(executePermitted);
   }
 
   private void enableAdminPermission(boolean adminPermitted) {
@@ -244,6 +252,31 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
         container.getDocumentRoot().addOverlay("org/pentaho/di/ui/repository/pur/xul/spoon-lock-overlay.xul"); //$NON-NLS-1$
         container.addEventHandler(new SpoonLockController());
       }
+
+      try {
+        Repository repository = Spoon.getInstance().getRepository();
+        IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
+        enableExecutePermission( securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) );
+      } catch ( KettleException e ) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  /**
+   * Change the menu-item states based on Execute permissions.
+   * @param executePermitted - if true, we enable menu-items
+   */
+  private void updateExecuteMenuState(boolean executePermitted) {
+    Document doc = getDocumentRoot();
+    if(doc != null) {
+      // Main spoon menu
+      ((XulMenuitem) doc.getElementById("process-run")).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ((XulMenuitem) doc.getElementById("trans-preview")).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ((XulMenuitem) doc.getElementById("trans-replay")).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ((XulMenuitem) doc.getElementById("trans-verify")).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ((XulMenuitem) doc.getElementById("trans-impact")).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ((XulMenuitem) doc.getElementById("trans-get-sql")).setDisabled( !executePermitted ); //$NON-NLS-1$
     }
   }
 
