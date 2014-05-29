@@ -78,8 +78,8 @@ import java.util.Enumeration;
 import java.util.ResourceBundle;
 // LICENSE CHECK
 
-@SpoonPlugin(id = "EESpoonPlugin", image = "")
-@SpoonPluginCategories( { "spoon", "trans-graph", "job-graph" })
+@SpoonPlugin( id = "EESpoonPlugin", image = "" )
+@SpoonPluginCategories( { "spoon", "trans-graph", "job-graph" } )
 public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener, java.io.Serializable {
 
   private static final long serialVersionUID = -5672306503357631444L; /* EESOURCE: UPDATE SERIALVERUID */
@@ -96,8 +96,8 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     }
 
     @Override
-    protected Object handleGetObject(String key) {
-      return BaseMessages.getString(PKG, key);
+    protected Object handleGetObject( String key ) {
+      return BaseMessages.getString( PKG, key );
     }
 
   };
@@ -114,9 +114,9 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     return null;
   }
 
-  public void onEvent(SpoonLifeCycleEvent evt) {
+  public void onEvent( SpoonLifeCycleEvent evt ) {
     try {
-      switch (evt) {
+      switch ( evt ) {
         case MENUS_REFRESHED:
           break;
         case REPOSITORY_CHANGED:
@@ -137,15 +137,17 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
         default:
           break;
       }
-    } catch (KettleException e) {
+    } catch ( KettleException e ) {
       try {
         getMainSpoonContainer();
-        XulMessageBox messageBox = (XulMessageBox) spoonXulContainer.getDocumentRoot().createElement("messagebox");//$NON-NLS-1$
-        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Success"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(PKG, "AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
+        XulMessageBox messageBox = (XulMessageBox) spoonXulContainer.getDocumentRoot()
+                                                                    .createElement( "messagebox" );//$NON-NLS-1$
+        messageBox.setTitle( BaseMessages.getString( PKG, "Dialog.Success" ) );//$NON-NLS-1$
+        messageBox.setAcceptLabel( BaseMessages.getString( PKG, "Dialog.Ok" ) );//$NON-NLS-1$
+        messageBox
+            .setMessage( BaseMessages.getString( PKG, "AbsController.RoleActionPermission.Success" ) );//$NON-NLS-1$
         messageBox.open();
-      } catch (Exception ex) {
+      } catch ( Exception ex ) {
         e.printStackTrace();
       }
     }
@@ -166,96 +168,102 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     getMainSpoonContainer();
     Repository repository = Spoon.getInstance().getRepository();
     // Repository User
-    if(repository != null && repository.hasService(IRoleSupportSecurityManager.class)) {
-      UIObjectRegistry.getInstance().registerUIRepositoryUserClass(UIEERepositoryUser.class);      
+    if ( repository != null && repository.hasService( IRoleSupportSecurityManager.class ) ) {
+      UIObjectRegistry.getInstance().registerUIRepositoryUserClass( UIEERepositoryUser.class );
     } else {
-      UIObjectRegistry.getInstance().registerUIRepositoryUserClass(UIObjectRegistry.DEFAULT_UIREPOSITORYUSER_CLASS);
+      UIObjectRegistry.getInstance().registerUIRepositoryUserClass( UIObjectRegistry.DEFAULT_UIREPOSITORYUSER_CLASS );
     }
     // Repository Directory
-    if(repository != null && repository.hasService(IAclService.class)) {
-      UIObjectRegistry.getInstance().registerUIRepositoryDirectoryClass(UIEERepositoryDirectory.class);
-      UIObjectRegistry.getInstance().registerUIDatabaseConnectionClass(UIEEDatabaseConnection.class);
+    if ( repository != null && repository.hasService( IAclService.class ) ) {
+      UIObjectRegistry.getInstance().registerUIRepositoryDirectoryClass( UIEERepositoryDirectory.class );
+      UIObjectRegistry.getInstance().registerUIDatabaseConnectionClass( UIEEDatabaseConnection.class );
 
     } else {
-      UIObjectRegistry.getInstance().registerUIRepositoryDirectoryClass(UIObjectRegistry.DEFAULT_UIDIR_CLASS);
+      UIObjectRegistry.getInstance().registerUIRepositoryDirectoryClass( UIObjectRegistry.DEFAULT_UIDIR_CLASS );
     }
     // Repository Role
-    if (repository != null && repository.hasService(IAbsSecurityProvider.class)) {
-      UIEEObjectRegistery.getInstance().registerUIRepositoryRoleClass(UIAbsRepositoryRole.class);
-      IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
+    if ( repository != null && repository.hasService( IAbsSecurityProvider.class ) ) {
+      UIEEObjectRegistery.getInstance().registerUIRepositoryRoleClass( UIAbsRepositoryRole.class );
+      IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository
+          .getService( IAbsSecurityProvider.class );
 
-      enableCreatePermission(securityProvider.isAllowed(IAbsSecurityProvider.CREATE_CONTENT_ACTION));
-      enableAdminPermission(securityProvider.isAllowed(IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION));
+      enableCreatePermission( securityProvider.isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION ) );
+      enableAdminPermission( securityProvider.isAllowed( IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION ) );
       enableExecutePermission( securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) );
     }
     // Job & Transformation =
-    if(repository.hasService(ILockService.class)) {
-      UIObjectRegistry.getInstance().registerUIJobClass(UIEEJob.class);
-      UIObjectRegistry.getInstance().registerUITransformationClass(UIEETransformation.class);
-      SpoonDelegateRegistry.getInstance().registerSpoonJobDelegateClass(SpoonEEJobDelegate.class);
-      SpoonDelegateRegistry.getInstance().registerSpoonTransDelegateClass(SpoonEETransformationDelegate.class);
+    if ( repository.hasService( ILockService.class ) ) {
+      UIObjectRegistry.getInstance().registerUIJobClass( UIEEJob.class );
+      UIObjectRegistry.getInstance().registerUITransformationClass( UIEETransformation.class );
+      SpoonDelegateRegistry.getInstance().registerSpoonJobDelegateClass( SpoonEEJobDelegate.class );
+      SpoonDelegateRegistry.getInstance().registerSpoonTransDelegateClass( SpoonEETransformationDelegate.class );
     } else {
-      UIObjectRegistry.getInstance().registerUIJobClass(UIObjectRegistry.DEFAULT_UIJOB_CLASS);
-      UIObjectRegistry.getInstance().registerUITransformationClass(UIObjectRegistry.DEFAULT_UITRANS_CLASS);
-      SpoonDelegateRegistry.getInstance().registerSpoonJobDelegateClass(SpoonDelegateRegistry.DEFAULT_SPOONJOBDELEGATE_CLASS);
-      SpoonDelegateRegistry.getInstance().registerSpoonTransDelegateClass(SpoonDelegateRegistry.DEFAULT_SPOONTRANSDELEGATE_CLASS);
+      UIObjectRegistry.getInstance().registerUIJobClass( UIObjectRegistry.DEFAULT_UIJOB_CLASS );
+      UIObjectRegistry.getInstance().registerUITransformationClass( UIObjectRegistry.DEFAULT_UITRANS_CLASS );
+      SpoonDelegateRegistry.getInstance()
+                           .registerSpoonJobDelegateClass( SpoonDelegateRegistry.DEFAULT_SPOONJOBDELEGATE_CLASS );
+      SpoonDelegateRegistry.getInstance()
+                           .registerSpoonTransDelegateClass( SpoonDelegateRegistry.DEFAULT_SPOONTRANSDELEGATE_CLASS );
     }
   }
 
   private void doOnSecurityCleanup() {
-    updateMenuState(true);
-    updateExecuteMenuState(false);
+    updateMenuState( true );
+    updateExecuteMenuState( false );
 
-    updateChangedWarningDialog(true);
+    updateChangedWarningDialog( true );
   }
 
-  private void enableCreatePermission(boolean createPermitted) {
-    updateMenuState(createPermitted);
-    updateChangedWarningDialog(createPermitted);
+  private void enableCreatePermission( boolean createPermitted ) {
+    updateMenuState( createPermitted );
+    updateChangedWarningDialog( createPermitted );
   }
 
-  private void enableExecutePermission(boolean executePermitted) {
-    updateExecuteMenuState(executePermitted);
-    updateChangedWarningDialog(executePermitted);
+  private void enableExecutePermission( boolean executePermitted ) {
+    updateExecuteMenuState( executePermitted );
+    updateChangedWarningDialog( executePermitted );
   }
 
-  private void enableAdminPermission(boolean adminPermitted) {
+  private void enableAdminPermission( boolean adminPermitted ) {
   }
 
   private void registerUISuppportForRepositoryExplorer() {
-    UISupportRegistery.getInstance().registerUISupport(IRevisionService.class, RevisionsUISupport.class);
-    UISupportRegistery.getInstance().registerUISupport(IAclService.class, AclUISupport.class);
-    UISupportRegistery.getInstance().registerUISupport(IConnectionAclService.class, ConnectionAclUISupport.class);
-    UISupportRegistery.getInstance().registerUISupport(IRoleSupportSecurityManager.class, ManageRolesUISupport.class);
-    UISupportRegistery.getInstance().registerUISupport(IAbsSecurityManager.class, AbsSecurityManagerUISupport.class);
-    UISupportRegistery.getInstance().registerUISupport(IAbsSecurityProvider.class, AbsSecurityProviderUISupport.class);
-    UISupportRegistery.getInstance().registerUISupport(ITrashService.class, TrashUISupport.class);
-    UISupportRegistery.getInstance().registerUISupport(ILockService.class, RepositoryLockUISupport.class);
+    UISupportRegistery.getInstance().registerUISupport( IRevisionService.class, RevisionsUISupport.class );
+    UISupportRegistery.getInstance().registerUISupport( IAclService.class, AclUISupport.class );
+    UISupportRegistery.getInstance().registerUISupport( IConnectionAclService.class, ConnectionAclUISupport.class );
+    UISupportRegistery.getInstance().registerUISupport( IRoleSupportSecurityManager.class, ManageRolesUISupport.class );
+    UISupportRegistery.getInstance().registerUISupport( IAbsSecurityManager.class, AbsSecurityManagerUISupport.class );
+    UISupportRegistery.getInstance()
+                      .registerUISupport( IAbsSecurityProvider.class, AbsSecurityProviderUISupport.class );
+    UISupportRegistery.getInstance().registerUISupport( ITrashService.class, TrashUISupport.class );
+    UISupportRegistery.getInstance().registerUISupport( ILockService.class, RepositoryLockUISupport.class );
   }
 
-  public void applyToContainer(String category, XulDomContainer container) throws XulException {
-    container.registerClassLoader(getClass().getClassLoader());
-    if (category.equals("spoon")) { //$NON-NLS-1$
+  public void applyToContainer( String category, XulDomContainer container ) throws XulException {
+    container.registerClassLoader( getClass().getClassLoader() );
+    if ( category.equals( "spoon" ) ) { //$NON-NLS-1$
 
       // register the two controllers, note that the lock controller must come 
       // after the abs controller so the biz logic between the two hold.
-      
+
       // Register the ABS Menu controller
-      Spoon.getInstance().addSpoonMenuController(new SpoonMenuABSController());
+      Spoon.getInstance().addSpoonMenuController( new SpoonMenuABSController() );
 
       // Register the SpoonMenuLockController to modify the main Spoon Menu structure
-      Spoon.getInstance().addSpoonMenuController(new SpoonMenuLockController());
+      Spoon.getInstance().addSpoonMenuController( new SpoonMenuLockController() );
 
-    } else if (category.equals("trans-graph") || category.equals("job-graph")) { //$NON-NLS-1$ //$NON-NLS-2$
-      if ((Spoon.getInstance() != null) && (Spoon.getInstance().getRepository() != null)
-          && (Spoon.getInstance().getRepository() instanceof PurRepository)) {
-        container.getDocumentRoot().addOverlay("org/pentaho/di/ui/repository/pur/xul/spoon-lock-overlay.xul"); //$NON-NLS-1$
-        container.addEventHandler(new SpoonLockController());
+    } else if ( category.equals( "trans-graph" ) || category.equals( "job-graph" ) ) { //$NON-NLS-1$ //$NON-NLS-2$
+      if ( ( Spoon.getInstance() != null ) && ( Spoon.getInstance().getRepository() != null ) && ( Spoon.getInstance()
+                                                                                                        .getRepository() instanceof PurRepository ) ) {
+        container.getDocumentRoot()
+                 .addOverlay( "org/pentaho/di/ui/repository/pur/xul/spoon-lock-overlay.xul" ); //$NON-NLS-1$
+        container.addEventHandler( new SpoonLockController() );
       }
 
       try {
         Repository repository = Spoon.getInstance().getRepository();
-        IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository.getService(IAbsSecurityProvider.class);
+        IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository
+            .getService( IAbsSecurityProvider.class );
         enableExecutePermission( securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) );
       } catch ( KettleException e ) {
         e.printStackTrace();
@@ -265,92 +273,97 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
 
   /**
    * Change the menu-item states based on Execute permissions.
-   * @param executePermitted - if true, we enable menu-items
+   *
+   * @param executePermitted
+   *     - if true, we enable menu-items
    */
-  private void updateExecuteMenuState(boolean executePermitted) {
+  private void updateExecuteMenuState( boolean executePermitted ) {
     Document doc = getDocumentRoot();
-    if(doc != null) {
+    if ( doc != null ) {
       // Main spoon menu
-      ((XulMenuitem) doc.getElementById("process-run")).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ((XulMenuitem) doc.getElementById("trans-preview")).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ((XulMenuitem) doc.getElementById("trans-replay")).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ((XulMenuitem) doc.getElementById("trans-verify")).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ((XulMenuitem) doc.getElementById("trans-impact")).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ((XulMenuitem) doc.getElementById("trans-get-sql")).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "process-run" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "trans-preview" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "trans-replay" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "trans-verify" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "trans-impact" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "trans-get-sql" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
     }
   }
 
-  private void updateMenuState(boolean createPermitted) {
+  private void updateMenuState( boolean createPermitted ) {
     Document doc = getDocumentRoot();
-    if(doc != null) {
+    if ( doc != null ) {
       // Main spoon toolbar
-      ((XulToolbarbutton) doc.getElementById("toolbar-file-new")).setDisabled(!createPermitted); //$NON-NLS-1$
-      ((XulToolbarbutton) doc.getElementById("toolbar-file-save")).setDisabled(!createPermitted); //$NON-NLS-1$
-      ((XulToolbarbutton) doc.getElementById("toolbar-file-save-as")).setDisabled(!createPermitted); //$NON-NLS-1$
-  
+      ( (XulToolbarbutton) doc.getElementById( "toolbar-file-new" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
+      ( (XulToolbarbutton) doc.getElementById( "toolbar-file-save" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
+      ( (XulToolbarbutton) doc.getElementById( "toolbar-file-save-as" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
+
       // Popup menus
-      ((XulMenuitem) doc.getElementById("trans-class-new")).setDisabled(!createPermitted); //$NON-NLS-1$
-      ((XulMenuitem) doc.getElementById("job-class-new")).setDisabled(!createPermitted); //$NON-NLS-1$
-  
+      ( (XulMenuitem) doc.getElementById( "trans-class-new" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "job-class-new" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
+
       // Main spoon menu
-      ((XulMenu) doc.getElementById("file-new")).setDisabled(!createPermitted); //$NON-NLS-1$
-      ((XulMenuitem) doc.getElementById("file-save")).setDisabled(!createPermitted); //$NON-NLS-1$
-      ((XulMenuitem) doc.getElementById("file-save-as")).setDisabled(!createPermitted); //$NON-NLS-1$
-      ((XulMenuitem) doc.getElementById("file-close")).setDisabled(!createPermitted); //$NON-NLS-1$
+      ( (XulMenu) doc.getElementById( "file-new" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "file-save" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "file-save-as" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "file-close" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
     }
   }
-  
-  public static void updateChangedWarningDialog(boolean createPermitted) {
-    if(!createPermitted) {
+
+  public static void updateChangedWarningDialog( boolean createPermitted ) {
+    if ( !createPermitted ) {
       // Update the ChangedWarningDialog - Disable the yes button
-      ChangedWarningDialog.setInstance(new ChangedWarningDialog() {
-        
+      ChangedWarningDialog.setInstance( new ChangedWarningDialog() {
+
         public int show() {
-          return show(null);
+          return show( null );
         }
-        
-        public int show(String fileName) {
+
+        public int show( String fileName ) {
           XulMessageBox msgBox = null;
           try {
-            msgBox = runXulChangedWarningDialog(fileName);
-            if(fileName != null) {
-              msgBox.setMessage(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.Fail.Message.WithParam", fileName)); //$NON-NLS-1$
+            msgBox = runXulChangedWarningDialog( fileName );
+            if ( fileName != null ) {
+              msgBox.setMessage( BaseMessages
+                  .getString( PKG, "Spoon.Dialog.PromptToSave.Fail.Message.WithParam", fileName ) ); //$NON-NLS-1$
             } else {
-              msgBox.setMessage(BaseMessages.getString(PKG, "Spoon.Dialog.PromptToSave.Fail.Message")); //$NON-NLS-1$
+              msgBox
+                  .setMessage( BaseMessages.getString( PKG, "Spoon.Dialog.PromptToSave.Fail.Message" ) ); //$NON-NLS-1$
             }
 
-            msgBox.setButtons(new Integer[] {SWT.YES | SWT.NO});
-          } catch (Exception e) {
+            msgBox.setButtons( new Integer[] { SWT.YES | SWT.NO } );
+          } catch ( Exception e ) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeException( e );
           }
           int retVal = msgBox.open();
-         
+
           // Map from this question to make sense in the original context (Yes = save, No = no-save , Cancel = do not close)
-          if(retVal == SWT.YES) {
+          if ( retVal == SWT.YES ) {
             return SWT.NO;
           } else {
             return SWT.CANCEL;
           }
         }
-      });
+      } );
     } else {
-      ChangedWarningDialog.setInstance(new ChangedWarningDialog());
+      ChangedWarningDialog.setInstance( new ChangedWarningDialog() );
     }
   }
-  
+
   private Document getDocumentRoot() {
     getMainSpoonContainer();
-    if(spoonXulContainer != null) {
-      return spoonXulContainer.getDocumentRoot();  
+    if ( spoonXulContainer != null ) {
+      return spoonXulContainer.getDocumentRoot();
     } else {
-      return null;  
+      return null;
     }
-     
+
   }
+
   private void getMainSpoonContainer() {
-    if (Spoon.getInstance() != null) { // Make sure spoon has been initialized first
-      if (spoonXulContainer == null && Spoon.getInstance().getMainSpoonContainer() != null) {
+    if ( Spoon.getInstance() != null ) { // Make sure spoon has been initialized first
+      if ( spoonXulContainer == null && Spoon.getInstance().getMainSpoonContainer() != null ) {
         spoonXulContainer = Spoon.getInstance().getMainSpoonContainer();
       }
     }
