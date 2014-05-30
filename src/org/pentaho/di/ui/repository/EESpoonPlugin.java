@@ -207,11 +207,15 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     }
   }
 
+  /**
+   * Called when repository is disconnected.
+   */
   private void doOnSecurityCleanup() {
     updateMenuState( true );
     updateExecuteMenuState( false );
 
-    updateChangedWarningDialog( true );
+    // Prompt and close all tabs as user disconnected from the repo
+    Spoon.getInstance().closeAllJobsAndTransformations();
   }
 
   private void enableCreatePermission( boolean createPermitted ) {
@@ -262,9 +266,13 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
 
       try {
         Repository repository = Spoon.getInstance().getRepository();
-        IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository
-            .getService( IAbsSecurityProvider.class );
-        enableExecutePermission( securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) );
+        if ( repository != null ) {
+          IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository
+              .getService( IAbsSecurityProvider.class );
+          if ( securityProvider != null ) {
+            enableExecutePermission( securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) );
+          }
+        }
       } catch ( KettleException e ) {
         e.printStackTrace();
       }
