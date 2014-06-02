@@ -110,6 +110,12 @@ public class SpoonMenuABSController implements ISpoonMenuController, java.io.Ser
           ( (XulMenuitem) doc.getElementById( "trans-impact" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
           ( (XulMenuitem) doc.getElementById( "trans-get-sql" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
 
+          // Schedule is a plugin
+          if ( doc.getElementById( "trans-schedule" ) != null ) {
+            ( (XulMenuitem) doc.getElementById( "trans-schedule" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+          }
+
+
           TransGraph transGraph = Spoon.getInstance().getActiveTransGraph();
           if ( transGraph != null ) {
             XulToolbar toolbar = transGraph.getToolbar();

@@ -213,9 +213,6 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
   private void doOnSecurityCleanup() {
     updateMenuState( true );
     updateExecuteMenuState( false );
-
-    // Prompt and close all tabs as user disconnected from the repo
-    Spoon.getInstance().closeAllJobsAndTransformations();
   }
 
   private void enableCreatePermission( boolean createPermitted ) {
@@ -225,7 +222,6 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
 
   private void enableExecutePermission( boolean executePermitted ) {
     updateExecuteMenuState( executePermitted );
-    updateChangedWarningDialog( executePermitted );
   }
 
   private void enableAdminPermission( boolean adminPermitted ) {
@@ -295,6 +291,11 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ( (XulMenuitem) doc.getElementById( "trans-verify" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-impact" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-get-sql" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+
+      // Schedule is a plugin
+      if ( doc.getElementById( "trans-schedule" ) != null ) {
+        ( (XulMenuitem) doc.getElementById( "trans-schedule" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      }
     }
   }
 
@@ -318,7 +319,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     }
   }
 
-  public static void updateChangedWarningDialog( boolean createPermitted ) {
+  public static void  updateChangedWarningDialog( boolean createPermitted ) {
     if ( !createPermitted ) {
       // Update the ChangedWarningDialog - Disable the yes button
       ChangedWarningDialog.setInstance( new ChangedWarningDialog() {
@@ -346,7 +347,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
           }
           int retVal = msgBox.open();
 
-          // Map from this question to make sense in the original context (Yes = save, No = no-save , Cancel = do not close)
+          // Map from this question to make sense in the original context (Yes = save, No = no-save , Cancel = do not disconnect)
           if ( retVal == SWT.YES ) {
             return SWT.NO;
           } else {
