@@ -319,8 +319,8 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     }
   }
 
-  public static void  updateChangedWarningDialog( boolean createPermitted ) {
-    if ( !createPermitted ) {
+  public static void  updateChangedWarningDialog( boolean overrideDefaultDialogBehavior ) {
+    if ( !overrideDefaultDialogBehavior ) {
       // Update the ChangedWarningDialog - Disable the yes button
       ChangedWarningDialog.setInstance( new ChangedWarningDialog() {
 
