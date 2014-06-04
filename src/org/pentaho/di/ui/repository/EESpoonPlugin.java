@@ -291,6 +291,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ( (XulMenuitem) doc.getElementById( "trans-verify" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-impact" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-get-sql" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenu) doc.getElementById( "file-export" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
 
       // Schedule is a plugin
       if ( doc.getElementById( "trans-schedule" ) != null ) {
