@@ -40,6 +40,8 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsSecuri
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.controller.EESecurityController;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.SecurityController;
+import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
+import org.pentaho.di.ui.spoon.SpoonPluginManager;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -51,11 +53,8 @@ import org.pentaho.ui.xul.containers.XulVbox;
 
 /**
  * {@code XulEventHandler} for the Security panel of the repository explorer.
- * 
- * <p>
  * This class handles only task permission (aka ABS)-related functionality. {@link SecurityController} handles users and
- * {@link EESecurityController} handles roles. 
- * </p>
+ * {@link EESecurityController} handles roles.
  */
 public class AbsController extends EESecurityController implements java.io.Serializable {
 
@@ -73,8 +72,8 @@ public class AbsController extends EESecurityController implements java.io.Seria
     }
 
     @Override
-    protected Object handleGetObject(String key) {
-      return BaseMessages.getString(PKG, key);
+    protected Object handleGetObject( String key ) {
+      return BaseMessages.getString( PKG, key );
     }
 
   };
@@ -82,7 +81,7 @@ public class AbsController extends EESecurityController implements java.io.Seria
   private XulButton applyLogicalRolesButton;
 
   private XulButton applyLogicalSystemRolesButton;
-  
+
   private XulVbox logicalRolesBox;
 
   private XulVbox logicalSystemRolesBox;
@@ -102,28 +101,28 @@ public class AbsController extends EESecurityController implements java.io.Seria
   public AbsController() {
 
   }
-  
+
   @Override
   protected boolean initService() {
     try {
-      if (repository.hasService(IAbsSecurityManager.class)) {
-        service = (RepositorySecurityManager) repository.getService(IAbsSecurityManager.class);
+      if ( repository.hasService( IAbsSecurityManager.class ) ) {
+        service = (RepositorySecurityManager) repository.getService( IAbsSecurityManager.class );
         String localeValue = null;
         try {
           localeValue = GlobalMessages.getLocale().getDisplayName();
-        } catch (MissingResourceException e) {
+        } catch ( MissingResourceException e ) {
           try {
             localeValue = LanguageChoice.getInstance().getFailoverLocale().getDisplayName();
-          } catch (MissingResourceException e2) {
+          } catch ( MissingResourceException e2 ) {
             localeValue = "en_US"; //$NON-NLS-1$
           }
         }
-        ((IAbsSecurityManager) service).initialize(localeValue);
+        ( (IAbsSecurityManager) service ).initialize( localeValue );
       } else {
         return false;
       }
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    } catch ( Exception e ) {
+      throw new RuntimeException( e );
     }
     return true;
   }
@@ -136,53 +135,53 @@ public class AbsController extends EESecurityController implements java.io.Seria
   }
 
   protected void createSecurity() throws Exception {
-    security = eeSecurity = absSecurity = new UIAbsSecurity(service);
+    security = eeSecurity = absSecurity = new UIAbsSecurity( service );
   }
 
   @Override
   protected void createBindings() {
     super.createBindings();
-    roleListBox = (XulListbox) document.getElementById("roles-list");//$NON-NLS-1$
-    systemRoleListBox = (XulListbox) document.getElementById("system-roles-list");//$NON-NLS-1$
-    applyLogicalRolesButton = (XulButton) document.getElementById("apply-action-permission");//$NON-NLS-1$
-    applyLogicalSystemRolesButton = (XulButton) document.getElementById("apply-system-role-action-permission");//$NON-NLS-1$
-    
-    logicalRolesBox = (XulVbox) document.getElementById("role-action-permissions-vbox");//$NON-NLS-1$
-    logicalSystemRolesBox = (XulVbox) document.getElementById("system-role-action-permissions-vbox");//$NON-NLS-1$
-    bf.setBindingType(Binding.Type.ONE_WAY);
+    roleListBox = (XulListbox) document.getElementById( "roles-list" );//$NON-NLS-1$
+    systemRoleListBox = (XulListbox) document.getElementById( "system-roles-list" );//$NON-NLS-1$
+    applyLogicalRolesButton = (XulButton) document.getElementById( "apply-action-permission" );//$NON-NLS-1$
+    applyLogicalSystemRolesButton = (XulButton) document.getElementById( "apply-system-role-action-permission" );//$NON-NLS-1$
+
+    logicalRolesBox = (XulVbox) document.getElementById( "role-action-permissions-vbox" );//$NON-NLS-1$
+    logicalSystemRolesBox = (XulVbox) document.getElementById( "system-role-action-permissions-vbox" );//$NON-NLS-1$
+    bf.setBindingType( Binding.Type.ONE_WAY );
     // Action based security permissions
     buttonConverter = new BindingConvertor<Integer, Boolean>() {
 
       @Override
-      public Boolean sourceToTarget(Integer value) {
-        if (value != null && value >= 0) {
+      public Boolean sourceToTarget( Integer value ) {
+        if ( value != null && value >= 0 ) {
           return false;
         }
         return true;
       }
 
       @Override
-      public Integer targetToSource(Boolean value) {
+      public Integer targetToSource( Boolean value ) {
         // TODO Auto-generated method stub
         return null;
       }
     };
-    bf.createBinding(roleListBox, "selectedIndex", applyLogicalRolesButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    bf.createBinding(systemRoleListBox, "selectedIndex", applyLogicalSystemRolesButton, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
-    bf.createBinding(absSecurity, "selectedRole", this, "selectedRoleChanged");//$NON-NLS-1$ //$NON-NLS-2$
-    bf.createBinding(absSecurity, "selectedSystemRole", this, "selectedSystemRoleChanged");//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding( roleListBox, "selectedIndex", applyLogicalRolesButton, "disabled", buttonConverter );//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding( systemRoleListBox, "selectedIndex", applyLogicalSystemRolesButton, "disabled", buttonConverter );//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding( absSecurity, "selectedRole", this, "selectedRoleChanged" );//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding( absSecurity, "selectedSystemRole", this, "selectedSystemRoleChanged" );//$NON-NLS-1$ //$NON-NLS-2$
   }
 
   /**
    * Update the model with the current status
    */
   public void updateRoleActionPermission() {
-    for (Entry<XulCheckbox, String> currentEntry : logicalRoleChecboxMap.entrySet()) {
+    for ( Entry<XulCheckbox, String> currentEntry : logicalRoleChecboxMap.entrySet() ) {
       XulCheckbox permissionCheckbox = currentEntry.getKey();
-      if (permissionCheckbox.isChecked()) {
-        absSecurity.addLogicalRole(currentEntry.getValue());
+      if ( permissionCheckbox.isChecked() ) {
+        absSecurity.addLogicalRole( currentEntry.getValue() );
       } else {
-        absSecurity.removeLogicalRole(currentEntry.getValue());
+        absSecurity.removeLogicalRole( currentEntry.getValue() );
       }
     }
   }
@@ -191,12 +190,12 @@ public class AbsController extends EESecurityController implements java.io.Seria
    * Update the model with the current status
    */
   public void updateSystemRoleActionPermission() {
-    for (Entry<XulCheckbox, String> currentEntry : logicalSystemRoleChecboxMap.entrySet()) {
+    for ( Entry<XulCheckbox, String> currentEntry : logicalSystemRoleChecboxMap.entrySet() ) {
       XulCheckbox permissionCheckbox = currentEntry.getKey();
-      if (permissionCheckbox.isChecked()) {
-        absSecurity.addLogicalRole(currentEntry.getValue());
+      if ( permissionCheckbox.isChecked() ) {
+        absSecurity.addLogicalRole( currentEntry.getValue() );
       } else {
-        absSecurity.removeLogicalRole(currentEntry.getValue());
+        absSecurity.removeLogicalRole( currentEntry.getValue() );
       }
     }
   }
@@ -210,25 +209,27 @@ public class AbsController extends EESecurityController implements java.io.Seria
     IUIAbsRole absRole = null;
     try {
       role = absSecurity.getSelectedRole();
-      if (role instanceof IUIAbsRole) {
+      if ( role instanceof IUIAbsRole ) {
         absRole = (IUIAbsRole) role;
       } else {
         throw new IllegalStateException();
       }
-      ((IAbsSecurityManager) service).setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
-      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Success"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(PKG, "AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
+      ( (IAbsSecurityManager) service ).setLogicalRoles( absRole.getName(), absRole.getLogicalRoles() );
+      messageBox.setTitle( BaseMessages.getString( PKG, "Dialog.Success" ) );//$NON-NLS-1$
+      messageBox.setAcceptLabel( BaseMessages.getString( PKG, "Dialog.Ok" ) );//$NON-NLS-1$
+      messageBox.setMessage( BaseMessages.getString( PKG, "AbsController.RoleActionPermission.Success" ) );//$NON-NLS-1$
       messageBox.open();
-    } catch (KettleException e) {
-      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(PKG,
-          "AbsController.RoleActionPermission.UnableToApplyPermissions", role.getName(), e.getLocalizedMessage()));//$NON-NLS-1$
+      // Refresh permissions in open tabs
+      SpoonPluginManager.getInstance().notifyLifecycleListeners( SpoonLifecycleListener.SpoonLifeCycleEvent.REPOSITORY_CHANGED );
+    } catch ( KettleException e ) {
+      messageBox.setTitle( BaseMessages.getString( PKG, "Dialog.Error" ) );//$NON-NLS-1$
+      messageBox.setAcceptLabel( BaseMessages.getString( PKG, "Dialog.Ok" ) );//$NON-NLS-1$
+      messageBox.setMessage( BaseMessages.getString( PKG,
+          "AbsController.RoleActionPermission.UnableToApplyPermissions", role.getName(), e.getLocalizedMessage() ) );//$NON-NLS-1$
       messageBox.open();
     }
   }
-  
+
   /**
    * Save the permission for the selected system role
    */
@@ -238,21 +239,21 @@ public class AbsController extends EESecurityController implements java.io.Seria
     IUIAbsRole absRole = null;
     try {
       role = absSecurity.getSelectedSystemRole();
-      if (role instanceof IUIAbsRole) {
+      if ( role instanceof IUIAbsRole ) {
         absRole = (IUIAbsRole) role;
       } else {
         throw new IllegalStateException();
       }
-      ((IAbsSecurityManager) service).setLogicalRoles(absRole.getName(), absRole.getLogicalRoles());
-      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Success"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(PKG, "AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
+      ( (IAbsSecurityManager) service ).setLogicalRoles( absRole.getName(), absRole.getLogicalRoles() );
+      messageBox.setTitle( BaseMessages.getString( PKG, "Dialog.Success" ) );//$NON-NLS-1$
+      messageBox.setAcceptLabel( BaseMessages.getString( PKG, "Dialog.Ok" ) );//$NON-NLS-1$
+      messageBox.setMessage( BaseMessages.getString( PKG, "AbsController.RoleActionPermission.Success" ) );//$NON-NLS-1$
       messageBox.open();
-    } catch (KettleException e) {
-      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(PKG,
-          "AbsController.RoleActionPermission.UnableToApplyPermissions", role.getName(), e.getLocalizedMessage()));//$NON-NLS-1$
+    } catch ( KettleException e ) {
+      messageBox.setTitle( BaseMessages.getString( PKG, "Dialog.Error" ) );//$NON-NLS-1$
+      messageBox.setAcceptLabel( BaseMessages.getString( PKG, "Dialog.Ok" ) );//$NON-NLS-1$
+      messageBox.setMessage( BaseMessages.getString( PKG,
+          "AbsController.RoleActionPermission.UnableToApplyPermissions", role.getName(), e.getLocalizedMessage() ) );//$NON-NLS-1$
       messageBox.open();
     }
   }
@@ -261,16 +262,16 @@ public class AbsController extends EESecurityController implements java.io.Seria
    * The method is called when a user select a role from the role list. This method reads the current selected
    * role and populates the Action Permission UI with the details
    */
-  public void setSelectedRoleChanged(IUIRole role) throws Exception {
+  public void setSelectedRoleChanged( IUIRole role ) throws Exception {
     IUIAbsRole absRole = null;
     uncheckAllActionPermissions();
-    if (role instanceof IUIAbsRole) {
+    if ( role instanceof IUIAbsRole ) {
       absRole = (IUIAbsRole) role;
-      if (absRole != null && absRole.getLogicalRoles() != null) {
-        for (String permission : absRole.getLogicalRoles()) {
-          XulCheckbox permissionCheckbox = findRoleCheckbox(permission);
-          if (permissionCheckbox != null) {
-            permissionCheckbox.setChecked(true);
+      if ( absRole != null && absRole.getLogicalRoles() != null ) {
+        for ( String permission : absRole.getLogicalRoles() ) {
+          XulCheckbox permissionCheckbox = findRoleCheckbox( permission );
+          if ( permissionCheckbox != null ) {
+            permissionCheckbox.setChecked( true );
           }
         }
       }
@@ -283,16 +284,16 @@ public class AbsController extends EESecurityController implements java.io.Seria
    * The method is called when a user select a role from the role list. This method reads the current selected
    * role and populates the Action Permission UI with the details
    */
-  public void setSelectedSystemRoleChanged(IUIRole role) throws Exception {
+  public void setSelectedSystemRoleChanged( IUIRole role ) throws Exception {
     IUIAbsRole absRole = null;
     uncheckAllSystemActionPermissions();
-    if (role instanceof IUIAbsRole) {
+    if ( role instanceof IUIAbsRole ) {
       absRole = (IUIAbsRole) role;
-      if (absRole != null && absRole.getLogicalRoles() != null) {
-        for (String permission : absRole.getLogicalRoles()) {
-          XulCheckbox permissionCheckbox = findSystemRoleCheckbox(permission);
-          if (permissionCheckbox != null) {
-            permissionCheckbox.setChecked(true);
+      if ( absRole != null && absRole.getLogicalRoles() != null ) {
+        for ( String permission : absRole.getLogicalRoles() ) {
+          XulCheckbox permissionCheckbox = findSystemRoleCheckbox( permission );
+          if ( permissionCheckbox != null ) {
+            permissionCheckbox.setChecked( true );
           }
         }
       }
@@ -301,18 +302,18 @@ public class AbsController extends EESecurityController implements java.io.Seria
     }
   }
 
-  private XulCheckbox findRoleCheckbox(String permission) {
-    for (Entry<XulCheckbox, String> currentEntry : logicalRoleChecboxMap.entrySet()) {
-      if (currentEntry.getValue().equals(permission)) {
+  private XulCheckbox findRoleCheckbox( String permission ) {
+    for ( Entry<XulCheckbox, String> currentEntry : logicalRoleChecboxMap.entrySet() ) {
+      if ( currentEntry.getValue().equals( permission ) ) {
         return currentEntry.getKey();
       }
     }
     return null;
   }
 
-  private XulCheckbox findSystemRoleCheckbox(String permission) {
-    for (Entry<XulCheckbox, String> currentEntry : logicalSystemRoleChecboxMap.entrySet()) {
-      if (currentEntry.getValue().equals(permission)) {
+  private XulCheckbox findSystemRoleCheckbox( String permission ) {
+    for ( Entry<XulCheckbox, String> currentEntry : logicalSystemRoleChecboxMap.entrySet() ) {
+      if ( currentEntry.getValue().equals( permission ) ) {
         return currentEntry.getKey();
       }
     }
@@ -324,23 +325,23 @@ public class AbsController extends EESecurityController implements java.io.Seria
    */
   private void initializeLogicalRolesUI() {
     try {
-      Map<String, String> logicalRoles = ((IAbsSecurityManager) service).getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
-      for (Entry<String, String> logicalRole : logicalRoles.entrySet()) {
+      Map<String, String> logicalRoles = ( (IAbsSecurityManager) service ).getAllLogicalRoles( GlobalMessages.getLocale().getDisplayName() );
+      for ( Entry<String, String> logicalRole : logicalRoles.entrySet() ) {
         XulCheckbox logicalRoleCheckbox;
-        logicalRoleCheckbox = (XulCheckbox) document.createElement("checkbox");//$NON-NLS-1$
-        logicalRoleCheckbox.setLabel(logicalRole.getValue());
-        logicalRoleCheckbox.setId(logicalRole.getValue());
-        logicalRoleCheckbox.setCommand("iSecurityController.updateRoleActionPermission()");//$NON-NLS-1$
-        logicalRoleCheckbox.setFlex(1);
-        logicalRoleCheckbox.setDisabled(true);
-        logicalRolesBox.addChild(logicalRoleCheckbox);
-        logicalRoleChecboxMap.put(logicalRoleCheckbox, logicalRole.getKey());
-        bf.setBindingType(Binding.Type.ONE_WAY);
-        bf.createBinding(roleListBox, "selectedIndex", logicalRoleCheckbox, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+        logicalRoleCheckbox = (XulCheckbox) document.createElement( "checkbox" );//$NON-NLS-1$
+        logicalRoleCheckbox.setLabel( logicalRole.getValue() );
+        logicalRoleCheckbox.setId( logicalRole.getValue() );
+        logicalRoleCheckbox.setCommand( "iSecurityController.updateRoleActionPermission()" );//$NON-NLS-1$
+        logicalRoleCheckbox.setFlex( 1 );
+        logicalRoleCheckbox.setDisabled( true );
+        logicalRolesBox.addChild( logicalRoleCheckbox );
+        logicalRoleChecboxMap.put( logicalRoleCheckbox, logicalRole.getKey() );
+        bf.setBindingType( Binding.Type.ONE_WAY );
+        bf.createBinding( roleListBox, "selectedIndex", logicalRoleCheckbox, "disabled", buttonConverter );//$NON-NLS-1$ //$NON-NLS-2$
       }
-    } catch (XulException xe) {
+    } catch ( XulException xe ) {
 
-    } catch (KettleException xe) {
+    } catch ( KettleException xe ) {
 
     }
   }
@@ -350,36 +351,36 @@ public class AbsController extends EESecurityController implements java.io.Seria
    */
   private void initializeLogicalSystemRolesUI() {
     try {
-      Map<String, String> logicalRoles = ((IAbsSecurityManager) service).getAllLogicalRoles(GlobalMessages.getLocale().getDisplayName());
-      for (Entry<String, String> logicalRole : logicalRoles.entrySet()) {
+      Map<String, String> logicalRoles = ( (IAbsSecurityManager) service ).getAllLogicalRoles( GlobalMessages.getLocale().getDisplayName() );
+      for ( Entry<String, String> logicalRole : logicalRoles.entrySet() ) {
         XulCheckbox logicalSystemRoleCheckbox;
-        logicalSystemRoleCheckbox = (XulCheckbox) document.createElement("checkbox");//$NON-NLS-1$
-        logicalSystemRoleCheckbox.setLabel(logicalRole.getValue());
-        logicalSystemRoleCheckbox.setId(logicalRole.getValue());
-        logicalSystemRoleCheckbox.setCommand("iSecurityController.updateSystemRoleActionPermission()");//$NON-NLS-1$
-        logicalSystemRoleCheckbox.setFlex(1);
-        logicalSystemRoleCheckbox.setDisabled(true);
-        logicalSystemRolesBox.addChild(logicalSystemRoleCheckbox);
-        logicalSystemRoleChecboxMap.put(logicalSystemRoleCheckbox, logicalRole.getKey());
-        bf.setBindingType(Binding.Type.ONE_WAY);
-        bf.createBinding(systemRoleListBox, "selectedIndex", logicalSystemRoleCheckbox, "disabled", buttonConverter);//$NON-NLS-1$ //$NON-NLS-2$
+        logicalSystemRoleCheckbox = (XulCheckbox) document.createElement( "checkbox" );//$NON-NLS-1$
+        logicalSystemRoleCheckbox.setLabel( logicalRole.getValue() );
+        logicalSystemRoleCheckbox.setId( logicalRole.getValue() );
+        logicalSystemRoleCheckbox.setCommand( "iSecurityController.updateSystemRoleActionPermission()" );//$NON-NLS-1$
+        logicalSystemRoleCheckbox.setFlex( 1 );
+        logicalSystemRoleCheckbox.setDisabled( true );
+        logicalSystemRolesBox.addChild( logicalSystemRoleCheckbox );
+        logicalSystemRoleChecboxMap.put( logicalSystemRoleCheckbox, logicalRole.getKey() );
+        bf.setBindingType( Binding.Type.ONE_WAY );
+        bf.createBinding( systemRoleListBox, "selectedIndex", logicalSystemRoleCheckbox, "disabled", buttonConverter );//$NON-NLS-1$ //$NON-NLS-2$
       }
-    } catch (XulException xe) {
+    } catch ( XulException xe ) {
 
-    } catch (KettleException xe) {
+    } catch ( KettleException xe ) {
 
     }
   }
 
   private void uncheckAllActionPermissions() {
-    for (XulCheckbox permissionCheckbox : logicalRoleChecboxMap.keySet()) {
-      permissionCheckbox.setChecked(false);
+    for ( XulCheckbox permissionCheckbox : logicalRoleChecboxMap.keySet() ) {
+      permissionCheckbox.setChecked( false );
     }
   }
 
   private void uncheckAllSystemActionPermissions() {
-    for (XulCheckbox permissionCheckbox : logicalSystemRoleChecboxMap.keySet()) {
-      permissionCheckbox.setChecked(false);
+    for ( XulCheckbox permissionCheckbox : logicalSystemRoleChecboxMap.keySet() ) {
+      permissionCheckbox.setChecked( false );
     }
   }
 }
