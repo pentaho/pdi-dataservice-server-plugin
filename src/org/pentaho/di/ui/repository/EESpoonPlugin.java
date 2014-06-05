@@ -79,7 +79,7 @@ import java.util.ResourceBundle;
 // LICENSE CHECK
 
 @SpoonPlugin( id = "EESpoonPlugin", image = "" )
-@SpoonPluginCategories( { "spoon", "trans-graph", "job-graph" } )
+@SpoonPluginCategories( { "spoon", "trans-graph", "job-graph", "repository-explorer" } )
 public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListener, java.io.Serializable {
 
   private static final long serialVersionUID = -5672306503357631444L; /* EESOURCE: UPDATE SERIALVERUID */
@@ -266,6 +266,22 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
           if ( securityProvider != null ) {
             enablePermission( securityProvider );
           }
+        }
+      } catch ( KettleException e ) {
+        e.printStackTrace();
+      }
+    } else if ( category.equals( "repository-explorer" ) ) { //$NON-NLS-1$
+      try {
+        Repository repository = Spoon.getInstance().getRepository();
+        IAbsSecurityProvider securityProvider = null;
+        if ( repository != null ) {
+          securityProvider = (IAbsSecurityProvider) repository.getService( IAbsSecurityProvider.class );
+        }
+        if ( securityProvider != null ) {
+          boolean createPermitted = securityProvider.isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION );
+          boolean executePermitted = securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION );
+          // Disable export if user can not create or execute content (prevents execution outside of this repo)
+          container.getDocumentRoot().getElementById( "folder-context-export" ).setDisabled( !createPermitted && !executePermitted );
         }
       } catch ( KettleException e ) {
         e.printStackTrace();
