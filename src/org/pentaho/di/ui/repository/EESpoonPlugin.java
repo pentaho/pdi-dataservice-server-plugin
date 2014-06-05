@@ -296,6 +296,9 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ( (XulMenuitem) doc.getElementById( "edit.copy-file" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "edit-paste-steps" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
 
+      // Disable Show Last menu under the Action menu.
+      ( (XulMenu) doc.getElementById( "trans-last" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+
       // Schedule is a plugin
       if ( doc.getElementById( "trans-schedule" ) != null ) {
         ( (XulMenuitem) doc.getElementById( "trans-schedule" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$

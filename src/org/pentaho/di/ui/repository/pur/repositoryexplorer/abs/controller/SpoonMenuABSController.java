@@ -110,6 +110,9 @@ public class SpoonMenuABSController implements ISpoonMenuController, java.io.Ser
           ( (XulMenuitem) doc.getElementById( "trans-impact" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
           ( (XulMenuitem) doc.getElementById( "trans-get-sql" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
 
+          // Disable Show Last menu under the Action menu.  Disable without execute permissions.
+          ( (XulMenu) doc.getElementById( "trans-last" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+
           boolean exportAllowed = createPermitted || executePermitted;
           ( (XulMenu) doc.getElementById( "file-export" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
           ( (XulMenuitem) doc.getElementById( "repository-export-all" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
@@ -129,6 +132,8 @@ public class SpoonMenuABSController implements ISpoonMenuController, java.io.Ser
             XulToolbarbutton previewButton = (XulToolbarbutton) toolbar.getElementById( "trans-preview" );
             XulToolbarbutton replayButton = (XulToolbarbutton) toolbar.getElementById( "trans-replay" );
             XulToolbarbutton verifyButton = (XulToolbarbutton) toolbar.getElementById( "trans-verify" );
+            XulToolbarbutton impactButton = (XulToolbarbutton) toolbar.getElementById( "trans-impact" );
+            XulToolbarbutton generateSqlButton = (XulToolbarbutton) toolbar.getElementById( "trans-get-sql" );
 
             if ( ( runButton != null ) && ( runButton.isDisabled() ^ !executePermitted ) ) {
               runButton.setDisabled( !executePermitted );
@@ -149,15 +154,28 @@ public class SpoonMenuABSController implements ISpoonMenuController, java.io.Ser
             if ( ( verifyButton != null ) && ( verifyButton.isDisabled() ^ !executePermitted ) ) {
               verifyButton.setDisabled( !executePermitted );
             }
+
+            if ( ( impactButton != null ) && ( impactButton.isDisabled() ^ !executePermitted ) ) {
+              impactButton.setDisabled( !executePermitted );
+            }
+
+            if ( ( generateSqlButton != null ) && ( generateSqlButton.isDisabled() ^ !executePermitted ) ) {
+              generateSqlButton.setDisabled( !executePermitted );
+            }
           }
 
           JobGraph jobGraph = Spoon.getInstance().getActiveJobGraph();
           if ( jobGraph != null ) {
             XulToolbar toolbar = jobGraph.getToolbar();
             XulToolbarbutton runButton = (XulToolbarbutton) toolbar.getElementById( "job-run" );
+            XulToolbarbutton generateSqlButton = (XulToolbarbutton) toolbar.getElementById( "job-get-sql" );
 
             if ( ( runButton != null ) && ( runButton.isDisabled() ^ !executePermitted ) ) {
               runButton.setDisabled( !executePermitted );
+            }
+
+            if ( ( generateSqlButton != null ) && ( generateSqlButton.isDisabled() ^ !executePermitted ) ) {
+              generateSqlButton.setDisabled( !executePermitted );
             }
           }
         }
