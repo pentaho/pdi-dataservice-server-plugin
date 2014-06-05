@@ -187,9 +187,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository
           .getService( IAbsSecurityProvider.class );
 
-      enableCreatePermission( securityProvider.isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION ) );
-      enableAdminPermission( securityProvider.isAllowed( IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION ) );
-      enableExecutePermission( securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) );
+      enablePermission( securityProvider );
     }
     // Job & Transformation =
     if ( repository.hasService( ILockService.class ) ) {
@@ -211,20 +209,19 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
    * Called when repository is disconnected.
    */
   private void doOnSecurityCleanup() {
-    updateMenuState( true );
-    updateExecuteMenuState( false );
+    updateMenuState( true, false );
   }
 
-  private void enableCreatePermission( boolean createPermitted ) {
-    updateMenuState( createPermitted );
+  private void enablePermission( IAbsSecurityProvider securityProvider ) throws KettleException {
+    boolean createPermitted = securityProvider.isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION );
+    boolean executePermitted = securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION );
+    boolean adminPermitted = securityProvider.isAllowed( IAbsSecurityProvider.ADMINISTER_SECURITY_ACTION );
+    enablePermission( createPermitted, executePermitted, adminPermitted );
+  }
+
+  private void enablePermission( boolean createPermitted, boolean executePermitted, boolean adminPermitted ) {
+    updateMenuState( createPermitted, executePermitted );
     updateChangedWarningDialog( createPermitted );
-  }
-
-  private void enableExecutePermission( boolean executePermitted ) {
-    updateExecuteMenuState( executePermitted );
-  }
-
-  private void enableAdminPermission( boolean adminPermitted ) {
   }
 
   private void registerUISuppportForRepositoryExplorer() {
@@ -267,7 +264,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
           IAbsSecurityProvider securityProvider = (IAbsSecurityProvider) repository
               .getService( IAbsSecurityProvider.class );
           if ( securityProvider != null ) {
-            enableExecutePermission( securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) );
+            enablePermission( securityProvider );
           }
         }
       } catch ( KettleException e ) {
@@ -277,12 +274,14 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
   }
 
   /**
-   * Change the menu-item states based on Execute permissions.
+   * Change the menu-item states based on Execute and Create permissions.
    *
+   * @param createPermitted
+   *     - if true, we enable menu-items requiring creation permissions
    * @param executePermitted
-   *     - if true, we enable menu-items
+   *     - if true, we enable menu-items requiring execute permissions
    */
-  private void updateExecuteMenuState( boolean executePermitted ) {
+  private void updateMenuState( boolean createPermitted, boolean executePermitted ) {
     Document doc = getDocumentRoot();
     if ( doc != null ) {
       // Main spoon menu
@@ -292,7 +291,6 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ( (XulMenuitem) doc.getElementById( "trans-verify" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-impact" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-get-sql" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ( (XulMenu) doc.getElementById( "file-export" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "edit-cut-steps" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "edit-copy-steps" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "edit.copy-file" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
@@ -302,12 +300,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       if ( doc.getElementById( "trans-schedule" ) != null ) {
         ( (XulMenuitem) doc.getElementById( "trans-schedule" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       }
-    }
-  }
 
-  private void updateMenuState( boolean createPermitted ) {
-    Document doc = getDocumentRoot();
-    if ( doc != null ) {
       // Main spoon toolbar
       ( (XulToolbarbutton) doc.getElementById( "toolbar-file-new" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
       ( (XulToolbarbutton) doc.getElementById( "toolbar-file-save" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
@@ -322,6 +315,11 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ( (XulMenuitem) doc.getElementById( "file-save" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "file-save-as" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "file-close" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
+
+      boolean exportAllowed = createPermitted || executePermitted;
+      ( (XulMenu) doc.getElementById( "file-export" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "repository-export-all" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "file-save-as-vfs" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
     }
   }
 
