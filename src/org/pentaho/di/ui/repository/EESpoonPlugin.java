@@ -253,8 +253,9 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       Spoon.getInstance().addSpoonMenuController( new SpoonMenuLockController() );
 
     } else if ( category.equals( "trans-graph" ) || category.equals( "job-graph" ) ) { //$NON-NLS-1$ //$NON-NLS-2$
-      if ( ( Spoon.getInstance() != null ) && ( Spoon.getInstance().getRepository() != null ) && ( Spoon.getInstance()
-                                                                                                        .getRepository() instanceof PurRepository ) ) {
+      if ( ( Spoon.getInstance() != null )
+          && ( Spoon.getInstance().getRepository() != null )
+          && ( Spoon.getInstance().getRepository() instanceof PurRepository ) ) {
         container.getDocumentRoot()
                  .addOverlay( "org/pentaho/di/ui/repository/pur/xul/spoon-lock-overlay.xul" ); //$NON-NLS-1$
         container.addEventHandler( new SpoonLockController() );
@@ -292,6 +293,10 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ( (XulMenuitem) doc.getElementById( "trans-impact" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-get-sql" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenu) doc.getElementById( "file-export" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "edit-cut-steps" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "edit-copy-steps" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "edit.copy-file" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "edit-paste-steps" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
 
       // Schedule is a plugin
       if ( doc.getElementById( "trans-schedule" ) != null ) {
