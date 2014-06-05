@@ -249,6 +249,8 @@ public class AbsController extends EESecurityController implements java.io.Seria
       messageBox.setAcceptLabel( BaseMessages.getString( PKG, "Dialog.Ok" ) );//$NON-NLS-1$
       messageBox.setMessage( BaseMessages.getString( PKG, "AbsController.RoleActionPermission.Success" ) );//$NON-NLS-1$
       messageBox.open();
+      // Refresh permissions in open tabs
+      SpoonPluginManager.getInstance().notifyLifecycleListeners( SpoonLifecycleListener.SpoonLifeCycleEvent.REPOSITORY_CHANGED );
     } catch ( KettleException e ) {
       messageBox.setTitle( BaseMessages.getString( PKG, "Dialog.Error" ) );//$NON-NLS-1$
       messageBox.setAcceptLabel( BaseMessages.getString( PKG, "Dialog.Ok" ) );//$NON-NLS-1$
