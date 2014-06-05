@@ -40,6 +40,8 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.abs.model.UIAbsSecuri
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.controller.EESecurityController;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityManager;
 import org.pentaho.di.ui.repository.repositoryexplorer.controllers.SecurityController;
+import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
+import org.pentaho.di.ui.spoon.SpoonPluginManager;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -220,6 +222,8 @@ public class AbsController extends EESecurityController implements java.io.Seria
       messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
       messageBox.setMessage(BaseMessages.getString(PKG, "AbsController.RoleActionPermission.Success"));//$NON-NLS-1$
       messageBox.open();
+      // Refresh permissions in open tabs
+      SpoonPluginManager.getInstance().notifyLifecycleListeners( SpoonLifecycleListener.SpoonLifeCycleEvent.REPOSITORY_CHANGED );
     } catch (KettleException e) {
       messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
       messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
