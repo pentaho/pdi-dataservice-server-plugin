@@ -244,6 +244,11 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   }
 
   private void warnClosingOfOpenTabsBasedOnPerms() throws KettleException {
+    // Check to see if there are any open jobs/trans
+    if ( Spoon.getInstance().getActiveMeta() == null ) {
+      return;
+    }
+
     String warningTitle = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllForce.Connect.Title" );
     String warningText = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllOptionAdditional.Connect.Message" );
     String additionalWarningText = "";
