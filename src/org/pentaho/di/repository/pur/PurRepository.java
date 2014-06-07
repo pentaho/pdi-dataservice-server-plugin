@@ -38,6 +38,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.MessageBox;
 import org.pentaho.di.cluster.ClusterSchema;
 import org.pentaho.di.cluster.SlaveServer;
 import org.pentaho.di.core.Condition;
@@ -85,6 +87,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
 import org.pentaho.di.ui.repository.pur.services.ILockService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
+import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.api.exceptions.MetaStoreNamespaceExistsException;
@@ -240,8 +243,61 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     return rootRef;
   }
 
+  private void warnClosingOfOpenTabsBasedOnPerms() throws KettleException {
+    // Check to see if there are any open jobs/trans
+    if ( Spoon.getInstance().getActiveMeta() == null ) {
+      return;
+    }
+
+    String warningTitle = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllForce.Connect.Title" );
+    String warningText = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllOptionAdditional.Connect.Message" );
+    String additionalWarningText = "";
+    int buttons = SWT.OK;
+
+    IAbsSecurityProvider absSecurityProvider = (IAbsSecurityProvider) getSecurityProvider();
+    if ( absSecurityProvider != null ) {
+      boolean createPerms = false;
+      boolean executePerms = false;
+      boolean readPerms = false;
+      try {
+        createPerms = absSecurityProvider.isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION );
+        executePerms = absSecurityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION );
+        readPerms = absSecurityProvider.isAllowed( IAbsSecurityProvider.READ_CONTENT_ACTION );
+      } catch ( KettleException e ) {
+        // No nothing - we are just checking perms
+      }
+
+      // Check to see if display of warning dialog has been disabled
+      if ( readPerms && createPerms && executePerms ) {
+        warningTitle = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllOption.Connect.Title" );
+        warningText = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllOption.Connect.Message" );
+        buttons = SWT.YES | SWT.NO | SWT.ICON_INFORMATION;
+      } else {
+        warningText = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllForce.Connect.Message" );
+        if ( createPerms ) {
+          additionalWarningText = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllForceAdditional.Connect.Message" );
+          buttons = SWT.YES | SWT.NO | SWT.ICON_WARNING;
+        } else {
+          additionalWarningText = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllOptionAdditional.Connect.Message" );
+          buttons = SWT.OK | SWT.ICON_WARNING;
+        }
+      }
+    }
+
+    MessageBox mb = new MessageBox( Spoon.getInstance().getShell(), buttons );
+    mb.setMessage( additionalWarningText.length() != 0 ? warningText + "\n\n" + additionalWarningText : warningText );
+    mb.setText( warningTitle );
+    final int isCloseAllFiles = mb.open();
+
+    // If user has create content perms, then they can leave the tabs open.
+    // Otherwise, we force close the tabs
+    if ( ( isCloseAllFiles == SWT.YES ) || ( isCloseAllFiles == SWT.OK ) ) {
+      Spoon.getInstance().closeAllFiles();
+    }
+  }
+
   @Override
-  public void connect( final String username, final String password ) throws KettleException, KettleSecurityException {
+  public void connect( final String username, final String password ) throws KettleException {
     if ( isTest() ) {
       connected = true;
       purRepositoryServiceRegistry.registerService( IRevisionService.class, new UnifiedRepositoryRevisionService( pur,
@@ -270,6 +326,19 @@ public class PurRepository extends AbstractRepository implements Repository, jav
       this.jobDelegate = new JobDelegate( this, pur );
     } finally {
       if ( connected ) {
+        // Check permissions to see so we can decide how to close tabs that should not be open
+        // For example if user connects and does not have create content perms, then we should force
+        // closing of the tabs.
+        Spoon.getInstance().getShell().getDisplay().asyncExec( new Runnable() {
+          public void run() {
+            try {
+              warnClosingOfOpenTabsBasedOnPerms();
+            } catch ( KettleException ex ) {
+              // Ok we are just checking perms
+            }
+          }
+        } );
+
         LogChannel.GENERAL.logBasic( BaseMessages.getString( PKG, "PurRepositoryMetastore.Create.Message" ) );
         metaStore = new PurRepositoryMetaStore( this );
         // Create the default Pentaho namespace if it does not exist
