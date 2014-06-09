@@ -326,18 +326,20 @@ public class PurRepository extends AbstractRepository implements Repository, jav
       this.jobDelegate = new JobDelegate( this, pur );
     } finally {
       if ( connected ) {
-        // Check permissions to see so we can decide how to close tabs that should not be open
-        // For example if user connects and does not have create content perms, then we should force
-        // closing of the tabs.
-        Spoon.getInstance().getShell().getDisplay().asyncExec( new Runnable() {
-          public void run() {
-            try {
-              warnClosingOfOpenTabsBasedOnPerms();
-            } catch ( KettleException ex ) {
-              // Ok we are just checking perms
+        if ( Spoon.getInstance() != null ) {
+          // Check permissions to see so we can decide how to close tabs that should not be open
+          // For example if user connects and does not have create content perms, then we should force
+          // closing of the tabs.
+          Spoon.getInstance().getShell().getDisplay().asyncExec( new Runnable() {
+            public void run() {
+              try {
+                warnClosingOfOpenTabsBasedOnPerms();
+              } catch ( KettleException ex ) {
+                // Ok we are just checking perms
+              }
             }
-          }
-        } );
+          } );
+        }
 
         LogChannel.GENERAL.logBasic( BaseMessages.getString( PKG, "PurRepositoryMetastore.Create.Message" ) );
         metaStore = new PurRepositoryMetaStore( this );
