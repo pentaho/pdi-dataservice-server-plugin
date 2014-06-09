@@ -113,10 +113,14 @@ public class SpoonMenuABSController implements ISpoonMenuController, java.io.Ser
           // Disable Show Last menu under the Action menu.  Disable without execute permissions.
           ( (XulMenu) doc.getElementById( "trans-last" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
 
-          boolean exportAllowed = createPermitted || executePermitted;
+          boolean exportAllowed = createPermitted && executePermitted;
           ( (XulMenu) doc.getElementById( "file-export" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
           ( (XulMenuitem) doc.getElementById( "repository-export-all" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
           ( (XulMenuitem) doc.getElementById( "file-save-as-vfs" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+          ( (XulMenuitem) doc.getElementById( "edit-cut-steps" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+          ( (XulMenuitem) doc.getElementById( "edit-copy-steps" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+          ( (XulMenuitem) doc.getElementById( "edit.copy-file" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+          ( (XulMenuitem) doc.getElementById( "edit-paste-steps" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
 
           // Schedule is a plugin
           if ( doc.getElementById( "trans-schedule" ) != null ) {

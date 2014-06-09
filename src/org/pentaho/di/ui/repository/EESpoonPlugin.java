@@ -281,7 +281,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
           boolean createPermitted = securityProvider.isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION );
           boolean executePermitted = securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION );
           // Disable export if user can not create or execute content (prevents execution outside of this repo)
-          container.getDocumentRoot().getElementById( "folder-context-export" ).setDisabled( !createPermitted && !executePermitted );
+          container.getDocumentRoot().getElementById( "folder-context-export" ).setDisabled( !createPermitted || !executePermitted );
         }
       } catch ( KettleException e ) {
         e.printStackTrace();
@@ -307,10 +307,6 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ( (XulMenuitem) doc.getElementById( "trans-verify" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-impact" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-get-sql" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ( (XulMenuitem) doc.getElementById( "edit-cut-steps" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ( (XulMenuitem) doc.getElementById( "edit-copy-steps" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ( (XulMenuitem) doc.getElementById( "edit.copy-file" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
-      ( (XulMenuitem) doc.getElementById( "edit-paste-steps" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
 
       // Disable Show Last menu under the Action menu.
       ( (XulMenu) doc.getElementById( "trans-last" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
@@ -335,10 +331,14 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ( (XulMenuitem) doc.getElementById( "file-save-as" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "file-close" ) ).setDisabled( !createPermitted ); //$NON-NLS-1$
 
-      boolean exportAllowed = createPermitted || executePermitted;
+      boolean exportAllowed = createPermitted && executePermitted;
       ( (XulMenu) doc.getElementById( "file-export" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "repository-export-all" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "file-save-as-vfs" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "edit-cut-steps" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "edit-copy-steps" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "edit.copy-file" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "edit-paste-steps" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
     }
   }
 
