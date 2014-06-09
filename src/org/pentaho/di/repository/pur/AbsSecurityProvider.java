@@ -85,6 +85,11 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
         if ( isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) == false ) {
           throw new KettleException( operation + " : permission not allowed" );
         }
+      } else if ( ( operation == RepositoryOperation.MODIFY_TRANSFORMATION ) ||
+                  ( operation == RepositoryOperation.MODIFY_JOB ) ) {
+        if ( isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION ) == false ) {
+          throw new KettleException( operation + " : permission not allowed" );
+        }
       }
     }
   }
