@@ -23,6 +23,7 @@
 package org.pentaho.di.ui.repository;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.MessageBox;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
@@ -123,6 +124,21 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
           doOnSecurityUpdate();
           break;
         case REPOSITORY_CONNECTED:
+          final Spoon spoon = Spoon.getInstance();
+          if ( spoon != null ) {
+            // Check permissions to see so we can decide how to close tabs that should not be open
+            // For example if user connects and does not have create content perms, then we should force
+            // closing of the tabs.
+            spoon.getShell().getDisplay().asyncExec( new Runnable() {
+              public void run() {
+                try {
+                  warnClosingOfOpenTabsBasedOnPerms( spoon );
+                } catch ( KettleException ex ) {
+                  // Ok we are just checking perms
+                }
+              }
+            } );
+          }
           doOnSecurityUpdate();
           break;
         case REPOSITORY_DISCONNECTED:
@@ -380,6 +396,67 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       } );
     } else {
       ChangedWarningDialog.setInstance( new ChangedWarningDialog() );
+    }
+  }
+
+  private void warnClosingOfOpenTabsBasedOnPerms( Spoon spoon ) throws KettleException {
+    Class<PurRepository> PKG = PurRepository.class;
+    // Check to see if there are any open jobs/trans
+    Repository repository = spoon.getRepository();
+    if ( spoon.getActiveMeta() == null ) {
+      return;
+    }
+
+    String warningTitle = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllForce.Connect.Title" );
+    String
+        warningText =
+        BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllOptionAdditional.Connect.Message" );
+    String additionalWarningText = "";
+    int buttons = SWT.OK;
+
+    IAbsSecurityProvider
+        absSecurityProvider =
+        (IAbsSecurityProvider) repository.getService( IAbsSecurityProvider.class );
+    if ( absSecurityProvider != null ) {
+      boolean createPerms = false;
+      boolean executePerms = false;
+      boolean readPerms = false;
+      try {
+        createPerms = absSecurityProvider.isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION );
+        executePerms = absSecurityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION );
+        readPerms = absSecurityProvider.isAllowed( IAbsSecurityProvider.READ_CONTENT_ACTION );
+      } catch ( KettleException e ) {
+        // No nothing - we are just checking perms
+      }
+
+      // Check to see if display of warning dialog has been disabled
+      if ( readPerms && createPerms && executePerms ) {
+        warningTitle = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllOption.Connect.Title" );
+        warningText = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllOption.Connect.Message" );
+        buttons = SWT.YES | SWT.NO | SWT.ICON_INFORMATION;
+      } else {
+        warningText = BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllForce.Connect.Message" );
+        if ( createPerms ) {
+          additionalWarningText =
+              BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllForceAdditional.Connect.Message" );
+          buttons = SWT.YES | SWT.NO | SWT.ICON_WARNING;
+        } else {
+          additionalWarningText =
+              BaseMessages.getString( PKG, "PurRepository.Dialog.WarnToCloseAllOptionAdditional.Connect.Message" );
+          buttons = SWT.OK | SWT.ICON_WARNING;
+        }
+      }
+    }
+
+    MessageBox mb = new MessageBox( spoon.getShell(), buttons );
+    mb.setMessage( additionalWarningText.length() != 0 ? warningText + "\n\n" + additionalWarningText : warningText );
+    mb.setText( warningTitle );
+    final int isCloseAllFiles = mb.open();
+
+    // If user has create content perms, then they can leave the tabs open.
+    // Otherwise, we force close the tabs
+    if ( ( isCloseAllFiles == SWT.YES ) || ( isCloseAllFiles == SWT.OK ) ) {
+      spoon.closeAllFiles();
     }
   }
 
