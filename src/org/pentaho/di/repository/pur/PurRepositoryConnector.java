@@ -264,7 +264,9 @@ public class PurRepositoryConnector implements IRepositoryConnector {
 
   @Override
   public synchronized void disconnect() {
-    serviceManager.close();
+    if ( serviceManager != null ) {
+      serviceManager.close();
+    }
     serviceManager = null;
   }
 }
