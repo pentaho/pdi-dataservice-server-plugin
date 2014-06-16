@@ -225,7 +225,7 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
    * Called when repository is disconnected.
    */
   private void doOnSecurityCleanup() {
-    updateMenuState( true, false );
+    updateMenuState( true, true );
   }
 
   private void enablePermission( IAbsSecurityProvider securityProvider ) throws KettleException {
@@ -297,7 +297,8 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
           boolean createPermitted = securityProvider.isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION );
           boolean executePermitted = securityProvider.isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION );
           // Disable export if user can not create or execute content (prevents execution outside of this repo)
-          container.getDocumentRoot().getElementById( "folder-context-export" ).setDisabled( !createPermitted || !executePermitted );
+          container.getDocumentRoot().getElementById( "folder-context-export" ).
+            setDisabled( !createPermitted || !executePermitted );
         }
       } catch ( KettleException e ) {
         e.printStackTrace();
@@ -318,7 +319,14 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
     if ( doc != null ) {
       // Main spoon menu
       ( (XulMenuitem) doc.getElementById( "process-run" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+
+      XulToolbarbutton transRunButton = ( (XulToolbarbutton) doc.getElementById( "trans-run" ) ); //$NON-NLS-1$
+      if ( transRunButton != null ) {
+        transRunButton.setDisabled( !executePermitted );
+      }
+
       ( (XulMenuitem) doc.getElementById( "trans-preview" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
+      ( (XulMenuitem) doc.getElementById( "trans-debug" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-replay" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-verify" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "trans-impact" ) ).setDisabled( !executePermitted ); //$NON-NLS-1$
@@ -355,6 +363,12 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
       ( (XulMenuitem) doc.getElementById( "edit-copy-steps" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "edit.copy-file" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
       ( (XulMenuitem) doc.getElementById( "edit-paste-steps" ) ).setDisabled( !exportAllowed ); //$NON-NLS-1$
+
+      XulMenuitem transCopyContextMenu =
+          ( (XulMenuitem) doc.getElementById( "trans-graph-entry-copy" ) ); //$NON-NLS-1$
+      if ( transCopyContextMenu != null ) {
+        transCopyContextMenu.setDisabled( !exportAllowed );
+      }
     }
   }
 
@@ -386,7 +400,8 @@ public class EESpoonPlugin implements SpoonPluginInterface, SpoonLifecycleListen
           }
           int retVal = msgBox.open();
 
-          // Map from this question to make sense in the original context (Yes = save, No = no-save , Cancel = do not disconnect)
+          // Map from this question to make sense in the original context
+          // (Yes = save, No = no-save , Cancel = do not disconnect)
           if ( retVal == SWT.YES ) {
             return SWT.NO;
           } else {
