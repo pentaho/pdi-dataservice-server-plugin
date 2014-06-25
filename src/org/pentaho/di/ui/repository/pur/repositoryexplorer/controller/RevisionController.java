@@ -65,6 +65,9 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
 
   private static final Class<?> PKG = IUIEEUser.class;
 
+  private static final String OPEN_REVISION_BUTTON = "revision-open";
+  private static final String RESTORE_REVISION_BUTTON = "revision-restore";
+
   protected XulTree folderTree;
   protected XulTree fileTable;
   protected XulTab historyTab;
@@ -134,8 +137,9 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
         return null;
       }
     };
+    Binding openButtonBinding = bf.createBinding(revisionTable, "selectedRows", OPEN_REVISION_BUTTON, "!disabled", forButtons); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+    Binding restoreButtonBinding = bf.createBinding(revisionTable, "selectedRows", RESTORE_REVISION_BUTTON, "!disabled", forButtons); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
-    Binding buttonBinding = bf.createBinding(revisionTable, "selectedRows", "revision-open", "!disabled", forButtons); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     bf.setBindingType(Binding.Type.ONE_WAY);
     bf.createBinding(folderTree, "selectedItems", this, "historyTabVisibility"); //$NON-NLS-1$  //$NON-NLS-2$
 
@@ -143,31 +147,37 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
         
     revisionBinding = bf.createBinding(browseController, "repositoryItems",  this, "revisionObjects",//$NON-NLS-1$ //$NON-NLS-2$
         new BindingConvertor<List<UIRepositoryObject>, UIRepositoryObjectRevisions>() {
-          @Override
-          public UIRepositoryObjectRevisions sourceToTarget(List<UIRepositoryObject> ro) {
-            UIRepositoryObjectRevisions revisions = new UIRepositoryObjectRevisions();
 
-            if (ro == null) {
+          private void disableButtons() {
+            document.getElementById( OPEN_REVISION_BUTTON ).setDisabled( true );
+            document.getElementById( RESTORE_REVISION_BUTTON ).setDisabled( true );
+          }
+
+          @Override
+          public UIRepositoryObjectRevisions sourceToTarget( List<UIRepositoryObject> ro ) {
+            if ( ro == null || ro.isEmpty() ) {
               return new UIRepositoryObjectRevisions();
             }
-            if (ro.size() <= 0) {
-              return new UIRepositoryObjectRevisions();
-            }
-            if (ro.get(0) instanceof UIRepositoryDirectory) {
-              historyTab.setVisible(false);
-              filePropertiesTabbox.setSelectedIndex(0);
+
+            if ( ro.get( 0 ) instanceof UIRepositoryDirectory ) {
+              historyTab.setVisible( false );
+              filePropertiesTabbox.setSelectedIndex( 0 );
+              disableButtons();
               return null;
             }
+
+            UIRepositoryObjectRevisions revisions;
             try {
-              UIRepositoryContent rc = (UIRepositoryContent) ro.get(0);
-              if(rc instanceof IRevisionObject) {
-                revisions = ((IRevisionObject)rc).getRevisions();
+              UIRepositoryContent rc = (UIRepositoryContent) ro.get( 0 );
+              if ( rc instanceof IRevisionObject ) {
+                revisions = ( (IRevisionObject) rc ).getRevisions();
               } else {
-                throw new IllegalStateException(BaseMessages.getString(PKG, "RevisionsController.RevisionsNotSupported")); //$NON-NLS-1$
+                throw new IllegalStateException(
+                  BaseMessages.getString( PKG, "RevisionsController.RevisionsNotSupported" ) ); //$NON-NLS-1$
               }
-            } catch (KettleException e) {
+            } catch ( KettleException e ) {
               // convert to runtime exception so it bubbles up through the UI
-              throw new RuntimeException(e);
+              throw new RuntimeException( e );
             }
             historyTab.setVisible(true);
             return revisions;
@@ -180,7 +190,8 @@ public class RevisionController  extends AbstractXulEventHandler implements IUIS
         });
 
     try {
-      buttonBinding.fireSourceChanged();
+      openButtonBinding.fireSourceChanged();
+      restoreButtonBinding.fireSourceChanged();
       revisionBinding.fireSourceChanged();
     } catch (Exception e) {
       // convert to runtime exception so it bubbles up through the UI
