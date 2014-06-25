@@ -26,29 +26,21 @@ explicitly covering such access.
             ondialogcancel="repositoryConfigController.cancel()"
             buttons="accept, cancel" buttonalign="right" title="${RepositoryConfigDialog.Title}"
             appicon="ui/images/spoon.ico"
-            height="260" width="450"
+            height="260" width="350"
             resizable="true"
             xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
               xmlns:pen="http://www.pentaho.org/2008/xul"
               onload="repositoryConfigController.init()"  padding="10" spacing="3">
-          <vbox>
-	          <label value="${RepositoryConfigDialog.RepositoryUrl}" />
-	          <hbox flex="1">
-		           <vbox flex="4">
-		                <textbox id="repository-url"  multiline="false"/>
-		                <label value="${RepositoryConfigDialog.RepositoryID}"/>
-		                <textbox id="repository-id" multiline="false"/>
-		                <label value="${RepositoryConfigDialog.RepositoryName}"/>
-		                <textbox id="repository-name"  multiline="false"/>
-		                <checkbox id="repository-modification-comments" command="repositoryConfigController.updateModificationComments()" label="${RepositoryConfigDialog.ModificationComments}" visible="false"/>
-		          </vbox>
-		          <vbox flex="1">
-		          		<hbox>
-			          		<label id="spacer-label" flex="1" />
-			                <button flex="3" id="repository-test" onclick="repositoryConfigController.test()" disabled="false" label="${RepositoryConfigDialog.Test}"/>
-		                </hbox>
-		                <label id="spacer-label" flex="1" />
-		          </vbox>
-	          </hbox>
+          	<vbox>
+    		 	<label value="${RepositoryConfigDialog.RepositoryUrl}" />
+				<hbox>
+		   			<textbox flex="1" id="repository-url"  multiline="false"/>
+			        <button  id="repository-test" onclick="repositoryConfigController.test()" disabled="false" label="${RepositoryConfigDialog.Test}"/>
+			     </hbox>
+		      <label value="${RepositoryConfigDialog.RepositoryName}"/>
+		      <textbox id="repository-name"  multiline="false"/>
+		      <label value="${RepositoryConfigDialog.RepositoryID}"/>
+		      <textbox id="repository-id" multiline="false"/>
+		      <checkbox id="repository-modification-comments" command="repositoryConfigController.updateModificationComments()" label="${RepositoryConfigDialog.ModificationComments}" visible="false"/>
           </vbox>
   </dialog>
