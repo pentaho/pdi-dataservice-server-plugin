@@ -27,8 +27,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.ObjectRevision;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryElementMetaInterface;
 import org.pentaho.di.repository.pur.model.EERepositoryObject;
 import org.pentaho.di.repository.pur.model.ObjectAcl;
@@ -44,7 +46,8 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryDirecto
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UITransformation;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 
-public class UIEETransformation extends UITransformation implements ILockObject, IRevisionObject, IAclObject, java.io.Serializable {
+public class UIEETransformation extends UITransformation implements ILockObject, IRevisionObject, IAclObject,
+    java.io.Serializable {
 
   private static final long serialVersionUID = 3460651955586659084L; /* EESOURCE: UPDATE SERIALVERUID */
   private ILockService lockService;
@@ -53,43 +56,43 @@ public class UIEETransformation extends UITransformation implements ILockObject,
   private UIRepositoryObjectRevisions revisions;
   private EERepositoryObject repObj;
   private ObjectAcl acl;
-  private Map<RepositoryFilePermission,Boolean> hasAccess = null;
+  private Map<RepositoryFilePermission, Boolean> hasAccess = null;
 
-  public UIEETransformation(RepositoryElementMetaInterface rc, UIRepositoryDirectory parent, Repository rep) {
-    super(rc, parent, rep);
-    if (!(rc instanceof EERepositoryObject)) {
+  public UIEETransformation( RepositoryElementMetaInterface rc, UIRepositoryDirectory parent, Repository rep ) {
+    super( rc, parent, rep );
+    if ( !( rc instanceof EERepositoryObject ) ) {
       throw new IllegalArgumentException();
     }
     repObj = (EERepositoryObject) rc;
     try {
-      if (rep.hasService(ILockService.class)) {
-        lockService = (ILockService) rep.getService(ILockService.class);
+      if ( rep.hasService( ILockService.class ) ) {
+        lockService = (ILockService) rep.getService( ILockService.class );
       } else {
         throw new IllegalStateException();
       }
-      if (rep.hasService(IRevisionService.class)) {
-        revisionService = (IRevisionService) rep.getService(IRevisionService.class);
+      if ( rep.hasService( IRevisionService.class ) ) {
+        revisionService = (IRevisionService) rep.getService( IRevisionService.class );
       } else {
         throw new IllegalStateException();
       }
-      if (rep.hasService(IAclService.class)) {
-        aclService = (IAclService) rep.getService(IAclService.class);
+      if ( rep.hasService( IAclService.class ) ) {
+        aclService = (IAclService) rep.getService( IAclService.class );
       } else {
         throw new IllegalStateException();
-      } 
-    } catch (KettleException e) {
-      throw new RuntimeException(e);
+      }
+    } catch ( KettleException e ) {
+      throw new RuntimeException( e );
     }
   }
 
   @Override
   public String getImage() {
     try {
-      if (isLocked()) {
+      if ( isLocked() ) {
         return "images/lock.png"; //$NON-NLS-1$
       }
-    } catch (KettleException e) {
-      throw new RuntimeException(e);
+    } catch ( KettleException e ) {
+      throw new RuntimeException( e );
     }
     return "images/transformation.png"; //$NON-NLS-1$
   }
@@ -98,15 +101,15 @@ public class UIEETransformation extends UITransformation implements ILockObject,
     return repObj.getLockMessage();
   }
 
-  public void lock(String lockNote) throws KettleException {
-    RepositoryLock lock = lockService.lockTransformation(getObjectId(), lockNote);
-    repObj.setLock(lock);
+  public void lock( String lockNote ) throws KettleException {
+    RepositoryLock lock = lockService.lockTransformation( getObjectId(), lockNote );
+    repObj.setLock( lock );
     uiParent.fireCollectionChanged();
   }
 
   public void unlock() throws KettleException {
-    lockService.unlockTransformation(getObjectId());
-    repObj.setLock(null);
+    lockService.unlockTransformation( getObjectId() );
+    repObj.setLock( null );
     uiParent.fireCollectionChanged();
   }
 
@@ -119,16 +122,16 @@ public class UIEETransformation extends UITransformation implements ILockObject,
   }
 
   public UIRepositoryObjectRevisions getRevisions() throws KettleException {
-    if (revisions != null) {
+    if ( revisions != null ) {
       return revisions;
     }
 
     revisions = new UIRepositoryObjectRevisions();
 
-    List<ObjectRevision> or = revisionService.getRevisions(getObjectId());
+    List<ObjectRevision> or = revisionService.getRevisions( getObjectId() );
 
-    for (ObjectRevision rev : or) {
-      revisions.add(new UIRepositoryObjectRevision(rev));
+    for ( ObjectRevision rev : or ) {
+      revisions.add( new UIRepositoryObjectRevision( rev ) );
     }
     return revisions;
   }
@@ -138,33 +141,34 @@ public class UIEETransformation extends UITransformation implements ILockObject,
     getRevisions();
   }
 
-  public void restoreRevision(UIRepositoryObjectRevision revision, String commitMessage) throws KettleException {
-    if (revisionService != null) {
-      revisionService.restoreTransformation(this.getObjectId(), revision.getName(), commitMessage);
+  public void restoreRevision( UIRepositoryObjectRevision revision, String commitMessage ) throws KettleException {
+    if ( revisionService != null ) {
+      revisionService.restoreTransformation( this.getObjectId(), revision.getName(), commitMessage );
       refreshRevisions();
       uiParent.fireCollectionChanged();
     }
   }
-  public void getAcls(UIRepositoryObjectAcls acls, boolean forceParentInheriting) throws AccessDeniedException{
-    if (acl == null) {
+
+  public void getAcls( UIRepositoryObjectAcls acls, boolean forceParentInheriting ) throws AccessDeniedException {
+    if ( acl == null ) {
       try {
-        acl = aclService.getAcl(getObjectId(), forceParentInheriting);
-      } catch(KettleException ke) {
-        throw new AccessDeniedException(ke);
+        acl = aclService.getAcl( getObjectId(), forceParentInheriting );
+      } catch ( KettleException ke ) {
+        throw new AccessDeniedException( ke );
       }
     }
-    acls.setObjectAcl(acl);
+    acls.setObjectAcl( acl );
   }
 
-  public void getAcls(UIRepositoryObjectAcls acls) throws AccessDeniedException{
-    getAcls(acls, false);
+  public void getAcls( UIRepositoryObjectAcls acls ) throws AccessDeniedException {
+    getAcls( acls, false );
   }
 
-  public void setAcls(UIRepositoryObjectAcls security) throws AccessDeniedException{
+  public void setAcls( UIRepositoryObjectAcls security ) throws AccessDeniedException {
     try {
-      aclService.setAcl(getObjectId(), security.getObjectAcl());
-    } catch (KettleException e) {
-      throw new AccessDeniedException(e);
+      aclService.setAcl( getObjectId(), security.getObjectAcl() );
+    } catch ( KettleException e ) {
+      throw new AccessDeniedException( e );
     }
   }
 
@@ -175,13 +179,21 @@ public class UIEETransformation extends UITransformation implements ILockObject,
   }
 
   @Override
-  public boolean hasAccess(RepositoryFilePermission perm) throws KettleException {
-    if (hasAccess == null) {
+  public boolean hasAccess( RepositoryFilePermission perm ) throws KettleException {
+    if ( hasAccess == null ) {
       hasAccess = new HashMap<RepositoryFilePermission, Boolean>();
     }
-    if (hasAccess.get(perm) == null) {
-      hasAccess.put(perm, new Boolean(aclService.hasAccess(getObjectId(), perm)));
+    if ( hasAccess.get( perm ) == null ) {
+      hasAccess.put( perm, new Boolean( aclService.hasAccess( getObjectId(), perm ) ) );
     }
-    return hasAccess.get(perm).booleanValue();
+    return hasAccess.get( perm ).booleanValue();
+  }
+
+  @Override
+  protected ObjectId renameTransformation( ObjectId objectId, RepositoryDirectory directory, String name )
+    throws Exception {
+    ObjectId id = rep.renameTransformation( this.getObjectId(), getRepositoryDirectory(), name );
+    refreshRevisions();
+    return id;
   }
 }
