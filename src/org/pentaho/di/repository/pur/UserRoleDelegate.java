@@ -88,7 +88,7 @@ public class UserRoleDelegate implements java.io.Serializable {
   
   private void initManaged(PurRepositoryMeta repositoryMeta, IUser userInfo) throws JSONException {
     String baseUrl = repositoryMeta.getRepositoryLocation().getUrl();
-    String webService = baseUrl + "/api/system/authentication-provider";
+    String webService = baseUrl + (baseUrl.endsWith("/")?"":"/")+ "api/system/authentication-provider";
     HTTPBasicAuthFilter authFilter = new HTTPBasicAuthFilter(userInfo.getLogin(), userInfo.getPassword());
     Client client = new Client();
     client.addFilter(authFilter);

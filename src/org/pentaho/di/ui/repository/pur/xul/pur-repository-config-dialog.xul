@@ -34,7 +34,7 @@ explicitly covering such access.
           	<vbox>
     		 	<label value="${RepositoryConfigDialog.RepositoryUrl}" />
 				<hbox>
-		   			<textbox flex="1" id="repository-url"  multiline="false"/>
+		   			<textbox flex="1" id="repository-url"  multiline="false" tooltiptext="${RepositoryConfigDialog.RepositoryUrl.TooltipText}"/>
 			        <button  id="repository-test" onclick="repositoryConfigController.test()" disabled="false" label="${RepositoryConfigDialog.Test}"/>
 			     </hbox>
 		      <label value="${RepositoryConfigDialog.RepositoryName}"/>
