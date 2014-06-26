@@ -289,17 +289,6 @@
 	<target name="package-eula" depends="install-antcontrib">
 
 		<property name="pentaho.resolve.repo" value="http://nexus.pentaho.org:8081/content/groups/omni" />
-		
-		<if>
-			<not>
-				<available file="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" type="file" />
-			</not>
-			<then>
-				<get src="${pentaho.resolve.repo}/com/pentaho/pentaho-eula-assembly-pom/${pentaho-eula-assembly-pom.version}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
-	              dest="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
-	              verbose="true" />
-			</then>
-		</if>
 
 		<if>
 			<not>
@@ -318,6 +307,17 @@
 			<then>
 				<property name="artifactName" value="${publish.artifactId}-${publish.version}" />
 				<echo>artifactName not set, assuming default of ${artifactName}</echo>
+			</then>
+		</if>
+		
+		<if>
+			<not>
+				<available file="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" type="file" />
+			</not>
+			<then>
+				<get src="${pentaho.resolve.repo}/com/pentaho/pentaho-eula-assembly-pom/${pentaho-eula-assembly-pom.version}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
+	              dest="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
+	              verbose="true" />
 			</then>
 		</if>
 		
