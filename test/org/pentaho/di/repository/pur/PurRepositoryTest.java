@@ -687,6 +687,42 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
   }
 
   @Test
+  public void testNewNonAmbiguousNaming() throws Exception {
+    PurRepository repo = (PurRepository) repository;
+
+    System.setProperty( "KETTLE_COMPATIBILITY_PUR_OLD_NAMING_MODE", "N" );
+    PartitionSchema partSchema1 = createPartitionSchema("find.me"); //$NON-NLS-1$
+    PartitionSchema partSchema2 = createPartitionSchema("find|me"); //$NON-NLS-1$
+    repository.save(partSchema1, VERSION_COMMENT_V1, null);
+    repository.save(partSchema2, VERSION_COMMENT_V1, null);
+
+    Map<RepositoryObjectType, List<? extends SharedObjectInterface>> sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+    repo.readSharedObjects(sharedObjectsByType, RepositoryObjectType.PARTITION_SCHEMA);
+
+    List<PartitionSchema> partitionSchemas = (List<PartitionSchema>) sharedObjectsByType
+      .get(RepositoryObjectType.PARTITION_SCHEMA);
+    assertEquals( 2, partitionSchemas.size() );
+
+    System.setProperty( "KETTLE_COMPATIBILITY_PUR_OLD_NAMING_MODE", "Y" );
+
+    PartitionSchema partSchema3 = createPartitionSchema("another.one"); //$NON-NLS-1$
+    PartitionSchema partSchema4 = createPartitionSchema("another|one"); //$NON-NLS-1$
+
+    repository.save(partSchema3, VERSION_COMMENT_V1, null);
+    repository.save(partSchema4, VERSION_COMMENT_V1, null);
+    sharedObjectsByType = new HashMap<RepositoryObjectType, List<? extends SharedObjectInterface>>();
+    repo.readSharedObjects(sharedObjectsByType, RepositoryObjectType.PARTITION_SCHEMA);
+
+    partitionSchemas = (List<PartitionSchema>) sharedObjectsByType
+      .get(RepositoryObjectType.PARTITION_SCHEMA);
+    assertEquals( 3, partitionSchemas.size() );
+
+
+
+  }
+
+
+  @Test
   public void testLoadSharedObjects_clusters() throws Exception {
     PurRepository repo = (PurRepository) repository;
     ClusterSchema clusterSchema = createClusterSchema(EXP_CLUSTER_SCHEMA_NAME);

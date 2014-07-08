@@ -60,3 +60,7 @@
       -keep class com.pentaho.di.trans.dataservice.DataServiceTransDialogTab {}
       
       -keepnames class org.pentaho.di.repository.pur.PurRepositoryLocation
+      
+      -keep class com.pentaho.repository.importexport.* {
+			  public static <methods>;
+		  }

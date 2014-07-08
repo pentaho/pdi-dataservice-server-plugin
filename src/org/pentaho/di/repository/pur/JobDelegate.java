@@ -55,7 +55,6 @@ import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNodeRef;
-import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 public class JobDelegate extends AbstractDelegate implements ISharedObjectsTransformer, java.io.Serializable {
 
@@ -165,10 +164,10 @@ public class JobDelegate extends AbstractDelegate implements ISharedObjectsTrans
 
   // ~ Constructors ====================================================================================================
 
-  public JobDelegate( final Repository repo ) {
+  public JobDelegate( final Repository repo, final IUnifiedRepository pur ) {
     super();
     this.repo = repo;
-    unifiedRepositoryConnectionAclService = new UnifiedRepositoryConnectionAclService( PentahoSystem.get(IUnifiedRepository.class) );
+    unifiedRepositoryConnectionAclService = new UnifiedRepositoryConnectionAclService( pur );
   }
 
   // ~ Methods =========================================================================================================

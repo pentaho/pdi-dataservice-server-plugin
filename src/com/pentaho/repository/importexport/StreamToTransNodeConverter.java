@@ -25,6 +25,9 @@ package com.pentaho.repository.importexport;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.cluster.ClusterSchema;
@@ -94,9 +97,9 @@ public class StreamToTransNodeConverter implements Converter {
       Repository repository = PDIImportUtil.connectToRepository( null );
       Document doc = PDIImportUtil.loadXMLFrom( inputStream );
       transMeta.loadXML( doc.getDocumentElement(), repository, false );
-      TransDelegate delegate = new TransDelegate( repository );
+      TransDelegate delegate = new TransDelegate( repository, this.unifiedRepository );
       saveSharedObjects( repository, transMeta );
-      return new NodeRepositoryFileData( delegate.elementToDataNode( transMeta ),  size);
+      return new NodeRepositoryFileData( delegate.elementToDataNode( transMeta ), size );
     } catch ( Exception e ) {
       e.printStackTrace();
       return null;
@@ -107,10 +110,34 @@ public class StreamToTransNodeConverter implements Converter {
     throws KettleException {
     TransMeta transMeta = (TransMeta) element;
     // First store the databases and other depending objects in the transformation.
+    List<String> databaseNames = Arrays.asList( repo.getDatabaseNames( true ) );
+
+    int dbIndex = 0;
+    int indexToReplace = 0;
+    boolean updateMeta = Boolean.FALSE;
+
+    List<Integer> transMetaDatabasesToUpdate = new ArrayList<Integer>();
+
     for ( DatabaseMeta databaseMeta : transMeta.getDatabases() ) {
+      if ( !databaseNames.contains( databaseMeta.getName() ) ) {
         if ( databaseMeta.getObjectId() == null || !StringUtils.isEmpty( databaseMeta.getHostname() ) ) {
           repo.save( databaseMeta, null, null );
         }
+      } else if ( databaseMeta.getObjectId() == null ) {
+        // add this to the list to update object Ids later
+        transMetaDatabasesToUpdate.add( dbIndex );
+        updateMeta = Boolean.TRUE;
+      }
+
+      dbIndex++;
+    }
+
+    if ( updateMeta ) {
+      // make sure to update object ids in the transmeta db collection
+      for ( Integer databaseMetaIndex : transMetaDatabasesToUpdate ) {
+        transMeta.getDatabase( databaseMetaIndex ).setObjectId(
+            repo.getDatabaseID( transMeta.getDatabase( databaseMetaIndex ).getName() ) );
+      }
     }
 
     // Store the slave servers...

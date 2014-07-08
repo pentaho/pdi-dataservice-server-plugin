@@ -1,4 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--===========================================================================
+PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
+
+Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
+
+NOTICE: All information including source code contained herein is, and
+remains the sole property of Pentaho and its licensors. The intellectual
+and technical concepts contained herein are proprietary and confidential
+to, and are trade secrets of Pentaho and may be covered by U.S. and foreign
+patents, or patents in process, and are protected by trade secret and
+copyright laws. The receipt or possession of this source code and/or related
+information does not convey or imply any rights to reproduce, disclose or
+distribute its contents, or to manufacture, use, or sell anything that it
+may describe, in whole or in part. Any reproduction, modification, distribution,
+or public display of this information without the express written authorization
+from Pentaho is strictly prohibited and in violation of applicable laws and
+international treaties. Access to the source code contained herein is strictly
+prohibited to anyone except those individuals and entities who have executed
+confidentiality and non-disclosure agreements or other agreements with Pentaho,
+explicitly covering such access.
+============================================================================-->
 <ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
   <info organisation="${ivy.artifact.group}" module="${ivy.artifact.id}" revision="${project.revision}" />
 
@@ -17,7 +38,7 @@
   <dependencies defaultconf="default->default">
 
     <!-- pentaho -->
-    <dependency org="commons-vfs" name="commons-vfs" rev="20100924-pentaho" transitive="false" />
+    <dependency org="commons-vfs" name="commons-vfs" rev="20100924-pentaho" transitive="false" conf="compile->default"/>
     <dependency org="pentaho" name="pentaho-platform-core" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" conf="compile->default"/>
     <dependency org="pentaho" name="pentaho-platform-api" rev="${dependency.bi-platform.revision}"
@@ -26,26 +47,26 @@
       changing="true" transitive="false" />
     <dependency org="pentaho" name="pentaho-platform-extensions" rev="${dependency.bi-platform.revision}"
       changing="true" transitive="false" conf="compile->default"/>
-    <dependency org="pentaho" name="pentaho-bi-platform-ee" rev="${dependency.bi-platform-ee.revision}" 
+    <dependency org="pentaho" name="pentaho-bi-platform-ee" rev="${dependency.bi-platform-ee.revision}"
       changing="true" transitive="false" conf="compile->default"/>
     <dependency org="pentaho"        name="pentaho-bi-platform-ee-proguard" rev="${dependency.bi-platform-ee.revision}" changing="true"   transitive="true" conf="obf->default">
       <artifact name="pentaho-bi-platform-ee-proguard" type="zip"/>
     </dependency>
-    <!-- begin remove for the customer src dist -->		
+    <!-- begin remove for the customer src dist -->
     <dependency org="pentaho"        name="pentaho-ee-dsc-core-proguard" rev="${dependency.pentaho-ee-dsc.revision}" changing="true"   transitive="true" conf="obf->default">
       <artifact name="pentaho-ee-dsc-core-proguard" type="zip"/>
-    </dependency>        
+    </dependency>
     <dependency org="pentaho"        name="pentaho-ee-dsc-core" rev="${dependency.pentaho-ee-dsc.revision}" changing="true"   transitive="true" conf="default->default"/>
-    <!-- end remove for the customer src dist -->	
-    
+    <!-- end remove for the customer src dist -->
+
     <dependency org="pentaho" name="pentaho-xul-core" rev="${dependency.pentaho-xul.revision}"
         changing="true" conf="compile->default" >
         <!-- Xul dependency on jaxen->xom->icu4j-2.6.1 is breaking the build during obfuscation -->
       <exclude org="com.ibm.icu" module="icu4j"/>
     </dependency>
-    
+
     <dependency org="pentaho" name="pentaho-xul-swt" rev="${dependency.pentaho-xul.revision}"
-      changing="true" conf="compile->default" />      
+      changing="true" conf="compile->default" />
 
     <!-- kettle -->
     <dependency org="pentaho-kettle" name="kettle-core" rev="${dependency.kettle.revision}" transitive="false"
@@ -58,6 +79,9 @@
     <!-- Metastore -->
     <dependency org="pentaho" name="metastore" rev="${dependency.metastore.revision}" transitive="false" changing="true" conf="compile->default" />
 
+    <!-- Metadata -->
+    <dependency org="pentaho" name="pentaho-metadata" rev="${dependency.pentaho-metadata.revision}" transitive="false" changing="true" conf="compile->default" />
+
     <!-- misc third-party -->
     <dependency org="commons-logging" name="commons-logging" rev="1.1" transitive="false" />
     <dependency org="commons-io" name="commons-io" rev="2.1" conf="default->default;test->default" />
@@ -67,19 +91,20 @@
     <dependency org="metro" name="metro-webservices-rt" rev="2.0" />
 
     <dependency org="javax.servlet"           name="servlet-api"          rev="2.5"  transitive="false" conf="compile->default"/>
- 
+
     <!--  test dependencies -->
     <dependency org="org.springframework.security" name="spring-security-core" rev="2.0.5.RELEASE"
       transitive="false" />
     <dependency org="junit" name="junit" rev="4.4" conf="test->default" />
+    <dependency org="commons-codec" name="commons-codec" rev="1.3" conf="test->default" />
     <dependency org="commons-logging" name="commons-logging" rev="1.1" conf="test->default" />
     <dependency org="commons-digester" name="commons-digester" rev="1.8" conf="test->default" />
     <dependency org="commons-lang" name="commons-lang" rev="2.4" conf="test->default" />
     <dependency org="commons-httpclient" name="commons-httpclient" rev="3.0.1" conf="test->default" />
     <dependency org="ognl" name="ognl" rev="2.6.9" conf="test->default" />
-    
+
     <dependency org="pentaho" name="pentaho-ee-mock-dsc" rev="${dependency.pentaho-ee-dsc.revision}" changing="true" conf="test->default" transitive="true" />
-    
+
     <dependency org="org.springframework" name="spring-test" rev="2.5.6" conf="test->default" />
     <dependency org="org.springframework" name="spring" rev="2.5.6" transitive="false" conf="test->default" />
     <dependency org="org.springframework" name="se-jcr" rev="0.9" transitive="false" conf="test->default">
@@ -87,7 +112,7 @@
       <exclude org="org.apache.jackrabbit" name="jackrabbit-jcr-rmi" />
     </dependency>
     <dependency org="org.json" name="json" rev="${dependency.json.revision}" transitive="false" changing="true"/>
-    <dependency org="com.google.collections" name="google-collections" rev="1.0-rc5" conf="test->default" />
+
     <dependency org="org.aspectj" name="aspectjrt" rev="1.6.6" conf="test->default" />
     <dependency org="jta" name="jta" rev="1.0.1b" conf="test->default" />
     <dependency org="org.apache.jackrabbit" name="jackrabbit-core" rev="2.4.2" conf="test->default">
@@ -110,6 +135,7 @@
     <dependency org="com.sun.jersey.contribs" name="jersey-apache-client" rev="1.16" transitive="false" conf="compile->default"/>
     <dependency org="com.sun.jersey"          name="jersey-bundle"        rev="1.16" transitive="false" conf="compile->default"/>
 
+    <dependency org="com.google.guava" name="guava" rev="17.0" transitive="false" conf="test->default"/>
 
     <!-- <exclude org="javax.servlet" module="servlet-api" /> -->
   </dependencies>

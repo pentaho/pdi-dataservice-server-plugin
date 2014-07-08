@@ -286,21 +286,41 @@
   
   <!-- ======================================== EULA assembly packaging ========================================= -->
 
-	<property name="pentaho-eula-assembly-pom.version" value="1.0.13" />
-
 	<target name="package-eula" depends="install-antcontrib">
 
+		<property name="pentaho.resolve.repo" value="http://nexus.pentaho.org:8081/content/groups/omni" />
+
+		<if>
+			<not>
+				<isset property="pentaho-eula-assembly-pom.version"/>
+			</not>
+			<then>
+				<property name="pentaho-eula-assembly-pom.version" value="1.0.13" />
+				<echo>pentaho-eula-assembly-pom.version not set, assuming default of ${pentaho-eula-assembly-pom.version}</echo>
+			</then>
+		</if>
+		
+		<if>
+			<not>
+				<isset property="artifactName"/>
+			</not>
+			<then>
+				<property name="artifactName" value="${publish.artifactId}-${publish.version}" />
+				<echo>artifactName not set, assuming default of ${artifactName}</echo>
+			</then>
+		</if>
+		
 		<if>
 			<not>
 				<available file="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" type="file" />
 			</not>
 			<then>
-				<get src="http://repo.pentaho.org/artifactory/private-release/com/pentaho/pentaho-eula-assembly-pom/${pentaho-eula-assembly-pom.version}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
+				<get src="${pentaho.resolve.repo}/com/pentaho/pentaho-eula-assembly-pom/${pentaho-eula-assembly-pom.version}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
 	              dest="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" 
 	              verbose="true" />
 			</then>
 		</if>
-
+		
 		<echo>
 	          mvn
 	          -f
@@ -312,7 +332,7 @@
 		<if>
 			<isset property="isWindows" />
 			<then>
-				<exec executable="cmd">
+				<exec executable="cmd" failonerror="true">
 					<arg value="/c" />
 					<arg value="mvn.bat" />
 					<arg value="-f" />
@@ -323,7 +343,7 @@
 				</exec>
 			</then>
 			<else>
-				<exec executable="mvn">
+				<exec executable="mvn" failonerror="true">
 					<arg value="-f" />
 					<arg value="${dist.dir}/pentaho-eula-assembly-pom-${pentaho-eula-assembly-pom.version}-pom.xml" />
 					<arg value="-DartifactName=${artifactName}" />

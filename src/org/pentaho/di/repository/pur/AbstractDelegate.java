@@ -24,8 +24,10 @@ package org.pentaho.di.repository.pur;
 
 import java.util.Date;
 
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 
 public abstract class AbstractDelegate {
@@ -98,6 +100,16 @@ public abstract class AbstractDelegate {
       return node.getProperty(name).getBoolean();
     } else {
       return defaultValue;
+    }
+  }
+  
+  public abstract DataNode elementToDataNode(RepositoryElementInterface element) throws KettleException;
+  
+  public boolean equals( RepositoryElementInterface first, RepositoryElementInterface second ) {
+    try {
+      return elementToDataNode( first ).equals( elementToDataNode( second ) );
+    } catch ( KettleException e ) {
+      return false;
     }
   }
 }

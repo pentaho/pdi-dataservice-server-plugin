@@ -139,7 +139,7 @@ public class ConnectionPermissionsController extends AbstractPermissionsControll
             throw new IllegalStateException(BaseMessages.getString(PKG, "PermissionsController.NoAclSupport")); //$NON-NLS-1$
           }          
           
-          connNameLabel.setValue(BaseMessages.getString(PKG, "AclTab.ConnectionPermission", dbconnObject.getName())); //$NON-NLS-1$
+          connNameLabel.setValue(BaseMessages.getString(PKG, "AclTab.ConnectionPermission", dbconnObject.getDisplayName())); //$NON-NLS-1$
           bf.setBindingType(Binding.Type.ONE_WAY);
           bf.createBinding(viewAclsModel, "acls", userRoleList, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
         } catch (AccessDeniedException ade) {

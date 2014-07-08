@@ -25,8 +25,10 @@ package org.pentaho.di.repository.pur;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleSecurityException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IUser;
+import org.pentaho.di.repository.RepositoryOperation;
 import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
 import org.pentaho.platform.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 
@@ -70,6 +72,25 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString(AbsSecurityProvider.class,
           "AbsSecurityProvider.ERROR_0002_UNABLE_TO_ACCESS_IS_ALLOWED"), e);//$NON-NLS-1$
+    }
+  }
+
+  @Override
+  public void validateAction( RepositoryOperation... operations )
+      throws KettleException, KettleSecurityException {
+
+    for ( RepositoryOperation operation : operations ) {
+      if ( ( operation == RepositoryOperation.EXECUTE_TRANSFORMATION ) ||
+           ( operation == RepositoryOperation.EXECUTE_JOB) ) {
+        if ( isAllowed( IAbsSecurityProvider.EXECUTE_CONTENT_ACTION ) == false ) {
+          throw new KettleException( operation + " : permission not allowed" );
+        }
+      } else if ( ( operation == RepositoryOperation.MODIFY_TRANSFORMATION ) ||
+                  ( operation == RepositoryOperation.MODIFY_JOB ) ) {
+        if ( isAllowed( IAbsSecurityProvider.CREATE_CONTENT_ACTION ) == false ) {
+          throw new KettleException( operation + " : permission not allowed" );
+        }
+      }
     }
   }
 }

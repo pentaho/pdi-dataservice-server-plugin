@@ -22,33 +22,19 @@
 
 package org.pentaho.di.repository.pur;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static org.mockito.Mockito.mock;
 
-import org.pentaho.di.repository.IRepositoryService;
+import org.junit.Test;
 
-public class RepositoryServiceRegistry {
-  private final Map<Class<? extends IRepositoryService>, IRepositoryService> serviceMap;
-  private final List<Class<? extends IRepositoryService>> serviceList;
-
-  public RepositoryServiceRegistry() {
-    serviceMap = new HashMap<Class<? extends IRepositoryService>, IRepositoryService>();
-    serviceList = new ArrayList<Class<? extends IRepositoryService>>();
-  }
-
-  public void registerService( Class<? extends IRepositoryService> clazz, IRepositoryService service ) {
-    if ( serviceMap.put( clazz, service ) == null ) {
-      serviceList.add( clazz );
-    }
-  }
-
-  public <T extends IRepositoryService> T getService( Class<T> clazz ) {
-    return clazz.cast( serviceMap.get( clazz ) );
-  }
-
-  public List<Class<? extends IRepositoryService>> getRegisteredInterfaces() {
-    return serviceList;
+public class PurRepositoryConnectorTest {
+  @Test
+  public void testPDI12439PurRepositoryConnectorDoesntNPEAfterMultipleDisconnects() {
+    PurRepository mockPurRepository = mock( PurRepository.class );
+    PurRepositoryMeta mockPurRepositoryMeta = mock( PurRepositoryMeta.class );
+    RootRef mockRootRef = mock( RootRef.class );
+    PurRepositoryConnector purRepositoryConnector =
+        new PurRepositoryConnector( mockPurRepository, mockPurRepositoryMeta, mockRootRef );
+    purRepositoryConnector.disconnect();
+    purRepositoryConnector.disconnect();
   }
 }

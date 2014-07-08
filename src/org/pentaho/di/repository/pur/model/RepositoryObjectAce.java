@@ -36,20 +36,20 @@ public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
   private EnumSet<RepositoryFilePermission> permissions;
 
   @Override
-  public boolean equals(Object obj) {
-    if (obj != null) {
+  public boolean equals( Object obj ) {
+    if ( obj != null ) {
       RepositoryObjectAce ace = (RepositoryObjectAce) obj;
 
-      if (recipient == null && permissions == null && ace.getRecipient() == null && ace.getPermissions() == null) {
+      if ( recipient == null && permissions == null && ace.getRecipient() == null && ace.getPermissions() == null ) {
         return true;
-      } else if (recipient != null && permissions != null) {
-        return recipient.equals(ace.getRecipient()) && permissions.equals(ace.getPermissions());
-      } else if (ace.getRecipient() != null && ace.getPermissions() != null ){
-        return ace.getRecipient().equals(recipient) && ace.getPermissions().equals(permissions);
-      } else if (ace.getPermissions() == null && permissions == null) {
-        return recipient.equals(ace.getRecipient());
-      } else if (ace.getRecipient() == null && recipient == null) {
-        return permissions.equals(ace.getPermissions());
+      } else if ( recipient != null && permissions != null ) {
+        return recipient.equals( ace.getRecipient() ) && permissions.equals( ace.getPermissions() );
+      } else if ( ace.getRecipient() != null && ace.getPermissions() != null ) {
+        return ace.getRecipient().equals( recipient ) && ace.getPermissions().equals( permissions );
+      } else if ( ace.getPermissions() == null && permissions == null ) {
+        return recipient.equals( ace.getRecipient() );
+      } else if ( ace.getRecipient() == null && recipient == null ) {
+        return permissions.equals( ace.getPermissions() );
       } else {
         return false;
       }
@@ -58,16 +58,17 @@ public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
     }
   }
 
-  public RepositoryObjectAce(ObjectRecipient recipient) {
+  public RepositoryObjectAce( ObjectRecipient recipient ) {
     this.recipient = recipient;
   }
 
-  public RepositoryObjectAce(ObjectRecipient recipient, RepositoryFilePermission first, RepositoryFilePermission... rest) {
-    this(recipient, EnumSet.of(first, rest));
+  public RepositoryObjectAce( ObjectRecipient recipient, RepositoryFilePermission first,
+      RepositoryFilePermission... rest ) {
+    this( recipient, EnumSet.of( first, rest ) );
   }
 
-  public RepositoryObjectAce(ObjectRecipient recipient, EnumSet<RepositoryFilePermission> permissions) {
-    this(recipient);
+  public RepositoryObjectAce( ObjectRecipient recipient, EnumSet<RepositoryFilePermission> permissions ) {
+    this( recipient );
     this.permissions = permissions;
   }
 
@@ -79,16 +80,20 @@ public class RepositoryObjectAce implements ObjectAce, java.io.Serializable {
     return permissions;
   }
 
-  public void setRecipient(ObjectRecipient recipient) {
+  public void setRecipient( ObjectRecipient recipient ) {
     this.recipient = recipient;
   }
 
-  public void setPermissions(EnumSet<RepositoryFilePermission> permissions) {
+  public void setPermissions( EnumSet<RepositoryFilePermission> permissions ) {
     this.permissions = permissions;
   }
 
-  public void setPermissions(RepositoryFilePermission first, RepositoryFilePermission... rest) {
-    this.permissions = EnumSet.of(first, rest);
+  public void setPermissions( RepositoryFilePermission first, RepositoryFilePermission... rest ) {
+    this.permissions = EnumSet.of( first, rest );
   }
 
+  @Override
+  public String toString() {
+    return recipient.toString();
+  }
 }
