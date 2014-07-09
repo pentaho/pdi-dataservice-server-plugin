@@ -138,5 +138,10 @@ explicitly covering such access.
     <dependency org="com.google.guava" name="guava" rev="17.0" transitive="false" conf="test->default"/>
 
     <!-- <exclude org="javax.servlet" module="servlet-api" /> -->
+    <!--<dependency org="com.sun.jersey" name="jersey-core" rev="1.16" transitive="false"/>-->
+    <!--<dependency org="com.sun.jersey" name="jersey-json" rev="1.16" transitive="false"/>-->
+    <!--<dependency org="com.sun.jersey" name="jersey-client" rev="1.16" transitive="false"/>-->
+    <!--<dependency org="com.sun.jersey" name="jersey-server" rev="1.16" transitive="false"/>-->
+    <!--<dependency org="com.sun.jersey" name="jersey-servlet" rev="1.16" transitive="false"/>-->
   </dependencies>
 </ivy-module>
