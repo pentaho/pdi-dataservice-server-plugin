@@ -33,9 +33,23 @@ import org.pentaho.di.ui.repository.pur.services.IAbsSecurityProvider;
 import org.pentaho.platform.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 
 public class AbsSecurityProvider extends PurRepositorySecurityProvider implements IAbsSecurityProvider, java.io.Serializable {
-
+  private static final long FIVE_MINUTES = 5 * 60 * 1000;
   private static final long serialVersionUID = -41954375242408881L; /* EESOURCE: UPDATE SERIALVERUID */
   private IAuthorizationPolicyWebService authorizationPolicyWebService = null;
+  private final ActiveCache<String, List<String>> allowedActionsActiveCache = new ActiveCache<String, List<String>>( new ActiveCacheLoader<String, List<String>>() {
+
+    @Override
+    public List<String> load( String key ) throws Exception {
+      return authorizationPolicyWebService.getAllowedActions( key );
+    }
+  }, FIVE_MINUTES );
+  private final ActiveCache<String, Boolean> isAllowedActiveCache = new ActiveCache<String, Boolean>( new ActiveCacheLoader<String, Boolean>() {
+
+    @Override
+    public Boolean load( String key ) throws Exception {
+      return authorizationPolicyWebService.isAllowed(key);
+    }
+  }, FIVE_MINUTES );
 
   public AbsSecurityProvider( PurRepository repository, PurRepositoryMeta repositoryMeta, IUser userInfo,
       ServiceManager serviceManager ) {
@@ -59,7 +73,7 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
 
   public List<String> getAllowedActions(String nameSpace) throws KettleException {
     try {
-      return authorizationPolicyWebService.getAllowedActions(nameSpace);
+      return allowedActionsActiveCache.get( nameSpace );
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString(AbsSecurityProvider.class,
           "AbsSecurityProvider.ERROR_0003_UNABLE_TO_ACCESS_GET_ALLOWED_ACTIONS"), e); //$NON-NLS-1$
@@ -68,7 +82,7 @@ public class AbsSecurityProvider extends PurRepositorySecurityProvider implement
 
   public boolean isAllowed(String actionName) throws KettleException {
     try {
-      return authorizationPolicyWebService.isAllowed(actionName);
+      return isAllowedActiveCache.get( actionName );
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString(AbsSecurityProvider.class,
           "AbsSecurityProvider.ERROR_0002_UNABLE_TO_ACCESS_IS_ALLOWED"), e);//$NON-NLS-1$
