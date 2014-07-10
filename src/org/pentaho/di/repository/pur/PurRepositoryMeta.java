@@ -81,7 +81,9 @@ public class PurRepositoryMeta extends BaseRepositoryMeta implements RepositoryM
 		try
 		{
 			String url = XMLHandler.getTagValue(repnode, "repository_location_url") ;
-			this.repositoryLocation = new PurRepositoryLocation(url);
+			 //remove trailing slash 
+			String urlTrim = url.endsWith( "/" ) ? url.substring( 0, url.length() - 1 ) : url;
+			this.repositoryLocation = new PurRepositoryLocation(urlTrim);
 			this.versionCommentMandatory = "Y".equalsIgnoreCase(XMLHandler.getTagValue(repnode, "version_comment_mandatory")) ;
 		}
 		catch(Exception e)
