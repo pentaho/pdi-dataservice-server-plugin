@@ -37,28 +37,14 @@ import java.util.concurrent.Future;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.pentaho.di.core.util.ExecutorUtil;
 import org.pentaho.di.repository.pur.ActiveCache.ExecutorServiceGetter;
 
 public class ActiveCacheTest {
-  private final ExecutorServiceGetter synchronousExecutorServiceGetter = new ExecutorServiceGetter() {
-
-    @SuppressWarnings( { "unchecked", "rawtypes" } )
-    @Override
-    public ExecutorService getExecutor() {
-      ExecutorService mockExecutor = mock( ExecutorService.class );
-      when( mockExecutor.submit( any( Callable.class ) ) ).thenAnswer( new Answer<Future>() {
-
-        @Override
-        public Future answer( final InvocationOnMock invocation ) throws Throwable {
-          Future result = mock( Future.class );
-          Object callableResult = ( (Callable) invocation.getArguments()[0] ).call();
-          when( result.get() ).thenReturn( callableResult );
-          return result;
-        }
-      } );
-      return mockExecutor;
-    }
-  };
+  private class FutureHolder {
+    @SuppressWarnings( "rawtypes" )
+    public Future future = null;
+  }
 
   @Test
   public void testActiveCacheLoadsWhenNull() throws Exception {
@@ -89,22 +75,40 @@ public class ActiveCacheTest {
     verify( mockLoader, times( 2 ) ).load( testKey );
   }
 
+  @SuppressWarnings( { "unchecked", "rawtypes" } )
   @Test
   public void testActiveCachePreemtivelyReloadsWhenHalfwayToTimeout() throws Exception {
-    long timeout = 100;
-    @SuppressWarnings( "unchecked" )
+    long timeout = 500;
     ActiveCacheLoader<String, String> mockLoader = mock( ActiveCacheLoader.class );
+    final ExecutorService mockService = mock( ExecutorService.class );
+    final FutureHolder lastSubmittedFuture = new FutureHolder();
+    when( mockService.submit( any( Callable.class ) ) ).thenAnswer( new Answer<Future>() {
+
+      @Override
+      public Future answer( InvocationOnMock invocation ) throws Throwable {
+        lastSubmittedFuture.future = ExecutorUtil.getExecutor().submit( (Callable) invocation.getArguments()[0] );
+        return lastSubmittedFuture.future;
+      }
+    } );
     ActiveCache<String, String> cache =
-        new ActiveCache<String, String>( mockLoader, timeout, synchronousExecutorServiceGetter );
+        new ActiveCache<String, String>( mockLoader, timeout, new ExecutorServiceGetter() {
+
+          @Override
+          public ExecutorService getExecutor() {
+            return mockService;
+          }
+        } );
     String testKey = "TEST-KEY";
     String testResult = "TEST-RESULT";
     String testResult2 = "TEST-RESULT-2";
     when( mockLoader.load( testKey ) ).thenReturn( testResult ).thenReturn( testResult2 );
     assertEquals( testResult, cache.get( testKey ) );
-    Thread.sleep( 55 );
+    Thread.sleep( 255 );
     // Trigger reload, we should get original result back here as it hasn't timed out
     assertEquals( testResult, cache.get( testKey ) );
-    // Should get new value when it's ready (immediately due to synchronous executor)
+    // Wait on new value to load
+    lastSubmittedFuture.future.get();
+    // Should get new value when it's ready
     assertEquals( testResult2, cache.get( testKey ) );
     verify( mockLoader, times( 2 ) ).load( testKey );
   }

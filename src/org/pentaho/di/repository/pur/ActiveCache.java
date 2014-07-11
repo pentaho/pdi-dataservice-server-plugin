@@ -85,6 +85,7 @@ public class ActiveCache<Key, Value> {
           futureResult =
               executorServiceGetter.getExecutor().submit(
                   new ActiveCacheCallable<Key, Value>( this, valueMap, loadingMap, key, loader ) );
+          loadingMap.put( key, futureResult );
         }
       }
     }
