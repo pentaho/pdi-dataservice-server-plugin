@@ -21,7 +21,12 @@
     <constructor-arg>
       <pen:bean class="org.pentaho.di.repository.Repository"/>
     </constructor-arg>
-      </bean>
+  </bean>
+    <bean class="com.pentaho.di.purge.PurgeResource">
+    <constructor-arg>
+      <pen:bean class="org.pentaho.platform.api.repository2.unified.IUnifiedRepository"/>
+    </constructor-arg>
+  </bean>
   <bean class="org.pentaho.platform.engine.core.system.objfac.spring.ApplicationContextPentahoSystemRegisterer"
         scope="singleton"/>
 </beans>
