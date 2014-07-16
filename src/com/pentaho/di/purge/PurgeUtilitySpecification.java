@@ -18,6 +18,8 @@ package com.pentaho.di.purge;
 
 import java.util.Date;
 
+import org.apache.log4j.Level;
+
 /**
  * @author tkafalas
  */
@@ -29,6 +31,7 @@ public class PurgeUtilitySpecification {
   int versionCount = -1; //if not equal to -1, keep only the newest versionCount versions of a file
   Date beforeDate; //if not null, delete all revisions dated before beforeDate
   String fileFilter = "*"; //File filter used by Tree call
+  Level logLevel = Level.INFO;
   
   public PurgeUtilitySpecification() {
   }
@@ -88,6 +91,13 @@ public class PurgeUtilitySpecification {
   public void setSharedObjects( boolean sharedObjects ) {
     this.sharedObjects = sharedObjects;
   }
-  
-  
+
+  public Level getLogLevel() {
+    return logLevel;
+  }
+
+  public void setLogLevel( Level logLevel ) {
+    this.logLevel = logLevel;
+  }
+
 }

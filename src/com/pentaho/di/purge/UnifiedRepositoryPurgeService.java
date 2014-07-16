@@ -22,16 +22,17 @@
 
 package com.pentaho.di.purge;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
-import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.RepositoryElementInterface;
-import org.pentaho.di.repository.pur.RootRef;
 import org.pentaho.di.ui.repository.pur.services.IPurgeService;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryRequest;
@@ -47,19 +48,20 @@ import org.pentaho.platform.repository2.unified.webservices.RepositoryFileTreeDt
 public class UnifiedRepositoryPurgeService implements IPurgeService {
   private final IUnifiedRepository unifiedRepository;
   private static DefaultUnifiedRepositoryWebService repoWs;
-  public static final DateFormat PARAMETER_DATE_FORMAT = DateFormat.getTimeInstance( DateFormat.SHORT );
-  
-  public UnifiedRepositoryPurgeService(IUnifiedRepository unifiedRepository) {
+  private static String[] sharedObjectFolders = new String[] { "/etc/pdi/databases", "/etc/pdi/slaveServers",
+    "/etc/pdi/clusterSchemas", "/etc/pdi/partitionSchemas" };
+
+  public UnifiedRepositoryPurgeService( IUnifiedRepository unifiedRepository ) {
     this.unifiedRepository = unifiedRepository;
   }
 
   @Override
   public void deleteVersionsBeforeDate( RepositoryElementInterface element, Date beforeDate ) throws KettleException {
     try {
-    Serializable fileId = element.getObjectId().getId();
-    deleteVersionsBeforeDate( fileId, beforeDate );
+      Serializable fileId = element.getObjectId().getId();
+      deleteVersionsBeforeDate( fileId, beforeDate );
     } catch ( Exception e ) {
-      processDeleteException(e);
+      processDeleteException( e );
     }
   }
 
@@ -70,10 +72,11 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
     int removedCount = 0;
     for ( VersionSummary versionSummary : versionList ) {
       if ( listSize - removedCount >= 1 ) {
-        break; //Don't delete the last instance of this file.
+        break; // Don't delete the last instance of this file.
       }
       if ( versionSummary.getDate().before( beforeDate ) ) {
         Serializable versionId = versionSummary.getId();
+        getLogger().debug( "removing version " + versionId.toString() );
         unifiedRepository.deleteFileAtVersion( fileId, versionId );
         removedCount++;
       }
@@ -88,7 +91,7 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
 
   @Override
   public void deleteAllVersions( Serializable fileId ) {
-    keepNumberOfVersions( fileId, 0);
+    keepNumberOfVersions( fileId, 0 );
   }
 
   @Override
@@ -113,61 +116,82 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
     List<VersionSummary> versionList = unifiedRepository.getVersionSummaries( fileId );
     int i = 0;
     int listSize = versionList.size();
+    if ( listSize > versionCount ) {
+      getLogger().info( "version count: removing versions" );
+    }
     for ( VersionSummary versionSummary : versionList ) {
       if ( i++ < listSize - versionCount ) {
         Serializable versionId = versionSummary.getId();
+        getLogger().debug( "removing version " + versionId.toString() );
         unifiedRepository.deleteFileAtVersion( fileId, versionId );
       } else {
         break;
       }
     }
   }
-  
-  private void processDeleteException (Throwable e) throws KettleException {
-    throw new KettleException( "Unable to complete revision deletion", e);
+
+  private void processDeleteException( Throwable e ) throws KettleException {
+    throw new KettleException( "Unable to complete revision deletion", e );
   }
-  
+
   public void doDeleteRevisions( PurgeUtilitySpecification purgeSpecification ) throws PurgeDeletionException {
     if ( purgeSpecification != null ) {
+      getLogger().setCurrentFilePath( purgeSpecification.getPath() );
+      logConfiguration( purgeSpecification );
       if ( !purgeSpecification.getPath().isEmpty() ) {
         processRevisionDeletion( purgeSpecification );
       }
+
+      // Now do shared objects if required
       if ( purgeSpecification.isSharedObjects() ) {
-        purgeSpecification.setPath( "/etc/pdi" );
-        processRevisionDeletion( purgeSpecification );
+        for ( String sharedObjectpath : sharedObjectFolders ) {
+          purgeSpecification.setPath( sharedObjectpath );
+          processRevisionDeletion( purgeSpecification );
+        }
       }
     }
   }
 
   private void processRevisionDeletion( PurgeUtilitySpecification purgeSpecification ) throws PurgeDeletionException {
-    RepositoryRequest repositoryRequest = new RepositoryRequest( purgeSpecification.getPath(), true, -1, purgeSpecification.getFileFilter() );
+
+    RepositoryRequest repositoryRequest =
+        new RepositoryRequest( purgeSpecification.getPath(), true, -1, purgeSpecification.getFileFilter() );
     repositoryRequest.setTypes( FILES_TYPE_FILTER.FILES_FOLDERS );
     repositoryRequest.setIncludeMemberSet( new HashSet<String>( Arrays.asList( new String[] { "name", "id", "folder",
       "path", "versioned", "versionId", "locked" } ) ) );
+
+    getLogger().debug( "Creating file list" );
     RepositoryFileTreeDto tree = getRepoWs().getTreeFromRequest( repositoryRequest );
-    
+
     processPurgeForTree( tree, purgeSpecification );
   }
-  
-  private void processPurgeForTree( RepositoryFileTreeDto tree, PurgeUtilitySpecification purgeSpecification ){ 
+
+  private void processPurgeForTree( RepositoryFileTreeDto tree, PurgeUtilitySpecification purgeSpecification ) {
 
     for ( RepositoryFileTreeDto child : tree.getChildren() ) {
-      if ( !child.getChildren().isEmpty() ){
-        processPurgeForTree( child, purgeSpecification );
-      }
-      RepositoryFileDto file = child.getFile();
-      if ( file.isVersioned() ) {
-        System.out.println( "checking revisions on file " + file.getPath() );
-        if ( purgeSpecification.isPurgeRevisions() ) {
-          deleteAllVersions( file.getId() );
-        } else {
-          if ( purgeSpecification.getBeforeDate() != null ) {
-            deleteVersionsBeforeDate( file.getId(), purgeSpecification.getBeforeDate() );
-          }
-          if ( purgeSpecification.getVersionCount() >= 0 ) {
-            keepNumberOfVersions( file.getId(), purgeSpecification.getVersionCount() );
+      try {
+        if ( !child.getChildren().isEmpty() ) {
+          processPurgeForTree( child, purgeSpecification );
+        }
+        RepositoryFileDto file = child.getFile();
+        getLogger().setCurrentFilePath( file.getPath() );
+        if ( file.isVersioned() ) {
+          if ( purgeSpecification.isPurgeRevisions() ) {
+            getLogger().info( "Purging Revisions" );
+            deleteAllVersions( file.getId() );
+          } else {
+            if ( purgeSpecification.getBeforeDate() != null ) {
+              getLogger().info( "Checking/purging by Revision date" );
+              deleteVersionsBeforeDate( file.getId(), purgeSpecification.getBeforeDate() );
+            }
+            if ( purgeSpecification.getVersionCount() >= 0 ) {
+              getLogger().info( "Checking/purging by number of Revisions" );
+              keepNumberOfVersions( file.getId(), purgeSpecification.getVersionCount() );
+            }
           }
         }
+      } catch ( Exception e ) {
+        getLogger().error( e );
       }
     }
   }
@@ -177,5 +201,33 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
       repoWs = new DefaultUnifiedRepositoryWebService();
     }
     return repoWs;
+  }
+
+  /**
+   * Get the formal logger ( or create one that just logs regularly )
+   */
+  private PurgeUtilityLogger getLogger() {
+    return PurgeUtilityLogger.getPurgeUtilityLogger();
+  }
+
+  private void logConfiguration( PurgeUtilitySpecification purgeSpecification ) {
+    if ( purgeSpecification.getFileFilter() != null && purgeSpecification.getFileFilter().isEmpty() ) {
+      getLogger().info( "Configure File Filter" + purgeSpecification.getFileFilter() );
+    }
+    if ( purgeSpecification.isPurgeFiles() ) {
+      getLogger().info( "Configure PurgeAllFiles: true" );
+    }
+    if ( purgeSpecification.isPurgeRevisions() ) {
+      getLogger().info( "Configure PurgeAllRevisions: true" );
+    }
+    if ( purgeSpecification.isSharedObjects() ) {
+      getLogger().info( "Configure ShareObjects: true" );
+    }
+    if ( purgeSpecification.getBeforeDate() != null ) {
+      getLogger().info( "Configure deleteBeforeDate: " + purgeSpecification.getBeforeDate().toString() );
+    }
+    if ( purgeSpecification.getVersionCount() != -1 ) {
+      getLogger().info( "Configure versionCount: " + purgeSpecification.getVersionCount() );
+    }
   }
 }

@@ -86,6 +86,8 @@ explicitly covering such access.
     <dependency org="commons-logging" name="commons-logging" rev="1.1" transitive="false" />
     <dependency org="commons-io" name="commons-io" rev="2.1" conf="default->default;test->default" />
     <dependency org="com.google.gwt" name="gwt-servlet"  rev="2.0.3"/>
+    <dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" />
+    <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.1" />
     <!-- metro -->
     <dependency org="metro" name="metro-webservices-api" rev="2.0" />
     <dependency org="metro" name="metro-webservices-rt" rev="2.0" />
