@@ -18,19 +18,20 @@ package com.pentaho.di.revision;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectRevision;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.di.repository.pur.PurObjectRevision;
+import org.pentaho.di.repository.pur.UnifiedRepositoryRevisionService;
 import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
-import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
-import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.repository2.unified.jcr.JcrRepositoryFileUtils;
 import org.pentaho.platform.web.http.api.resources.FileResource;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -41,31 +42,25 @@ import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 
 /**
  * Created by pminutillo on 7/7/14.
+ *
+ * Provide REST endpoints for revision API
  */
 @Path("/pur-repository-plugin/api/revision")
 public class RevisionResource {
 
-  private static boolean versioningEnabled = false;
-
-  static{
-    boolean isVersioningEnabled = PentahoSystem.get(
-        Boolean.class,
-        "versioningEnabled",
-        PentahoSessionHolder.getSession()
-    );
-
-    versioningEnabled = isVersioningEnabled;
-
-  }
-
   IUnifiedRepository repository;
-  Repository diRepository;
 
   IRevisionService revisionService = null;
 
-  public RevisionResource(IUnifiedRepository unifiedRepository, Repository diRepository) {
-    this.diRepository = diRepository;
+  /**
+   *
+   * @param unifiedRepository
+   * @param diRepository
+   */
+  public RevisionResource(IUnifiedRepository unifiedRepository) {
     this.repository = unifiedRepository;
+    // Is there a better way to get the revisionService
+    this.revisionService = new UnifiedRepositoryRevisionService(unifiedRepository, null);
   }
 
   /**
@@ -75,12 +70,12 @@ public class RevisionResource {
    * @return file properties object <code> RepositoryFileDto </code>
    */
   @GET
-  @Path("{pathId : .}/revisions")
+  @Path("{pathId : .+}/revisions")
   @Produces({APPLICATION_XML, APPLICATION_JSON})
   public Response doGetVersions(@PathParam("pathId") String pathId) {
 
     Serializable fileId = null;
-    List<ObjectRevision> revisions = null;
+    List<ObjectRevision> originalRevisions = null;
 
     RepositoryFile repositoryFile = repository.getFile(FileResource.idToPath(pathId));
     if (repositoryFile != null) {
@@ -88,19 +83,19 @@ public class RevisionResource {
     }
     if (fileId != null) {
       try {
-        revisionService = (IRevisionService) diRepository.getService(IRevisionService.class);
-        revisions = revisionService.getRevisions(new StringObjectId("fileId"));
+        originalRevisions = revisionService.getRevisions(new StringObjectId(fileId.toString()));
       } catch (KettleException e) {
         return Response.serverError().build();
       }
 
-      ArrayList<Object> responseList = new ArrayList<Object>();
-      RevisionsResponseList versionsResponseList = new RevisionsResponseList();
-      for (ObjectRevision dto : revisions) {
-        responseList.add(dto);
+      List<PurObjectRevision> revisions = new ArrayList();
+      for(ObjectRevision revision : originalRevisions ){
+        revisions.add((PurObjectRevision) revision);
       }
-      versionsResponseList.setList(responseList);
-      return Response.ok(versionsResponseList).build();
+
+      GenericEntity<List<PurObjectRevision>> genericRevisionsEntity = new GenericEntity<List<PurObjectRevision>>(revisions){};
+
+      return Response.ok(genericRevisionsEntity).build();
     } else {
       return Response.serverError().build();
     }
@@ -114,26 +109,17 @@ public class RevisionResource {
   @GET
   @Path("/versioningEnabled")
   public Response getVersioningEnabled() {
-    return Response.ok(
-      Boolean.toString(versioningEnabled)
-    ).build();
+    return Response.ok( Boolean.toString( JcrRepositoryFileUtils.getVersioningEnabled() ) ).build();
   }
 
   /**
-   * Set version enabled flag
+   * Get version comments enabled flag
    *
-   * @param versioningEnabled
    * @return
    */
-/*  @POST
-  @Path("/versioningEnabled")
-  public Response postVersioningEnabled(String versioningEnabled) {
-    IPentahoObjectFactory objectFactory = PentahoSystem.getObjectFactory();
-    if (objectFactory instanceof IPentahoDefinableObjectFactory) {
-      IPentahoDefinableObjectFactory definableObjectFactory = (IPentahoDefinableObjectFactory) objectFactory;
-      definableObjectFactory.defineInstance("versioningEnabled", Boolean.parseBoolean(versioningEnabled));
-    }
-
-    return getVersioningEnabled();
-  }*/
+  @GET
+  @Path("/versionCommentsEnabled")
+  public Response getVersionCommentsEnabled() {
+    return Response.ok( Boolean.toString( JcrRepositoryFileUtils.getVersionCommentsEnabled() ) ).build();
+  }
 }
