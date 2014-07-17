@@ -21,22 +21,16 @@
  */
 package com.pentaho.di.purge;
 
-import static javax.ws.rs.core.MediaType.WILDCARD;
-
 import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.util.Date;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -44,6 +38,8 @@ import org.apache.log4j.Level;
 import org.pentaho.di.ui.repository.pur.services.IPurgeService;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.util.RepositoryPathEncoder;
+
+import com.sun.jersey.multipart.FormDataParam;
 
 /**
  * Created by tkafalas 7/14/14.
@@ -59,18 +55,18 @@ public class PurgeResource {
     this.repository = unifiedRepository;
   }
 
-  @GET
+  @POST
   @Path( "{pathId : .+}/purge" )
-  @Consumes( { WILDCARD } )
+  @Consumes( MediaType.MULTIPART_FORM_DATA )
   @Produces( MediaType.TEXT_HTML )
   public Response doDeleteRevisions( @PathParam( "pathId" ) String pathId,
-      @DefaultValue( "false" ) @QueryParam( "purgeFiles" ) boolean purgeFiles,
-      @DefaultValue( "false" ) @QueryParam( "purgeRevisions" ) boolean purgeRevisions,
-      @DefaultValue( "false" ) @QueryParam( "purgeSharedObjects" ) boolean purgeSharedObjects,
-      @DefaultValue( "-1" ) @QueryParam( "versionCount" ) int versionCount,
-      @QueryParam( "deleteBeforeDate" ) Date deleteBeforeDate,
-      @DefaultValue( "*" ) @QueryParam( "fileFilter" ) String fileFilter,
-      @DefaultValue( "INFO" ) @QueryParam( "logLevel") String logLevelName ) {
+      @DefaultValue( "false" ) @FormDataParam( "purgeFiles" ) boolean purgeFiles,
+      @DefaultValue( "false" ) @FormDataParam( "purgeRevisions" ) boolean purgeRevisions,
+      @DefaultValue( "false" ) @FormDataParam( "purgeSharedObjects" ) boolean purgeSharedObjects,
+      @DefaultValue( "-1" ) @FormDataParam( "versionCount" ) int versionCount,
+      @FormDataParam( "deleteBeforeDate" ) Date deleteBeforeDate,
+      @DefaultValue( "*" ) @FormDataParam( "fileFilter" ) String fileFilter,
+      @DefaultValue( "INFO" ) @FormDataParam( "logLevel") String logLevelName ) {
 
     // A version count of 0 is illegal.
     if ( versionCount == 0 ) {
