@@ -37,7 +37,7 @@ import java.util.Date;
  * 
  * @author tkafalas
  */
-public class PurgeUtilityHTMLLayout extends Layout {
+public class PurgeUtilityHTMLLayout extends Layout implements IPurgeUtilityLayout {
 
   protected static final int BUF_SIZE = 256;
   protected static final int MAX_CAPACITY = 1024;
@@ -137,10 +137,10 @@ public class PurgeUtilityHTMLLayout extends Layout {
     if ( showCodeLineColumn() ) {
       LocationInfo locInfo = event.getLocationInformation();
       sbuf.append( "<td>" );
-      sbuf.append( MDC.get( PurgeUtilityLogger.CODE_LINE ) );
-//      sbuf.append( Transform.escapeTags( locInfo.getFileName() ) );
-//      sbuf.append( ':' );
-//      sbuf.append( locInfo.getLineNumber() );
+      sbuf.append( Transform.escapeTags( MDC.get( PurgeUtilityLogger.CODE_LINE ) ) );
+      // sbuf.append( Transform.escapeTags( locInfo.getFileName() ) );
+      // sbuf.append( ':' );
+      // sbuf.append( locInfo.getLineNumber() );
       sbuf.append( "</td>" + Layout.LINE_SEP );
     }
 
@@ -151,7 +151,7 @@ public class PurgeUtilityHTMLLayout extends Layout {
 
     if ( event.getNDC() != null ) {
       sbuf.append( "<tr><td bgcolor=\"#EEEEEE\" style=\"font-size : "
-        + "xx-small;\" colspan=\"6\" title=\"Nested Diagnostic Context\">" );
+          + "xx-small;\" colspan=\"6\" title=\"Nested Diagnostic Context\">" );
       sbuf.append( "NDC: " + Transform.escapeTags( event.getNDC() ) );
       sbuf.append( "</td></tr>" + Layout.LINE_SEP );
     }
@@ -188,7 +188,7 @@ public class PurgeUtilityHTMLLayout extends Layout {
   public String getHeader() {
     StringBuffer sbuf = new StringBuffer();
     sbuf.append( "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" "
-      + "\"http://www.w3.org/TR/html4/loose.dtd\">" + Layout.LINE_SEP );
+        + "\"http://www.w3.org/TR/html4/loose.dtd\">" + Layout.LINE_SEP );
     sbuf.append( "<html>" + Layout.LINE_SEP );
     sbuf.append( "<head>" + Layout.LINE_SEP );
     sbuf.append( "<title>" + title + "</title>" + Layout.LINE_SEP );

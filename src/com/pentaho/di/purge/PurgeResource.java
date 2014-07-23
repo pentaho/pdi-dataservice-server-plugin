@@ -21,6 +21,8 @@
  */
 package com.pentaho.di.purge;
 
+import static javax.ws.rs.core.MediaType.WILDCARD;
+
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
@@ -58,7 +60,7 @@ public class PurgeResource {
   @POST
   @Path( "{pathId : .+}/purge" )
   @Consumes( MediaType.MULTIPART_FORM_DATA )
-  @Produces( MediaType.TEXT_HTML )
+  @Produces( { WILDCARD } )
   public Response doDeleteRevisions( @PathParam( "pathId" ) String pathId,
       @DefaultValue( "false" ) @FormDataParam( "purgeFiles" ) boolean purgeFiles,
       @DefaultValue( "false" ) @FormDataParam( "purgeRevisions" ) boolean purgeRevisions,

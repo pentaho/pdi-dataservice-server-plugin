@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 
+import org.apache.log4j.Layout;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
@@ -63,9 +64,9 @@ public class PurgeUtilityLog {
     logName = "PurgeUtilityLog." + getThreadName();
     logger = Logger.getLogger( logName );
     logger.setLevel( logLevel );
-    PurgeUtilityHTMLLayout htmlLayout = new PurgeUtilityHTMLLayout( logLevel );
-    htmlLayout.setTitle( "Purge Utility Log" );
-    writeAppender = new WriterAppender( htmlLayout, new OutputStreamWriter( outputStream, Charset.forName( "utf-8" ) ) );
+    IPurgeUtilityLayout layout = new PurgeUtilityTextLayout( logLevel );
+    layout.setTitle( "Purge Utility Log" );
+    writeAppender = new WriterAppender( (Layout) layout, new OutputStreamWriter( outputStream, Charset.forName( "utf-8" ) ) );
     logger.addAppender( writeAppender );
   }
 

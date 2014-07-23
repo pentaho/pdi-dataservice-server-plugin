@@ -22,15 +22,12 @@
 
 package com.pentaho.di.purge;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.RepositoryElementInterface;
 import org.pentaho.di.ui.repository.pur.services.IPurgeService;
@@ -47,7 +44,7 @@ import org.pentaho.platform.repository2.unified.webservices.RepositoryFileTreeDt
  */
 public class UnifiedRepositoryPurgeService implements IPurgeService {
   private final IUnifiedRepository unifiedRepository;
-  private static DefaultUnifiedRepositoryWebService repoWs;
+  public static DefaultUnifiedRepositoryWebService repoWs; //Scoped public only so that test class can set mock
   private static String[] sharedObjectFolders = new String[] { "/etc/pdi/databases", "/etc/pdi/slaveServers",
     "/etc/pdi/clusterSchemas", "/etc/pdi/partitionSchemas" };
 
@@ -71,7 +68,7 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
     int listSize = versionList.size();
     int removedCount = 0;
     for ( VersionSummary versionSummary : versionList ) {
-      if ( listSize - removedCount >= 1 ) {
+      if ( listSize - removedCount <= 1 ) {
         break; // Don't delete the last instance of this file.
       }
       if ( versionSummary.getDate().before( beforeDate ) ) {
@@ -114,7 +111,7 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
   @Override
   public void keepNumberOfVersions( Serializable fileId, int versionCount ) {
     List<VersionSummary> versionList = unifiedRepository.getVersionSummaries( fileId );
-    int i = 0;
+    int i = 1;
     int listSize = versionList.size();
     if ( listSize > versionCount ) {
       getLogger().info( "version count: removing versions" );
@@ -138,7 +135,7 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
     if ( purgeSpecification != null ) {
       getLogger().setCurrentFilePath( purgeSpecification.getPath() );
       logConfiguration( purgeSpecification );
-      if ( !purgeSpecification.getPath().isEmpty() ) {
+      if ( purgeSpecification.getPath() != null && !purgeSpecification.getPath().isEmpty() ) {
         processRevisionDeletion( purgeSpecification );
       }
 
@@ -176,7 +173,11 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
         RepositoryFileDto file = child.getFile();
         getLogger().setCurrentFilePath( file.getPath() );
         if ( file.isVersioned() ) {
-          if ( purgeSpecification.isPurgeRevisions() ) {
+          if ( purgeSpecification.isPurgeFiles() ) {
+            getLogger().info( "Purge File" );
+            keepNumberOfVersions( file.getId(), 0 );
+            getRepoWs().deleteFileWithPermanentFlag( file.getId(), true, "purge utility" );
+          } else if ( purgeSpecification.isPurgeRevisions() ) {
             getLogger().info( "Purging Revisions" );
             deleteAllVersions( file.getId() );
           } else {
