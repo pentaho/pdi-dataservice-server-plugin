@@ -30,14 +30,59 @@
             <stringProp name="Argument.value">localhost</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
-          <elementProp name="dummyFilename" elementType="Argument">
-            <stringProp name="Argument.name">dummyFilename</stringProp>
-            <stringProp name="Argument.value">dummy.xml</stringProp>
+          <elementProp name="testFilename" elementType="Argument">
+            <stringProp name="Argument.name">testFilename</stringProp>
+            <stringProp name="Argument.value">jmeter-test.ktr</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="webContextRoot" elementType="Argument">
             <stringProp name="Argument.name">webContextRoot</stringProp>
             <stringProp name="Argument.value">pentaho-di</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="adminHomeFolderNodeId" elementType="Argument">
+            <stringProp name="Argument.name">adminHomeFolderNodeId</stringProp>
+            <stringProp name="Argument.value">null</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="createdTestFileNodeId" elementType="Argument">
+            <stringProp name="Argument.name">createdTestFileNodeId</stringProp>
+            <stringProp name="Argument.value">null</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="soap.server.name" elementType="Argument">
+            <stringProp name="Argument.name">soap.server.name</stringProp>
+            <stringProp name="Argument.value">${__property(run.server,,localhost)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="soap.server.port" elementType="Argument">
+            <stringProp name="Argument.name">soap.server.port</stringProp>
+            <stringProp name="Argument.value">${__property(run.port,,9080)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="soap.server.url" elementType="Argument">
+            <stringProp name="Argument.name">soap.server.url</stringProp>
+            <stringProp name="Argument.value">http://${soap.server.name}:${soap.server.port}/${webContextRoot}/webservices/</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="soapUrl" elementType="Argument">
+            <stringProp name="Argument.name">soapUrl</stringProp>
+            <stringProp name="Argument.value">http://localhost:9080/pentaho-di/webservices</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="createdFilePathToId" elementType="Argument">
+            <stringProp name="Argument.name">createdFilePathToId</stringProp>
+            <stringProp name="Argument.value">null</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="testFolderNodeId" elementType="Argument">
+            <stringProp name="Argument.name">testFolderNodeId</stringProp>
+            <stringProp name="Argument.value">null</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="testFolderName" elementType="Argument">
+            <stringProp name="Argument.name">testFolderName</stringProp>
+            <stringProp name="Argument.value">jmeter-test-folder</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -175,6 +220,1551 @@
               <hashTree/>
             </hashTree>
           </hashTree>
+          <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="Set Up" enabled="true"/>
+          <hashTree>
+            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Get /home/tree" enabled="true">
+              <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" enabled="true">
+                <collectionProp name="Arguments.arguments"/>
+              </elementProp>
+              <stringProp name="HTTPSampler.domain"></stringProp>
+              <stringProp name="HTTPSampler.port"></stringProp>
+              <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+              <stringProp name="HTTPSampler.response_timeout"></stringProp>
+              <stringProp name="HTTPSampler.protocol"></stringProp>
+              <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+              <stringProp name="HTTPSampler.path">/${webContextRoot}/api/repo/files/:home/tree</stringProp>
+              <stringProp name="HTTPSampler.method">GET</stringProp>
+              <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+              <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+              <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+              <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+              <boolProp name="HTTPSampler.monitor">false</boolProp>
+              <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            </HTTPSamplerProxy>
+            <hashTree>
+              <XPathExtractor guiclass="XPathExtractorGui" testclass="XPathExtractor" testname="get admin home folder node id - XPath Extractor" enabled="true">
+                <stringProp name="XPathExtractor.default">null</stringProp>
+                <stringProp name="XPathExtractor.refname">adminHomeFolderNodeId</stringProp>
+                <stringProp name="XPathExtractor.xpathQuery">//file[name=&quot;admin&quot;]/id</stringProp>
+                <boolProp name="XPathExtractor.validate">false</boolProp>
+                <boolProp name="XPathExtractor.tolerant">false</boolProp>
+                <boolProp name="XPathExtractor.namespace">false</boolProp>
+              </XPathExtractor>
+              <hashTree/>
+              <XPathExtractor guiclass="XPathExtractorGui" testclass="XPathExtractor" testname="get test folder node id - XPath Extractor" enabled="true">
+                <stringProp name="XPathExtractor.default">null</stringProp>
+                <stringProp name="XPathExtractor.refname">testFolderNodeId</stringProp>
+                <stringProp name="XPathExtractor.xpathQuery">//file[name=&quot;${testFolderName}&quot;]/id</stringProp>
+                <boolProp name="XPathExtractor.validate">false</boolProp>
+                <boolProp name="XPathExtractor.tolerant">false</boolProp>
+                <boolProp name="XPathExtractor.namespace">false</boolProp>
+              </XPathExtractor>
+              <hashTree/>
+            </hashTree>
+            <IfController guiclass="IfControllerPanel" testclass="IfController" testname="If test folder node does not exist - Controller" enabled="true">
+              <stringProp name="IfController.condition">${testFolderNodeId} != &quot;null&quot;</stringProp>
+              <boolProp name="IfController.evaluateAll">false</boolProp>
+            </IfController>
+            <hashTree>
+              <SoapSampler guiclass="SoapSamplerGui" testclass="SoapSampler" testname="create test folder SOAP/XML-RPC Request" enabled="true">
+                <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+                  <collectionProp name="Arguments.arguments"/>
+                </elementProp>
+                <stringProp name="SoapSampler.URL_DATA">${soapUrl}/unifiedRepository</stringProp>
+                <stringProp name="HTTPSamper.xml_data">&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot; xmlns:jax=&quot;http://jaxws.webservices.unified.repository2.platform.pentaho.org/&quot;&gt;
+   &lt;soapenv:Header/&gt;
+   &lt;soapenv:Body&gt;
+      &lt;jax:createFolder&gt;
+         &lt;arg0&gt;${adminHomeFolderNodeId}&lt;/arg0&gt;
+         &lt;arg1&gt;
+            &lt;fileSize&gt;0&lt;/fileSize&gt;
+            &lt;folder&gt;true&lt;/folder&gt;
+            &lt;hidden&gt;false&lt;/hidden&gt;
+              &lt;locked&gt;false&lt;/locked&gt;
+            &lt;ownerType&gt;-1&lt;/ownerType&gt;
+            &lt;versioned&gt;false&lt;/versioned&gt;
+	&lt;name&gt;${testFolderName}&lt;/name&gt;
+         &lt;/arg1&gt;
+      &lt;/jax:createFolder&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</stringProp>
+                <stringProp name="SoapSampler.xml_data_file"></stringProp>
+                <stringProp name="SoapSampler.SOAP_ACTION">createFolder</stringProp>
+                <stringProp name="SoapSampler.SEND_SOAP_ACTION">true</stringProp>
+                <boolProp name="HTTPSampler.use_keepalive">false</boolProp>
+              </SoapSampler>
+              <hashTree>
+                <XPathExtractor guiclass="XPathExtractorGui" testclass="XPathExtractor" testname="XPath Extractor" enabled="true">
+                  <stringProp name="XPathExtractor.default">null</stringProp>
+                  <stringProp name="XPathExtractor.refname">testFolderNodeId</stringProp>
+                  <stringProp name="XPathExtractor.xpathQuery">//id[1]</stringProp>
+                  <boolProp name="XPathExtractor.validate">false</boolProp>
+                  <boolProp name="XPathExtractor.tolerant">false</boolProp>
+                  <boolProp name="XPathExtractor.namespace">false</boolProp>
+                </XPathExtractor>
+                <hashTree/>
+              </hashTree>
+            </hashTree>
+            <SoapSampler guiclass="SoapSamplerGui" testclass="SoapSampler" testname="create test file SOAP/XML-RPC Request" enabled="true">
+              <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+                <collectionProp name="Arguments.arguments"/>
+              </elementProp>
+              <stringProp name="SoapSampler.URL_DATA">${soapUrl}/unifiedRepository</stringProp>
+              <stringProp name="HTTPSamper.xml_data">&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot; xmlns:jax=&quot;http://jaxws.webservices.unified.repository2.platform.pentaho.org/&quot;&gt;
+   &lt;soapenv:Header/&gt;
+   &lt;soapenv:Body&gt;
+      &lt;jax:createFile&gt;
+&lt;arg0&gt;${testFolderNodeId}&lt;/arg0&gt;
+&lt;arg1&gt;
+&lt;createdDate&gt;1406054566029&lt;/createdDate&gt;
+&lt;fileSize&gt;0&lt;/fileSize&gt;
+&lt;folder&gt;false&lt;/folder&gt;
+&lt;hidden&gt;false&lt;/hidden&gt;
+&lt;localePropertiesMapEntries&gt;
+  &lt;locale&gt;default&lt;/locale&gt;
+  &lt;properties&gt;
+	&lt;key&gt;file.title&lt;/key&gt;
+	&lt;value&gt;Transformation 1 Test&lt;/value&gt;
+  &lt;/properties&gt;
+  &lt;properties&gt;
+	&lt;key&gt;description&lt;/key&gt;
+	&lt;value/&gt;
+  &lt;/properties&gt;
+  &lt;properties&gt;
+	&lt;key&gt;title&lt;/key&gt;
+	&lt;value&gt;Transformation 1 Test&lt;/value&gt;
+  &lt;/properties&gt;
+  &lt;properties&gt;
+	&lt;key&gt;file.description&lt;/key&gt;
+	&lt;value/&gt;
+  &lt;/properties&gt;
+&lt;/localePropertiesMapEntries&gt;
+&lt;locked&gt;false&lt;/locked&gt;
+&lt;name&gt;${testFilename}&lt;/name&gt;
+&lt;ownerType&gt;-1&lt;/ownerType&gt;
+&lt;title&gt;${testFilename}&lt;/title&gt;
+&lt;versioned&gt;true&lt;/versioned&gt;
+&lt;/arg1&gt;
+&lt;arg2&gt;
+&lt;node&gt;
+  &lt;childNodes&gt;
+	&lt;name&gt;steps&lt;/name&gt;
+  &lt;/childNodes&gt;
+  &lt;childNodes&gt;
+	&lt;childProperties&gt;
+	  &lt;name&gt;NR_NOTES&lt;/name&gt;
+	  &lt;type&gt;3&lt;/type&gt;
+	  &lt;value&gt;0&lt;/value&gt;
+	&lt;/childProperties&gt;
+	&lt;name&gt;notes&lt;/name&gt;
+  &lt;/childNodes&gt;
+  &lt;childNodes&gt;
+	&lt;childProperties&gt;
+	  &lt;name&gt;NR_HOPS&lt;/name&gt;
+	  &lt;type&gt;3&lt;/type&gt;
+	  &lt;value&gt;0&lt;/value&gt;
+	&lt;/childProperties&gt;
+	&lt;name&gt;hops&lt;/name&gt;
+  &lt;/childNodes&gt;
+  &lt;childNodes&gt;
+	&lt;childProperties&gt;
+	  &lt;name&gt;NR_PARAMETERS&lt;/name&gt;
+	  &lt;type&gt;3&lt;/type&gt;
+	  &lt;value&gt;0&lt;/value&gt;
+	&lt;/childProperties&gt;
+	&lt;name&gt;parameters&lt;/name&gt;
+  &lt;/childNodes&gt;
+  &lt;childNodes&gt;
+	&lt;childNodes&gt;
+	  &lt;childProperties&gt;
+		&lt;name&gt;name&lt;/name&gt;
+		&lt;type&gt;4&lt;/type&gt;
+		&lt;value/&gt;
+	  &lt;/childProperties&gt;
+	  &lt;childProperties&gt;
+		&lt;name&gt;stepname&lt;/name&gt;
+		&lt;type&gt;4&lt;/type&gt;
+		&lt;value/&gt;
+	  &lt;/childProperties&gt;
+	  &lt;name&gt;DataService&lt;/name&gt;
+	&lt;/childNodes&gt;
+	&lt;name&gt;ATTRIBUTE_GROUPS&lt;/name&gt;
+  &lt;/childNodes&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_DATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STEP_COPY&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID11&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ROOT_CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_READ&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;TRANSNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STEPNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME9&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_INPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID10&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;PARENT_CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_WRITTEN&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_UPDATED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_VERSION&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value/&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;USING_THREAD_PRIORITIES&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_SUBJECT8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID9&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_INPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_SUBJECT9&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_WRITTEN&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_UPDATED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_SUBJECT4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STEP_COPY&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_SUBJECT5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_READ&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_SUBJECT6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;TRANSNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_SUBJECT7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STEPNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;SEQ_NR&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOGDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANSLOG_TABLE_INTERVAL&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_REJECTED&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANSFORMATION_TYPE&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;Normal&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID12&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ENDDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_SCHEMA_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID13&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOGDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID14&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;DEPDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID15&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;REPLAYDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID10&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ERRORS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID11&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STARTDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;SIZE_ROWSET&lt;/name&gt;
+	&lt;type&gt;3&lt;/type&gt;
+	&lt;value&gt;10000&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID16&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_FIELD&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID17&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;EXECUTING_SERVER&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID18&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;EXECUTING_USER&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID19&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CLIENT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_INPUT&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;TRANSNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;MODIFIED_USER&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;admin&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME9&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_REJECTED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED8&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED7&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_INPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED6&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_OUTPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED5&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_WRITTEN&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_UPDATED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STATUS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_READ&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED9&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED0&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED4&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED3&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;EXTENDED_DESCRIPTION&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value/&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_OUTPUT&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED2&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED1&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID13&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;INPUT_BUFFER_ROWS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID12&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ERRORS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME11&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_REJECTED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID14&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OUTPUT_BUFFER_ROWS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME10&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_OUTPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME13&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;INPUT_BUFFER_ROWS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME12&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ERRORS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID9&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_INPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_UPDATED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID11&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_REJECTED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME14&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OUTPUT_BUFFER_ROWS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_WRITTEN&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ID10&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_OUTPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_READ&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;LOG_SIZE_LIMIT&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STEP_COPY&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STEPNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;TRANSNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_DATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_TIMEOUT_IN_DAYS&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_TABLE_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED0&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED4&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED3&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED2&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED1&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED8&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED7&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED6&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_TABLE_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED5&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_SCHEMA_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED9&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_CONNECTION_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;USE_LOGFIELD&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CREATED_DATE&lt;/name&gt;
+	&lt;type&gt;1&lt;/type&gt;
+	&lt;value&gt;1406041546806&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_TIMEOUT_IN_DAYS&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TABLE_NAME_MAXDATE&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value/&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_PERFORMANCE_LOG_TABLE&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME12&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ERRORS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME13&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_FIELD&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ENABLED1&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME11&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_REJECTED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ENABLED0&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_STATUS&lt;/name&gt;
+	&lt;type&gt;3&lt;/type&gt;
+	&lt;value&gt;0&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_NAME10&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_OUTPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ENABLED3&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ENABLED2&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_CONNECTION_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_TABLE_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOGGING_OBJECT_TYPE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_DATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OBJECT_COPY&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OBJECT_NAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;FILENAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;REPOSITORY_DIRECTORY&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;MODIFIED_DATE&lt;/name&gt;
+	&lt;type&gt;1&lt;/type&gt;
+	&lt;value&gt;1406054561872&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;FEEDBACK_SIZE&lt;/name&gt;
+	&lt;type&gt;3&lt;/type&gt;
+	&lt;value&gt;50000&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TABLE_NAME_LOG&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OBJECT_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_TABLE_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ID9&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OBJECT_REVISION&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;TRANSNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED1&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME17&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;EXECUTING_SERVER&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ENABLED8&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED0&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME16&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_FIELD&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED3&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME19&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CLIENT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED2&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME18&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;EXECUTING_USER&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ENABLED5&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ENABLED4&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ENABLED7&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ENABLED6&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_UPDATED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_WRITTEN&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME11&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STARTDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_READ&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME10&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ERRORS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STATUS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME13&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOGDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME12&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ENDDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID9&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_REJECTED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME15&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;REPLAYDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_OUTPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_NAME14&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;DEPDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ID7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_INPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED6&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCELOG_TABLE_INTERVAL&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED7&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED4&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED5&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED8&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED9&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;USE_BATCHID&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED11&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOGDATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED10&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;SEQ_NR&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED13&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED12&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED15&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED14&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED17&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;false&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED16&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME9&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_INPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_UPDATED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_WRITTEN&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_READ&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_UPDATE&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STEP_COPY&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;STEPNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_NAME3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;TRANSNAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED14&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;FEEDBACK_SHOWN&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED10&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED11&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED12&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME11&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ROOT_CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_FIELD_ENABLED13&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME10&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;PARENT_CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;FIELD_NAME_MAXDATE&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value/&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_CONNECTION_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_CONNECTION_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_READ&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;SHARED_FILE&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value/&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_SCHEMA_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CREATED_USER&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;-&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_NAME1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_NAME0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_NAME3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_DATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID13&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_FIELD&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_NAME2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_DATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID12&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ERRORS&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_NAME5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_DESCRIPTION&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED13&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;false&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_NAME4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_CODE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED12&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_NAME7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_TYPE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED11&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_NAME6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_SUBJECT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ENABLED10&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_TABLE_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED10&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_ENABLED11&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CAPTURE_STEP_PERFORMANCE&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;false&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_CONNECTION_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;UNIQUE_CONNECTIONS&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;false&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ID0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ID1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ID2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_DATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ID3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_DATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ID4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_CODE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ID5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_DESCRIPTION&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ID6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_SUBJECT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED0&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED19&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;false&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ID7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_TYPE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED18&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;false&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED2&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED1&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED4&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED3&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED6&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED5&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED8&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANSLOG_TABLE_SIZE_LIMIT&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED7&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_NAME8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_VALUE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_FIELD_ID8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;METRICS_VALUE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_SCHEMA_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_PERFORMANCE_CAPTURING_SIZE_LIMIT&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;100&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_FIELD_ENABLED9&lt;/name&gt;
+	&lt;type&gt;0&lt;/type&gt;
+	&lt;value&gt;true&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME9&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OBJECT_REVISION&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME8&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OBJECT_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;DIFF_MAXDATE&lt;/name&gt;
+	&lt;type&gt;2&lt;/type&gt;
+	&lt;value&gt;0.0&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_WRITE&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME2&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOG_DATE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;METRICS_LOG_TABLE_TIMEOUT_IN_DAYS&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME3&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LOGGING_OBJECT_TYPE&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_TIMEOUT_IN_DAYS&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME0&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;ID_BATCH&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME1&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;CHANNEL_ID&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;LOG_INTERVAL&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME6&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;REPOSITORY_DIRECTORY&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME7&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;FILENAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME4&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OBJECT_NAME&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;CHANNEL_LOG_TABLE_FIELD_NAME5&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;OBJECT_COPY&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_PERFORMANCE_CAPTURING_DELAY&lt;/name&gt;
+	&lt;type&gt;3&lt;/type&gt;
+	&lt;value&gt;1000&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID10&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_OUTPUT&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;STEP_LOG_TABLE_FIELD_ID11&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+	&lt;value&gt;LINES_REJECTED&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;TRANS_LOG_TABLE_SCHEMA_NAME&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;PERFORMANCE_LOG_TABLE_TIMEOUT_IN_DAYS&lt;/name&gt;
+	&lt;type&gt;4&lt;/type&gt;
+  &lt;/childProperties&gt;
+  &lt;childProperties&gt;
+	&lt;name&gt;OFFSET_MAXDATE&lt;/name&gt;
+	&lt;type&gt;2&lt;/type&gt;
+	&lt;value&gt;0.0&lt;/value&gt;
+  &lt;/childProperties&gt;
+  &lt;name&gt;transformation&lt;/name&gt;
+&lt;/node&gt;
+&lt;/arg2&gt;
+&lt;arg3&gt;JMeter test&lt;/arg3&gt;
+
+	&lt;/jax:createFile&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</stringProp>
+              <stringProp name="SoapSampler.xml_data_file"></stringProp>
+              <stringProp name="SoapSampler.SOAP_ACTION">createFile</stringProp>
+              <stringProp name="SoapSampler.SEND_SOAP_ACTION">true</stringProp>
+              <boolProp name="HTTPSampler.use_keepalive">false</boolProp>
+            </SoapSampler>
+            <hashTree>
+              <XPathExtractor guiclass="XPathExtractorGui" testclass="XPathExtractor" testname="XPath Extractor" enabled="true">
+                <stringProp name="XPathExtractor.default">null</stringProp>
+                <stringProp name="XPathExtractor.refname">createdTestFileNodeId</stringProp>
+                <stringProp name="XPathExtractor.xpathQuery">//id[1]</stringProp>
+                <boolProp name="XPathExtractor.validate">false</boolProp>
+                <boolProp name="XPathExtractor.tolerant">false</boolProp>
+                <boolProp name="XPathExtractor.namespace">false</boolProp>
+              </XPathExtractor>
+              <hashTree/>
+            </hashTree>
+            <SoapSampler guiclass="SoapSamplerGui" testclass="SoapSampler" testname="get test file SOAP/XML-RPC Request" enabled="true">
+              <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+                <collectionProp name="Arguments.arguments"/>
+              </elementProp>
+              <stringProp name="SoapSampler.URL_DATA">${soapUrl}/unifiedRepository</stringProp>
+              <stringProp name="HTTPSamper.xml_data">&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot; xmlns:jax=&quot;http://jaxws.webservices.unified.repository2.platform.pentaho.org/&quot;&gt;
+   &lt;soapenv:Header/&gt;
+   &lt;soapenv:Body&gt;
+      &lt;jax:getFileById&gt;
+         &lt;arg0&gt;${createdTestFileNodeId}&lt;/arg0&gt;
+      &lt;/jax:getFileById&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</stringProp>
+              <stringProp name="SoapSampler.xml_data_file"></stringProp>
+              <stringProp name="SoapSampler.SOAP_ACTION">getFileById</stringProp>
+              <stringProp name="SoapSampler.SEND_SOAP_ACTION">true</stringProp>
+              <boolProp name="HTTPSampler.use_keepalive">false</boolProp>
+            </SoapSampler>
+            <hashTree>
+              <XPathExtractor guiclass="XPathExtractorGui" testclass="XPathExtractor" testname="XPath Extractor" enabled="true">
+                <stringProp name="XPathExtractor.default">null</stringProp>
+                <stringProp name="XPathExtractor.refname">createdFilePath</stringProp>
+                <stringProp name="XPathExtractor.xpathQuery">//path[1]</stringProp>
+                <boolProp name="XPathExtractor.validate">false</boolProp>
+                <boolProp name="XPathExtractor.tolerant">false</boolProp>
+                <boolProp name="XPathExtractor.namespace">false</boolProp>
+              </XPathExtractor>
+              <hashTree/>
+            </hashTree>
+          </hashTree>
           <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="RevisionResource" enabled="true"/>
           <hashTree>
             <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET /revision/versioningEnabled" enabled="true">
@@ -204,7 +1794,7 @@
                 </collectionProp>
                 <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
                 <boolProp name="Assertion.assume_success">false</boolProp>
-                <intProp name="Assertion.test_type">1</intProp>
+                <intProp name="Assertion.test_type">2</intProp>
               </ResponseAssertion>
               <hashTree/>
             </hashTree>
@@ -239,7 +1829,7 @@
               <stringProp name="HTTPSampler.response_timeout"></stringProp>
               <stringProp name="HTTPSampler.protocol"></stringProp>
               <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-              <stringProp name="HTTPSampler.path">/${webContextRoot}/plugin/pur-repository-plugin/api/revision/:home:admin/revisions</stringProp>
+              <stringProp name="HTTPSampler.path">/${webContextRoot}/plugin/pur-repository-plugin/api/revision/${createdFilePath}/revisions</stringProp>
               <stringProp name="HTTPSampler.method">GET</stringProp>
               <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
               <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -248,13 +1838,40 @@
               <boolProp name="HTTPSampler.monitor">false</boolProp>
               <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
             </HTTPSamplerProxy>
-            <hashTree/>
+            <hashTree>
+              <BeanShellPreProcessor guiclass="TestBeanGUI" testclass="BeanShellPreProcessor" testname="BeanShell PreProcessor" enabled="true">
+                <stringProp name="filename"></stringProp>
+                <stringProp name="parameters"></stringProp>
+                <boolProp name="resetInterpreter">false</boolProp>
+                <stringProp name="script">String path = vars.get(&quot;createdFilePath&quot;);
+path = path.replace(&quot;&lt;id&gt;&quot;, &quot;&quot;);
+path = path.replace(&quot;&lt;/id&gt;&quot;,  &quot;&quot;);
+path = path.replace(&quot;/&quot;, &quot;:&quot;);
+vars.put(&quot;createdFilePath&quot;, path);</stringProp>
+              </BeanShellPreProcessor>
+              <hashTree/>
+            </hashTree>
           </hashTree>
-          <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="PurgeResource" enabled="false"/>
+          <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="PurgeResource" enabled="true"/>
           <hashTree>
-            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET /purge/{pathId : .+}/purge" enabled="true">
+            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /purge/{pathId : .+}/purge" enabled="true">
               <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" enabled="true">
-                <collectionProp name="Arguments.arguments"/>
+                <collectionProp name="Arguments.arguments">
+                  <elementProp name="deleteBeforeDate" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">8/3/2014</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">deleteBeforeDate</stringProp>
+                  </elementProp>
+                  <elementProp name="purgeFiles" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">true</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">purgeFiles</stringProp>
+                  </elementProp>
+                </collectionProp>
               </elementProp>
               <stringProp name="HTTPSampler.domain"></stringProp>
               <stringProp name="HTTPSampler.port"></stringProp>
@@ -262,12 +1879,12 @@
               <stringProp name="HTTPSampler.response_timeout"></stringProp>
               <stringProp name="HTTPSampler.protocol"></stringProp>
               <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-              <stringProp name="HTTPSampler.path">/${webContextRoot}/plugin/pur-repository-plugin/api/revision/versioningEnabled</stringProp>
-              <stringProp name="HTTPSampler.method">GET</stringProp>
-              <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+              <stringProp name="HTTPSampler.path">/${webContextRoot}/plugin/pur-repository-plugin/api/purge/:home:admin:${testFolderName}/purge</stringProp>
+              <stringProp name="HTTPSampler.method">POST</stringProp>
+              <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
               <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-              <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-              <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+              <boolProp name="HTTPSampler.use_keepalive">false</boolProp>
+              <boolProp name="HTTPSampler.DO_MULTIPART_POST">true</boolProp>
               <boolProp name="HTTPSampler.monitor">false</boolProp>
               <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
             </HTTPSamplerProxy>
