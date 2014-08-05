@@ -39,6 +39,10 @@ explicitly covering such access.
             value="${basedir}/compile-lib"
             description="Directory for compilation dependencies that shouldn't make it into the distribution" />
 
+  <property name="assemble.stage.dir"
+            value="${bin.dir}/stage"
+            description="Staging directory for package contents" />
+
   <!-- Setup the compile classpath -->
   <path id="classpath">
     <fileset dir="${devlib.dir}">
@@ -107,7 +111,31 @@ explicitly covering such access.
   </target>
 
   <!-- Override assemble to build plugin.xml afterwards -->
-  <target name="assemble" depends="update-plugin-xml" />
+  <target name="assemble" depends="update-plugin-xml">
+    <mkdir dir="${assemble.stage.dir}" />
+    <mkdir dir="${assemble.stage.dir}/${ivy.artifact.id}" />
+    <mkdir dir="${assemble.stage.dir}/${ivy.artifact.id}/lib" />
+
+    <!-- move the plugin jar to the plugin lib folder -->
+    <if>
+      <available file="${assemble.stage.dir}/${ivy.artifact.id}/${ivy.artifact.id}-${project.revision}-obf.jar" />
+      <then>
+        <!-- move the obfuscated plugin jar to the plugin dist lib folder -->
+        <move todir="${assemble.stage.dir}/${ivy.artifact.id}/lib">
+          <fileset dir="${assemble.stage.dir}/${ivy.artifact.id}/">
+            <include name="${ivy.artifact.id}-${project.revision}-obf.jar" />
+          </fileset>
+          <globmapper from="*-obf.jar" to="*.jar"/>
+        </move>
+      </then>
+      <else>
+        <!-- move the plugin jar to the plugin dist lib folder -->
+        <move todir="${assemble.stage.dir}/${ivy.artifact.id}/lib" overwrite="true">
+          <fileset file="${assemble.stage.dir}/${ivy.artifact.id}/${ivy.artifact.id}-${project.revision}.jar"/>
+        </move>
+      </else>
+    </if>
+  </target>
 
   <target name="update-plugin-xml" depends="subfloor-pkg.assemble,install-antcontrib">
     <var name="libSection.var" value="" />
