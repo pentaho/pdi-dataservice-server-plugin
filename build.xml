@@ -186,4 +186,11 @@ explicitly covering such access.
 
   </target>
   <!-- end remove for the customer src dist -->
+	
+  <target name="wadl2java-resolve" depends="install-antcontrib, install-ivy" description="Loads in the Wadl2Java dependencies so build-wadl2java.xml will work">
+    <mkdir dir="${wadl2java.project}"/>
+	  <ivy:resolve file="ivy.xml" conf="wadl2java" />
+		<ivy:retrieve conf="wadl2java" pattern="${basedir}/wadl2java/lib/[module]-[revision](-[classifier]).[ext]" symlink="${ivy.use.symlinks.internal}" />
+  </target>
+	
 </project>

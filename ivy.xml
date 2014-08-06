@@ -27,6 +27,7 @@ explicitly covering such access.
     <conf name="default" />
     <conf name="compile" />
     <conf name="obf" />
+    <conf name="wadl2java" />
     <conf name="test" visibility="private" />
   </configurations>
 
@@ -139,6 +140,8 @@ explicitly covering such access.
     <dependency org="com.sun.jersey"          name="jersey-bundle"        rev="1.16" transitive="false" conf="compile->default"/>
     
     <dependency org="com.google.guava" name="guava" rev="17.0" transitive="false" conf="test->default"/>
+	  <dependency org="org.jvnet.ws.wadl" name="wadl-core" rev="1.1.6" conf="wadl2java->default" />
+    <dependency org="org.jvnet.ws.wadl" name="wadl-ant" rev="1.1.6" conf="wadl2java->default" />
 
     <!-- <exclude org="javax.servlet" module="servlet-api" /> -->
     <!--<dependency org="com.sun.jersey" name="jersey-core" rev="1.16" transitive="false"/>-->

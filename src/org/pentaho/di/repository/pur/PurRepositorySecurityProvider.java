@@ -53,7 +53,7 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	}
 	
 	public boolean isVersionCommentMandatory() {
-	  return  ((PurRepositoryMeta) repositoryMeta).isVersionCommentMandatory();
+	  return ( ( (PurRepositoryMeta) repositoryMeta ).isVersionCommentMandatory() && repository.isVersioningEnabled());
 	}
 
 	public boolean isLockingPossible() {
@@ -65,7 +65,7 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
 	}
 
 	public boolean allowsVersionComments() {
-		return true;
+		return ( repository.isVersioningEnabled() && repository.isCommentsEnabled() );
 	}
 
   public String[] getUserLogins() throws KettleException {
@@ -112,5 +112,8 @@ public class PurRepositorySecurityProvider extends BaseRepositorySecurityProvide
     return logger;
   }
 
-
+  @Override
+  public boolean isVersioningEnabled() {
+    return repository.isVersioningEnabled();
+  }
 }

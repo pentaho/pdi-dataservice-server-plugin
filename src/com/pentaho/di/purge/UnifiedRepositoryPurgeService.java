@@ -142,6 +142,7 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
       // Now do shared objects if required
       if ( purgeSpecification.isSharedObjects() ) {
         for ( String sharedObjectpath : sharedObjectFolders ) {
+          purgeSpecification.fileFilter="*";
           purgeSpecification.setPath( sharedObjectpath );
           processRevisionDeletion( purgeSpecification );
         }

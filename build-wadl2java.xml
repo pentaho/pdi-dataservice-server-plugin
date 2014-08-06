@@ -1,0 +1,76 @@
+<project name="PUR Repository Plugin - Wadl2Java" basedir="." default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
+<!--===========================================================================
+PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
+
+Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
+
+NOTICE: All information including source code contained herein is, and
+remains the sole property of Pentaho and its licensors. The intellectual
+and technical concepts contained herein are proprietary and confidential
+to, and are trade secrets of Pentaho and may be covered by U.S. and foreign
+patents, or patents in process, and are protected by trade secret and
+copyright laws. The receipt or possession of this source code and/or related
+information does not convey or imply any rights to reproduce, disclose or
+distribute its contents, or to manufacture, use, or sell anything that it
+may describe, in whole or in part. Any reproduction, modification, distribution,
+or public display of this information without the express written authorization
+from Pentaho is strictly prohibited and in violation of applicable laws and
+international treaties. Access to the source code contained herein is strictly
+prohibited to anyone except those individuals and entities who have executed
+confidentiality and non-disclosure agreements or other agreements with Pentaho,
+explicitly covering such access.
+============================================================================-->
+	
+	<import file="build-res/subfloor-ee.xml" />
+  <!-- Import the subfloor-pkg.xml file which contains all the default tasks -->
+  <import file="build-res/subfloor-pkg.xml" />
+	
+	
+	<!-- Wadl2Java logic -->
+	<property name="wadl2java.temp-file-full-path" value="${wadl2java.codedir}/${wadl2java.generated-class-name}.java" />
+	
+  <taskdef name="wjc" 
+           classname="org.jvnet.ws.wadl2java.WJCTask">
+      <classpath>
+          <fileset dir="${wadl2java.project}" includes="*.jar" 
+                   excludes="wadl-cmdline*.jar"/>
+      </classpath>
+  </taskdef>
+	
+	<target name="wadl2java" description="Generated the classes reflecting the Rest Services from the Wadl file" >
+    <echo message="Compiling the description..." />
+    <mkdir dir="${wadl2java.codedir}"/>
+    <wjc description="${wadl2java.source-wadl-file}" 
+         package="${wadl2java.target-package}" 
+         autoSchemaPackage="false" 
+         target="${basedir}/src">
+        
+        <produces dir="${basedir}/src" includes="**/*.java" />
+        <depends dir="." includes="build.xml"/>
+    		<depends dir="${wadl2java.project}" includes="wadl2java.jar"/>
+        <customClassName uri="http://localhost:9080/pentaho-di/plugin/" classname="PurRepositoryPluginServices" />            
+    </wjc>
+		
+		<!-- Modify the resulting class adding our tagging interface -->
+		<replaceregexp file="${wadl2java.temp-file-full-path}"
+			match="package com.pentaho.di.services;\r\n"
+			replace="package com.pentaho.di.services;${line.separator}${line.separator}import org.pentaho.di.repository.IRepositoryService;"
+		/>
+
+		<replaceregexp file="${wadl2java.temp-file-full-path}"
+			match="public static class (.*) \{"
+			replace="public static class \1 implements IRepositoryService {"
+			byline="true"
+		/>
+		
+		<replaceregexp file="${wadl2java.temp-file-full-path}"
+			match="${wadl2java.generated-class-name}"
+			replace="${wadl2java.desired-class-name}"
+			byline="true"
+		/>
+		
+		<!-- Finally rename the file and overwrite the original -->
+		<move file="${wadl2java.temp-file-full-path}" tofile="${wadl2java.codedir}/${wadl2java.desired-class-name}.java" />
+
+	</target>
+</project>

@@ -29,4 +29,5 @@ public interface IRepositoryConnector {
   public RepositoryConnectResult connect( final String username, final String password ) throws KettleException,
     KettleSecurityException;
   public void disconnect();
+  public ServiceManager getServiceManager();
 }

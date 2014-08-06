@@ -22,7 +22,9 @@
 
 package org.pentaho.di.repository.pur;
 
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,13 +42,19 @@ import javax.xml.ws.soap.SOAPBinding;
 
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.util.ExecutorUtil;
+import org.pentaho.di.repository.pur.WebServiceSpecification.ServiceType;
 import org.pentaho.platform.repository2.unified.webservices.jaxws.IUnifiedRepositoryJaxwsWebService;
 import org.pentaho.platform.security.policy.rolebased.ws.IAuthorizationPolicyWebService;
 import org.pentaho.platform.security.policy.rolebased.ws.IRoleAuthorizationPolicyRoleBindingDaoWebService;
 import org.pentaho.platform.security.userrole.ws.IUserRoleListWebService;
 import org.pentaho.platform.security.userroledao.ws.IUserRoleWebService;
 
+import com.pentaho.di.services.PentahoDiPlugin;
 import com.pentaho.pdi.ws.IRepositorySyncWebService;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import com.sun.xml.ws.developer.JAXWSProperties;
 
 /**
@@ -69,23 +77,29 @@ public class WebServiceManager implements ServiceManager {
 
   private final Map<String, Future<Object>> serviceCache = new HashMap<String, Future<Object>>();
 
-  private final Map<Class<?>, String> serviceNameMap;
+  private final Map<Class<?>, WebServiceSpecification> serviceNameMap;
 
   private final String baseUrl;
 
   private final String lastUsername;
 
+  private Map<Class<?>, WebServiceSpecification> tempServiceNameMap; // hold the map while building
+
   public WebServiceManager( String baseUrl, String username ) {
     this.baseUrl = baseUrl;
     this.lastUsername = username;
-    Map<Class<?>, String> serviceNameMap = new HashMap<Class<?>, String>();
-    serviceNameMap.put( IUnifiedRepositoryJaxwsWebService.class, "unifiedRepository" );//$NON-NLS-1$
-    serviceNameMap.put( IRepositorySyncWebService.class, "repositorySync" );//$NON-NLS-1$
-    serviceNameMap.put( IUserRoleListWebService.class, "userRoleListService" );//$NON-NLS-1$
-    serviceNameMap.put( IUserRoleWebService.class, "userRoleService" );//$NON-NLS-1$
-    serviceNameMap.put( IRoleAuthorizationPolicyRoleBindingDaoWebService.class, "roleBindingDao" );//$NON-NLS-1$
-    serviceNameMap.put( IAuthorizationPolicyWebService.class, "authorizationPolicy" );//$NON-NLS-1$
-    this.serviceNameMap = Collections.unmodifiableMap( serviceNameMap );
+    tempServiceNameMap = new HashMap<Class<?>, WebServiceSpecification>();
+    registerWsSpecification( IUnifiedRepositoryJaxwsWebService.class, "unifiedRepository" );//$NON-NLS-1$
+    registerWsSpecification( IRepositorySyncWebService.class, "repositorySync" );//$NON-NLS-1$
+    registerWsSpecification( IUserRoleListWebService.class, "userRoleListService" );//$NON-NLS-1$
+    registerWsSpecification( IUserRoleWebService.class, "userRoleService" );//$NON-NLS-1$
+    registerWsSpecification( IRoleAuthorizationPolicyRoleBindingDaoWebService.class, "roleBindingDao" );//$NON-NLS-1$
+    registerWsSpecification( IAuthorizationPolicyWebService.class, "authorizationPolicy" );//$NON-NLS-1$
+
+    registerRestSpecification( PentahoDiPlugin.PurRepositoryPluginApiRevision.class, "purRepositoryPluginApiRevision" );//$NON-NLS-1$
+
+    this.serviceNameMap = Collections.unmodifiableMap( tempServiceNameMap );
+    tempServiceNameMap = null;
   }
 
   @Override
@@ -99,63 +113,99 @@ public class WebServiceManager implements ServiceManager {
         throw new IllegalStateException();
       }
 
-      final String serviceName = serviceNameMap.get( clazz );
+      final WebServiceSpecification webServiceSpecification = serviceNameMap.get( clazz );
+      final String serviceName = webServiceSpecification.getServiceName();
       if ( serviceName == null ) {
         throw new IllegalStateException();
       }
 
-      // build the url handling whether or not baseUrl ends with a slash
-      // String baseUrl = repositoryMeta.getRepositoryLocation().getUrl();
-      final URL url =
-          new URL( baseUrl + ( baseUrl.endsWith( "/" ) ? "" : "/" ) + "webservices/" + serviceName + "?wsdl" ); //$NON-NLS-1$ //$NON-NLS-2$
+      if ( webServiceSpecification.getServiceType().equals( ServiceType.JAX_WS ) ) {
+        // build the url handling whether or not baseUrl ends with a slash
+        // String baseUrl = repositoryMeta.getRepositoryLocation().getUrl();
+        final URL url =
+            new URL( baseUrl + ( baseUrl.endsWith( "/" ) ? "" : "/" ) + "webservices/" + serviceName + "?wsdl" ); //$NON-NLS-1$ //$NON-NLS-2$
 
-      String key = url.toString() + '_' + serviceName + '_' + clazz.getName();
-      if ( !serviceCache.containsKey( key ) ) {
-        resultFuture = executor.submit( new Callable<Object>() {
+        String key = url.toString() + '_' + serviceName + '_' + clazz.getName();
+        if ( !serviceCache.containsKey( key ) ) {
+          resultFuture = executor.submit( new Callable<Object>() {
 
-          @Override
-          public Object call() throws Exception {
-            Service service = Service.create( url, new QName( NAMESPACE_URI, serviceName ) );
-            T port = service.getPort( clazz );
-            // add TRUST_USER if necessary
-            if ( StringUtils.isNotBlank( System.getProperty( "pentaho.repository.client.attemptTrust" ) ) ) {
-              ( (BindingProvider) port ).getRequestContext().put( MessageContext.HTTP_REQUEST_HEADERS,
-                  Collections.singletonMap( TRUST_USER, Collections.singletonList( username ) ) );
-            } else {
-              // http basic authentication
-              ( (BindingProvider) port ).getRequestContext().put( BindingProvider.USERNAME_PROPERTY, username );
-              ( (BindingProvider) port ).getRequestContext().put( BindingProvider.PASSWORD_PROPERTY, password );
+            @Override
+            public Object call() throws Exception {
+              Service service = Service.create( url, new QName( NAMESPACE_URI, serviceName ) );
+              T port = service.getPort( clazz );
+              // add TRUST_USER if necessary
+              if ( StringUtils.isNotBlank( System.getProperty( "pentaho.repository.client.attemptTrust" ) ) ) {
+                ( (BindingProvider) port ).getRequestContext().put( MessageContext.HTTP_REQUEST_HEADERS,
+                    Collections.singletonMap( TRUST_USER, Collections.singletonList( username ) ) );
+              } else {
+                // http basic authentication
+                ( (BindingProvider) port ).getRequestContext().put( BindingProvider.USERNAME_PROPERTY, username );
+                ( (BindingProvider) port ).getRequestContext().put( BindingProvider.PASSWORD_PROPERTY, password );
+              }
+              // accept cookies to maintain session on server
+              ( (BindingProvider) port ).getRequestContext().put( BindingProvider.SESSION_MAINTAIN_PROPERTY, true );
+              // support streaming binary data
+              // TODO mlowery this is not portable between JAX-WS implementations (uses com.sun)
+              ( (BindingProvider) port ).getRequestContext().put( JAXWSProperties.HTTP_CLIENT_STREAMING_CHUNK_SIZE,
+                  8192 );
+              SOAPBinding binding = (SOAPBinding) ( (BindingProvider) port ).getBinding();
+              binding.setMTOMEnabled( true );
+              return port;
             }
-            // accept cookies to maintain session on server
-            ( (BindingProvider) port ).getRequestContext().put( BindingProvider.SESSION_MAINTAIN_PROPERTY, true );
-            // support streaming binary data
-            // TODO mlowery this is not portable between JAX-WS implementations (uses com.sun)
-            ( (BindingProvider) port ).getRequestContext().put( JAXWSProperties.HTTP_CLIENT_STREAMING_CHUNK_SIZE, 8192 );
-            SOAPBinding binding = (SOAPBinding) ( (BindingProvider) port ).getBinding();
-            binding.setMTOMEnabled( true );
-            return port;
-          }
-        } );
-        serviceCache.put( key, resultFuture );
+          } );
+          serviceCache.put( key, resultFuture );
+        } else {
+          resultFuture = serviceCache.get( key );
+        }
       } else {
-        resultFuture = serviceCache.get( key );
-      }
-    }
+        if ( webServiceSpecification.getServiceType().equals( ServiceType.JAX_RS ) ) {
 
-    try {
-      return (T) resultFuture.get();
-    } catch ( InterruptedException e ) {
-      throw new RuntimeException( e );
-    } catch ( ExecutionException e ) {
-      Throwable cause = e.getCause();
-      if ( cause != null ) {
-        if ( cause instanceof RuntimeException ) {
-          throw (RuntimeException) cause;
-        } else if ( cause instanceof MalformedURLException ) {
-          throw (MalformedURLException) cause;
+          String key = baseUrl.toString() + '_' + serviceName + '_' + clazz.getName();
+          if ( !serviceCache.containsKey( key ) ) {
+
+            resultFuture = executor.submit( new Callable<Object>() {
+
+              @Override
+              public Object call() throws Exception {
+                ClientConfig clientConfig = new DefaultClientConfig();
+                Client client = Client.create( clientConfig );
+                client.addFilter( new HTTPBasicAuthFilter( username, password ) );
+
+                Class<?>[] parameterTypes = new Class[] { Client.class, URI.class };
+                String factoryClassName = webServiceSpecification.getServiceClass().getName();
+                factoryClassName = factoryClassName.substring( 0, factoryClassName.lastIndexOf( "$" ) );
+                Class<?> factoryClass = Class.forName( factoryClassName );
+                Method method =
+                    factoryClass.getDeclaredMethod( webServiceSpecification.getServiceName(), parameterTypes );
+                T port = (T) method.invoke( null, new Object[] { client, new URI( baseUrl + "/plugin" ) } );
+
+                return port;
+              }
+            } );
+            serviceCache.put( key, resultFuture );
+          } else {
+            resultFuture = serviceCache.get( key );
+          }
+        } else {
+          resultFuture = null;
         }
       }
-      throw new RuntimeException( e );
+
+      try {
+        return (T) resultFuture.get();
+      } catch ( InterruptedException e ) {
+        throw new RuntimeException( e );
+      } catch ( ExecutionException e ) {
+        Throwable cause = e.getCause();
+        if ( cause != null ) {
+          if ( cause instanceof RuntimeException ) {
+            throw (RuntimeException) cause;
+          } else if ( cause instanceof MalformedURLException ) {
+            throw (MalformedURLException) cause;
+          }
+        }
+        throw new RuntimeException( e );
+      }
     }
   }
 
@@ -163,4 +213,25 @@ public class WebServiceManager implements ServiceManager {
   public synchronized void close() {
     serviceCache.clear();
   }
+
+  private void registerWsSpecification( Class serviceClass, String serviceName ) {
+    registerSpecification( WebServiceSpecification.getWsServiceSpecification( serviceClass, serviceName ) );
+  }
+
+  private void registerRestSpecification( Class<?> serviceClass, String serviceName ) {
+    try {
+      registerSpecification( WebServiceSpecification.getRestServiceSpecification( serviceClass, serviceName ) );
+    } catch ( NoSuchMethodException e ) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch ( SecurityException e ) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  private void registerSpecification( WebServiceSpecification webServiceSpecification ) {
+    tempServiceNameMap.put( webServiceSpecification.getServiceClass(), webServiceSpecification );
+  }
+
 }
