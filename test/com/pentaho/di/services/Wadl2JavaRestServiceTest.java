@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.junit.Ignore;
 import org.pentaho.di.repository.pur.PurRepositoryRestService;
 import org.pentaho.di.repository.pur.WebServiceManager;
 import org.pentaho.platform.plugin.services.importexport.InitializationException;
@@ -20,6 +21,7 @@ import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
  * @author tkafalas
  *
  */
+@Ignore
 public class Wadl2JavaRestServiceTest {
   private Client client = null;
 

@@ -187,10 +187,58 @@ explicitly covering such access.
   </target>
   <!-- end remove for the customer src dist -->
 	
+  <!-- Wadl2Java logic -->
   <target name="wadl2java-resolve" depends="install-antcontrib, install-ivy" description="Loads in the Wadl2Java dependencies so build-wadl2java.xml will work">
     <mkdir dir="${wadl2java.project}"/>
 	  <ivy:resolve file="ivy.xml" conf="wadl2java" />
 		<ivy:retrieve conf="wadl2java" pattern="${basedir}/wadl2java/lib/[module]-[revision](-[classifier]).[ext]" symlink="${ivy.use.symlinks.internal}" />
   </target>
+  
+	<property name="wadl2java.temp-file-full-path" value="${wadl2java.codedir}/${wadl2java.generated-class-name}.java" />
+	
+	<target name="wadl2java" description="Generated the classes reflecting the Rest Services from the Wadl file" depends="wadl2java-resolve" >
+	  <taskdef name="wjc" 
+           classname="org.jvnet.ws.wadl2java.WJCTask">
+      <classpath>
+          <fileset dir="${wadl2java.project}" includes="*.jar" 
+                   excludes="wadl-cmdline*.jar"/>
+      </classpath>
+  	</taskdef>
+
+    <echo message="Compiling the Wadl description..." />
+    <mkdir dir="${wadl2java.codedir}"/>
+    <wjc description="${wadl2java.source-wadl-file}" 
+         package="${wadl2java.target-package}" 
+         autoSchemaPackage="false" 
+         target="${basedir}/src">
+        
+        <produces dir="${basedir}/src" includes="**/*.java" />
+        <depends dir="." includes="build.xml"/>
+    		<depends dir="${wadl2java.project}" includes="wadl2java.jar"/>
+        <customClassName uri="http://localhost:9080/pentaho-di/plugin/" classname="PurRepositoryPluginServices" />            
+    </wjc>
+		
+		<!-- Modify the resulting class adding our tagging interface -->
+		<replaceregexp file="${wadl2java.temp-file-full-path}"
+			match="package com.pentaho.di.services;\r\n"
+			replace="package com.pentaho.di.services;${line.separator}${line.separator}import org.pentaho.di.repository.IRepositoryService;"
+		/>
+
+		<replaceregexp file="${wadl2java.temp-file-full-path}"
+			match="public static class (.*) \{"
+			replace="public static class \1 implements IRepositoryService {"
+			byline="true"
+		/>
+		
+		<replaceregexp file="${wadl2java.temp-file-full-path}"
+			match="${wadl2java.generated-class-name}"
+			replace="${wadl2java.desired-class-name}"
+			byline="true"
+		/>
+		
+		<!-- Finally rename the file and overwrite the original -->
+		<move file="${wadl2java.temp-file-full-path}" tofile="${wadl2java.codedir}/${wadl2java.desired-class-name}.java" />
+
+	</target>
 	
 </project>
