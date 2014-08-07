@@ -83,7 +83,7 @@ public class RevisionResourceTest {
    */
   @org.junit.Test
   public void testGetVersioningEnabled() throws Exception {
-    Assert.assertFalse( Boolean.parseBoolean( revisionResource.getVersioningEnabled().getEntity().toString() ) );
+    Assert.assertTrue( Boolean.parseBoolean( revisionResource.getVersioningEnabled().getEntity().toString() ) );
   }
 
   /**
@@ -92,7 +92,7 @@ public class RevisionResourceTest {
    */
   @org.junit.Test
   public void testGetVersionCommentsEnabled() throws Exception {
-    Assert.assertFalse( Boolean.parseBoolean( revisionResource.getVersioningEnabled().getEntity().toString() ) );
+    Assert.assertTrue( Boolean.parseBoolean( revisionResource.getVersioningEnabled().getEntity().toString() ) );
   }
 
   /**
