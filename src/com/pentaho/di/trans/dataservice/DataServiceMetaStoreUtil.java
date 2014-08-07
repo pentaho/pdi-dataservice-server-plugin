@@ -46,11 +46,23 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
 
   public static DataServiceMeta fromTransMeta( TransMeta transMeta, IMetaStore metaStore ) throws MetaStoreException {
     String serviceName = transMeta.getAttribute( GROUP_DATA_SERVICE, DATA_SERVICE_NAME );
+    String stepName = transMeta.getAttribute( GROUP_DATA_SERVICE, DATA_SERVICE_STEPNAME );
     if ( Const.isEmpty( serviceName ) ) {
       return null;
     }
     DataServiceMeta meta = new DataServiceMeta();
-    return loadDataService( metaStore, serviceName, meta );
+    try {
+      return loadDataService( metaStore, serviceName, meta );
+    } catch ( MetaStoreException e ) {
+      //could not load data service
+      //create new data service
+      LogChannel.GENERAL.logBasic(e.getMessage() );
+      DataServiceMeta dataService = new DataServiceMeta();
+      dataService.setName( serviceName );
+      dataService.setStepname( stepName );
+      DataServiceMetaStoreUtil.toTransMeta( transMeta, metaStore, dataService, true );
+    }
+    return meta;
   }
 
 
@@ -191,6 +203,4 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
     }
     return dataServices;
   }
-
-
 }
