@@ -27,6 +27,7 @@ explicitly covering such access.
     <conf name="default" />
     <conf name="compile" />
     <conf name="obf" />
+    <conf name="wadl2java" />
     <conf name="test" visibility="private" />
   </configurations>
 
@@ -86,6 +87,8 @@ explicitly covering such access.
     <dependency org="commons-logging" name="commons-logging" rev="1.1" transitive="false" />
     <dependency org="commons-io" name="commons-io" rev="2.1" conf="default->default;test->default" />
     <dependency org="com.google.gwt" name="gwt-servlet"  rev="2.0.3"/>
+    <dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" />
+    <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.1" />
     <!-- metro -->
     <dependency org="metro" name="metro-webservices-api" rev="2.0" />
     <dependency org="metro" name="metro-webservices-rt" rev="2.0" />
@@ -132,11 +135,19 @@ explicitly covering such access.
     <dependency org="org.mortbay.jetty" name="jetty-plus" rev="6.1.21" transitive="false" conf="test->default" />
     <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.21" transitive="false" conf="test->default" />
 
+    <dependency org="com.sun.jersey.contribs" name="jersey-multipart"     rev="1.16" transitive="false" conf="compile->default"/>
     <dependency org="com.sun.jersey.contribs" name="jersey-apache-client" rev="1.16" transitive="false" conf="compile->default"/>
     <dependency org="com.sun.jersey"          name="jersey-bundle"        rev="1.16" transitive="false" conf="compile->default"/>
-
+    
     <dependency org="com.google.guava" name="guava" rev="17.0" transitive="false" conf="test->default"/>
+	  <dependency org="org.jvnet.ws.wadl" name="wadl-core" rev="1.1.6" conf="wadl2java->default" />
+    <dependency org="org.jvnet.ws.wadl" name="wadl-ant" rev="1.1.6" conf="wadl2java->default" />
 
     <!-- <exclude org="javax.servlet" module="servlet-api" /> -->
+    <!--<dependency org="com.sun.jersey" name="jersey-core" rev="1.16" transitive="false"/>-->
+    <!--<dependency org="com.sun.jersey" name="jersey-json" rev="1.16" transitive="false"/>-->
+    <!--<dependency org="com.sun.jersey" name="jersey-client" rev="1.16" transitive="false"/>-->
+    <!--<dependency org="com.sun.jersey" name="jersey-server" rev="1.16" transitive="false"/>-->
+    <!--<dependency org="com.sun.jersey" name="jersey-servlet" rev="1.16" transitive="false"/>-->
   </dependencies>
 </ivy-module>
