@@ -22,11 +22,11 @@ import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
  *
  */
 @Ignore
-public class Wadl2JavaRestServiceTest {
+public class Wadl2JavaRestConnectivetyCheck {
   private Client client = null;
 
   public static void main( String[] args ) {
-    Wadl2JavaRestServiceTest test = new Wadl2JavaRestServiceTest();
+    Wadl2JavaRestConnectivetyCheck test = new Wadl2JavaRestConnectivetyCheck();
     try {
       test.initRestService1();
       test.initRestService2();
