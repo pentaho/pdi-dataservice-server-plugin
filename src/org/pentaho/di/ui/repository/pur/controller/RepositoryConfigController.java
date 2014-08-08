@@ -54,13 +54,13 @@ import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 public class RepositoryConfigController extends AbstractXulEventHandler implements java.io.Serializable {
 
   private static final long serialVersionUID = 1882563488501980590L; /* EESOURCE: UPDATE SERIALVERUID */
- 
+
   public String getName() {
     return "repositoryConfigController"; //$NON-NLS-1$
   }
 
   public static final String PLUGIN_PROPERTIES_FILE = "plugins/repositories/pur-repository-plugin/plugin.properties"; //$NON-NLS-1$
-  public static final String DEFAULT_URL = "default-url";  //$NON-NLS-1$
+  public static final String DEFAULT_URL = "default-url"; //$NON-NLS-1$
   private XulDialog repositoryConfigDialog;
   private XulTextbox url;
   private XulTextbox name;
@@ -73,155 +73,169 @@ public class RepositoryConfigController extends AbstractXulEventHandler implemen
   private RepositoryMeta repositoryMeta;
   private ResourceBundle messages;
   private XulMessageBox messageBox;
+
   public RepositoryConfigController() {
-    
+
   }
+
   public void init() throws ControllerInitializationException {
     bf = new DefaultBindingFactory();
-    bf.setDocument(this.getXulDomContainer().getDocumentRoot());
+    bf.setDocument( this.getXulDomContainer().getDocumentRoot() );
     try {
-      messageBox = (XulMessageBox) document.createElement("messagebox"); //$NON-NLS-1$
-    } catch (Throwable th) {
-      throw new ControllerInitializationException(th);
+      messageBox = (XulMessageBox) document.createElement( "messagebox" ); //$NON-NLS-1$
+    } catch ( Throwable th ) {
+      throw new ControllerInitializationException( th );
     }
     model = new RepositoryConfigModel();
-    if(bf != null) {
+    if ( bf != null ) {
       createBindings();
     }
     initializeModel();
   }
-  
+
   private void createBindings() {
-    repositoryConfigDialog = (XulDialog) document.getElementById("repository-config-dialog");//$NON-NLS-1$
-    url = (XulTextbox) document.getElementById("repository-url");//$NON-NLS-1$
-    name = (XulTextbox) document.getElementById("repository-name");//$NON-NLS-1$
-    id = (XulTextbox) document.getElementById("repository-id");//$NON-NLS-1$
-    modificationComments = (XulCheckbox) document.getElementById("repository-modification-comments");//$NON-NLS-1$
-    okButton = (XulButton) document.getElementById("repository-config-dialog_accept"); //$NON-NLS-1$
-    bf.setBindingType(Type.BI_DIRECTIONAL);
-    bf.createBinding(model, "url", url, "value");//$NON-NLS-1$ //$NON-NLS-2$
-    bf.createBinding(model, "name", name, "value");//$NON-NLS-1$ //$NON-NLS-2$
-    bf.createBinding(model, "id", id, "value");//$NON-NLS-1$ //$NON-NLS-2$
-    bf.createBinding(model, "modificationComments", modificationComments, "checked");//$NON-NLS-1$ //$NON-NLS-2$
-    bf.setBindingType(Type.ONE_WAY);
-    bf.createBinding(model, "valid", okButton, "!disabled");//$NON-NLS-1$ //$NON-NLS-2$
+    repositoryConfigDialog = (XulDialog) document.getElementById( "repository-config-dialog" );//$NON-NLS-1$
+    url = (XulTextbox) document.getElementById( "repository-url" );//$NON-NLS-1$
+    name = (XulTextbox) document.getElementById( "repository-name" );//$NON-NLS-1$
+    id = (XulTextbox) document.getElementById( "repository-id" );//$NON-NLS-1$
+    modificationComments = (XulCheckbox) document.getElementById( "repository-modification-comments" );//$NON-NLS-1$
+    okButton = (XulButton) document.getElementById( "repository-config-dialog_accept" ); //$NON-NLS-1$
+    bf.setBindingType( Type.BI_DIRECTIONAL );
+    bf.createBinding( model, "url", url, "value" );//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding( model, "name", name, "value" );//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding( model, "id", id, "value" );//$NON-NLS-1$ //$NON-NLS-2$
+    bf.createBinding( model, "modificationComments", modificationComments, "checked" );//$NON-NLS-1$ //$NON-NLS-2$
+    bf.setBindingType( Type.ONE_WAY );
+    bf.createBinding( model, "valid", okButton, "!disabled" );//$NON-NLS-1$ //$NON-NLS-2$
   }
-  
+
   public void ok() {
-    if(repositoryMeta instanceof PurRepositoryMeta) {
-      repositoryMeta.setName(model.getId());
-      repositoryMeta.setDescription(model.getName());  
-      ((PurRepositoryMeta)repositoryMeta).setRepositoryLocation(new PurRepositoryLocation(model.getUrl()));
-      ((PurRepositoryMeta)repositoryMeta).setVersionCommentMandatory(model.isModificationComments());
-      getCallback().onSuccess(((PurRepositoryMeta)repositoryMeta));
+    if ( repositoryMeta instanceof PurRepositoryMeta ) {
+      repositoryMeta.setName( model.getId() );
+      repositoryMeta.setDescription( model.getName() );
+      //remove trailing slash
+      String url = model.getUrl();
+      String urlTrim = url.endsWith( "/" ) ? url.substring( 0, url.length() - 1 ) : url;
+      PurRepositoryLocation location = new PurRepositoryLocation( urlTrim );
+      ( (PurRepositoryMeta) repositoryMeta ).setRepositoryLocation( location );
+      ( (PurRepositoryMeta) repositoryMeta ).setVersionCommentMandatory( model.isModificationComments() );
+      getCallback().onSuccess( ( (PurRepositoryMeta) repositoryMeta ) );
     } else {
-      getCallback().onError(new IllegalStateException(BaseMessages.
-          getString(PurRepositoryDialog.class, "RepositoryConfigDialog.ERROR_0001_NotAnInstanceOfPurRepositoryMeta"))); //$NON-NLS-1$
+      getCallback().onError(
+          new IllegalStateException( BaseMessages.getString( PurRepositoryDialog.class,
+              "RepositoryConfigDialog.ERROR_0001_NotAnInstanceOfPurRepositoryMeta" ) ) ); //$NON-NLS-1$
     }
   }
-  
+
   public void cancel() {
-    if(!repositoryConfigDialog.isHidden()) {
+    if ( !repositoryConfigDialog.isHidden() ) {
       repositoryConfigDialog.hide();
       getCallback().onCancel();
     }
   }
-  
+
   public void test() {
-    //  build the url handling whether or not the model's url ends wirth a slash
-    final String url = model.getUrl() + (model.getUrl().endsWith("/")?"":"/")+"webservices/unifiedRepository?wsdl"; //$NON-NLS-1$
+    // build the url handling whether or not the model's url ends wirth a slash
+    final String url =
+        model.getUrl() + ( model.getUrl().endsWith( "/" ) ? "" : "/" ) + "webservices/unifiedRepository?wsdl"; //$NON-NLS-1$
     Service service;
     try {
-      service = Service.create(new URL(url), new QName("http://www.pentaho.org/ws/1.0", "unifiedRepository")); //$NON-NLS-1$ //$NON-NLS-2$
-      if(service != null) {
-        IUnifiedRepositoryJaxwsWebService repoWebService = service.getPort(IUnifiedRepositoryJaxwsWebService.class);
-        if(repoWebService != null) {
-          messageBox.setTitle(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Success"));//$NON-NLS-1$
-          messageBox.setAcceptLabel(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(BaseMessages.getString(PurRepositoryDialog.class, "RepositoryConfigDialog.RepositoryUrlTestPassed"));//$NON-NLS-1$
+      service = Service.create( new URL( url ), new QName( "http://www.pentaho.org/ws/1.0", "unifiedRepository" ) ); //$NON-NLS-1$ //$NON-NLS-2$
+      if ( service != null ) {
+        IUnifiedRepositoryJaxwsWebService repoWebService = service.getPort( IUnifiedRepositoryJaxwsWebService.class );
+        if ( repoWebService != null ) {
+          messageBox.setTitle( BaseMessages.getString( PurRepositoryDialog.class, "Dialog.Success" ) );//$NON-NLS-1$
+          messageBox.setAcceptLabel( BaseMessages.getString( PurRepositoryDialog.class, "Dialog.Ok" ) );//$NON-NLS-1$
+          messageBox.setMessage( BaseMessages.getString( PurRepositoryDialog.class,
+              "RepositoryConfigDialog.RepositoryUrlTestPassed" ) );//$NON-NLS-1$
           messageBox.open();
 
         } else {
-          messageBox.setTitle(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Error"));//$NON-NLS-1$
-          messageBox.setAcceptLabel(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(BaseMessages.getString(PurRepositoryDialog.class, "RepositoryConfigDialog.RepositoryUrlTestFailed"));//$NON-NLS-1$
+          messageBox.setTitle( BaseMessages.getString( PurRepositoryDialog.class, "Dialog.Error" ) );//$NON-NLS-1$
+          messageBox.setAcceptLabel( BaseMessages.getString( PurRepositoryDialog.class, "Dialog.Ok" ) );//$NON-NLS-1$
+          messageBox.setMessage( BaseMessages.getString( PurRepositoryDialog.class,
+              "RepositoryConfigDialog.RepositoryUrlTestFailed" ) );//$NON-NLS-1$
           messageBox.open();
         }
       } else {
-        messageBox.setTitle(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(PurRepositoryDialog.class, "RepositoryConfigDialog.RepositoryUrlTestFailed"));//$NON-NLS-1$
+        messageBox.setTitle( BaseMessages.getString( PurRepositoryDialog.class, "Dialog.Error" ) );//$NON-NLS-1$
+        messageBox.setAcceptLabel( BaseMessages.getString( PurRepositoryDialog.class, "Dialog.Ok" ) );//$NON-NLS-1$
+        messageBox.setMessage( BaseMessages.getString( PurRepositoryDialog.class,
+            "RepositoryConfigDialog.RepositoryUrlTestFailed" ) );//$NON-NLS-1$
         messageBox.open();
 
       }
-    } catch (Exception e) {
-      messageBox.setTitle(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PurRepositoryDialog.class, "Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(PurRepositoryDialog.class,
-          "RepositoryConfigDialog.RepositoryUrlTestFailedMessage", e.getLocalizedMessage()));//$NON-NLS-1$
+    } catch ( Exception e ) {
+      messageBox.setTitle( BaseMessages.getString( PurRepositoryDialog.class, "Dialog.Error" ) );//$NON-NLS-1$
+      messageBox.setAcceptLabel( BaseMessages.getString( PurRepositoryDialog.class, "Dialog.Ok" ) );//$NON-NLS-1$
+      messageBox.setMessage( BaseMessages.getString( PurRepositoryDialog.class,
+          "RepositoryConfigDialog.RepositoryUrlTestFailedMessage", e.getLocalizedMessage() ) );//$NON-NLS-1$
       messageBox.open();
     }
   }
-  
+
   private String getDefaultUrl() {
     String returnValue = ""; //$NON-NLS-1$
     FileInputStream fis = null;
     Properties properties = null;
     try {
-      File file = new File(PLUGIN_PROPERTIES_FILE);
-      fis = new FileInputStream(file);
-    } catch (IOException e1) {
+      File file = new File( PLUGIN_PROPERTIES_FILE );
+      fis = new FileInputStream( file );
+    } catch ( IOException e1 ) {
       return returnValue;
     }
-    if (null != fis) {
+    if ( null != fis ) {
       properties = new Properties();
       try {
-        properties.load(fis);
-      } catch (IOException e) {
+        properties.load( fis );
+      } catch ( IOException e ) {
         return returnValue;
       }
     }
-    if (properties != null) {
-      returnValue = properties.getProperty(DEFAULT_URL, "");//$NON-NLS-1$
+    if ( properties != null ) {
+      returnValue = properties.getProperty( DEFAULT_URL, "" );//$NON-NLS-1$
     }
     return returnValue;
- }
-  
+  }
+
   public IRepositoryConfigDialogCallback getCallback() {
     return callback;
   }
-  public void setCallback(IRepositoryConfigDialogCallback callback) {
+
+  public void setCallback( IRepositoryConfigDialogCallback callback ) {
     this.callback = callback;
   }
- 
-  public void setRepositoryMeta(RepositoryMeta repositoryMeta) {
+
+  public void setRepositoryMeta( RepositoryMeta repositoryMeta ) {
     this.repositoryMeta = repositoryMeta;
   }
 
   public void updateModificationComments() {
-    model.setModificationComments(modificationComments.isChecked());
+    model.setModificationComments( modificationComments.isChecked() );
   }
+
   private void initializeModel() {
     PurRepositoryMeta purRepositoryMeta = null;
-    if (repositoryMeta != null && repositoryMeta instanceof PurRepositoryMeta) {
+    if ( repositoryMeta != null && repositoryMeta instanceof PurRepositoryMeta ) {
       purRepositoryMeta = (PurRepositoryMeta) repositoryMeta;
-      model.setName(purRepositoryMeta.getDescription());
-      model.setId(purRepositoryMeta.getName());
+      model.setName( purRepositoryMeta.getDescription() );
+      model.setId( purRepositoryMeta.getName() );
       PurRepositoryLocation location = purRepositoryMeta.getRepositoryLocation();
-      if (location != null) {
-        model.setUrl(location.getUrl());
+      if ( location != null ) {
+        model.setUrl( location.getUrl() );
       } else {
-        model.setUrl(getDefaultUrl());
+        model.setUrl( getDefaultUrl() );
       }
     } else {
-      model.setModificationComments(true);
+      model.setModificationComments( true );
     }
   }
-  
+
   public ResourceBundle getMessages() {
     return messages;
   }
-  public void setMessages(ResourceBundle messages) {
+
+  public void setMessages( ResourceBundle messages ) {
     this.messages = messages;
   }
 }

@@ -23,6 +23,7 @@
 package org.pentaho.di.repository.pur;
 
 import java.io.Serializable;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -196,6 +197,9 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   private IRepositoryConnector purRepositoryConnector;
 
   private RepositoryServiceRegistry purRepositoryServiceRegistry = new RepositoryServiceRegistry();
+  
+  protected boolean versioningEnabled = true;
+  protected boolean commentsEnabled = true;
 
   // ~ Constructors ====================================================================================================
 
@@ -285,6 +289,13 @@ public class PurRepository extends AbstractRepository implements Repository, jav
           LogChannel.GENERAL.logError( BaseMessages.getString( PKG,
               "PurRepositoryMetastore.NamespaceCreateException.Message", PentahoDefaults.NAMESPACE ), e );
         }
+        try {
+          setVersioningFlags();
+        } catch ( KettleException e ) {
+          // Should never happen, the rest service should be registered
+          e.printStackTrace();
+        }
+        
         LogChannel.GENERAL.logBasic( BaseMessages.getString( PKG, "PurRepository.ConnectSuccess.Message" ) );
       }
     }
@@ -1031,15 +1042,15 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     sharedObjectAssemblerMap.put( RepositoryObjectType.PARTITION_SCHEMA, partitionSchemaTransformer );
     sharedObjectAssemblerMap.put( RepositoryObjectType.SLAVE_SERVER, slaveTransformer );
   }
-  
+
   public DatabaseDelegate getDatabaseMetaTransformer() {
     return databaseMetaTransformer;
   }
-  
+
   public ClusterDelegate getClusterTransformer() {
     return clusterTransformer;
   }
-  
+
   public PartitionDelegate getPartitionSchemaTransformer() {
     return partitionSchemaTransformer;
   }
@@ -1325,7 +1336,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     loadAndCacheSharedObjects();
     return (List<SlaveServer>) sharedObjectsByType.get( RepositoryObjectType.SLAVE_SERVER );
   }
-  
+
   public SlaveDelegate getSlaveTransformer() {
     return slaveTransformer;
   }
@@ -2183,7 +2194,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     if ( out.contains( "/" ) || out.equals( ".." ) || out.equals( "." ) || StringUtils.isBlank( out ) ) {
       throw new IllegalArgumentException();
     }
-    if( System.getProperty( "KETTLE_COMPATIBILITY_PUR_OLD_NAMING_MODE", "N" ).equals( "Y" ) ) {
+    if ( System.getProperty( "KETTLE_COMPATIBILITY_PUR_OLD_NAMING_MODE", "N" ).equals( "Y" ) ) {
       out = out.replaceAll( "[/:\\[\\]\\*'\"\\|\\s\\.]", "_" ); //$NON-NLS-1$//$NON-NLS-2$
     }
     if ( extension != null ) {
@@ -2561,7 +2572,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   public boolean hasService( Class<? extends IRepositoryService> clazz ) throws KettleException {
     return purRepositoryServiceRegistry.getService( clazz ) != null;
   }
-
+  
   @Override
   public RepositoryDirectoryInterface getDefaultSaveDirectory( RepositoryElementInterface repositoryElement )
     throws KettleException {
@@ -2767,5 +2778,28 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   @Override
   public IMetaStore getMetaStore() {
     return metaStore;
+  }
+
+  public ServiceManager getServiceManager() {
+    return purRepositoryConnector == null ? null : purRepositoryConnector.getServiceManager();
+  }
+  
+  public boolean isVersioningEnabled() {
+    return versioningEnabled;
+  }
+
+  public boolean isCommentsEnabled() {
+    return commentsEnabled;
+  }
+
+  private void setVersioningFlags() throws KettleException {
+    commentsEnabled = true;
+    versioningEnabled = true;
+    // Call two web services to get the status of the versioning flags
+    PurRepositoryRestService.PurRepositoryPluginApiRevision servicePort =
+        (PurRepositoryRestService.PurRepositoryPluginApiRevision) ( this
+            .getService( PurRepositoryRestService.PurRepositoryPluginApiRevision.class ) );
+    commentsEnabled = new Boolean( servicePort.versionCommentsEnabled().getAs( String.class ) );
+    versioningEnabled = new Boolean( servicePort.versioningEnabled().getAs( String.class ) );
   }
 }

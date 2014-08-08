@@ -22,12 +22,28 @@
 
 package org.pentaho.di.repository.pur;
 
-import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleSecurityException;
+public class ActiveCacheResult<Value> {
+  private final Exception exception;
 
-public interface IRepositoryConnector {
-  public RepositoryConnectResult connect( final String username, final String password ) throws KettleException,
-    KettleSecurityException;
-  public void disconnect();
-  public ServiceManager getServiceManager();
+  private final Value value;
+
+  private long timeLoaded;
+
+  public ActiveCacheResult( Value value, Exception exception ) {
+    this.value = value;
+    this.exception = exception;
+    this.timeLoaded = System.currentTimeMillis();
+  }
+
+  public Exception getException() {
+    return exception;
+  }
+
+  public Value getValue() {
+    return value;
+  }
+
+  public long getTimeLoaded() {
+    return timeLoaded;
+  }
 }

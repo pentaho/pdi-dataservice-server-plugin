@@ -236,6 +236,10 @@ public class PurRepositoryConnector implements IRepositoryConnector {
         purRepositoryServiceRegistry.registerService( IRoleSupportSecurityManager.class, result.getSecurityManager() );
         purRepositoryServiceRegistry.registerService( IAbsSecurityManager.class, result.getSecurityManager() );
       }
+      
+      purRepositoryServiceRegistry.registerService( PurRepositoryRestService.PurRepositoryPluginApiRevision.class,
+          serviceManager.createService( username, decryptedPassword,
+              PurRepositoryRestService.PurRepositoryPluginApiRevision.class ) );
 
       purRepositoryServiceRegistry.registerService( IRevisionService.class, new UnifiedRepositoryRevisionService(
           result.getUnifiedRepository(), rootRef ) );
@@ -268,5 +272,10 @@ public class PurRepositoryConnector implements IRepositoryConnector {
       serviceManager.close();
     }
     serviceManager = null;
+  }
+
+  @Override
+  public ServiceManager getServiceManager() {
+    return serviceManager;
   }
 }
