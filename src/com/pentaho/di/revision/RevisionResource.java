@@ -25,7 +25,7 @@ import org.pentaho.di.ui.repository.pur.services.IRevisionService;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.repository2.unified.jcr.JcrRepositoryFileUtils;
-import org.pentaho.platform.web.http.api.resources.FileResource;
+import org.pentaho.platform.web.http.api.resources.utils.FileUtils;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -77,7 +77,7 @@ public class RevisionResource {
     Serializable fileId = null;
     List<ObjectRevision> originalRevisions = null;
 
-    RepositoryFile repositoryFile = repository.getFile(FileResource.idToPath(pathId));
+    RepositoryFile repositoryFile = repository.getFile( FileUtils.idToPath( pathId ));
     if (repositoryFile != null) {
       fileId = repositoryFile.getId();
     }
