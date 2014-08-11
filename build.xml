@@ -187,6 +187,12 @@ explicitly covering such access.
   </target>
   <!-- end remove for the customer src dist -->
 	
+	
+	<!-- Override clean-all to clean the wadl2java lib folder -->
+	<target name="clean-all" depends="subfloor.clean-all">
+    <delete dir="${wadl2java.project}" />
+	</target>
+	
   <!-- Wadl2Java logic -->
   <target name="wadl2java-resolve" depends="install-antcontrib, install-ivy" description="Loads in the Wadl2Java dependencies so build-wadl2java.xml will work">
     <mkdir dir="${wadl2java.project}"/>
