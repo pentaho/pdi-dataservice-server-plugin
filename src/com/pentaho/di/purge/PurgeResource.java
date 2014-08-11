@@ -107,11 +107,14 @@ public class PurgeResource {
   }
 
   public static String idToPath( String pathId ) {
-    String path = null;
-    path = pathId.replaceAll( PATH_SEPARATOR, "" ); //$NON-NLS-1$
+    String path = pathId;
     path = RepositoryPathEncoder.decodeRepositoryPath( path );
-    if ( !path.startsWith( PATH_SEPARATOR ) ) {
-      path = PATH_SEPARATOR + path;
+    if ( path == null || path.trim().isEmpty() ) {
+      path = "";
+    } else {
+      if ( !path.startsWith( PATH_SEPARATOR ) ) {
+        path = PATH_SEPARATOR + path;
+      }
     }
     return path;
   }

@@ -11,8 +11,6 @@ the plugin's rest services.
 
 2) Overwrite the wadl2java/wadl-resource/application.wadl.xml file with the results of step 1.
 
-3) Run the "wadl2java-resolve" task in the build.xml file to retrieve all the dependencies needed
-	 to run wadl2java. This task will generate a populated wadl2java/lib folder.
-	 
-4) Run the "wadl2java" ant task on the build-wadl2java.xml file.  This task was put in a separate file because
-	 the build file would not compile if the class defined in the <taskdef> node was not present.
+3) Run the "wadl2java" ant task.  This task depends on wadl2java-resolve to generate a populated
+	 wadl2java/lib folder.  It then creates the org.pentaho.di.services.PentahoDiPlugin class from
+	 the wadl file.
