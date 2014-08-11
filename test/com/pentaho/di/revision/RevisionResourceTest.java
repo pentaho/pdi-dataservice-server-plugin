@@ -16,12 +16,12 @@
 */
 package com.pentaho.di.revision;
 
+import org.pentaho.platform.web.http.api.resources.utils.FileUtils;
 import org.pentaho.di.core.util.Assert;
 import org.pentaho.di.repository.pur.PurObjectRevision;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.VersionSummary;
-import org.pentaho.platform.web.http.api.resources.FileResource;
 
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.Response;
@@ -55,7 +55,7 @@ public class RevisionResourceTest {
     when( mockRepositoryFile.getId() ).thenReturn( MOCK_FILE_ID );
     IUnifiedRepository mockRepository = mock( IUnifiedRepository.class );
 
-    when( mockRepository.getFile( FileResource.idToPath(MOCK_FILE_PATH) ) ).thenReturn( mockRepositoryFile );
+    when( mockRepository.getFile( FileUtils.idToPath( MOCK_FILE_PATH ) ) ).thenReturn( mockRepositoryFile );
     when( mockRepository.getVersionSummaries( MOCK_FILE_ID ) ).thenReturn( getMockVersionSummaries() );
 
     revisionResource = new RevisionResource( mockRepository );
