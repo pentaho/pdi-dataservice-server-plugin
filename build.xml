@@ -112,11 +112,14 @@ explicitly covering such access.
 
   <!-- Override assemble to build plugin.xml afterwards -->
   <target name="assemble" depends="update-plugin-xml">
+  </target>
+
+  <!-- move the plugin jar to the plugin lib folder -->
+  <target name="move-jar-to-lib">
     <mkdir dir="${assemble.stage.dir}" />
     <mkdir dir="${assemble.stage.dir}/${ivy.artifact.id}" />
     <mkdir dir="${assemble.stage.dir}/${ivy.artifact.id}/lib" />
 
-    <!-- move the plugin jar to the plugin lib folder -->
     <if>
       <available file="${assemble.stage.dir}/${ivy.artifact.id}/${ivy.artifact.id}-${project.revision}-obf.jar" />
       <then>
@@ -137,7 +140,7 @@ explicitly covering such access.
     </if>
   </target>
 
-  <target name="update-plugin-xml" depends="subfloor-pkg.assemble,install-antcontrib">
+  <target name="update-plugin-xml" depends="subfloor-pkg.assemble,install-antcontrib,move-jar-to-lib">
     <var name="libSection.var" value="" />
     <pathconvert property="jarFile" pathsep="${path.separator}">
       <map from="${approot.stage.dir}" to="" />
