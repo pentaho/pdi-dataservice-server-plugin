@@ -149,8 +149,10 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
     revisionTable = (XulTree) document.getElementById( "revision-table" ); //$NON-NLS-1$
     folderTree = (XulTree) document.getElementById( "folder-tree" ); //$NON-NLS-1$
     fileTable = (XulTree) document.getElementById( "file-table" ); //$NON-NLS-1$ 
-    //Hide the comment file if comments are not enabled
+    //Hide the comment column if comments are not enabled
     setRevisionTableColumns();
+    //Hide the history tab if versioning is off
+    historyTab.setVisible( versioningEnabled );
 
     bf.setBindingType( Binding.Type.ONE_WAY );
     BindingConvertor<int[], Boolean> forButtons = new BindingConvertor<int[], Boolean>() {
@@ -210,7 +212,7 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
               throw new RuntimeException( e );
             }
       
-            //Hide the comment file if comments are not enabled
+            //Hide the comment column if comments are not enabled
             setRevisionTableColumns();
             
             historyTab.setVisible( true );
@@ -342,10 +344,8 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
   
   private void setRevisionTableColumns() {
     if ( commentsEnabled ) {
-      revisionTable.getColumns().getColumn( 2 ).setVisible( true );
       revisionTable.getColumns().getColumn( 2 ).setHidden( false );
     } else {
-      revisionTable.getColumns().getColumn( 2 ).setVisible( false );
       revisionTable.getColumns().getColumn( 2 ).setHidden( true );
     }
   }
