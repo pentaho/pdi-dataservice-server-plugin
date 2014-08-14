@@ -114,7 +114,7 @@ explicitly covering such access.
   <target name="assemble" depends="update-plugin-xml">
   </target>
 
-  <!-- copy the plugin jar to the plugin lib folder -->
+  <!-- move the plugin jar to the plugin lib folder -->
   <target name="move-jar-to-lib">
     <mkdir dir="${assemble.stage.dir}" />
     <mkdir dir="${assemble.stage.dir}/${ivy.artifact.id}" />
