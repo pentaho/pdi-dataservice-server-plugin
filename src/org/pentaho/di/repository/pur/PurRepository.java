@@ -96,11 +96,13 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileTree;
 import org.pentaho.platform.api.repository2.unified.VersionSummary;
 import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.repository2.ClientRepositoryPaths;
 
 import com.pentaho.commons.dsc.PentahoDscContent;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.params.KParam;
+import org.pentaho.platform.repository2.unified.jcr.JcrRepositoryFileUtils;
 
 /**
  * Implementation of {@link Repository} that delegates to the Pentaho unified repository (PUR), an instance of
@@ -2795,11 +2797,20 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   private void setVersioningFlags() throws KettleException {
     commentsEnabled = true;
     versioningEnabled = true;
-    // Call two web services to get the status of the versioning flags
-    PurRepositoryRestService.PurRepositoryPluginApiRevision servicePort =
+
+    if ( PentahoSystem.getApplicationContext() != null ) {
+      // assume we are running within a server
+      commentsEnabled = JcrRepositoryFileUtils.getVersionCommentsEnabled();
+      versioningEnabled = JcrRepositoryFileUtils.getVersionCommentsEnabled();
+    }
+    else{
+      // we are probably running in spoon
+      // Call two web services to get the status of the versioning flags
+      PurRepositoryRestService.PurRepositoryPluginApiRevision servicePort =
         (PurRepositoryRestService.PurRepositoryPluginApiRevision) ( this
-            .getService( PurRepositoryRestService.PurRepositoryPluginApiRevision.class ) );
-    commentsEnabled = new Boolean( servicePort.versionCommentsEnabled().getAs( String.class ) );
-    versioningEnabled = new Boolean( servicePort.versioningEnabled().getAs( String.class ) );
+          .getService( PurRepositoryRestService.PurRepositoryPluginApiRevision.class ) );
+      commentsEnabled = new Boolean( servicePort.versionCommentsEnabled().getAs( String.class ) );
+      versioningEnabled = new Boolean( servicePort.versioningEnabled().getAs( String.class ) );
+    }
   }
 }
