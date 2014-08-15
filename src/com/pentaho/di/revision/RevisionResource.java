@@ -43,7 +43,9 @@ import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 /**
  * Created by pminutillo on 7/7/14.
  *
- * Provide REST endpoints for revision API
+ * Provide REST endpoints for revision API. These methods will
+ * provide the current status of the versioning and version
+ * comments enabled flags
  */
 @Path("/pur-repository-plugin/api/revision")
 public class RevisionResource {
@@ -67,7 +69,20 @@ public class RevisionResource {
    * Retrieves the version history of a selected repository file
    *
    * @param pathId (colon separated path for the repository file)
-   * @return file properties object <code> RepositoryFileDto </code>
+   * <pre function="syntax.xml">
+   *    :path:to:file:id
+   * </pre>
+   * @return file revisions objects <code> purObjectRevisions </code>
+   * <pre function="syntax.xml">
+   * &lt;purObjectRevisions&gt;
+   * &lt;revision&gt;
+   * &lt;versionId&gt;1.0&lt;/versionId&gt;
+   * &lt;creationDate&gt;2014-07-22T14:42:46.029-04:00&lt;/creationDate&gt;
+   * &lt;login&gt;admin&lt;/login&gt;
+   * &lt;comment&gt;JMeter test&lt;/comment&gt;
+   * &lt;/revision&gt;
+   * &lt;/purObjectRevisions&gt;
+   * </pre>
    */
   @GET
   @Path("{pathId : .+}/revisions")
@@ -104,7 +119,10 @@ public class RevisionResource {
   /**
    * Get version enabled flag
    *
-   * @return
+   * @return string representing boolean versioning enabled flag value
+   * <pre function="syntax.xml">
+   *   true
+   * </pre>
    */
   @GET
   @Path("/versioningEnabled")
@@ -115,7 +133,10 @@ public class RevisionResource {
   /**
    * Get version comments enabled flag
    *
-   * @return
+   * @return string representing boolean version comments enabled flag value
+   * <pre function="syntax.xml">
+   *   true
+   * </pre>
    */
   @GET
   @Path("/versionCommentsEnabled")
