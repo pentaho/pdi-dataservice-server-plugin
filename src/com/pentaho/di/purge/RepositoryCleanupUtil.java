@@ -58,12 +58,12 @@ public class RepositoryCleanupUtil {
   private final String USER = "user";
   private final String PASS = "password";
   private final String VER_COUNT = "versionCount";
-  private final String DEL_DATE = "deleteBeforeDate";
+  private final String DEL_DATE = "purgeBeforeDate";
   private final String PURGE_FILES = "purgeFiles";
   private final String PURGE_REV = "purgeRevisions";
-  private final String CONTENT_TARGET = "contentTarget";
+  private final String PURGE_TARGET = "purgeTarget";
   private final String LOG_LEVEL = "logLevel";
-  private final String LOG_FILE = "logFile";
+  private final String LOG_FILE = "logFileName";
 
   //parameters in rest call that are not in command line
   private final String FILE_FILTER = "fileFilter";
@@ -73,7 +73,9 @@ public class RepositoryCleanupUtil {
   private final String SERVICE_NAME = "purge";
   private final String BASE_PATH = "/pentaho-di/plugin/pur-repository-plugin/api/purge";
   private final String AUTHENTICATION = "/pentaho-di/api/authorization/action/isauthorized?authAction=";
-  private final String deleteBeforeDateFormat = "MM/dd/yyyy";
+  private final String purgeBeforeDateFormat = "MM/dd/yyyy";
+  private final String logFileNameDateFormat = "YYYYMMdd-HHmmss";
+  private final String DEFAULT_LOG_FILE_PREFIX = "purge-utility-log-";
   private final String OPTION_PREFIX = "-";
   private final String NEW_LINE = "\n";
 
@@ -131,10 +133,18 @@ public class RepositoryCleanupUtil {
 
   private Map<String, String> parseExecutionOptions( String[] args ) throws Exception {
     Map<String, String> arguments = new HashMap<String, String>();
+    String param;
+    String value;
     try {
       for ( String arg : args ) {
-        String param = arg.substring( 0, arg.indexOf( "=" ) );
-        String value = arg.substring( arg.indexOf( "=" ) + 1, arg.length() );
+        int equalsPos = arg.indexOf( "=" );
+        if ( equalsPos == -1 ) {
+          param = arg;
+          value = "true";
+        } else {
+          param = arg.substring( 0, equalsPos );
+          value = arg.substring( equalsPos + 1, arg.length() );
+        }
         arguments.put( param, value );
       }
     } catch ( Exception e ) {
@@ -154,7 +164,7 @@ public class RepositoryCleanupUtil {
     String aDelFrom = arguments.get( OPTION_PREFIX + DEL_DATE );
     String aPurgeFiles = arguments.get( OPTION_PREFIX + PURGE_FILES );
     String aPurgeRev = arguments.get( OPTION_PREFIX + PURGE_REV );
-    String aContentTarget = arguments.get( OPTION_PREFIX + CONTENT_TARGET );
+    String aPurgeTarget = arguments.get( OPTION_PREFIX + PURGE_TARGET );
     String aLogLevel = arguments.get( OPTION_PREFIX + LOG_LEVEL );
     String aLogFile = arguments.get( OPTION_PREFIX + LOG_FILE );
 
@@ -208,35 +218,35 @@ public class RepositoryCleanupUtil {
       purgeRev = Boolean.parseBoolean( aPurgeRev );
     }
     
-    if ( aContentTarget == null ) {
-      aContentTarget = "C";
+    if ( aPurgeTarget == null ) {
+      aPurgeTarget = "C";
     }
-    String upperContentTarget = aContentTarget.toUpperCase();
-    if ( upperContentTarget.equals( "C" ) || upperContentTarget.equals( "CONTENT" ) ) {
+    String upperPurgeTarget = aPurgeTarget.toUpperCase();
+    if ( upperPurgeTarget.equals( "C" ) || upperPurgeTarget.equals( "CONTENT" ) ) {
       fileFilter = "*.kjb|*.ktr";
       repositoryPath = "/";
       purgeShared = false;
-    } else if ( upperContentTarget.equals( "S" ) || upperContentTarget.equals( "SHARED" ) ) {
+    } else if ( upperPurgeTarget.equals( "S" ) || upperPurgeTarget.equals( "SHARED" ) ) {
       fileFilter = "*";
       repositoryPath = " ";
       purgeShared = true;
-    } else if ( upperContentTarget.equals( "B" ) || upperContentTarget.equals( "BOTH" ) ) {
+    } else if ( upperPurgeTarget.equals( "B" ) || upperPurgeTarget.equals( "BOTH" ) ) {
       fileFilter = "*.kjb|*.ktr";
       repositoryPath = "/";
       purgeShared = true;
     } else {
-      errors.append( OPTION_PREFIX + CONTENT_TARGET + "=" + aContentTarget
+      errors.append( OPTION_PREFIX + PURGE_TARGET + "=" + aPurgeTarget
           + " is invalid.  Valid values are CONTENT, SHARED, BOTH, C, S, OR B and are not case sensitive.\n" );
     }
 
     if ( aDelFrom != null ) {
-      SimpleDateFormat sdf = new SimpleDateFormat( deleteBeforeDateFormat );
+      SimpleDateFormat sdf = new SimpleDateFormat( purgeBeforeDateFormat );
       sdf.setLenient( false );
       try {
         sdf.parse( aDelFrom );
         delFrom = aDelFrom;
       } catch ( ParseException e ) {
-        errors.append( OPTION_PREFIX + DEL_DATE + "=" + aDelFrom + " should be defined in " + deleteBeforeDateFormat
+        errors.append( OPTION_PREFIX + DEL_DATE + "=" + aDelFrom + " should be defined in " + purgeBeforeDateFormat
             + " format.\n" );
       }
     }
@@ -320,14 +330,14 @@ public class RepositoryCleanupUtil {
         + " Server resides, (eg. " + URL + "=http://localhost:9080)" ) );
     help.append( optionHelp( USER, "Required User Name" ) );
     help.append( optionHelp( PASS, "Required password for user" ) );
-    help.append( optionHelp( CONTENT_TARGET, "What to purge (CONTENT = Content Files, SHARED = Shared Objects"
+    help.append( optionHelp( PURGE_TARGET, "What to purge (CONTENT = Content Files, SHARED = Shared Objects"
         + ", BOTH = both content and shared files).  It is acceptable to use just the first character"
         + " of the value C, S, or B.  If omitted CONTENT will be targeted." ) );
 
     help.append( "\n" );
     help.append( indentFormat(
         "The command line must include at least one of these options, and that option must be set to a non-false value.  "
-            + "These options describe what to do with the files defined by the " + CONTENT_TARGET + " option.", 0, 0 ) );
+            + "These options describe what to do with the files defined by the " + PURGE_TARGET + " option.", 0, 0 ) );
     help.append( optionHelp( VER_COUNT,
         "If present, delete all version history except the last 'versionCount' versions.  Should be an integer, (eg. "
             + VER_COUNT + "=2)" ) );
@@ -335,26 +345,30 @@ public class RepositoryCleanupUtil {
         "If present, delete all version history created prior to this date in MM/dd/YYYY format" + ", (eg. " + DEL_DATE
             + "=12/01/2014)." ) );
     help.append( optionHelp( PURGE_FILES, "If " + PURGE_FILES
-        + "=true, then physically remove all the files specified by '" + CONTENT_TARGET
+        + "=true, then physically remove all the files specified by '" + PURGE_TARGET
         + ".  Note that this option PERMINENTLY erases files." ) );
     help.append( optionHelp( PURGE_REV, " iF " + PURGE_REV + "=true, all version history will be removed, but the"
         + " current files will remain unchanged." ) );
 
     help.append( "\n\nOptional Parameters:" );
+    help.append( optionHelp( LOG_FILE, "If present, output result log to this file.  If not present, output will be"
+        + " sent to " + DEFAULT_LOG_FILE_PREFIX + logFileNameDateFormat + ".txt where " + logFileNameDateFormat
+        + " represents the date and time the log file was created." ) );
+    
     help.append( optionHelp( LOG_LEVEL, "valid values are ALL,DEBUG,ERROR,FATAL,TRACE,INFO,OFF,TRACE,WARN."
         + "  Defaults to " + LOG_LEVEL + "=INFO if omitted." ) );
 
     help.append( "\n\nEXAMPLES:" );
     help.append( indentFormat( "1) purge-utility " + OPTION_PREFIX + URL + "=http://localhost:9080 " + OPTION_PREFIX
-        + USER + "=admin " + OPTION_PREFIX + PASS + "=password " + OPTION_PREFIX + CONTENT_TARGET + "=CONTENT "
+        + USER + "=admin " + OPTION_PREFIX + PASS + "=password " + OPTION_PREFIX + PURGE_TARGET + "=CONTENT "
         + OPTION_PREFIX + PURGE_FILES + "=true", 0, 3 ) );
-    help.append( indentFormat( "Purge ALL Transforms and Jobs in the repository.", 3, 3 ) );
+    help.append( indentFormat( "Purge ALL transforms and jobs in the repository.", 3, 3 ) );
 
     help.append( indentFormat( "2) purge-utility " + OPTION_PREFIX + URL + "=http://localhost:9080 " + OPTION_PREFIX
-        + USER + "=admin " + OPTION_PREFIX + PASS + "=password " + OPTION_PREFIX + CONTENT_TARGET + "=BOTH "
+        + USER + "=admin " + OPTION_PREFIX + PASS + "=password " + OPTION_PREFIX + PURGE_TARGET + "=BOTH "
         + OPTION_PREFIX + PURGE_REV + "=true", 0, 3 ) );
     help.append( indentFormat(
-        "Purge ALL version history of ALL Transforms, Jobs, and shared objects in the repository.  The current version will remain.",
+        "Purge ALL version history of ALL transforms, jobs, and shared objects in the repository.  The current version will remain.",
         3, 3 ) );
 
     help.append( indentFormat( "3) purge-utility " + OPTION_PREFIX + URL + "=http://localhost:9080 " + OPTION_PREFIX
@@ -396,8 +410,8 @@ public class RepositoryCleanupUtil {
     if ( logFile != null ) {
       logName = logFile;
     } else {
-      DateFormat df = new SimpleDateFormat( "YYYYMMdd-HHmmss" );
-      logName = "purge-utility-log-" + df.format( new Date() ) + ".txt";
+      DateFormat df = new SimpleDateFormat( logFileNameDateFormat );
+      logName = DEFAULT_LOG_FILE_PREFIX + df.format( new Date() ) + ".txt";
     }
     File file = new File( logName );
     FileOutputStream fout = FileUtils.openOutputStream( file );

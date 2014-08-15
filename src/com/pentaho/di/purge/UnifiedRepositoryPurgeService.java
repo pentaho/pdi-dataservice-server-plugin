@@ -226,7 +226,7 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
       getLogger().info( "Configure ShareObjects: true" );
     }
     if ( purgeSpecification.getBeforeDate() != null ) {
-      getLogger().info( "Configure deleteBeforeDate: " + purgeSpecification.getBeforeDate().toString() );
+      getLogger().info( "Configure purgeBeforeDate: " + purgeSpecification.getBeforeDate().toString() );
     }
     if ( purgeSpecification.getVersionCount() != -1 ) {
       getLogger().info( "Configure versionCount: " + purgeSpecification.getVersionCount() );

@@ -57,6 +57,38 @@ public class PurgeResource {
     this.repository = unifiedRepository;
   }
 
+  /**
+   * Provides a utility for purging files and/or revision history for the DI server.
+   * 
+   * @param pathId
+   *          Colon separated path for the repository file.  Processing of files will occur under this path.  Exception:
+   *          If purgeSharedObject=true other files may be affected as well.
+   * @param purgeFiles
+   *          If true, files will be purged completely. This options erases files and all history.  This effectively
+   *          disables all parameters effecting revisions since all revisions will be deleted unconditionally.
+   * @param purgeRevisions
+   *          If true, all revisions to the targeted files will be purged. The current state of the file will be
+   *          retained.
+   * @param purgeSharedObjects
+   *          If true, Shared objects will also be targeted by the purge operation. This does not replace the pathId and
+   *          fileFilter processing, but rather, is in addition to that processing. If it is desired to purge shared
+   *          objects only without effecting other files, then set the pathId to a single space character. Some examples
+   *          of shared objects database connections, Slave Servers, Cluster Schemas, and partition Schemas.
+   * @param versionCount
+   *          If present, the number of historical revisions to keep. If there are more revisions for a file than
+   *          versionCount, the older ones will be removed.
+   * @param purgeBeforeDate
+   *          If set, remove all version history created prior to this date.
+   * @param fileFilter
+   *          The file filter to be applied when determining what files are affected by the purge. This filter is used
+   *          by the <code>tree</code> endpoint to determine what files to return. The fileFilter is a list of allowed
+   *          names of files separated by the pipe (|) character. Each file name in the filter may be a full name or a
+   *          partial name with one or more wildcard characters ("*").  
+   *          (eg: *.ktr|*.kjb returns all files with a ktr or kjb extension).
+   * @param logLevelName
+   *          The standard name for the log level (ie:  INFO, DEBUG)
+   * @return A text file containing a log of the service execution.
+   */
   @POST
   @Path( "{pathId : .+}/purge" )
   @Consumes( MediaType.MULTIPART_FORM_DATA )
@@ -66,7 +98,7 @@ public class PurgeResource {
       @DefaultValue( "false" ) @FormDataParam( "purgeRevisions" ) boolean purgeRevisions,
       @DefaultValue( "false" ) @FormDataParam( "purgeSharedObjects" ) boolean purgeSharedObjects,
       @DefaultValue( "-1" ) @FormDataParam( "versionCount" ) int versionCount,
-      @FormDataParam( "deleteBeforeDate" ) Date deleteBeforeDate,
+      @FormDataParam( "purgeBeforeDate" ) Date purgeBeforeDate,
       @DefaultValue( "*" ) @FormDataParam( "fileFilter" ) String fileFilter,
       @DefaultValue( "INFO" ) @FormDataParam( "logLevel") String logLevelName ) {
 
@@ -75,7 +107,7 @@ public class PurgeResource {
       return Response.serverError().build();
     }
 
-    if ( purgeRevisions && ( versionCount > 0 || deleteBeforeDate != null ) ) {
+    if ( purgeRevisions && ( versionCount > 0 || purgeBeforeDate != null ) ) {
       purgeRevisions = false;
     }
     
@@ -88,7 +120,7 @@ public class PurgeResource {
     purgeSpecification.setPurgeRevisions( purgeRevisions );
     purgeSpecification.setSharedObjects( purgeSharedObjects );
     purgeSpecification.setVersionCount( versionCount );
-    purgeSpecification.setBeforeDate( deleteBeforeDate );
+    purgeSpecification.setBeforeDate( purgeBeforeDate );
     purgeSpecification.setFileFilter( fileFilter );
     purgeSpecification.setLogLevel( logLevel );
 
