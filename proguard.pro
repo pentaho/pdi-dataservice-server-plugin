@@ -58,6 +58,21 @@
       -keep class com.pentaho.di.job.CheckpointLogTableUserInterface {}
       -keep class com.pentaho.di.job.JobRestart {}
       -keep class com.pentaho.di.trans.dataservice.DataServiceTransDialogTab {}
+      -keep class com.pentaho.di.services.PentahoDiPlugin {
+        public *;
+      }
+
+      -keep class com.pentaho.di.purge.* {
+        public *;
+      }
+
+      -keep class com.pentaho.di.revision.* {
+        public *;
+      }
+
+      -keepclassmembers class org.pentaho.di.repository.pur.PurObjectRevision {
+        <fields>;
+      }
       
       -keepnames class org.pentaho.di.repository.pur.PurRepositoryLocation
       
