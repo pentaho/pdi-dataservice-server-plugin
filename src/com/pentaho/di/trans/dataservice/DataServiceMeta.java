@@ -29,9 +29,8 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
 /**
  * This describes a (transformation) data service to the outside world.
  * It defines the name, picks the step to read from (or to write to), the caching method etc.
- *  
- * @author matt
  *
+ * @author matt
  */
 public class DataServiceMeta {
 
@@ -44,7 +43,7 @@ public class DataServiceMeta {
   public static final String DATA_SERVICE_TRANSFORMATION_REP_OBJECT_ID = "transformation_rep_object_id";
   public static final String DATA_SERVICE_CACHE_METHOD = "cache_method";
   public static final String DATA_SERVICE_CACHE_MAX_AGE_MINUTES = "cache_max_age_minutes";
-  
+
 
   protected String name;
 
@@ -59,11 +58,11 @@ public class DataServiceMeta {
   protected String id;
 
   protected ServiceCacheMethod cacheMethod;
-  
+
   protected int cacheMaxAgeMinutes;
 
   public DataServiceMeta() {
-    this(null, null, true, false, ServiceCacheMethod.None);
+    this( null, null, true, false, ServiceCacheMethod.None );
   }
 
   /**
@@ -72,29 +71,30 @@ public class DataServiceMeta {
    * @param output
    * @param optimisationAllowed
    */
-  public DataServiceMeta(String name, String stepname, boolean output, boolean optimisationAllowed,
-      ServiceCacheMethod cacheMethod) {
+  public DataServiceMeta( String name, String stepname, boolean output, boolean optimisationAllowed,
+                          ServiceCacheMethod cacheMethod ) {
     this.name = name;
     this.stepname = stepname;
     this.cacheMethod = cacheMethod;
   }
-  
+
   /**
    * Save this object to the metaStore
+   *
    * @param metaStore
    * @param attribute
    */
-  public void saveToMetaStore(IMetaStore metaStore) throws MetaStoreException {
-    DataServiceMetaStoreUtil.createOrUpdateDataServiceElement(metaStore, this);
+  public void saveToMetaStore( IMetaStore metaStore ) throws MetaStoreException {
+    DataServiceMetaStoreUtil.createOrUpdateDataServiceElement( metaStore, this );
   }
-  
-  public DataServiceMeta(IMetaStore metaStore, String dataServiceName) throws MetaStoreException {
+
+  public DataServiceMeta( IMetaStore metaStore, String dataServiceName ) throws MetaStoreException {
     this();
-    DataServiceMetaStoreUtil.loadDataService(metaStore, dataServiceName, this);
+    DataServiceMetaStoreUtil.loadDataService( metaStore, dataServiceName, this );
   }
 
   public boolean isDefined() {
-    return !Const.isEmpty(name) && !Const.isEmpty(stepname);
+    return !Const.isEmpty( name ) && !Const.isEmpty( stepname );
   }
 
   /**
@@ -107,7 +107,7 @@ public class DataServiceMeta {
   /**
    * @param name the name to set
    */
-  public void setName(String name) {
+  public void setName( String name ) {
     this.name = name;
   }
 
@@ -121,7 +121,7 @@ public class DataServiceMeta {
   /**
    * @param stepname the stepname to set
    */
-  public void setStepname(String stepname) {
+  public void setStepname( String stepname ) {
     this.stepname = stepname;
   }
 
@@ -135,7 +135,7 @@ public class DataServiceMeta {
   /**
    * @param id the id to set
    */
-  public void setId(String id) {
+  public void setId( String id ) {
     this.id = id;
   }
 
@@ -149,7 +149,7 @@ public class DataServiceMeta {
   /**
    * @param cacheMethod the cacheMethod to set
    */
-  public void setCacheMethod(ServiceCacheMethod cacheMethod) {
+  public void setCacheMethod( ServiceCacheMethod cacheMethod ) {
     this.cacheMethod = cacheMethod;
   }
 
@@ -157,7 +157,7 @@ public class DataServiceMeta {
     return transObjectId;
   }
 
-  public void setTransObjectId(ObjectId transObjectId) {
+  public void setTransObjectId( ObjectId transObjectId ) {
     this.transObjectId = transObjectId;
   }
 
@@ -165,7 +165,7 @@ public class DataServiceMeta {
     return transRepositoryPath;
   }
 
-  public void setTransRepositoryPath(String transRepositoryPath) {
+  public void setTransRepositoryPath( String transRepositoryPath ) {
     this.transRepositoryPath = transRepositoryPath;
   }
 
@@ -173,7 +173,7 @@ public class DataServiceMeta {
     return transFilename;
   }
 
-  public void setTransFilename(String transFilename) {
+  public void setTransFilename( String transFilename ) {
     this.transFilename = transFilename;
   }
 
@@ -181,35 +181,40 @@ public class DataServiceMeta {
     return cacheMaxAgeMinutes;
   }
 
-  public void setCacheMaxAgeMinutes(int cacheMaxAgeMinutes) {
+  public void setCacheMaxAgeMinutes( int cacheMaxAgeMinutes ) {
     this.cacheMaxAgeMinutes = cacheMaxAgeMinutes;
   }
 
   /**
-   * Try to look up the transObjectId for transformation which are referenced by path 
+   * Try to look up the transObjectId for transformation which are referenced by path
+   *
    * @param repository The repository to use.
    * @throws KettleException
    */
-  public void lookupTransObjectId(Repository repository) throws KettleException {
-    if (repository==null) return;
-    
-    if (Const.isEmpty(transFilename) && transObjectId==null && !Const.isEmpty(transRepositoryPath)) {
+  public void lookupTransObjectId( Repository repository ) throws KettleException {
+    if ( repository == null ) {
+      return;
+    }
+
+    if ( Const.isEmpty( transFilename ) && transObjectId == null && !Const.isEmpty( transRepositoryPath ) ) {
       // see if there is a path specified to a repository name
       //
       String path = "/";
-      String name = transRepositoryPath; 
-      int lastSlashIndex = name.lastIndexOf('/');
-      if (lastSlashIndex>=0) {
-        path = transRepositoryPath.substring(0, lastSlashIndex+1);
-        name = transRepositoryPath.substring(lastSlashIndex+1);
+      String name = transRepositoryPath;
+      int lastSlashIndex = name.lastIndexOf( '/' );
+      if ( lastSlashIndex >= 0 ) {
+        path = transRepositoryPath.substring( 0, lastSlashIndex + 1 );
+        name = transRepositoryPath.substring( lastSlashIndex + 1 );
       }
       RepositoryDirectoryInterface tree = repository.loadRepositoryDirectoryTree();
-      RepositoryDirectoryInterface rd = tree.findDirectory(path);
-      if (rd==null) rd=tree; // root
-      
-      transObjectId = repository.getTransformationID(name, rd);
+      RepositoryDirectoryInterface rd = tree.findDirectory( path );
+      if ( rd == null ) {
+        rd = tree; // root
+      }
+
+      transObjectId = repository.getTransformationID( name, rd );
     }
   }
-  
-  
+
+
 }
