@@ -20,12 +20,28 @@
  * explicitly covering such access.
  */
 
-package com.pentaho.di.trans.dataservice.optimization;
+package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 /**
- * @author nhudak
- */
-public interface PushDownType {
-  public String getTypeName();
-  public String getFormName();
+* @author nhudak
+*/
+public enum OptimizationForm {
+  WHERE_CLAUSE( "Where Clause", new WhereClauseGenerator() ),
+  FILTER_CLAUSE( "Filter", null ); // TODO implement filter generator
+
+  private final String formName;
+  private final ParameterGenerationService service;
+
+  OptimizationForm( String formName, ParameterGenerationService service ) {
+    this.formName = formName;
+    this.service = service;
+  }
+
+  public String getFormName() {
+    return formName;
+  }
+
+  public ParameterGenerationService getService() {
+    return service;
+  }
 }

@@ -20,59 +20,69 @@
  * explicitly covering such access.
  */
 
-package com.pentaho.di.trans.dataservice.optimization;
+package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.pentaho.di.trans.dataservice.optimization.PushDownType;
+import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
-import org.pentaho.metastore.persist.MetaStoreElementType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author nhudak
  */
-@MetaStoreElementType(
-  name = "Push Down Optimization",
-  description = "Define opportunities to improve Data Service performance by modifying user transformation execution"
-  )
-public final class PushDownOptimizationMeta {
+public class ParameterGeneration implements PushDownType {
 
-  /**
-   *  User-defined name for this optimization (required)
-   */
+  public static final String TYPE_NAME = "Parameter Generation";
+
+  // Default to WHERE clause generation
   @MetaStoreAttribute
-  private String name;
+  private OptimizationForm form = OptimizationForm.WHERE_CLAUSE;
 
-  /**
-   * Name of step being optimized (optional)
-   */
   @MetaStoreAttribute
-  private String stepName = "";
+  private List<SourceTargetFields> fieldMappings = new ArrayList<SourceTargetFields>();
 
-  /**
-   * Optimization Type
-   */
   @MetaStoreAttribute
-  private PushDownType type;
+  private String parameterName;
 
-  public String getName() {
-    return name;
+  public String getParameterName() {
+    return parameterName;
   }
 
-  public void setName( String name ) {
-    this.name = name;
+  public void setParameterName( String parameterName ) {
+    this.parameterName = parameterName;
   }
 
-  public String getStepName() {
-    return stepName;
+  @Override public String getTypeName() {
+    return TYPE_NAME;
   }
 
-  public void setStepName( String stepName ) {
-    this.stepName = stepName;
+  public OptimizationForm getForm() {
+    return form;
   }
 
-  public PushDownType getType() {
-    return type;
+  public void setForm( OptimizationForm form ) {
+    this.form = form;
   }
 
-  public void setType( PushDownType type ) {
-    this.type = type;
+  @Override public String getFormName() {
+    return form.getFormName();
   }
+
+  public List<SourceTargetFields> getFieldMappings() {
+    return fieldMappings;
+  }
+
+  public SourceTargetFields createFieldMapping() {
+    SourceTargetFields mapping = new SourceTargetFields();
+    fieldMappings.add( mapping );
+    return mapping;
+  }
+
+  public SourceTargetFields removeFieldMapping( SourceTargetFields mapping ) {
+    fieldMappings.remove( mapping );
+    return mapping;
+  }
+
 }

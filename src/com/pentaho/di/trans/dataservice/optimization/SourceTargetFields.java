@@ -22,10 +22,49 @@
 
 package com.pentaho.di.trans.dataservice.optimization;
 
-/**
- * @author nhudak
- */
-public interface PushDownType {
-  public String getTypeName();
-  public String getFormName();
+import org.pentaho.metastore.persist.MetaStoreAttribute;
+import org.pentaho.metastore.persist.MetaStoreElementType;
+
+
+@MetaStoreElementType(
+  name = "Source Target Fields",
+  description = "Defines the mapping of a source to target field and any related metadata.  "
+    +  "Used for push down optimization."
+)
+public class SourceTargetFields {
+
+  @MetaStoreAttribute
+  private String sourceFieldName;
+
+  @MetaStoreAttribute
+  private String targetFieldName;
+
+  // protected boolean filterAllowed;  // Not used yet.
+
+  public SourceTargetFields() { }
+
+  public SourceTargetFields( String source, String target ) {
+    setSourceFieldName( source );
+    setTargetFieldName( target );
+  }
+
+  public String getSourceFieldName() {
+    return sourceFieldName;
+  }
+
+  public void setSourceFieldName( String sourceFieldName ) {
+    this.sourceFieldName = sourceFieldName;
+  }
+
+  public String getTargetFieldName() {
+    return targetFieldName;
+  }
+
+  public void setTargetFieldName( String targetFieldName ) {
+    this.targetFieldName = targetFieldName;
+  }
+
+
+
+
 }

@@ -20,12 +20,10 @@
  * explicitly covering such access.
  */
 
-package com.pentaho.di.trans.dataservice.optimization;
+package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 /**
  * @author nhudak
  */
-public interface PushDownType {
-  public String getTypeName();
-  public String getFormName();
+public interface ParameterGenerationService {
 }
