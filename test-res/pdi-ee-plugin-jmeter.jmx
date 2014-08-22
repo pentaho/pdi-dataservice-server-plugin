@@ -10312,26 +10312,12 @@ vars.put(&quot;createdTestFileNodeVersionId&quot;, path);</stringProp>
               <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Purge x revisions" enabled="true">
                 <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" enabled="true">
                   <collectionProp name="Arguments.arguments">
-                    <elementProp name="deleteBeforeDate" elementType="HTTPArgument">
-                      <boolProp name="HTTPArgument.always_encode">true</boolProp>
-                      <stringProp name="Argument.value">8/3/2019</stringProp>
-                      <stringProp name="Argument.metadata">=</stringProp>
-                      <boolProp name="HTTPArgument.use_equals">true</boolProp>
-                      <stringProp name="Argument.name">deleteBeforeDate</stringProp>
-                    </elementProp>
                     <elementProp name="versionCount" elementType="HTTPArgument">
-                      <boolProp name="HTTPArgument.always_encode">true</boolProp>
-                      <stringProp name="Argument.value">2</stringProp>
+                      <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                      <stringProp name="Argument.value">1</stringProp>
                       <stringProp name="Argument.metadata">=</stringProp>
                       <boolProp name="HTTPArgument.use_equals">true</boolProp>
                       <stringProp name="Argument.name">versionCount</stringProp>
-                    </elementProp>
-                    <elementProp name="purgeRevisions" elementType="HTTPArgument">
-                      <boolProp name="HTTPArgument.always_encode">true</boolProp>
-                      <stringProp name="Argument.value">true</stringProp>
-                      <stringProp name="Argument.metadata">=</stringProp>
-                      <boolProp name="HTTPArgument.use_equals">true</boolProp>
-                      <stringProp name="Argument.name">purgeRevisions</stringProp>
                     </elementProp>
                   </collectionProp>
                 </elementProp>
@@ -10384,7 +10370,7 @@ vars.put(&quot;createdFilePath&quot;, path);</stringProp>
                 <hashTree/>
                 <XPathAssertion guiclass="XPathAssertionGui" testclass="XPathAssertion" testname="XPath Assertion - Ensure there is only one revision returned" enabled="true">
                   <boolProp name="XPath.negate">true</boolProp>
-                  <stringProp name="XPath.xpath">//revision[2]</stringProp>
+                  <stringProp name="XPath.xpath">//revision[3]</stringProp>
                   <boolProp name="XPath.validate">false</boolProp>
                   <boolProp name="XPath.whitespace">false</boolProp>
                   <boolProp name="XPath.tolerant">false</boolProp>
