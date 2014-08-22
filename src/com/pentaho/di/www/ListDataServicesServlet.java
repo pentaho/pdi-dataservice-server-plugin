@@ -35,6 +35,7 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
+import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
@@ -116,10 +117,12 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
             } else if ( Const.isEmpty( dataService.getName() ) ) {
               log.logError( "A data service without a name was found'" );
             } else {
-              services.add( new TransDataService( dataService.getName(), dataService.getTransFilename(), dataService.getTransObjectId(), dataService.getStepname() ) );
+              services.add( new TransDataService( dataService.getName(), dataService.getTransFilename(),
+                new StringObjectId( dataService.getTransObjectId() ), dataService.getStepname() ) );
             }
           } else {
-            log.logError( "The transformation specification for data service '" + dataService.getName() + "' could not be found" );
+            log.logError( "The transformation specification for data service '" + dataService.getName()
+              + "' could not be found:  " + dataService.getTransRepositoryPath() );
           }
         }
       }

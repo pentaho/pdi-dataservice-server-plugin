@@ -46,6 +46,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
@@ -137,7 +138,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
               new TransDataService(
                 dataService.getName(),
                 dataService.getTransFilename(),
-                dataService.getTransObjectId(),
+                new StringObjectId( dataService.getTransObjectId() ),
                 dataService.getStepname() )
             );
           }

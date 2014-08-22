@@ -23,8 +23,9 @@ import org.pentaho.di.core.sql.ServiceCacheMethod;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
-import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.metastore.persist.MetaStoreAttribute;
+import org.pentaho.metastore.persist.MetaStoreElementType;
+import org.pentaho.metastore.util.PentahoDefaults;
 
 /**
  * This describes a (transformation) data service to the outside world.
@@ -32,6 +33,9 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
  *
  * @author matt
  */
+@MetaStoreElementType(
+  name = PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME,
+  description = PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION )
 public class DataServiceMeta {
 
   public static String XML_TAG = "data-service";
@@ -44,21 +48,26 @@ public class DataServiceMeta {
   public static final String DATA_SERVICE_CACHE_METHOD = "cache_method";
   public static final String DATA_SERVICE_CACHE_MAX_AGE_MINUTES = "cache_max_age_minutes";
 
-
   protected String name;
 
+  @MetaStoreAttribute
   protected String stepname;
 
-  protected ObjectId transObjectId; // rep: by reference (1st priority)
+  @MetaStoreAttribute( key = DATA_SERVICE_TRANSFORMATION_REP_OBJECT_ID )
+  protected String transObjectId; // rep: by reference (1st priority)
 
+  @MetaStoreAttribute( key = DATA_SERVICE_TRANSFORMATION_REP_PATH )
   protected String transRepositoryPath; // rep: by name (2nd priority)
 
+  @MetaStoreAttribute( key = DATA_SERVICE_TRANSFORMATION_FILENAME )
   protected String transFilename; // file (3rd priority)
 
   protected String id;
 
+  @MetaStoreAttribute( key = DATA_SERVICE_CACHE_METHOD )
   protected ServiceCacheMethod cacheMethod;
 
+  @MetaStoreAttribute( key = DATA_SERVICE_CACHE_MAX_AGE_MINUTES )
   protected int cacheMaxAgeMinutes;
 
   public DataServiceMeta() {
@@ -76,21 +85,6 @@ public class DataServiceMeta {
     this.name = name;
     this.stepname = stepname;
     this.cacheMethod = cacheMethod;
-  }
-
-  /**
-   * Save this object to the metaStore
-   *
-   * @param metaStore
-   * @param attribute
-   */
-  public void saveToMetaStore( IMetaStore metaStore ) throws MetaStoreException {
-    DataServiceMetaStoreUtil.createOrUpdateDataServiceElement( metaStore, this );
-  }
-
-  public DataServiceMeta( IMetaStore metaStore, String dataServiceName ) throws MetaStoreException {
-    this();
-    DataServiceMetaStoreUtil.loadDataService( metaStore, dataServiceName, this );
   }
 
   public boolean isDefined() {
@@ -153,11 +147,11 @@ public class DataServiceMeta {
     this.cacheMethod = cacheMethod;
   }
 
-  public ObjectId getTransObjectId() {
+  public String getTransObjectId() {
     return transObjectId;
   }
 
-  public void setTransObjectId( ObjectId transObjectId ) {
+  public void setTransObjectId( String transObjectId ) {
     this.transObjectId = transObjectId;
   }
 
@@ -187,7 +181,8 @@ public class DataServiceMeta {
 
   /**
    * Try to look up the transObjectId for transformation which are referenced by path
-   *
+   * and set transRepositoryPath if found.
+   * Caller is responsible for determining whether an oid was actually set.
    * @param repository The repository to use.
    * @throws KettleException
    */
@@ -211,8 +206,10 @@ public class DataServiceMeta {
       if ( rd == null ) {
         rd = tree; // root
       }
-
-      transObjectId = repository.getTransformationID( name, rd );
+      ObjectId oid = repository.getTransformationID( name, rd );
+      if ( oid != null ) {
+        transObjectId = oid.getId();
+      }
     }
   }
 
