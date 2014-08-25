@@ -21,7 +21,6 @@ import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -35,23 +34,21 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.jdbc.ThinConnection;
 import org.pentaho.di.core.jdbc.ThinDriver;
-import org.pentaho.di.core.jdbc.TransDataService;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.sql.SqlTransExecutor;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
@@ -119,48 +116,27 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     Map<String, String> parameters = getParametersFromRequestHeader( request );
 
     try {
-      // Get the list of services...
-      //
-      List<TransDataService> services = new ArrayList<TransDataService>( transformationMap.getSlaveServerConfig().getServices() );
 
       // Add possible services from the repository...
       //
       Repository repository = transformationMap.getSlaveServerConfig().getRepository();
       DelegatingMetaStore metaStore = transformationMap.getSlaveServerConfig().getMetaStore();
       List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices( metaStore );
-      for ( DataServiceMeta dataService : dataServices ) {
-
-        dataService.lookupTransObjectId( repository );
-
-        if ( !Const.isEmpty( dataService.getTransFilename() ) || dataService.getTransObjectId() != null ) {
-          if ( !Const.isEmpty( dataService.getName() ) && !Const.isEmpty( dataService.getStepname() ) ) {
-            services.add(
-              new TransDataService(
-                dataService.getName(),
-                dataService.getTransFilename(),
-                new StringObjectId( dataService.getTransObjectId() ),
-                dataService.getStepname() )
-            );
-          }
-        } else {
-          log.logError( "The transformation specification for data service '" + dataService.getName() + "' could not be found" );
-        }
-      }
 
       // Execute the SQL using a few transformations...
       //
-      final SqlTransExecutor executor = new SqlTransExecutor( sqlQuery, services, parameters, repository, 0 );
-
+      final DataServiceExecutor executor = new DataServiceExecutor( sqlQuery, dataServices, parameters, repository, 0 );
+            
       // First write the service name and the metadata
       //
       dos.writeUTF( executor.getServiceName() );
 
       // Then send the transformation names and carte container IDs
       //
-      dos.writeUTF( SqlTransExecutor.calculateTransname( executor.getSql(), true ) );
+      dos.writeUTF( DataServiceExecutor.calculateTransname( executor.getSql(), true ) );
       String serviceContainerObjectId = UUID.randomUUID().toString();
       dos.writeUTF( serviceContainerObjectId );
-      dos.writeUTF( SqlTransExecutor.calculateTransname( executor.getSql(), false ) );
+      dos.writeUTF( DataServiceExecutor.calculateTransname( executor.getSql(), false ) );
       String genContainerObjectId = UUID.randomUUID().toString();
       dos.writeUTF( genContainerObjectId );
 

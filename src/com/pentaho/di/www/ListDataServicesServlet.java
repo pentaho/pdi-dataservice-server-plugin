@@ -18,7 +18,7 @@
 package com.pentaho.di.www;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -26,10 +26,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.jdbc.ThinDriver;
-import org.pentaho.di.core.jdbc.TransDataService;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -97,40 +95,20 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
 
     // Copy the list locally so we can add the current repository services...
     //
-    List<TransDataService> services = new ArrayList<TransDataService>( transformationMap.getSlaveServerConfig().getServices() );
-
     IMetaStore metaStore = transformationMap.getSlaveServerConfig().getMetaStore();
 
     // Add possible services from the repository...
     //
     Repository repository = null;
+    List<DataServiceMeta> dataServices = Collections.emptyList();
     try {
       repository = transformationMap.getSlaveServerConfig().getRepository(); // loaded lazily
-      List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices( metaStore );
-      for ( DataServiceMeta dataService : dataServices ) {
-        if ( !Const.isEmpty( dataService.getName() ) && !Const.isEmpty( dataService.getStepname() ) ) {
-
-          dataService.lookupTransObjectId( repository );
-          if ( !Const.isEmpty( dataService.getTransFilename() ) || dataService.getTransObjectId() != null ) {
-            if ( Const.isEmpty( dataService.getStepname() ) ) {
-              log.logError( "A data service without a stepname specification was found : '" + dataService.getName() + "'" );
-            } else if ( Const.isEmpty( dataService.getName() ) ) {
-              log.logError( "A data service without a name was found'" );
-            } else {
-              services.add( new TransDataService( dataService.getName(), dataService.getTransFilename(),
-                new StringObjectId( dataService.getTransObjectId() ), dataService.getStepname() ) );
-            }
-          } else {
-            log.logError( "The transformation specification for data service '" + dataService.getName()
-              + "' could not be found:  " + dataService.getTransRepositoryPath() );
-          }
-        }
-      }
+      dataServices = DataServiceMetaStoreUtil.getDataServices( metaStore );
     } catch ( Exception e ) {
       log.logError( "Unable to list extra repository services", e );
     }
 
-    for ( TransDataService service : services ) {
+    for ( DataServiceMeta service : dataServices ) {
       response.getWriter().println( XMLHandler.openTag( XML_TAG_SERVICE ) );
       response.getWriter().println( XMLHandler.addTagValue( "name", service.getName() ) );
 
@@ -138,8 +116,9 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
       //
       try {
         TransMeta transMeta = null;
-        if ( repository != null && service.getObjectId() != null ) {
-          transMeta = repository.loadTransformation( service.getObjectId(), null );
+        if ( repository != null && service.getTransObjectId() != null ) {
+          StringObjectId objectId = new StringObjectId( service.getTransObjectId() );
+          transMeta = repository.loadTransformation( objectId, null );
         } else if ( repository != null && service.getName() != null ) {
           String path = "/";
           String name = service.getName();
@@ -155,19 +134,19 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
           }
           transMeta = repository.loadTransformation( name, rd, null, true, null );
         } else {
-          transMeta = new TransMeta( service.getFileName() );
+          transMeta = new TransMeta( service.getTransFilename() );
         }
 
         for ( String name : parameters.keySet() ) {
           transMeta.setParameterValue( name, parameters.get( name ) );
         }
         transMeta.activateParameters();
-        RowMetaInterface serviceFields = transMeta.getStepFields( service.getServiceStepName() );
+        RowMetaInterface serviceFields = transMeta.getStepFields( service.getStepname() );
         response.getWriter().println( serviceFields.getMetaXML() );
 
       } catch ( Exception e ) {
         // Don't include details
-        log.logError( "Unable to get fields for service " + service.getName() + ", transformation: " + service.getFileName() );
+        log.logError( "Unable to get fields for service " + service.getName() + ", transformation: " + service.getTransFilename() );
       }
 
       response.getWriter().println( XMLHandler.closeTag( XML_TAG_SERVICE ) );
