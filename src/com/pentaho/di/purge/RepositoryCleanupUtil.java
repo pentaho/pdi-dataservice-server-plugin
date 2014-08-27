@@ -346,7 +346,7 @@ public class RepositoryCleanupUtil {
             + "=12/01/2014)." ) );
     help.append( optionHelp( PURGE_FILES, "If " + PURGE_FILES
         + "=true, then physically remove all the files specified by '" + PURGE_TARGET
-        + ".  Note that this option PERMINENTLY erases files." ) );
+        + ".  Note that this option PERMANENTLY erases files." ) );
     help.append( optionHelp( PURGE_REV, " iF " + PURGE_REV + "=true, all version history will be removed, but the"
         + " current files will remain unchanged." ) );
 

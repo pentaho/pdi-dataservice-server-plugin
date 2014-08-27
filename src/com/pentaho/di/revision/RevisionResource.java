@@ -37,6 +37,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codehaus.enunciate.jaxrs.ResponseCode;
+import org.codehaus.enunciate.jaxrs.StatusCodes;
+
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 
@@ -57,7 +60,6 @@ public class RevisionResource {
   /**
    *
    * @param unifiedRepository
-   * @param diRepository
    */
   public RevisionResource(IUnifiedRepository unifiedRepository) {
     this.repository = unifiedRepository;
@@ -67,6 +69,10 @@ public class RevisionResource {
 
   /**
    * Retrieves the version history of a selected repository file
+   *
+   * <p><b>Example Request:</b><br>
+   * GET /pur-repository-plugin/api/revision/path:to:file/revisions
+   * </p>
    *
    * @param pathId (colon separated path for the repository file)
    * <pre function="syntax.xml">
@@ -86,6 +92,11 @@ public class RevisionResource {
    */
   @GET
   @Path("{pathId : .+}/revisions")
+  @StatusCodes({
+    @ResponseCode( code = 200, condition = "Successfully returns list of revisions"),
+    @ResponseCode( code = 500, condition = "Something failed when attempting to retrieve revisions"),
+    @ResponseCode( code = 404, condition = "Invalid path")
+  })
   @Produces({APPLICATION_XML, APPLICATION_JSON})
   public Response doGetVersions(@PathParam("pathId") String pathId) {
 
@@ -119,6 +130,10 @@ public class RevisionResource {
   /**
    * Get version enabled flag
    *
+   * <p><b>Example Request:</b><br>
+   * GET /pur-repository-plugin/api/revision/versioningEnabled
+   * </p>
+   *
    * @return string representing boolean versioning enabled flag value
    * <pre function="syntax.xml">
    *   true
@@ -126,12 +141,20 @@ public class RevisionResource {
    */
   @GET
   @Path("/versioningEnabled")
+  @StatusCodes({
+    @ResponseCode( code = 200, condition = "Returns a true/false string response"),
+    @ResponseCode( code = 500, condition = "Something failed")
+  })
   public Response getVersioningEnabled() {
     return Response.ok( Boolean.toString( JcrRepositoryFileUtils.getVersioningEnabled() ) ).build();
   }
 
   /**
    * Get version comments enabled flag
+   *
+   * <p><b>Example Request:</b><br>
+   * GET /pur-repository-plugin/api/revision/versionCommentsEnabled
+   * </p>
    *
    * @return string representing boolean version comments enabled flag value
    * <pre function="syntax.xml">
@@ -140,6 +163,10 @@ public class RevisionResource {
    */
   @GET
   @Path("/versionCommentsEnabled")
+  @StatusCodes({
+    @ResponseCode( code = 200, condition = "Returns a true/false string response"),
+    @ResponseCode( code = 500, condition = "Something failed")
+  })
   public Response getVersionCommentsEnabled() {
     return Response.ok( Boolean.toString( JcrRepositoryFileUtils.getVersionCommentsEnabled() ) ).build();
   }
