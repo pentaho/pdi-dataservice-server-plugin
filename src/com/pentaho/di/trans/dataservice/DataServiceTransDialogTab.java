@@ -243,7 +243,9 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         boolean removed = removeService( shell, transMeta.getMetaStore(), wServiceName.getText() );
         if ( removed ) {
           wServiceName.setItems( getDataServiceElementNames( shell, transMeta.getMetaStore() ) );
+          //we should set both fields empty, because if one empty then second empty
           wServiceName.setText( "" );
+          wServiceStep.setText( "" );
         }
 
       }
@@ -354,7 +356,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       DataServiceMeta dataService = new DataServiceMeta();
       String serviceName = wServiceName.getText();
       String stepService = wServiceStep.getText();
-      if ( serviceName.isEmpty() || stepService.isEmpty() ) {
+      if ( ( serviceName.isEmpty() && !stepService.isEmpty() ) || ( !serviceName.isEmpty() && stepService.isEmpty() ) ) {
         throw new KettleException( "Required fields are not filled!" );
       }
 
