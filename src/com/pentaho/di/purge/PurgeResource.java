@@ -37,6 +37,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.log4j.Level;
+import org.codehaus.enunciate.jaxrs.ResponseCode;
+import org.codehaus.enunciate.jaxrs.StatusCodes;
 import org.pentaho.di.ui.repository.pur.services.IPurgeService;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.util.RepositoryPathEncoder;
@@ -59,6 +61,10 @@ public class PurgeResource {
 
   /**
    * Provides a utility for purging files and/or revision history for the DI server.
+   *
+   * <p><b>Example Request:</b><br>
+   * POST /pur-repository-plugin/api/purge/path:to:file/purge
+   * </p>
    * 
    * @param pathId
    *          Colon separated path for the repository file.  Processing of files will occur under this path.  Exception:
@@ -91,6 +97,11 @@ public class PurgeResource {
    */
   @POST
   @Path( "{pathId : .+}/purge" )
+  @StatusCodes({
+    @ResponseCode( code = 200, condition = "Successfully purged specified target"),
+    @ResponseCode( code = 500, condition = "Something failed when attempting to purge "),
+    @ResponseCode( code = 404, condition = "Invalid path")
+  })
   @Consumes( MediaType.MULTIPART_FORM_DATA )
   @Produces( { WILDCARD } )
   public Response doDeleteRevisions( @PathParam( "pathId" ) String pathId,
