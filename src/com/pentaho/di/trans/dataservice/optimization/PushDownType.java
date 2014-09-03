@@ -22,10 +22,17 @@
 
 package com.pentaho.di.trans.dataservice.optimization;
 
+import com.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.step.StepInterface;
+
 /**
  * @author nhudak
  */
 public interface PushDownType {
   public String getTypeName();
   public String getFormName();
+
+  boolean activate( DataServiceExecutor executor, Trans trans, StepInterface stepInterface, SQL sql );
 }

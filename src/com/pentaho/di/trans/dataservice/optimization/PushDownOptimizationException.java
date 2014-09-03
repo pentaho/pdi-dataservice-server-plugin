@@ -20,10 +20,19 @@
  * explicitly covering such access.
  */
 
-package com.pentaho.di.trans.dataservice.optimization.paramgen;
+package com.pentaho.di.trans.dataservice.optimization;
+
+import org.pentaho.di.core.exception.KettleException;
 
 /**
  * @author nhudak
  */
-public interface ParameterGenerationService {
+public class PushDownOptimizationException extends KettleException {
+  public PushDownOptimizationException() {
+    super();
+  }
+
+  public PushDownOptimizationException( String message ) {
+    super( message );
+  }
 }

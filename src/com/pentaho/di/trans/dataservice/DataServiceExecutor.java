@@ -22,6 +22,7 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
@@ -163,6 +164,11 @@ public class DataServiceExecutor {
       }
 
       serviceTrans.prepareExecution( null );
+
+      // Apply Push Down Optimizations
+      for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
+        optimizationMeta.activate( this );
+      }
 
       // This is where we will inject the rows from the service transformation step
       //

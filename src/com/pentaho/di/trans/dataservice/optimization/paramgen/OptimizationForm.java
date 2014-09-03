@@ -26,22 +26,22 @@ package com.pentaho.di.trans.dataservice.optimization.paramgen;
 * @author nhudak
 */
 public enum OptimizationForm {
-  WHERE_CLAUSE( "Where Clause", new WhereClauseGenerator() ),
-  FILTER_CLAUSE( "Filter", null ); // TODO implement filter generator
+  WHERE_CLAUSE( "Where Clause", "WHERE" ),
+  FILTER_CLAUSE( "Filter", "AND" );
 
   private final String formName;
-  private final ParameterGenerationService service;
+  private String prefix;
 
-  OptimizationForm( String formName, ParameterGenerationService service ) {
+  private OptimizationForm( String formName, String prefix ) {
     this.formName = formName;
-    this.service = service;
+    this.prefix = prefix;
   }
 
   public String getFormName() {
     return formName;
   }
 
-  public ParameterGenerationService getService() {
-    return service;
+  public String getPrefix() {
+    return prefix;
   }
 }
