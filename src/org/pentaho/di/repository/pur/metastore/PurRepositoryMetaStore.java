@@ -66,10 +66,11 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   protected static final String PROP_NAME = "NAME";
   protected static final String PROP_ELEMENT_TYPE_NAME = "element_type_name";
   protected static final String PROP_ELEMENT_CHILDREN = "element_children";
+  protected static final String PROP_VALUE = "attribute_value";
 
   protected static final String PROP_ELEMENT_TYPE_DESCRIPTION = "element_type_description"; //$NON-NLS-1$
 
-  private static final String METASTORE_FOLDER_PATH = "/etc/metastore";
+  protected static final String METASTORE_FOLDER_PATH = "/etc/metastore";
 
   protected PurRepository repository;
   protected IUnifiedRepository pur;
@@ -324,6 +325,14 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     attributeToDataNode( element, childrenNode );
   }
 
+  protected void dataNodeToElement( DataNode dataNode, IMetaStoreElement element ) throws MetaStoreException {
+    DataProperty nameProperty = dataNode.getProperty( PROP_NAME );
+    element.setName( nameProperty != null ? nameProperty.getString() : null );
+    DataNode childrenNode = dataNode.getNode( PROP_ELEMENT_CHILDREN );
+    dataNodeToAttribute( childrenNode, element );
+  }
+
+
   @Override
   public synchronized void updateElement( String namespace, IMetaStoreElementType elementType, String elementId,
       IMetaStoreElement element ) throws MetaStoreException {
@@ -359,10 +368,7 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
     element.setElementType( elementType );
     NodeRepositoryFileData data = pur.getDataForRead( elementId, NodeRepositoryFileData.class );
     DataNode dataNode = data.getNode();
-    DataProperty nameProperty = dataNode.getProperty( PROP_NAME );
-    element.setName( nameProperty != null ? nameProperty.getString() : null );
-    DataNode childrenNode = dataNode.getNode( PROP_ELEMENT_CHILDREN );
-    dataNodeToAttribute( childrenNode, element );
+    dataNodeToElement( dataNode, element );
     element.setId( elementId );
 
     return element;
@@ -416,53 +422,47 @@ public class PurRepositoryMetaStore extends MemoryMetaStore implements IMetaStor
   }
 
   protected void attributeToDataNode( IMetaStoreAttribute attribute, DataNode dataNode ) {
-    for ( IMetaStoreAttribute child : attribute.getChildren() ) {
-      Object value = child.getValue();
-      if ( child.getChildren().isEmpty() ) {
-        if ( value == null ) {
-          continue;
-        }
-        if ( value instanceof Double ) {
-          dataNode.setProperty( child.getId(), (Double) value );
-        } else if ( value instanceof Date ) {
-          dataNode.setProperty( child.getId(), (Date) value );
-        } else if ( value instanceof Long ) {
-          dataNode.setProperty( child.getId(), (Long) value );
-        } else {
-          dataNode.setProperty( child.getId(), value.toString() );
-        }
+    Object value = attribute.getValue();
+    if ( value != null ) {
+      if ( value instanceof Double ) {
+        dataNode.setProperty( PROP_VALUE, (Double) value );
+      } else if ( value instanceof Date ) {
+        dataNode.setProperty( PROP_VALUE, (Date) value );
+      } else if ( value instanceof Long ) {
+        dataNode.setProperty( PROP_VALUE, (Long) value );
       } else {
-        DataNode subNode = new DataNode( child.getId() );
-        attributeToDataNode( child, subNode );
-        dataNode.addNode( subNode );
+        dataNode.setProperty( PROP_VALUE, value.toString() );
       }
+    }
+    for ( IMetaStoreAttribute child : attribute.getChildren() ) {
+      DataNode subNode = new DataNode( child.getId() );
+      attributeToDataNode( child, subNode );
+      dataNode.addNode( subNode );
     }
   }
 
   protected void dataNodeToAttribute( DataNode dataNode, IMetaStoreAttribute attribute ) throws MetaStoreException {
-    // First process the properties
-    //
-    Iterable<DataProperty> properties = dataNode.getProperties();
-    for ( Iterator<DataProperty> it = properties.iterator(); it.hasNext(); ) {
-      DataProperty property = it.next();
+    DataProperty property = dataNode.getProperty( PROP_VALUE );
+    if ( property != null ) {
       switch ( property.getType() ) {
         case DATE:
-          attribute.addChild( newAttribute( property.getName(), property.getDate() ) );
+          attribute.setValue( property.getDate() );
           break;
         case DOUBLE:
-          attribute.addChild( newAttribute( property.getName(), property.getDouble() ) );
+          attribute.setValue( property.getDouble() );
+          break;
+        case LONG:
+          attribute.setValue(  property.getLong() );
           break;
         case STRING:
-          attribute.addChild( newAttribute( property.getName(), property.getString() ) );
+          attribute.setValue( property.getString() );
           break;
         default:
           break;
       }
     }
 
-    Iterable<DataNode> nodes = dataNode.getNodes();
-    for ( Iterator<DataNode> it = nodes.iterator(); it.hasNext(); ) {
-      DataNode subNode = it.next();
+    for ( DataNode subNode : dataNode.getNodes() ) {
       IMetaStoreAttribute subAttr = newAttribute( subNode.getName(), null );
       dataNodeToAttribute( subNode, subAttr );
       attribute.addChild( subAttr );
