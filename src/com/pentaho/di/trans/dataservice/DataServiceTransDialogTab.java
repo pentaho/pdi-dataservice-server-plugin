@@ -17,9 +17,11 @@
 
 package com.pentaho.di.trans.dataservice;
 
-import java.util.Arrays;
-import java.util.List;
-
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import com.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
@@ -33,8 +35,10 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TableItem;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
@@ -43,6 +47,8 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.EnterStringDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
+import org.pentaho.di.ui.core.widget.ColumnInfo;
+import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.trans.dialog.TransDialogPlugin;
 import org.pentaho.di.ui.trans.dialog.TransDialogPluginInterface;
@@ -51,6 +57,10 @@ import org.pentaho.metastore.api.IMetaStoreElement;
 import org.pentaho.metastore.api.IMetaStoreElementType;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.util.PentahoDefaults;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @TransDialogPlugin(
   id = "DataServiceTransDialogTab",
@@ -61,25 +71,22 @@ import org.pentaho.metastore.util.PentahoDefaults;
 public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   private static Class<?> PKG = DataServiceTransDialogTab.class;
-    // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
+  // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
 
   private CTabItem wDataServiceTab;
   private CCombo wServiceName;
   private CCombo wServiceStep;
+  private TableView optimizationListTable;
+  private List<PushDownOptimizationMeta> optimizationList = new ArrayList<PushDownOptimizationMeta>();
 
-  /*
-  private Button wServiceOutput;
-  private Button wServiceAllowOptimization;
-  private CCombo wServiceCacheMethod;
-  */
+  private static final Log logger = LogFactory.getLog( DataServiceTransDialogTab.class );
 
   @Override
   public void addTab( final TransMeta transMeta, final Shell shell, final CTabFolder wTabFolder ) {
-
     transMeta.setRepository( Spoon.getInstance().getRepository() );
     transMeta.setMetaStore( Spoon.getInstance().getMetaStore() );
 
-    PropsUI props = PropsUI.getInstance();
+    final PropsUI props = PropsUI.getInstance();
     int middle = props.getMiddlePct();
     int margin = Const.MARGIN;
 
@@ -117,6 +124,23 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     wServiceName.setEditable( false );
     wServiceName.setItems( getDataServiceElementNames( shell, transMeta.getMetaStore() ) );
     Control lastControl = wServiceName;
+    wServiceName.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent selectionEvent ) {
+        try {
+          if ( wServiceName.getText() != null ) {
+            DataServiceMeta selectedServiceMeta =
+              DataServiceMeta.getMetaStoreFactory( transMeta.getMetaStore(), PentahoDefaults.NAMESPACE )
+                .loadElement( wServiceName.getText() );
+            optimizationList = selectedServiceMeta.getPushDownOptimizationMeta();
+            refreshOptimizationList();
+          }
+        } catch ( MetaStoreException e ) {
+          logger.error(
+            String.format( "Failed to load service named '%s'", wServiceName.getText()), e );
+        }
+      }
+    } );
 
     // 
     // Service step
@@ -143,75 +167,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     wServiceStep.setItems( stepnames );
     lastControl = wServiceStep;
 
-    /*
-    // 
-    // Cache method
-    //
-    Label wlServiceCacheMethod = new Label(wDataServiceComp, SWT.LEFT);
-    wlServiceCacheMethod.setText(BaseMessages.getString(PKG, "TransDialog.DataServiceCacheMethod.Label")); 
-    wlServiceCacheMethod.setToolTipText(BaseMessages.getString(PKG, "TransDialog.DataServiceCacheMethod.Tooltip"));
-    props.setLook(wlServiceCacheMethod);
-    FormData fdlServiceCacheMethod = new FormData();
-    fdlServiceCacheMethod.left = new FormAttachment(0, 0);
-    fdlServiceCacheMethod.right = new FormAttachment(middle, -margin);
-    fdlServiceCacheMethod.top = new FormAttachment(wServiceStep, margin);
-    wlServiceCacheMethod.setLayoutData(fdlServiceCacheMethod);
-    wServiceCacheMethod = new CCombo(wDataServiceComp, SWT.LEFT | SWT.BORDER | SWT.SINGLE);
-    wServiceCacheMethod.setToolTipText(BaseMessages.getString(PKG, "TransDialog.DataServiceCacheMethod.Tooltip"));
-    props.setLook(wServiceCacheMethod);
-    FormData fdServiceCacheMethod = new FormData();
-    fdServiceCacheMethod.left = new FormAttachment(middle, 0);
-    fdServiceCacheMethod.right = new FormAttachment(100, 0);
-    fdServiceCacheMethod.top = new FormAttachment(wServiceStep, margin);
-    wServiceCacheMethod.setLayoutData(fdServiceCacheMethod);
-    String[] cacheMethodDescriptions = ServiceCacheMethod.getDescriptions();
-    Arrays.sort(cacheMethodDescriptions);
-    wServiceCacheMethod.setItems(cacheMethodDescriptions);
-    
-    // 
-    // output service?
-    //
-    Label wlServiceOutput = new Label(wDataServiceComp, SWT.LEFT);
-    wlServiceOutput.setText(BaseMessages.getString(PKG,Modification by user of [Getting Started Transformation]
-    "TransDialog.DataServiceOutput.Label"));
-    props.setLook(wlServiceOutput);
-    FormData fdlServiceOutput = new FormData();
-    fdlServiceOutput.left = new FormAttachment(0, 0);
-    fdlServiceOutput.right = new FormAttachment(middle, -margin);
-    fdlServiceOutput.top = new FormAttachment(wServiceCacheMethod, margin);
-    wlServiceOutput.setLayoutData(fdlServiceOutput);
-    wlServiceOutput.setEnabled(false);
-    wServiceOutput = new Button(wDataServiceComp, SWT.CHECK);
-    props.setLook(wServiceOutput);
-    FormData fdServiceOutput = new FormData();
-    fdServiceOutput.left = new FormAttachment(middle, 0);
-    fdServiceOutput.right = new FormAttachment(100, 0);
-    fdServiceOutput.top = new FormAttachment(wServiceCacheMethod, margin);
-    wServiceOutput.setLayoutData(fdServiceOutput);
-    wServiceOutput.setEnabled(false);
-
-    // 
-    // Allow optimisation?
-    //
-    Label wlServiceAllowOptimization = new Label(wDataServiceComp, SWT.LEFT);
-    wlServiceAllowOptimization.setText(BaseMessages.getString(PKG, "TransDialog.DataServiceAllowOptimization.Label")); 
-    props.setLook(wlServiceAllowOptimization);
-    FormData fdlServiceAllowOptimization = new FormData();
-    fdlServiceAllowOptimization.left = new FormAttachment(0, 0);
-    fdlServiceAllowOptimization.right = new FormAttachment(middle, -margin);
-    fdlServiceAllowOptimization.top = new FormAttachment(wServiceOutput, margin);
-    wlServiceAllowOptimization.setLayoutData(fdlServiceAllowOptimization);
-    wlServiceAllowOptimization.setEnabled(false);
-    wServiceAllowOptimization = new Button(wDataServiceComp, SWT.CHECK);
-    props.setLook(wServiceAllowOptimization);
-    FormData fdServiceAllowOptimization = new FormData();
-    fdServiceAllowOptimization.left = new FormAttachment(middle, 0);
-    fdServiceAllowOptimization.right = new FormAttachment(100, 0);
-    fdServiceAllowOptimization.top = new FormAttachment(wServiceOutput, margin);
-    wServiceAllowOptimization.setLayoutData(fdServiceAllowOptimization);
-    wServiceAllowOptimization.setEnabled(false);
-    */
-
     Button wNew = new Button( wDataServiceComp, SWT.PUSH );
     props.setLook( wNew );
     wNew.setText( BaseMessages.getString( PKG, "TransDialog.NewServiceButton.Label" ) );
@@ -226,8 +181,10 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         if ( newName != null ) {
           wServiceName.setItems( getDataServiceElementNames( shell, transMeta.getMetaStore() ) );
           wServiceName.setText( newName );
+          // clear out any defined optimizations
+          optimizationList = new ArrayList<PushDownOptimizationMeta>();
+          refreshOptimizationList();
         }
-
       }
     } );
 
@@ -248,9 +205,102 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
           wServiceName.setText( "" );
           wServiceStep.setText( "" );
         }
-
       }
     } );
+    lastControl = wRemove;
+
+    Group group = new Group( wDataServiceComp, SWT.SHADOW_IN );
+    group.setLayout( new FormLayout() );
+
+    FormData fdOptGroup = new FormData();
+    fdOptGroup.top = new FormAttachment( lastControl, margin * 5 );
+    fdOptGroup.left = new FormAttachment( 10, 0 );
+    fdOptGroup.right = new FormAttachment( 90, 0 );
+    fdOptGroup.bottom = new FormAttachment( 90, 0 );
+    group.setLayoutData( fdOptGroup );
+
+    group.setText( "Push Down Optimization" );
+
+    ColumnInfo[] colinf =
+      new ColumnInfo[]{
+        new ColumnInfo(
+          "Optimization Name",
+          ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
+        new ColumnInfo(
+          "Step Name",
+          ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
+        new ColumnInfo(
+          "Optimization Method",
+          ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
+        new ColumnInfo(
+          "Form",
+          ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
+        new ColumnInfo(
+          "State",
+          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[]{"Enabled", "Disabled"}, false )};
+
+    optimizationListTable = new TableView(
+      transMeta, group, SWT.FULL_SELECTION | SWT.MULTI, colinf, 0, null, props );
+
+    Button editBtn = new Button( group, SWT.PUSH );
+    editBtn.setText( "Edit" );
+    FormData fdEditBtn = new FormData();
+    fdEditBtn.right = new FormAttachment( 95 );
+    editBtn.setLayoutData( fdEditBtn );
+    editBtn.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent selectionEvent ) {
+        if ( optimizationListTable.getSelectionIndex() < 0 ||
+          optimizationListTable.getSelectionIndex() >= optimizationList.size() ) {
+          return;
+        }
+        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta,
+          optimizationList.get( optimizationListTable.getSelectionIndex() ) );
+        if ( dialog.open() == SWT.OK ) {
+          refreshOptimizationList();
+        }
+      }
+    } );
+
+    Button delBtn = new Button( group, SWT.PUSH );
+    delBtn.setText( "-" );
+    FormData fdDelBtn = new FormData();
+    fdDelBtn.right = new FormAttachment( editBtn, -margin * 2 );
+    delBtn.setLayoutData( fdDelBtn );
+    delBtn.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent selectionEvent ) {
+        int selectedIndex = optimizationListTable.getSelectionIndex();
+        if ( selectedIndex >= 0 && optimizationList.size() > selectedIndex ) {
+          optimizationList.remove( selectedIndex );
+          refreshOptimizationList();
+        }
+      }
+    } );
+
+    Button addBtn = new Button( group, SWT.PUSH );
+    addBtn.setText( "+" );
+    FormData fdAddBtn = new FormData();
+    fdAddBtn.right = new FormAttachment( delBtn, -margin * 2 );
+    addBtn.setLayoutData( fdAddBtn );
+    addBtn.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
+        PushDownOptimizationMeta optMeta = new PushDownOptimizationMeta();
+        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta, optMeta );
+        if ( dialog.open() == SWT.OK ) {
+          optimizationList.add( optMeta );
+          refreshOptimizationList();
+        }
+      }
+    } );
+
+    FormData fdOptTable = new FormData();
+    fdOptTable.top = new FormAttachment( addBtn, margin * 2 );
+    fdOptTable.left = new FormAttachment( 1, 0 );
+    fdOptTable.right = new FormAttachment( 99, 0 );
+    fdOptTable.bottom = new FormAttachment( 90, 0 );
+    optimizationListTable.setLayoutData( fdOptTable );
 
     FormData fdDataServiceComp = new FormData();
     fdDataServiceComp.left = new FormAttachment( 0, 0 );
@@ -267,7 +317,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   protected boolean removeService( Shell shell, IMetaStore metaStore, String elementName ) {
     MessageDialog dialog =
       new MessageDialog( shell, "Confirm removal", shell.getDisplay().getSystemImage( SWT.ICON_QUESTION ),
-        "Are you sure you want to remove data service '" + elementName + "'?", SWT.NONE, new String[] { "Yes", "No" },
+        "Are you sure you want to remove data service '" + elementName + "'?", SWT.NONE, new String[]{"Yes", "No"},
         1 );
     int answerIndex = dialog.open();
     if ( answerIndex == 0 ) {
@@ -284,7 +334,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
 
     }
-
     return false;
   }
 
@@ -329,7 +378,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
       e.printStackTrace();
       new ErrorDialog( shell, "Error", "Error getting list of data services", e );
-      return new String[] { };
+      return new String[]{};
     }
   }
 
@@ -339,16 +388,46 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       // Data service metadata
       //
       DataServiceMeta dataService = DataServiceMetaStoreUtil.fromTransMeta( transMeta, transMeta.getMetaStore() );
+
       if ( dataService != null ) {
+        optimizationList = dataService.getPushDownOptimizationMeta();
         wServiceName.setText( Const.NVL( dataService.getName(), "" ) );
         wServiceStep.setText( Const.NVL( dataService.getStepname(), "" ) );
-        // wServiceOutput.setSelection(dataService.isOutput());
-        // wServiceAllowOptimization.setSelection(dataService.isOptimizationAllowed());
-        // wServiceCacheMethod.setText(dataService.getCacheMethod()==null ? "" : dataService.getCacheMethod()
-        // .getDescription());
+        refreshOptimizationList();
       }
     } catch ( Exception e ) {
       throw new KettleException( "Unable to load data service", e );
+    }
+  }
+
+
+  private void refreshOptimizationList() {
+    optimizationListTable.clearAll();
+    optimizationListTable.removeEmptyRows();
+    boolean firstRow = true;
+
+    for ( PushDownOptimizationMeta optMeta : optimizationList ) {
+      PushDownType pushDownType = optMeta.getType();
+      if ( pushDownType == null ) {
+        logger.warn(
+          String.format( "Optimization type is missing from '%s'.  Skipping.",
+            optMeta.getName() ) );
+        continue;
+      }
+
+      TableItem item;
+      if ( firstRow ) {
+        item = optimizationListTable.table.getItem( 0 );
+        firstRow = false;
+      } else {
+        item = new TableItem( optimizationListTable.table, SWT.NONE );
+      }
+      int colnr = 1;
+      item.setText( colnr++, optMeta.getName() );
+      item.setText( colnr++, optMeta.getStepName() );
+      item.setText( colnr++, pushDownType.getTypeName() );
+      item.setText( colnr++, pushDownType.getFormName() );
+      item.setText( colnr++, "Enabled" ); //?
     }
   }
 
@@ -367,6 +446,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
       dataService.setName( serviceName );
       dataService.setStepname( stepService );
+      dataService.setPushDownOptimizationMeta( optimizationList );
       // dataService.setOutput(wServiceOutput.getSelection());
       // dataService.setOptimizationAllowed(wServiceAllowOptimization.getSelection());
       // dataService.setCacheMethod(ServiceCacheMethod.getMethodByDescription(wServiceCacheMethod.getText()));

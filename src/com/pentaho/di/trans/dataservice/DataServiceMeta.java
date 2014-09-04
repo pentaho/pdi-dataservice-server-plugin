@@ -236,4 +236,7 @@ public class DataServiceMeta {
     return pushDownOptimizationMeta;
   }
 
+  public void setPushDownOptimizationMeta( List<PushDownOptimizationMeta> pushDownOptimizationMeta ) {
+    this.pushDownOptimizationMeta = pushDownOptimizationMeta;
+  }
 }

@@ -22,68 +22,34 @@
 
 package com.pentaho.di.trans.dataservice.optimization;
 
-import org.pentaho.metastore.persist.MetaStoreAttribute;
-import org.pentaho.metastore.persist.MetaStoreElementType;
+import org.eclipse.swt.widgets.Composite;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.ui.core.PropsUI;
 
 /**
- * @author nhudak
+ * Defines the UI and layout for forms that populate the PushDownOptDialog.
+ * There are multiple forms of push down optimization possible, and the
+ * PushDownOptDialog will allow selecting from a list of optimizations, each
+ * with different form elements and layouts.
  */
-@MetaStoreElementType(
-  name = "Push Down Optimization",
-  description = "Define opportunities to improve Data Service performance by modifying user transformation execution"
-  )
-public final class PushDownOptimizationMeta {
+public interface PushDownOptTypeForm {
 
   /**
-   *  User-defined name for this optimization (required)
+   * @return the name to be displayed as the optimization type in the dialog
    */
-  @MetaStoreAttribute
-  private String name = "";
+  String getName();
 
   /**
-   * Name of step being optimized (optional)
+   * Lays out and populates form elements within composite, based on the
+   * contents of optimizationMeta.
    */
-  @MetaStoreAttribute
-  private String stepName = "";
+  void populateForm( Composite composite, PropsUI props,
+                     TransMeta transMeta, PushDownOptimizationMeta optimizationMeta );
 
   /**
-   * Optimization Type
+   * Apply any user-entered form values to optimizationMeta.
+   * @param optimizationMeta
    */
-  @MetaStoreAttribute
-  private PushDownType type;
+  void applyOptimizationParameters( PushDownOptimizationMeta optimizationMeta );
 
-  @MetaStoreAttribute
-  private boolean enabled = true;
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName( String name ) {
-    this.name = name;
-  }
-
-  public String getStepName() {
-    return stepName;
-  }
-
-  public void setStepName( String stepName ) {
-    this.stepName = stepName;
-  }
-
-  public PushDownType getType() {
-    return type;
-  }
-
-  public void setType( PushDownType type ) {
-    this.type = type;
-  }
-
-  public boolean isEnabled() {
-    return enabled;
-  }
-
-  public void setEnabled( boolean enabled ) {
-    this.enabled = enabled;
-  }
 }

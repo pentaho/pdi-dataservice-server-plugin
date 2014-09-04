@@ -19,7 +19,6 @@
  * confidentiality and non-disclosure agreements or other agreements with Pentaho,
  * explicitly covering such access.
  */
-
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
@@ -47,7 +46,7 @@ public class ParameterGeneration implements PushDownType {
   private String parameterName;
 
   public String getParameterName() {
-    return parameterName;
+    return parameterName == null ? "" : parameterName;
   }
 
   public void setParameterName( String parameterName ) {
@@ -76,6 +75,12 @@ public class ParameterGeneration implements PushDownType {
 
   public SourceTargetFields createFieldMapping() {
     SourceTargetFields mapping = new SourceTargetFields();
+    fieldMappings.add( mapping );
+    return mapping;
+  }
+
+  public SourceTargetFields createFieldMapping( String source, String target ) {
+    SourceTargetFields mapping = new SourceTargetFields( source, target );
     fieldMappings.add( mapping );
     return mapping;
   }
