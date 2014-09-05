@@ -156,9 +156,12 @@ public class PdiContentProvider implements IPdiContentProvider {
   private boolean isUserParameter( String paramName ) {
 
     if ( !StringUtils.isEmpty( paramName ) ) {
-      // TODO: add logic to filter user parameters
+      // prevent rendering of protected/hidden/system parameters
+      if( paramName.startsWith( IPdiContentProvider.PROTECTED_PARAMETER_PREFIX ) ){
+        return false;
+      }
     }
-    return true; // for now..
+    return true;
   }
 
   private boolean hasUserParameters( NamedParams params ) {
