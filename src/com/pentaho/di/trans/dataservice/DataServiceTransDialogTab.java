@@ -38,6 +38,8 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
@@ -137,7 +139,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
           }
         } catch ( MetaStoreException e ) {
           logger.error(
-            String.format( "Failed to load service named '%s'", wServiceName.getText()), e );
+            String.format( "Failed to load service named '%s'", wServiceName.getText() ), e );
         }
       }
     } );
@@ -209,40 +211,47 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     } );
     lastControl = wRemove;
 
-    Group group = new Group( wDataServiceComp, SWT.SHADOW_IN );
-    group.setLayout( new FormLayout() );
+    Group optimizationGroup = new Group( wDataServiceComp, SWT.SHADOW_IN );
+    optimizationGroup.setLayout( new FormLayout() );
+    props.setLook( optimizationGroup );
 
     FormData fdOptGroup = new FormData();
     fdOptGroup.top = new FormAttachment( lastControl, margin * 5 );
     fdOptGroup.left = new FormAttachment( 10, 0 );
     fdOptGroup.right = new FormAttachment( 90, 0 );
     fdOptGroup.bottom = new FormAttachment( 90, 0 );
-    group.setLayoutData( fdOptGroup );
+    optimizationGroup.setLayoutData( fdOptGroup );
 
-    group.setText( "Push Down Optimization" );
+    optimizationGroup.setText( BaseMessages.getString( PKG, "TransDialog.PushDownOptGroup.Label" )  );
 
     ColumnInfo[] colinf =
       new ColumnInfo[]{
         new ColumnInfo(
-          "Optimization Name",
+          BaseMessages.getString( PKG, "TransDialog.OptNameColumn.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
         new ColumnInfo(
-          "Step Name",
+          BaseMessages.getString( PKG, "TransDialog.StepNameColumn.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
         new ColumnInfo(
-          "Optimization Method",
+          BaseMessages.getString( PKG, "TransDialog.OptMethodColumn.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
         new ColumnInfo(
-          "Form",
+          BaseMessages.getString( PKG, "TransDialog.FormColumn.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
         new ColumnInfo(
-          "State",
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[]{"Enabled", "Disabled"}, false )};
+          BaseMessages.getString( PKG, "TransDialog.StateColumn.Label" ),
+          ColumnInfo.COLUMN_TYPE_CCOMBO,
+          new String[]{
+            BaseMessages.getString( PKG, "TransDialog.Enabled.Value" ),
+            BaseMessages.getString( PKG, "TransDialog.Disabled.Value" )},
+          false )};
 
     optimizationListTable = new TableView(
-      transMeta, group, SWT.FULL_SELECTION | SWT.MULTI, colinf, 0, null, props );
+      transMeta, optimizationGroup, SWT.FULL_SELECTION | SWT.MULTI, colinf, 0, null, props );
 
-    Button editBtn = new Button( group, SWT.PUSH );
+
+
+    Button editBtn = new Button( optimizationGroup, SWT.PUSH );
     editBtn.setText( "Edit" );
     FormData fdEditBtn = new FormData();
     fdEditBtn.right = new FormAttachment( 95 );
@@ -250,8 +259,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     editBtn.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( SelectionEvent selectionEvent ) {
-        if ( optimizationListTable.getSelectionIndex() < 0 ||
-          optimizationListTable.getSelectionIndex() >= optimizationList.size() ) {
+        if ( optimizationListTable.getSelectionIndex() < 0
+          || optimizationListTable.getSelectionIndex() >= optimizationList.size() ) {
           return;
         }
         PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta,
@@ -262,7 +271,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     } );
 
-    Button delBtn = new Button( group, SWT.PUSH );
+    Button delBtn = new Button( optimizationGroup, SWT.PUSH );
     delBtn.setText( "-" );
     FormData fdDelBtn = new FormData();
     fdDelBtn.right = new FormAttachment( editBtn, -margin * 2 );
@@ -278,7 +287,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     } );
 
-    Button addBtn = new Button( group, SWT.PUSH );
+    Button addBtn = new Button( optimizationGroup, SWT.PUSH );
     addBtn.setText( "+" );
     FormData fdAddBtn = new FormData();
     fdAddBtn.right = new FormAttachment( delBtn, -margin * 2 );
@@ -428,6 +437,13 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       item.setText( colnr++, pushDownType.getTypeName() );
       item.setText( colnr++, pushDownType.getFormName() );
       item.setText( colnr++, "Enabled" ); //?
+    }
+    adjustTableColumns( optimizationListTable.table );
+  }
+
+  private void adjustTableColumns( Table table ) {
+    for ( TableColumn column : table.getColumns() ) {
+      column.pack();
     }
   }
 

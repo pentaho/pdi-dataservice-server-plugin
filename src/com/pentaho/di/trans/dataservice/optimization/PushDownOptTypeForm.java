@@ -46,6 +46,8 @@ public interface PushDownOptTypeForm {
   void populateForm( Composite composite, PropsUI props,
                      TransMeta transMeta, PushDownOptimizationMeta optimizationMeta );
 
+  boolean isFormValid();
+
   /**
    * Apply any user-entered form values to optimizationMeta.
    * @param optimizationMeta

@@ -36,6 +36,7 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.core.PropsUI;
@@ -58,7 +59,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
   private static final java.util.List<String> supportedDbTypes =
     Collections.unmodifiableList(
       Arrays.asList( "H2" ) );  // Where should this list come from?
-  private List stepList;
+  protected List stepList;
 
   @Override
   public String getName() {
@@ -70,6 +71,27 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
                             PushDownOptimizationMeta optimizationMeta ) {
     layoutWidgets( composite, props, transMeta );
     setInitialValues( optimizationMeta, transMeta );
+  }
+
+  @Override
+  public boolean isFormValid() {
+    String paramName = paramNameText.getText();
+    return atLeastOneMappingExists()
+      && paramName != null
+      && paramName.trim().length() > 0
+      && stepList.getSelection().length == 1
+      && stepList.getSelection()[ 0 ].trim().length() > 0;
+  }
+
+  private boolean atLeastOneMappingExists() {
+    for ( int i = 0; i < definitionTable.getItemCount(); i++ ) {
+      String source = definitionTable.getItem( i, 2 );
+      String target = definitionTable.getItem( i, 1 );
+      if ( source.trim().length() > 0 && target.trim().length() > 0 ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   protected void setInitialValues( PushDownOptimizationMeta optimizationMeta, TransMeta transMeta ) {
@@ -88,7 +110,8 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
   private void layoutWidgets( Composite composite, PropsUI props, TransMeta transMeta ) {
     Group paramGenGroup = new Group( composite, SWT.SHADOW_IN );
-    paramGenGroup.setText( "Parameter Generation" );
+    props.setLook( paramGenGroup );
+    paramGenGroup.setText( BaseMessages.getString( PKG, "ParamGenOptForm.ParamGen.Label" ) );
     paramGenGroup.setLayout( new FormLayout() );
 
     FormData paramGenFormData = new FormData();
@@ -99,38 +122,43 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
     paramGenGroup.setLayoutData( paramGenFormData );
 
-    Label lblStepName = new Label( paramGenGroup, SWT.NONE );
+    Label stepNameLabel = new Label( paramGenGroup, SWT.NONE );
+    props.setLook( stepNameLabel );
     FormData labelStepNameFormData = new FormData();
     labelStepNameFormData.top = new FormAttachment( 5 );
 
-    lblStepName.setText( "Step Name:" );
-    lblStepName.setLayoutData( labelStepNameFormData );
+    stepNameLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.StepName.Label" ) );
+    stepNameLabel.setLayoutData( labelStepNameFormData );
     stepList = new List( paramGenGroup, SWT.BORDER );
+    props.setLook( stepList );
 
     FormData fdStepList = new FormData();
-    fdStepList.top = new FormAttachment( lblStepName, Const.MARGIN * 2 );
+    fdStepList.top = new FormAttachment( stepNameLabel, Const.MARGIN * 2 );
     fdStepList.width = 200;
     fdStepList.height = 100;
     stepList.setLayoutData( fdStepList );
 
-    Label lblDefinition = new Label( paramGenGroup, SWT.NONE );
+    Label definitionLabel = new Label( paramGenGroup, SWT.NONE );
+    props.setLook( definitionLabel );
     FormData fdDefinition = new FormData();
     fdDefinition.top = new FormAttachment( stepList, Const.MARGIN * 2 );
-    lblDefinition.setText( "Definition:" );
-    lblDefinition.setLayoutData( fdDefinition );
+    definitionLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.Definition.Label" ) );
+    definitionLabel.setLayoutData( fdDefinition );
 
     Label parameterNameLabel = new Label( paramGenGroup, SWT.NONE );
+    props.setLook( parameterNameLabel );
     parameterNameLabel.setAlignment( SWT.RIGHT );
     FormData fdParamNameLabel = new FormData();
     fdParamNameLabel.left = new FormAttachment( stepList, Const.MARGIN * 4 );
     fdParamNameLabel.top = fdStepList.top;
     fdParamNameLabel.width = 130;
-    parameterNameLabel.setText( "Parameter Name:" );
+    parameterNameLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.ParamName.Label" ) );
     parameterNameLabel.setLayoutData( fdParamNameLabel );
 
     Label formLabel = new Label( paramGenGroup, SWT.NONE );
+    props.setLook( formLabel );
     formLabel.setAlignment( SWT.RIGHT );
-    formLabel.setText( "Form:" );
+    formLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.Form.Label" ) );
 
     FormData fdFormLabel = new FormData();
     fdFormLabel.top = new FormAttachment( parameterNameLabel, Const.MARGIN * 5 );
@@ -139,6 +167,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     formLabel.setLayoutData( fdFormLabel );
 
     paramNameText = new Text( paramGenGroup, SWT.BORDER );
+    props.setLook( paramNameText );
 
     FormData paramNameFormData = new FormData();
     paramNameFormData.left = new FormAttachment( parameterNameLabel, Const.MARGIN * 2 );
@@ -147,6 +176,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     paramNameText.setLayoutData( paramNameFormData );
 
     Combo formCombo = new Combo( paramGenGroup, SWT.NONE );
+    props.setLook( formCombo );
     formCombo.setItems( availableParamForms() );
     formCombo.select( 0 );
     FormData fdFormCombo = new FormData();
@@ -158,10 +188,10 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     ColumnInfo[] colinf =
       new ColumnInfo[]{
         new ColumnInfo(
-          "Source Output Field",
+          BaseMessages.getString( PKG, "ParamGenOptForm.SourceOutputField.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false ),
         new ColumnInfo(
-          "Source Step Field",
+          BaseMessages.getString( PKG, "ParamGenOptForm.SourceStepField.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false )
 //  NO FILTER ALLOWED COMBO YET
 //        ,
@@ -172,9 +202,10 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
     definitionTable = new TableView(
       transMeta, paramGenGroup, SWT.FULL_SELECTION | SWT.MULTI, colinf, 1, null, props );
+    props.setLook( definitionTable );
 
     FormData fdDefTable = new FormData();
-    fdDefTable.top = new FormAttachment( lblDefinition, Const.MARGIN * 2 );
+    fdDefTable.top = new FormAttachment( definitionLabel, Const.MARGIN * 2 );
     fdDefTable.left = new FormAttachment( 0 );
     fdDefTable.right = new FormAttachment( 100 );
     fdDefTable.bottom = new FormAttachment( 100 );

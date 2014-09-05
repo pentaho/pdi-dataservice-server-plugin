@@ -34,9 +34,11 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
 
@@ -80,21 +82,24 @@ public class PushDownOptDialog extends Dialog {
   private void layoutDialog() {
     Display display = parent.getDisplay();
     final Shell shell = new Shell( display );
+    props.setLook( shell );
 
-    shell.setText( "Push Down Optimization" );
+    shell.setText( BaseMessages.getString( PKG, "PushDownOptDialog.PushDownOpt.Label" )  );
     shell.setLayout( new FormLayout() );
 
     shell.setSize( DIALOG_WIDTH, DIALOG_HEIGHT );
 
     Label nameLabel = new Label( shell, SWT.NONE );
+    props.setLook( nameLabel );
     nameLabel.setAlignment( SWT.RIGHT );
     FormData fd_nameLabel = new FormData();
     fd_nameLabel.top = new FormAttachment( 0, 10 );
     fd_nameLabel.left = new FormAttachment( 30, 0 );
     nameLabel.setLayoutData( fd_nameLabel );
-    nameLabel.setText( "Name:" );
+    nameLabel.setText( BaseMessages.getString( PKG, "PushDownOptDialog.Name.Label" ) );
 
     nameText = new Text( shell, SWT.BORDER );
+    props.setLook( nameText );
     nameText.setText( optimizationMeta.getName() );
     FormData fd_nameText = new FormData();
     fd_nameText.right = new FormAttachment( nameLabel, 251, SWT.RIGHT );
@@ -102,15 +107,17 @@ public class PushDownOptDialog extends Dialog {
     fd_nameText.left = new FormAttachment( nameLabel, 6 );
     nameText.setLayoutData( fd_nameText );
 
-    Label lblType = new Label( shell, SWT.NONE );
-    lblType.setAlignment( SWT.RIGHT );
+    Label typeLabel = new Label( shell, SWT.NONE );
+    props.setLook( typeLabel );
+    typeLabel.setAlignment( SWT.RIGHT );
     FormData fd_lblType = new FormData();
     fd_lblType.top = new FormAttachment( nameLabel, 17 );
     fd_lblType.right = new FormAttachment( nameLabel, 0, SWT.RIGHT );
-    lblType.setLayoutData( fd_lblType );
-    lblType.setText( "Optimization Method:" );
+    typeLabel.setLayoutData( fd_lblType );
+    typeLabel.setText( BaseMessages.getString( PKG, "PushDownOptDialog.OptimizationMethod.Label" ) );
 
     optimizationMethodCombo = new Combo( shell, SWT.NONE );
+    props.setLook( optimizationMethodCombo );
     FormData fd_typeCombo = new FormData();
     fd_typeCombo.right = new FormAttachment( nameText, 0, SWT.RIGHT );
     fd_typeCombo.top = new FormAttachment( nameText, 6 );
@@ -120,6 +127,7 @@ public class PushDownOptDialog extends Dialog {
     optimizationMethodCombo.select( 0 );
 
     Composite typePlaceholder = new Composite( shell, SWT.NONE );
+    props.setLook( typePlaceholder );
     typePlaceholder.setLayout( new FormLayout() );
     FormData fd_typePlaceholder = new FormData();
     fd_typePlaceholder.top = new FormAttachment( optimizationMethodCombo, 34 );
@@ -129,17 +137,21 @@ public class PushDownOptDialog extends Dialog {
 
     typePlaceholder.setLayoutData( fd_typePlaceholder );
 
-    Button btnOk = new Button( shell, SWT.NONE );
+    Button okButton = new Button( shell, SWT.NONE );
+    props.setLook( okButton );
     FormData fd_btnOk = new FormData();
     fd_btnOk.top = new FormAttachment( typePlaceholder, Const.MARGIN * 2 );
     fd_btnOk.left = new FormAttachment( 50, -40 );
-    btnOk.setLayoutData( fd_btnOk );
-    btnOk.setText( "OK" );
-    btnOk.addSelectionListener( new SelectionAdapter() {
+    okButton.setLayoutData( fd_btnOk );
+    okButton.setText( BaseMessages.getString( PKG, "PushDownOptDialog.OK.Label" ) );
+    okButton.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( SelectionEvent selectionEvent ) {
-        if ( !formIsValid() ) {
-          // TODO warning dialog, plus info about what's missing
+        if ( !isFormValid() ) {
+          MessageBox mb = new MessageBox( shell, SWT.OK | SWT.ICON_INFORMATION );
+          mb.setText( BaseMessages.getString( PKG, "PushDownOptDialog.MissingFields.Title" ) );
+          mb.setMessage( BaseMessages.getString( PKG, "PushDownOptDialog.MissingFields.Message" ) );
+          mb.open();
         } else {
           initializeOptimizationMeta();
           returnCode = SWT.OK;
@@ -148,13 +160,14 @@ public class PushDownOptDialog extends Dialog {
       }
     } );
 
-    Button btnCancel = new Button( shell, SWT.NONE );
+    Button cancelButton = new Button( shell, SWT.NONE );
+    props.setLook( cancelButton );
     FormData fd_btnCancel = new FormData();
     fd_btnCancel.top = fd_btnOk.top;
-    fd_btnCancel.left = new FormAttachment( btnOk, Const.MARGIN * 2 );
-    btnCancel.setLayoutData( fd_btnCancel );
-    btnCancel.setText( "Cancel" );
-    btnCancel.addSelectionListener( new SelectionAdapter() {
+    fd_btnCancel.left = new FormAttachment( okButton, Const.MARGIN * 2 );
+    cancelButton.setLayoutData( fd_btnCancel );
+    cancelButton.setText( BaseMessages.getString( PKG, "PushDownOptDialog.Cancel.Label" ) );
+    cancelButton.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( SelectionEvent selectionEvent ) {
         shell.dispose();
@@ -185,9 +198,10 @@ public class PushDownOptDialog extends Dialog {
     getPushDownOptTypeForm().applyOptimizationParameters( optimizationMeta );
   }
 
-  private boolean formIsValid() {
-    // TODO validate form, pop dialog if invalid.
-    return true;
+  private boolean isFormValid() {
+    return nameText.getText() != null
+      && nameText.getText().trim().length() > 0
+      && getPushDownOptTypeForm().isFormValid();
   }
 
   private void layoutTypeForm( Composite typePlaceholder, int item ) {

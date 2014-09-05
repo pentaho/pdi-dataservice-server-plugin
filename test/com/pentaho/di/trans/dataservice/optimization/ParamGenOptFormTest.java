@@ -28,6 +28,7 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
 import org.junit.Test;
+import org.pentaho.di.core.database.DatabaseInterface;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
@@ -37,6 +38,8 @@ import org.pentaho.di.ui.core.PropsUI;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -92,6 +95,26 @@ public class ParamGenOptFormTest extends ParamGenOptForm {
     }
   }
 
+  @Test
+  public void testIsFormValid() {
+    PushDownOptimizationMeta optMeta = new PushDownOptimizationMeta();
+    optMeta.setName( "testOptName" );
+
+    populateForm( new Shell(), makeTestPropsUI(),
+      makeTestTransMeta(), optMeta );
+    assertFalse( isFormValid() );
+    paramNameText.setText( "foo" );
+    assertFalse( isFormValid() );
+    stepList.setSelection(0);
+    assertFalse( isFormValid() );
+
+    definitionTable.setText( "foo", 1, 0 );
+    definitionTable.setText( "bar", 2, 0 );
+
+    assertTrue( isFormValid() );
+  }
+
+
   private PropsUI makeTestPropsUI() {
     PropsUI props = mock( PropsUI.class );
     when( props.getGridFont() ).thenReturn( new FontData() );
@@ -106,11 +129,15 @@ public class ParamGenOptFormTest extends ParamGenOptForm {
     DatabaseMeta databaseMeta = mock( DatabaseMeta.class );
     when( stepMetaInterface.getUsedDatabaseConnections())
       .thenReturn( new DatabaseMeta[] { databaseMeta } );
-    when( tableStep.getStepMetaInterface()).thenReturn( stepMetaInterface );
+    when( databaseMeta.getDatabaseInterface() ).thenReturn( mock( DatabaseInterface.class ) );
+    when( databaseMeta.getDatabaseInterface().getPluginId() ).thenReturn( "H2" );
+    when( tableStep.getStepMetaInterface() ).thenReturn( stepMetaInterface );
     when( tableStep.getName() ).thenReturn( "testTableStep" );
     when( tableStep.getTypeId() ).thenReturn( "TableInput" );
     when( transMeta.getSteps() )
     .thenReturn( Arrays.asList( tableStep, otherStep ) );
     return transMeta;
   }
+
+
 }
