@@ -2767,7 +2767,10 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     IAbsSecurityProvider securityProvider = purRepositoryServiceRegistry.getService( IAbsSecurityProvider.class );
     StringBuilder errorMessage = new StringBuilder( "[" );
     for ( String perm : exportPerms ) {
-      if ( securityProvider.isAllowed( perm ) ) {
+      if ( securityProvider == null && PurRepositoryConnector.inProcess() ) {
+        return new PurRepositoryExporter( this );
+      }
+      if ( securityProvider != null && securityProvider.isAllowed( perm ) ) {
         return new PurRepositoryExporter( this );
       }
       errorMessage.append( perm );

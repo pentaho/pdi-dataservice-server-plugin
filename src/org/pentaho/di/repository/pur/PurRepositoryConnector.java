@@ -108,15 +108,7 @@ public class PurRepositoryConnector implements IRepositoryConnector {
       result.setUser( user1 );
 
       if ( PentahoSystem.getApplicationContext() != null ) {
-        boolean inProcess = false;
-        boolean remoteDiServer =
-          BooleanUtils.toBoolean( PentahoSystem.getSystemSetting( REMOTE_DI_SERVER_INSTANCE, "false" ) ); //$NON-NLS-1$
-        if ( "true".equals( PentahoSystem.getSystemSetting( SINGLE_DI_SERVER_INSTANCE, "true" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
-          inProcess = true;
-        } else if ( !remoteDiServer && PentahoSystem.getApplicationContext().getFullyQualifiedServerURL() != null ) {
-          inProcess = true;
-        }
-        if ( inProcess ) {
+        if ( inProcess() ) {
           // connect to the IUnifiedRepository through PentahoSystem
           // this assumes we're running in a BI Platform
           if ( log.isDebug() ) {
@@ -278,4 +270,16 @@ public class PurRepositoryConnector implements IRepositoryConnector {
   public ServiceManager getServiceManager() {
     return serviceManager;
   }
+  
+  public static boolean inProcess() {
+    boolean inProcess = false;
+    boolean remoteDiServer =
+        BooleanUtils.toBoolean( PentahoSystem.getSystemSetting( REMOTE_DI_SERVER_INSTANCE, "false" ) ); //$NON-NLS-1$
+    if ( "true".equals( PentahoSystem.getSystemSetting( SINGLE_DI_SERVER_INSTANCE, "true" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
+      inProcess = true;
+    } else if ( !remoteDiServer && PentahoSystem.getApplicationContext().getFullyQualifiedServerURL() != null ) {
+      inProcess = true;
+    }
+    return inProcess;
+  } 
 }
