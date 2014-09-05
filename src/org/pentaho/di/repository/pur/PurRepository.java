@@ -1620,12 +1620,18 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   public ObjectId
     renameJob( final ObjectId idJob, final RepositoryDirectoryInterface newDirectory, final String newName )
       throws KettleException {
+    return renameJob( idJob, null, newDirectory, newName );
+  }
+
+  @Override
+  public ObjectId renameJob( final ObjectId idJob, String versionComment,
+      final RepositoryDirectoryInterface newDirectory, final String newName ) throws KettleException {
     if ( newName != null ) {
       // set new title
       RepositoryFile file = pur.getFileById( idJob.getId() );
       file = new RepositoryFile.Builder( file ).title( RepositoryFile.DEFAULT_LOCALE, newName ).build();
       NodeRepositoryFileData data = pur.getDataAtVersionForRead( file.getId(), null, NodeRepositoryFileData.class );
-      file = pur.updateFile( file, data, null );
+      file = pur.updateFile( file, data, versionComment );
     }
     pur.moveFile( idJob.getId(), calcDestAbsPath( idJob, newDirectory, newName, RepositoryObjectType.JOB ), null );
     rootRef.clearRef();
@@ -1635,12 +1641,18 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   @Override
   public ObjectId renameTransformation( final ObjectId idTransformation,
       final RepositoryDirectoryInterface newDirectory, final String newName ) throws KettleException {
+    return renameTransformation( idTransformation, null, newDirectory, newName );
+  }
+
+  @Override
+  public ObjectId renameTransformation( final ObjectId idTransformation, String versionComment,
+      final RepositoryDirectoryInterface newDirectory, final String newName ) throws KettleException {
     if ( newName != null ) {
       // set new title
       RepositoryFile file = pur.getFileById( idTransformation.getId() );
       file = new RepositoryFile.Builder( file ).title( RepositoryFile.DEFAULT_LOCALE, newName ).build();
       NodeRepositoryFileData data = pur.getDataAtVersionForRead( file.getId(), null, NodeRepositoryFileData.class );
-      file = pur.updateFile( file, data, null );
+      file = pur.updateFile( file, data, versionComment );
     }
     pur.moveFile( idTransformation.getId(), calcDestAbsPath( idTransformation, newDirectory, newName,
         RepositoryObjectType.TRANSFORMATION ), null );

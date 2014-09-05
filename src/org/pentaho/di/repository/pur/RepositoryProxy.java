@@ -463,14 +463,24 @@ public class RepositoryProxy extends AbstractRepository implements ILockService,
   public ObjectId renameJob(ObjectId idJob, RepositoryDirectoryInterface newDirectory, String newName) throws KettleException {
     throw new UnsupportedOperationException();
   }
+  
+  public ObjectId renameJob(ObjectId idJob, String versionComment, RepositoryDirectoryInterface newDirectory,
+    String newName) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
 
   public ObjectId renameRepositoryDirectory(ObjectId id, RepositoryDirectoryInterface newParentDir, String newName)
       throws KettleException {
     throw new UnsupportedOperationException();
   }
 
-  public ObjectId renameTransformation(ObjectId idTransformation, RepositoryDirectoryInterface newDirectory, String newName)
-      throws KettleException {
+  public ObjectId renameTransformation(ObjectId idTransformation, RepositoryDirectoryInterface newDirectory,
+    String newName) throws KettleException {
+    throw new UnsupportedOperationException();
+  }
+  
+  public ObjectId renameTransformation(ObjectId idTransformation, String versionComment,
+    RepositoryDirectoryInterface newDirectory, String newName) throws KettleException {
     throw new UnsupportedOperationException();
   }
   

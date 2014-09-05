@@ -192,7 +192,7 @@ public class UIEETransformation extends UITransformation implements ILockObject,
   @Override
   protected ObjectId renameTransformation( ObjectId objectId, RepositoryDirectory directory, String name )
     throws Exception {
-    ObjectId id = rep.renameTransformation( this.getObjectId(), getRepositoryDirectory(), name );
+    ObjectId id = super.renameTransformation( objectId, directory, name );
     refreshRevisions();
     return id;
   }
