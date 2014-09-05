@@ -27,6 +27,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.pentaho.di.core.database.DatabaseInterface;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -51,6 +52,7 @@ import static org.mockito.Mockito.when;
  */
 public class ParamGenOptFormTest extends ParamGenOptForm {
 
+  @Ignore
   @Test
   public void testApplyOptimizationParameters() throws Exception {
     PushDownOptimizationMeta optMeta = new PushDownOptimizationMeta();
@@ -68,6 +70,7 @@ public class ParamGenOptFormTest extends ParamGenOptForm {
     assertEquals( "testParamName", paramGen.getParameterName() );
   }
 
+  @Ignore
   @Test
   public void testApplyOptWithInitialMappings() {
     PushDownOptimizationMeta optMeta = new PushDownOptimizationMeta();
@@ -95,6 +98,7 @@ public class ParamGenOptFormTest extends ParamGenOptForm {
     }
   }
 
+  @Ignore
   @Test
   public void testIsFormValid() {
     PushDownOptimizationMeta optMeta = new PushDownOptimizationMeta();
