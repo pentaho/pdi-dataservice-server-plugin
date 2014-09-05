@@ -36,8 +36,10 @@ import org.pentaho.di.trans.steps.tableinput.TableInputData;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author nhudak
@@ -101,6 +103,62 @@ public class ParameterGeneration implements PushDownType {
     return mapping;
   }
 
+  protected Condition mapConditionFields( Condition condition ) {
+    Condition clone = (Condition) condition.clone();
+    HashMap<String, SourceTargetFields> sourceMap;
+    sourceMap = new HashMap<String, SourceTargetFields>();
+    for ( SourceTargetFields fieldMapping : fieldMappings ) {
+      sourceMap.put( fieldMapping.getSourceFieldName(), fieldMapping );
+    }
+
+    Map<String, SourceTargetFields> sourceTargetFieldsMap = sourceMap;
+    if ( applyMapping( clone, sourceTargetFieldsMap ) ) {
+      return clone;
+    } else {
+      return null;
+    }
+  }
+
+  private boolean applyMapping( Condition condition, Map<String, SourceTargetFields> sourceTargetFieldsMap ) {
+    // Atomic: check for simple mapping
+    if ( condition.isAtomic() ) {
+      String key = condition.getLeftValuename();
+      SourceTargetFields mapping = sourceTargetFieldsMap.get( key );
+      if ( mapping != null ) {
+        condition.setLeftValuename( mapping.getTargetFieldName() );
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      // Composite: decide if all child conditions are required
+      List<Condition> children = condition.getChildren();
+      boolean requireAll = false;
+      for ( Condition child : children ) {
+        if ( child.getOperator() == Condition.OPERATOR_OR ) {
+          requireAll = true;
+          break;
+        }
+      }
+
+      // Map each child
+      for ( Iterator<Condition> i = children.iterator(); i.hasNext();) {
+        Condition child = i.next();
+        if ( !applyMapping( child, sourceTargetFieldsMap ) ) {
+          if ( requireAll ) {
+            // If all were required, give up now
+            return false;
+          } else {
+            i.remove();
+          }
+        }
+      }
+
+      // Successful if any children were mapped
+      return !children.isEmpty();
+    }
+  }
+
   @Override public boolean activate( DataServiceExecutor executor, Trans trans, StepInterface stepInterface, SQL query ) {
     // Get step's database
     Database db;
@@ -112,79 +170,55 @@ public class ParameterGeneration implements PushDownType {
       return false;
     }
     // Get user query conditions
-    List<Condition> conditions;
+    Condition whereCondition;
     if ( query.getWhereCondition() != null ) {
-      Condition whereCondition = query.getWhereCondition().getCondition();
-      if ( whereCondition.getChildren().isEmpty() ) {
-        conditions = Collections.singletonList( whereCondition );
-      } else {
-        conditions = whereCondition.getChildren();
-      }
+      whereCondition = query.getWhereCondition().getCondition();
     } else {
       return false;
     }
 
+    // Attempt to map fields to where clause
+    Condition pushDownCondition = mapConditionFields( whereCondition );
+    if ( pushDownCondition == null ) {
+      return false;
+    }
+
+    // TODO: Defer sql generation to database meta interface, new plugin? service?
     String sqlFragment;
     try {
-      sqlFragment = buildSqlFragment( db, conditions );
+      sqlFragment = convertCondition( pushDownCondition, db );
     } catch ( PushDownOptimizationException e ) {
       return false;
     }
 
     if ( StringUtils.isNotBlank( getParameterName() ) && StringUtils.isNotBlank( sqlFragment ) ) {
-      stepInterface.setVariable( getParameterName(), sqlFragment );
+      stepInterface.setVariable( getParameterName(), form.getPrefix() + " " + sqlFragment );
     }
 
     return true;
   }
 
-  protected String buildSqlFragment( Database db, List<Condition> conditions ) throws PushDownOptimizationException {
-    StringBuilder builder = new StringBuilder();
-    boolean first = true;
-    for ( Condition condition : conditions ) {
-      if ( !first && condition.getOperator() != Condition.OPERATOR_AND ) {
-        // Query can not be pushed down because it is not simply joined
-        throw new PushDownOptimizationException( "Parameter Generation does not support operators other than AND" );
-      }
-      if ( conditionSupported( condition, db ) ) {
-        String mappedCondition = convertCondition( condition, db );
-        if ( mappedCondition != null ) {
-          // Condition supported and converted to push down condition
-          builder.append( first ? form.getPrefix() + " " : " AND " );
-          builder.append( mappedCondition );
-          first = false;
-        }
-      }
-    }
-    return builder.toString();
-  }
-
-  protected boolean conditionSupported( Condition condition, Database db ) throws PushDownOptimizationException {
-    // TODO need better logic to determine supported operations, simplified here to only support '='
-    return condition.getFunction() == Condition.FUNC_EQUAL && condition.getChildren().isEmpty();
-  }
-
   protected String convertCondition( Condition condition, Database db ) throws PushDownOptimizationException {
-    String target = null;
-    for ( SourceTargetFields fieldMapping : fieldMappings ) {
-      if ( fieldMapping.getSourceFieldName().equals( condition.getLeftValuename() ) ) {
-        target = fieldMapping.getTargetFieldName();
-        break;
+    StringBuilder output = new StringBuilder();
+    if ( condition.isComposite() ) {
+      output.append( " ( " );
+      for ( Condition child : condition.getChildren() ) {
+        if ( child.getOperator() == Condition.OPERATOR_AND ) {
+          output.append( " AND " );
+        } else if ( child.getOperator() == Condition.OPERATOR_OR ) {
+          output.append( " OR " );
+        }
+        output.append( convertCondition( child, db ) );
       }
+      output.append( " ) " );
+    } else {
+      String value = condition.getRightExactString();
+      if ( condition.getRightExact().getValueMeta().isString() ) {
+        // Wrap string constant in quotes
+        value = "'" + value + "'";
+      }
+      output.append( String.format( "\"%s\" %s %s", condition.getLeftValuename(), condition.getFunctionDesc(), value ) );
     }
-
-    // Ensure target is mapped
-    if ( target == null ) {
-      // Return Null: Skip this condition
-      return null;
-    }
-
-    // TODO need better conversion logic, using only simple field mapping here, defer to DB?
-    String value = condition.getRightExactString();
-    if ( condition.getRightExact().getValueMeta().isString() ) {
-      // Wrap string constant in quotes
-      value = "'" + value + "'";
-    }
-    return String.format( "\"%s\" %s %s", target, condition.getFunctionDesc(), value );
+    return output.toString();
   }
 }
