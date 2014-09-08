@@ -26,6 +26,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
 
+import java.util.List;
+
 /**
  * Defines the UI and layout for forms that populate the PushDownOptDialog.
  * There are multiple forms of push down optimization possible, and the
@@ -47,6 +49,8 @@ public interface PushDownOptTypeForm {
                      TransMeta transMeta, PushDownOptimizationMeta optimizationMeta );
 
   boolean isFormValid();
+
+  public List<String> getMissingFormElements();
 
   /**
    * Apply any user-entered form values to optimizationMeta.

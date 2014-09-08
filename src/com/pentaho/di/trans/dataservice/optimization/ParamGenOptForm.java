@@ -33,15 +33,16 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.core.PropsUI;
+import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
+import org.pentaho.di.ui.core.widget.TextVar;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,13 +50,13 @@ import java.util.Collections;
 
 public class ParamGenOptForm implements PushDownOptTypeForm {
   private static final Class<?> PKG = ParamGenOptForm.class;
-  protected static Text paramNameText;
+  protected static TextVar paramNameText;
   protected TableView definitionTable;
   private ParameterGeneration parameterGeneration = new ParameterGeneration();
 
   private static final java.util.List<String> supportedStepTypes =
     Collections.unmodifiableList(
-      Arrays.asList( "TableInput" ) );
+       Arrays.asList( "TableInput" ) );
   private static final java.util.List<String> supportedDbTypes =
     Collections.unmodifiableList(
       Arrays.asList( "H2" ) );  // Where should this list come from?
@@ -75,13 +76,25 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
   @Override
   public boolean isFormValid() {
-    String paramName = paramNameText.getText();
-    return atLeastOneMappingExists()
-      && paramName != null
-      && paramName.trim().length() > 0
-      && stepList.getSelection().length == 1
-      && stepList.getSelection()[ 0 ].trim().length() > 0;
+    return getMissingFormElements().size() == 0;
   }
+
+  public java.util.List<String> getMissingFormElements() {
+    java.util.List<String> errors = new ArrayList<String>();
+    if ( !atLeastOneMappingExists() ) {
+      errors.add( BaseMessages.getString( PKG, "ParamGenOptForm.MissingFieldMapping.Message" ) );
+    }
+    String paramName = paramNameText.getText();
+    if ( paramName == null || paramName.trim().length() == 0 ) {
+      errors.add( BaseMessages.getString( PKG, "ParamGenOptForm.MissingParamName.Message" ) );
+    }
+    if ( !( stepList.getSelection().length == 1
+       && stepList.getSelection()[ 0 ].trim().length() > 0 ) ) {
+      errors.add( BaseMessages.getString( PKG, "ParamGenOptForm.MissingStep.Message" ) );
+    }
+    return errors;
+  }
+
 
   private boolean atLeastOneMappingExists() {
     for ( int i = 0; i < definitionTable.getItemCount(); i++ ) {
@@ -108,12 +121,12 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     paramNameText.setText( paramType.getParameterName() );
   }
 
-  private void layoutWidgets( Composite composite, PropsUI props, TransMeta transMeta ) {
+  private void layoutWidgets( Composite composite, PropsUI props,
+                              TransMeta transMeta ) {
     Group paramGenGroup = new Group( composite, SWT.SHADOW_IN );
     props.setLook( paramGenGroup );
     paramGenGroup.setText( BaseMessages.getString( PKG, "ParamGenOptForm.ParamGen.Label" ) );
     paramGenGroup.setLayout( new FormLayout() );
-
     FormData paramGenFormData = new FormData();
     paramGenFormData.top = new FormAttachment( 0 );
     paramGenFormData.left = new FormAttachment( 0 );
@@ -165,15 +178,15 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     fdFormLabel.left = fdParamNameLabel.left;
     fdFormLabel.width = 130;
     formLabel.setLayoutData( fdFormLabel );
-
-    paramNameText = new Text( paramGenGroup, SWT.BORDER );
+    paramNameText = new TextVar( transMeta, paramGenGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( paramNameText );
 
     FormData paramNameFormData = new FormData();
     paramNameFormData.left = new FormAttachment( parameterNameLabel, Const.MARGIN * 2 );
     paramNameFormData.top = fdStepList.top;
-    paramNameFormData.width = 150;
+    paramNameFormData.width = 250;
     paramNameText.setLayoutData( paramNameFormData );
+
 
     Combo formCombo = new Combo( paramGenGroup, SWT.NONE );
     props.setLook( formCombo );
@@ -201,14 +214,13 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
       };
 
     definitionTable = new TableView(
-      transMeta, paramGenGroup, SWT.FULL_SELECTION | SWT.MULTI, colinf, 1, null, props );
+      transMeta, paramGenGroup, SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION, colinf, 1, null, props );
     props.setLook( definitionTable );
-
     FormData fdDefTable = new FormData();
     fdDefTable.top = new FormAttachment( definitionLabel, Const.MARGIN * 2 );
-    fdDefTable.left = new FormAttachment( 0 );
-    fdDefTable.right = new FormAttachment( 100 );
-    fdDefTable.bottom = new FormAttachment( 100 );
+    fdDefTable.left = new FormAttachment( 0, Const.MARGIN );
+    fdDefTable.right = new FormAttachment( 100, -Const.MARGIN );
+    fdDefTable.bottom = new FormAttachment( 100, -Const.MARGIN );
     definitionTable.setLayoutData( fdDefTable );
   }
 
@@ -241,6 +253,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
   @Override
   public void applyOptimizationParameters( PushDownOptimizationMeta optimizationMeta ) {
+    GUIResource.getInstance().getImageNew();
     if ( stepList.getSelection().length == 1 ) {
       optimizationMeta.setStepName( stepList.getSelection()[ 0 ] );
     }
@@ -251,8 +264,17 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
         parameterGeneration.createFieldMapping( source, target );
       }
     }
-    parameterGeneration.setParameterName( paramNameText.getText() );
+    parameterGeneration.setParameterName( cleanseParamName( paramNameText.getText() ) );
     optimizationMeta.setType( parameterGeneration );
+  }
+
+  private String cleanseParamName( String name ) {
+    String paramName = Const.nullToEmpty( name ).trim();
+    if ( paramName.startsWith( "${" )
+      && paramName.endsWith( "}" ) ) {
+      paramName = paramName.substring( 2, paramName.length() - 1 );
+    }
+    return paramName;
   }
 
   private String[] availableParamForms() {

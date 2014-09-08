@@ -56,6 +56,8 @@ public class PushDownOptDialog extends Dialog {
   protected Shell parent;
   private static Text nameText;
 
+  private Button okButton;
+
   private int returnCode = SWT.CANCEL;
 
   private static final Class<?> PKG = PushDownOptDialog.class;
@@ -65,6 +67,7 @@ public class PushDownOptDialog extends Dialog {
       Arrays.asList( (PushDownOptTypeForm) new ParamGenOptForm() ) );
 
   private Combo optimizationMethodCombo;
+
 
   public PushDownOptDialog( Shell parent, PropsUI props, TransMeta transMeta, PushDownOptimizationMeta optMeta ) {
     super( parent );
@@ -79,9 +82,14 @@ public class PushDownOptDialog extends Dialog {
     return returnCode;
   }
 
+
+
   private void layoutDialog() {
     Display display = parent.getDisplay();
     final Shell shell = new Shell( display );
+
+
+
     props.setLook( shell );
 
     shell.setText( BaseMessages.getString( PKG, "PushDownOptDialog.PushDownOpt.Label" )  );
@@ -137,7 +145,7 @@ public class PushDownOptDialog extends Dialog {
 
     typePlaceholder.setLayoutData( fd_typePlaceholder );
 
-    Button okButton = new Button( shell, SWT.NONE );
+    okButton = new Button( shell, SWT.NONE );
     props.setLook( okButton );
     FormData fd_btnOk = new FormData();
     fd_btnOk.top = new FormAttachment( typePlaceholder, Const.MARGIN * 2 );
@@ -148,9 +156,14 @@ public class PushDownOptDialog extends Dialog {
       @Override
       public void widgetSelected( SelectionEvent selectionEvent ) {
         if ( !isFormValid() ) {
+          StringBuilder errors = new StringBuilder().append( "\n\n" );
+          for ( String error : getMissingFormElements() ) {
+            errors.append( "*" ).append( error ).append( "\n" );
+          }
           MessageBox mb = new MessageBox( shell, SWT.OK | SWT.ICON_INFORMATION );
           mb.setText( BaseMessages.getString( PKG, "PushDownOptDialog.MissingFields.Title" ) );
-          mb.setMessage( BaseMessages.getString( PKG, "PushDownOptDialog.MissingFields.Message" ) );
+          mb.setMessage( BaseMessages.getString( PKG, "PushDownOptDialog.MissingFields.Message" )
+            + errors.toString() );
           mb.open();
         } else {
           initializeOptimizationMeta();
@@ -173,16 +186,23 @@ public class PushDownOptDialog extends Dialog {
         shell.dispose();
       }
     } );
-
     layoutTypeForm( typePlaceholder,
       optimizationMethodCombo.getSelectionIndex() );
 
+    setShellPos( shell );
     shell.open();
     while ( !shell.isDisposed() ) {
       if ( !display.readAndDispatch() ) {
         display.sleep();
       }
     }
+  }
+
+  private void setShellPos( Shell shell ) {
+    int centerX = parent.getBounds().x + parent.getBounds().width / 2;
+    int centerY = parent.getBounds().y + parent.getBounds().height / 2;
+    shell.setLocation( centerX - shell.getBounds().width / 2,
+      centerY - shell.getBounds().height / 2 );
   }
 
   private String[] getTypeNames() {
@@ -199,9 +219,15 @@ public class PushDownOptDialog extends Dialog {
   }
 
   private boolean isFormValid() {
-    return nameText.getText() != null
-      && nameText.getText().trim().length() > 0
-      && getPushDownOptTypeForm().isFormValid();
+    return getMissingFormElements().size() == 0;
+  }
+
+  private List<String> getMissingFormElements() {
+    List<String> errors = getPushDownOptTypeForm().getMissingFormElements();
+    if ( nameText.getText().trim().length() == 0 ) {
+      errors.add( BaseMessages.getString( PKG, "PushDownOptDialog.MissingName.Message" ) );
+    }
+    return errors;
   }
 
   private void layoutTypeForm( Composite typePlaceholder, int item ) {

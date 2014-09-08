@@ -41,6 +41,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.swt.widgets.ToolItem;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
@@ -49,6 +51,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.EnterStringDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
+import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.spoon.Spoon;
@@ -82,6 +85,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private List<PushDownOptimizationMeta> optimizationList = new ArrayList<PushDownOptimizationMeta>();
 
   private static final Log logger = LogFactory.getLog( DataServiceTransDialogTab.class );
+  private ToolItem editButton;
+  private ToolItem deleteButton;
 
   @Override
   public void addTab( final TransMeta transMeta, final Shell shell, final CTabFolder wTabFolder ) {
@@ -106,12 +111,11 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     // 
     // Service name
     //
-    Label wlServiceName = new Label( wDataServiceComp, SWT.LEFT );
+    Label wlServiceName = new Label( wDataServiceComp, SWT.RIGHT );
     wlServiceName.setText( BaseMessages.getString( PKG, "TransDialog.DataServiceName.Label" ) );
     wlServiceName.setToolTipText( BaseMessages.getString( PKG, "TransDialog.DataServiceName.Tooltip" ) );
     props.setLook( wlServiceName );
     FormData fdlServiceName = new FormData();
-    fdlServiceName.left = new FormAttachment( 0, 0 );
     fdlServiceName.right = new FormAttachment( middle, -margin );
     fdlServiceName.top = new FormAttachment( 0, 0 );
     wlServiceName.setLayoutData( fdlServiceName );
@@ -120,7 +124,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     props.setLook( wServiceName );
     FormData fdServiceName = new FormData();
     fdServiceName.left = new FormAttachment( middle, 0 );
-    fdServiceName.right = new FormAttachment( 100, 0 );
+    fdServiceName.right = new FormAttachment( 65, 0 );
     fdServiceName.top = new FormAttachment( 0, 0 );
     wServiceName.setLayoutData( fdServiceName );
     wServiceName.setEditable( false );
@@ -147,12 +151,11 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     // 
     // Service step
     //
-    Label wlServiceStep = new Label( wDataServiceComp, SWT.LEFT );
+    Label wlServiceStep = new Label( wDataServiceComp, SWT.RIGHT );
     wlServiceStep.setText( BaseMessages.getString( PKG, "TransDialog.DataServiceStep.Label" ) );
     wlServiceStep.setToolTipText( BaseMessages.getString( PKG, "TransDialog.DataServiceStep.Tooltip" ) );
     props.setLook( wlServiceStep );
     FormData fdlServiceStep = new FormData();
-    fdlServiceStep.left = new FormAttachment( 0, 0 );
     fdlServiceStep.right = new FormAttachment( middle, -margin );
     fdlServiceStep.top = new FormAttachment( lastControl, margin );
     wlServiceStep.setLayoutData( fdlServiceStep );
@@ -161,7 +164,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     props.setLook( wServiceStep );
     FormData fdServiceStep = new FormData();
     fdServiceStep.left = new FormAttachment( middle, 0 );
-    fdServiceStep.right = new FormAttachment( 100, 0 );
+    fdServiceStep.right = new FormAttachment( 65, 0 );
     fdServiceStep.top = new FormAttachment( lastControl, margin );
     wServiceStep.setLayoutData( fdServiceStep );
     String[] stepnames = transMeta.getStepNames();
@@ -247,16 +250,24 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
           false )};
 
     optimizationListTable = new TableView(
-      transMeta, optimizationGroup, SWT.FULL_SELECTION | SWT.MULTI, colinf, 0, null, props );
+      transMeta, optimizationGroup, SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION, colinf, 0, null, props );
 
-
-
-    Button editBtn = new Button( optimizationGroup, SWT.PUSH );
-    editBtn.setText( "Edit" );
+    ToolBar toolBar = new ToolBar( optimizationGroup, SWT.FLAT );
     FormData fdEditBtn = new FormData();
-    fdEditBtn.right = new FormAttachment( 95 );
-    editBtn.setLayoutData( fdEditBtn );
-    editBtn.addSelectionListener( new SelectionAdapter() {
+    fdEditBtn.right = new FormAttachment( 99 );
+    toolBar.setLayoutData( fdEditBtn );
+    props.setLook( toolBar );
+
+    final ToolItem addButton = new ToolItem( toolBar, SWT.FLAT );
+    addButton.setImage( GUIResource.getInstance().getImageAdd() );
+    deleteButton = new ToolItem( toolBar, SWT.FLAT );
+    deleteButton.setEnabled( false );
+    deleteButton.setImage( GUIResource.getInstance().getImageDelete() );
+    editButton = new ToolItem( toolBar, SWT.PUSH );
+    editButton.setEnabled( false );
+    editButton.setImage( GUIResource.getInstance().getImageEdit() );
+
+    editButton.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( SelectionEvent selectionEvent ) {
         if ( optimizationListTable.getSelectionIndex() < 0
@@ -271,12 +282,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     } );
 
-    Button delBtn = new Button( optimizationGroup, SWT.PUSH );
-    delBtn.setText( "-" );
-    FormData fdDelBtn = new FormData();
-    fdDelBtn.right = new FormAttachment( editBtn, -margin * 2 );
-    delBtn.setLayoutData( fdDelBtn );
-    delBtn.addSelectionListener( new SelectionAdapter() {
+    deleteButton.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( SelectionEvent selectionEvent ) {
         int selectedIndex = optimizationListTable.getSelectionIndex();
@@ -287,12 +293,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     } );
 
-    Button addBtn = new Button( optimizationGroup, SWT.PUSH );
-    addBtn.setText( "+" );
-    FormData fdAddBtn = new FormData();
-    fdAddBtn.right = new FormAttachment( delBtn, -margin * 2 );
-    addBtn.setLayoutData( fdAddBtn );
-    addBtn.addSelectionListener( new SelectionAdapter() {
+    addButton.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( SelectionEvent e ) {
         PushDownOptimizationMeta optMeta = new PushDownOptimizationMeta();
@@ -304,11 +305,23 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     } );
 
+    optimizationListTable.table.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
+        super.widgetSelected( e );
+        TableItem firstItem = optimizationListTable.table.getItem( 0 );
+        if ( optimizationListTable.table.getSelectionIndex() > 0
+          || ( firstItem != null && firstItem.getText( 1 ).trim().length() > 0 ) ) {
+          editButton.setEnabled( true );
+          deleteButton.setEnabled( true );
+        }
+      }
+    } );
     FormData fdOptTable = new FormData();
-    fdOptTable.top = new FormAttachment( addBtn, margin * 2 );
-    fdOptTable.left = new FormAttachment( 1, 0 );
-    fdOptTable.right = new FormAttachment( 99, 0 );
-    fdOptTable.bottom = new FormAttachment( 90, 0 );
+    fdOptTable.top = new FormAttachment( toolBar, margin * 2 );
+    fdOptTable.left = new FormAttachment( 0, margin );
+    fdOptTable.right = new FormAttachment( 100, -margin );
+    fdOptTable.bottom = new FormAttachment( 100, -margin );
     optimizationListTable.setLayoutData( fdOptTable );
 
     FormData fdDataServiceComp = new FormData();
@@ -436,8 +449,11 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       item.setText( colnr++, optMeta.getStepName() );
       item.setText( colnr++, pushDownType.getTypeName() );
       item.setText( colnr++, pushDownType.getFormName() );
-      item.setText( colnr++, "Enabled" ); //?
+      item.setText( colnr++, "Enabled" ); // Fixed value for now.
     }
+    optimizationListTable.setRowNums();
+    editButton.setEnabled( false );
+    deleteButton.setEnabled( false );
     adjustTableColumns( optimizationListTable.table );
   }
 
@@ -463,9 +479,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       dataService.setName( serviceName );
       dataService.setStepname( stepService );
       dataService.setPushDownOptimizationMeta( optimizationList );
-      // dataService.setOutput(wServiceOutput.getSelection());
-      // dataService.setOptimizationAllowed(wServiceAllowOptimization.getSelection());
-      // dataService.setCacheMethod(ServiceCacheMethod.getMethodByDescription(wServiceCacheMethod.getText()));
 
       DataServiceMetaStoreUtil.toTransMeta( transMeta, transMeta.getMetaStore(), dataService, true );
 
