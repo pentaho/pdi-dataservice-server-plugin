@@ -88,7 +88,7 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
 
   @Override
   public void deleteAllVersions( Serializable fileId ) {
-    keepNumberOfVersions( fileId, 0 );
+    keepNumberOfVersions( fileId, 1 );
   }
 
   @Override
@@ -111,16 +111,17 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
   @Override
   public void keepNumberOfVersions( Serializable fileId, int versionCount ) {
     List<VersionSummary> versionList = unifiedRepository.getVersionSummaries( fileId );
-    int i = 1;
+    int i = 0;
     int listSize = versionList.size();
     if ( listSize > versionCount ) {
       getLogger().info( "version count: removing versions" );
     }
     for ( VersionSummary versionSummary : versionList ) {
-      if ( i++ < listSize - versionCount ) {
+      if ( i < listSize - versionCount ) {
         Serializable versionId = versionSummary.getId();
         getLogger().debug( "removing version " + versionId.toString() );
         unifiedRepository.deleteFileAtVersion( fileId, versionId );
+        i++;
       } else {
         break;
       }
@@ -142,7 +143,7 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
       // Now do shared objects if required
       if ( purgeSpecification.isSharedObjects() ) {
         for ( String sharedObjectpath : sharedObjectFolders ) {
-          purgeSpecification.fileFilter="*";
+          purgeSpecification.fileFilter = "*";
           purgeSpecification.setPath( sharedObjectpath );
           processRevisionDeletion( purgeSpecification );
         }

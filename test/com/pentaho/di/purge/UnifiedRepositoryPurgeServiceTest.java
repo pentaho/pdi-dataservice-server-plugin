@@ -141,7 +141,7 @@ public class UnifiedRepositoryPurgeServiceTest {
 
     UnifiedRepositoryPurgeService purgeService = new UnifiedRepositoryPurgeService( mockRepo );
     String fileId = "1";
-    int versionCount = 3;
+    int versionCount = 2;
 
     purgeService.keepNumberOfVersions( element1, versionCount );
 
@@ -224,14 +224,9 @@ public class UnifiedRepositoryPurgeServiceTest {
     purgeService.doDeleteRevisions( spec );
 
     // Since each tree call delivers the same mock tree, we expect the files to get deleted once per folder.
-    String fileId = "1";
-    List<VersionSummary> list = versionListMap.get( fileId );
+    String fileId = "1";    List<VersionSummary> list = versionListMap.get( fileId );
     for ( VersionSummary sum : list ) {
-      if ( sum.getId().equals( list.get( list.size() - 1 ).getId() ) ) {
-        verify( mockRepo, never() ).deleteFileAtVersion( fileId, sum.getId() ); // The newest version is the actual file
-      } else {
-        verify( mockRepo, times( 4 ) ).deleteFileAtVersion( fileId, sum.getId() );
-      }
+      verify( mockRepo, times( 4 ) ).deleteFileAtVersion( fileId, sum.getId() );
     }
   }
 
@@ -262,31 +257,30 @@ public class UnifiedRepositoryPurgeServiceTest {
   private static void verifyAllVersionsDeleted( HashMap<String, List<VersionSummary>> versionListMap,
       IUnifiedRepository mockRepo, String fileId ) {
     List<VersionSummary> list = versionListMap.get( fileId );
+    int i=1;
     for ( VersionSummary sum : list ) {
-      if ( sum.getId().equals( list.get( list.size() - 1 ).getId() ) ) {
-        verify( mockRepo, never() ).deleteFileAtVersion( fileId, sum.getId() ); // The newest version is the actual file
-      } else {
+      if( i < list.size() ) {
         verify( mockRepo, times( 1 ) ).deleteFileAtVersion( fileId, sum.getId() );
       }
-    }
+      i++;
+   }
   }
 
   private static void verifyVersionCountDeletion( HashMap<String, List<VersionSummary>> versionListMap,
       IUnifiedRepository mockRepo, String fileId, int versionCount ) {
-    int i = 1;
     List<VersionSummary> list = versionListMap.get( fileId );
+    int i = 1;
     for ( VersionSummary sum : list ) {
-      if ( i++ < list.size() - versionCount ) {
+      if( i <= list.size() - versionCount ) {
         verify( mockRepo, times( 1 ) ).deleteFileAtVersion( fileId, sum.getId() );
-      } else {
-        verify( mockRepo, never() ).deleteFileAtVersion( fileId, sum.getId() );
       }
+      i++;
     }
   }
 
   private static void verifyDateBeforeDeletion( HashMap<String, List<VersionSummary>> versionListMap,
       IUnifiedRepository mockRepo, String fileId, Date beforeDate ) {
-    int i = 1;
+    int i = 0;
     List<VersionSummary> list = versionListMap.get( fileId );
     for ( VersionSummary sum : list ) {
       if ( beforeDate.after( sum.getDate() ) && !sum.getId().equals( list.get( list.size() - 1 ).getId() ) ) {
