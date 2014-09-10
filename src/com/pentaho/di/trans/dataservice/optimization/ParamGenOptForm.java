@@ -139,6 +139,8 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     props.setLook( stepNameLabel );
     FormData labelStepNameFormData = new FormData();
     labelStepNameFormData.top = new FormAttachment( 5 );
+    labelStepNameFormData.left = new FormAttachment( 0, Const.MARGIN );
+
 
     stepNameLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.StepName.Label" ) );
     stepNameLabel.setLayoutData( labelStepNameFormData );
@@ -149,12 +151,14 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     fdStepList.top = new FormAttachment( stepNameLabel, Const.MARGIN * 2 );
     fdStepList.width = 200;
     fdStepList.height = 100;
+    fdStepList.left = labelStepNameFormData.left;
     stepList.setLayoutData( fdStepList );
 
     Label definitionLabel = new Label( paramGenGroup, SWT.NONE );
     props.setLook( definitionLabel );
     FormData fdDefinition = new FormData();
     fdDefinition.top = new FormAttachment( stepList, Const.MARGIN * 2 );
+    fdDefinition.left = labelStepNameFormData.left;
     definitionLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.Definition.Label" ) );
     definitionLabel.setLayoutData( fdDefinition );
 
@@ -184,7 +188,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     FormData paramNameFormData = new FormData();
     paramNameFormData.left = new FormAttachment( parameterNameLabel, Const.MARGIN * 2 );
     paramNameFormData.top = fdStepList.top;
-    paramNameFormData.width = 250;
+    paramNameFormData.width = PushDownOptDialog.TEXT_WIDTH;
     paramNameText.setLayoutData( paramNameFormData );
 
 
@@ -195,7 +199,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     FormData fdFormCombo = new FormData();
     fdFormCombo.top = fdFormLabel.top;
     fdFormCombo.left = paramNameFormData.left;
-    fdFormCombo.width = 160;
+    fdFormCombo.width = PushDownOptDialog.TEXT_WIDTH;
     formCombo.setLayoutData( fdFormCombo );
 
     ColumnInfo[] colinf =

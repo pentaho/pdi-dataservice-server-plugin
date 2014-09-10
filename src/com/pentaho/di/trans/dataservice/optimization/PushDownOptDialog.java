@@ -48,6 +48,7 @@ import java.util.List;
 
 public class PushDownOptDialog extends Dialog {
 
+  public static final int TEXT_WIDTH = 250;
   private static final int DIALOG_WIDTH = 691;
   private static final int DIALOG_HEIGHT = 522;
   private final PropsUI props;
@@ -88,8 +89,6 @@ public class PushDownOptDialog extends Dialog {
     Display display = parent.getDisplay();
     final Shell shell = new Shell( display );
 
-
-
     props.setLook( shell );
 
     shell.setText( BaseMessages.getString( PKG, "PushDownOptDialog.PushDownOpt.Label" )  );
@@ -110,9 +109,9 @@ public class PushDownOptDialog extends Dialog {
     props.setLook( nameText );
     nameText.setText( optimizationMeta.getName() );
     FormData fd_nameText = new FormData();
-    fd_nameText.right = new FormAttachment( nameLabel, 251, SWT.RIGHT );
+    fd_nameText.right = new FormAttachment( nameLabel, TEXT_WIDTH, SWT.RIGHT );
     fd_nameText.top = new FormAttachment( 0, 10 );
-    fd_nameText.left = new FormAttachment( nameLabel, 6 );
+    fd_nameText.left = new FormAttachment( nameLabel, Const.MARGIN );
     nameText.setLayoutData( fd_nameText );
 
     Label typeLabel = new Label( shell, SWT.NONE );
@@ -127,9 +126,9 @@ public class PushDownOptDialog extends Dialog {
     optimizationMethodCombo = new Combo( shell, SWT.NONE );
     props.setLook( optimizationMethodCombo );
     FormData fd_typeCombo = new FormData();
-    fd_typeCombo.right = new FormAttachment( nameText, 0, SWT.RIGHT );
-    fd_typeCombo.top = new FormAttachment( nameText, 6 );
-    fd_typeCombo.left = new FormAttachment( nameText, 0, SWT.LEFT );
+    fd_typeCombo.right =  fd_nameText.right;
+    fd_typeCombo.top = new FormAttachment( nameText, Const.MARGIN );
+    fd_typeCombo.left = fd_nameText.left;
     optimizationMethodCombo.setLayoutData( fd_typeCombo );
     optimizationMethodCombo.setItems( getTypeNames() );
     optimizationMethodCombo.select( 0 );
@@ -158,7 +157,7 @@ public class PushDownOptDialog extends Dialog {
         if ( !isFormValid() ) {
           StringBuilder errors = new StringBuilder().append( "\n\n" );
           for ( String error : getMissingFormElements() ) {
-            errors.append( "*" ).append( error ).append( "\n" );
+            errors.append( "- " ).append( error ).append( "\n" );
           }
           MessageBox mb = new MessageBox( shell, SWT.OK | SWT.ICON_INFORMATION );
           mb.setText( BaseMessages.getString( PKG, "PushDownOptDialog.MissingFields.Title" ) );

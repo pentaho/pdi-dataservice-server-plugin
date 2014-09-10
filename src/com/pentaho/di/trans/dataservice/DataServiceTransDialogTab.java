@@ -258,14 +258,18 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     toolBar.setLayoutData( fdEditBtn );
     props.setLook( toolBar );
 
-    final ToolItem addButton = new ToolItem( toolBar, SWT.FLAT );
-    addButton.setImage( GUIResource.getInstance().getImageAdd() );
-    deleteButton = new ToolItem( toolBar, SWT.FLAT );
-    deleteButton.setEnabled( false );
-    deleteButton.setImage( GUIResource.getInstance().getImageDelete() );
     editButton = new ToolItem( toolBar, SWT.PUSH );
     editButton.setEnabled( false );
     editButton.setImage( GUIResource.getInstance().getImageEdit() );
+    editButton.setWidth( GUIResource.getInstance().getImageEdit().getBounds().width );
+    final ToolItem addButton = new ToolItem( toolBar, SWT.FLAT );
+    addButton.setImage( GUIResource.getInstance().getImageAdd() );
+    addButton.setWidth( GUIResource.getInstance().getImageAdd().getBounds().width );
+    deleteButton = new ToolItem( toolBar, SWT.FLAT );
+    deleteButton.setEnabled( false );
+    deleteButton.setImage( GUIResource.getInstance().getImageDelete() );
+    deleteButton.setWidth( GUIResource.getInstance().getImageDelete().getBounds().width );
+
 
     editButton.addSelectionListener( new SelectionAdapter() {
       @Override
