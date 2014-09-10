@@ -185,6 +185,6 @@ public class ParameterGeneration implements PushDownType {
       // Wrap string constant in quotes
       value = "'" + value + "'";
     }
-    return String.format( "%s %s %s", target, condition.getFunctionDesc(), value );
+    return String.format( "\"%s\" %s %s", target, condition.getFunctionDesc(), value );
   }
 }
