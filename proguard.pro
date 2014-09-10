@@ -79,3 +79,6 @@
       -keep class com.pentaho.repository.importexport.* {
 			  public static <methods>;
 		  }
+
+	-adaptresourcefilenames		**.properties
+
