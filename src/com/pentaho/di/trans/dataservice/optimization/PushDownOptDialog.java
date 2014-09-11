@@ -87,7 +87,7 @@ public class PushDownOptDialog extends Dialog {
 
   private void layoutDialog() {
     Display display = parent.getDisplay();
-    final Shell shell = new Shell( display );
+    final Shell shell = new Shell( display, SWT.APPLICATION_MODAL | SWT.SHELL_TRIM );
 
     props.setLook( shell );
 
