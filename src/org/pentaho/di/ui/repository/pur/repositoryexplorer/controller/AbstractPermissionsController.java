@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.KettleRepositoryLostException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositorySecurityManager;
@@ -38,6 +39,7 @@ import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObj
 import org.pentaho.di.ui.repository.pur.repositoryexplorer.model.UIRepositoryObjectAcls;
 import org.pentaho.di.ui.repository.repositoryexplorer.ContextChangeVetoer.TYPE;
 import org.pentaho.di.ui.repository.repositoryexplorer.ControllerInitializationException;
+import org.pentaho.di.ui.repository.repositoryexplorer.controllers.MainController;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.binding.Binding;
@@ -62,7 +64,7 @@ import org.pentaho.ui.xul.util.XulDialogCallback;
 public abstract class AbstractPermissionsController extends AbstractXulEventHandler {
 
   private static final Class<?> PKG = IUIEEUser.class;
- 
+
   protected BindingFactory bf;
   protected XulMessageBox messageBox;
   protected XulConfirmBox confirmBox;
@@ -88,11 +90,13 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
   protected UIRepositoryObjectAclModel manageAclsModel;
   protected RepositorySecurityProvider service;
 
+  protected MainController mainController;
+
   protected abstract List<? extends Object> getSelectedObjects();
-  
+
   protected PermissionsCheckboxHandler permissionsCheckboxHandler;
-  
-  protected void init(Repository rep) throws Exception {
+
+  protected void init( Repository rep ) throws Exception {
     if (rep != null && rep.hasService(RepositorySecurityProvider.class)) {
       service = (RepositorySecurityProvider) rep.getService(RepositorySecurityProvider.class);
     } else {
@@ -104,6 +108,8 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
     manageAclsModel = new UIRepositoryObjectAclModel(viewAclsModel);
     bf = new DefaultBindingFactory();
     bf.setDocument(this.getXulDomContainer().getDocumentRoot());
+    
+    mainController = (MainController) this.getXulDomContainer().getEventHandler( "mainController" );
     
     confirmBox = (XulConfirmBox) document.createElement("confirmbox");//$NON-NLS-1$
     confirmBox.setTitle(BaseMessages.getString(PKG, "PermissionsController.RemoveAclWarning")); //$NON-NLS-1$
@@ -454,8 +460,9 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
         return ((IAclObject) ro).hasAccess(RepositoryFilePermission.ACL_MANAGEMENT);
       }
     } catch (Exception e) {
-      // convert to runtime exception so it bubbles up through the UI
-      throw new RuntimeException(e);
+      if(KettleRepositoryLostException.lookupStackStrace( e ) == null) {
+        throw new RuntimeException(e);
+      }
     }
     return false;
   }
@@ -489,51 +496,59 @@ public abstract class AbstractPermissionsController extends AbstractXulEventHand
   protected TYPE returnType;
   
   public TYPE onContextChange() {
-    if (viewAclsModel.isModelDirty()) {
-
-      if (!hasManageAclAccess()) {
-        // if the user does not have permission to modify the acls, 
-        // ignore any changes, although this code shouldn't be executed 
-        // because all buttons should be disabled.
+    try {
+      if (viewAclsModel.isModelDirty()) {
+  
+        if (!hasManageAclAccess()) {
+          // if the user does not have permission to modify the acls, 
+          // ignore any changes, although this code shouldn't be executed 
+          // because all buttons should be disabled.
+          
+          viewAclsModel.clear();
+          // Clear the ACL from the backing repo object
+          clearSelectedObjAcl();
+          viewAclsModel.setModelDirty(false);
+          return TYPE.OK;
+        }
         
-        viewAclsModel.clear();
-        // Clear the ACL from the backing repo object
-        clearSelectedObjAcl();
-        viewAclsModel.setModelDirty(false);
-        return TYPE.OK;
+        XulConfirmBox confirmBox = null;
+        try {
+          confirmBox = (XulConfirmBox) document.createElement("confirmbox");//$NON-NLS-1$
+        } catch (Exception e) {
+          // convert to runtime exception so it bubbles up through the UI
+          throw new RuntimeException(e);
+        }
+        confirmBox.setTitle(BaseMessages.getString(PKG, "PermissionsController.ContextChangeWarning")); //$NON-NLS-1$
+        confirmBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.ContextChangeWarningText")); //$NON-NLS-1$
+        confirmBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Yes")); //$NON-NLS-1$
+        confirmBox.setCancelLabel(BaseMessages.getString(PKG, "Dialog.No")); //$NON-NLS-1$
+        confirmBox.addDialogCallback(new XulDialogCallback<Object>() {
+          public void onClose(XulComponent sender, Status returnCode, Object retVal) {
+            if (returnCode == Status.ACCEPT) {
+              returnType = TYPE.OK;
+              viewAclsModel.clear();
+              // Clear the ACL from the backing repo object
+              clearSelectedObjAcl();
+              viewAclsModel.setModelDirty(false);
+            } else {
+              returnType = TYPE.CANCEL;
+            }
+          }
+          public void onError(XulComponent sender, Throwable t) {
+            returnType = TYPE.NO_OP;
+          }
+        });
+        confirmBox.open();
+      } else {
+        returnType = TYPE.NO_OP;
       }
-      
-      XulConfirmBox confirmBox = null;
-      try {
-        confirmBox = (XulConfirmBox) document.createElement("confirmbox");//$NON-NLS-1$
-      } catch (Exception e) {
-        // convert to runtime exception so it bubbles up through the UI
+      return returnType;
+    } catch(Exception e) {
+      if(KettleRepositoryLostException.lookupStackStrace( e ) != null) {
+        return TYPE.NO_OP;
+      } else {
         throw new RuntimeException(e);
       }
-      confirmBox.setTitle(BaseMessages.getString(PKG, "PermissionsController.ContextChangeWarning")); //$NON-NLS-1$
-      confirmBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.ContextChangeWarningText")); //$NON-NLS-1$
-      confirmBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Yes")); //$NON-NLS-1$
-      confirmBox.setCancelLabel(BaseMessages.getString(PKG, "Dialog.No")); //$NON-NLS-1$
-      confirmBox.addDialogCallback(new XulDialogCallback<Object>() {
-        public void onClose(XulComponent sender, Status returnCode, Object retVal) {
-          if (returnCode == Status.ACCEPT) {
-            returnType = TYPE.OK;
-            viewAclsModel.clear();
-            // Clear the ACL from the backing repo object
-            clearSelectedObjAcl();
-            viewAclsModel.setModelDirty(false);
-          } else {
-            returnType = TYPE.CANCEL;
-          }
-        }
-        public void onError(XulComponent sender, Throwable t) {
-          returnType = TYPE.NO_OP;
-        }
-      });
-      confirmBox.open();
-    } else {
-      returnType = TYPE.NO_OP;
     }
-    return returnType;
   }
 }

@@ -107,6 +107,17 @@ public class PurRepositoryConnector implements IRepositoryConnector {
       user1.setName( username );
       result.setUser( user1 );
 
+/*
+        this.pur = (IUnifiedRepository)Proxy.newProxyInstance( 
+            r.getClass().getClassLoader(), 
+            new Class<?>[] {IUnifiedRepository.class}, 
+            new UnifiedRepositoryInvocationHandler( r ));
+      } catch(Throwable th) {
+        if(log.isError()) {
+          log.logError( "Failed to setup repository connection", th );
+        }
+*/
+
       if ( PentahoSystem.getApplicationContext() != null ) {
         if ( inProcess() ) {
           // connect to the IUnifiedRepository through PentahoSystem
@@ -228,7 +239,7 @@ public class PurRepositoryConnector implements IRepositoryConnector {
         purRepositoryServiceRegistry.registerService( IRoleSupportSecurityManager.class, result.getSecurityManager() );
         purRepositoryServiceRegistry.registerService( IAbsSecurityManager.class, result.getSecurityManager() );
       }
-      
+
       purRepositoryServiceRegistry.registerService( PurRepositoryRestService.PurRepositoryPluginApiRevision.class,
           serviceManager.createService( username, decryptedPassword,
               PurRepositoryRestService.PurRepositoryPluginApiRevision.class ) );
@@ -270,7 +281,7 @@ public class PurRepositoryConnector implements IRepositoryConnector {
   public ServiceManager getServiceManager() {
     return serviceManager;
   }
-  
+
   public static boolean inProcess() {
     boolean inProcess = false;
     boolean remoteDiServer =
@@ -281,5 +292,5 @@ public class PurRepositoryConnector implements IRepositoryConnector {
       inProcess = true;
     }
     return inProcess;
-  } 
+  }
 }

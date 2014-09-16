@@ -23,7 +23,7 @@
 package org.pentaho.di.repository.pur;
 
 import java.io.Serializable;
-import java.net.MalformedURLException;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -199,7 +199,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   private IRepositoryConnector purRepositoryConnector;
 
   private RepositoryServiceRegistry purRepositoryServiceRegistry = new RepositoryServiceRegistry();
-  
+
   protected boolean versioningEnabled = true;
   protected boolean commentsEnabled = true;
 
@@ -246,6 +246,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
     return rootRef;
   }
 
+
   @Override
   public void connect( final String username, final String password ) throws KettleException {
     if ( isTest() ) {
@@ -268,7 +269,18 @@ public class PurRepository extends AbstractRepository implements Repository, jav
       this.connected = result.isSuccess();
       this.securityProvider = result.getSecurityProvider();
       this.securityManager = result.getSecurityManager();
-      this.pur = result.getUnifiedRepository();
+      IUnifiedRepository r = result.getUnifiedRepository();
+      try {
+        this.pur = (IUnifiedRepository) Proxy.newProxyInstance(
+            r.getClass().getClassLoader(),
+            new Class<?>[] {IUnifiedRepository.class},
+            new UnifiedRepositoryInvocationHandler( r ) );
+      } catch ( Throwable th ) {
+        if ( log.isError() ) {
+          log.logError( "Failed to setup repository connection", th );
+        }
+        connected = false;
+      }
       this.unifiedRepositoryLockService = new UnifiedRepositoryLockService( pur );
       this.connectMessage = result.getConnectMessage();
       this.purRepositoryServiceRegistry = result.repositoryServiceRegistry();
@@ -297,7 +309,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
           // Should never happen, the rest service should be registered
           e.printStackTrace();
         }
-        
+
         LogChannel.GENERAL.logBasic( BaseMessages.getString( PKG, "PurRepository.ConnectSuccess.Message" ) );
       }
     }
@@ -2800,7 +2812,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
   public ServiceManager getServiceManager() {
     return purRepositoryConnector == null ? null : purRepositoryConnector.getServiceManager();
   }
-  
+
   public boolean isVersioningEnabled() {
     return versioningEnabled;
   }
@@ -2817,8 +2829,7 @@ public class PurRepository extends AbstractRepository implements Repository, jav
       // assume we are running within a server
       commentsEnabled = JcrRepositoryFileUtils.getVersionCommentsEnabled();
       versioningEnabled = JcrRepositoryFileUtils.getVersionCommentsEnabled();
-    }
-    else{
+    } else{
       // we are probably running in spoon
       // Call two web services to get the status of the versioning flags
       PurRepositoryRestService.PurRepositoryPluginApiRevision servicePort =
