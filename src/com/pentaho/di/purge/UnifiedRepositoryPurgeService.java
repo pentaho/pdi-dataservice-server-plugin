@@ -142,10 +142,14 @@ public class UnifiedRepositoryPurgeService implements IPurgeService {
 
       // Now do shared objects if required
       if ( purgeSpecification.isSharedObjects() ) {
-        for ( String sharedObjectpath : sharedObjectFolders ) {
-          purgeSpecification.fileFilter = "*";
-          purgeSpecification.setPath( sharedObjectpath );
-          processRevisionDeletion( purgeSpecification );
+        if ( purgeSpecification.isPurgeFiles() ) {
+          for ( String sharedObjectpath : sharedObjectFolders ) {
+            purgeSpecification.fileFilter = "*";
+            purgeSpecification.setPath( sharedObjectpath );
+            processRevisionDeletion( purgeSpecification );
+          }
+        } else {
+          throw new PurgeDeletionException( "Must purge files before shared objects" );
         }
       }
     }
