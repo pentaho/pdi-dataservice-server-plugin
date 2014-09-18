@@ -119,7 +119,7 @@ public class PdiContentProvider implements IPdiContentProvider {
       }
     }
 
-    return params;
+    return userParams;
   }
 
   private NamedParams getMeta( RepositoryFile file ) throws KettleException {
