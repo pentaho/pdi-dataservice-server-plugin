@@ -107,17 +107,6 @@ public class PurRepositoryConnector implements IRepositoryConnector {
       user1.setName( username );
       result.setUser( user1 );
 
-/*
-        this.pur = (IUnifiedRepository)Proxy.newProxyInstance( 
-            r.getClass().getClassLoader(), 
-            new Class<?>[] {IUnifiedRepository.class}, 
-            new UnifiedRepositoryInvocationHandler( r ));
-      } catch(Throwable th) {
-        if(log.isError()) {
-          log.logError( "Failed to setup repository connection", th );
-        }
-*/
-
       if ( PentahoSystem.getApplicationContext() != null ) {
         if ( inProcess() ) {
           // connect to the IUnifiedRepository through PentahoSystem
