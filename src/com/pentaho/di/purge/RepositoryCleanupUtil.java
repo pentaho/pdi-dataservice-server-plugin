@@ -66,13 +66,13 @@ public class RepositoryCleanupUtil {
   private final String DEL_DATE = "purgeBeforeDate";
   private final String PURGE_FILES = "purgeFiles";
   private final String PURGE_REV = "purgeRevisions";
-  private final String PURGE_TARGET = "purgeTarget";
+
   private final String LOG_LEVEL = "logLevel";
   private final String LOG_FILE = "logFileName";
+  private final String PURGE_SHARED = "purgeSharedObjects";
 
   //parameters in rest call that are not in command line
   private final String FILE_FILTER = "fileFilter";
-  private final String PURGE_SHARED = "purgeSharedObjects";
 
   // Constants.
   private final String SERVICE_NAME = "purge";
@@ -197,13 +197,18 @@ public class RepositoryCleanupUtil {
     String aDelFrom = arguments.get( OPTION_PREFIX + DEL_DATE );
     String aPurgeFiles = arguments.get( OPTION_PREFIX + PURGE_FILES );
     String aPurgeRev = arguments.get( OPTION_PREFIX + PURGE_REV );
-    String aPurgeTarget = arguments.get( OPTION_PREFIX + PURGE_TARGET );
+    String aPurgeShared = arguments.get( OPTION_PREFIX + PURGE_SHARED );
+
     String aLogLevel = arguments.get( OPTION_PREFIX + LOG_LEVEL );
     String aLogFile = arguments.get( OPTION_PREFIX + LOG_FILE );
 
     StringBuffer errors = new StringBuffer();
 
     boolean isValidOperationSelected = false;
+
+    fileFilter = "*.kjb|*.ktr";
+    repositoryPath = "/";
+    purgeShared = false;
 
     if ( aLogLevel != null
       && !( aLogLevel.equals( "DEBUG" ) || aLogLevel.equals( "ERROR" )
@@ -298,29 +303,16 @@ public class RepositoryCleanupUtil {
       }
     }
 
-    if ( aPurgeTarget == null ) {
-      aPurgeTarget = "C";
-    }
-    String upperPurgeTarget = aPurgeTarget.toUpperCase();
-    if ( upperPurgeTarget.equals( "C" ) || upperPurgeTarget.equals( "CONTENT" ) ) {
-      fileFilter = "*.kjb|*.ktr";
-      repositoryPath = "/";
-      purgeShared = false;
-    } else if ( upperPurgeTarget.equals( "S" ) || upperPurgeTarget.equals( "SHARED" ) ) {
-      fileFilter = "*";
-      repositoryPath = " ";
-      purgeShared = true;
-    } else if ( upperPurgeTarget.equals( "B" ) || upperPurgeTarget.equals( "BOTH" ) ) {
-      fileFilter = "*.kjb|*.ktr";
-      repositoryPath = "/";
-      purgeShared = true;
-    } else {
-      errors.append(
-        Messages.getInstance().getString(
-          "REPOSITORY_CLEANUP_UTIL.ERROR_0007.INVALID_TARGET",
-          OPTION_PREFIX + PURGE_TARGET + "=" + aPurgeTarget
-        ) + "\n"
-      );
+    if ( aPurgeShared != null ) {
+      if ( Boolean.parseBoolean( aPurgeFiles ) != Boolean.TRUE ) {
+        errors.append(
+          Messages.getInstance().getString(
+            "REPOSITORY_CLEANUP_UTIL.ERROR_0014.INVALID_PURGE_SHARED"
+          )
+        );
+      } else {
+        purgeShared = true;
+      }
     }
 
     if ( aDelFrom != null ) {
@@ -490,20 +482,13 @@ public class RepositoryCleanupUtil {
       )
     );
 
-    help.append(
-      optionHelp(
-        PURGE_TARGET,
-        Messages.getInstance().getString( "REPOSITORY_CLEANUP_UTIL.INFO_0007.PURGE_TARGET" )
-      )
-    );
-
     help.append( "\n" );
 
     help.append(
       indentFormat(
         Messages.getInstance().getString(
           "REPOSITORY_CLEANUP_UTIL.INFO_0008.PARAMS_HELP",
-          PURGE_TARGET ), 0, 0
+          PURGE_SHARED ), 0, 0
       )
     );
 
@@ -525,8 +510,7 @@ public class RepositoryCleanupUtil {
       optionHelp(
         PURGE_FILES,
         Messages.getInstance().getString( "REPOSITORY_CLEANUP_UTIL.INFO_0011.PURGE_FILES_HELP",
-          PURGE_FILES,
-          PURGE_TARGET
+          PURGE_FILES
         )
       )
     );
@@ -560,6 +544,13 @@ public class RepositoryCleanupUtil {
       )
     );
 
+    help.append(
+      optionHelp(
+        PURGE_SHARED,
+        Messages.getInstance().getString( "REPOSITORY_CLEANUP_UTIL.INFO_0007.PURGE_SHARED", PURGE_FILES )
+      )
+    );
+
     help.append( "\n\n" + Messages.getInstance().getString( "REPOSITORY_CLEANUP_UTIL.INFO_0016.EXAMPLES" ) );
 
     help.append(
@@ -569,7 +560,6 @@ public class RepositoryCleanupUtil {
           OPTION_PREFIX + URL,
           OPTION_PREFIX + USER,
           OPTION_PREFIX + PASS,
-          OPTION_PREFIX + PURGE_TARGET,
           OPTION_PREFIX + PURGE_FILES
         ), 0, 3 ) );
 
@@ -587,7 +577,6 @@ public class RepositoryCleanupUtil {
           OPTION_PREFIX + URL,
           OPTION_PREFIX + USER,
           OPTION_PREFIX + PASS,
-          OPTION_PREFIX + PURGE_TARGET,
           OPTION_PREFIX + PURGE_REV
         ), 0, 3 ) );
 
@@ -612,6 +601,25 @@ public class RepositoryCleanupUtil {
     help.append(
       indentFormat(
         Messages.getInstance().getString( "REPOSITORY_CLEANUP_UTIL.INFO_0022.EXAMPLE_3_DESC" ),
+        3, 3
+      )
+    );
+
+    help.append(
+      indentFormat(
+        Messages.getInstance().getString(
+          "REPOSITORY_CLEANUP_UTIL.INFO_0023.EXAMPLE_4",
+          OPTION_PREFIX + URL,
+          OPTION_PREFIX + USER,
+          OPTION_PREFIX + PASS,
+          OPTION_PREFIX + PURGE_FILES,
+          OPTION_PREFIX + PURGE_SHARED
+        )
+        , 0, 3 ) );
+
+    help.append(
+      indentFormat(
+        Messages.getInstance().getString( "REPOSITORY_CLEANUP_UTIL.INFO_0024.EXAMPLE_4_DESC" ),
         3, 3
       )
     );
