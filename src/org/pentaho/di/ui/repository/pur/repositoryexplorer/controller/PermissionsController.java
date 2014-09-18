@@ -145,18 +145,22 @@ public class PermissionsController extends AbstractPermissionsController impleme
           bf.createBinding(viewAclsModel, "acls", userRoleList, "elements"); //$NON-NLS-1$ //$NON-NLS-2$
           updateInheritFromParentPermission();
         } catch (AccessDeniedException ade) {
-          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(BaseMessages.getString(PKG,
-              "PermissionsController.UnableToGetAcls", repoObject.getName(), ade.getLocalizedMessage()));//$NON-NLS-1$
-
-          messageBox.open();
+          if( mainController == null || ! mainController.handleLostRepository( ade ) ) {
+            messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+            messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+            messageBox.setMessage(BaseMessages.getString(PKG,
+                "PermissionsController.UnableToGetAcls", repoObject.getName(), ade.getLocalizedMessage()));//$NON-NLS-1$
+  
+            messageBox.open();
+          }
         } catch (Exception e) {
-          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(BaseMessages.getString(PKG,
-              "PermissionsController.UnableToGetAcls", repoObject.getName(), e.getLocalizedMessage())); //$NON-NLS-1$
-          messageBox.open();
+          if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+            messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+            messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+            messageBox.setMessage(BaseMessages.getString(PKG,
+                "PermissionsController.UnableToGetAcls", repoObject.getName(), e.getLocalizedMessage())); //$NON-NLS-1$
+            messageBox.open();
+          }
         }
 
         aclDeck.setSelectedIndex(ACL);
@@ -183,12 +187,14 @@ public class PermissionsController extends AbstractPermissionsController impleme
     // Setting the default Deck to show no permission
     aclDeck.setSelectedIndex(NO_ACL);
     try {
-      if (securityBinding != null) {
+      if ( securityBinding != null ) {
         securityBinding.fireSourceChanged();
       }
-    } catch (Exception e) {
-      // convert to runtime exception so it bubbles up through the UI
-      throw new RuntimeException(e);
+    } catch ( Exception e ) {
+      if ( mainController == null || !mainController.handleLostRepository( e ) ) {
+        // convert to runtime exception so it bubbles up through the UI
+        throw new RuntimeException( e );
+      }
     }
   }
 
@@ -258,15 +264,19 @@ public class PermissionsController extends AbstractPermissionsController impleme
       /*if (hideDialog) {
         applyAclConfirmationDialog.hide();
       }*/
-      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
-      messageBox.setMessage(ade.getLocalizedMessage());
-      messageBox.open();
+      if( mainController == null || ! mainController.handleLostRepository( ade ) ) {
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+        messageBox.setMessage(ade.getLocalizedMessage());
+        messageBox.open();
+      }
     } catch (KettleException kex) {
-      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
-      messageBox.setMessage(kex.getLocalizedMessage());
-      messageBox.open();
+      if( mainController == null || ! mainController.handleLostRepository( kex ) ) {
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+        messageBox.setMessage(kex.getLocalizedMessage());
+        messageBox.open();
+      }
     }
   }
 

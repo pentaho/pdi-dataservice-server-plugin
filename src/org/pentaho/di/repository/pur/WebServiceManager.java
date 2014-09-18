@@ -89,14 +89,14 @@ public class WebServiceManager implements ServiceManager {
     this.baseUrl = baseUrl;
     this.lastUsername = username;
     tempServiceNameMap = new HashMap<Class<?>, WebServiceSpecification>();
-    registerWsSpecification( IUnifiedRepositoryJaxwsWebService.class, "unifiedRepository" );//$NON-NLS-1$
-    registerWsSpecification( IRepositorySyncWebService.class, "repositorySync" );//$NON-NLS-1$
-    registerWsSpecification( IUserRoleListWebService.class, "userRoleListService" );//$NON-NLS-1$
-    registerWsSpecification( IUserRoleWebService.class, "userRoleService" );//$NON-NLS-1$
-    registerWsSpecification( IRoleAuthorizationPolicyRoleBindingDaoWebService.class, "roleBindingDao" );//$NON-NLS-1$
-    registerWsSpecification( IAuthorizationPolicyWebService.class, "authorizationPolicy" );//$NON-NLS-1$
+    registerWsSpecification( IUnifiedRepositoryJaxwsWebService.class, "unifiedRepository" ); //$NON-NLS-1$
+    registerWsSpecification( IRepositorySyncWebService.class, "repositorySync" ); //$NON-NLS-1$
+    registerWsSpecification( IUserRoleListWebService.class, "userRoleListService" ); //$NON-NLS-1$
+    registerWsSpecification( IUserRoleWebService.class, "userRoleService" ); //$NON-NLS-1$
+    registerWsSpecification( IRoleAuthorizationPolicyRoleBindingDaoWebService.class, "roleBindingDao" ); //$NON-NLS-1$
+    registerWsSpecification( IAuthorizationPolicyWebService.class, "authorizationPolicy" ); //$NON-NLS-1$
 
-    registerRestSpecification( PentahoDiPlugin.PurRepositoryPluginApiRevision.class, "purRepositoryPluginApiRevision" );//$NON-NLS-1$
+    registerRestSpecification( PentahoDiPlugin.PurRepositoryPluginApiRevision.class, "purRepositoryPluginApiRevision" ); //$NON-NLS-1$
 
     this.serviceNameMap = Collections.unmodifiableMap( tempServiceNameMap );
     tempServiceNameMap = null;
@@ -192,7 +192,12 @@ public class WebServiceManager implements ServiceManager {
       }
 
       try {
-        return (T) resultFuture.get();
+        if ( clazz.isInterface() ) {
+          return UnifiedRepositoryInvocationHandler.forObject((T) resultFuture.get(), clazz );
+        } else {
+          return (T) resultFuture.get();
+        }
+
       } catch ( InterruptedException e ) {
         throw new RuntimeException( e );
       } catch ( ExecutionException e ) {

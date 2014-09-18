@@ -228,7 +228,7 @@ public class PurRepositoryConnector implements IRepositoryConnector {
         purRepositoryServiceRegistry.registerService( IRoleSupportSecurityManager.class, result.getSecurityManager() );
         purRepositoryServiceRegistry.registerService( IAbsSecurityManager.class, result.getSecurityManager() );
       }
-      
+
       purRepositoryServiceRegistry.registerService( PurRepositoryRestService.PurRepositoryPluginApiRevision.class,
           serviceManager.createService( username, decryptedPassword,
               PurRepositoryRestService.PurRepositoryPluginApiRevision.class ) );
@@ -270,7 +270,7 @@ public class PurRepositoryConnector implements IRepositoryConnector {
   public ServiceManager getServiceManager() {
     return serviceManager;
   }
-  
+
   public static boolean inProcess() {
     boolean inProcess = false;
     boolean remoteDiServer =
@@ -281,5 +281,5 @@ public class PurRepositoryConnector implements IRepositoryConnector {
       inProcess = true;
     }
     return inProcess;
-  } 
+  }
 }

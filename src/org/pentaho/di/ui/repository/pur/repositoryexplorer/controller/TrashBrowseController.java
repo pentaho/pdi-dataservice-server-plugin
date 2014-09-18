@@ -308,7 +308,9 @@ public class TrashBrowseController extends BrowseController implements java.io.S
       try {
         setTrash(trashService.getTrash());
       } catch (KettleException e) {
-        throw new RuntimeException(e);
+        if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+          throw new RuntimeException(e);
+        }
       }
       deck.setSelectedIndex(1);
     } else {
@@ -348,8 +350,10 @@ public class TrashBrowseController extends BrowseController implements java.io.S
         trashService.delete(ids);
         setTrash(trashService.getTrash());
       } catch(Throwable th) {
-        displayExceptionMessage(BaseMessages.getString(PKG,
-            "TrashBrowseController.UnableToDeleteFile", th.getLocalizedMessage())); //$NON-NLS-1$
+        if( mainController == null || ! mainController.handleLostRepository( th ) ) {
+          displayExceptionMessage(BaseMessages.getString(PKG,
+              "TrashBrowseController.UnableToDeleteFile", th.getLocalizedMessage())); //$NON-NLS-1$
+        }
       }
     } else {
       // ui probably allowed the button to be enabled when it shouldn't have been enabled
@@ -381,8 +385,10 @@ public class TrashBrowseController extends BrowseController implements java.io.S
         }
         deck.setSelectedIndex(1);
       } catch(Throwable th) {
-        displayExceptionMessage(BaseMessages.getString(PKG,
-            "TrashBrowseController.UnableToRestoreFile", th.getLocalizedMessage())); //$NON-NLS-1$
+        if( mainController == null || ! mainController.handleLostRepository( th ) ) {
+          displayExceptionMessage(BaseMessages.getString(PKG,
+              "TrashBrowseController.UnableToRestoreFile", th.getLocalizedMessage())); //$NON-NLS-1$
+        }
       }
     } else {
       // ui probably allowed the button to be enabled when it shouldn't have been enabled
@@ -412,18 +418,24 @@ public class TrashBrowseController extends BrowseController implements java.io.S
               try{
                 ((UIEERepositoryDirectory)repoObject).delete(true);
               } catch (Exception e) {
-                displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+                if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+                  displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+                }
               }
             }
           }
   
           public void onError(XulComponent sender, Throwable t) {
-            throw new RuntimeException(t);
+            if( mainController == null || ! mainController.handleLostRepository( t ) ) {
+              throw new RuntimeException(t);
+            }
           }
           
         });
       } else {
-        throw ke;
+        if( mainController == null || ! mainController.handleLostRepository( ke ) ) {
+          throw ke;
+        }
       }
     }
     
@@ -455,28 +467,38 @@ public class TrashBrowseController extends BrowseController implements java.io.S
                     try{
                      ((UIEERepositoryDirectory)repoObject).setName(newName, true);
                     } catch (Exception e) {
-                      displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+                      if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+                        displayExceptionMessage(BaseMessages.getString(PKG, e.getLocalizedMessage()));
+                      }
                     }
                   }
                 }
   
                 public void onError(XulComponent sender, Throwable t) {
-                  throw new RuntimeException(t);
+                  if( mainController == null || ! mainController.handleLostRepository( t ) ) {
+                      throw new RuntimeException(t);
+                  }
                 }
                 
               });
             } else {
-              throw new RuntimeException(ke);
+              if( mainController == null || ! mainController.handleLostRepository( ke ) ) {
+                throw new RuntimeException(ke);
+              }
             }
           } catch (Exception e) {
-            // convert to runtime exception so it bubbles up through the UI
-            throw new RuntimeException(e);
+            if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+              // convert to runtime exception so it bubbles up through the UI
+              throw new RuntimeException(e);
+            }
           }
         }
       }
 
       public void onError(XulComponent component, Throwable err) {
-        throw new RuntimeException(err);
+        if( mainController == null || ! mainController.handleLostRepository( err ) ) {
+          throw new RuntimeException(err);
+        }
       }
     });
 
@@ -505,12 +527,16 @@ public class TrashBrowseController extends BrowseController implements java.io.S
           }
 
           public void onError(XulComponent sender, Throwable t) {
-            throw new RuntimeException(t);
+            if( mainController == null || ! mainController.handleLostRepository( t ) ) {
+              throw new RuntimeException(t);
+            }
           }
         });
         confirmBox.open();
       } catch (Exception e) {
-        throw new RuntimeException(e);
+        if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+          throw new RuntimeException(e);
+        }
       }
     }
     return false;

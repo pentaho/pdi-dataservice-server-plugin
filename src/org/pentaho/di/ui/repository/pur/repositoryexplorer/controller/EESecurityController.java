@@ -533,11 +533,13 @@ public class EESecurityController extends SecurityController implements java.io.
       userDialog.setTitle(BaseMessages.getString(PKG, "AddUserDialog.Title"));//$NON-NLS-1$
       userDialog.show();
     } catch (KettleException e) {
-      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(PKG,
-          "SecurityController.AddUser.UnableToShowAddUser", e.getLocalizedMessage()));//$NON-NLS-1$
-      messageBox.open();
+      if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG,
+            "SecurityController.AddUser.UnableToShowAddUser", e.getLocalizedMessage()));//$NON-NLS-1$
+        messageBox.open();
+      }
     }
   }
 
@@ -558,11 +560,13 @@ public class EESecurityController extends SecurityController implements java.io.
         eeSecurity.addUser(UIObjectRegistry.getInstance().constructUIRepositoryUser(eeSecurityUser.getUserInfo()));
         userDialog.hide();        
       } catch (Throwable th) {
-        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(PKG,
-            "AddUser.UnableToAddUser", th.getLocalizedMessage()));//$NON-NLS-1$
-        messageBox.open();
+        if( mainController == null || ! mainController.handleLostRepository( th ) ) {
+          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PKG,
+              "AddUser.UnableToAddUser", th.getLocalizedMessage()));//$NON-NLS-1$
+          messageBox.open();
+        }
       }
     }
   }
@@ -597,11 +601,13 @@ public class EESecurityController extends SecurityController implements java.io.
         eeSecurity.updateUser(uiUser, previousRoleList);
         userDialog.hide();        
       } catch (Throwable th) {
-        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(PKG,
-            "UpdateUser.UnableToUpdateUser", th.getLocalizedMessage()));//$NON-NLS-1$
-        messageBox.open();
+        if( mainController == null || ! mainController.handleLostRepository( th ) ) {
+          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PKG,
+              "UpdateUser.UnableToUpdateUser", th.getLocalizedMessage()));//$NON-NLS-1$
+          messageBox.open();
+        }
       }
     }
   }
@@ -615,11 +621,13 @@ public class EESecurityController extends SecurityController implements java.io.
       roleDialog.setTitle(BaseMessages.getString(PKG, "AddRoleDialog.Title"));//$NON-NLS-1$
       roleDialog.show();
     } catch (KettleException e) {
-      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-      messageBox.setMessage(BaseMessages.getString(PKG,
-          "SecurityController.AddRole.UnableToShowAddRole", e.getLocalizedMessage()));//$NON-NLS-1$
-      messageBox.open();
+      if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+        messageBox.setMessage(BaseMessages.getString(PKG,
+            "SecurityController.AddRole.UnableToShowAddRole", e.getLocalizedMessage()));//$NON-NLS-1$
+        messageBox.open();
+      }
 
     }
   }
@@ -668,11 +676,13 @@ public class EESecurityController extends SecurityController implements java.io.
         eeSecurity.addRole(UIEEObjectRegistery.getInstance().constructUIRepositoryRole(role));
         roleDialog.hide();
       } catch (Throwable th) {
-        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(PKG,
-            "AddRole.UnableToAddRole", th.getLocalizedMessage()));//$NON-NLS-1$
-        messageBox.open();
+        if( mainController == null || ! mainController.handleLostRepository( th ) ) {
+          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PKG,
+              "AddRole.UnableToAddRole", th.getLocalizedMessage()));//$NON-NLS-1$
+          messageBox.open();
+        }
       }
     }
   }
@@ -743,11 +753,13 @@ public class EESecurityController extends SecurityController implements java.io.
       }
 
       public void onError(XulComponent sender, Throwable t) {
-        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-        messageBox.setMessage(BaseMessages.getString(PKG,
-            "RemoveRole.UnableToRemoveRole", t.getLocalizedMessage()));//$NON-NLS-1$
-        messageBox.open();
+        if( mainController == null || ! mainController.handleLostRepository( t ) ) {
+          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+          messageBox.setMessage(BaseMessages.getString(PKG,
+              "RemoveRole.UnableToRemoveRole", t.getLocalizedMessage()));//$NON-NLS-1$
+          messageBox.open();
+        }
       }
     });
     confirmBox.open();
@@ -801,7 +813,6 @@ public class EESecurityController extends SecurityController implements java.io.
     return rusers;
   }
 
-
   @Override
   protected void enableButtons(boolean enableNew, boolean enableEdit, boolean enableRemove) {
     super.enableButtons(enableNew, enableEdit, enableRemove);
@@ -813,6 +824,7 @@ public class EESecurityController extends SecurityController implements java.io.
     addRoleToUserButton.setDisabled(!enableNew);
     removeRoleFromUserButton .setDisabled(!enableNew);
   }
+  
   @Override
   protected void showButtons(boolean showNew, boolean showEdit, boolean showRemove) {
     super.showButtons(showNew, showEdit, showRemove);

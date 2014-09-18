@@ -119,10 +119,12 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
 
       setVersioningFlags();
 
-      messageBox = (XulMessageBox) document.createElement( "messagebox" );//$NON-NLS-1$
+      messageBox = (XulMessageBox) document.createElement( "messagebox" ); //$NON-NLS-1$
       createBindings();
     } catch ( Exception e ) {
-      throw new ControllerInitializationException( e );
+      if ( mainController == null || !mainController.handleLostRepository( e ) ) {
+        throw new ControllerInitializationException( e );
+      }
     }
   }
 
@@ -137,8 +139,10 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
         commentsEnabled = new Boolean( servicePort.versionCommentsEnabled().getAs( String.class ) );
         versioningEnabled = new Boolean( servicePort.versioningEnabled().getAs( String.class ) );
       } catch ( KettleException e ) {
-        // Should never happen, the rest service should be registered
-        e.printStackTrace();
+        if ( mainController == null || !mainController.handleLostRepository( e ) ) {
+          // Should never happen, the rest service should be registered
+          e.printStackTrace();
+        }
       }
     }
   }
@@ -175,9 +179,9 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
     bf.setBindingType( Binding.Type.ONE_WAY );
     bf.createBinding( folderTree, "selectedItems", this, "historyTabVisibility" ); //$NON-NLS-1$  //$NON-NLS-2$
 
-    revisionBinding = bf.createBinding( this, "revisionObjects", revisionTable, "elements" );//$NON-NLS-1$ //$NON-NLS-2$
+    revisionBinding = bf.createBinding( this, "revisionObjects", revisionTable, "elements" ); //$NON-NLS-1$ //$NON-NLS-2$
 
-    revisionBinding = bf.createBinding( browseController, "repositoryItems", this, "revisionObjects",//$NON-NLS-1$ //$NON-NLS-2$
+    revisionBinding = bf.createBinding( browseController, "repositoryItems", this, "revisionObjects", //$NON-NLS-1$ //$NON-NLS-2$
         new BindingConvertor<List<UIRepositoryObject>, UIRepositoryObjectRevisions>() {
 
           private void disableButtons() {
@@ -198,7 +202,7 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
               return null;
             }
 
-            UIRepositoryObjectRevisions revisions;
+            UIRepositoryObjectRevisions revisions = null;
             try {
               UIRepositoryContent rc = (UIRepositoryContent) ro.get( 0 );
               if ( rc instanceof IRevisionObject ) {
@@ -208,13 +212,15 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
                     "RevisionsController.RevisionsNotSupported" ) ); //$NON-NLS-1$
               }
             } catch ( KettleException e ) {
-              // convert to runtime exception so it bubbles up through the UI
-              throw new RuntimeException( e );
+              if ( mainController == null || !mainController.handleLostRepository( e ) ) {
+                // convert to runtime exception so it bubbles up through the UI
+                throw new RuntimeException( e );
+              }
             }
-      
+
             //Hide the comment column if comments are not enabled
             setRevisionTableColumns();
-            
+
             historyTab.setVisible( true );
             return revisions;
           }
@@ -230,8 +236,10 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
       restoreButtonBinding.fireSourceChanged();
       revisionBinding.fireSourceChanged();
     } catch ( Exception e ) {
-      // convert to runtime exception so it bubbles up through the UI
-      throw new RuntimeException( e );
+      if ( mainController == null || !mainController.handleLostRepository( e ) ) {
+        // convert to runtime exception so it bubbles up through the UI
+        throw new RuntimeException( e );
+      }
     }
 
   }
@@ -271,8 +279,14 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
     // TODO: Is it a requirement to allow opening multiple revisions?
     UIRepositoryObjectRevision revisionToOpen = revision.iterator().next();
     if ( mainController != null && mainController.getCallback() != null ) {
-      if ( mainController.getCallback().open( contentToOpen, revisionToOpen.getName() ) ) {
-        // TODO: fire request to close dialog
+      try {
+        if ( mainController.getCallback().open( contentToOpen, revisionToOpen.getName() ) ) {
+          // TODO: fire request to close dialog
+        }
+      } catch ( Exception e ) {
+        if ( mainController != null ) {
+          mainController.handleLostRepository( e );
+        }
       }
     }
   }
@@ -290,8 +304,8 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
 
       if ( contentToRestore instanceof ILockObject && ( (ILockObject) contentToRestore ).isLocked() ) {
         // Cannot restore revision of locked content
-        messageBox.setTitle( BaseMessages.getString( PKG, "Dialog.Error" ) );//$NON-NLS-1$
-        messageBox.setAcceptLabel( BaseMessages.getString( PKG, "Dialog.Ok" ) );//$NON-NLS-1$
+        messageBox.setTitle( BaseMessages.getString( PKG, "Dialog.Error" ) ); //$NON-NLS-1$
+        messageBox.setAcceptLabel( BaseMessages.getString( PKG, "Dialog.Ok" ) ); //$NON-NLS-1$
         messageBox.setMessage( BaseMessages.getString( PKG, "RevisionsController.RestoreLockedFileNotAllowed" ) ); //$NON-NLS-1$
         messageBox.open();
         return;
@@ -312,20 +326,26 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
                     "RevisionsController.RevisionsNotSupported" ) ); //$NON-NLS-1$
               }
             } catch ( Exception e ) {
-              // convert to runtime exception so it bubbles up through the UI
-              throw new RuntimeException( e );
+              if ( mainController == null || !mainController.handleLostRepository( e ) ) {
+                  // convert to runtime exception so it bubbles up through the UI
+                throw new RuntimeException( e );
+              }
             }
           }
         }
 
         public void onError( XulComponent component, Throwable err ) {
-          throw new RuntimeException( err );
+          if ( mainController == null || !mainController.handleLostRepository( err ) ) {
+            throw new RuntimeException( err );
+          }
         }
       } );
 
       commitPrompt.open();
     } catch ( Exception e ) {
-      throw new RuntimeException( new KettleException( e ) );
+      if ( mainController == null || !mainController.handleLostRepository( e ) ) {
+        throw new RuntimeException( new KettleException( e ) );
+      }
     }
   }
 
@@ -333,15 +353,15 @@ public class RevisionController extends AbstractXulEventHandler implements IUISu
       String defaultMessage ) throws XulException {
     XulPromptBox prompt = (XulPromptBox) document.createElement( "promptbox" ); //$NON-NLS-1$
 
-    prompt.setTitle( BaseMessages.getString( PKG, "RepositoryExplorer.CommitTitle" ) );//$NON-NLS-1$
+    prompt.setTitle( BaseMessages.getString( PKG, "RepositoryExplorer.CommitTitle" ) ); //$NON-NLS-1$
     prompt.setButtons( new DialogConstant[] { DialogConstant.OK, DialogConstant.CANCEL } );
 
-    prompt.setMessage( BaseMessages.getString( PKG, "RepositoryExplorer.CommitLabel" ) );//$NON-NLS-1$
+    prompt.setMessage( BaseMessages.getString( PKG, "RepositoryExplorer.CommitLabel" ) ); //$NON-NLS-1$
     prompt.setValue( defaultMessage == null
         ? BaseMessages.getString( PKG, "RepositoryExplorer.DefaultCommitMessage" ) : defaultMessage ); //$NON-NLS-1$
     return prompt;
   }
-  
+
   private void setRevisionTableColumns() {
     if ( commentsEnabled ) {
       revisionTable.getColumns().getColumn( 2 ).setHidden( false );

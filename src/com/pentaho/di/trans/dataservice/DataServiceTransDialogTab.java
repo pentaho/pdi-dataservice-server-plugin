@@ -38,6 +38,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.repository.KettleRepositoryLostException;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.EnterStringDialog;
@@ -322,6 +323,10 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
       return names;
     } catch ( Exception e ) {
+      KettleRepositoryLostException krle = KettleRepositoryLostException.lookupStackStrace( e );
+      if(krle != null) {
+        throw krle;
+      }
       e.printStackTrace();
       new ErrorDialog( shell, "Error", "Error getting list of data services", e );
       return new String[] { };

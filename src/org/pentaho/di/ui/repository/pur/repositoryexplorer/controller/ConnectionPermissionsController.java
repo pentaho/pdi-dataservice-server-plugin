@@ -149,10 +149,12 @@ public class ConnectionPermissionsController extends AbstractPermissionsControll
     
           messageBox.open();
         } catch (Exception e) {
-          messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
-          messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
-          messageBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.UnableToGetAcls", dbconnObject.getName(), e.getLocalizedMessage())); //$NON-NLS-1$
-          messageBox.open();
+          if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+            messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error"));//$NON-NLS-1$
+            messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok"));//$NON-NLS-1$
+            messageBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.UnableToGetAcls", dbconnObject.getName(), e.getLocalizedMessage())); //$NON-NLS-1$
+            messageBox.open();
+          }
         }
         return viewAclsModel.getAcls();
       }
@@ -172,8 +174,10 @@ public class ConnectionPermissionsController extends AbstractPermissionsControll
         securityBinding.fireSourceChanged();
       }
     } catch (Exception e) {
-      // convert to runtime exception so it bubbles up through the UI
-      throw new RuntimeException(e);
+      if( mainController == null || ! mainController.handleLostRepository( e ) ) {
+        // convert to runtime exception so it bubbles up through the UI
+        throw new RuntimeException(e);
+      }
     }
   }
 
@@ -215,10 +219,12 @@ public class ConnectionPermissionsController extends AbstractPermissionsControll
       messageBox.setMessage(BaseMessages.getString(PKG, "PermissionsController.PermissionAppliedSuccessfully")); //$NON-NLS-1$
       messageBox.open();
     } catch (AccessDeniedException ade) {
-      messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
-      messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
-      messageBox.setMessage(ade.getLocalizedMessage());
-      messageBox.open();
+      if( mainController == null || ! mainController.handleLostRepository( ade ) ) {
+        messageBox.setTitle(BaseMessages.getString(PKG, "Dialog.Error")); //$NON-NLS-1$
+        messageBox.setAcceptLabel(BaseMessages.getString(PKG, "Dialog.Ok")); //$NON-NLS-1$
+        messageBox.setMessage(ade.getLocalizedMessage());
+        messageBox.open();
+      }
     }
   }
 
