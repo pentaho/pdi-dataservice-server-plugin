@@ -214,8 +214,8 @@ public class ParameterGenerationTest {
     condition = newCondition( "A_src" );
     condition.addCondition( newCondition( AND, "Z" ) );
     assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
-    assertEquals( "A_tgt", verify.getCondition( 0 ).getLeftValuename() );
-    assertEquals( 1, verify.getChildren().size() );
+    assertEquals( "A_tgt", verify.getLeftValuename() );
+    assertEquals( 0, verify.getChildren().size() );
 
     // ( A & ( B & C ) ) -> ( A & ( B & C ) )
     condition = newCondition( "A_src" );
@@ -277,8 +277,8 @@ public class ParameterGenerationTest {
     condition.addCondition( newCondition( AND, "B_src" ) );
     condition.getCondition( 1 ).addCondition( newCondition( OR, "Z" ) );
     assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
-    assertEquals( "A_tgt", verify.getCondition( 0 ).getLeftValuename() );
-    assertEquals( 1, verify.getChildren().size() );
+    assertEquals( "A_tgt", verify.getLeftValuename() );
+    assertEquals( 0, verify.getChildren().size() );
 
     // ( Z || A ) -> none
     condition = newCondition( "Z" );
@@ -289,6 +289,50 @@ public class ParameterGenerationTest {
     condition = newCondition( "A_src" );
     condition.addCondition( newCondition( OR, "Z" ) );
     assertNull( condition.toString(), paramGen.mapConditionFields( condition ) );
+  }
+
+  @Test
+  public void testOperatorHandlingWithPartiallyApplicableCondition() throws Exception {
+    // Verifies no dangling AND/OR operators are left around after unmapped fields
+    // have been removed.
+    Condition condition, verify;
+    // In examples below, fields A, B, and C are mapped
+
+    //  ( Z & A ) -> ( A )
+    condition = newCondition( "Z" );
+    condition.addCondition( newCondition( AND, "A_src" ) );
+    assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
+    assertEquals( "A_tgt", verify.getLeftValuename() );
+    assertEquals( 0, verify.getChildren().size() );
+    assertEquals( "Only one predicate, should be OPERATOR_NONE",
+      Condition.OPERATOR_NONE, verify.getOperator() );
+    assertEquals( "\"A_tgt\" = 'value'", paramGen.convertCondition( verify, null ) );
+
+    //  ( Z & ( A | B ) ) -> ( A | B )
+    condition = newCondition( "Z" );
+    condition.addCondition( newCondition( AND, "A_src" ) );
+    condition.getCondition( 1 ).addCondition( newCondition( OR, "B_src" ) );
+    assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
+    assertEquals( " (  ( \"A_tgt\" = 'value' OR \"B_tgt\" = 'value' )  ) ",
+      paramGen.convertCondition( verify, null ) );
+
+    //  ( Z & A & B ) -> ( A & B )
+    //  3 flat conditions
+    condition = newCondition( "Z" );
+    condition.addCondition( newCondition( AND, "A_src" ) );
+    condition.addCondition( newCondition( AND, "B_src" ) );
+    assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
+    assertEquals( " ( \"A_tgt\" = 'value' AND \"B_tgt\" = 'value' ) ",
+      paramGen.convertCondition( verify, null ) );
+
+    //  ( B & ( Z & A ) ) -> ( B & A )
+    // unmapped condition as first child in nested expression
+    condition = newCondition( "B_src" );
+    condition.addCondition( newCondition( AND, "Z" ) );
+    condition.getCondition( 1 ).addCondition( newCondition( AND, "A_src" ) );
+    assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
+    assertEquals( " ( \"B_tgt\" = 'value' AND \"A_tgt\" = 'value' ) ",
+      paramGen.convertCondition( verify, null ) );
   }
 
   private Condition newCondition( String lhs ) throws KettleValueException {

@@ -113,6 +113,7 @@ public class ParameterGeneration implements PushDownType {
 
     Map<String, SourceTargetFields> sourceTargetFieldsMap = sourceMap;
     if ( applyMapping( clone, sourceTargetFieldsMap ) ) {
+      clone.simplify();
       return clone;
     } else {
       return null;
