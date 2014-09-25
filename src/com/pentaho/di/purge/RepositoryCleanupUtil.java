@@ -311,7 +311,7 @@ public class RepositoryCleanupUtil {
           )
         );
       } else {
-        purgeShared = true;
+        purgeShared = Boolean.parseBoolean( aPurgeShared );
       }
     }
 
