@@ -214,7 +214,9 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     mp.defineInstance(ITenantManager.class, tenantManager);
     mp.defineInstance("roleAuthorizationPolicyRoleBindingDaoTarget", roleBindingDaoTarget);
     mp.defineInstance("repositoryAdminUsername", repositoryAdminUsername);
-    mp.defineInstance( "RepositoryFileProxyFactory", new RepositoryFileProxyFactory(testJcrTemplate, repositoryFileDao) );        
+    mp.defineInstance( "RepositoryFileProxyFactory", new RepositoryFileProxyFactory(testJcrTemplate, repositoryFileDao) );
+    mp.defineInstance("useMultiByteEncoding", new Boolean( false ) );
+    
     // Start the micro-platform
     mp.start();
     loginAsRepositoryAdmin();
