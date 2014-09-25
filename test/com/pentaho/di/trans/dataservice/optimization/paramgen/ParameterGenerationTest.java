@@ -24,14 +24,20 @@ package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.database.Database;
+import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.sql.SQL;
@@ -46,12 +52,8 @@ import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -66,8 +68,22 @@ public class ParameterGenerationTest {
 
   private ParameterGeneration paramGen;
 
+  @Mock
+  private Database database;
+
+  @Mock
+  private DatabaseMeta databaseMeta;
+
   @Before
   public void setup() {
+    MockitoAnnotations.initMocks( this );
+    when( database.getDatabaseMeta() ).thenReturn( databaseMeta );
+    when( databaseMeta.quoteSQLString( anyString() ) ).thenAnswer( new Answer<Object>() {
+      @Override
+      public Object answer( InvocationOnMock invocation ) throws Throwable {
+        return String.format( "'%s'", invocation.getArguments() [ 0 ] );
+      }
+    } );
     paramGen = new ParameterGeneration();
     paramGen.setParameterName( PARAM_NAME );
     paramGen.setForm( OptimizationForm.WHERE_CLAUSE );
@@ -166,7 +182,7 @@ public class ParameterGenerationTest {
     // Step type is not supported
     assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
 
-    stepInterface = mockTableInputStep( mock( Database.class ) );
+    stepInterface = mockTableInputStep();
 
     // Query does not have a WHERE clause
     assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
@@ -188,8 +204,7 @@ public class ParameterGenerationTest {
 
     Trans trans = mock( Trans.class );
 
-    Database database = mock( Database.class );
-    TableInput step = mockTableInputStep( database );
+    TableInput step = mockTableInputStep();
 
     Condition condition = newCondition( "A_src" );
     condition.addCondition( newCondition( AND, "B_src" ) );
@@ -306,7 +321,7 @@ public class ParameterGenerationTest {
     assertEquals( 0, verify.getChildren().size() );
     assertEquals( "Only one predicate, should be OPERATOR_NONE",
       Condition.OPERATOR_NONE, verify.getOperator() );
-    assertEquals( "\"A_tgt\" = 'value'", paramGen.convertCondition( verify, null ) );
+    assertEquals( "\"A_tgt\" = 'value'", paramGen.convertCondition( verify, database ) );
 
     //  ( Z & ( A | B ) ) -> ( A | B )
     condition = newCondition( "Z" );
@@ -314,7 +329,7 @@ public class ParameterGenerationTest {
     condition.getCondition( 1 ).addCondition( newCondition( OR, "B_src" ) );
     assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
     assertEquals( " (  ( \"A_tgt\" = 'value' OR \"B_tgt\" = 'value' )  ) ",
-      paramGen.convertCondition( verify, null ) );
+      paramGen.convertCondition( verify, database ) );
 
     //  ( Z & A & B ) -> ( A & B )
     //  3 flat conditions
@@ -323,7 +338,7 @@ public class ParameterGenerationTest {
     condition.addCondition( newCondition( AND, "B_src" ) );
     assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
     assertEquals( " ( \"A_tgt\" = 'value' AND \"B_tgt\" = 'value' ) ",
-      paramGen.convertCondition( verify, null ) );
+      paramGen.convertCondition( verify, database ) );
 
     //  ( B & ( Z & A ) ) -> ( B & A )
     // unmapped condition as first child in nested expression
@@ -332,7 +347,41 @@ public class ParameterGenerationTest {
     condition.getCondition( 1 ).addCondition( newCondition( AND, "A_src" ) );
     assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
     assertEquals( " ( \"B_tgt\" = 'value' AND \"A_tgt\" = 'value' ) ",
-      paramGen.convertCondition( verify, null ) );
+      paramGen.convertCondition( verify, database ) );
+  }
+
+
+  @Test
+  public void testConvertAtomicCondition() throws KettleValueException, PushDownOptimizationException {
+    testFunctionType( Condition.FUNC_EQUAL, "\"field_name\" = 'value'", "value" );
+    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> 'value'", "value" );
+    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> 123", 123 );
+    testFunctionType( Condition.FUNC_SMALLER, "\"field_name\" < 123", 123 );
+    testFunctionType( Condition.FUNC_SMALLER_EQUAL, "\"field_name\" <= 123", 123 );
+    testFunctionType( Condition.FUNC_LARGER, "\"field_name\" > 123", 123 );
+    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= 123", 123 );
+    testFunctionType( Condition.FUNC_IN_LIST,
+      "\"field_name\"  IN  ('value1','value2','value3')", "value1;value2;value3" );
+    testFunctionType( Condition.FUNC_IN_LIST,
+      "\"field_name\"  IN  ('val;ue1','value2','value3','val ue4')", "val\\;ue1;value2;value3;val ue4" );
+    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= 123", 123 );
+
+    try {
+      testFunctionType( Condition.FUNC_REGEXP, "\"field_name\" >= 123", "123" );
+      fail( "Should have thrown exception" );
+    } catch ( PushDownOptimizationException e ) {
+      assertTrue(  e.getMessage().contains( "REGEXP" ) );
+    }
+    testFunctionType( Condition.FUNC_NULL, "\"field_name\" IS NULL ", null );
+    testFunctionType( Condition.FUNC_NOT_NULL, "\"field_name\" IS NOT NULL ", null );
+    testFunctionType( Condition.FUNC_LIKE, "\"field_name\" LIKE 'MAT%CH'", "MAT%CH" );
+  }
+
+  private void testFunctionType( int function, String expected, Object value ) throws KettleValueException, PushDownOptimizationException {
+    ValueMetaAndData right_exact = new ValueMetaAndData( "mock_value", value );
+    Condition condition = new Condition( "field_name", Condition.FUNC_IN_LIST, null, right_exact );
+    condition.setFunction( function );
+    assertEquals( expected, paramGen.convertAtomicCondition( condition, database ) );
   }
 
   private Condition newCondition( String lhs ) throws KettleValueException {
@@ -340,13 +389,13 @@ public class ParameterGenerationTest {
     return new Condition( lhs, Condition.FUNC_EQUAL, "value", right_exact );
   }
 
-  private Condition newCondition( int op, String lhs ) throws KettleValueException {
+  public Condition newCondition( int op, String lhs ) throws KettleValueException {
     Condition condition = newCondition( lhs );
     condition.setOperator( op );
     return condition;
   }
 
-  public TableInput mockTableInputStep( Database database ) {
+  public TableInput mockTableInputStep() {
     TableInput step = mock( TableInput.class );
     TableInputData tableInputData = new TableInputData();
     when( step.getStepDataInterface() ).thenReturn( tableInputData );

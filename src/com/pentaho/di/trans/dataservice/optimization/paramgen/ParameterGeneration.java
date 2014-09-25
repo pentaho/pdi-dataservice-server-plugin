@@ -27,7 +27,10 @@ import com.pentaho.di.trans.dataservice.optimization.PushDownType;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.Database;
+import org.pentaho.di.core.exception.KettleValueException;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.step.StepInterface;
@@ -213,13 +216,52 @@ public class ParameterGeneration implements PushDownType {
       }
       output.append( " ) " );
     } else {
-      String value = condition.getRightExactString();
-      if ( condition.getRightExact().getValueMeta().isString() ) {
-        // Wrap string constant in quotes
-        value = "'" + value + "'";
-      }
-      output.append( String.format( "\"%s\" %s %s", condition.getLeftValuename(), condition.getFunctionDesc(), value ) );
+      output.append( convertAtomicCondition( condition, db ) );
     }
     return output.toString();
   }
+
+  protected String convertAtomicCondition( Condition condition, Database db ) throws PushDownOptimizationException {
+    String value = condition.getRightExactString();
+    String function = condition.getFunctionDesc();
+
+    switch ( condition.getFunction() ) {
+      case Condition.FUNC_REGEXP:
+      case Condition.FUNC_CONTAINS:
+      case Condition.FUNC_STARTS_WITH:
+      case Condition.FUNC_ENDS_WITH:
+      case Condition.FUNC_TRUE:
+        throw new PushDownOptimizationException( condition.getFunctionDesc()
+          + " is not supported for push down." );
+      case Condition.FUNC_NOT_NULL:
+      case Condition.FUNC_NULL:
+        assert value == null;
+        value = "";
+        break;
+      case Condition.FUNC_IN_LIST:
+        ValueMetaInterface valueMeta = condition.getRightExact().getValueMeta();
+        String[] inList;
+        try {
+          inList = Const.splitString( valueMeta.getString( value ), ';', true );
+        } catch ( KettleValueException e ) {
+          throw new PushDownOptimizationException( "Failed to convert condition for push down optimization", e );
+        }
+        for ( int i = 0; i < inList.length; i++ ) {
+          inList[ i ] = inList[ i ] == null ? null
+            : db.getDatabaseMeta().quoteSQLString( inList[ i ].replace( "\\", "" ) );
+        }
+        value = String.format( "(%s)", StringUtils.join( inList, "," ) );
+        function = " IN ";
+        break;
+      default:
+        assert value != null;
+        if ( condition.getRightExact().getValueMeta().isString() ) {
+          // Wrap string constant in quotes
+          value = db.getDatabaseMeta().quoteSQLString( value );
+        }
+        break;
+    }
+    return String.format( "\"%s\" %s %s", condition.getLeftValuename(), function, value );
+  }
+
 }

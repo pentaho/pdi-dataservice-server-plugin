@@ -35,4 +35,8 @@ public class PushDownOptimizationException extends KettleException {
   public PushDownOptimizationException( String message ) {
     super( message );
   }
+
+  public PushDownOptimizationException( String message, Throwable cause ) {
+    super( message, cause );
+  }
 }
