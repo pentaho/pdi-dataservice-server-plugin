@@ -45,8 +45,8 @@ import org.pentaho.platform.repository2.unified.webservices.RepositoryFileTreeDt
 public class UnifiedRepositoryPurgeService implements IPurgeService {
   private final IUnifiedRepository unifiedRepository;
   public static DefaultUnifiedRepositoryWebService repoWs; //Scoped public only so that test class can set mock
-  private static String[] sharedObjectFolders = new String[] { "/etc/pdi/databases", "/etc/pdi/slaveServers",
-    "/etc/pdi/clusterSchemas", "/etc/pdi/partitionSchemas" };
+  private static String[] sharedObjectFolders = new String[] { "/etc/pdi/databases", "/etc/pdi/clusterSchemas",
+    "/etc/pdi/partitionSchemas", "/etc/pdi/slaveServers" };
 
   public UnifiedRepositoryPurgeService( IUnifiedRepository unifiedRepository ) {
     this.unifiedRepository = unifiedRepository;
