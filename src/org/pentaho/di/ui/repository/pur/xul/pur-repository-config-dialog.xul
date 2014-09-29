@@ -38,9 +38,10 @@ explicitly covering such access.
 			        <button  id="repository-test" onclick="repositoryConfigController.test()" disabled="false" label="${RepositoryConfigDialog.Test}"/>
 			     </hbox>
 		      <label value="${RepositoryConfigDialog.RepositoryName}"/>
-		      <textbox id="repository-id" multiline="false"/>
+		      <textbox id="repository-name" multiline="false"/>
 		      <label value="${RepositoryConfigDialog.RepositoryID}"/>
-		      <textbox id="repository-name"  multiline="false"/>
+		      <textbox id="repository-id"  multiline="false"/>
 		      <checkbox id="repository-modification-comments" command="repositoryConfigController.updateModificationComments()" label="${RepositoryConfigDialog.ModificationComments}" visible="false"/>
           </vbox>
+
   </dialog>

@@ -111,8 +111,8 @@ public class RepositoryConfigController extends AbstractXulEventHandler implemen
 
   public void ok() {
     if ( repositoryMeta instanceof PurRepositoryMeta ) {
-      repositoryMeta.setName( model.getId() );
-      repositoryMeta.setDescription( model.getName() );
+      repositoryMeta.setName( model.getName() );
+      repositoryMeta.setDescription( model.getId() );
       //remove trailing slash
       String url = model.getUrl();
       String urlTrim = url.endsWith( "/" ) ? url.substring( 0, url.length() - 1 ) : url;
@@ -218,8 +218,8 @@ public class RepositoryConfigController extends AbstractXulEventHandler implemen
     PurRepositoryMeta purRepositoryMeta = null;
     if ( repositoryMeta != null && repositoryMeta instanceof PurRepositoryMeta ) {
       purRepositoryMeta = (PurRepositoryMeta) repositoryMeta;
-      model.setName( purRepositoryMeta.getDescription() );
-      model.setId( purRepositoryMeta.getName() );
+      model.setName( purRepositoryMeta.getName() );
+      model.setId( purRepositoryMeta.getDescription() );
       PurRepositoryLocation location = purRepositoryMeta.getRepositoryLocation();
       if ( location != null ) {
         model.setUrl( location.getUrl() );
