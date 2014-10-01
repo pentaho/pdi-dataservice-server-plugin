@@ -26,13 +26,17 @@ import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationExcepti
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleValueException;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.steps.tableinput.TableInput;
 import org.pentaho.di.trans.steps.tableinput.TableInputData;
+
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author nhudak
@@ -56,7 +60,15 @@ public class TableInputParameterGeneration implements ParameterGenerationService
     }
 
     TableInputData stepDataInterface = (TableInputData) tableInput.getStepDataInterface();
-    Database db = stepDataInterface.db;
+    DatabaseWrapper db;
+    if ( stepDataInterface.db instanceof DatabaseWrapper ) {
+      // Use existing wrapper if available
+      db = (DatabaseWrapper) stepDataInterface.db;
+    } else {
+      // Create a new wrapper
+      db = new DatabaseWrapper( stepDataInterface.db );
+    }
+
     // Verify database connection
     try {
       db.connect();
@@ -65,14 +77,20 @@ public class TableInputParameterGeneration implements ParameterGenerationService
     }
 
     StringBuilder sqlFragment = new StringBuilder();
+    RowMeta paramsMeta = new RowMeta();
+    List<Object> params = new LinkedList<Object>();
 
-    convertCondition( condition, sqlFragment, db );
+    convertCondition( condition, sqlFragment, paramsMeta, params );
 
-    // Set variable to sql fragment
-    stepInterface.setVariable( parameterGeneration.getParameterName(), sqlFragment.toString() );
+    // Save conversion results for injection at runtime
+    String fragmentId = db.createRuntimePushDown( sqlFragment.toString(), paramsMeta, params );
+
+    // Set variable to fragment ID
+    stepInterface.setVariable( parameterGeneration.getParameterName(), fragmentId );
+    stepDataInterface.db = db;
   }
 
-  protected void convertCondition( Condition condition, StringBuilder builder, Database db )
+  protected void convertCondition( Condition condition, StringBuilder builder, RowMeta paramsMeta, List<Object> params )
     throws PushDownOptimizationException {
     // Condition is composite: Recursively add children
     if ( condition.isComposite() ) {
@@ -83,17 +101,19 @@ public class TableInputParameterGeneration implements ParameterGenerationService
         } else if ( child.getOperator() == Condition.OPERATOR_OR ) {
           builder.append( " OR " );
         }
-        convertCondition( child, builder, db );
+        convertCondition( child, builder, paramsMeta, params );
       }
       builder.append( " )" );
     } else {
-      builder.append( convertAtomicCondition( condition, db ) );
+      builder.append( convertAtomicCondition( condition, paramsMeta, params ) );
     }
   }
 
-  protected String convertAtomicCondition( Condition condition, Database db ) throws PushDownOptimizationException {
+  protected String convertAtomicCondition( Condition condition, RowMeta paramsMeta, List<Object> params )
+    throws PushDownOptimizationException {
     String value = condition.getRightExactString();
     String function = condition.getFunctionDesc();
+    String placeholder = "?";
 
     switch ( condition.getFunction() ) {
       case Condition.FUNC_REGEXP:
@@ -105,7 +125,7 @@ public class TableInputParameterGeneration implements ParameterGenerationService
           + " is not supported for push down." );
       case Condition.FUNC_NOT_NULL:
       case Condition.FUNC_NULL:
-        value = "";
+        placeholder = "";
         break;
       case Condition.FUNC_IN_LIST:
         ValueMetaInterface valueMeta = condition.getRightExact().getValueMeta();
@@ -116,22 +136,21 @@ public class TableInputParameterGeneration implements ParameterGenerationService
           throw new PushDownOptimizationException( "Failed to convert condition for push down optimization", e );
         }
         for ( int i = 0; i < inList.length; i++ ) {
-          inList[ i ] = inList[ i ] == null ? null
-            : db.getDatabaseMeta().quoteSQLString( inList[ i ].replace( "\\", "" ) );
+          inList[ i ] = inList[ i ] == null ? null : inList[ i ].replace( "\\", "" );
+          paramsMeta.addValueMeta( condition.getRightExact().getValueMeta() );
+          params.add( inList[ i ] );
         }
-        value = String.format( "(%s)", StringUtils.join( inList, "," ) );
+        placeholder = String.format( "(%s)", StringUtils.join( Collections.nCopies( inList.length, "?" ).iterator() , "," ) );
         function = " IN ";
         break;
       default:
         if ( value == null ) {
           throw new PushDownOptimizationException( "Condition value can not be null: " + condition );
         }
-        if ( condition.getRightExact().getValueMeta().isString() ) {
-          // Wrap string constant in quotes
-          value = db.getDatabaseMeta().quoteSQLString( value );
-        }
+        paramsMeta.addValueMeta( condition.getRightExact().getValueMeta() );
+        params.add( condition.getRightExact().getValueData() );
         break;
     }
-    return String.format( "\"%s\" %s %s", condition.getLeftValuename(), function, value );
+    return String.format( "\"%s\" %s %s", condition.getLeftValuename(), function, placeholder );
   }
 }
