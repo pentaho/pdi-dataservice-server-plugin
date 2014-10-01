@@ -27,35 +27,35 @@ import com.pentaho.di.trans.dataservice.DataServiceMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.database.Database;
-import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLCondition;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.steps.tableinput.TableInput;
-import org.pentaho.di.trans.steps.tableinput.TableInputData;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -65,31 +65,34 @@ public class ParameterGenerationTest {
   public static final int AND = Condition.OPERATOR_AND;
   public static final int OR = Condition.OPERATOR_OR;
   public static final String PARAM_NAME = "MY_INJECTED_PARAM";
+  public static final String OPT_NAME = "My Optimization";
+  public static final String OPT_STEP = "Optimized Step";
 
   private ParameterGeneration paramGen;
-
-  @Mock
-  private Database database;
-
-  @Mock
-  private DatabaseMeta databaseMeta;
+  @Mock private ParameterGenerationServiceProvider serviceProvider;
+  @Mock private ParameterGenerationService service;
+  @Mock private Trans trans;
+  @Mock private TransMeta transMeta;
+  @Mock private StepInterface stepInterface;
+  @Mock private StepMeta stepMeta;
+  @Mock private DataServiceExecutor executor;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks( this );
-    when( database.getDatabaseMeta() ).thenReturn( databaseMeta );
-    when( databaseMeta.quoteSQLString( anyString() ) ).thenAnswer( new Answer<Object>() {
-      @Override
-      public Object answer( InvocationOnMock invocation ) throws Throwable {
-        return String.format( "'%s'", invocation.getArguments() [ 0 ] );
-      }
-    } );
+
     paramGen = new ParameterGeneration();
     paramGen.setParameterName( PARAM_NAME );
     paramGen.setForm( OptimizationForm.WHERE_CLAUSE );
     paramGen.createFieldMapping( "A_src", "A_tgt" );
     paramGen.createFieldMapping( "B_src", "B_tgt" );
     paramGen.createFieldMapping( "C_src", "C_tgt" );
+    paramGen.serviceProvider = serviceProvider;
+
+    when( trans.getTransMeta() ).thenReturn( transMeta );
+    when( transMeta.findStep( OPT_STEP ) ).thenReturn( stepMeta );
+    when( stepInterface.getStepMeta() ).thenReturn( stepMeta );
+    when( serviceProvider.getService( stepMeta ) ).thenReturn( service );
   }
 
 
@@ -109,9 +112,6 @@ public class ParameterGenerationTest {
     parameterGeneration.removeFieldMapping( mapping );
     assertEquals( 0, fieldMappings.size() );
   }
-
-  private static final String OPT_NAME = "My Optimization";
-  private static final String OPT_STEP = "Optimized Step";
 
   @Test
   public void testSaveLoad() throws Exception {
@@ -174,50 +174,59 @@ public class ParameterGenerationTest {
 
   @Test
   public void testActivationFailure() throws Exception {
-    DataServiceExecutor executor = mock( DataServiceExecutor.class );
-    Trans trans = mock( Trans.class );
-    StepInterface stepInterface = mock( StepInterface.class );
-    SQL query = mock( SQL.class );
-
-    // Step type is not supported
-    assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
-
-    stepInterface = mockTableInputStep();
-
-    // Query does not have a WHERE clause
-    assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
-
-    query = mockSql( newCondition( "Z" ) );
-
-    // Query could not be mapped
-    assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
-
-    query = mockSql( newCondition( "A_src" ) );
+    SQL query = mockSql( newCondition( "A_src" ) );
 
     // All okay
+    assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
+
+    // Step type is not supported
+    when( serviceProvider.getService( stepMeta ) ).thenReturn( null, service );
+    assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
+    assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
+
+    // Query does not have a WHERE clause
+    assertFalse( paramGen.activate( executor, trans, stepInterface, mock( SQL.class ) ) );
+
+    // Query could not be mapped
+    assertFalse( paramGen.activate( executor, trans, stepInterface, mockSql( newCondition( "Z" ) ) ) );
+
+    // Parameter value is blank
+    paramGen.setParameterName( "" );
+    assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
+    paramGen.setParameterName( PARAM_NAME );
+    assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
+
+    // Service throws an error the first time
+    doThrow( PushDownOptimizationException.class )
+      .doNothing()
+      .when( service ).pushDown( any( Condition.class ), same( paramGen ), same( stepInterface ) );
+    assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
     assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
   }
 
   @Test
-  public void testTableInputActivation() throws Exception {
+  public void testActivation() throws Exception {
     DataServiceExecutor executor = mock( DataServiceExecutor.class );
-
-    Trans trans = mock( Trans.class );
-
-    TableInput step = mockTableInputStep();
-
-    Condition condition = newCondition( "A_src" );
-    condition.addCondition( newCondition( AND, "B_src" ) );
-    condition.getCondition( 1 ).addCondition( newCondition( OR, "C_src" ) );
+    // ( A & ( B | C ) )
+    Condition condition = newCondition( "A_src", "A_value" );
+    condition.addCondition( newCondition( AND, "B_src", "B_value" ) );
+    condition.getCondition( 1 ).addCondition( newCondition( OR, "C_src", "C_value" ) );
     SQL query = mockSql( condition );
 
-    assertTrue( paramGen.activate( executor, trans, step, query ) );
+    assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
 
-    ArgumentCaptor<String> paramValue = ArgumentCaptor.forClass( String.class );
-    verify( step ).setVariable( eq( PARAM_NAME ), paramValue.capture() );
+    ArgumentCaptor<Condition> pushDownCaptor = ArgumentCaptor.forClass( Condition.class );
+    verify( service ).pushDown( pushDownCaptor.capture(), same( paramGen ), same( stepInterface ) );
 
-    String expectedValue = "WHERE ( \"A_tgt\" = 'value' AND ( \"B_tgt\" = 'value' OR \"C_tgt\" = 'value' ) )";
-    assertArrayEquals( StringUtils.split( expectedValue ), StringUtils.split( paramValue.getValue() ) );
+    Condition verify = pushDownCaptor.getValue();
+    assertEquals( "A_tgt", verify.getCondition( 0 ).getLeftValuename() );
+    assertEquals( "A_value", verify.getCondition( 0 ).getRightExactString() );
+    assertEquals( AND, verify.getCondition( 1 ).getOperator() );
+    assertEquals( "B_tgt", verify.getCondition( 1 ).getCondition( 0 ).getLeftValuename() );
+    assertEquals( "B_value", verify.getCondition( 1 ).getCondition( 0 ).getRightExactString() );
+    assertEquals( OR, verify.getCondition( 1 ).getCondition( 1 ).getOperator() );
+    assertEquals( "C_tgt", verify.getCondition( 1 ).getCondition( 1 ).getLeftValuename() );
+    assertEquals( "C_value", verify.getCondition( 1 ).getCondition( 1 ).getRightExactString() );
   }
 
   @Test
@@ -321,90 +330,50 @@ public class ParameterGenerationTest {
     assertEquals( 0, verify.getChildren().size() );
     assertEquals( "Only one predicate, should be OPERATOR_NONE",
       Condition.OPERATOR_NONE, verify.getOperator() );
-    assertEquals( "\"A_tgt\" = 'value'", paramGen.convertCondition( verify, database ) );
 
     //  ( Z & ( A | B ) ) -> ( A | B )
     condition = newCondition( "Z" );
     condition.addCondition( newCondition( AND, "A_src" ) );
     condition.getCondition( 1 ).addCondition( newCondition( OR, "B_src" ) );
-    assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
-    assertEquals( " (  ( \"A_tgt\" = 'value' OR \"B_tgt\" = 'value' )  ) ",
-      paramGen.convertCondition( verify, database ) );
+    assertNotNull( condition.toString(), paramGen.mapConditionFields( condition ) );
 
     //  ( Z & A & B ) -> ( A & B )
     //  3 flat conditions
     condition = newCondition( "Z" );
     condition.addCondition( newCondition( AND, "A_src" ) );
     condition.addCondition( newCondition( AND, "B_src" ) );
-    assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
-    assertEquals( " ( \"A_tgt\" = 'value' AND \"B_tgt\" = 'value' ) ",
-      paramGen.convertCondition( verify, database ) );
+    assertNotNull( condition.toString(), paramGen.mapConditionFields( condition ) );
 
     //  ( B & ( Z & A ) ) -> ( B & A )
     // unmapped condition as first child in nested expression
     condition = newCondition( "B_src" );
     condition.addCondition( newCondition( AND, "Z" ) );
     condition.getCondition( 1 ).addCondition( newCondition( AND, "A_src" ) );
-    assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
-    assertEquals( " ( \"B_tgt\" = 'value' AND \"A_tgt\" = 'value' ) ",
-      paramGen.convertCondition( verify, database ) );
+    assertNotNull( condition.toString(), paramGen.mapConditionFields( condition ) );
   }
 
-
-  @Test
-  public void testConvertAtomicCondition() throws KettleValueException, PushDownOptimizationException {
-    testFunctionType( Condition.FUNC_EQUAL, "\"field_name\" = 'value'", "value" );
-    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> 'value'", "value" );
-    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> 123", 123 );
-    testFunctionType( Condition.FUNC_SMALLER, "\"field_name\" < 123", 123 );
-    testFunctionType( Condition.FUNC_SMALLER_EQUAL, "\"field_name\" <= 123", 123 );
-    testFunctionType( Condition.FUNC_LARGER, "\"field_name\" > 123", 123 );
-    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= 123", 123 );
-    testFunctionType( Condition.FUNC_IN_LIST,
-      "\"field_name\"  IN  ('value1','value2','value3')", "value1;value2;value3" );
-    testFunctionType( Condition.FUNC_IN_LIST,
-      "\"field_name\"  IN  ('val;ue1','value2','value3','val ue4')", "val\\;ue1;value2;value3;val ue4" );
-    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= 123", 123 );
-
-    try {
-      testFunctionType( Condition.FUNC_REGEXP, "\"field_name\" >= 123", "123" );
-      fail( "Should have thrown exception" );
-    } catch ( PushDownOptimizationException e ) {
-      assertTrue(  e.getMessage().contains( "REGEXP" ) );
-    }
-    testFunctionType( Condition.FUNC_NULL, "\"field_name\" IS NULL ", null );
-    testFunctionType( Condition.FUNC_NOT_NULL, "\"field_name\" IS NOT NULL ", null );
-    testFunctionType( Condition.FUNC_LIKE, "\"field_name\" LIKE 'MAT%CH'", "MAT%CH" );
+  public static Condition newCondition( String lhs ) throws KettleValueException {
+    return newCondition( lhs, "value" );
   }
 
-  private void testFunctionType( int function, String expected, Object value ) throws KettleValueException, PushDownOptimizationException {
-    ValueMetaAndData right_exact = new ValueMetaAndData( "mock_value", value );
-    Condition condition = new Condition( "field_name", Condition.FUNC_IN_LIST, null, right_exact );
-    condition.setFunction( function );
-    assertEquals( expected, paramGen.convertAtomicCondition( condition, database ) );
+  public static Condition newCondition( String lhs, Object value ) throws KettleValueException {
+    ValueMetaAndData right_exact = new ValueMetaAndData( value.toString(), value );
+    return new Condition( lhs, Condition.FUNC_EQUAL, value.toString(), right_exact );
   }
 
-  private Condition newCondition( String lhs ) throws KettleValueException {
-    ValueMetaAndData right_exact = new ValueMetaAndData( "mock_value", "value" );
-    return new Condition( lhs, Condition.FUNC_EQUAL, "value", right_exact );
-  }
-
-  public Condition newCondition( int op, String lhs ) throws KettleValueException {
+  public static Condition newCondition( int op, String lhs ) throws KettleValueException {
     Condition condition = newCondition( lhs );
     condition.setOperator( op );
     return condition;
   }
 
-  public TableInput mockTableInputStep() {
-    TableInput step = mock( TableInput.class );
-    TableInputData tableInputData = new TableInputData();
-    when( step.getStepDataInterface() ).thenReturn( tableInputData );
-    tableInputData.db = database;
-    return step;
+  public static Condition newCondition( int op, String lhs, Object value ) throws KettleValueException {
+    ValueMetaAndData right_exact = new ValueMetaAndData( value.toString(), value );
+    return new Condition( op, lhs, Condition.FUNC_EQUAL, value.toString(), right_exact );
   }
 
   public SQL mockSql( Condition condition ) {
-    SQL query = mock( SQL.class ); // ( A & ( B | C ) )
+    SQL query = mock( SQL.class );
     when( query.getWhereCondition() ).thenReturn( mock( SQLCondition.class ) );
     when( query.getWhereCondition().getCondition() ).thenReturn( condition );
     return query;

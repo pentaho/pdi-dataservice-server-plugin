@@ -27,15 +27,9 @@ import com.pentaho.di.trans.dataservice.optimization.PushDownType;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.Const;
-import org.pentaho.di.core.database.Database;
-import org.pentaho.di.core.exception.KettleValueException;
-import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.steps.tableinput.TableInput;
-import org.pentaho.di.trans.steps.tableinput.TableInputData;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 
 import java.util.ArrayList;
@@ -60,6 +54,8 @@ public class ParameterGeneration implements PushDownType {
 
   @MetaStoreAttribute
   private String parameterName;
+
+  protected ParameterGenerationServiceProvider serviceProvider = new ParameterGenerationServiceProvider();
 
   public String getParameterName() {
     return parameterName == null ? "" : parameterName;
@@ -114,8 +110,7 @@ public class ParameterGeneration implements PushDownType {
       sourceMap.put( fieldMapping.getSourceFieldName(), fieldMapping );
     }
 
-    Map<String, SourceTargetFields> sourceTargetFieldsMap = sourceMap;
-    if ( applyMapping( clone, sourceTargetFieldsMap ) ) {
+    if ( applyMapping( clone, sourceMap ) ) {
       clone.simplify();
       return clone;
     } else {
@@ -164,13 +159,9 @@ public class ParameterGeneration implements PushDownType {
   }
 
   @Override public boolean activate( DataServiceExecutor executor, Trans trans, StepInterface stepInterface, SQL query ) {
-    // Get step's database
-    Database db;
-    if ( stepInterface instanceof TableInput ) {
-      TableInput tableInput = (TableInput) stepInterface;
-      TableInputData stepDataInterface = (TableInputData) tableInput.getStepDataInterface();
-      db = stepDataInterface.db;
-    } else {
+    // Get service for step type
+    ParameterGenerationService service = serviceProvider.getService( stepInterface.getStepMeta() );
+    if ( service == null ) {
       return false;
     }
     // Get user query conditions
@@ -183,85 +174,16 @@ public class ParameterGeneration implements PushDownType {
 
     // Attempt to map fields to where clause
     Condition pushDownCondition = mapConditionFields( whereCondition );
-    if ( pushDownCondition == null ) {
+    if ( pushDownCondition == null || StringUtils.isBlank( getParameterName() ) ) {
       return false;
     }
 
-    // TODO: Defer sql generation to database meta interface, new plugin? service?
-    String sqlFragment;
     try {
-      sqlFragment = convertCondition( pushDownCondition, db );
+      service.pushDown( pushDownCondition, this, stepInterface );
     } catch ( PushDownOptimizationException e ) {
       return false;
     }
 
-    if ( StringUtils.isNotBlank( getParameterName() ) && StringUtils.isNotBlank( sqlFragment ) ) {
-      stepInterface.setVariable( getParameterName(), form.getPrefix() + " " + sqlFragment );
-    }
-
     return true;
   }
-
-  protected String convertCondition( Condition condition, Database db ) throws PushDownOptimizationException {
-    StringBuilder output = new StringBuilder();
-    if ( condition.isComposite() ) {
-      output.append( " ( " );
-      for ( Condition child : condition.getChildren() ) {
-        if ( child.getOperator() == Condition.OPERATOR_AND ) {
-          output.append( " AND " );
-        } else if ( child.getOperator() == Condition.OPERATOR_OR ) {
-          output.append( " OR " );
-        }
-        output.append( convertCondition( child, db ) );
-      }
-      output.append( " ) " );
-    } else {
-      output.append( convertAtomicCondition( condition, db ) );
-    }
-    return output.toString();
-  }
-
-  protected String convertAtomicCondition( Condition condition, Database db ) throws PushDownOptimizationException {
-    String value = condition.getRightExactString();
-    String function = condition.getFunctionDesc();
-
-    switch ( condition.getFunction() ) {
-      case Condition.FUNC_REGEXP:
-      case Condition.FUNC_CONTAINS:
-      case Condition.FUNC_STARTS_WITH:
-      case Condition.FUNC_ENDS_WITH:
-      case Condition.FUNC_TRUE:
-        throw new PushDownOptimizationException( condition.getFunctionDesc()
-          + " is not supported for push down." );
-      case Condition.FUNC_NOT_NULL:
-      case Condition.FUNC_NULL:
-        assert value == null;
-        value = "";
-        break;
-      case Condition.FUNC_IN_LIST:
-        ValueMetaInterface valueMeta = condition.getRightExact().getValueMeta();
-        String[] inList;
-        try {
-          inList = Const.splitString( valueMeta.getString( value ), ';', true );
-        } catch ( KettleValueException e ) {
-          throw new PushDownOptimizationException( "Failed to convert condition for push down optimization", e );
-        }
-        for ( int i = 0; i < inList.length; i++ ) {
-          inList[ i ] = inList[ i ] == null ? null
-            : db.getDatabaseMeta().quoteSQLString( inList[ i ].replace( "\\", "" ) );
-        }
-        value = String.format( "(%s)", StringUtils.join( inList, "," ) );
-        function = " IN ";
-        break;
-      default:
-        assert value != null;
-        if ( condition.getRightExact().getValueMeta().isString() ) {
-          // Wrap string constant in quotes
-          value = db.getDatabaseMeta().quoteSQLString( value );
-        }
-        break;
-    }
-    return String.format( "\"%s\" %s %s", condition.getLeftValuename(), function, value );
-  }
-
 }
