@@ -22,14 +22,19 @@
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
+import com.pentaho.di.trans.dataservice.DataServiceMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 
 import java.util.ArrayList;
@@ -44,10 +49,6 @@ import java.util.Map;
 public class ParameterGeneration implements PushDownType {
 
   public static final String TYPE_NAME = "Parameter Generation";
-
-  // Default to WHERE clause generation
-  @MetaStoreAttribute
-  private OptimizationForm form = OptimizationForm.WHERE_CLAUSE;
 
   @MetaStoreAttribute
   private List<SourceTargetFields> fieldMappings = new ArrayList<SourceTargetFields>();
@@ -67,18 +68,6 @@ public class ParameterGeneration implements PushDownType {
 
   @Override public String getTypeName() {
     return TYPE_NAME;
-  }
-
-  public OptimizationForm getForm() {
-    return form;
-  }
-
-  public void setForm( OptimizationForm form ) {
-    this.form = form;
-  }
-
-  @Override public String getFormName() {
-    return form.getFormName();
   }
 
   public List<SourceTargetFields> getFieldMappings() {
@@ -155,6 +144,20 @@ public class ParameterGeneration implements PushDownType {
 
       // Successful if any children were mapped
       return !children.isEmpty();
+    }
+  }
+
+  @Override public void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta ) {
+    StepMeta stepMeta = transMeta.findStep( optMeta.getStepName() );
+    ParameterGenerationService service = stepMeta != null ? serviceProvider.getService( stepMeta ) : null;
+    String parameterDefault = service != null ? service.getParameterDefault() : "";
+
+    String description = String.format( "Auto-generated parameter for Push Down Optimization: %s", optMeta.getName() );
+    try {
+      transMeta.addParameterDefinition( getParameterName(), parameterDefault, description );
+      transMeta.activateParameters();
+    } catch ( DuplicateParamException e ) {
+      // Ignore duplicates
     }
   }
 

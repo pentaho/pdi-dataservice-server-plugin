@@ -172,16 +172,6 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     parameterNameLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.ParamName.Label" ) );
     parameterNameLabel.setLayoutData( fdParamNameLabel );
 
-    Label formLabel = new Label( paramGenGroup, SWT.NONE );
-    props.setLook( formLabel );
-    formLabel.setAlignment( SWT.RIGHT );
-    formLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.Form.Label" ) );
-
-    FormData fdFormLabel = new FormData();
-    fdFormLabel.top = new FormAttachment( parameterNameLabel, Const.MARGIN * 5 );
-    fdFormLabel.left = fdParamNameLabel.left;
-    fdFormLabel.width = 130;
-    formLabel.setLayoutData( fdFormLabel );
     paramNameText = new TextVar( transMeta, paramGenGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( paramNameText );
 
@@ -190,17 +180,6 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     paramNameFormData.top = fdStepList.top;
     paramNameFormData.width = PushDownOptDialog.TEXT_WIDTH;
     paramNameText.setLayoutData( paramNameFormData );
-
-
-    Combo formCombo = new Combo( paramGenGroup, SWT.NONE );
-    props.setLook( formCombo );
-    formCombo.setItems( availableParamForms() );
-    formCombo.select( 0 );
-    FormData fdFormCombo = new FormData();
-    fdFormCombo.top = fdFormLabel.top;
-    fdFormCombo.left = paramNameFormData.left;
-    fdFormCombo.width = PushDownOptDialog.TEXT_WIDTH;
-    formCombo.setLayoutData( fdFormCombo );
 
     ColumnInfo[] colinf =
       new ColumnInfo[]{
@@ -279,10 +258,6 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
       paramName = paramName.substring( 2, paramName.length() - 1 );
     }
     return paramName;
-  }
-
-  private String[] availableParamForms() {
-    return new String[]{"Where Clause"};
   }
 
   private String[] getSupportedSteps( TransMeta transMeta ) {

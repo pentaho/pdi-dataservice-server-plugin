@@ -18,10 +18,8 @@
 package com.pentaho.di.trans.dataservice;
 
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.logging.LogChannel;
-import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
@@ -61,7 +59,11 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
       //
       transMeta.setAttribute( GROUP_DATA_SERVICE, DATA_SERVICE_NAME, dataService.getName() );
       transMeta.setAttribute( GROUP_DATA_SERVICE, DATA_SERVICE_STEPNAME, dataService.getStepname() );
-      addRequiredParameters( transMeta, dataService.getPushDownOptimizationMeta() );
+
+      // Initialize optimizations
+      for ( PushDownOptimizationMeta optMeta : dataService.getPushDownOptimizationMeta() ) {
+        optMeta.getType().init( transMeta, dataService, optMeta );
+      }
 
       LogChannel.GENERAL.logBasic( "Saving data service in meta store '" + transMeta.getMetaStore() + "'" );
 
@@ -85,24 +87,6 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
       if ( saveToMetaStore ) {
         new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, metaStore, namespace )
           .saveElement( dataService );
-      }
-    }
-  }
-
-  /**
-   * Creates any parameters required by the optimizations.  If a PushDownOptimizationMeta in the list
-   * has a PushDownType of ParameterGeneration, this method will create the referenced parameter if it
-   * doesn't already exist.
-   */
-  private static void addRequiredParameters( TransMeta transMeta,
-                                             List<PushDownOptimizationMeta> pushDownOptimizationMetas )  {
-    for ( PushDownOptimizationMeta optMeta : pushDownOptimizationMetas ) {
-      if ( optMeta.getType() instanceof ParameterGeneration ) {
-        try {
-          transMeta.addParameterDefinition( ( (ParameterGeneration) optMeta.getType()).getParameterName(), "", "" );
-        } catch ( DuplicateParamException e ) {
-          // Ignore duplicates
-        }
       }
     }
   }

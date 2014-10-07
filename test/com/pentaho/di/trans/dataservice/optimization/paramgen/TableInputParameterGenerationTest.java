@@ -87,11 +87,10 @@ public class TableInputParameterGenerationTest {
     String originalQuery =
       "SELECT DepartmentName, COUNT(*) as EmployeeCount "
         + "FROM Department, Employee "
-        + "WHERE Employee.DepartmentId = Department.DepartmentId ${EMPLOYEE_FILTER} ";
+        + "WHERE Employee.DepartmentId = Department.DepartmentId AND ${EMPLOYEE_FILTER} ";
 
     ParameterGeneration employeeFilterParamGen = new ParameterGeneration();
     employeeFilterParamGen.setParameterName( "EMPLOYEE_FILTER" );
-    employeeFilterParamGen.setForm( OptimizationForm.FILTER_CLAUSE );
 
     // Employee.Grade = "G7"
     Condition employeeFilter = newCondition( "Employee.Grade", "G7" );

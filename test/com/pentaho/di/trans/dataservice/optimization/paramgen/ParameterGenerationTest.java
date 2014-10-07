@@ -34,6 +34,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleValueException;
+import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLCondition;
@@ -52,10 +53,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +72,7 @@ public class ParameterGenerationTest {
   public static final String PARAM_NAME = "MY_INJECTED_PARAM";
   public static final String OPT_NAME = "My Optimization";
   public static final String OPT_STEP = "Optimized Step";
+  public static final String EXPECTED_DEFAULT = "## PARAMETER DEFAULT ##";
 
   private ParameterGeneration paramGen;
   @Mock private ParameterGenerationServiceProvider serviceProvider;
@@ -83,7 +89,6 @@ public class ParameterGenerationTest {
 
     paramGen = new ParameterGeneration();
     paramGen.setParameterName( PARAM_NAME );
-    paramGen.setForm( OptimizationForm.WHERE_CLAUSE );
     paramGen.createFieldMapping( "A_src", "A_tgt" );
     paramGen.createFieldMapping( "B_src", "B_tgt" );
     paramGen.createFieldMapping( "C_src", "C_tgt" );
@@ -93,6 +98,7 @@ public class ParameterGenerationTest {
     when( transMeta.findStep( OPT_STEP ) ).thenReturn( stepMeta );
     when( stepInterface.getStepMeta() ).thenReturn( stepMeta );
     when( serviceProvider.getService( stepMeta ) ).thenReturn( service );
+    when( service.getParameterDefault() ).thenReturn( EXPECTED_DEFAULT );
   }
 
 
@@ -116,7 +122,7 @@ public class ParameterGenerationTest {
   @Test
   public void testSaveLoad() throws Exception {
     MetaStoreFactory<DataServiceMeta> metaStoreFactory = DataServiceMeta
-      .getMetaStoreFactory( new MemoryMetaStore(), "Test Namespace" );
+        .getMetaStoreFactory( new MemoryMetaStore(), "Test Namespace" );
 
     // Create parent data service
     DataServiceMeta expectedDataService = new DataServiceMeta();
@@ -163,13 +169,32 @@ public class ParameterGenerationTest {
     ParameterGeneration verifyType = (ParameterGeneration) verifyOptimization.getType();
 
     assertEquals( expectedType.getParameterName(), verifyType.getParameterName() );
-    assertEquals( expectedType.getForm(), verifyType.getForm() );
-    assertEquals( expectedType.getFormName(), OptimizationForm.WHERE_CLAUSE.getFormName() );
     assertFalse( verifyType.getFieldMappings().isEmpty() );
     SourceTargetFields verifyMapping = verifyType.getFieldMappings().get( 0 );
 
     assertEquals( expectedMapping.getSourceFieldName(), verifyMapping.getSourceFieldName() );
     assertEquals( expectedMapping.getTargetFieldName(), verifyMapping.getTargetFieldName() );
+  }
+
+  @Test
+  public void testInit() throws DuplicateParamException {
+    DataServiceMeta dataService = mock( DataServiceMeta.class );
+    PushDownOptimizationMeta pdo = new PushDownOptimizationMeta();
+    pdo.setName( OPT_NAME );
+    pdo.setStepName( OPT_STEP );
+
+    when( transMeta.findStep( OPT_STEP ) ).thenReturn( null, stepMeta );
+    when( serviceProvider.getService( stepMeta ) ).thenReturn( null, service );
+
+    paramGen.init( transMeta, dataService, pdo ); // Step not found
+    paramGen.init( transMeta, dataService, pdo ); // Service not found
+    paramGen.init( transMeta, dataService, pdo ); // Okay
+    verify( transMeta, times( 2 ) ).addParameterDefinition( eq( PARAM_NAME ), eq( "" ), anyString() );
+    verify( transMeta ).addParameterDefinition( eq( PARAM_NAME ), eq( EXPECTED_DEFAULT ), anyString() );
+
+    doThrow( DuplicateParamException.class ).when( transMeta ).addParameterDefinition( eq( PARAM_NAME ), eq( EXPECTED_DEFAULT ), anyString() );
+    paramGen.init( transMeta, dataService, pdo ); //Exception should be silently caught
+    verify( transMeta, atLeast( 3 ) ).activateParameters();
   }
 
   @Test

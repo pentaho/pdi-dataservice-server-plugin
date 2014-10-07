@@ -31,4 +31,6 @@ import org.pentaho.di.trans.step.StepInterface;
  */
 public interface ParameterGenerationService {
   public void pushDown( Condition condition, ParameterGeneration parameterGeneration, StepInterface stepInterface ) throws PushDownOptimizationException;
+
+  public String getParameterDefault();
 }

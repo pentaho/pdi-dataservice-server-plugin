@@ -239,9 +239,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
           BaseMessages.getString( PKG, "TransDialog.OptMethodColumn.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
         new ColumnInfo(
-          BaseMessages.getString( PKG, "TransDialog.FormColumn.Label" ),
-          ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
-        new ColumnInfo(
           BaseMessages.getString( PKG, "TransDialog.StateColumn.Label" ),
           ColumnInfo.COLUMN_TYPE_CCOMBO,
           new String[]{
@@ -452,7 +449,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       item.setText( colnr++, optMeta.getName() );
       item.setText( colnr++, optMeta.getStepName() );
       item.setText( colnr++, pushDownType.getTypeName() );
-      item.setText( colnr++, pushDownType.getFormName() );
       item.setText( colnr++, "Enabled" ); // Fixed value for now.
     }
     optimizationListTable.setRowNums();

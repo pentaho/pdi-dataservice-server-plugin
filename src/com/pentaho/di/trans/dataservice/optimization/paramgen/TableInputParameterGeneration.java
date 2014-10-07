@@ -42,6 +42,10 @@ public class TableInputParameterGeneration implements ParameterGenerationService
   public TableInputParameterGeneration() {
   }
 
+  @Override public String getParameterDefault() {
+    return "1=1";
+  }
+
   @Override
   public void pushDown( Condition condition, ParameterGeneration parameterGeneration, StepInterface stepInterface ) throws PushDownOptimizationException {
     TableInput tableInput;
@@ -60,7 +64,7 @@ public class TableInputParameterGeneration implements ParameterGenerationService
       throw new PushDownOptimizationException( "Failed to verify database connection", e );
     }
 
-    StringBuilder sqlFragment = new StringBuilder( parameterGeneration.getForm().getPrefix() ).append( ' ' );
+    StringBuilder sqlFragment = new StringBuilder();
 
     convertCondition( condition, sqlFragment, db );
 
