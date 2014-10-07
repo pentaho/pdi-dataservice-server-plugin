@@ -26,12 +26,14 @@ import java.util.List;
 
 import org.pentaho.platform.api.repository2.unified.IRepositoryFileData;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
+import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
+import org.pentaho.platform.api.repository2.unified.data.node.NodeRepositoryFileData;
 import org.pentaho.platform.plugin.services.importer.IPlatformImportHandler;
-import org.pentaho.platform.plugin.services.importer.mimeType.MimeType;
 import org.pentaho.platform.plugin.services.importer.PlatformImportException;
 import org.pentaho.platform.plugin.services.importer.RepositoryFileImportBundle;
 import org.pentaho.platform.plugin.services.importer.RepositoryFileImportFileHandler;
-
+import org.pentaho.platform.plugin.services.importer.mimeType.MimeType;
 
 public class PDIImportFileHandler extends RepositoryFileImportFileHandler implements IPlatformImportHandler {
 
@@ -49,5 +51,34 @@ public class PDIImportFileHandler extends RepositoryFileImportFileHandler implem
     pdiBundle.setTitle( originalName );
 
     return super.createFile( pdiBundle, repositoryPath, data );
+  }
+
+  @Override
+  protected RepositoryFile updateFile( final RepositoryFileImportBundle bundle, final RepositoryFile file,
+      final IRepositoryFileData data ) throws PlatformImportException {
+    RepositoryFile updatedFile = null;
+    if ( isNodeRepositoryFileData( file ) ) {
+      updatedFile = getRepository().updateFile( file, data, bundle.getComment() );
+    } else {
+      String fileName = bundle.getName();
+      getLogger().trace( "The file [" + fileName + "] will be recreated because it content-type was changed." );
+      RepositoryFileAcl originFileAcl = getRepository().getAcl( file.getId() );
+      getRepository().deleteFile( file.getId(), true, null );
+
+      RepositoryFileAcl newFileAcl = bundle.getAcl();
+      bundle.setAcl( originFileAcl );
+      updatedFile = createFile( bundle, file.getPath(), data );
+      bundle.setAcl( newFileAcl );
+    }
+    return updatedFile;
+  }
+
+  private boolean isNodeRepositoryFileData( final RepositoryFile file ) {
+    try {
+      getRepository().getDataForRead( file.getId(), NodeRepositoryFileData.class );
+      return true;
+    } catch ( UnifiedRepositoryException e ) {
+      return false;
+    }
   }
 }
