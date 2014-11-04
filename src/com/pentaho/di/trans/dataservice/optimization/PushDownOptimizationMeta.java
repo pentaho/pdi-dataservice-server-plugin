@@ -37,6 +37,8 @@ import org.pentaho.metastore.persist.MetaStoreElementType;
   )
 public final class PushDownOptimizationMeta {
 
+  public static final String PUSH_DOWN_STEP_NAME = "step_name";
+
   /**
    *  User-defined name for this optimization (required)
    */
@@ -46,7 +48,7 @@ public final class PushDownOptimizationMeta {
   /**
    * Name of step being optimized (optional)
    */
-  @MetaStoreAttribute
+  @MetaStoreAttribute( key = PUSH_DOWN_STEP_NAME )
   private String stepName = "";
 
   /**

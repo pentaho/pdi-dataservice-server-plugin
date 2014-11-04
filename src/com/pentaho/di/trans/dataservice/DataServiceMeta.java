@@ -49,6 +49,7 @@ import java.util.List;
   description = PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION )
 public class DataServiceMeta {
 
+  public static final String DATA_SERVICE_TRANSFORMATION_STEP_NAME = "step_name";
   public static final String DATA_SERVICE_TRANSFORMATION_FILENAME = "transformation_filename";
   public static final String DATA_SERVICE_TRANSFORMATION_REP_PATH = "transformation_rep_path";
   public static final String DATA_SERVICE_TRANSFORMATION_REP_OBJECT_ID = "transformation_rep_object_id";
@@ -58,7 +59,7 @@ public class DataServiceMeta {
 
   protected String name;
 
-  @MetaStoreAttribute
+  @MetaStoreAttribute( key = DATA_SERVICE_TRANSFORMATION_STEP_NAME )
   protected String stepname;
 
   @MetaStoreAttribute( key = DATA_SERVICE_TRANSFORMATION_REP_OBJECT_ID )

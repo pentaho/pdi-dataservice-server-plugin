@@ -48,12 +48,14 @@ import java.util.Map;
  */
 public class ParameterGeneration implements PushDownType {
 
+  public static final String PUSH_DOWN_FIELD_MAPPINGS = "field_mappings";
+  public static final String PUSH_DOWN_PARAMETER_NAME = "parameter_name";
   public static final String TYPE_NAME = "Parameter Generation";
 
-  @MetaStoreAttribute
+  @MetaStoreAttribute( key = PUSH_DOWN_FIELD_MAPPINGS )
   private List<SourceTargetFields> fieldMappings = new ArrayList<SourceTargetFields>();
 
-  @MetaStoreAttribute
+  @MetaStoreAttribute( key = PUSH_DOWN_PARAMETER_NAME )
   private String parameterName;
 
   protected ParameterGenerationServiceProvider serviceProvider = new ParameterGenerationServiceProvider();

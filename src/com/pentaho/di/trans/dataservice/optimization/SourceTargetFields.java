@@ -33,10 +33,13 @@ import org.pentaho.metastore.persist.MetaStoreElementType;
 )
 public class SourceTargetFields {
 
-  @MetaStoreAttribute
+  public static final String SOURCE_FIELD_NAME = "source_field_name";
+  public static final String TARGET_FIELD_NAME = "target_field_name";
+
+  @MetaStoreAttribute( key = SOURCE_FIELD_NAME )
   private String sourceFieldName;
 
-  @MetaStoreAttribute
+  @MetaStoreAttribute( key = TARGET_FIELD_NAME )
   private String targetFieldName;
 
   // protected boolean filterAllowed;  // Not used yet.
