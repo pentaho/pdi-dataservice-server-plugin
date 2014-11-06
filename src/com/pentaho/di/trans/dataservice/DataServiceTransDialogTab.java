@@ -193,11 +193,29 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     } );
 
+    Button wRename = new Button( wDataServiceComp, SWT.PUSH );
+    props.setLook( wRename );
+    wRename.setText( BaseMessages.getString( PKG, "TransDialog.RenameServiceButton.Label" ) );
+    FormData fdRename = new FormData();
+    fdRename.left = new FormAttachment( wNew, margin * 2 );
+    fdRename.top = new FormAttachment( lastControl, margin * 2 );
+    wRename.setLayoutData( fdRename );
+    wRename.addSelectionListener( new SelectionAdapter() {
+      @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+        String newName = renameService( shell, transMeta.getMetaStore(), wServiceName.getText() );
+        if ( newName != null ) {
+          wServiceName.setItems( getDataServiceElementNames( shell, transMeta.getMetaStore() ) );
+          wServiceName.setText( newName );
+        }
+      }
+    } );
+
+
     Button wRemove = new Button( wDataServiceComp, SWT.PUSH );
     props.setLook( wRemove );
     wRemove.setText( BaseMessages.getString( PKG, "TransDialog.RemoveServiceButton.Label" ) );
     FormData fdRemove = new FormData();
-    fdRemove.left = new FormAttachment( wNew, margin * 2 );
+    fdRemove.left = new FormAttachment( wRename, margin * 2 );
     fdRemove.top = new FormAttachment( lastControl, margin * 2 );
     wRemove.setLayoutData( fdRemove );
     wRemove.addSelectionListener( new SelectionAdapter() {
@@ -336,11 +354,37 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     wDataServiceTab.setControl( wDataServiceComp );
   }
 
+  protected String renameService( Shell shell, IMetaStore metaStore, String elementName ) {
+    EnterStringDialog dialog =
+      new EnterStringDialog( shell, elementName, BaseMessages.getString( PKG, "TransDialog.RenameServiceDialog.Label" ),
+        BaseMessages.getString( PKG, "TransDialog.RenameServiceDialog.Description" ) );
+    String newName = dialog.open();
+    if ( newName != null ) {
+      try {
+        IMetaStoreElementType elementType = DataServiceMetaStoreUtil.createDataServiceElementTypeIfNeeded( metaStore );
+        IMetaStoreElement element = metaStore.getElementByName( PentahoDefaults.NAMESPACE, elementType, elementName );
+        if ( element != null ) {
+          metaStore.deleteElement( PentahoDefaults.NAMESPACE, elementType, element.getId() );
+          element.setName( newName );
+          metaStore.createElement( PentahoDefaults.NAMESPACE, elementType, element );
+        }
+        return newName;
+      } catch ( MetaStoreException e ) {
+        new ErrorDialog( shell, BaseMessages.getString( PKG, "TransDialog.ErrorDialog.Label" ),
+          BaseMessages.getString( PKG, "TransDialog.RenameServiceErrorDialog.Label", elementName ), e );
+      }
+
+    }
+    return null;
+  }
 
   protected boolean removeService( Shell shell, IMetaStore metaStore, String elementName ) {
     MessageDialog dialog =
-      new MessageDialog( shell, "Confirm removal", shell.getDisplay().getSystemImage( SWT.ICON_QUESTION ),
-        "Are you sure you want to remove data service '" + elementName + "'?", SWT.NONE, new String[]{"Yes", "No"},
+      new MessageDialog( shell, BaseMessages.getString( PKG, "TransDialog.RemoveServiceDialog.Label" ),
+        shell.getDisplay().getSystemImage( SWT.ICON_QUESTION ),
+        BaseMessages.getString( PKG, "TransDialog.RemoveServiceDialog.Description", elementName ), SWT.NONE,
+        new String[] { BaseMessages.getString( PKG, "TransDialog.RemoveServiceDialog.Yes" ),
+          BaseMessages.getString( PKG, "TransDialog.RemoveServiceDialog.No" ) },
         1 );
     int answerIndex = dialog.open();
     if ( answerIndex == 0 ) {
@@ -352,7 +396,9 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         }
         return true;
       } catch ( MetaStoreException e ) {
-        new ErrorDialog( shell, "Error", "Error deleting data service with name '" + elementName + "'", e );
+        new ErrorDialog( shell, BaseMessages.getString( PKG, "TransDialog.ErrorDialog.Label" ),
+          BaseMessages.getString( PKG, "TransDialog.RemoveServiceErrorDialog.Label", elementName ),
+          e );
         return false;
       }
 
@@ -360,10 +406,10 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     return false;
   }
 
-
   protected String createNewService( Shell shell, IMetaStore metaStore ) {
-    EnterStringDialog dialog = new EnterStringDialog( shell, "table1", "Enter service name",
-      "Enter the name of the new data service (virtual table name)" );
+    EnterStringDialog dialog =
+      new EnterStringDialog( shell, "table1", BaseMessages.getString( PKG, "TransDialog.NewServiceDialog.Label" ),
+        BaseMessages.getString( PKG, "TransDialog.NewServiceDialog.Description" ) );
     String name = dialog.open();
     if ( name != null ) {
 
@@ -374,7 +420,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
           throw new MetaStoreException( "The data service with name '" + name + "' already exists" );
         }
       } catch ( MetaStoreException e ) {
-        new ErrorDialog( shell, "Error", "Error creating new data service", e );
+        new ErrorDialog( shell, BaseMessages.getString( PKG, "TransDialog.ErrorDialog.Label" ),
+          BaseMessages.getString( PKG, "TransDialog.NewServiceErrorDialog.Label" ), e );
         return null;
       }
 
