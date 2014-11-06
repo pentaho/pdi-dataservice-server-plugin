@@ -28,8 +28,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -60,11 +58,12 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class TableInputParameterGenerationTest {
@@ -72,7 +71,6 @@ public class TableInputParameterGenerationTest {
   public static final String MOCK_PARTITION_ID = "Mock Partition ID";
   public static final String MOCK_CONNECTION_GROUP = "Mock Connection Group";
   @Mock private TableInput stepInterface;
-  @Mock private Database database;
   @Mock private DatabaseMeta databaseMeta;
 
   private TableInputParameterGeneration service;
@@ -81,13 +79,6 @@ public class TableInputParameterGenerationTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks( this );
-    when( database.getDatabaseMeta() ).thenReturn( databaseMeta );
-    when( databaseMeta.quoteSQLString( anyString() ) ).thenAnswer( new Answer<Object>() {
-      @Override
-      public Object answer( InvocationOnMock invocation ) throws Throwable {
-        return String.format( "'%s'", invocation.getArguments() [ 0 ] );
-      }
-    } );
 
     // Setup Mock Step and Data
     data = new TableInputData();
@@ -109,7 +100,7 @@ public class TableInputParameterGenerationTest {
   public void testPushDown() throws Exception {
     // Add filters to both WHERE and GROUP by converting original query to a prepared statement...
     String originalQuery =
-      "SELECT DepartmentName, COUNT(*) as EmployeeCount "
+        "SELECT DepartmentName, COUNT(*) as EmployeeCount "
         + "FROM Department, Employee "
         + "WHERE Employee.DepartmentId = Department.DepartmentId AND ${EMPLOYEE_FILTER} ";
 
@@ -151,7 +142,7 @@ public class TableInputParameterGenerationTest {
     String resultQuery = databaseWrapper.injectRuntime( databaseWrapper.pushDownMap, runtimeQuery, rowMeta, values );
 
     String expectedQuery =
-      "SELECT DepartmentName, COUNT(*) as EmployeeCount "
+        "SELECT DepartmentName, COUNT(*) as EmployeeCount "
         + "FROM Department, Employee "
         + "WHERE Employee.DepartmentId = Department.DepartmentId AND \"Employee.Grade\" = ? ";
     assertThat( resultQuery, equalTo( expectedQuery ) );
@@ -163,28 +154,28 @@ public class TableInputParameterGenerationTest {
 
   @Test
   public void testConvertAtomicCondition() throws Exception {
-    testFunctionType( Condition.FUNC_EQUAL, "\"field_name\" = 'value'", "value" );
-    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> 'value'", "value" );
-    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> 123", 123 );
-    testFunctionType( Condition.FUNC_SMALLER, "\"field_name\" < 123", 123 );
-    testFunctionType( Condition.FUNC_SMALLER_EQUAL, "\"field_name\" <= 123", 123 );
-    testFunctionType( Condition.FUNC_LARGER, "\"field_name\" > 123", 123 );
-    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= 123", 123 );
-    testFunctionType( Condition.FUNC_IN_LIST,
-      "\"field_name\"  IN  ('value1','value2','value3')", "value1;value2;value3" );
-    testFunctionType( Condition.FUNC_IN_LIST,
-      "\"field_name\"  IN  ('val;ue1','value2','value3','val ue4')", "val\\;ue1;value2;value3;val ue4" );
-    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= 123", 123 );
+    testFunctionType( Condition.FUNC_EQUAL, "\"field_name\" = ?", "value" );
+    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> ?", "value" );
+    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> ?", 123 );
+    testFunctionType( Condition.FUNC_SMALLER, "\"field_name\" < ?", 123 );
+    testFunctionType( Condition.FUNC_SMALLER_EQUAL, "\"field_name\" <= ?", 123 );
+    testFunctionType( Condition.FUNC_LARGER, "\"field_name\" > ?", 123 );
+    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= ?", 123 );
+
+    testInListCondition( "value1;value2;value3", new String[]{"value1", "value2", "value3"}, "\"field_name\"  IN  (?,?,?)" );
+
+    testInListCondition("val\\;ue1;value2;value3;val ue4" , new String[]{ "val;ue1", "value2", "value3", "val ue4" }, "\"field_name\"  IN  (?,?,?,?)" );
+    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= ?", 123 );
 
     try {
-      testFunctionType( Condition.FUNC_REGEXP, "\"field_name\" >= 123", "123" );
+      testFunctionType( Condition.FUNC_REGEXP, "\"field_name\" ~= ?", "123" );
       fail( "Should have thrown exception" );
     } catch ( PushDownOptimizationException e ) {
       assertTrue(  e.getMessage().contains( "REGEXP" ) );
     }
     testFunctionType( Condition.FUNC_NULL, "\"field_name\" IS NULL ", null );
     testFunctionType( Condition.FUNC_NOT_NULL, "\"field_name\" IS NOT NULL ", null );
-    testFunctionType( Condition.FUNC_LIKE, "\"field_name\" LIKE 'MAT%CH'", "MAT%CH" );
+    testFunctionType( Condition.FUNC_LIKE, "\"field_name\" LIKE ?", "MAT%CH" );
 
     try {
       testFunctionType( Condition.FUNC_EQUAL, "\"field_name\" = 'value'", null );
@@ -194,14 +185,33 @@ public class TableInputParameterGenerationTest {
     }
   }
 
+  @SuppressWarnings( "unchecked" )
+  protected void testInListCondition( String valueData, String[] inListExpectedValues, String expectedSql )
+    throws KettleValueException, PushDownOptimizationException {
+    ValueMetaAndData rightExactInList = new ValueMetaAndData( "mock_value", valueData );
+    Condition inListCondition = new Condition( "field_name", Condition.FUNC_IN_LIST, null, rightExactInList );
+    RowMeta inListParamsMeta = mock( RowMeta.class );
+    List<Object> inListParams = mock( List.class );
+    assertThat( service.convertAtomicCondition( inListCondition, inListParamsMeta, inListParams ), equalTo( expectedSql ) );
+    for ( String inListValue : inListExpectedValues ) {
+      verify( inListParams ).add( inListValue );
+    }
+    verify( inListParamsMeta, times( inListExpectedValues.length ) ).addValueMeta( rightExactInList.getValueMeta() );
+    verifyNoMoreInteractions( inListParams, inListParamsMeta );
+  }
+
+  @SuppressWarnings( "unchecked" )
   private void testFunctionType( int function, String expected, Object value ) throws Exception {
     ValueMetaAndData right_exact = new ValueMetaAndData( "mock_value", value );
     Condition condition = new Condition( "field_name", function, null, right_exact );
     RowMeta paramsMeta = mock( RowMeta.class );
     List<Object> params = mock( List.class );
     assertThat( service.convertAtomicCondition( condition, paramsMeta, params ), equalTo( expected ) );
-    verify( paramsMeta ).addValueMeta( right_exact.getValueMeta() );
-    verify( params ).add( value );
+    if ( value != null ) {
+      verify( paramsMeta ).addValueMeta( right_exact.getValueMeta() );
+      verify( params ).add( value );
+    }
+    verifyNoMoreInteractions( paramsMeta, params );
   }
 
   @Test
@@ -240,7 +250,8 @@ public class TableInputParameterGenerationTest {
 
     // Throw exception if connection fails
     KettleDatabaseException expected = new KettleDatabaseException();
-    doThrow( expected ).when( database ).connect();
+    data.db = mock( DatabaseWrapper.class );
+    doThrow( expected ).when( data.db ).connect();
 
     try {
       service.pushDown( mock( Condition.class ), mock( ParameterGeneration.class ), stepInterface );
