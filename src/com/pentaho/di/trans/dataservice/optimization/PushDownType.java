@@ -37,5 +37,5 @@ public interface PushDownType {
 
   void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta );
 
-  boolean activate( DataServiceExecutor executor, Trans trans, StepInterface stepInterface, SQL sql );
+  boolean activate( DataServiceExecutor executor );
 }

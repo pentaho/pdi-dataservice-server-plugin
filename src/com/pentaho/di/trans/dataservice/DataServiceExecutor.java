@@ -42,6 +42,7 @@ import org.pentaho.di.trans.sql.SqlTransMeta;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMetaInterface;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -324,6 +325,10 @@ public class DataServiceExecutor {
 
   public void setSql( SQL sql ) {
     this.sql = sql;
+  }
+
+  public StepInterface getServiceStep() {
+    return getServiceTrans().findRunThread( service.getStepname() );
   }
 
   /**

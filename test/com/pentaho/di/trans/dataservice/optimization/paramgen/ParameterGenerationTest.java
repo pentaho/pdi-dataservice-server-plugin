@@ -99,6 +99,7 @@ public class ParameterGenerationTest {
     when( stepInterface.getStepMeta() ).thenReturn( stepMeta );
     when( serviceProvider.getService( stepMeta ) ).thenReturn( service );
     when( service.getParameterDefault() ).thenReturn( EXPECTED_DEFAULT );
+    when( executor.getServiceStep() ).thenReturn( stepInterface );
   }
 
 
@@ -200,45 +201,48 @@ public class ParameterGenerationTest {
   @Test
   public void testActivationFailure() throws Exception {
     SQL query = mockSql( newCondition( "A_src" ) );
-
+    when( executor.getSql() ).thenReturn( query );
     // All okay
-    assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
-
-    // Step type is not supported
-    when( serviceProvider.getService( stepMeta ) ).thenReturn( null, service );
-    assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
-    assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
-
-    // Query does not have a WHERE clause
-    assertFalse( paramGen.activate( executor, trans, stepInterface, mock( SQL.class ) ) );
-
-    // Query could not be mapped
-    assertFalse( paramGen.activate( executor, trans, stepInterface, mockSql( newCondition( "Z" ) ) ) );
+    assertTrue( paramGen.activate( executor ) );
 
     // Parameter value is blank
     paramGen.setParameterName( "" );
-    assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
+    assertFalse( paramGen.activate( executor ) );
     paramGen.setParameterName( PARAM_NAME );
-    assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
+    assertTrue( paramGen.activate( executor ) );
 
     // Service throws an error the first time
     doThrow( PushDownOptimizationException.class )
       .doNothing()
       .when( service ).pushDown( any( Condition.class ), same( paramGen ), same( stepInterface ) );
-    assertFalse( paramGen.activate( executor, trans, stepInterface, query ) );
-    assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
+    assertFalse( paramGen.activate( executor ) );
+    assertTrue( paramGen.activate( executor ) );
+
+    // Step type is not supported
+    when( serviceProvider.getService( stepMeta ) ).thenReturn( null, service );
+    assertFalse( paramGen.activate( executor ) );
+    assertTrue( paramGen.activate( executor ) );
+
+    // Query does not have a WHERE clause
+    when( executor.getSql() ).thenReturn( mock( SQL.class ) );
+    assertFalse( paramGen.activate( executor ) );
+
+    // Query could not be mapped
+    query = mockSql( newCondition( "UNMAPPED" ) );
+    when( executor.getSql() ).thenReturn( query );
+    assertFalse( paramGen.activate( executor ) );
   }
 
   @Test
   public void testActivation() throws Exception {
-    DataServiceExecutor executor = mock( DataServiceExecutor.class );
     // ( A & ( B | C ) )
     Condition condition = newCondition( "A_src", "A_value" );
     condition.addCondition( newCondition( AND, "B_src", "B_value" ) );
     condition.getCondition( 1 ).addCondition( newCondition( OR, "C_src", "C_value" ) );
     SQL query = mockSql( condition );
+    when( executor.getSql() ).thenReturn( query );
 
-    assertTrue( paramGen.activate( executor, trans, stepInterface, query ) );
+    assertTrue( paramGen.activate( executor ) );
 
     ArgumentCaptor<Condition> pushDownCaptor = ArgumentCaptor.forClass( Condition.class );
     verify( service ).pushDown( pushDownCaptor.capture(), same( paramGen ), same( stepInterface ) );

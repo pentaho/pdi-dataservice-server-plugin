@@ -23,13 +23,17 @@
 package com.pentaho.di.trans.dataservice.optimization;
 
 import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
+import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceProvider;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.List;
+import org.eclipse.swt.widgets.TableItem;
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
@@ -40,8 +44,6 @@ import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
 public class ParamGenOptForm implements PushDownOptTypeForm {
   private static final Class<?> PKG = ParamGenOptForm.class;
@@ -49,12 +51,6 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
   protected TableView definitionTable;
   private ParameterGeneration parameterGeneration = new ParameterGeneration();
 
-  private static final java.util.List<String> supportedStepTypes =
-    Collections.unmodifiableList(
-       Arrays.asList( "TableInput", "MongoDbInput" ) );
-  private static final java.util.List<String> supportedDbTypes =
-    Collections.unmodifiableList(
-      Arrays.asList( "H2" ) );  // Where should this list come from?
   protected List stepList;
 
   @Override
@@ -257,24 +253,14 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
   private String[] getSupportedSteps( TransMeta transMeta ) {
     java.util.List<String> stepNames = new ArrayList<String>();
+    ParameterGenerationServiceProvider paramGenProvider = new ParameterGenerationServiceProvider();
     for ( StepMeta step : transMeta.getSteps() ) {
-      if ( !supportedStepTypes.contains( step.getTypeId() ) ) {
-        continue;
-      }
-
-      DatabaseMeta[] dbMeta = step.getStepMetaInterface().getUsedDatabaseConnections();
-      if ( dbMeta.length == 0 ) {
-        // some supported types (e.g. mongo) will not have a db connection
-        stepNames.add( step.getName() );
-      } else if ( dbMeta.length == 1
-        && dbMeta[ 0 ].getDatabaseInterface() != null
-        && supportedDbTypes.contains( dbMeta[ 0 ].getDatabaseInterface().getPluginId() ) ) {
+      if ( paramGenProvider.supportsStep( step ) ) {
         stepNames.add( step.getName() );
       }
     }
     return stepNames.toArray( new String[ stepNames.size() ] );
   }
-
 
 }
 

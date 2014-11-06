@@ -23,6 +23,7 @@
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import com.pentaho.di.trans.dataservice.optimization.mongod.MongodbPredicate;
 import org.junit.Before;
 import org.junit.Test;

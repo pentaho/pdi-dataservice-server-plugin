@@ -22,34 +22,34 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.StepMetaInterface;
 
-/**
- * @author nhudak
- */
-public class ParameterGenerationServiceProvider {
+public class MongodbInputParameterGenerationFactory implements ParameterGenerationServiceFactory {
 
-  private final ParameterGenerationServiceFactory[] factories = new ParameterGenerationServiceFactory[] {
-    new TableInputParameterGenerationFactory(),
-    new MongodbInputParameterGenerationFactory()
-  };
-
+  @Override
   public ParameterGenerationService getService( StepMeta stepMeta ) {
-    for ( ParameterGenerationServiceFactory factory : factories ) {
-      if ( factory.supportsStep( stepMeta ) ) {
-        return factory.getService( stepMeta );
-      }
-    }
-    return null;
+    return new MongodbInputParameterGeneration(
+      new ValueMetaResolver( getFields( stepMeta.getStepMetaInterface() ) ) );
   }
 
+  @Override
   public boolean supportsStep( StepMeta stepMeta ) {
-    for ( ParameterGenerationServiceFactory factory : factories ) {
-      if ( factory.supportsStep( stepMeta ) ) {
-        return true;
-      }
+    return "MongoDbInput".equals( stepMeta.getTypeId() );
+  }
+
+  private RowMeta getFields( StepMetaInterface stepMetaInterface ) {
+    RowMeta rowMeta = new RowMeta();
+    try {
+      // MongoDbInputMeta only implements the deprecated version of .getFields().
+      stepMetaInterface.getFields( rowMeta, "", null, null, null );
+    } catch ( KettleStepException e ) {
+      return new RowMeta();
     }
-    return false;
+    return rowMeta;
   }
 
 }

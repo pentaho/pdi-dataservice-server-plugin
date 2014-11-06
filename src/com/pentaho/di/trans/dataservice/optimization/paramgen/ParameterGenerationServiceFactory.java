@@ -24,32 +24,10 @@ package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import org.pentaho.di.trans.step.StepMeta;
 
-/**
- * @author nhudak
- */
-public class ParameterGenerationServiceProvider {
+public interface ParameterGenerationServiceFactory {
 
-  private final ParameterGenerationServiceFactory[] factories = new ParameterGenerationServiceFactory[] {
-    new TableInputParameterGenerationFactory(),
-    new MongodbInputParameterGenerationFactory()
-  };
+  public ParameterGenerationService getService( StepMeta stepMeta );
 
-  public ParameterGenerationService getService( StepMeta stepMeta ) {
-    for ( ParameterGenerationServiceFactory factory : factories ) {
-      if ( factory.supportsStep( stepMeta ) ) {
-        return factory.getService( stepMeta );
-      }
-    }
-    return null;
-  }
-
-  public boolean supportsStep( StepMeta stepMeta ) {
-    for ( ParameterGenerationServiceFactory factory : factories ) {
-      if ( factory.supportsStep( stepMeta ) ) {
-        return true;
-      }
-    }
-    return false;
-  }
+  public boolean supportsStep( StepMeta stepMeta );
 
 }

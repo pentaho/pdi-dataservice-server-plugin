@@ -31,7 +31,6 @@ import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.core.sql.SQL;
-import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
@@ -163,7 +162,12 @@ public class ParameterGeneration implements PushDownType {
     }
   }
 
-  @Override public boolean activate( DataServiceExecutor executor, Trans trans, StepInterface stepInterface, SQL query ) {
+  @Override public boolean activate( DataServiceExecutor executor ) {
+    SQL query = executor.getSql();
+    StepInterface stepInterface = executor.getServiceStep();
+    if ( stepInterface == null ) {
+      return false;
+    }
     // Get service for step type
     ParameterGenerationService service = serviceProvider.getService( stepInterface.getStepMeta() );
     if ( service == null ) {
