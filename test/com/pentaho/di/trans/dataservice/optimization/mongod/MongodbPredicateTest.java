@@ -23,26 +23,24 @@
 package com.pentaho.di.trans.dataservice.optimization.mongod;
 
 import com.mongodb.util.JSON;
+import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSQLException;
 import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQLCondition;
 import org.pentaho.di.core.sql.SQLFields;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class MongodbPredicateTest {
 
-  private RowMetaInterface rowMeta = new RowMeta();
+  private RowMeta rowMeta = new RowMeta();
+  private ValueMetaResolver resolver;
 
   @Before
   public void setup() {
@@ -50,8 +48,9 @@ public class MongodbPredicateTest {
       rowMeta.addValueMeta( new ValueMeta( "sField" + i,
         ValueMetaInterface.TYPE_STRING, 50 ) );
       rowMeta.addValueMeta( new ValueMeta( "iField" + i,
-        ValueMetaInterface.TYPE_STRING, 7 ) );
+        ValueMetaInterface.TYPE_INTEGER, 7 ) );
     }
+    resolver = new ValueMetaResolver( rowMeta );
   }
 
   @Test
@@ -83,14 +82,11 @@ public class MongodbPredicateTest {
       asFilter( condition( "sField1 IN ('foo','bar','baz')" ) ) );
   }
 
-  @Ignore( "Condition.FUNC_IN_LIST is always treated as a string.  "
-    + "Before this can be translated correctly the datatype of the IN list needs to be set correctly." )
   @Test
   public void testInListOfInts() throws KettleException {
-    assertJsonEquals( "{\"Field1\":{\"$in\":[1,2,3]}}",
+    assertJsonEquals( "{\"iField1\":{\"$in\":[1,2,3]}}",
       asFilter( condition( "iField1 IN (1,2,3)" ) ) );
   }
-
 
   @Test
   public void testNotInList() throws KettleException {
@@ -100,8 +96,8 @@ public class MongodbPredicateTest {
 
   @Test
   public void testGT() throws KettleException {
-    assertJsonEquals( "{\"iField\":{\"$gt\":123}}",
-      asFilter( condition( "iField > 123" ) ) );
+    assertJsonEquals( "{\"iField1\":{\"$gt\":123}}",
+      asFilter( condition( "iField1 > 123" ) ) );
   }
 
   @Test
@@ -160,11 +156,11 @@ public class MongodbPredicateTest {
   }
 
   private String asMatch( Condition condition ) throws KettleException {
-    return new MongodbPredicate( condition ).asMatch();
+    return new MongodbPredicate( condition, resolver ).asMatch();
   }
 
   private String asFilter( Condition condition ) throws KettleException {
-    return new MongodbPredicate( condition ).asFilterCriteria();
+    return new MongodbPredicate( condition, resolver ).asFilterCriteria();
   }
 
   private Condition condition( String sql ) throws KettleSQLException {

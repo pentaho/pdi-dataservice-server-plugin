@@ -25,11 +25,11 @@ package com.pentaho.di.trans.dataservice.optimization.mongod;
 import com.mongodb.BasicDBList;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleValueException;
-import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.ValueMetaAndData;
 
 import java.util.List;
 
@@ -41,9 +41,11 @@ import java.util.List;
  */
 public class MongodbPredicate {
   private static final String MATCH = "$match";
+  private final ValueMetaResolver valueMetaResolver;
   private Condition condition;
 
-  public MongodbPredicate( Condition condition ) {
+  public MongodbPredicate( Condition condition, ValueMetaResolver resolver ) {
+    this.valueMetaResolver = resolver;
     this.condition = condition;
   }
 
@@ -60,69 +62,74 @@ public class MongodbPredicate {
     return buildMongoCondition( condition, QueryBuilder.start() ).get();
   }
 
-  private QueryBuilder buildMongoCondition( Condition condition, QueryBuilder queryBuilder ) throws KettleException {
+  private QueryBuilder buildMongoCondition( Condition condition, QueryBuilder queryBuilder ) throws PushDownOptimizationException {
     condition = unwrap( condition );
     return condition.isAtomic()
       ? applyAtomicCondition( condition, queryBuilder )
       : applyCompoundCondition( condition, queryBuilder );
   }
 
-  private QueryBuilder applyAtomicCondition( Condition condition, QueryBuilder queryBuilder ) throws KettleValueException {
+  private QueryBuilder applyAtomicCondition( Condition condition, QueryBuilder queryBuilder )
+    throws PushDownOptimizationException {
     MongoFunc func = MongoFunc.getMongoFunc( condition.getFunction() );
     String fieldName = condition.getLeftValuename();
-    Object value = getRightExactValue( condition );
+    Object value = getResolvedValue( condition );
     if ( condition.isNegated() ) {
       func.negate( queryBuilder, fieldName, value );
     } else {
-      func.affirm( queryBuilder, fieldName,  value );
+      func.affirm( queryBuilder, fieldName, value );
     }
     return queryBuilder;
   }
 
   /**
-   * Gets the Object value associated with the Condition's rightExact,
-   * applying special handling for IN list conversion to String[]
+   * Gets the Object value associated with the Condition's rightExact.
+   * Also handles IN list conversion to typed array.
    */
-  private Object getRightExactValue( Condition condition ) throws KettleValueException {
-    Object value = condition.getRightExact().getValueData();
-    if ( condition.getFunction() == condition.FUNC_IN_LIST ) {
-      ValueMetaInterface valueMeta = condition.getRightExact().getValueMeta();
-      return Const.splitString( valueMeta.getString( value ), ';', true );
+  private Object getResolvedValue( Condition condition ) throws PushDownOptimizationException {
+    final ValueMetaAndData rightExact = condition.getRightExact();
+    Object value = rightExact.getValueData();
+    int type = rightExact.getValueMeta().getType();
+    String fieldName = condition.getLeftValuename();
+    if ( condition.getFunction() == Condition.FUNC_IN_LIST ) {
+      return valueMetaResolver.inListToTypedObjectArray( fieldName, (String) value );
     }
-    return value;
+    return valueMetaResolver.getTypedValue( fieldName, type, value );
   }
 
   private QueryBuilder applyCompoundCondition( Condition condition, QueryBuilder queryBuilder )
-    throws KettleException {
+    throws PushDownOptimizationException {
     getMongoOp( condition )
       .apply( queryBuilder,
         conditionListToDBObjectArray( condition.getChildren() ) );
     return queryBuilder;
   }
 
-  private MongoOp getMongoOp( Condition condition ) throws KettleException {
+  private MongoOp getMongoOp( Condition condition )
+    throws PushDownOptimizationException {
     validateConditionForOpDetermination( condition );
 
     final Condition firstChild = condition.getChildren().get( 1 );
     MongoOp op = MongoOp
       .getMongoOp( firstChild.getOperator() );
     if ( op == null ) {
-      throw new KettleException( "Unsupported operator:  " + firstChild.getOperatorDesc() );
+      throw new PushDownOptimizationException( "Unsupported operator:  " + firstChild.getOperatorDesc() );
     }
     return op;
   }
 
-  private void validateConditionForOpDetermination( Condition condition ) throws KettleException {
+  private void validateConditionForOpDetermination( Condition condition )
+    throws PushDownOptimizationException {
     if ( condition.getChildren().size() <= 1 ) {
-      throw new KettleException( "At least 2 children are required to determine connecting operator." );
+      throw new PushDownOptimizationException( "At least 2 children are required to determine connecting operator." );
     }
     if ( condition.isNegated() ) {
-      throw new KettleException( "Negated non-atomic conditions can't be converted to BSON" );
+      throw new PushDownOptimizationException( "Negated non-atomic conditions can't be converted to BSON" );
     }
   }
 
   private DBObject[] conditionListToDBObjectArray( List<Condition> conditions )
-    throws KettleException {
+    throws PushDownOptimizationException {
     BasicDBList basicDbList = new BasicDBList();
     for ( Condition condition : conditions ) {
       QueryBuilder childContainer = QueryBuilder.start();

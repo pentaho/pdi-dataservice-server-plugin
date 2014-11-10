@@ -24,7 +24,6 @@ package com.pentaho.di.trans.dataservice.optimization.mongod;
 
 import com.mongodb.QueryBuilder;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.exception.KettleValueException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -77,8 +76,7 @@ public enum MongoFunc {
     }
 
     @Override
-    public void negate( QueryBuilder queryBuilder, String attribute, Object value )
-      throws KettleValueException {
+    public void negate( QueryBuilder queryBuilder, String attribute, Object value ) {
       NEQ.affirm( queryBuilder, attribute, value );
     }
   },
@@ -91,24 +89,21 @@ public enum MongoFunc {
     }
 
     @Override
-    public void negate( QueryBuilder queryBuilder, String attribute, Object value )
-      throws KettleValueException {
+    public void negate( QueryBuilder queryBuilder, String attribute, Object value ) {
       EQ.affirm( queryBuilder, attribute, value );
     }
   },
 
   IN( Condition.FUNC_IN_LIST ) {
     @Override
-    public void affirm( QueryBuilder queryBuilder, String attribute, Object value )
-      throws KettleValueException {
+    public void affirm( QueryBuilder queryBuilder, String attribute, Object value ) {
       queryBuilder
         .and( attribute )
         .in( value );
     }
 
     @Override
-    public void negate( QueryBuilder queryBuilder, String attribute, Object value )
-      throws KettleValueException {
+    public void negate( QueryBuilder queryBuilder, String attribute, Object value ) {
       queryBuilder
         .and( attribute )
         .notIn( value );
@@ -131,11 +126,9 @@ public enum MongoFunc {
     return kettleToMongo.get( kettleFuncCode );
   }
 
-  public abstract void affirm( QueryBuilder queryBuilder, String attribute, Object value )
-    throws KettleValueException;
+  public abstract void affirm( QueryBuilder queryBuilder, String attribute, Object value );
 
-  public  void negate( QueryBuilder queryBuilder, String attribute, Object value )
-    throws KettleValueException {
+  public  void negate( QueryBuilder queryBuilder, String attribute, Object value ) {
     affirm( queryBuilder.not(), attribute, value );
   }
 }
