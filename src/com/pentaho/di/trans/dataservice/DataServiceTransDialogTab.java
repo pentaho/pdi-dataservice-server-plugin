@@ -108,10 +108,24 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     dataServiceLayout.marginHeight = Const.FORM_MARGIN;
     wDataServiceComp.setLayout( dataServiceLayout );
 
+    Group serviceGroup = new Group( wDataServiceComp, SWT.SHADOW_IN );
+    FormLayout serviceGroupLayout = new FormLayout();
+    serviceGroupLayout.marginHeight = Const.FORM_MARGIN * 2;
+    serviceGroup.setLayout( serviceGroupLayout );
+    props.setLook( serviceGroup );
+
+    FormData fdServiceGroup = new FormData();
+    fdServiceGroup.top = new FormAttachment( 0, margin * 5 );
+    fdServiceGroup.left = new FormAttachment( 10, 0 );
+    fdServiceGroup.right = new FormAttachment( 90, 0 );
+    serviceGroup.setLayoutData( fdServiceGroup );
+
+    serviceGroup.setText( BaseMessages.getString( PKG, "TransDialog.ServiceGroup.Label" ) );
+
     // 
     // Service name
     //
-    Label wlServiceName = new Label( wDataServiceComp, SWT.RIGHT );
+    Label wlServiceName = new Label( serviceGroup, SWT.RIGHT );
     wlServiceName.setText( BaseMessages.getString( PKG, "TransDialog.DataServiceName.Label" ) );
     wlServiceName.setToolTipText( BaseMessages.getString( PKG, "TransDialog.DataServiceName.Tooltip" ) );
     props.setLook( wlServiceName );
@@ -119,7 +133,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     fdlServiceName.right = new FormAttachment( middle, -margin );
     fdlServiceName.top = new FormAttachment( 0, 0 );
     wlServiceName.setLayoutData( fdlServiceName );
-    wServiceName = new CCombo( wDataServiceComp, SWT.LEFT | SWT.BORDER | SWT.SINGLE );
+    wServiceName = new CCombo( serviceGroup, SWT.LEFT | SWT.BORDER | SWT.SINGLE );
     wServiceName.setToolTipText( BaseMessages.getString( PKG, "TransDialog.DataServiceName.Tooltip" ) );
     props.setLook( wServiceName );
     FormData fdServiceName = new FormData();
@@ -148,36 +162,12 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     } );
 
-    // 
-    // Service step
-    //
-    Label wlServiceStep = new Label( wDataServiceComp, SWT.RIGHT );
-    wlServiceStep.setText( BaseMessages.getString( PKG, "TransDialog.DataServiceStep.Label" ) );
-    wlServiceStep.setToolTipText( BaseMessages.getString( PKG, "TransDialog.DataServiceStep.Tooltip" ) );
-    props.setLook( wlServiceStep );
-    FormData fdlServiceStep = new FormData();
-    fdlServiceStep.right = new FormAttachment( middle, -margin );
-    fdlServiceStep.top = new FormAttachment( lastControl, margin );
-    wlServiceStep.setLayoutData( fdlServiceStep );
-    wServiceStep = new CCombo( wDataServiceComp, SWT.LEFT | SWT.BORDER | SWT.SINGLE );
-    wServiceStep.setToolTipText( BaseMessages.getString( PKG, "TransDialog.DataServiceStep.Tooltip" ) );
-    props.setLook( wServiceStep );
-    FormData fdServiceStep = new FormData();
-    fdServiceStep.left = new FormAttachment( middle, 0 );
-    fdServiceStep.right = new FormAttachment( 65, 0 );
-    fdServiceStep.top = new FormAttachment( lastControl, margin );
-    wServiceStep.setLayoutData( fdServiceStep );
-    String[] stepnames = transMeta.getStepNames();
-    Arrays.sort( stepnames );
-    wServiceStep.setItems( stepnames );
-    lastControl = wServiceStep;
-
-    Button wNew = new Button( wDataServiceComp, SWT.PUSH );
+    Button wNew = new Button( serviceGroup, SWT.PUSH );
     props.setLook( wNew );
     wNew.setText( BaseMessages.getString( PKG, "TransDialog.NewServiceButton.Label" ) );
     FormData fdNew = new FormData();
-    fdNew.left = new FormAttachment( middle, 0 );
-    fdNew.top = new FormAttachment( lastControl, margin * 2 );
+    fdNew.left = new FormAttachment( wServiceName, margin * 2 );
+    fdNew.top = new FormAttachment( 0, 0 );
     wNew.setLayoutData( fdNew );
     wNew.addSelectionListener( new SelectionAdapter() {
       @Override
@@ -193,12 +183,12 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     } );
 
-    Button wRename = new Button( wDataServiceComp, SWT.PUSH );
+    Button wRename = new Button( serviceGroup, SWT.PUSH );
     props.setLook( wRename );
     wRename.setText( BaseMessages.getString( PKG, "TransDialog.RenameServiceButton.Label" ) );
     FormData fdRename = new FormData();
     fdRename.left = new FormAttachment( wNew, margin * 2 );
-    fdRename.top = new FormAttachment( lastControl, margin * 2 );
+    fdRename.top = new FormAttachment( 0, 0 );
     wRename.setLayoutData( fdRename );
     wRename.addSelectionListener( new SelectionAdapter() {
       @Override public void widgetSelected( SelectionEvent selectionEvent ) {
@@ -211,12 +201,12 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     } );
 
 
-    Button wRemove = new Button( wDataServiceComp, SWT.PUSH );
+    Button wRemove = new Button( serviceGroup, SWT.PUSH );
     props.setLook( wRemove );
     wRemove.setText( BaseMessages.getString( PKG, "TransDialog.RemoveServiceButton.Label" ) );
     FormData fdRemove = new FormData();
     fdRemove.left = new FormAttachment( wRename, margin * 2 );
-    fdRemove.top = new FormAttachment( lastControl, margin * 2 );
+    fdRemove.top = new FormAttachment( 0, 0 );
     wRemove.setLayoutData( fdRemove );
     wRemove.addSelectionListener( new SelectionAdapter() {
       @Override
@@ -230,14 +220,37 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         }
       }
     } );
-    lastControl = wRemove;
+    lastControl = wServiceName;
+
+    //
+    // Service step
+    //
+    Label wlServiceStep = new Label( serviceGroup, SWT.RIGHT );
+    wlServiceStep.setText( BaseMessages.getString( PKG, "TransDialog.DataServiceStep.Label" ) );
+    wlServiceStep.setToolTipText( BaseMessages.getString( PKG, "TransDialog.DataServiceStep.Tooltip" ) );
+    props.setLook( wlServiceStep );
+    FormData fdlServiceStep = new FormData();
+    fdlServiceStep.right = new FormAttachment( middle, -margin );
+    fdlServiceStep.top = new FormAttachment( lastControl, margin );
+    wlServiceStep.setLayoutData( fdlServiceStep );
+    wServiceStep = new CCombo( serviceGroup, SWT.LEFT | SWT.BORDER | SWT.SINGLE );
+    wServiceStep.setToolTipText( BaseMessages.getString( PKG, "TransDialog.DataServiceStep.Tooltip" ) );
+    props.setLook( wServiceStep );
+    FormData fdServiceStep = new FormData();
+    fdServiceStep.left = new FormAttachment( middle, 0 );
+    fdServiceStep.right = new FormAttachment( 65, 0 );
+    fdServiceStep.top = new FormAttachment( lastControl, margin );
+    wServiceStep.setLayoutData( fdServiceStep );
+    String[] stepnames = transMeta.getStepNames();
+    Arrays.sort( stepnames );
+    wServiceStep.setItems( stepnames );
 
     Group optimizationGroup = new Group( wDataServiceComp, SWT.SHADOW_IN );
     optimizationGroup.setLayout( new FormLayout() );
     props.setLook( optimizationGroup );
 
     FormData fdOptGroup = new FormData();
-    fdOptGroup.top = new FormAttachment( lastControl, margin * 5 );
+    fdOptGroup.top = new FormAttachment( serviceGroup, margin * 5 );
     fdOptGroup.left = new FormAttachment( 10, 0 );
     fdOptGroup.right = new FormAttachment( 90, 0 );
     fdOptGroup.bottom = new FormAttachment( 90, 0 );
