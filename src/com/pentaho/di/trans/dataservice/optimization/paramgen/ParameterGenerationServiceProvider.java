@@ -22,6 +22,10 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+
+import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
@@ -33,9 +37,20 @@ public class ParameterGenerationServiceProvider {
   public ParameterGenerationService getService( StepMeta stepMeta ) {
     StepMetaInterface stepMetaInterface = stepMeta.getStepMetaInterface();
     ParameterGenerationService service = null;
+    ValueMetaResolver resolver = new ValueMetaResolver( getFields( stepMetaInterface ) );
     if ( stepMetaInterface instanceof TableInputMeta ) {
-      service = new TableInputParameterGeneration();
+      service = new TableInputParameterGeneration( resolver );
     }
     return service;
+  }
+
+  private RowMeta getFields( StepMetaInterface stepMetaInterface ) {
+    RowMeta rowMeta = new RowMeta();
+    try {
+      stepMetaInterface.getFields( rowMeta, "", null, null, null, null, null );
+    } catch ( KettleStepException e ) {
+      return new RowMeta();
+    }
+    return rowMeta;
   }
 }

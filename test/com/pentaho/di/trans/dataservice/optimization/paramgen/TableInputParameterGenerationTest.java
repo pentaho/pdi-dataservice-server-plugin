@@ -23,18 +23,25 @@
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.database.map.DatabaseConnectionMap;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleValueException;
+import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.variables.Variables;
@@ -58,6 +65,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -72,7 +80,11 @@ public class TableInputParameterGenerationTest {
   public static final String MOCK_CONNECTION_GROUP = "Mock Connection Group";
   @Mock private TableInput stepInterface;
   @Mock private DatabaseMeta databaseMeta;
+  @Mock private ValueMetaResolver resolver;
 
+  private ValueMetaInterface resolvedValueMeta = new ValueMeta( "testValueMeta" );
+
+  @InjectMocks
   private TableInputParameterGeneration service;
   private TableInputData data;
 
@@ -82,6 +94,7 @@ public class TableInputParameterGenerationTest {
 
     // Setup Mock Step and Data
     data = new TableInputData();
+    when( stepInterface.getLogLevel() ).thenReturn( LogLevel.NOTHING );
     data.db = new Database( stepInterface, mock( DatabaseMeta.class ) );
     // Add mock connection to connection map, prevent an actual connection attempt
     data.db.setConnection( mock( Connection.class ) );
@@ -93,7 +106,26 @@ public class TableInputParameterGenerationTest {
     connectionMap.getMap().clear();
     connectionMap.storeDatabase( MOCK_CONNECTION_GROUP, MOCK_PARTITION_ID, data.db );
 
-    service = new TableInputParameterGeneration();
+    setupValueMetaResolverMock();
+  }
+
+  private void setupValueMetaResolverMock() throws PushDownOptimizationException {
+    when( resolver.getValueMeta( any( String.class ) ) )
+      .thenReturn( resolvedValueMeta );
+    when( resolver.getTypedValue( any( String.class ), any( Integer.class ), any() ) )
+      .thenAnswer( new Answer<Object>() {
+        @Override
+        public Object answer( InvocationOnMock invocation ) throws Throwable {
+          return invocation.getArguments()[2];
+        }
+      } );
+    when( resolver.inListToTypedObjectArray( any( String.class ), any( String.class ) ) )
+      .thenAnswer( new Answer<Object>() {
+        @Override
+        public Object answer( InvocationOnMock invocation ) throws Throwable {
+          return Const.splitString( ( (String) invocation.getArguments()[ 1 ] ), ';', true );
+        }
+      } );
   }
 
   @Test
@@ -147,8 +179,7 @@ public class TableInputParameterGenerationTest {
         + "WHERE Employee.DepartmentId = Department.DepartmentId AND \"Employee.Grade\" = ? ";
     assertThat( resultQuery, equalTo( expectedQuery ) );
 
-    ValueMetaInterface employeeValueMeta = employeeFilter.getRightExact().getValueMeta();
-    assertThat( rowMeta.getValueMetaList(), equalTo( Arrays.asList( employeeValueMeta ) ) );
+    assertThat( rowMeta.getValueMetaList(), equalTo( Arrays.asList( resolvedValueMeta ) ) );
     assertThat( values, equalTo( Arrays.<Object>asList( "G7" ) ) );
   }
 
@@ -163,8 +194,7 @@ public class TableInputParameterGenerationTest {
     testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= ?", 123 );
 
     testInListCondition( "value1;value2;value3", new String[]{"value1", "value2", "value3"}, "\"field_name\"  IN  (?,?,?)" );
-
-    testInListCondition("val\\;ue1;value2;value3;val ue4" , new String[]{ "val;ue1", "value2", "value3", "val ue4" }, "\"field_name\"  IN  (?,?,?,?)" );
+    testInListCondition("value1;value2;value3;val ue4" , new String[]{ "value1", "value2", "value3", "val ue4" }, "\"field_name\"  IN  (?,?,?,?)" );
     testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= ?", 123 );
 
     try {
@@ -196,7 +226,7 @@ public class TableInputParameterGenerationTest {
     for ( String inListValue : inListExpectedValues ) {
       verify( inListParams ).add( inListValue );
     }
-    verify( inListParamsMeta, times( inListExpectedValues.length ) ).addValueMeta( rightExactInList.getValueMeta() );
+    verify( inListParamsMeta, times( inListExpectedValues.length ) ).addValueMeta( resolvedValueMeta );
     verifyNoMoreInteractions( inListParams, inListParamsMeta );
   }
 
@@ -208,7 +238,7 @@ public class TableInputParameterGenerationTest {
     List<Object> params = mock( List.class );
     assertThat( service.convertAtomicCondition( condition, paramsMeta, params ), equalTo( expected ) );
     if ( value != null ) {
-      verify( paramsMeta ).addValueMeta( right_exact.getValueMeta() );
+      verify( paramsMeta ).addValueMeta( resolvedValueMeta );
       verify( params ).add( value );
     }
     verifyNoMoreInteractions( paramsMeta, params );
@@ -217,25 +247,21 @@ public class TableInputParameterGenerationTest {
   @Test
   public void testConvertCondition() throws Exception {
     // ( ( A | B ) & C )
-    Condition condition = new Condition(), a, b, c;
-    condition.addCondition( a = newCondition( "A", "valA" ) );
-    condition.getCondition( 0 ).addCondition( b = newCondition( OR, "B", 32 ) );
-    condition.addCondition( c = newCondition( AND, "C", "valC" ) );
+    Condition condition = new Condition();
+    condition.addCondition( newCondition( "A", "valA" ) );
+    condition.getCondition( 0 ).addCondition( newCondition( OR, "B", 32 ) );
+    condition.addCondition( newCondition( AND, "C", "valC" ) );
 
     StringBuilder sqlBuilder = new StringBuilder();
-    RowMeta rowMeta = new RowMeta();
+    RowMeta paramsMeta = mock( RowMeta.class );
     List<Object> values = new LinkedList<Object>();
 
-    service.convertCondition( condition, sqlBuilder, rowMeta, values );
+    service.convertCondition( condition, sqlBuilder, paramsMeta, values );
 
     assertThat( sqlBuilder.toString(), equalTo( "( ( \"A\" = ? OR \"B\" = ? ) AND \"C\" = ? )" ) );
 
-    // Verify that ValueMeta and data were stored in order
-    List<ValueMetaInterface> expectedMeta = new LinkedList<ValueMetaInterface>();
-    for ( Condition expected : Arrays.asList( a, b, c ) ) {
-      expectedMeta.add( expected.getRightExact().getValueMeta() );
-    }
-    assertThat( rowMeta.getValueMetaList(), equalTo( expectedMeta ) );
+    // Verify that resolved ValueMeta added 3 times, and data stored in order
+    verify( paramsMeta, times( 3 ) ).addValueMeta( resolvedValueMeta );
     assertThat( values, equalTo( Arrays.<Object>asList( "valA", 32, "valC" ) ) );
   }
 

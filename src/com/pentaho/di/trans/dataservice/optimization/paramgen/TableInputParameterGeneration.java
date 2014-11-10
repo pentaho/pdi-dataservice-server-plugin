@@ -23,12 +23,12 @@
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleDatabaseException;
-import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.steps.tableinput.TableInput;
@@ -43,7 +43,10 @@ import java.util.List;
  */
 public class TableInputParameterGeneration implements ParameterGenerationService {
 
-  public TableInputParameterGeneration() {
+  private final ValueMetaResolver valueMetaResolver;
+
+  public TableInputParameterGeneration( ValueMetaResolver resolver ) {
+    valueMetaResolver = resolver;
   }
 
   @Override public String getParameterDefault() {
@@ -90,6 +93,7 @@ public class TableInputParameterGeneration implements ParameterGenerationService
     stepDataInterface.db = db;
   }
 
+
   protected void convertCondition( Condition condition, StringBuilder builder, RowMeta paramsMeta, List<Object> params )
     throws PushDownOptimizationException {
     // Condition is composite: Recursively add children
@@ -128,29 +132,48 @@ public class TableInputParameterGeneration implements ParameterGenerationService
         placeholder = "";
         break;
       case Condition.FUNC_IN_LIST:
-        ValueMetaInterface valueMeta = condition.getRightExact().getValueMeta();
-        String[] inList;
-        try {
-          inList = Const.splitString( valueMeta.getString( value ), ';', true );
-        } catch ( KettleValueException e ) {
-          throw new PushDownOptimizationException( "Failed to convert condition for push down optimization", e );
-        }
+        Object[] inList = getInListArray( condition );
+        ValueMetaInterface inListValueMeta = getResolvedValueMeta( condition );
         for ( int i = 0; i < inList.length; i++ ) {
-          inList[ i ] = inList[ i ] == null ? null : inList[ i ].replace( "\\", "" );
-          paramsMeta.addValueMeta( condition.getRightExact().getValueMeta() );
-          params.add( inList[ i ] );
+          paramsMeta.addValueMeta( inListValueMeta );
+          params.add( inList [ i ] );
         }
-        placeholder = String.format( "(%s)", StringUtils.join( Collections.nCopies( inList.length, "?" ).iterator() , "," ) );
+        placeholder = String.format( "(%s)", StringUtils.join( Collections.nCopies( inList.length, "?" ).iterator(), "," ) );
         function = " IN ";
         break;
       default:
         if ( value == null ) {
           throw new PushDownOptimizationException( "Condition value can not be null: " + condition );
         }
-        paramsMeta.addValueMeta( condition.getRightExact().getValueMeta() );
-        params.add( condition.getRightExact().getValueData() );
+        paramsMeta.addValueMeta( getResolvedValueMeta( condition ) );
+        params.add( getResolvedValue( condition ) );
         break;
     }
-    return String.format( "\"%s\" %s %s", condition.getLeftValuename(), function, placeholder );
+    return String.format( "\"%s\" %s %s", getFieldName( condition ), function, placeholder );
   }
+
+  private Object[] getInListArray( Condition condition ) throws PushDownOptimizationException {
+    String value = condition.getRightExactString();
+    return valueMetaResolver.inListToTypedObjectArray(
+      getFieldName( condition ), value );
+  }
+
+  private Object getResolvedValue( Condition condition ) throws PushDownOptimizationException {
+    ValueMetaAndData metaAndData = condition.getRightExact();
+    String fieldName = getFieldName( condition );
+    return valueMetaResolver.getTypedValue(
+      fieldName, metaAndData.getValueMeta().getType(),
+      metaAndData.getValueData() );
+  }
+
+  private ValueMetaInterface getResolvedValueMeta( Condition condition ) throws PushDownOptimizationException {
+    return valueMetaResolver.getValueMeta( getFieldName( condition ) );
+  }
+
+  private String getFieldName( Condition condition ) {
+    assert condition.isAtomic();
+    return condition.getLeftValuename();
+  }
+
+
 }
