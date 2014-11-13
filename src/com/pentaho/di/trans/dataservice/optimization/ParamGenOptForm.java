@@ -27,12 +27,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.List;
-import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.*;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.i18n.BaseMessages;
@@ -56,7 +51,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
   private static final java.util.List<String> supportedStepTypes =
     Collections.unmodifiableList(
-       Arrays.asList( "TableInput" ) );
+       Arrays.asList( "TableInput", "MongoDbInput" ) );
   private static final java.util.List<String> supportedDbTypes =
     Collections.unmodifiableList(
       Arrays.asList( "H2" ) );  // Where should this list come from?
@@ -266,8 +261,12 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
       if ( !supportedStepTypes.contains( step.getTypeId() ) ) {
         continue;
       }
+
       DatabaseMeta[] dbMeta = step.getStepMetaInterface().getUsedDatabaseConnections();
-      if ( dbMeta.length == 1
+      if ( dbMeta.length == 0 ) {
+        // some supported types (e.g. mongo) will not have a db connection
+        stepNames.add( step.getName() );
+      } else if ( dbMeta.length == 1
         && dbMeta[ 0 ].getDatabaseInterface() != null
         && supportedDbTypes.contains( dbMeta[ 0 ].getDatabaseInterface().getPluginId() ) ) {
         stepNames.add( step.getName() );

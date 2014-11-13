@@ -49,16 +49,16 @@ public class MongodbPredicate {
     this.condition = condition;
   }
 
-  public String asMatch() throws KettleException {
+  public String asMatch() throws PushDownOptimizationException {
     return QueryBuilder.start( MATCH ).is(
       conditionAsDBObject() ).get().toString();
   }
 
-  public String asFilterCriteria() throws KettleException {
+  public String asFilterCriteria() throws PushDownOptimizationException {
     return conditionAsDBObject().toString();
   }
 
-  protected DBObject conditionAsDBObject() throws KettleException {
+  protected DBObject conditionAsDBObject() throws PushDownOptimizationException {
     return buildMongoCondition( condition, QueryBuilder.start() ).get();
   }
 

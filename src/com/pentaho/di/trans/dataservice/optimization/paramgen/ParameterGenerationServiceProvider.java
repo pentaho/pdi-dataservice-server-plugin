@@ -40,6 +40,8 @@ public class ParameterGenerationServiceProvider {
     ValueMetaResolver resolver = new ValueMetaResolver( getFields( stepMetaInterface ) );
     if ( stepMetaInterface instanceof TableInputMeta ) {
       service = new TableInputParameterGeneration( resolver );
+    } else if ( "MongoDbInput".equals( stepMeta.getTypeId() ) ) {
+      service = new MongodbInputParameterGeneration( resolver );
     }
     return service;
   }
@@ -48,6 +50,9 @@ public class ParameterGenerationServiceProvider {
     RowMeta rowMeta = new RowMeta();
     try {
       stepMetaInterface.getFields( rowMeta, "", null, null, null, null, null );
+      // MongoDbInputMeta only implements the deprecated version of .getFields().
+      // The following line can be removed when that is fixed.
+      stepMetaInterface.getFields( rowMeta, "", null, null, null );
     } catch ( KettleStepException e ) {
       return new RowMeta();
     }

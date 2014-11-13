@@ -22,42 +22,51 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import com.pentaho.di.trans.dataservice.optimization.mongod.MongodbPredicate;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.pentaho.di.core.Condition;
+import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
-import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.hamcrest.CoreMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-public class ParameterGenerationServiceProviderTest {
+public class MongodbInputParameterGenerationTest extends MongodbInputParameterGeneration {
 
-  private ParameterGenerationServiceProvider provider;
+  @Mock Condition condition;
+
+  @Mock ParameterGeneration parameterGeneration;
+
+  @Mock StepInterface stepInterface;
+
+  @Mock MongodbPredicate mongodbPredicate;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks( this );
-    provider = new ParameterGenerationServiceProvider();
+    when( stepInterface.getStepMeta() ).thenReturn( mock( StepMeta.class ) );
+  }
+
+  @Test( expected = PushDownOptimizationException.class )
+  public void testPushDownThrowsWithInvalidType() throws Exception {
+    when( stepInterface.getStepMeta().getTypeId() ).thenReturn( "InvalidType" );
+    pushDown( condition, parameterGeneration, stepInterface );
   }
 
   @Test
-  public void testGetTableInputParameterGeneration() throws Exception {
-    StepMeta stepMeta = new StepMeta();
-    stepMeta.setStepMetaInterface( mock( StepMetaInterface.class ) );
-    assertThat( provider.getService( stepMeta ), nullValue() );
-    stepMeta.setStepMetaInterface( new TableInputMeta() );
-    assertThat( provider.getService( stepMeta ), is( TableInputParameterGeneration.class ) );
+  public void testPushDownSetsParameter() throws Exception {
+    when( stepInterface.getStepMeta().getTypeId() ).thenReturn( "MongoDbInput" );
+    when( mongodbPredicate.asFilterCriteria() ).thenReturn(  "mockedFilter" );
+    when( parameterGeneration.getParameterName() ).thenReturn( "paramName" );
+    pushDown( condition, parameterGeneration, stepInterface );
+    verify( stepInterface ).setVariable( "paramName", "mockedFilter" );
   }
 
-  @Test
-  public void testGetMongodbInputParameterGeneration() throws Exception {
-    StepMeta stepMeta = mock( StepMeta.class );
-    when( stepMeta.getTypeId() ).thenReturn( "MongoDbInput" );
-    when( stepMeta.getStepMetaInterface() ).thenReturn( mock( StepMetaInterface.class ) );
-    assertThat( provider.getService( stepMeta ), is( MongodbInputParameterGeneration.class ) );
+  @Override
+  protected MongodbPredicate getMongodbPredicate( Condition condition ) {
+    return mongodbPredicate;
   }
 }
