@@ -203,34 +203,34 @@ public class ParameterGenerationTest {
     SQL query = mockSql( newCondition( "A_src" ) );
     when( executor.getSql() ).thenReturn( query );
     // All okay
-    assertTrue( paramGen.activate( executor ) );
+    assertTrue( paramGen.activate( executor, stepInterface ) );
 
     // Parameter value is blank
     paramGen.setParameterName( "" );
-    assertFalse( paramGen.activate( executor ) );
+    assertFalse( paramGen.activate( executor, stepInterface ) );
     paramGen.setParameterName( PARAM_NAME );
-    assertTrue( paramGen.activate( executor ) );
+    assertTrue( paramGen.activate( executor, stepInterface ) );
 
     // Service throws an error the first time
     doThrow( PushDownOptimizationException.class )
       .doNothing()
       .when( service ).pushDown( any( Condition.class ), same( paramGen ), same( stepInterface ) );
-    assertFalse( paramGen.activate( executor ) );
-    assertTrue( paramGen.activate( executor ) );
+    assertFalse( paramGen.activate( executor, stepInterface ) );
+    assertTrue( paramGen.activate( executor, stepInterface ) );
 
     // Step type is not supported
     when( serviceProvider.getService( stepMeta ) ).thenReturn( null, service );
-    assertFalse( paramGen.activate( executor ) );
-    assertTrue( paramGen.activate( executor ) );
+    assertFalse( paramGen.activate( executor, stepInterface ) );
+    assertTrue( paramGen.activate( executor, stepInterface ) );
 
     // Query does not have a WHERE clause
     when( executor.getSql() ).thenReturn( mock( SQL.class ) );
-    assertFalse( paramGen.activate( executor ) );
+    assertFalse( paramGen.activate( executor, stepInterface ) );
 
     // Query could not be mapped
     query = mockSql( newCondition( "UNMAPPED" ) );
     when( executor.getSql() ).thenReturn( query );
-    assertFalse( paramGen.activate( executor ) );
+    assertFalse( paramGen.activate( executor, stepInterface ) );
   }
 
   @Test
@@ -242,7 +242,7 @@ public class ParameterGenerationTest {
     SQL query = mockSql( condition );
     when( executor.getSql() ).thenReturn( query );
 
-    assertTrue( paramGen.activate( executor ) );
+    assertTrue( paramGen.activate( executor, stepInterface ) );
 
     ArgumentCaptor<Condition> pushDownCaptor = ArgumentCaptor.forClass( Condition.class );
     verify( service ).pushDown( pushDownCaptor.capture(), same( paramGen ), same( stepInterface ) );

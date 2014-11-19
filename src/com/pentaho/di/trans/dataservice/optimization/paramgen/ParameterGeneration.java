@@ -162,9 +162,8 @@ public class ParameterGeneration implements PushDownType {
     }
   }
 
-  @Override public boolean activate( DataServiceExecutor executor ) {
+  @Override public boolean activate( DataServiceExecutor executor, StepInterface stepInterface ) {
     SQL query = executor.getSql();
-    StepInterface stepInterface = executor.getServiceStep();
     if ( stepInterface == null ) {
       return false;
     }

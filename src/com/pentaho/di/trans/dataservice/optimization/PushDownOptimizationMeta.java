@@ -23,6 +23,7 @@
 package com.pentaho.di.trans.dataservice.optimization;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 
@@ -91,6 +92,7 @@ public final class PushDownOptimizationMeta {
   }
 
   public boolean activate( DataServiceExecutor executor ) {
-    return getType().activate( executor );
+    StepInterface stepInterface = executor.getServiceTrans().findRunThread( getStepName() );
+    return getType().activate( executor, stepInterface );
   }
 }

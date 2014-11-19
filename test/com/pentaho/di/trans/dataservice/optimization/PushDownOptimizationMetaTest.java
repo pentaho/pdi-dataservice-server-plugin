@@ -64,7 +64,7 @@ public class PushDownOptimizationMetaTest {
     StepInterface stepInterface = mock( StepInterface.class );
     when( trans.findRunThread( STEP_NAME ) ).thenReturn( stepInterface );
 
-    when( pushDownType.activate( executor ) ).thenReturn( true, false );
+    when( pushDownType.activate( executor, stepInterface ) ).thenReturn( true, false );
     assertThat( pushDownOptimizationMeta.activate( executor ), is( true ) );
     assertThat( pushDownOptimizationMeta.activate( executor ), is( false ) );
   }
