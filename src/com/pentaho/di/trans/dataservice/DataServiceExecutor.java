@@ -42,7 +42,6 @@ import org.pentaho.di.trans.sql.SqlTransMeta;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMetaInterface;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,73 +57,78 @@ public class DataServiceExecutor {
   private String serviceName;
   private DataServiceMeta service;
   private SQL sql;
-  private Repository repository;
   private int rowLimit;
   private Map<String, String> parameters;
-  private boolean dual;
   private SqlTransMeta sqlTransGenerator;
+  private RowMetaInterface serviceFields;
 
   // Initialize empty without prepareExecution
   protected DataServiceExecutor() {
     parameters = Collections.emptyMap();
   }
 
+  public DataServiceExecutor( String sqlQuery, List<DataServiceMeta> services, Map<String, String> parameters,
+                              TransMeta transMeta, int rowLimit ) throws KettleException {
+    this( sqlQuery, services, parameters, rowLimit );
+    if ( !isDual() ) {
+      initServiceTrans( transMeta );
+    }
+    initGenTrans();
+  }
+
   /**
-   * @param sqlQuery User SQL query
-   * @param services Available services
+   * @param sqlQuery   User SQL query
+   * @param services   Available services
    * @param parameters Connection trans parameters
    * @param repository Repository to search for transformation
    * @throws KettleException
    */
   public DataServiceExecutor( String sqlQuery, List<DataServiceMeta> services, Map<String, String> parameters,
                               Repository repository, int rowLimit ) throws KettleException {
+   this( sqlQuery, services, parameters, rowLimit );
+    if ( !isDual() ) {
+      initServiceTrans( loadTransMeta( repository ) );
+    }
+    initGenTrans();
+  }
+
+  public DataServiceExecutor( String sqlQuery, List<DataServiceMeta> services,
+                              Map<String, String> parameters,
+                              int rowLimit ) throws KettleException {
     this.services = services;
     this.parameters = parameters;
-    this.repository = repository;
     this.rowLimit = rowLimit;
     this.sql = new SQL( sqlQuery );
     this.serviceName = sql.getServiceName();
-
-    prepareExecution();
+    service = findService( getServiceName() );
   }
 
-  public void prepareExecution() throws KettleException {
-    // First see if this is a special "dual" table we're reading from...
-    //
-    RowMetaInterface serviceFields;
-    if ( Const.isEmpty( serviceName ) || "dual".equalsIgnoreCase( serviceName ) ) {
-      service = new DataServiceMeta();
-      service.setName( "dual" );
-      sql.setServiceName( "dual" );
-      setDual( true );
-      serviceFields = new RowMeta(); // nothing to report from dual
-    } else {
-      // Locate Data Service
-      service = findService( serviceName );
-      if ( service == null ) {
-        throw new KettleException( "Unable to find service with name '" + serviceName + "' and SQL: " + sql.getSqlString() );
-      }
-
-      // Load Service Trans
-      TransMeta serviceTransMeta = loadTransMeta( repository );
-      serviceTransMeta.setName( calculateTransname( sql, true ) );
-
-      serviceTransMeta.activateParameters();
-      serviceFields = serviceTransMeta.getStepFields( service.getStepname() );
-      serviceTrans = new Trans( serviceTransMeta );
+  private void initServiceTrans( TransMeta serviceTransMeta ) throws KettleException {
+    if ( service == null ) {
+      throw new KettleException( "Unable to find service with name '" + getServiceName() + "' and SQL: " + sql.getSqlString() );
     }
-    // Continue parsing of the SQL, map to fields, extract conditions, parameters, ...
-    //
-    sql.parse( serviceFields );
+    serviceTransMeta.setName( calculateTransname( sql, true ) );
+    serviceTransMeta.activateParameters();
+    serviceFields = serviceTransMeta.getStepFields( service.getStepname() );
+    serviceTrans = new Trans( serviceTransMeta );
+  }
 
-    // Generate a transformation
-    //
+  private void initGenTrans() throws KettleException {
+    sql.parse( serviceFields );
     sqlTransGenerator = new SqlTransMeta( sql, rowLimit );
     TransMeta genTransMeta = sqlTransGenerator.generateTransMeta();
     genTrans = new Trans( genTransMeta );
   }
 
   private DataServiceMeta findService( String name ) {
+    DataServiceMeta service;
+    if ( isDual() ) {
+      service = new DataServiceMeta();
+      service.setName( "dual" );
+      sql.setServiceName( "dual" );
+      serviceFields = new RowMeta(); // nothing to report from dual
+      return service;
+    }
     for ( DataServiceMeta s : services ) {
       if ( s.getName().equalsIgnoreCase( name ) ) {
         return s;
@@ -232,7 +236,7 @@ public class DataServiceExecutor {
         transMeta.getLogChannel().logDetailed(
           "Service transformation was loaded from XML file [" + service.getTransFilename() + "]" );
       } catch ( Exception e ) {
-        throw new KettleException( "Unable to load service transformation for service '" + serviceName + "'", e );
+        throw new KettleException( "Unable to load service transformation for service '" + getServiceName() + "'", e );
       }
     } else {
       try {
@@ -242,7 +246,7 @@ public class DataServiceExecutor {
           "Service transformation was loaded from repository for service [" + service.getName() + "]" );
       } catch ( Exception e ) {
         throw new KettleException( "Unable to load service transformation for service '"
-          + serviceName + "' from the repository", e );
+          + getServiceName() + "' from the repository", e );
       }
     }
     return transMeta;
@@ -355,10 +359,11 @@ public class DataServiceExecutor {
   }
 
   public boolean isDual() {
-    return dual;
+    return Const.isEmpty( getServiceName() ) || "dual".equalsIgnoreCase( getServiceName() );
   }
 
-  public void setDual( boolean dual ) {
-    this.dual = dual;
+
+  public void setServiceName( String serviceName ) {
+    this.serviceName = serviceName;
   }
 }

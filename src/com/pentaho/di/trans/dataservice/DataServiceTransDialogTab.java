@@ -20,6 +20,7 @@ package com.pentaho.di.trans.dataservice;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
+import com.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -81,6 +82,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private CTabItem wDataServiceTab;
   private CCombo wServiceName;
   private CCombo wServiceStep;
+
+  private Button testButton;
   private TableView optimizationListTable;
   private List<PushDownOptimizationMeta> optimizationList = new ArrayList<PushDownOptimizationMeta>();
 
@@ -154,6 +157,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
                 .loadElement( wServiceName.getText() );
             optimizationList = selectedServiceMeta.getPushDownOptimizationMeta();
             refreshOptimizationList();
+            updateTestButton();
           }
         } catch ( MetaStoreException e ) {
           logger.error(
@@ -244,6 +248,15 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     String[] stepnames = transMeta.getStepNames();
     Arrays.sort( stepnames );
     wServiceStep.setItems( stepnames );
+    wServiceStep.addSelectionListener(
+      new SelectionAdapter() {
+        @Override
+        public void widgetSelected( SelectionEvent e ) {
+          super.widgetSelected( e );
+          updateTestButton();
+        }
+      }
+    );
 
     Group optimizationGroup = new Group( wDataServiceComp, SWT.SHADOW_IN );
     optimizationGroup.setLayout( new FormLayout() );
@@ -353,8 +366,30 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     fdOptTable.top = new FormAttachment( toolBar, margin * 2 );
     fdOptTable.left = new FormAttachment( 0, margin );
     fdOptTable.right = new FormAttachment( 100, -margin );
-    fdOptTable.bottom = new FormAttachment( 100, -margin );
+    fdOptTable.bottom = new FormAttachment( 90, -margin );
     optimizationListTable.setLayoutData( fdOptTable );
+
+
+    testButton = new Button( optimizationGroup, SWT.PUSH );
+    props.setLook( testButton );
+    testButton.setText( BaseMessages.getString( PKG, "TransDialog.TestButton.Label" ) );
+    FormData fdTest = new FormData();
+
+    fdTest.left = new FormAttachment( optimizationListTable, 0, SWT.CENTER );
+    fdTest.top = new FormAttachment( optimizationListTable, margin * 2 );
+    testButton.setLayoutData( fdTest );
+    testButton.setEnabled( false );
+    testButton.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent event ) {
+        try {
+          new DataServiceTestDialog( shell, getDataServiceMeta(), transMeta ).open();
+        } catch ( KettleException e ) {
+          new ErrorDialog( shell, BaseMessages.getString( PKG, "TransDialog.ErrorDialog.Label" ),
+            BaseMessages.getString( PKG, "TransDialog.TestDialogInitError.Label" ), e );
+        }
+      }
+    } );
 
     FormData fdDataServiceComp = new FormData();
     fdDataServiceComp.left = new FormAttachment( 0, 0 );
@@ -363,8 +398,19 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     fdDataServiceComp.bottom = new FormAttachment( 100, 0 );
     wDataServiceComp.setLayoutData( fdDataServiceComp );
 
+
     wDataServiceComp.layout();
     wDataServiceTab.setControl( wDataServiceComp );
+  }
+
+  private void updateTestButton() {
+    String serviceName = wServiceName.getText();
+    String stepName = wServiceStep.getText();
+    testButton.setEnabled(
+      serviceName != null
+      && stepName != null
+      && serviceName.length() > 0
+      && stepName.length() > 0 );
   }
 
   protected String renameService( Shell shell, IMetaStore metaStore, String elementName ) {
@@ -475,12 +521,25 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       if ( dataService != null ) {
         optimizationList = dataService.getPushDownOptimizationMeta();
         wServiceName.setText( Const.NVL( dataService.getName(), "" ) );
-        wServiceStep.setText( Const.NVL( dataService.getStepname(), "" ) );
+        wServiceStep.setText( getStepname( dataService, transMeta ) );
         refreshOptimizationList();
+        updateTestButton();
       }
     } catch ( Exception e ) {
       throw new KettleException( "Unable to load data service", e );
     }
+  }
+
+  /**
+   * Returns the step name associated with the data service if there is a corresponding
+   * step in transMeta, otherwise an empty string.
+   */
+  private String getStepname( DataServiceMeta dataService, TransMeta transMeta ) {
+    String stepName = dataService.getStepname();
+    if ( Arrays.asList( transMeta.getStepNames() ).contains( stepName ) ) {
+      return stepName;
+    }
+    return "";
   }
 
 
@@ -521,6 +580,21 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     for ( TableColumn column : table.getColumns() ) {
       column.pack();
     }
+  }
+
+
+  public DataServiceMeta getDataServiceMeta() throws KettleException {
+    DataServiceMeta dataService = new DataServiceMeta();
+    String serviceName = wServiceName.getText();
+    String stepService = wServiceStep.getText();
+    if ( serviceName.isEmpty() || stepService.isEmpty() ) {
+      throw new KettleException( "Required fields are not filled!" );
+    }
+
+    dataService.setName( serviceName );
+    dataService.setStepname( stepService );
+    dataService.setPushDownOptimizationMeta( optimizationList );
+    return dataService;
   }
 
   @Override
