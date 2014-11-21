@@ -145,6 +145,7 @@ public class DataServiceExecutorTest {
     executor.setSql( sql );
     SqlTransMeta sqlTransMeta = mockSqlMetaTrans();
     executor.setSqlTransMeta( sqlTransMeta );
+    executor.setServiceName( "test_service" );
 
     when( sql.getWhereClause() ).thenReturn( null );
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
