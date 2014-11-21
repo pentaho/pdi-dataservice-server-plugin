@@ -91,6 +91,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private ToolItem editButton;
   private ToolItem deleteButton;
 
+  private int ENABLED_COMBO_COLUMN = 4;
+
   @Override
   public void addTab( final TransMeta transMeta, final Shell shell, final CTabFolder wTabFolder ) {
     transMeta.setRepository( Spoon.getInstance().getRepository() );
@@ -272,7 +274,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     optimizationGroup.setText( BaseMessages.getString( PKG, "TransDialog.PushDownOptGroup.Label" )  );
 
     ColumnInfo[] colinf =
-      new ColumnInfo[]{
+      new ColumnInfo[] {
         new ColumnInfo(
           BaseMessages.getString( PKG, "TransDialog.OptNameColumn.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
@@ -285,10 +287,10 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         new ColumnInfo(
           BaseMessages.getString( PKG, "TransDialog.StateColumn.Label" ),
           ColumnInfo.COLUMN_TYPE_CCOMBO,
-          new String[]{
+          new String[] {
             BaseMessages.getString( PKG, "TransDialog.Enabled.Value" ),
-            BaseMessages.getString( PKG, "TransDialog.Disabled.Value" )},
-          false )};
+            BaseMessages.getString( PKG, "TransDialog.Disabled.Value" ) },
+          true ) };
 
     optimizationListTable = new TableView(
       transMeta, optimizationGroup, SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION, colinf, 0, null, props );
@@ -568,7 +570,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       item.setText( colnr++, optMeta.getName() );
       item.setText( colnr++, optMeta.getStepName() );
       item.setText( colnr++, pushDownType.getTypeName() );
-      item.setText( colnr++, "Enabled" ); // Fixed value for now.
+      item.setText( colnr, optMeta.isEnabled() ? BaseMessages.getString( PKG, "TransDialog.Enabled.Value" )
+        : BaseMessages.getString( PKG, "TransDialog.Disabled.Value" ) );
     }
     optimizationListTable.setRowNums();
     editButton.setEnabled( false );
@@ -601,6 +604,14 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   public void ok( TransMeta transMeta ) throws KettleException {
 
     try {
+      // Set enabled/disabled on optimizations
+      for ( int i = 0; i < optimizationList.size(); i++ ) {
+        PushDownOptimizationMeta optMeta = optimizationList.get( i );
+        TableItem tableItem = optimizationListTable.table.getItem( i );
+        String text = tableItem.getText( ENABLED_COMBO_COLUMN );
+        optMeta.setEnabled( text.equals( BaseMessages.getString( PKG, "TransDialog.Enabled.Value" ) ) );
+      }
+
       // Get data service details...
       //
       DataServiceMeta dataService = new DataServiceMeta();

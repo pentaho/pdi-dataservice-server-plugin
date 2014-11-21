@@ -172,7 +172,9 @@ public class DataServiceExecutor {
 
       // Apply Push Down Optimizations
       for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
-        optimizationMeta.activate( this );
+        if ( optimizationMeta.isEnabled() ) {
+          optimizationMeta.activate( this );
+        }
       }
 
       // This is where we will inject the rows from the service transformation step
