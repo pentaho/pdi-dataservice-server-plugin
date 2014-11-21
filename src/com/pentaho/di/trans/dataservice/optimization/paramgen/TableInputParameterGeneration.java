@@ -26,6 +26,7 @@ import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationExcepti
 import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.ValueMetaAndData;
@@ -44,6 +45,7 @@ import java.util.List;
 public class TableInputParameterGeneration implements ParameterGenerationService {
 
   private final ValueMetaResolver valueMetaResolver;
+  protected DatabaseMeta dbMeta;
 
   public TableInputParameterGeneration( ValueMetaResolver resolver ) {
     valueMetaResolver = resolver;
@@ -71,6 +73,8 @@ public class TableInputParameterGeneration implements ParameterGenerationService
       // Create a new wrapper
       db = new DatabaseWrapper( stepDataInterface.db );
     }
+
+    dbMeta = db.getDatabaseMeta();
 
     // Verify database connection
     try {
@@ -149,7 +153,8 @@ public class TableInputParameterGeneration implements ParameterGenerationService
         params.add( getResolvedValue( condition ) );
         break;
     }
-    return String.format( "\"%s\" %s %s", getFieldName( condition ), function, placeholder );
+
+    return String.format( "%s %s %s", getQuotedFieldName( condition ), function, placeholder );
   }
 
   private Object[] getInListArray( Condition condition ) throws PushDownOptimizationException {
@@ -175,5 +180,9 @@ public class TableInputParameterGeneration implements ParameterGenerationService
     return condition.getLeftValuename();
   }
 
+  private String getQuotedFieldName( Condition condition ) {
+    String fieldName = dbMeta.quoteField( getFieldName( condition ) );
+    return fieldName;
+  }
 
 }

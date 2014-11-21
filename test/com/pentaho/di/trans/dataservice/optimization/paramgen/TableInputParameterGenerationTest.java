@@ -66,13 +66,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TableInputParameterGenerationTest {
 
@@ -95,12 +91,20 @@ public class TableInputParameterGenerationTest {
     // Setup Mock Step and Data
     data = new TableInputData();
     when( stepInterface.getLogLevel() ).thenReturn( LogLevel.NOTHING );
-    data.db = new Database( stepInterface, mock( DatabaseMeta.class ) );
+    data.db = new Database( stepInterface, databaseMeta );
     // Add mock connection to connection map, prevent an actual connection attempt
     data.db.setConnection( mock( Connection.class ) );
     data.db.setConnectionGroup( MOCK_CONNECTION_GROUP );
     data.db.setPartitionId( MOCK_PARTITION_ID );
     when( stepInterface.getStepDataInterface() ).thenReturn( data );
+
+    service.dbMeta = databaseMeta;
+
+    when( databaseMeta.quoteField( anyString() ) ).thenAnswer(new Answer<String>() {
+      @Override public String answer( InvocationOnMock invocation ) throws Throwable {
+        return (String) invocation.getArguments()[ 0 ];
+      }
+    });
 
     DatabaseConnectionMap connectionMap = DatabaseConnectionMap.getInstance();
     connectionMap.getMap().clear();
@@ -176,7 +180,7 @@ public class TableInputParameterGenerationTest {
     String expectedQuery =
         "SELECT DepartmentName, COUNT(*) as EmployeeCount "
         + "FROM Department, Employee "
-        + "WHERE Employee.DepartmentId = Department.DepartmentId AND \"Employee.Grade\" = ? ";
+        + "WHERE Employee.DepartmentId = Department.DepartmentId AND Employee.Grade = ? ";
     assertThat( resultQuery, equalTo( expectedQuery ) );
 
     assertThat( rowMeta.getValueMetaList(), equalTo( Arrays.asList( resolvedValueMeta ) ) );
@@ -185,30 +189,31 @@ public class TableInputParameterGenerationTest {
 
   @Test
   public void testConvertAtomicCondition() throws Exception {
-    testFunctionType( Condition.FUNC_EQUAL, "\"field_name\" = ?", "value" );
-    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> ?", "value" );
-    testFunctionType( Condition.FUNC_NOT_EQUAL, "\"field_name\" <> ?", 123 );
-    testFunctionType( Condition.FUNC_SMALLER, "\"field_name\" < ?", 123 );
-    testFunctionType( Condition.FUNC_SMALLER_EQUAL, "\"field_name\" <= ?", 123 );
-    testFunctionType( Condition.FUNC_LARGER, "\"field_name\" > ?", 123 );
-    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= ?", 123 );
+    testFunctionType( Condition.FUNC_EQUAL, "field_name = ?", "value" );
+    testFunctionType( Condition.FUNC_NOT_EQUAL, "field_name <> ?", "value" );
+    testFunctionType( Condition.FUNC_NOT_EQUAL, "field_name <> ?", 123 );
+    testFunctionType( Condition.FUNC_SMALLER, "field_name < ?", 123 );
+    testFunctionType( Condition.FUNC_SMALLER_EQUAL, "field_name <= ?", 123 );
+    testFunctionType( Condition.FUNC_LARGER, "field_name > ?", 123 );
+    testFunctionType( Condition.FUNC_LARGER_EQUAL, "field_name >= ?", 123 );
 
-    testInListCondition( "value1;value2;value3", new String[]{"value1", "value2", "value3"}, "\"field_name\"  IN  (?,?,?)" );
-    testInListCondition("value1;value2;value3;val ue4" , new String[]{ "value1", "value2", "value3", "val ue4" }, "\"field_name\"  IN  (?,?,?,?)" );
-    testFunctionType( Condition.FUNC_LARGER_EQUAL, "\"field_name\" >= ?", 123 );
+    testInListCondition( "value1;value2;value3", new String[] { "value1", "value2", "value3" },
+      "field_name  IN  (?,?,?)" );
+    testInListCondition("value1;value2;value3;val ue4" , new String[]{ "value1", "value2", "value3", "val ue4" }, "field_name  IN  (?,?,?,?)" );
+    testFunctionType( Condition.FUNC_LARGER_EQUAL, "field_name >= ?", 123 );
 
     try {
-      testFunctionType( Condition.FUNC_REGEXP, "\"field_name\" ~= ?", "123" );
+      testFunctionType( Condition.FUNC_REGEXP, "field_name ~= ?", "123" );
       fail( "Should have thrown exception" );
     } catch ( PushDownOptimizationException e ) {
       assertTrue(  e.getMessage().contains( "REGEXP" ) );
     }
-    testFunctionType( Condition.FUNC_NULL, "\"field_name\" IS NULL ", null );
-    testFunctionType( Condition.FUNC_NOT_NULL, "\"field_name\" IS NOT NULL ", null );
-    testFunctionType( Condition.FUNC_LIKE, "\"field_name\" LIKE ?", "MAT%CH" );
+    testFunctionType( Condition.FUNC_NULL, "field_name IS NULL ", null );
+    testFunctionType( Condition.FUNC_NOT_NULL, "field_name IS NOT NULL ", null );
+    testFunctionType( Condition.FUNC_LIKE, "field_name LIKE ?", "MAT%CH" );
 
     try {
-      testFunctionType( Condition.FUNC_EQUAL, "\"field_name\" = 'value'", null );
+      testFunctionType( Condition.FUNC_EQUAL, "field_name = 'value'", null );
       fail( "Should have thrown exception" );
     } catch ( PushDownOptimizationException e ) {
       assertThat( e.getMessage(), notNullValue() );
@@ -258,10 +263,11 @@ public class TableInputParameterGenerationTest {
 
     service.convertCondition( condition, sqlBuilder, paramsMeta, values );
 
-    assertThat( sqlBuilder.toString(), equalTo( "( ( \"A\" = ? OR \"B\" = ? ) AND \"C\" = ? )" ) );
+    assertThat( sqlBuilder.toString(), equalTo( "( ( A = ? OR B = ? ) AND C = ? )" ) );
 
     // Verify that resolved ValueMeta added 3 times, and data stored in order
     verify( paramsMeta, times( 3 ) ).addValueMeta( resolvedValueMeta );
+    verify( databaseMeta, times( 3 ) ).quoteField( anyString() );
     assertThat( values, equalTo( Arrays.<Object>asList( "valA", 32, "valC" ) ) );
   }
 
@@ -286,4 +292,5 @@ public class TableInputParameterGenerationTest {
       assertThat( thrown.getCause(), equalTo( (Throwable) expected ) );
     }
   }
+
 }
