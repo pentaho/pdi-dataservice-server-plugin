@@ -101,6 +101,9 @@ public class TableInputParameterGeneration implements ParameterGenerationService
   protected void convertCondition( Condition condition, StringBuilder builder, RowMeta paramsMeta, List<Object> params )
     throws PushDownOptimizationException {
     // Condition is composite: Recursively add children
+    if ( condition.isNegated() ) {
+      builder.append( "NOT " );
+    }
     if ( condition.isComposite() ) {
       builder.append( "( " );
       for ( Condition child : condition.getChildren() ) {

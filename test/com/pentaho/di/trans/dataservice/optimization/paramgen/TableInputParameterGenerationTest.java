@@ -251,11 +251,12 @@ public class TableInputParameterGenerationTest {
 
   @Test
   public void testConvertCondition() throws Exception {
-    // ( ( A | B ) & C )
+    // ( ( A | B ) & !C )
     Condition condition = new Condition();
     condition.addCondition( newCondition( "A", "valA" ) );
     condition.getCondition( 0 ).addCondition( newCondition( OR, "B", 32 ) );
     condition.addCondition( newCondition( AND, "C", "valC" ) );
+    condition.getCondition( 1 ).negate();
 
     StringBuilder sqlBuilder = new StringBuilder();
     RowMeta paramsMeta = mock( RowMeta.class );
@@ -263,7 +264,7 @@ public class TableInputParameterGenerationTest {
 
     service.convertCondition( condition, sqlBuilder, paramsMeta, values );
 
-    assertThat( sqlBuilder.toString(), equalTo( "( ( A = ? OR B = ? ) AND C = ? )" ) );
+    assertThat( sqlBuilder.toString(), equalTo( "( ( A = ? OR B = ? ) AND NOT C = ? )" ) );
 
     // Verify that resolved ValueMeta added 3 times, and data stored in order
     verify( paramsMeta, times( 3 ) ).addValueMeta( resolvedValueMeta );
