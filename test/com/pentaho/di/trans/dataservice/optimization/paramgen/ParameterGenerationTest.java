@@ -342,6 +342,21 @@ public class ParameterGenerationTest {
     condition = newCondition( "A_src" );
     condition.addCondition( newCondition( OR, "Z" ) );
     assertNull( condition.toString(), paramGen.mapConditionFields( condition ) );
+
+    // !( A & Z ) -> none
+    condition = newCondition( "A_src" );
+    condition.addCondition( newCondition( AND, "Z" ) );
+    condition.negate();
+    assertNull( condition.toString(), paramGen.mapConditionFields( condition ) );
+
+    //  !( A || Z ) -> !A
+    condition = newCondition( "A_src" );
+    condition.addCondition( newCondition( OR, "Z" ) );
+    condition.negate();
+    assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
+    assertEquals( "A_tgt", verify.getLeftValuename() );
+    assertEquals( 0, verify.getChildren().size() );
+    assertTrue( verify.isNegated() );
   }
 
   @Test
@@ -379,6 +394,19 @@ public class ParameterGenerationTest {
     condition.addCondition( newCondition( AND, "Z" ) );
     condition.getCondition( 1 ).addCondition( newCondition( AND, "A_src" ) );
     assertNotNull( condition.toString(), paramGen.mapConditionFields( condition ) );
+
+    //  !( Z || A || B ) -> !( A || B )
+    //  3 flat conditions, negated
+    condition = newCondition( "Z" );
+    condition.addCondition( newCondition( OR, "A_src" ) );
+    condition.addCondition( newCondition( OR, "B_src" ) );
+    condition.negate();
+    assertNotNull( condition.toString(), verify = paramGen.mapConditionFields( condition ) );
+    assertEquals( 2, verify.getChildren().size() );
+    assertEquals( "A_tgt", verify.getCondition( 0 ).getLeftValuename() );
+    assertEquals( OR, verify.getCondition( 1 ).getOperator() );
+    assertEquals( "B_tgt", verify.getCondition( 1 ).getLeftValuename() );
+    assertTrue( verify.isNegated() );
   }
 
   public static Condition newCondition( String lhs ) throws KettleValueException {

@@ -122,9 +122,10 @@ public class ParameterGeneration implements PushDownType {
     } else {
       // Composite: decide if all child conditions are required
       List<Condition> children = condition.getChildren();
+      int requireAllOp = condition.isNegated() ? Condition.OPERATOR_AND : Condition.OPERATOR_OR;
       boolean requireAll = false;
       for ( Condition child : children ) {
-        if ( child.getOperator() == Condition.OPERATOR_OR ) {
+        if ( child.getOperator() == requireAllOp ) {
           requireAll = true;
           break;
         }
