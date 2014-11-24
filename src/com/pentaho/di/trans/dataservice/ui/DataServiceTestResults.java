@@ -33,7 +33,6 @@ import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
@@ -47,7 +46,7 @@ import java.util.List;
  */
 public class DataServiceTestResults {
 
-  private final RowMetaInterface rowMeta;
+  private RowMetaInterface rowMeta;
   private final TransMeta transMeta;
   private final Composite container;
 
@@ -56,20 +55,12 @@ public class DataServiceTestResults {
                                  Composite container ) throws KettleStepException {
     this.transMeta = transMeta;
     this.container = container;
-    rowMeta = initRowMeta( dataService );
+    rowMeta = new RowMeta();
   }
 
-  private RowMetaInterface initRowMeta( DataServiceMeta dataService ) throws KettleStepException {
-    RowMetaInterface stepFields = null;
-    for ( StepMeta step : transMeta.getSteps() ) {
-      if ( dataService.getStepname().equals( step.getName() ) ) {
-        stepFields = transMeta.getStepFields( step ).clone();
-        break;
-      }
-    }
-    return stepFields == null ? new RowMeta() : stepFields;
+  public void setRowMeta( RowMetaInterface rowMeta ) {
+    this.rowMeta = rowMeta;
   }
-
 
   public void load( List<Object[]> rows ) {
     TableView tableView = initTableView( rows );
@@ -84,7 +75,7 @@ public class DataServiceTestResults {
     tableView.optWidth( true );
   }
 
-  protected TableView initTableView( List<Object[]> rows ) {
+  private TableView initTableView( List<Object[]> rows ) {
     for ( Control control : container.getChildren() ) {
       control.dispose();
     }

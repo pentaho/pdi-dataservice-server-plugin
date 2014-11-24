@@ -89,6 +89,7 @@ public class DataServiceTestDialog implements  java.io.Serializable {
   }
 
   public void close() {
+
     dialog.hide();
   }
 
@@ -103,6 +104,7 @@ public class DataServiceTestDialog implements  java.io.Serializable {
       new DataServiceTestCallback() {
         @Override
         public void onExecuteComplete() {
+          resultsView.setRowMeta( model.getResultRowMeta() );
           resultsView.load( model.getResultRows() );
         }
 
@@ -120,10 +122,14 @@ public class DataServiceTestDialog implements  java.io.Serializable {
   }
 
   private void updateLogChannel() {
-    serviceTransLogBrowser.attachToLogBrowser( model.getServiceTransLogChannel(),
-      model.getLogLevel() );
-    genTransLogBrowser.attachToLogBrowser( model.getGenTransLogChannel(),
-      model.getLogLevel() );
+    if ( model.getServiceTransLogChannel() != null ) {
+      serviceTransLogBrowser.attachToLogBrowser( model.getServiceTransLogChannel(),
+        model.getLogLevel() );
+    }
+    if ( model.getGenTransLogChannel() != null ) {
+      genTransLogBrowser.attachToLogBrowser( model.getGenTransLogChannel(),
+        model.getLogLevel() );
+    }
   }
 
   private Document initXul( Composite parent ) throws KettleException {

@@ -36,15 +36,16 @@ import org.pentaho.di.ui.spoon.trans.LogBrowser;
 
 public class DataServiceTestLogBrowser {
 
-  private final StyledText logText;
+  private final Composite parentComposite;
+  private  StyledText logText;
 
   public DataServiceTestLogBrowser( Composite parentComposite ) {
-    logText = addStyledText( parentComposite );
+    this.parentComposite = parentComposite;
   }
 
   public void attachToLogBrowser( final LogChannelInterface logChannel,
                                   LogLevel logLevel ) {
-    logText.setText( "" );
+    initStyledText( parentComposite );
     logChannel.setLogLevel( logLevel );
     LogBrowser logBrowser = new LogBrowser( logText, new LogParentProvidedInterface() {
       @Override
@@ -60,16 +61,18 @@ public class DataServiceTestLogBrowser {
     logBrowser.installLogSniffer();
   }
 
-  private StyledText addStyledText( Composite composite ) {
+  private void initStyledText( Composite composite ) {
+    if ( logText != null ) {
+      logText.dispose();
+    }
     composite.setLayout( new FormLayout() );
-    StyledText text = new StyledText( composite, SWT.H_SCROLL | SWT.V_SCROLL );
+    logText = new StyledText( composite, SWT.H_SCROLL | SWT.V_SCROLL );
     FormData formData = new FormData();
     formData.left = new FormAttachment( 0, 0 );
     formData.right = new FormAttachment( 100, 0 );
     formData.top = new FormAttachment( 0, 0 );
     formData.bottom = new FormAttachment( 100, 0 );
-    text.setLayoutData( formData );
-    return text;
+    logText.setLayoutData( formData );
+    composite.layout();
   }
-
 }

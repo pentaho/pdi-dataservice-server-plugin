@@ -24,13 +24,16 @@ package com.pentaho.di.trans.dataservice.ui.controller;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import com.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import com.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
+import com.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import com.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.logging.KettleLogStore;
 import org.pentaho.di.core.logging.LogLevel;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowListener;
@@ -48,6 +51,7 @@ import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 public class DataServiceTestController extends AbstractXulEventHandler {
 
@@ -163,10 +167,10 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   public void executeSql() throws KettleException {
-    DataServiceExecutor dataServiceExec = getDataServiceExecutor();
+    DataServiceExecutor dataServiceExec = getNewDataServiceExecutor();
+
     updateModel( dataServiceExec );
     callback.onLogChannelUpdate();
-
     try {
       dataServiceExec.executeQuery( getDataServiceRowListener() );
       dataServiceExec.waitUntilFinished();
@@ -183,9 +187,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   private void maybeSetErrorAlert( DataServiceExecutor dataServiceExec ) {
     if ( dataServiceExec.getGenTrans().getErrors() > 0
-      || dataServiceExec.getServiceTrans().getErrors() > 0 ) {
+      || ( dataServiceExec.getServiceTrans() != null
+      && dataServiceExec.getServiceTrans().getErrors() > 0 ) ) {
       setErrorAlertMessage();
-
     }
   }
 
@@ -194,17 +198,39 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       BaseMessages.getString( PKG, "DataServiceTest.Errors.Label" ) );
   }
 
-  protected DataServiceExecutor getDataServiceExecutor() throws KettleException {
-    return new DataServiceExecutor( model.getSql(),
-      Arrays.asList( dataService ), new HashMap<String, String>(),
-      transMeta, model.getMaxRows() );
+  protected DataServiceExecutor getNewDataServiceExecutor() throws KettleException {
+    try {
+      return new DataServiceExecutor( model.getSql(),
+        Arrays.asList( dataService ), new HashMap<String, String>(),
+        transMeta, model.getMaxRows() );
+    } catch ( KettleException e ) {
+      model.setErrorAlertMessage( e.getMessage() );
+      throw e;
+    }
   }
 
-  private void updateModel( DataServiceExecutor dataServiceExec ) {
+  private void updateModel( DataServiceExecutor dataServiceExec ) throws KettleException {
+    model.setResultRowMeta( sqlFieldsToRowMeta( dataServiceExec ) );
     model.clearResultRows();
     model.setErrorAlertMessage( "" );
-    model.setServiceTransLogChannel( dataServiceExec.getServiceTrans().getLogChannel() );
+
+    dataServiceExec.getGenTrans().setLogLevel( model.getLogLevel() );
+    dataServiceExec.getServiceTrans().setLogLevel( model.getLogLevel() );
+    model.setServiceTransLogChannel(
+      dataServiceExec.isDual() ? null : dataServiceExec.getServiceTrans().getLogChannel() );
     model.setGenTransLogChannel( dataServiceExec.getGenTrans().getLogChannel() );
+  }
+
+  private RowMetaInterface sqlFieldsToRowMeta( DataServiceExecutor dataServiceExec ) throws KettleException {
+    List<SQLField> fields = dataServiceExec.getSql().getSelectFields().getFields();
+    RowMetaInterface rowMeta = dataServiceExec.getSql().getRowMeta();
+    RowMetaInterface sqlFieldsRowMeta = new RowMeta();
+    List<String> fieldNames = Arrays.asList( rowMeta.getFieldNames() );
+    for ( SQLField field : fields ) {
+      int indexOfField = fieldNames.indexOf( field.getField() );
+      sqlFieldsRowMeta.addValueMeta( rowMeta.getValueMeta( indexOfField ) );
+    }
+    return sqlFieldsRowMeta;
   }
 
   private RowListener getDataServiceRowListener() {
@@ -212,6 +238,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       @Override
       public void rowReadEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
         model.addResultRow( row );
+        // if there were any rows read we want to make sure RowMeta is consistent w/ the
+        // actual results, since datatypes may have changed (e.g. with sum(integer_field) )
+        model.setResultRowMeta( rowMeta );
       }
 
       @Override
@@ -221,12 +250,14 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
       @Override
       public void errorRowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-        model.addResultRow( row );  // TODO - anything else to handle error row?
+        model.addResultRow( row );
       }
     };
   }
 
   public void close() {
+    KettleLogStore.discardLines( model.getGenTransLogChannel().getLogChannelId(), true );
+    KettleLogStore.discardLines( model.getServiceTransLogChannel().getLogChannelId(), true );
     callback.onClose();
   }
 

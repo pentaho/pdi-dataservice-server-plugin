@@ -25,7 +25,7 @@
             <button  label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()" />
         </hbox>
         <hbox align="right"  height="50">
-            <label  id="error-alert" width="250" />
+            <label  id="error-alert" width="700" />
             <spacer flex="1"/>
             <label id="elapsed-time"  />
             <spacer flex="1"/>

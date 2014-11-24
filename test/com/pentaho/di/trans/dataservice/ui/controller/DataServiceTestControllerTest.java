@@ -35,11 +35,22 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMeta;
+import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.core.sql.SQLField;
+import org.pentaho.di.core.sql.SQLFields;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowListener;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class DataServiceTestControllerTest  {
@@ -69,6 +80,11 @@ public class DataServiceTestControllerTest  {
     when( dataServiceExecutor.getGenTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getServiceTrans().getLogChannel() ).thenReturn( mock( LogChannelInterface.class ) );
     when( dataServiceExecutor.getGenTrans().getLogChannel() ).thenReturn( mock( LogChannelInterface.class ) );
+    when( dataServiceExecutor.getSql() ).thenReturn( mock( SQL.class ) );
+    when( dataServiceExecutor.getSql().getSelectFields() ).thenReturn( mock( SQLFields.class ) );
+    when( dataServiceExecutor.getSql().getRowMeta() ).thenReturn( new RowMeta() );
+    when( dataServiceExecutor.getSql().getSelectFields().getFields() )
+      .thenReturn( new ArrayList<SQLField>() );
   }
 
   @Test
@@ -121,6 +137,24 @@ public class DataServiceTestControllerTest  {
   }
 
   @Test
+  public void resultRowMetaIsUpdated() throws Exception {
+    SQLField field = mock( SQLField.class );
+    List<SQLField> fields = new ArrayList<SQLField>();
+    fields.add( field );
+    when( field.getField() ).thenReturn( "testFieldName" );
+    when( dataServiceExecutor.getSql().getSelectFields().getFields() )
+      .thenReturn( fields );
+    RowMeta rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMeta( "testFieldName" ) );
+    when( dataServiceExecutor.getSql().getRowMeta() ).thenReturn( rowMeta );
+    ArgumentCaptor<RowMetaInterface> argument = ArgumentCaptor.forClass( RowMetaInterface.class );
+    dataServiceTestController.executeSql();
+    verify( model, times( 1 ) ).setResultRowMeta( argument.capture() );
+    assertThat( argument.getValue().getFieldNames(),
+      equalTo( new String[]{"testFieldName"} ) );
+  }
+
+  @Test
   public void previousResultsAreClearedOnSqlExec() throws KettleException {
     dataServiceTestController.executeSql();
     verify( model, times( 1 ) ).clearResultRows();
@@ -150,7 +184,7 @@ public class DataServiceTestControllerTest  {
     }
 
     @Override
-    protected DataServiceExecutor getDataServiceExecutor() throws KettleException {
+    protected DataServiceExecutor getNewDataServiceExecutor() throws KettleException {
       return dataServiceExecutor;
     }
   }

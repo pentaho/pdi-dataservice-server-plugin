@@ -24,6 +24,7 @@ package com.pentaho.di.trans.dataservice.ui.model;
 
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogLevel;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   private String errorAlertMessage;
 
   private List<Object[]> resultRows = new ArrayList<Object[]>();
+  private RowMetaInterface resultRowMeta;
 
   private LogChannelInterface serviceTransLogChannel;
   private LogChannelInterface genTransLogChannel;
@@ -109,5 +111,13 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   public void setErrorAlertMessage( String errorAlertMessage ) {
     this.errorAlertMessage = errorAlertMessage;
     firePropertyChange( "errorAlertMessage", null, errorAlertMessage );
+  }
+
+  public RowMetaInterface getResultRowMeta() {
+    return resultRowMeta;
+  }
+
+  public void setResultRowMeta( RowMetaInterface resultRowMeta ) {
+    this.resultRowMeta = resultRowMeta;
   }
 }
