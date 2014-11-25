@@ -61,10 +61,14 @@ public class DataServiceTestLogBrowser {
     logBrowser.installLogSniffer();
   }
 
-  private void initStyledText( Composite composite ) {
+  public void dispose() {
     if ( logText != null ) {
       logText.dispose();
     }
+  }
+
+  private void initStyledText( Composite composite ) {
+    dispose();
     composite.setLayout( new FormLayout() );
     logText = new StyledText( composite, SWT.H_SCROLL | SWT.V_SCROLL );
     FormData formData = new FormData();
@@ -75,4 +79,5 @@ public class DataServiceTestLogBrowser {
     logText.setLayoutData( formData );
     composite.layout();
   }
+
 }

@@ -9,6 +9,7 @@
             appicon="ui/images/spoon.ico"
             buttons="accept"
             ondialogaccept="dataServiceTestController.close()"
+            ondialogcancel="dataServiceTestController.close()"
             buttonalign="end"
             buttonlabelaccept="${DataServiceTest.Dialog.Close}">
         <label value="SQL:" />

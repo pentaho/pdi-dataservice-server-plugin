@@ -220,7 +220,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   private void resetDatabaseMetaParameters() {
     for ( StepMeta stepMeta :  transMeta.getSteps() ) {
       if ( stepMeta.getStepMetaInterface() instanceof TableInputMeta ) {
-        DatabaseMeta dbMeta = ((TableInputMeta) stepMeta.getStepMetaInterface()).getDatabaseMeta();
+        DatabaseMeta dbMeta = ( (TableInputMeta) stepMeta.getStepMetaInterface() ).getDatabaseMeta();
         dbMeta.copyVariablesFrom( transMeta );
       }
     }
@@ -273,9 +273,17 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   public void close() {
-    KettleLogStore.discardLines( model.getGenTransLogChannel().getLogChannelId(), true );
-    KettleLogStore.discardLines( model.getServiceTransLogChannel().getLogChannelId(), true );
+    clearLogLines();
     callback.onClose();
+  }
+
+  private void clearLogLines() {
+    if ( model.getGenTransLogChannel() != null ) {
+      KettleLogStore.discardLines( model.getGenTransLogChannel().getLogChannelId(), true );
+    }
+    if ( model.getServiceTransLogChannel() != null ) {
+      KettleLogStore.discardLines( model.getServiceTransLogChannel().getLogChannelId(), true );
+    }
   }
 
   public void setCallback( DataServiceTestCallback callback ) {
