@@ -24,6 +24,8 @@ package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.exception.KettleDatabaseException;
+import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 
@@ -42,9 +44,12 @@ import java.util.UUID;
 */
 class DatabaseWrapper extends Database {
   Map<String, RuntimePushDown> pushDownMap = new HashMap<String, RuntimePushDown>();
+  private final LogChannelInterface log;
 
   public DatabaseWrapper( Database db ) {
     super( db, db.getDatabaseMeta() );
+
+    log = new LogChannel( this, db );
 
     shareVariablesWith( db );
 
@@ -61,7 +66,26 @@ class DatabaseWrapper extends Database {
     List<Object> params = data == null ? new ArrayList<Object>() : new ArrayList<Object>( Arrays.asList( data ) );
     paramsMeta = paramsMeta == null ? new RowMeta() : paramsMeta;
     sql = injectRuntime( pushDownMap, sql, paramsMeta, params );
+    if ( params.size() > 0 && log.isDetailed() ) {
+      log.logDetailed( String.format( "Parameterized SQL:  %s   %s",
+        sql,  paramsToString( params ) ) );
+    }
+
     return super.openQuery( sql, paramsMeta, params.toArray(), fetch_mode, lazyConversion );
+  }
+
+  private String paramsToString( List<Object> params ) {
+    StringBuilder paramStr = new StringBuilder();
+    paramStr.append( "{" );
+    for ( int i = 1; i <= params.size(); i++ ) {
+      paramStr.append( i )
+        .append( ": " )
+        .append( params.get( i - 1 ) );
+      if ( i < params.size() ) {
+        paramStr.append( ", " );
+      }
+    }
+    return paramStr.append( "}" ).toString();
   }
 
   protected String injectRuntime( Map<String, RuntimePushDown> runtimeMap, String sql, final RowMetaInterface paramsMeta, final List<Object> params ) {

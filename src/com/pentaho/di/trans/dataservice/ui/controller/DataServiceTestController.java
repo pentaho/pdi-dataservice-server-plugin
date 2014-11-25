@@ -27,6 +27,7 @@ import com.pentaho.di.trans.dataservice.DataServiceMeta;
 import com.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import com.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import com.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
+import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.KettleLogStore;
@@ -37,6 +38,8 @@ import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowListener;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -200,12 +203,26 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   protected DataServiceExecutor getNewDataServiceExecutor() throws KettleException {
     try {
+      resetDatabaseMetaParameters();
       return new DataServiceExecutor( model.getSql(),
         Arrays.asList( dataService ), new HashMap<String, String>(),
         transMeta, model.getMaxRows() );
     } catch ( KettleException e ) {
       model.setErrorAlertMessage( e.getMessage() );
       throw e;
+    }
+  }
+
+  /**
+   *  Assures parameter values are consistent between DatabaseMeta and transMeta.
+   *  Otherwise DatabaseMeta may have parameter values saved from previous execution.
+   */
+  private void resetDatabaseMetaParameters() {
+    for ( StepMeta stepMeta :  transMeta.getSteps() ) {
+      if ( stepMeta.getStepMetaInterface() instanceof TableInputMeta ) {
+        DatabaseMeta dbMeta = ((TableInputMeta) stepMeta.getStepMetaInterface()).getDatabaseMeta();
+        dbMeta.copyVariablesFrom( transMeta );
+      }
     }
   }
 
