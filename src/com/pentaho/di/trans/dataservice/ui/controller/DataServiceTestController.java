@@ -273,6 +273,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   public void close() {
+    resetDatabaseMetaParameters();
     clearLogLines();
     callback.onClose();
   }
