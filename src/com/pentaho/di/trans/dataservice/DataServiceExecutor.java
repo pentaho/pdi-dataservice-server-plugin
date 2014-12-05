@@ -23,6 +23,8 @@
 package com.pentaho.di.trans.dataservice;
 
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
@@ -32,6 +34,8 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaAndData;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.StringObjectId;
@@ -128,9 +132,68 @@ public class DataServiceExecutor {
 
   private void initGenTrans() throws KettleException {
     sql.parse( serviceFields );
+
+    // Normalize conditions
+    ValueMetaResolver resolver = new ValueMetaResolver( serviceFields );
+    if ( sql.getWhereCondition() != null && sql.getWhereCondition().getCondition() != null ) {
+      convertCondition( sql.getWhereCondition().getCondition(), resolver );
+    }
+    if ( sql.getHavingCondition() != null && sql.getHavingCondition().getCondition() != null ) {
+      convertCondition( sql.getHavingCondition().getCondition(), resolver );
+    }
+
     sqlTransGenerator = new SqlTransMeta( sql, rowLimit );
     TransMeta genTransMeta = sqlTransGenerator.generateTransMeta();
     genTrans = new Trans( genTransMeta );
+  }
+
+  private void convertCondition( Condition condition, ValueMetaResolver resolver ) {
+    if ( condition.isAtomic() ) {
+      if ( condition.getFunction() == Condition.FUNC_IN_LIST ) {
+        convertListCondition( condition, resolver );
+      } else {
+        convertAtomicCondition( condition, resolver );
+      }
+    } else {
+      for ( Condition child : condition.getChildren() ) {
+        convertCondition( child, resolver );
+      }
+    }
+  }
+
+  private void convertAtomicCondition( Condition condition, ValueMetaResolver resolver ) {
+    String fieldName = condition.getLeftValuename();
+    ValueMetaAndData rhs = condition.getRightExact();
+    try {
+      // Determine meta and resolve value
+      ValueMetaInterface resolvedValueMeta = resolver.getValueMeta( fieldName );
+      Object resolvedValue = resolver.getTypedValue( fieldName, rhs.getValueMeta().getType(), rhs.getValueData() );
+
+      // Set new condition meta and value
+      condition.setRightExact( new ValueMetaAndData( resolvedValueMeta, resolvedValue ) );
+    } catch ( KettleException e ) {
+      // Skip conversion of this condition?
+    }
+  }
+
+  private void convertListCondition( Condition condition, ValueMetaResolver resolver ) {
+    String fieldName = condition.getLeftValuename();
+    try {
+      // Determine meta and resolve values
+      ValueMetaInterface resolvedValueMeta = resolver.getValueMeta( fieldName );
+      Object[] typedValues = resolver.inListToTypedObjectArray( fieldName, condition.getRightExactString() );
+
+      // Encode list values
+      String[] typedValueStrings = new String[ typedValues.length ];
+      for ( int i = 0; i < typedValues.length; i++ ) {
+        typedValueStrings[i] = resolvedValueMeta.getString( typedValues[i] );
+      }
+
+      // Set new condition in-list (leave meta as string)
+      condition.getRightExact().setValueData( StringUtils.join( typedValueStrings, ';' ) );
+    } catch ( KettleException e ) {
+      // Skip conversion of this condition?
+    }
   }
 
   private DataServiceMeta findService( String name ) {
@@ -252,7 +315,7 @@ public class DataServiceExecutor {
         //
         transMeta = new TransMeta( service.getTransFilename(), false );
         transMeta.getLogChannel().logDetailed(
-          "Service transformation was loaded from XML file [" + service.getTransFilename() + "]" );
+            "Service transformation was loaded from XML file [" + service.getTransFilename() + "]" );
       } catch ( Exception e ) {
         throw new KettleException( "Unable to load service transformation for service '" + getServiceName() + "'", e );
       }
@@ -261,7 +324,7 @@ public class DataServiceExecutor {
         StringObjectId objectId = new StringObjectId( service.getTransObjectId() );
         transMeta = repository.loadTransformation( objectId, null );
         transMeta.getLogChannel().logDetailed(
-          "Service transformation was loaded from repository for service [" + service.getName() + "]" );
+            "Service transformation was loaded from repository for service [" + service.getName() + "]" );
       } catch ( Exception e ) {
         throw new KettleException( "Unable to load service transformation for service '"
           + getServiceName() + "' from the repository", e );

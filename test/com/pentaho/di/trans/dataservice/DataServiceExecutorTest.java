@@ -23,13 +23,16 @@
 package com.pentaho.di.trans.dataservice;
 
 import com.google.common.collect.Lists;
+import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
@@ -42,16 +45,27 @@ import org.pentaho.di.trans.sql.SqlTransMeta;
 import org.pentaho.di.trans.step.RowListener;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DataServiceExecutorTest extends DataServiceExecutor {
 
@@ -85,8 +99,7 @@ public class DataServiceExecutorTest extends DataServiceExecutor {
 
     TransMeta trans = mockTransMeta();
 
-    Repository repository = mock( Repository.class );
-    when( repository.loadTransformation( eq( transId ), anyString() ) ).thenReturn( trans );
+    Repository repository = mockRepository( transId, trans );
 
     Map<String, String> parameters = Collections.emptyMap();
 
@@ -103,6 +116,34 @@ public class DataServiceExecutorTest extends DataServiceExecutor {
     assertEquals( SERVICE_NAME, executor.getServiceName() );
     assertNotNull( executor.getSql() );
     assertNotNull( executor.getResultStepName() );
+  }
+
+  @Test
+  public void testConditionResolution() throws Exception {
+    RowMeta rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMeta( "aString", ValueMeta.TYPE_STRING ) );
+    rowMeta.addValueMeta( new ValueMeta( "anInt", ValueMeta.TYPE_INTEGER ) );
+    rowMeta.addValueMeta( new ValueMeta( "aDate", ValueMeta.TYPE_DATE ) );
+
+    String query = "SELECT * FROM " + SERVICE_NAME + " WHERE anInt = 2 AND aDate IN ('2014-12-05','2008-01-01')";
+
+    Map<String, String> parameters = Collections.emptyMap();
+    DataServiceMeta service = mockDataServiceMeta();
+    ObjectId transId = new StringObjectId( UUID.randomUUID().toString() );
+    when( service.getTransObjectId() ).thenReturn( transId.getId() );
+    TransMeta transMeta = mockTransMeta();
+    when( transMeta.getStepFields( SERVICE_STEP_NAME ) ).thenReturn( rowMeta );
+    Repository repository = mockRepository( transId, transMeta );
+
+    DataServiceExecutor executor = new DataServiceExecutorTest( query, Arrays.asList( service ), parameters, repository, 0 );
+
+    Condition condition = executor.getSql().getWhereCondition().getCondition();
+
+    assertEquals( condition.getCondition( 0 ).getRightExact().getValueMeta().getType(), ValueMeta.TYPE_INTEGER );
+    String dateList = condition.getCondition( 1 ).getRightExactString();
+    for ( Object date : new ValueMetaResolver( rowMeta ).inListToTypedObjectArray( "aDate", dateList ) ) {
+      assertThat( date, instanceOf( Date.class ) );
+    }
   }
 
   @Test
@@ -228,6 +269,12 @@ public class DataServiceExecutorTest extends DataServiceExecutor {
     when( service.getName() ).thenReturn( SERVICE_NAME );
     when( service.getStepname() ).thenReturn( SERVICE_STEP_NAME );
     return service;
+  }
+
+  private Repository mockRepository( ObjectId transId, TransMeta trans ) throws KettleException {
+    Repository repository = mock( Repository.class );
+    when( repository.loadTransformation( eq( transId ), anyString() ) ).thenReturn( trans );
+    return repository;
   }
 
   @Override

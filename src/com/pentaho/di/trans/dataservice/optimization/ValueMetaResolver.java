@@ -24,7 +24,7 @@ package com.pentaho.di.trans.dataservice.optimization;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleValueException;
-import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaTimestamp;
@@ -50,7 +50,7 @@ public class ValueMetaResolver {
   private static final String ANSI_DATE_LITERAL = "yyyy-MM-dd";
   private static final String ANSI_TIMESTAMP_LITERAL = "yyyy-mm-dd HH:mm:ss.SSS";
 
-  public ValueMetaResolver( RowMeta rowMeta ) {
+  public ValueMetaResolver( RowMetaInterface rowMeta ) {
     Map<String, ValueMetaInterface> tempFieldNameValueMetaMap =
       new HashMap<String, ValueMetaInterface>();
     for ( int i = 0; i < rowMeta.size(); i++ ) {
