@@ -95,4 +95,10 @@ public final class PushDownOptimizationMeta {
     StepInterface stepInterface = executor.getServiceTrans().findRunThread( getStepName() );
     return getType().activate( executor, stepInterface );
   }
+
+  public OptimizationImpactInfo preview( DataServiceExecutor executor ) {
+    StepInterface stepInterface = executor.getServiceTrans().findRunThread( getStepName() );
+    return getType().preview( executor, stepInterface );
+  }
+
 }

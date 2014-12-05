@@ -24,8 +24,6 @@ package com.pentaho.di.trans.dataservice.optimization;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.core.sql.SQL;
-import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepInterface;
 
@@ -38,4 +36,6 @@ public interface PushDownType {
   void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta );
 
   boolean activate( DataServiceExecutor executor, StepInterface stepInterface );
+
+  OptimizationImpactInfo preview( DataServiceExecutor executor, StepInterface stepInterface );
 }

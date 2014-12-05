@@ -30,7 +30,6 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.pentaho.di.core.logging.HasLogChannelInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.logging.LogParentProvidedInterface;
 import org.pentaho.di.ui.spoon.trans.LogBrowser;
 
@@ -43,10 +42,8 @@ public class DataServiceTestLogBrowser {
     this.parentComposite = parentComposite;
   }
 
-  public void attachToLogBrowser( final LogChannelInterface logChannel,
-                                  LogLevel logLevel ) {
+  public void attachToLogBrowser( final LogChannelInterface logChannel ) {
     initStyledText( parentComposite );
-    logChannel.setLogLevel( logLevel );
     LogBrowser logBrowser = new LogBrowser( logText, new LogParentProvidedInterface() {
       @Override
       public HasLogChannelInterface getLogChannelProvider() {

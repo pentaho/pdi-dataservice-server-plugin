@@ -124,12 +124,10 @@ public class DataServiceTestDialog implements  java.io.Serializable {
 
   private void updateLogChannel() {
     if ( model.getServiceTransLogChannel() != null ) {
-      serviceTransLogBrowser.attachToLogBrowser( model.getServiceTransLogChannel(),
-        model.getLogLevel() );
+      serviceTransLogBrowser.attachToLogBrowser( model.getServiceTransLogChannel() );
     }
     if ( model.getGenTransLogChannel() != null ) {
-      genTransLogBrowser.attachToLogBrowser( model.getGenTransLogChannel(),
-        model.getLogLevel() );
+      genTransLogBrowser.attachToLogBrowser( model.getGenTransLogChannel() );
     }
   }
 

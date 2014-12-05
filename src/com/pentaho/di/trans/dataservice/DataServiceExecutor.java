@@ -29,6 +29,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
@@ -68,12 +69,23 @@ public class DataServiceExecutor {
   }
 
   public DataServiceExecutor( String sqlQuery, List<DataServiceMeta> services, Map<String, String> parameters,
-                              TransMeta transMeta, int rowLimit ) throws KettleException {
+                              TransMeta transMeta, int rowLimit, LogLevel logLevel ) throws KettleException {
     this( sqlQuery, services, parameters, rowLimit );
     if ( !isDual() ) {
       initServiceTrans( transMeta );
     }
     initGenTrans();
+    setLogLevel( logLevel );
+    prepareExecution();
+  }
+
+  private void setLogLevel( LogLevel logLevel ) {
+    if ( serviceTrans != null ) {
+      serviceTrans.setLogLevel( logLevel );
+    }
+    if ( genTrans != null ) {
+      genTrans.setLogLevel( logLevel );
+    }
   }
 
   /**
@@ -90,9 +102,10 @@ public class DataServiceExecutor {
       initServiceTrans( loadTransMeta( repository ) );
     }
     initGenTrans();
+    prepareExecution();
   }
 
-  public DataServiceExecutor( String sqlQuery, List<DataServiceMeta> services,
+  private DataServiceExecutor( String sqlQuery, List<DataServiceMeta> services,
                               Map<String, String> parameters,
                               int rowLimit ) throws KettleException {
     this.services = services;
@@ -150,8 +163,7 @@ public class DataServiceExecutor {
     }
   }
 
-  public void executeQuery( RowListener resultRowListener ) throws KettleException {
-
+  protected void prepareExecution() throws KettleException {
     genTrans.prepareExecution( null );
 
     if ( !isDual() ) {
@@ -167,9 +179,13 @@ public class DataServiceExecutor {
       for ( Entry<String, String> parameter : parameters.entrySet() ) {
         serviceTransMeta.setParameterValue( parameter.getKey(), parameter.getValue() );
       }
-
       serviceTrans.prepareExecution( null );
+    }
+  }
 
+
+  public void executeQuery( RowListener resultRowListener ) throws KettleException {
+    if ( !isDual() ) {
       // Apply Push Down Optimizations
       for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
         if ( optimizationMeta.isEnabled() ) {

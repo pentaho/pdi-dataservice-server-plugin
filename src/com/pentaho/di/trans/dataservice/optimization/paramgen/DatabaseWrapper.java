@@ -67,11 +67,13 @@ class DatabaseWrapper extends Database {
     paramsMeta = paramsMeta == null ? new RowMeta() : paramsMeta;
     sql = injectRuntime( pushDownMap, sql, paramsMeta, params );
     if ( params.size() > 0 && log.isDetailed() ) {
-      log.logDetailed( String.format( "Parameterized SQL:  %s   %s",
-        sql,  paramsToString( params ) ) );
+      log.logDetailed( parameterizedQueryToString( sql, params ) );
     }
-
     return super.openQuery( sql, paramsMeta, params.toArray(), fetch_mode, lazyConversion );
+  }
+
+  protected String parameterizedQueryToString( String sql, List<Object> params ) {
+    return String.format( "Parameterized SQL:  %s   %s", sql,  paramsToString( params ) );
   }
 
   private String paramsToString( List<Object> params ) {

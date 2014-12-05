@@ -22,6 +22,7 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.junit.Before;
@@ -46,24 +47,19 @@ import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInput;
 import org.pentaho.di.trans.steps.tableinput.TableInputData;
+import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 
 import java.sql.Connection;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.AND;
-import static com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.OR;
-import static com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.newCondition;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.*;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 import static org.junit.matchers.JUnitMatchers.containsString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -104,7 +100,7 @@ public class TableInputParameterGenerationTest {
       @Override public String answer( InvocationOnMock invocation ) throws Throwable {
         return (String) invocation.getArguments()[ 0 ];
       }
-    });
+    } );
 
     DatabaseConnectionMap connectionMap = DatabaseConnectionMap.getInstance();
     connectionMap.getMap().clear();
@@ -185,6 +181,31 @@ public class TableInputParameterGenerationTest {
 
     assertThat( rowMeta.getValueMetaList(), equalTo( Arrays.asList( resolvedValueMeta ) ) );
     assertThat( values, equalTo( Arrays.<Object>asList( "G7" ) ) );
+  }
+
+
+  @Test
+  public void testPreview() throws KettleValueException, PushDownOptimizationException {
+    ParameterGeneration param = new ParameterGeneration();
+    param.setParameterName( "param" );
+
+    Condition employeeFilter = newCondition( "fooField", "barValue" );
+
+    when( stepInterface.getStepMeta() ).thenReturn( mock( StepMeta.class ) );
+    TableInputMeta mockTableInput = mock( TableInputMeta.class );
+    String origQuery = "SELECT * FROM TABLE WHERE ${param}";
+    when( mockTableInput.getSQL() ).thenReturn( "SELECT * FROM TABLE WHERE ${param}" );
+    when( stepInterface.getStepMeta().getStepMetaInterface() ).thenReturn( mockTableInput );
+    when( stepInterface.getStepname() ).thenReturn( "testStepName" );
+
+    OptimizationImpactInfo impact = service.preview( employeeFilter, param, stepInterface );
+    assertThat( impact.getQueryBeforeOptimization(),
+      equalTo( origQuery ) );
+    assertThat( impact.getStepName(),
+      equalTo( "testStepName" ) );
+    assertThat( impact.getQueryAfterOptimization(),
+      equalTo( "Parameterized SQL:  SELECT * FROM TABLE WHERE fooField = ?   {1: barValue}" ) );
+    assertTrue( impact.isModified() );
   }
 
   @Test

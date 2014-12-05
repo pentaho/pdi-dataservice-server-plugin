@@ -24,6 +24,7 @@ package com.pentaho.di.trans.dataservice.ui.controller;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import com.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import com.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
@@ -83,6 +84,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   public void init() throws InvocationTargetException, XulException {
+
     BindingFactory bindingFactory = new DefaultBindingFactory();
     bindingFactory.setDocument( this.getXulDomContainer().getDocumentRoot() );
 
@@ -90,6 +92,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     bindSqlText( bindingFactory );
     bindMaxRows( bindingFactory );
     bindErrorAlert( bindingFactory );
+    bindOptImpactInfo( bindingFactory );
   }
 
   private void bindErrorAlert( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
@@ -99,6 +102,13 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     Binding binding = bindingFactory.createBinding( model, "errorAlertMessage", errorAlert, "value" );
     binding.initialize();
     binding.fireSourceChanged();
+  }
+
+  private void bindOptImpactInfo( BindingFactory bindingFactory ) {
+    XulTextbox maxRows = (XulTextbox) document.getElementById( "optimization-impact-info" );
+    bindingFactory.setBindingType( Binding.Type.ONE_WAY );
+    Binding binding = bindingFactory.createBinding( model, "optimizationImpactDescription", maxRows, "value" );
+    binding.initialize();
   }
 
   private void bindMaxRows( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
@@ -170,6 +180,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   public void executeSql() throws KettleException {
+    previewQueries();
+
     DataServiceExecutor dataServiceExec = getNewDataServiceExecutor();
 
     updateModel( dataServiceExec );
@@ -188,6 +200,15 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     callback.onExecuteComplete();
   }
 
+  public void previewQueries() throws KettleException {
+    DataServiceExecutor dataServiceExec = getNewDataServiceExecutor();
+    model.clearOptimizationImpact();
+
+    for ( PushDownOptimizationMeta optMeta :  dataService.getPushDownOptimizationMeta() ) {
+      model.addOptimizationImpact( optMeta.preview( dataServiceExec ) );
+    }
+  }
+
   private void maybeSetErrorAlert( DataServiceExecutor dataServiceExec ) {
     if ( dataServiceExec.getGenTrans().getErrors() > 0
       || ( dataServiceExec.getServiceTrans() != null
@@ -204,9 +225,10 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   protected DataServiceExecutor getNewDataServiceExecutor() throws KettleException {
     try {
       resetDatabaseMetaParameters();
+      transMeta.setLogLevel( model.getLogLevel() );
       return new DataServiceExecutor( model.getSql(),
         Arrays.asList( dataService ), new HashMap<String, String>(),
-        transMeta, model.getMaxRows() );
+        transMeta, model.getMaxRows(), model.getLogLevel() );
     } catch ( KettleException e ) {
       model.setErrorAlertMessage( e.getMessage() );
       throw e;

@@ -23,6 +23,7 @@
             <label  value="${DataServiceTest.MaxRows.Label}"/>
             <textbox id="maxrows-textbox" width="50" value="{default text}"/>
             <spacer flex="1"/>
+            <button  label="${DataServiceTest.PreviewOptimization.Button}" onclick="dataServiceTestController.previewQueries()" />
             <button  label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()" />
         </hbox>
         <hbox align="right"  height="50">
@@ -32,16 +33,22 @@
             <spacer flex="1"/>
             <label id="rows-returned" />
         </hbox>
-        <tabbox flex="1">
+        <tabbox flex="1" id="tabbox">
             <tabs>
+                <tab label="${DataServiceTest.OptimizedQueries.Tab}" />
                 <tab label="${DataServiceTest.Results.Tab}" />
                 <tab label="${DataServiceTest.ServiceTransLog.Tab}" />
                 <tab label="${DataServiceTest.GenTransLog.Tab}" />
+
             </tabs>
             <tabpanels id="repository-panels-set" flex="1">
+                <tabpanel>
+                    <textbox multiline="true" height="370" id="optimization-impact-info"  value=""/>
+                </tabpanel>
                 <tabpanel id="results-tab" flex="1"></tabpanel>
                 <tabpanel id="serviceTrans-log-tab"></tabpanel>
                 <tabpanel id="genTrans-log-tab"></tabpanel>
+
             </tabpanels>
         </tabbox>
     </dialog>

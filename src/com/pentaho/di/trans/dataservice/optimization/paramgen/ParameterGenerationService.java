@@ -22,6 +22,7 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.trans.step.StepInterface;
@@ -33,4 +34,6 @@ public interface ParameterGenerationService {
   public void pushDown( Condition condition, ParameterGeneration parameterGeneration, StepInterface stepInterface ) throws PushDownOptimizationException;
 
   public String getParameterDefault();
+
+  OptimizationImpactInfo preview( Condition pushDownCondition, ParameterGeneration parameterGeneration, StepInterface stepInterface );
 }

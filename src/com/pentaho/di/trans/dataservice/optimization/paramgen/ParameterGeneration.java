@@ -23,6 +23,7 @@ package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
@@ -31,6 +32,8 @@ import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.core.variables.VariableSpace;
+import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
@@ -164,35 +167,55 @@ public class ParameterGeneration implements PushDownType {
   }
 
   @Override public boolean activate( DataServiceExecutor executor, StepInterface stepInterface ) {
-    SQL query = executor.getSql();
-    if ( stepInterface == null ) {
-      return false;
-    }
-    // Get service for step type
     ParameterGenerationService service = serviceProvider.getService( stepInterface.getStepMeta() );
-    if ( service == null ) {
-      return false;
-    }
-    // Get user query conditions
-    Condition whereCondition;
-    if ( query.getWhereCondition() != null ) {
-      whereCondition = query.getWhereCondition().getCondition();
-    } else {
-      return false;
-    }
+    Condition pushDownCondition = getPushDownCondition( executor.getSql() );
 
-    // Attempt to map fields to where clause
-    Condition pushDownCondition = mapConditionFields( whereCondition );
-    if ( pushDownCondition == null || StringUtils.isBlank( getParameterName() ) ) {
+    return handlePushDown( service, pushDownCondition, stepInterface );
+  }
+
+  @Override
+  public OptimizationImpactInfo preview( DataServiceExecutor executor, StepInterface stepInterface ) {
+    ParameterGenerationService service = serviceProvider.getService( stepInterface.getStepMeta() );
+    Condition pushDownCondition = getPushDownCondition( executor.getSql() );
+
+    return service.preview( pushDownCondition, this, stepInterface );
+  }
+
+  private boolean handlePushDown( ParameterGenerationService service,
+                                  Condition pushDownCondition,
+                                  StepInterface stepInterface ) {
+    if ( service == null || pushDownCondition == null || stepInterface == null ) {
       return false;
     }
-
     try {
       service.pushDown( pushDownCondition, this, stepInterface );
     } catch ( PushDownOptimizationException e ) {
       return false;
     }
-
     return true;
   }
+
+  private Condition getPushDownCondition( SQL query ) {
+    // Get user query conditions
+    Condition whereCondition;
+    if ( query.getWhereCondition() != null ) {
+      whereCondition = query.getWhereCondition().getCondition();
+    } else {
+      return null;
+    }
+
+    // Attempt to map fields to where clause
+    Condition pushDownCondition = mapConditionFields( whereCondition );
+    if ( pushDownCondition == null || StringUtils.isBlank( getParameterName() ) ) {
+      return null;
+    }
+    return pushDownCondition;
+  }
+
+  protected String setQueryParameter( String query, String parameterValue ) {
+    VariableSpace varSpace = new Variables();
+    varSpace.setVariable( getParameterName(), parameterValue  );
+    return varSpace.environmentSubstitute( query );
+  }
+
 }

@@ -22,6 +22,7 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.apache.commons.lang.StringUtils;
@@ -34,6 +35,7 @@ import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.steps.tableinput.TableInput;
 import org.pentaho.di.trans.steps.tableinput.TableInputData;
+import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -56,32 +58,52 @@ public class TableInputParameterGeneration implements ParameterGenerationService
   }
 
   @Override
-  public void pushDown( Condition condition, ParameterGeneration parameterGeneration, StepInterface stepInterface ) throws PushDownOptimizationException {
-    TableInput tableInput;
-    if ( stepInterface instanceof TableInput ) {
-      tableInput = (TableInput) stepInterface;
-    } else {
-      throw new PushDownOptimizationException( "Unable to push down to push down to type " + stepInterface.getClass() );
-    }
+  public OptimizationImpactInfo preview( Condition pushDownCondition, ParameterGeneration parameterGeneration, StepInterface stepInterface ) {
+    OptimizationImpactInfo optimizationInfo = new OptimizationImpactInfo();
 
-    TableInputData stepDataInterface = (TableInputData) tableInput.getStepDataInterface();
-    DatabaseWrapper db;
-    if ( stepDataInterface.db instanceof DatabaseWrapper ) {
-      // Use existing wrapper if available
-      db = (DatabaseWrapper) stepDataInterface.db;
-    } else {
-      // Create a new wrapper
-      db = new DatabaseWrapper( stepDataInterface.db );
+    try {
+      final String sql = getSQL( stepInterface );
+      optimizationInfo.setQueryBeforeOptimization( sql );
+      optimizationInfo.setStepName( stepInterface.getStepname() );
+
+      if ( pushDownCondition == null ) {
+        optimizationInfo.setModified( false );
+        return optimizationInfo;
+      }
+
+      DatabaseWrapper db = getDatabaseWrapper( stepInterface );
+
+      StringBuilder sqlFragment = new StringBuilder();
+      RowMeta paramsMeta = new RowMeta();
+      List<Object> params = new LinkedList<Object>();
+
+      dbMeta = db.getDatabaseMeta();
+
+      convertCondition( pushDownCondition, sqlFragment, paramsMeta, params );
+      String fragmentId = db.createRuntimePushDown( sqlFragment.toString(), paramsMeta, params );
+
+      final String modifiedSql = db.injectRuntime(
+        db.pushDownMap,
+        parameterGeneration.setQueryParameter( sql, fragmentId ),
+        //setVariableInSql( sql, parameterGeneration.getParameterName(), fragmentId ),
+        new RowMeta(), new LinkedList<Object>() );
+
+      optimizationInfo.setQueryAfterOptimization( db.parameterizedQueryToString( modifiedSql, params ) );
+      optimizationInfo.setModified( true );
+
+    } catch ( PushDownOptimizationException e ) {
+      optimizationInfo.setModified( false );
+      optimizationInfo.setErrorMsg( e.getMessage() );
     }
+    return optimizationInfo;
+  }
+
+  @Override
+  public void pushDown( Condition condition, ParameterGeneration parameterGeneration, StepInterface stepInterface ) throws PushDownOptimizationException {
+    DatabaseWrapper db = getDatabaseWrapper( stepInterface );
+    verifyDbConnection( db );
 
     dbMeta = db.getDatabaseMeta();
-
-    // Verify database connection
-    try {
-      db.connect();
-    } catch ( KettleDatabaseException e ) {
-      throw new PushDownOptimizationException( "Failed to verify database connection", e );
-    }
 
     StringBuilder sqlFragment = new StringBuilder();
     RowMeta paramsMeta = new RowMeta();
@@ -94,9 +116,52 @@ public class TableInputParameterGeneration implements ParameterGenerationService
 
     // Set variable to fragment ID
     stepInterface.setVariable( parameterGeneration.getParameterName(), fragmentId );
-    stepDataInterface.db = db;
+
+    TableInputData tableInput = getTableInputData( stepInterface );
+    tableInput.db = db;
   }
 
+  private void verifyDbConnection( DatabaseWrapper db ) throws PushDownOptimizationException {
+    try {
+      db.connect();
+    } catch ( KettleDatabaseException e ) {
+      throw new PushDownOptimizationException( "Failed to verify database connection", e );
+    }
+  }
+
+  private DatabaseWrapper getDatabaseWrapper( StepInterface stepInterface ) throws PushDownOptimizationException {
+    TableInputData stepDataInterface = getTableInputData( stepInterface );
+    DatabaseWrapper db;
+    if ( stepDataInterface.db instanceof DatabaseWrapper ) {
+      // Use existing wrapper if available
+      db = (DatabaseWrapper) stepDataInterface.db;
+    } else {
+      // Create a new wrapper
+      db = new DatabaseWrapper( stepDataInterface.db );
+    }
+    return db;
+  }
+
+  private TableInputData getTableInputData( StepInterface stepInterface ) throws PushDownOptimizationException {
+    TableInput tableInput;
+    if ( stepInterface instanceof TableInput ) {
+      tableInput = (TableInput) stepInterface;
+    } else {
+      throw new PushDownOptimizationException( "Unable to push down to push down to type " + stepInterface.getClass() );
+    }
+    return (TableInputData) tableInput.getStepDataInterface();
+  }
+
+  private String getSQL( StepInterface stepInterface ) throws PushDownOptimizationException {
+    TableInput tableInput;
+    if ( stepInterface instanceof TableInput ) {
+      tableInput = (TableInput) stepInterface;
+    } else {
+      throw new PushDownOptimizationException( "Unable to push down to push down to type " + stepInterface.getClass() );
+    }
+    final TableInputMeta tableInputMeta = (TableInputMeta) tableInput.getStepMeta().getStepMetaInterface();
+    return tableInputMeta.getSQL();
+  }
 
   protected void convertCondition( Condition condition, StringBuilder builder, RowMeta paramsMeta, List<Object> params )
     throws PushDownOptimizationException {

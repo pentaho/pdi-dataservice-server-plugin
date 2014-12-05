@@ -24,6 +24,7 @@ package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
@@ -407,6 +408,24 @@ public class ParameterGenerationTest {
     assertEquals( OR, verify.getCondition( 1 ).getOperator() );
     assertEquals( "B_tgt", verify.getCondition( 1 ).getLeftValuename() );
     assertTrue( verify.isNegated() );
+  }
+
+  @Test
+  public void testPreview() throws KettleValueException, PushDownOptimizationException {
+    Condition condition = newCondition( "A_src", "A_value" );
+    SQL query = mockSql( condition );
+    when( executor.getSql() ).thenReturn( query );
+
+    OptimizationImpactInfo optImpact = mock( OptimizationImpactInfo.class );
+    when( service.preview( any( Condition.class ), same( paramGen ), same( stepInterface ) ) ).thenReturn( optImpact );
+    assertEquals( optImpact, paramGen.preview( executor, stepInterface ) );
+
+    ArgumentCaptor<Condition> pushDownCaptor = ArgumentCaptor.forClass( Condition.class );
+    verify( service ).preview( pushDownCaptor.capture(), same( paramGen ), same( stepInterface ) );
+
+    Condition verify = pushDownCaptor.getValue();
+    assertEquals( "A_tgt", verify.getLeftValuename() );
+    assertEquals( "A_value", verify.getRightExactString() );
   }
 
   public static Condition newCondition( String lhs ) throws KettleValueException {

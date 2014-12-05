@@ -22,6 +22,7 @@
 
 package com.pentaho.di.trans.dataservice.ui.model;
 
+import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -38,6 +39,8 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   private LogLevel logLevel = DEFAULT_LOGLEVEL;
 
   private String errorAlertMessage;
+
+  private List<OptimizationImpactInfo> optimizationImpact = new ArrayList<OptimizationImpactInfo>();
 
   private List<Object[]> resultRows = new ArrayList<Object[]>();
   private RowMetaInterface resultRowMeta;
@@ -119,5 +122,49 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
 
   public void setResultRowMeta( RowMetaInterface resultRowMeta ) {
     this.resultRowMeta = resultRowMeta;
+  }
+
+  public void clearOptimizationImpact() {
+    optimizationImpact.clear();
+    firePropertyChange( "optimizationImpactDescription", null, getOptimizationImpactDescription() );
+  }
+
+  public void addOptimizationImpact( OptimizationImpactInfo info ) {
+    optimizationImpact.add( info );
+    firePropertyChange( "optimizationImpactDescription", null, getOptimizationImpactDescription() );
+  }
+
+  public String getOptimizationImpactDescription() {
+    StringBuilder builder = new StringBuilder();
+    builder.append( "\n" );
+    if ( optimizationImpact.size() == 0 ) {
+      builder.append( "[No Push Down Optimizations Defined]" );
+    }
+    for ( OptimizationImpactInfo info : optimizationImpact ) {
+      builder
+        .append( "Step:  " )
+        .append( info.getStepName() )
+        .append( "\n" );
+      if ( info.getErrorMsg().length() > 0 ) {
+        builder
+          .append( "[ERROR]  " )
+          .append( info.getErrorMsg() )
+          .append( "\n" );
+      }
+      if ( info.isModified() ) {
+        builder
+          .append( "Before:\n     " )
+          .append( info.getQueryBeforeOptimization() )
+          .append( "\nAfter:\n     " )
+          .append( info.getQueryAfterOptimization() );
+      } else {
+        builder
+          .append( "[NO MODIFICATION]\n" )
+          .append( "Query:\n     " )
+          .append( info.getQueryBeforeOptimization() );
+      }
+      builder.append( "\n- - - - - - - - - - - - - - - - - - - - - -\n\n" );
+    }
+    return builder.toString();
   }
 }

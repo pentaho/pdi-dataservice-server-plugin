@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -46,25 +47,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-public class DataServiceExecutorTest {
+public class DataServiceExecutorTest extends DataServiceExecutor {
 
   public static final String SERVICE_NAME = "serviceName";
   public static final String SERVICE_STEP_NAME = "Service Step";
   public static final String INJECTOR_STEP_NAME = "Injector Step";
   public static final String RESULT_STEP_NAME = "Result Step";
+
+  public DataServiceExecutorTest() {
+    super();
+  }
+
+  /**
+   * This test class extends DataServiceExecutor to override initialization behavior with
+   * deep dependencies.  Trans.prepareExecution() makes mocking very difficult.  We sidestep
+   * that by overriding prepareExec w/ a no-op.
+   */
+  public DataServiceExecutorTest( String query, List<DataServiceMeta> services,
+                                  Map<String, String> parameters, Repository repository, int i )
+    throws KettleException {
+    super( query, services, parameters, repository, i );
+  }
 
   @Test
   public void testCreateExecutorByObjectId() throws Exception {
@@ -82,7 +91,7 @@ public class DataServiceExecutorTest {
     Map<String, String> parameters = Collections.emptyMap();
 
     List<DataServiceMeta> services = createServicesList( service );
-    DataServiceExecutor executor = new DataServiceExecutor( query, services, parameters, repository, 0 );
+    DataServiceExecutor executor = new DataServiceExecutorTest( query, services, parameters, repository, 0 );
 
     // Verify execution prep
     assertEquals( trans, executor.getServiceTransMeta() );
@@ -104,7 +113,7 @@ public class DataServiceExecutorTest {
     Repository repository = mock( Repository.class );
 
     for ( String query : queries ) {
-      DataServiceExecutor executor = new DataServiceExecutor( query, services, parameters, repository, 0 );
+      DataServiceExecutor executor = new DataServiceExecutorTest( query, services, parameters, repository, 0 );
 
       // Verify execution prep
       assertNull( executor.getServiceTrans() );
@@ -125,7 +134,6 @@ public class DataServiceExecutorTest {
 
       InOrder startup = inOrder( genTrans, genTrans.findRunThread( RESULT_STEP_NAME ) );
 
-      startup.verify( genTrans ).prepareExecution( null );
       startup.verify( genTrans.findRunThread( RESULT_STEP_NAME ) ).addRowListener( clientRowListener );
       startup.verify( genTrans ).startThreads();
     }
@@ -152,7 +160,6 @@ public class DataServiceExecutorTest {
 
     RowListener clientRowListener = mock( RowListener.class );
 
-    RowProducer sqlTransRowProducer = genTrans.addRowProducer( INJECTOR_STEP_NAME, 0 );
 
     // Start Execution
     executor.executeQuery( clientRowListener );
@@ -161,12 +168,10 @@ public class DataServiceExecutorTest {
     InOrder serviceTransStartup = inOrder( serviceTrans, serviceTrans.findRunThread( SERVICE_STEP_NAME ) );
     ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );
 
-    genTransStartup.verify( genTrans ).prepareExecution( null );
     genTransStartup.verify( genTrans ).addRowProducer( INJECTOR_STEP_NAME, 0 );
     genTransStartup.verify( genTrans.findRunThread( RESULT_STEP_NAME ) ).addRowListener( clientRowListener );
     genTransStartup.verify( genTrans ).startThreads();
 
-    serviceTransStartup.verify( serviceTrans ).prepareExecution( null );
     serviceTransStartup.verify( serviceTrans.findRunThread( SERVICE_STEP_NAME ) ).addRowListener( listenerArgumentCaptor.capture() );
     serviceTransStartup.verify( serviceTrans ).startThreads();
 
@@ -174,6 +179,7 @@ public class DataServiceExecutorTest {
     RowListener serviceRowListener = listenerArgumentCaptor.getValue();
     assertNotNull( serviceRowListener );
 
+    RowProducer sqlTransRowProducer = genTrans.addRowProducer( INJECTOR_STEP_NAME, 0 );
     // Push row from service to sql Trans
     for ( int i = 0; i < 50; i++ ) {
       RowMeta rowMeta =  mock( RowMeta.class );
@@ -199,7 +205,7 @@ public class DataServiceExecutorTest {
 
   private ArrayList<DataServiceMeta> createServicesList( DataServiceMeta service ) {
     ArrayList<DataServiceMeta> list = Lists.newArrayListWithCapacity( 20 );
-    for( int i = 0; i < 19; i++ ) {
+    for ( int i = 0; i < 19; i++ ) {
       DataServiceMeta falseMeta = mock( DataServiceMeta.class );
       when( falseMeta.getName() ).thenReturn( UUID.randomUUID().toString() );
       list.add( falseMeta );
@@ -224,5 +230,9 @@ public class DataServiceExecutorTest {
     return service;
   }
 
+  @Override
+  protected void prepareExecution() {
+    // no-op, skip Trans.prepareExecution().
+  }
 
 }
