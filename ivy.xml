@@ -83,6 +83,9 @@ explicitly covering such access.
     <!-- Metadata -->
     <dependency org="pentaho" name="pentaho-metadata" rev="${dependency.pentaho-metadata.revision}" transitive="false" changing="true" conf="compile->default" />
 
+    <!-- Modeler -->
+    <dependency org="pentaho" name="pentaho-modeler" rev="${dependency.pentaho-modeler.revision}" changing="true" transitive="false"/>
+
     <!-- misc third-party -->
     <dependency org="commons-logging" name="commons-logging" rev="1.1" transitive="false" />
     <dependency org="commons-io" name="commons-io" rev="2.1" conf="default->default;test->default" />
@@ -137,6 +140,7 @@ explicitly covering such access.
     <dependency org="org.mortbay.jetty" name="jetty-plus" rev="6.1.21" transitive="false" conf="test->default" />
     <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.21" transitive="false" conf="test->default" />
 
+    <!-- jersey -->
     <dependency org="com.sun.jersey.contribs" name="jersey-multipart"     rev="1.16" transitive="false" conf="compile->default"/>
     <dependency org="com.sun.jersey.contribs" name="jersey-apache-client" rev="1.16" transitive="false" conf="compile->default"/>
     <dependency org="com.sun.jersey"          name="jersey-bundle"        rev="1.16" transitive="false" conf="compile->default"/>
