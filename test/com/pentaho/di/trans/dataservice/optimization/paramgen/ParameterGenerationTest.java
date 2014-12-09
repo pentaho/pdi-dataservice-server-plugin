@@ -100,7 +100,6 @@ public class ParameterGenerationTest {
     when( stepInterface.getStepMeta() ).thenReturn( stepMeta );
     when( serviceProvider.getService( stepMeta ) ).thenReturn( service );
     when( service.getParameterDefault() ).thenReturn( EXPECTED_DEFAULT );
-    when( executor.getServiceStep() ).thenReturn( stepInterface );
   }
 
 

@@ -54,7 +54,6 @@ import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 public class DataServiceTestController extends AbstractXulEventHandler {
@@ -226,9 +225,12 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     try {
       resetDatabaseMetaParameters();
       transMeta.setLogLevel( model.getLogLevel() );
-      return new DataServiceExecutor( model.getSql(),
-        Arrays.asList( dataService ), new HashMap<String, String>(),
-        transMeta, model.getMaxRows(), model.getLogLevel() );
+      return new DataServiceExecutor.Builder( model.getSql() ).
+        service( dataService ).
+        serviceTrans( transMeta ).
+        rowLimit( model.getMaxRows() ).
+        logLevel( model.getLogLevel() ).
+        build();
     } catch ( KettleException e ) {
       model.setErrorAlertMessage( e.getMessage() );
       throw e;

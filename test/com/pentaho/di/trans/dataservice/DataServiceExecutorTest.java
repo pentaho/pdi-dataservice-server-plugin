@@ -30,6 +30,7 @@ import org.mockito.InOrder;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
@@ -45,11 +46,9 @@ import org.pentaho.di.trans.sql.SqlTransMeta;
 import org.pentaho.di.trans.step.RowListener;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -67,27 +66,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class DataServiceExecutorTest extends DataServiceExecutor {
+public class DataServiceExecutorTest {
 
   public static final String SERVICE_NAME = "serviceName";
   public static final String SERVICE_STEP_NAME = "Service Step";
   public static final String INJECTOR_STEP_NAME = "Injector Step";
   public static final String RESULT_STEP_NAME = "Result Step";
-
-  public DataServiceExecutorTest() {
-    super();
-  }
-
-  /**
-   * This test class extends DataServiceExecutor to override initialization behavior with
-   * deep dependencies.  Trans.prepareExecution() makes mocking very difficult.  We sidestep
-   * that by overriding prepareExec w/ a no-op.
-   */
-  public DataServiceExecutorTest( String query, List<DataServiceMeta> services,
-                                  Map<String, String> parameters, Repository repository, int i )
-    throws KettleException {
-    super( query, services, parameters, repository, i );
-  }
 
   @Test
   public void testCreateExecutorByObjectId() throws Exception {
@@ -101,10 +85,13 @@ public class DataServiceExecutorTest extends DataServiceExecutor {
 
     Repository repository = mockRepository( transId, trans );
 
-    Map<String, String> parameters = Collections.emptyMap();
-
     List<DataServiceMeta> services = createServicesList( service );
-    DataServiceExecutor executor = new DataServiceExecutorTest( query, services, parameters, repository, 0 );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( query ).
+        findService( services ).
+        lookupServiceTrans( repository ).
+        normalizeConditions( false ).
+        prepareExecution( false ).
+        build();
 
     // Verify execution prep
     assertEquals( trans, executor.getServiceTransMeta() );
@@ -119,6 +106,26 @@ public class DataServiceExecutorTest extends DataServiceExecutor {
   }
 
   @Test
+  public void testLogging() throws Exception {
+    DataServiceMeta serviceMeta = mockDataServiceMeta();
+    Trans serviceTrans = mock( Trans.class );
+    TransMeta transMeta = mockTransMeta();
+    when( serviceTrans.getTransMeta() ).thenReturn( transMeta );
+    Trans genTrans = mock( Trans.class );
+
+    new DataServiceExecutor.Builder( "SELECT foo FROM bar" ).
+      service( serviceMeta ).
+      serviceTrans( serviceTrans ).
+      genTrans( genTrans ).
+      prepareExecution( false ).
+      logLevel( LogLevel.DETAILED ).
+      build();
+
+    verify( serviceTrans ).setLogLevel( LogLevel.DETAILED );
+    verify( genTrans ).setLogLevel( LogLevel.DETAILED );
+  }
+
+  @Test
   public void testConditionResolution() throws Exception {
     RowMeta rowMeta = new RowMeta();
     rowMeta.addValueMeta( new ValueMeta( "aString", ValueMeta.TYPE_STRING ) );
@@ -127,15 +134,15 @@ public class DataServiceExecutorTest extends DataServiceExecutor {
 
     String query = "SELECT * FROM " + SERVICE_NAME + " WHERE anInt = 2 AND aDate IN ('2014-12-05','2008-01-01')";
 
-    Map<String, String> parameters = Collections.emptyMap();
     DataServiceMeta service = mockDataServiceMeta();
-    ObjectId transId = new StringObjectId( UUID.randomUUID().toString() );
-    when( service.getTransObjectId() ).thenReturn( transId.getId() );
     TransMeta transMeta = mockTransMeta();
     when( transMeta.getStepFields( SERVICE_STEP_NAME ) ).thenReturn( rowMeta );
-    Repository repository = mockRepository( transId, transMeta );
 
-    DataServiceExecutor executor = new DataServiceExecutorTest( query, Arrays.asList( service ), parameters, repository, 0 );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( query ).
+        service( service ).
+        serviceTrans( transMeta ).
+        prepareExecution( false ).
+        build();
 
     Condition condition = executor.getSql().getWhereCondition().getCondition();
 
@@ -150,11 +157,13 @@ public class DataServiceExecutorTest extends DataServiceExecutor {
   public void testDual() throws Exception {
     ArrayList<String> queries = Lists.newArrayList( "Select 1,2,3 from DUAL", "Select 1,2,3" );
     List<DataServiceMeta> services = Collections.emptyList();
-    Map<String, String> parameters = Collections.emptyMap();
-    Repository repository = mock( Repository.class );
 
     for ( String query : queries ) {
-      DataServiceExecutor executor = new DataServiceExecutorTest( query, services, parameters, repository, 0 );
+      DataServiceExecutor executor = new DataServiceExecutor.Builder( query ).
+          findService( services ).
+          lookupServiceTrans( mock( Repository.class ) ).
+          prepareExecution( false ).
+          build();
 
       // Verify execution prep
       assertNull( executor.getServiceTrans() );
@@ -182,25 +191,25 @@ public class DataServiceExecutorTest extends DataServiceExecutor {
 
   @Test
   public void testExecuteQuery() throws Exception {
-    DataServiceExecutor executor = new DataServiceExecutor();
 
     DataServiceMeta service = mockDataServiceMeta();
-    executor.setService( service );
     Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    executor.setServiceTrans( serviceTrans );
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    executor.setGenTrans( genTrans );
     SQL sql = mock( SQL.class );
-    executor.setSql( sql );
+    when( sql.getServiceName() ).thenReturn( "test_service" );
     SqlTransMeta sqlTransMeta = mockSqlMetaTrans();
-    executor.setSqlTransMeta( sqlTransMeta );
-    executor.setServiceName( "test_service" );
 
     when( sql.getWhereClause() ).thenReturn( null );
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
 
     RowListener clientRowListener = mock( RowListener.class );
 
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql ).
+        service( service ).
+        serviceTrans( serviceTrans ).
+        sqlTransGenerator( sqlTransMeta ).
+        genTrans( genTrans ).
+        build();
 
     // Start Execution
     executor.executeQuery( clientRowListener );
@@ -276,10 +285,4 @@ public class DataServiceExecutorTest extends DataServiceExecutor {
     when( repository.loadTransformation( eq( transId ), anyString() ) ).thenReturn( trans );
     return repository;
   }
-
-  @Override
-  protected void prepareExecution() {
-    // no-op, skip Trans.prepareExecution().
-  }
-
 }

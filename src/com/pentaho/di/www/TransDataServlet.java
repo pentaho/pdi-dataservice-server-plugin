@@ -125,7 +125,11 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
 
       // Execute the SQL using a few transformations...
       //
-      final DataServiceExecutor executor = new DataServiceExecutor( sqlQuery, dataServices, parameters, repository, 0 );
+      final DataServiceExecutor executor = new DataServiceExecutor.Builder( sqlQuery ).
+          findService( dataServices ).
+          parameters( parameters ).
+          lookupServiceTrans( repository ).
+          build();
             
       // First write the service name and the metadata
       //

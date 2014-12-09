@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleSQLException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -58,29 +59,186 @@ public class DataServiceExecutor {
   private Trans serviceTrans;
   private Trans genTrans;
 
-  private List<DataServiceMeta> services;
-  private String serviceName;
   private DataServiceMeta service;
   private SQL sql;
-  private int rowLimit;
   private Map<String, String> parameters;
   private SqlTransMeta sqlTransGenerator;
-  private RowMetaInterface serviceFields;
 
-  // Initialize empty without prepareExecution
-  protected DataServiceExecutor() {
-    parameters = Collections.emptyMap();
+  private DataServiceExecutor( Builder builder ) {
+    sql = builder.sql;
+    service = builder.service;
+    parameters = new HashMap<String, String>( builder.parameters );
+    serviceTrans = builder.serviceTrans;
+    sqlTransGenerator = builder.sqlTransGenerator;
+    genTrans = builder.genTrans;
   }
 
-  public DataServiceExecutor( String sqlQuery, List<DataServiceMeta> services, Map<String, String> parameters,
-                              TransMeta transMeta, int rowLimit, LogLevel logLevel ) throws KettleException {
-    this( sqlQuery, services, parameters, rowLimit );
-    if ( !isDual() ) {
-      initServiceTrans( transMeta );
+  public static class Builder {
+    private final SQL sql;
+    private DataServiceMeta service;
+    private Trans serviceTrans;
+    private Trans genTrans;
+    private int rowLimit = 0;
+    private Map<String, String> parameters = Collections.emptyMap();
+    private LogLevel logLevel;
+    private SqlTransMeta sqlTransGenerator;
+
+    private boolean normalizeConditions = true;
+    private boolean prepareExecution = true;
+
+    public Builder( String query ) throws KettleSQLException {
+      this( new SQL( query ) );
     }
-    initGenTrans();
-    setLogLevel( logLevel );
-    prepareExecution();
+
+    public Builder( SQL sql ) {
+      this.sql = sql;
+    }
+
+    public Builder parameters( Map<String, String> parameters ) {
+      this.parameters = parameters;
+      return this;
+    }
+
+    public Builder service( DataServiceMeta service ) {
+      this.service = service;
+      return this;
+    }
+
+    public Builder findService( List<DataServiceMeta> serviceMetaList ) throws KettleException {
+      String serviceName = sql.getServiceName();
+      if ( StringUtils.isEmpty( serviceName ) || serviceName.equalsIgnoreCase( "dual" ) ) {
+        service = new DataServiceMeta();
+        service.setName( "dual" );
+        sql.setServiceName( "dual" );
+      } else {
+        for ( DataServiceMeta service : serviceMetaList ) {
+          if ( service.getName().equalsIgnoreCase( serviceName ) ) {
+            this.service = service;
+          }
+        }
+      }
+      return this;
+    }
+
+    public Builder rowLimit( int rowLimit ) {
+      this.rowLimit = rowLimit;
+      return this;
+    }
+
+    public Builder logLevel( LogLevel logLevel ) {
+      this.logLevel = logLevel;
+      return this;
+    }
+
+    public Builder serviceTrans( Trans serviceTrans ) {
+      this.serviceTrans = serviceTrans;
+      return this;
+    }
+
+    public Builder serviceTrans( TransMeta serviceTransMeta ) throws KettleException {
+      serviceTransMeta.setName( calculateTransname( sql, true ) );
+      serviceTransMeta.activateParameters();
+      return serviceTrans( new Trans( serviceTransMeta ) );
+    }
+
+    public Builder lookupServiceTrans( Repository repository ) throws KettleException {
+      TransMeta transMeta;
+      if ( service == null ) {
+        throw serviceNotFound();
+      }
+      if ( service.getName().equals( "dual" ) ) {
+        return this;
+      }
+
+      if ( !Const.isEmpty( service.getTransFilename() ) ) {
+        try {
+          // OK, load the meta-data from file...
+          //
+          // Don't set internal variables: they belong to the parent thread!
+          //
+          transMeta = new TransMeta( service.getTransFilename(), false );
+          transMeta.getLogChannel().logDetailed(
+              "Service transformation was loaded from XML file [" + service.getTransFilename() + "]" );
+        } catch ( Exception e ) {
+          throw new KettleException( "Unable to load service transformation for service '" + sql.getServiceName() + "'",
+            e );
+        }
+      } else {
+        try {
+          service.lookupTransObjectId( repository );
+          StringObjectId objectId = new StringObjectId( service.getTransObjectId() );
+          transMeta = repository.loadTransformation( objectId, null );
+          transMeta.getLogChannel().logDetailed(
+              "Service transformation was loaded from repository for service [" + service.getName() + "]" );
+        } catch ( Exception e ) {
+          throw new KettleException( "Unable to load service transformation for service '"
+            + sql.getServiceName() + "' from the repository", e );
+        }
+      }
+      return serviceTrans( transMeta );
+    }
+
+    public Builder sqlTransGenerator( SqlTransMeta sqlTransMeta ) {
+      this.sqlTransGenerator = sqlTransMeta;
+      return this;
+    }
+
+    public Builder genTrans( Trans trans ) {
+      this.genTrans = trans;
+      return this;
+    }
+
+    public Builder normalizeConditions( boolean enable ) {
+      normalizeConditions = enable;
+      return this;
+    }
+
+    public Builder prepareExecution( boolean enable ) {
+      prepareExecution = enable;
+      return this;
+    }
+
+    public DataServiceExecutor build() throws KettleException {
+      if ( service == null ) {
+        throw serviceNotFound();
+      }
+
+      RowMetaInterface serviceFields;
+      if ( serviceTrans != null ) {
+        serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
+      } else {
+        serviceFields = new RowMeta();
+      }
+
+      sql.parse( serviceFields );
+
+      if ( normalizeConditions ) {
+        DataServiceExecutor.normalizeConditions( sql, serviceFields );
+      }
+
+      if ( sqlTransGenerator == null ) {
+        sqlTransGenerator = new SqlTransMeta( sql, rowLimit );
+      }
+      if ( genTrans == null ) {
+        genTrans = new Trans( sqlTransGenerator.generateTransMeta() );
+      }
+
+      DataServiceExecutor dataServiceExecutor = new DataServiceExecutor( this );
+
+      if ( logLevel != null ) {
+        dataServiceExecutor.setLogLevel( logLevel );
+      }
+
+      if ( prepareExecution ) {
+        dataServiceExecutor.prepareExecution();
+      }
+
+      return dataServiceExecutor;
+    }
+
+    private KettleException serviceNotFound() throws KettleException {
+      throw new KettleException( "Unable to find service with name '" + sql.getServiceName() + "' and SQL: " + sql.getSqlString() );
+    }
   }
 
   private void setLogLevel( LogLevel logLevel ) {
@@ -92,62 +250,17 @@ public class DataServiceExecutor {
     }
   }
 
-  /**
-   * @param sqlQuery   User SQL query
-   * @param services   Available services
-   * @param parameters Connection trans parameters
-   * @param repository Repository to search for transformation
-   * @throws KettleException
-   */
-  public DataServiceExecutor( String sqlQuery, List<DataServiceMeta> services, Map<String, String> parameters,
-                              Repository repository, int rowLimit ) throws KettleException {
-   this( sqlQuery, services, parameters, rowLimit );
-    if ( !isDual() ) {
-      initServiceTrans( loadTransMeta( repository ) );
-    }
-    initGenTrans();
-    prepareExecution();
-  }
-
-  private DataServiceExecutor( String sqlQuery, List<DataServiceMeta> services,
-                              Map<String, String> parameters,
-                              int rowLimit ) throws KettleException {
-    this.services = services;
-    this.parameters = parameters;
-    this.rowLimit = rowLimit;
-    this.sql = new SQL( sqlQuery );
-    this.serviceName = sql.getServiceName();
-    service = findService( getServiceName() );
-  }
-
-  private void initServiceTrans( TransMeta serviceTransMeta ) throws KettleException {
-    if ( service == null ) {
-      throw new KettleException( "Unable to find service with name '" + getServiceName() + "' and SQL: " + sql.getSqlString() );
-    }
-    serviceTransMeta.setName( calculateTransname( sql, true ) );
-    serviceTransMeta.activateParameters();
-    serviceFields = serviceTransMeta.getStepFields( service.getStepname() );
-    serviceTrans = new Trans( serviceTransMeta );
-  }
-
-  private void initGenTrans() throws KettleException {
-    sql.parse( serviceFields );
-
-    // Normalize conditions
-    ValueMetaResolver resolver = new ValueMetaResolver( serviceFields );
+  protected static void normalizeConditions( SQL sql, RowMetaInterface fields ) throws KettleStepException {
+    ValueMetaResolver resolver = new ValueMetaResolver( fields );
     if ( sql.getWhereCondition() != null && sql.getWhereCondition().getCondition() != null ) {
       convertCondition( sql.getWhereCondition().getCondition(), resolver );
     }
     if ( sql.getHavingCondition() != null && sql.getHavingCondition().getCondition() != null ) {
       convertCondition( sql.getHavingCondition().getCondition(), resolver );
     }
-
-    sqlTransGenerator = new SqlTransMeta( sql, rowLimit );
-    TransMeta genTransMeta = sqlTransGenerator.generateTransMeta();
-    genTrans = new Trans( genTransMeta );
   }
 
-  private void convertCondition( Condition condition, ValueMetaResolver resolver ) {
+  private static void convertCondition( Condition condition, ValueMetaResolver resolver ) {
     if ( condition.isAtomic() ) {
       if ( condition.getFunction() == Condition.FUNC_IN_LIST ) {
         convertListCondition( condition, resolver );
@@ -161,7 +274,7 @@ public class DataServiceExecutor {
     }
   }
 
-  private void convertAtomicCondition( Condition condition, ValueMetaResolver resolver ) {
+  private static void convertAtomicCondition( Condition condition, ValueMetaResolver resolver ) {
     String fieldName = condition.getLeftValuename();
     ValueMetaAndData rhs = condition.getRightExact();
     try {
@@ -176,7 +289,7 @@ public class DataServiceExecutor {
     }
   }
 
-  private void convertListCondition( Condition condition, ValueMetaResolver resolver ) {
+  private static void convertListCondition( Condition condition, ValueMetaResolver resolver ) {
     String fieldName = condition.getLeftValuename();
     try {
       // Determine meta and resolve values
@@ -194,23 +307,6 @@ public class DataServiceExecutor {
     } catch ( KettleException e ) {
       // Skip conversion of this condition?
     }
-  }
-
-  private DataServiceMeta findService( String name ) {
-    DataServiceMeta service;
-    if ( isDual() ) {
-      service = new DataServiceMeta();
-      service.setName( "dual" );
-      sql.setServiceName( "dual" );
-      serviceFields = new RowMeta(); // nothing to report from dual
-      return service;
-    }
-    for ( DataServiceMeta s : services ) {
-      if ( s.getName().equalsIgnoreCase( name ) ) {
-        return s;
-      }
-    }
-    return null;
   }
 
   private void extractConditionParameters( Condition condition, Map<String, String> map ) {
@@ -304,35 +400,6 @@ public class DataServiceExecutor {
     }
   }
 
-  private TransMeta loadTransMeta( Repository repository ) throws KettleException {
-    TransMeta transMeta;
-
-    if ( !Const.isEmpty( service.getTransFilename() ) ) {
-      try {
-        // OK, load the meta-data from file...
-        //
-        // Don't set internal variables: they belong to the parent thread!
-        //
-        transMeta = new TransMeta( service.getTransFilename(), false );
-        transMeta.getLogChannel().logDetailed(
-            "Service transformation was loaded from XML file [" + service.getTransFilename() + "]" );
-      } catch ( Exception e ) {
-        throw new KettleException( "Unable to load service transformation for service '" + getServiceName() + "'", e );
-      }
-    } else {
-      try {
-        StringObjectId objectId = new StringObjectId( service.getTransObjectId() );
-        transMeta = repository.loadTransformation( objectId, null );
-        transMeta.getLogChannel().logDetailed(
-            "Service transformation was loaded from repository for service [" + service.getName() + "]" );
-      } catch ( Exception e ) {
-        throw new KettleException( "Unable to load service transformation for service '"
-          + getServiceName() + "' from the repository", e );
-      }
-    }
-    return transMeta;
-  }
-
   public void waitUntilFinished() {
     if ( !isDual() ) {
       serviceTrans.waitUntilFinished();
@@ -372,7 +439,7 @@ public class DataServiceExecutor {
    * @return the serviceName
    */
   public String getServiceName() {
-    return serviceName;
+    return sql.getServiceName();
   }
 
   /**
@@ -441,10 +508,5 @@ public class DataServiceExecutor {
 
   public boolean isDual() {
     return Const.isEmpty( getServiceName() ) || "dual".equalsIgnoreCase( getServiceName() );
-  }
-
-
-  public void setServiceName( String serviceName ) {
-    this.serviceName = serviceName;
   }
 }
