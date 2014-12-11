@@ -48,7 +48,7 @@ public class ValueMetaResolver {
 
   private final Map<String, ValueMetaInterface> fieldNameValueMetaMap;
   private static final String ANSI_DATE_LITERAL = "yyyy-MM-dd";
-  private static final String ANSI_TIMESTAMP_LITERAL = "yyyy-mm-dd HH:mm:ss.SSS";
+  private static final String ANSI_TIMESTAMP_LITERAL = "yyyy-MM-dd HH:mm:ss.SSS";
 
   public ValueMetaResolver( RowMetaInterface rowMeta ) {
     Map<String, ValueMetaInterface> tempFieldNameValueMetaMap =
