@@ -28,7 +28,6 @@ import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleSQLException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -56,18 +55,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class DataServiceExecutor {
-  private Trans serviceTrans;
-  private Trans genTrans;
+  private final Trans serviceTrans;
+  private final Trans genTrans;
 
-  private DataServiceMeta service;
-  private SQL sql;
-  private Map<String, String> parameters;
-  private SqlTransMeta sqlTransGenerator;
+  private final DataServiceMeta service;
+  private final SQL sql;
+  private final Map<String, String> parameters;
+  private final SqlTransMeta sqlTransGenerator;
 
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
     service = builder.service;
-    parameters = new HashMap<String, String>( builder.parameters );
+    Map<String, String> param = new HashMap<String, String>( builder.parameters );
+    param.putAll( getWhereConditionParameters() );
+    parameters = Collections.unmodifiableMap( param );
     serviceTrans = builder.serviceTrans;
     sqlTransGenerator = builder.sqlTransGenerator;
     genTrans = builder.genTrans;
@@ -75,7 +76,7 @@ public class DataServiceExecutor {
 
   public static class Builder {
     private final SQL sql;
-    private DataServiceMeta service;
+    private final DataServiceMeta service;
     private Trans serviceTrans;
     private Trans genTrans;
     private int rowLimit = 0;
@@ -86,37 +87,18 @@ public class DataServiceExecutor {
     private boolean normalizeConditions = true;
     private boolean prepareExecution = true;
 
-    public Builder( String query ) throws KettleSQLException {
-      this( new SQL( query ) );
+    public Builder( SQL sql, DataServiceMeta service ) {
+      this.sql = sql;
+      this.service = service;
     }
 
-    public Builder( SQL sql ) {
+    public Builder( SQL sql, List<DataServiceMeta> services ) throws KettleException {
       this.sql = sql;
+      this.service = findService( services );
     }
 
     public Builder parameters( Map<String, String> parameters ) {
       this.parameters = parameters;
-      return this;
-    }
-
-    public Builder service( DataServiceMeta service ) {
-      this.service = service;
-      return this;
-    }
-
-    public Builder findService( List<DataServiceMeta> serviceMetaList ) throws KettleException {
-      String serviceName = sql.getServiceName();
-      if ( StringUtils.isEmpty( serviceName ) || serviceName.equalsIgnoreCase( "dual" ) ) {
-        service = new DataServiceMeta();
-        service.setName( "dual" );
-        sql.setServiceName( "dual" );
-      } else {
-        for ( DataServiceMeta service : serviceMetaList ) {
-          if ( service.getName().equalsIgnoreCase( serviceName ) ) {
-            this.service = service;
-          }
-        }
-      }
       return this;
     }
 
@@ -143,9 +125,6 @@ public class DataServiceExecutor {
 
     public Builder lookupServiceTrans( Repository repository ) throws KettleException {
       TransMeta transMeta;
-      if ( service == null ) {
-        throw serviceNotFound();
-      }
       if ( service.getName().equals( "dual" ) ) {
         return this;
       }
@@ -199,10 +178,6 @@ public class DataServiceExecutor {
     }
 
     public DataServiceExecutor build() throws KettleException {
-      if ( service == null ) {
-        throw serviceNotFound();
-      }
-
       RowMetaInterface serviceFields;
       if ( serviceTrans != null ) {
         serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
@@ -236,7 +211,27 @@ public class DataServiceExecutor {
       return dataServiceExecutor;
     }
 
-    private KettleException serviceNotFound() throws KettleException {
+    private DataServiceMeta findService( List<DataServiceMeta> serviceMetaList ) throws KettleException {
+      String serviceName = sql.getServiceName();
+      DataServiceMeta foundService = null;
+      if ( StringUtils.isEmpty( serviceName ) || serviceName.equalsIgnoreCase( "dual" ) ) {
+        foundService = new DataServiceMeta();
+        foundService .setName( "dual" );
+        sql.setServiceName( "dual" );
+      } else {
+        for ( DataServiceMeta service : serviceMetaList ) {
+          if ( service.getName().equalsIgnoreCase( serviceName ) ) {
+            foundService = service;
+          }
+        }
+      }
+      if ( foundService == null ) {
+        serviceNotFound();
+      }
+      return foundService;
+    }
+
+    private void serviceNotFound() throws KettleException {
       throw new KettleException( "Unable to find service with name '" + sql.getServiceName() + "' and SQL: " + sql.getSqlString() );
     }
   }
@@ -326,20 +321,22 @@ public class DataServiceExecutor {
     genTrans.prepareExecution( null );
 
     if ( !isDual() ) {
-      // Parameters: see which ones are defined in the SQL
-      //
-      Map<String, String> conditionParameters = new HashMap<String, String>();
-      if ( sql.getWhereCondition() != null ) {
-        extractConditionParameters( sql.getWhereCondition().getCondition(), conditionParameters );
-      }
-      parameters.putAll( conditionParameters ); // overwrite the defaults for this query
-
       TransMeta serviceTransMeta = getServiceTransMeta();
       for ( Entry<String, String> parameter : parameters.entrySet() ) {
         serviceTransMeta.setParameterValue( parameter.getKey(), parameter.getValue() );
       }
       serviceTrans.prepareExecution( null );
     }
+  }
+
+  private Map<String, String> getWhereConditionParameters() {
+    // Parameters: see which ones are defined in the SQL
+    //
+    Map<String, String> conditionParameters = new HashMap<String, String>();
+    if ( sql.getWhereCondition() != null ) {
+      extractConditionParameters( sql.getWhereCondition().getCondition(), conditionParameters );
+    }
+    return conditionParameters;
   }
 
 
@@ -442,6 +439,10 @@ public class DataServiceExecutor {
     return sql.getServiceName();
   }
 
+  public Map<String, String> getParameters() {
+    return parameters;
+  }
+
   /**
    * Calculate the name of the generated transformation based on the SQL
    *
@@ -475,35 +476,11 @@ public class DataServiceExecutor {
     return sql;
   }
 
-  public void setSql( SQL sql ) {
-    this.sql = sql;
-  }
-
-  public StepInterface getServiceStep() {
-    return getServiceTrans().findRunThread( service.getStepname() );
-  }
-
   /**
    * @return the resultStepName
    */
   public String getResultStepName() {
     return sqlTransGenerator.getResultStepName();
-  }
-
-  public void setGenTrans( Trans genTrans ) {
-    this.genTrans = genTrans;
-  }
-
-  public void setServiceTrans( Trans serviceTrans ) {
-    this.serviceTrans = serviceTrans;
-  }
-
-  public void setService( DataServiceMeta service ) {
-    this.service = service;
-  }
-
-  public void setSqlTransMeta( SqlTransMeta sqlTransMeta ) {
-    this.sqlTransGenerator = sqlTransMeta;
   }
 
   public boolean isDual() {

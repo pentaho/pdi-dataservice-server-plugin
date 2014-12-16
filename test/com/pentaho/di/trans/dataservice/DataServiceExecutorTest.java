@@ -45,11 +45,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.sql.SqlTransMeta;
 import org.pentaho.di.trans.step.RowListener;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -86,8 +82,7 @@ public class DataServiceExecutorTest {
     Repository repository = mockRepository( transId, trans );
 
     List<DataServiceMeta> services = createServicesList( service );
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( query ).
-        findService( services ).
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), services ).
         lookupServiceTrans( repository ).
         normalizeConditions( false ).
         prepareExecution( false ).
@@ -113,8 +108,7 @@ public class DataServiceExecutorTest {
     when( serviceTrans.getTransMeta() ).thenReturn( transMeta );
     Trans genTrans = mock( Trans.class );
 
-    new DataServiceExecutor.Builder( "SELECT foo FROM bar" ).
-      service( serviceMeta ).
+    new DataServiceExecutor.Builder( new SQL( "SELECT foo FROM bar" ), serviceMeta ).
       serviceTrans( serviceTrans ).
       genTrans( genTrans ).
       prepareExecution( false ).
@@ -138,8 +132,7 @@ public class DataServiceExecutorTest {
     TransMeta transMeta = mockTransMeta();
     when( transMeta.getStepFields( SERVICE_STEP_NAME ) ).thenReturn( rowMeta );
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( query ).
-        service( service ).
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), service ).
         serviceTrans( transMeta ).
         prepareExecution( false ).
         build();
@@ -159,8 +152,7 @@ public class DataServiceExecutorTest {
     List<DataServiceMeta> services = Collections.emptyList();
 
     for ( String query : queries ) {
-      DataServiceExecutor executor = new DataServiceExecutor.Builder( query ).
-          findService( services ).
+      DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), services ).
           lookupServiceTrans( mock( Repository.class ) ).
           prepareExecution( false ).
           build();
@@ -173,10 +165,14 @@ public class DataServiceExecutorTest {
       assertTrue( executor.isDual() );
 
       Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-      executor.setGenTrans( genTrans );
       SqlTransMeta sqlTransMeta = mockSqlMetaTrans();
-      executor.setSqlTransMeta( sqlTransMeta );
 
+      executor = new DataServiceExecutor.Builder( new SQL( query ), services ).
+        lookupServiceTrans( mock( Repository.class ) ).
+        sqlTransGenerator( sqlTransMeta ).
+        genTrans( genTrans ).
+        prepareExecution( false ).
+        build();
       RowListener clientRowListener = mock( RowListener.class );
 
       // Start Execution
@@ -204,8 +200,7 @@ public class DataServiceExecutorTest {
 
     RowListener clientRowListener = mock( RowListener.class );
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql ).
-        service( service ).
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, service ).
         serviceTrans( serviceTrans ).
         sqlTransGenerator( sqlTransMeta ).
         genTrans( genTrans ).
@@ -244,6 +239,26 @@ public class DataServiceExecutorTest {
     verify( serviceTrans ).addTransListener( serviceTransListener.capture() );
     serviceTransListener.getValue().transFinished( serviceTrans );
     verify( sqlTransRowProducer ).finished();
+  }
+
+  @Test
+  public void testQueryWithParams() throws Exception {
+    String sql = "SELECT * FROM FOO WHERE PARAMETER('foo') = 'bar' AND PARAMETER('baz') = 'bop'";
+    DataServiceMeta service = mockDataServiceMeta();
+    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    SqlTransMeta sqlTransMeta = mockSqlMetaTrans();
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), service ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransMeta ).
+      genTrans( genTrans ).
+      build();
+    Map<String, String> expectedParams = new HashMap<String, String>();
+    expectedParams.put( "baz", "bop" );
+    expectedParams.put( "foo", "bar" );
+
+    assertEquals( expectedParams, executor.getParameters() );
   }
 
   private SqlTransMeta mockSqlMetaTrans() {

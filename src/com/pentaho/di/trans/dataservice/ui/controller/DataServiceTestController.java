@@ -35,6 +35,7 @@ import org.pentaho.di.core.logging.KettleLogStore;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
@@ -225,8 +226,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     try {
       resetDatabaseMetaParameters();
       transMeta.setLogLevel( model.getLogLevel() );
-      return new DataServiceExecutor.Builder( model.getSql() ).
-        service( dataService ).
+      return new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService ).
         serviceTrans( transMeta ).
         rowLimit( model.getMaxRows() ).
         logLevel( model.getLogLevel() ).

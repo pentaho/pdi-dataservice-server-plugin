@@ -42,6 +42,7 @@ import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.jdbc.ThinConnection;
 import org.pentaho.di.core.jdbc.ThinDriver;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
@@ -125,12 +126,11 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
 
       // Execute the SQL using a few transformations...
       //
-      final DataServiceExecutor executor = new DataServiceExecutor.Builder( sqlQuery ).
-          findService( dataServices ).
+      final DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sqlQuery ), dataServices ).
           parameters( parameters ).
           lookupServiceTrans( repository ).
           build();
-            
+
       // First write the service name and the metadata
       //
       dos.writeUTF( executor.getServiceName() );
