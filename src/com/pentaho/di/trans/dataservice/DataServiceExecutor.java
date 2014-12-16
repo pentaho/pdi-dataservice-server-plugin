@@ -86,6 +86,7 @@ public class DataServiceExecutor {
 
     private boolean normalizeConditions = true;
     private boolean prepareExecution = true;
+    private boolean enableMetrics = false;
 
     public Builder( SQL sql, DataServiceMeta service ) {
       this.sql = sql;
@@ -167,6 +168,11 @@ public class DataServiceExecutor {
       return this;
     }
 
+    public Builder enableMetrics( boolean enable ) {
+      enableMetrics = enable;
+      return this;
+    }
+
     public Builder normalizeConditions( boolean enable ) {
       normalizeConditions = enable;
       return this;
@@ -204,6 +210,11 @@ public class DataServiceExecutor {
         dataServiceExecutor.setLogLevel( logLevel );
       }
 
+      genTrans.setGatheringMetrics( enableMetrics );
+      if ( serviceTrans != null ) {
+        serviceTrans.setGatheringMetrics( enableMetrics );
+      }
+
       if ( prepareExecution ) {
         dataServiceExecutor.prepareExecution();
       }
@@ -239,9 +250,11 @@ public class DataServiceExecutor {
   private void setLogLevel( LogLevel logLevel ) {
     if ( serviceTrans != null ) {
       serviceTrans.setLogLevel( logLevel );
+      getServiceTransMeta().setLogLevel( logLevel );
     }
     if ( genTrans != null ) {
       genTrans.setLogLevel( logLevel );
+      getGenTransMeta().setLogLevel( logLevel );
     }
   }
 

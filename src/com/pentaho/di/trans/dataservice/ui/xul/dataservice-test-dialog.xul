@@ -38,7 +38,9 @@
                 <tab label="${DataServiceTest.OptimizedQueries.Tab}" />
                 <tab label="${DataServiceTest.Results.Tab}" />
                 <tab label="${DataServiceTest.ServiceTransLog.Tab}" />
+                <tab label="${DataServiceTest.ServiceTransMetrics.Tab}" />
                 <tab label="${DataServiceTest.GenTransLog.Tab}" />
+                <tab label="${DataServiceTest.GenTransMetrics.Tab}" />
 
             </tabs>
             <tabpanels id="repository-panels-set" flex="1">
@@ -47,7 +49,9 @@
                 </tabpanel>
                 <tabpanel id="results-tab" flex="1"></tabpanel>
                 <tabpanel id="serviceTrans-log-tab"></tabpanel>
+                <tabpanel id="serviceTrans-metrics-tab"></tabpanel>
                 <tabpanel id="genTrans-log-tab"></tabpanel>
+                <tabpanel id="genTrans-metrics-tab"></tabpanel>
 
             </tabpanels>
         </tabbox>

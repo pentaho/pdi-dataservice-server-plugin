@@ -28,6 +28,9 @@ import com.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.eclipse.swt.widgets.Composite;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.metrics.MetricsDuration;
+import org.pentaho.di.core.metrics.MetricsUtil;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.ui.xul.XulDomContainer;
@@ -38,14 +41,18 @@ import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class DataServiceTestDialog implements  java.io.Serializable {
   private static final String XUL_PATH = "com/pentaho/di/trans/dataservice/ui/xul/dataservice-test-dialog.xul";
   private static final String XUL_DIALOG_ID = "dataservice-test-dialog";
   private static final String GENTRANS_LOG_XUL_ID = "genTrans-log-tab";
+  private static final String GENTRANS_METRICS_XUL_ID = "genTrans-metrics-tab";
   private static final String SVCTRANS_LOG_XUL_ID = "serviceTrans-log-tab";
+  private static final String SVCTRANS_METRICS_XUL_ID = "serviceTrans-metrics-tab";
   private static final String QUERY_RESULTS_XUL_ID = "results-tab";
 
   private final DataServiceTestModel model = new DataServiceTestModel();
@@ -53,6 +60,8 @@ public class DataServiceTestDialog implements  java.io.Serializable {
   private final DataServiceTestResults resultsView;
   private final DataServiceTestLogBrowser serviceTransLogBrowser;
   private final DataServiceTestLogBrowser genTransLogBrowser;
+  private final DataServiceTestMetrics serviceTransMetrics;
+  private final DataServiceTestMetrics genTransMetrics;
   private final Document xulDocument;
   private final XulDialog dialog;
 
@@ -75,7 +84,9 @@ public class DataServiceTestDialog implements  java.io.Serializable {
     xulDocument = initXul( parent );
     resultsView = initDataServiceResultsView( dataService, transMeta );
     serviceTransLogBrowser = new DataServiceTestLogBrowser( getComposite( SVCTRANS_LOG_XUL_ID ) );
+    serviceTransMetrics = new DataServiceTestMetrics( getComposite( SVCTRANS_METRICS_XUL_ID ) );
     genTransLogBrowser = new DataServiceTestLogBrowser( getComposite( GENTRANS_LOG_XUL_ID ) );
+    genTransMetrics = new DataServiceTestMetrics( getComposite( GENTRANS_METRICS_XUL_ID ) );
     dialog = (XulDialog) xulDocument.getElementById( XUL_DIALOG_ID );
     attachCallback();
   }
@@ -90,7 +101,9 @@ public class DataServiceTestDialog implements  java.io.Serializable {
 
   public void close() {
     genTransLogBrowser.dispose();
+    genTransMetrics.dispose();
     serviceTransLogBrowser.dispose();
+    serviceTransMetrics.dispose();
     dialog.hide();
   }
 
@@ -107,6 +120,23 @@ public class DataServiceTestDialog implements  java.io.Serializable {
         public void onExecuteComplete() {
           resultsView.setRowMeta( model.getResultRowMeta() );
           resultsView.load( model.getResultRows() );
+          List<MetricsDuration> genTransMetrics = MetricsUtil.getAllDurations( model.getGenTransLogChannel().getLogChannelId() );
+          DataServiceTestDialog.this.genTransMetrics.display( genTransMetrics );
+          LogChannelInterface serviceTransLogChannel = model.getServiceTransLogChannel();
+          if ( serviceTransLogChannel != null ) {
+            serviceTransMetrics.display( MetricsUtil.getAllDurations( serviceTransLogChannel.getLogChannelId() ) );
+          }
+          StringBuilder message = new StringBuilder( "Query returned " );
+          message.append( model.getResultRows().size() );
+          message.append( " rows" );
+          if ( !genTransMetrics.isEmpty() ) {
+            message.append( " in " );
+            // Get duration of first genTrans metric (should be Transformation Execution)
+            Long duration = Collections.min( genTransMetrics, DataServiceTestMetrics.METRICS_COMPARATOR ).getDuration();
+            message.append( duration );
+            message.append( " ms" );
+          }
+          model.setErrorAlertMessage( message.toString() );
         }
 
         @Override

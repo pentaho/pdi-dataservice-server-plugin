@@ -32,7 +32,10 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.KettleLogStore;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogLevel;
+import org.pentaho.di.core.logging.LoggingRegistry;
+import org.pentaho.di.core.logging.MetricsRegistry;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
@@ -59,7 +62,7 @@ import java.util.List;
 
 public class DataServiceTestController extends AbstractXulEventHandler {
 
-  private static Class<?> PKG = DataServiceTestDialog.class;
+  public static Class<?> PKG = DataServiceTestDialog.class;
 
   private final DataServiceTestModel model;
 
@@ -180,10 +183,10 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   public void executeSql() throws KettleException {
-    previewQueries();
+    resetMetrics();
+    DataServiceExecutor dataServiceExec = getNewDataServiceExecutor( true );
 
-    DataServiceExecutor dataServiceExec = getNewDataServiceExecutor();
-
+    updateOptimizationImpact( dataServiceExec );
     updateModel( dataServiceExec );
     callback.onLogChannelUpdate();
     try {
@@ -200,8 +203,27 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     callback.onExecuteComplete();
   }
 
+  private void resetMetrics() {
+    resetMetrics( model.getServiceTransLogChannel() );
+    resetMetrics( model.getGenTransLogChannel() );
+  }
+
+  private void resetMetrics( LogChannelInterface logChannel ) {
+    LoggingRegistry loggingRegistry = LoggingRegistry.getInstance();
+    MetricsRegistry metricsRegistry = MetricsRegistry.getInstance();
+    if ( logChannel != null ) {
+      for ( String channelId : loggingRegistry.getLogChannelChildren( logChannel.getLogChannelId() ) ) {
+        metricsRegistry.getSnapshotLists().remove( channelId );
+      }
+    }
+  }
+
   public void previewQueries() throws KettleException {
-    DataServiceExecutor dataServiceExec = getNewDataServiceExecutor();
+    DataServiceExecutor dataServiceExec = getNewDataServiceExecutor( false );
+    updateOptimizationImpact( dataServiceExec );
+  }
+
+  private void updateOptimizationImpact( DataServiceExecutor dataServiceExec ) {
     model.clearOptimizationImpact();
 
     for ( PushDownOptimizationMeta optMeta :  dataService.getPushDownOptimizationMeta() ) {
@@ -222,14 +244,14 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       BaseMessages.getString( PKG, "DataServiceTest.Errors.Label" ) );
   }
 
-  protected DataServiceExecutor getNewDataServiceExecutor() throws KettleException {
+  protected DataServiceExecutor getNewDataServiceExecutor( boolean enableMetrics ) throws KettleException {
     try {
       resetDatabaseMetaParameters();
-      transMeta.setLogLevel( model.getLogLevel() );
       return new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService ).
         serviceTrans( transMeta ).
         rowLimit( model.getMaxRows() ).
         logLevel( model.getLogLevel() ).
+        enableMetrics( enableMetrics ).
         build();
     } catch ( KettleException e ) {
       model.setErrorAlertMessage( e.getMessage() );
@@ -255,8 +277,6 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     model.clearResultRows();
     model.setErrorAlertMessage( "" );
 
-    dataServiceExec.getGenTrans().setLogLevel( model.getLogLevel() );
-    dataServiceExec.getServiceTrans().setLogLevel( model.getLogLevel() );
     model.setServiceTransLogChannel(
       dataServiceExec.isDual() ? null : dataServiceExec.getServiceTrans().getLogChannel() );
     model.setGenTransLogChannel( dataServiceExec.getGenTrans().getLogChannel() );

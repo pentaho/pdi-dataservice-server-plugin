@@ -184,7 +184,7 @@ public class DataServiceTestControllerTest  {
     }
 
     @Override
-    protected DataServiceExecutor getNewDataServiceExecutor() throws KettleException {
+    protected DataServiceExecutor getNewDataServiceExecutor( boolean enableMetrics ) throws KettleException {
       return dataServiceExecutor;
     }
   }
