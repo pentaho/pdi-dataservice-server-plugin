@@ -104,9 +104,11 @@ public class DataServiceExecutorTest {
   public void testLogging() throws Exception {
     DataServiceMeta serviceMeta = mockDataServiceMeta();
     Trans serviceTrans = mock( Trans.class );
-    TransMeta transMeta = mockTransMeta();
-    when( serviceTrans.getTransMeta() ).thenReturn( transMeta );
+    TransMeta serviceTransMeta = mockTransMeta();
+    when( serviceTrans.getTransMeta() ).thenReturn( serviceTransMeta );
     Trans genTrans = mock( Trans.class );
+    TransMeta genTransMeta = mock( TransMeta.class );
+    when( genTrans.getTransMeta() ).thenReturn( genTransMeta );
 
     new DataServiceExecutor.Builder( new SQL( "SELECT foo FROM bar" ), serviceMeta ).
       serviceTrans( serviceTrans ).
@@ -116,7 +118,9 @@ public class DataServiceExecutorTest {
       build();
 
     verify( serviceTrans ).setLogLevel( LogLevel.DETAILED );
+    verify( serviceTransMeta ).setLogLevel( LogLevel.DETAILED );
     verify( genTrans ).setLogLevel( LogLevel.DETAILED );
+    verify( genTransMeta ).setLogLevel( LogLevel.DETAILED );
   }
 
   @Test
