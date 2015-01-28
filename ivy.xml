@@ -84,7 +84,9 @@ explicitly covering such access.
     <dependency org="pentaho" name="pentaho-metadata" rev="${dependency.pentaho-metadata.revision}" transitive="false" changing="true" conf="compile->default" />
 
     <!-- Modeler -->
-    <dependency org="pentaho" name="pentaho-modeler" rev="${dependency.pentaho-modeler.revision}" changing="true" transitive="false"/>
+    <dependency org="pentaho" name="pentaho-modeler" rev="${dependency.pentaho-modeler.revision}" changing="true" transitive="false">
+      <artifact name="pentaho-modeler" type="jar" />
+    </dependency>
 
     <!-- misc third-party -->
     <dependency org="commons-logging" name="commons-logging" rev="1.1" transitive="false" />
