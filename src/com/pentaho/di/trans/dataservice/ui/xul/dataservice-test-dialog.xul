@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window id="dataservice-test-window" orient="vertical" height="600" width="800" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:pen="http://www.pentaho.org/2008/xul" onload="dataServiceTestController.init()">
+    <dialog id="dataservice-test-dialog"
+            title="${DataServiceTest.Dialog.Title}"
+            resizable="false"
+            height="700"
+            width="900"
+            appicon="ui/images/spoon.ico"
+            buttons="accept"
+            ondialogaccept="dataServiceTestController.close()"
+            ondialogcancel="dataServiceTestController.close()"
+            buttonalign="end"
+            buttonlabelaccept="${DataServiceTest.Dialog.Close}">
+        <label value="SQL:" />
+        <textbox id='sql-textbox' multiline="true" height="100" value="{default text}" />
+        <hbox align="right" >
+            <label value="${DataServiceTest.LogLevel.Label}" />
+            <menulist id="log-levels">
+                <menupopup />
+            </menulist>
+            <spacer flex="1"/>
+            <label  value="${DataServiceTest.MaxRows.Label}"/>
+            <textbox id="maxrows-textbox" width="50" value="{default text}"/>
+            <spacer flex="1"/>
+            <button  label="${DataServiceTest.PreviewOptimization.Button}" onclick="dataServiceTestController.previewQueries()" />
+            <button  label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()" />
+        </hbox>
+        <hbox align="right"  height="50">
+            <label  id="error-alert" width="700" />
+            <spacer flex="1"/>
+            <label id="elapsed-time"  />
+            <spacer flex="1"/>
+            <label id="rows-returned" />
+        </hbox>
+        <tabbox flex="1" id="tabbox">
+            <tabs>
+                <tab label="${DataServiceTest.OptimizedQueries.Tab}" />
+                <tab label="${DataServiceTest.Results.Tab}" />
+                <tab label="${DataServiceTest.ServiceTransLog.Tab}" />
+                <tab label="${DataServiceTest.ServiceTransMetrics.Tab}" />
+                <tab label="${DataServiceTest.GenTransLog.Tab}" />
+                <tab label="${DataServiceTest.GenTransMetrics.Tab}" />
+
+            </tabs>
+            <tabpanels id="repository-panels-set" flex="1">
+                <tabpanel>
+                    <textbox multiline="true" height="370" id="optimization-impact-info"  value=""/>
+                </tabpanel>
+                <tabpanel id="results-tab" flex="1"></tabpanel>
+                <tabpanel id="serviceTrans-log-tab"></tabpanel>
+                <tabpanel id="serviceTrans-metrics-tab"></tabpanel>
+                <tabpanel id="genTrans-log-tab"></tabpanel>
+                <tabpanel id="genTrans-metrics-tab"></tabpanel>
+
+            </tabpanels>
+        </tabbox>
+    </dialog>
+</window>
+

@@ -437,6 +437,8 @@ public class TransDelegate extends AbstractDelegate implements ITransformer, ISh
       String desc = getString( paramNode, PARAM_DESC );
       transMeta.addParameterDefinition( key, def, desc );
     }
+
+    transMeta.activateParameters();
   }
 
   /**

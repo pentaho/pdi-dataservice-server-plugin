@@ -86,6 +86,7 @@ import org.pentaho.metastore.api.IMetaStoreElementType;
 import org.pentaho.metastore.api.exceptions.MetaStoreDependenciesExistsException;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.api.exceptions.MetaStoreNamespaceExistsException;
+import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.util.PentahoDefaults;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
@@ -144,7 +145,6 @@ import org.xml.sax.ext.DefaultHandler2;
 import com.pentaho.commons.dsc.PentahoLicenseVerifier;
 import com.pentaho.commons.dsc.util.TestLicenseStream;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/repository.spring.xml", "classpath:/repository-test-override.spring.xml" })
@@ -1105,13 +1105,16 @@ public class PurRepositoryTest extends RepositoryTestBase implements Application
     }
     
     DataServiceMeta dataServiceMeta = new DataServiceMeta();
-    dataServiceMeta.setName("table1");
-    dataServiceMeta.setTransFilename("/test/fictive/trans.ktr");
-    dataServiceMeta.setStepname("Output-step");
-    IMetaStoreElement element = DataServiceMetaStoreUtil.createOrUpdateDataServiceElement(metaStore, dataServiceMeta);
-    
-    assertNotNull(element);
-    assertNotNull(element.getId());
+    dataServiceMeta.setName( "table1" );
+    dataServiceMeta.setTransFilename( "/test/fictive/trans.ktr" );
+    dataServiceMeta.setStepname( "Output-step" );
+    MetaStoreFactory<DataServiceMeta> MSF = new MetaStoreFactory<DataServiceMeta>(
+      DataServiceMeta.class, metaStore, PentahoDefaults.NAMESPACE );
+    MSF.saveElement( dataServiceMeta );
+    DataServiceMeta loadedDsm = MSF.loadElement( "table1" );
+
+    assertNotNull( loadedDsm );
+    assertNotNull( loadedDsm.getName() );
   }
   
   protected IMetaStoreElement populateElement(IMetaStore metaStore, IMetaStoreElementType elementType, String name) throws MetaStoreException {
