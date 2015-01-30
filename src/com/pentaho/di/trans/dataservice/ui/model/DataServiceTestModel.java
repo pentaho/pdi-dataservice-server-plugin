@@ -141,30 +141,10 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
       builder.append( "[No Push Down Optimizations Defined]" );
     }
     for ( OptimizationImpactInfo info : optimizationImpact ) {
-      builder
-        .append( "Step:  " )
-        .append( info.getStepName() )
-        .append( "\n" );
-      if ( info.getErrorMsg().length() > 0 ) {
-        builder
-          .append( "[ERROR]  " )
-          .append( info.getErrorMsg() )
-          .append( "\n" );
-      }
-      if ( info.isModified() ) {
-        builder
-          .append( "Before:\n     " )
-          .append( info.getQueryBeforeOptimization() )
-          .append( "\nAfter:\n     " )
-          .append( info.getQueryAfterOptimization() );
-      } else {
-        builder
-          .append( "[NO MODIFICATION]\n" )
-          .append( "Query:\n     " )
-          .append( info.getQueryBeforeOptimization() );
-      }
+      builder.append( info.getDescription() );
       builder.append( "\n- - - - - - - - - - - - - - - - - - - - - -\n\n" );
     }
     return builder.toString();
   }
+
 }

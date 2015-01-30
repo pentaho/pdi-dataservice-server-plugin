@@ -613,14 +613,25 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   public DataServiceMeta getDataServiceMeta() throws KettleException {
     DataServiceMeta dataService = new DataServiceMeta();
-    String serviceName = wServiceName.getText();
-    String stepService = wServiceStep.getText();
-    if ( serviceName.isEmpty() || stepService.isEmpty() ) {
+    String serviceName = wServiceName.getText().trim();
+    String stepService = wServiceStep.getText().trim();
+    if ( ( serviceName.isEmpty() && !stepService.isEmpty() ) || ( !serviceName.isEmpty() && stepService.isEmpty() ) ) {
       throw new KettleException( "Required fields are not filled!" );
     }
 
+    // Get data service details...
+    //
     dataService.setName( serviceName );
     dataService.setStepname( stepService );
+
+    // Set enabled/disabled on optimizations
+    for ( int i = 0; i < optimizationList.size(); i++ ) {
+      PushDownOptimizationMeta optMeta = optimizationList.get( i );
+      TableItem tableItem = optimizationListTable.table.getItem( i );
+      String text = tableItem.getText( ENABLED_COMBO_COLUMN );
+      optMeta.setEnabled( text.equals( BaseMessages.getString( PKG, "TransDialog.Enabled.Value" ) ) );
+    }
+
     dataService.setPushDownOptimizationMeta( optimizationList );
     return dataService;
   }
@@ -629,31 +640,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   public void ok( TransMeta transMeta ) throws KettleException {
 
     try {
-      // Set enabled/disabled on optimizations
-      for ( int i = 0; i < optimizationList.size(); i++ ) {
-        PushDownOptimizationMeta optMeta = optimizationList.get( i );
-        TableItem tableItem = optimizationListTable.table.getItem( i );
-        String text = tableItem.getText( ENABLED_COMBO_COLUMN );
-        optMeta.setEnabled( text.equals( BaseMessages.getString( PKG, "TransDialog.Enabled.Value" ) ) );
-      }
-
-      // Get data service details...
-      //
-      DataServiceMeta dataService = new DataServiceMeta();
-      String serviceName = wServiceName.getText();
-      String stepService = wServiceStep.getText();
-      if ( ( serviceName.isEmpty() && !stepService.isEmpty() ) || ( !serviceName.isEmpty() && stepService.isEmpty() ) ) {
-        throw new KettleException( "Required fields are not filled!" );
-      }
-
-      dataService.setName( serviceName );
-      dataService.setStepname( stepService );
-      dataService.setPushDownOptimizationMeta( optimizationList );
-
-      DataServiceMetaStoreUtil.toTransMeta( transMeta, transMeta.getMetaStore(), dataService, true );
-
+      DataServiceMetaStoreUtil.toTransMeta( transMeta, transMeta.getMetaStore(), getDataServiceMeta(), true );
       transMeta.setChanged();
-
     } catch ( Exception e ) {
       throw new KettleException( "Error reading data service metadata", e );
     }
