@@ -59,12 +59,11 @@ public class TableInputParameterGeneration implements ParameterGenerationService
 
   @Override
   public OptimizationImpactInfo preview( Condition pushDownCondition, ParameterGeneration parameterGeneration, StepInterface stepInterface ) {
-    OptimizationImpactInfo optimizationInfo = new OptimizationImpactInfo();
+    OptimizationImpactInfo optimizationInfo = new OptimizationImpactInfo( stepInterface.getStepname() );
 
     try {
       final String sql = getSQL( stepInterface );
       optimizationInfo.setQueryBeforeOptimization( sql );
-      optimizationInfo.setStepName( stepInterface.getStepname() );
 
       if ( pushDownCondition == null ) {
         optimizationInfo.setModified( false );

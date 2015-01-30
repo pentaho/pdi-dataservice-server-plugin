@@ -33,13 +33,13 @@ import org.pentaho.metastore.persist.MetaStoreElementType;
 @MetaStoreElementType(
   name = "Push Down Optimization",
   description = "Define opportunities to improve Data Service performance by modifying user transformation execution"
-  )
+)
 public final class PushDownOptimizationMeta {
 
   public static final String PUSH_DOWN_STEP_NAME = "step_name";
 
   /**
-   *  User-defined name for this optimization (required)
+   * User-defined name for this optimization (required)
    */
   @MetaStoreAttribute
   private String name = "";
@@ -98,7 +98,22 @@ public final class PushDownOptimizationMeta {
 
   public OptimizationImpactInfo preview( DataServiceExecutor executor ) {
     StepInterface stepInterface = executor.getServiceTrans().findRunThread( getStepName() );
-    return getType().preview( executor, stepInterface );
+    final OptimizationImpactInfo preview = getType().preview( executor, stepInterface );
+    if ( enabled ) {
+      return preview;
+    } else {
+      return new OptimizationImpactInfo( getStepName() ) {
+        {
+          setModified( false );
+          setErrorMsg( preview.getErrorMsg() );
+          setQueryBeforeOptimization( preview.getQueryBeforeOptimization() );
+        }
+        @Override public String getDescription() {
+          return "# " + getName() + " is disabled\n" +
+            super.getDescription();
+        }
+      };
+    }
   }
 
 }

@@ -74,8 +74,7 @@ public class MongodbInputParameterGeneration implements ParameterGenerationServi
   @Override
   public OptimizationImpactInfo preview( Condition pushDownCondition,
                                          ParameterGeneration parameterGeneration, StepInterface stepInterface ) {
-    OptimizationImpactInfo impactInfo = new OptimizationImpactInfo();
-    impactInfo.setStepName( stepInterface.getStepname() );
+    OptimizationImpactInfo impactInfo = new OptimizationImpactInfo( stepInterface.getStepname() );
     try {
       String jsonQuery = getJsonQuery( stepInterface );
       impactInfo.setQueryBeforeOptimization( jsonQuery );
@@ -92,8 +91,7 @@ public class MongodbInputParameterGeneration implements ParameterGenerationServi
         impactInfo.setModified( true );
       }
     } catch ( KettleException e ) {
-      log.logDetailed( String.format( "Unable to optimize step '%s'",
-        stepInterface.getStepname(), e ) );
+      log.logDetailed( String.format( "Unable to optimize step '%s'", stepInterface.getStepname() ) );
       impactInfo.setModified( false );
       impactInfo.setErrorMsg( e.getMessage() );
     }

@@ -3,10 +3,13 @@ package com.pentaho.di.trans.dataservice.optimization;
 public class OptimizationImpactInfo {
   private String queryBeforeOptimization = "";
   private String queryAfterOptimization = "";
-  private String stepName = "";
-  private boolean modified;
+  private final String stepName;
+  private boolean modified = false;
   private String errorMsg = "";
 
+  public OptimizationImpactInfo( String stepName ) {
+    this.stepName = stepName;
+  }
 
   public String getQueryBeforeOptimization() {
     return queryBeforeOptimization == null || queryBeforeOptimization.trim().length() == 0
@@ -29,10 +32,6 @@ public class OptimizationImpactInfo {
     return stepName;
   }
 
-  public void setStepName( String stepName ) {
-    this.stepName = stepName;
-  }
-
   public boolean isModified() {
     return modified;
   }
@@ -48,4 +47,32 @@ public class OptimizationImpactInfo {
   public void setErrorMsg( String errorMsg ) {
     this.errorMsg = errorMsg;
   }
+
+  public String getDescription() {
+    StringBuilder builder = new StringBuilder();
+    builder
+      .append( "Step:  " )
+      .append( getStepName() )
+      .append( "\n" );
+    if ( getErrorMsg().length() > 0 ) {
+      builder
+        .append( "[ERROR]  " )
+        .append( getErrorMsg() )
+        .append( "\n" );
+    }
+    if ( isModified() ) {
+      builder
+        .append( "Before:\n     " )
+        .append( getQueryBeforeOptimization() )
+        .append( "\nAfter:\n     " )
+        .append( getQueryAfterOptimization() );
+    } else {
+      builder
+        .append( "[NO MODIFICATION]\n" )
+        .append( "Query:\n     " )
+        .append( getQueryBeforeOptimization() );
+    }
+    return builder.toString();
+  }
+
 }
