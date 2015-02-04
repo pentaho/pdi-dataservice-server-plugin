@@ -1,11 +1,12 @@
-pdi-ee-plugin
-=============
+PDI DATA SERVICE PLUGIN
+========================================
 
-This project contains the enterprise edition plugins for Pentaho Data Integration.
-At this time this entails the following plugins:
-- Enterprise Repository type
-- Row level load balancing
-- Job Restartability
-- Data Services (data blending) 
-- Checkpoint-restart
+Objective
+---------
+
+The goal of this project is to expose transformations as a data sources and allow querying rows from a JDBC client
+
+Creating data services is an enterprise-only feature.
+The client for these services is available in the [kettle-engine]
+(https://github.com/pentaho/pentaho-kettle/blob/master/core/src/org/pentaho/di/core/jdbc/ThinDriver.java).
 
