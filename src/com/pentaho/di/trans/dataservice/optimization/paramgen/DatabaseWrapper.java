@@ -119,9 +119,9 @@ class DatabaseWrapper extends Database {
     return sqlBuilder.toString();
   }
 
-  public String createRuntimePushDown( String sqlFragment, RowMeta paramsMeta, List<Object> params ) {
-    // Create a unique ID for this substitution
-    String fragmentId = "/*" + UUID.randomUUID().toString() + "*/";
+  public String createRuntimePushDown( String sqlFragment, RowMeta paramsMeta, List<Object> params, String defaultValue ) {
+    // Create a unique ID for this substitution, including a default value
+    String fragmentId = "/*" + UUID.randomUUID().toString() + "*/" + defaultValue;
 
     RuntimePushDown runtimePushDown = new RuntimePushDown( fragmentId, sqlFragment, paramsMeta, params );
     pushDownMap.put( fragmentId, runtimePushDown );
