@@ -79,7 +79,7 @@ public class TableInputParameterGeneration implements ParameterGenerationService
       dbMeta = db.getDatabaseMeta();
 
       convertCondition( pushDownCondition, sqlFragment, paramsMeta, params );
-      String fragmentId = db.createRuntimePushDown( sqlFragment.toString(), paramsMeta, params );
+      String fragmentId = db.createRuntimePushDown( sqlFragment.toString(), paramsMeta, params, getParameterDefault() );
 
       final String modifiedSql = db.injectRuntime(
         db.pushDownMap,
@@ -111,7 +111,7 @@ public class TableInputParameterGeneration implements ParameterGenerationService
     convertCondition( condition, sqlFragment, paramsMeta, params );
 
     // Save conversion results for injection at runtime
-    String fragmentId = db.createRuntimePushDown( sqlFragment.toString(), paramsMeta, params );
+    String fragmentId = db.createRuntimePushDown( sqlFragment.toString(), paramsMeta, params, getParameterDefault() );
 
     // Set variable to fragment ID
     stepInterface.setVariable( parameterGeneration.getParameterName(), fragmentId );
