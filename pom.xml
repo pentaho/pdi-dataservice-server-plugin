@@ -21,7 +21,7 @@
     <licenses>
         <license>
             <name>Pentaho Proprietary License</name>
-            <!-- TODO: figure out if the proprietary license is publically available -->
+            <!-- TODO: figure out if the proprietary license is publicly available -->
             <url>http://www.pentaho.com</url>
             <distribution>repo</distribution>
         </license>
