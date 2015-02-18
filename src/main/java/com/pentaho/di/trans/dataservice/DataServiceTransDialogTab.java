@@ -20,7 +20,6 @@ package com.pentaho.di.trans.dataservice;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
-import com.pentaho.di.trans.dataservice.ui.DataServicePublishDialog;
 import com.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -261,28 +260,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     );
 
-    lastControl = wServiceStep;
-
-    Button publish = new Button( serviceGroup, SWT.PUSH );
-    props.setLook( publish );
-    publish.setText( BaseMessages.getString( PKG, "TransDialog.PublishToBaServer.Button" ) );
-    FormData fdPublish = new FormData();
-    fdPublish.left = new FormAttachment( middle, 0 );
-    fdPublish.right = new FormAttachment( 65, 0 );
-    fdPublish.top = new FormAttachment( lastControl, margin );
-    publish.setLayoutData( fdPublish );
-
-    publish.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent selectionEvent ) {
-        try {
-          new DataServicePublishDialog( shell, getDataServiceMeta(), transMeta ).open();
-        } catch ( KettleException e ) {
-          new ErrorDialog( shell, BaseMessages.getString( PKG, "TransDialog.ErrorDialog.Label" ),
-            BaseMessages.getString( PKG, "TransDialog.TestDialogInitError.Label" ), e );
-        }
-      }
-    } );
-
     Group optimizationGroup = new Group( wDataServiceComp, SWT.SHADOW_IN );
     optimizationGroup.setLayout( new FormLayout() );
     props.setLook( optimizationGroup );
@@ -415,8 +392,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         }
       }
     } );
-
-
 
     FormData fdDataServiceComp = new FormData();
     fdDataServiceComp.left = new FormAttachment( 0, 0 );

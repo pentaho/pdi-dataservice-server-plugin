@@ -69,10 +69,7 @@
         <mongo-driver.version>2.11.1</mongo-driver.version>
         <mockito.version>1.9.5</mockito.version>
         <junit.version>4.4</junit.version>
-        <jersey.version>1.16</jersey.version>
-        <pentaho-modeler.version>6.0-SNAPSHOT</pentaho-modeler.version>
         <kettle.version>6.0-SNAPSHOT</kettle.version>
-        <metadata.version>6.0-SNAPSHOT</metadata.version>
         <guava.version>17.0</guava.version>
     </properties>
 
@@ -103,32 +100,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>pentaho</groupId>
-            <artifactId>pentaho-metadata</artifactId>
-            <version>${metadata.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>pentaho</groupId>
-            <artifactId>pentaho-modeler</artifactId>
-            <version>${pentaho-modeler.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-bundle</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey.contribs</groupId>
-            <artifactId>jersey-multipart</artifactId>
-            <version>${jersey.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
