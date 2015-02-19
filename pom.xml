@@ -8,10 +8,10 @@
     <version>6.0-SNAPSHOT</version>
 
     <parent>
-        <groupId>org.pentaho</groupId>
-        <artifactId>pentaho-ce-jar-parent-pom</artifactId>
-        <!-- recommend only setting this to a specific version upon migration to maintenance -->
-        <version>RELEASE</version>
+        <groupId>com.pentaho</groupId>
+        <artifactId>pentaho-ee-jar-parent-pom</artifactId>
+        <version>1.0.8</version>
+        <!-- https://github.com/pentaho/maven-parent-poms/blob/pentaho-ee-jar-parent-pom-1.0.8/pentaho-ee-jar-parent-pom/pom.xml -->
     </parent>
 
     <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
@@ -73,12 +73,6 @@
         <guava.version>17.0</guava.version>
     </properties>
 
-    <scm>
-        <connection>scm:git:git@github.com:${github.user}/${project.artifactId}.git</connection>
-        <url>scm:git:git@github.com:${github.user}/${project.artifactId}.git</url>
-        <developerConnection>scm:git:git@github.com:${github.user}/${project.artifactId}.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
 
     <dependencies>
         <dependency>
@@ -182,47 +176,5 @@
             </plugin>
         </plugins>
     </build>
-    <distributionManagement>
-        <!--
-         if you plan on releasing anything that inherits this parent pom
-              you will need your Maven settings.xml to have the appropriate entries ...
-              we recommend something like this: <servers> <server> <id>pentaho.public.release.repo</id>
-              <username>YOUR_REPO_USERNAME</username> <password>YOUR_REPO_PASSWORD</password>
-              </server> <server> <id>pentaho.public.snapshot.repo</id> <username>YOUR_REPO_USERNAME</username>
-              <password>YOUR_REPO_PASSWORD</password> </server> </servers> requests for
-              repo credentials should be made to buildteam@pentaho.com
-        -->
-        <repository>
-            <id>pentaho.public.release.repo</id>
-            <name>Pentaho Public Release Repository</name>
-            <url>${pentaho.public.release.repo}</url>
-        </repository>
-        <snapshotRepository>
-            <id>pentaho.public.snapshot.repo</id>
-            <name>Pentaho Public Snapshot Repository</name>
-            <url>${pentaho.public.snapshot.repo}</url>
-        </snapshotRepository>
-    </distributionManagement>
-    <!-- this is for bootstrapping only; you should really just add this to your settings.xml -->
-    <repositories>
-        <repository>
-            <id>pentaho.resolve.repo</id>
-            <name>Pentaho Group Resolve Repository</name>
-            <url>http://nexus.pentaho.org/content/groups/omni/</url>
-            <releases>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>fail</checksumPolicy>
-            </releases>
-            <snapshots>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>fail</checksumPolicy>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>repo.pentaho.org</id>
-            <name>repo.pentaho.org</name>
-            <url>http://repository.pentaho.org/artifactory/pentaho</url>
-        </repository>
-    </repositories>
 
 </project>
