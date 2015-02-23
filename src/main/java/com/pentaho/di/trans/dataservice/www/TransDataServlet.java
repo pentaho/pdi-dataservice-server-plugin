@@ -39,8 +39,6 @@ import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
-import org.pentaho.di.core.jdbc.ThinConnection;
-import org.pentaho.di.core.jdbc.ThinDriver;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.xml.XMLHandler;
@@ -75,7 +73,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
 
   private static final long serialVersionUID = 3634806745372015720L;
 
-  public static final String CONTEXT_PATH = ThinDriver.SERVICE_NAME + "/sql";
+  public static final String CONTEXT_PATH = "/sql";
 
   AtomicLong dataSize = new AtomicLong( 0L );
 
@@ -110,7 +108,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     String sqlQuery = request.getHeader( "SQL" );
     final int maxRows = Const.toInt( request.getHeader( "MaxRows" ), -1 );
 
-    final String debugTransFile = request.getParameter( ThinConnection.ARG_DEBUGTRANS );
+    final String debugTransFile = request.getParameter( "debugtrans" );
 
     // Parse the variables in the request header...
     //
