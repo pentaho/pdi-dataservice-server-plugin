@@ -1,7 +1,7 @@
 /*!
  * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
+ * Copyright 2002 - 2015 Pentaho Corporation (Pentaho). All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Pentaho and its licensors. The intellectual
@@ -41,6 +41,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepMeta;
@@ -51,6 +52,7 @@ import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBinding;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
+import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
@@ -59,9 +61,13 @@ import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class DataServiceTestController extends AbstractXulEventHandler {
 
+  public static final int POLL_DELAY_MILLIS = 500;
+  public static final int POLL_PERIOD_MILLIS = 500;
   public static Class<?> PKG = DataServiceTestDialog.class;
 
   private final DataServiceTestModel model;
@@ -75,6 +81,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   private final DataServiceMeta dataService;
   private final TransMeta transMeta;
   private XulMenuList<String> logLevels;
+  private Timer completionPollTimer;
+  private DataServiceExecutor dataServiceExec;
+
 
   public DataServiceTestController( DataServiceTestModel model,
                                     DataServiceMeta dataService,
@@ -93,16 +102,33 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
     bindLogLevelsCombo( bindingFactory );
     bindSqlText( bindingFactory );
+    bindButtons( bindingFactory );
     bindMaxRows( bindingFactory );
     bindErrorAlert( bindingFactory );
     bindOptImpactInfo( bindingFactory );
   }
 
+  private void bindButtons( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
+    bindButton( bindingFactory, (XulButton) document.getElementById( "preview-opt-btn" ) );
+    bindButton( bindingFactory, (XulButton) document.getElementById( "exec-sql-btn" ) );
+  }
+
+  /**
+   * Binds the button to the executing prop of model, such that the button will be
+   * disabled for the duration of a query execution.
+   */
+  private void bindButton( BindingFactory bindingFactory, XulButton button ) throws XulException, InvocationTargetException {
+    bindingFactory.setBindingType( Binding.Type.ONE_WAY );
+    Binding binding = bindingFactory.createBinding( model, "executing", button, "disabled" );
+    binding.initialize();
+    binding.fireSourceChanged();
+  }
+
   private void bindErrorAlert( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
     XulLabel errorAlert = (XulLabel) document.getElementById( "error-alert" );
-    model.setErrorAlertMessage( "" );
+    model.setAlertMessage( "" );
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
-    Binding binding = bindingFactory.createBinding( model, "errorAlertMessage", errorAlert, "value" );
+    Binding binding = bindingFactory.createBinding( model, "alertMessage", errorAlert, "value" );
     binding.initialize();
     binding.fireSourceChanged();
   }
@@ -139,6 +165,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     bindSelectedLogLevel();
   }
 
+  @SuppressWarnings( "unchecked" )
   private void bindLogLevelComboValues( BindingFactory bindingFactory ) throws XulException, InvocationTargetException {
     assert document.getElementById( "log-levels" ) instanceof XulMenuList;
     logLevels = (XulMenuList<String>) document.getElementById( "log-levels" );
@@ -184,22 +211,90 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   public void executeSql() throws KettleException {
     resetMetrics();
-    DataServiceExecutor dataServiceExec = getNewDataServiceExecutor( true );
+    dataServiceExec = getNewDataServiceExecutor( true );
 
     updateOptimizationImpact( dataServiceExec );
     updateModel( dataServiceExec );
     callback.onLogChannelUpdate();
     try {
       dataServiceExec.executeQuery( getDataServiceRowListener() );
-      dataServiceExec.waitUntilFinished();
-      maybeSetErrorAlert( dataServiceExec );
     } catch ( KettleException ke ) {
       setErrorAlertMessage();
+      return;
     }
+    pollForCompletion( dataServiceExec );
+  }
+
+  private void pollForCompletion( final DataServiceExecutor dataServiceExec ) {
+    final Trans svcTrans = dataServiceExec.getServiceTrans();
+    final Trans genTrans = dataServiceExec.getGenTrans();
+    completionPollTimer = new Timer( "DataServiceTesterTimer" );
+    final long startMillis = System.currentTimeMillis();
+
+    TimerTask task = new TimerTask() {
+      @Override
+      public void run() {
+        // any actions that might update widgets need to be invoked in UI thread
+        document.invokeLater( new Runnable() {
+          @Override
+          public void run() {
+            checkMaxRows( dataServiceExec );
+            checkForFailures( dataServiceExec );
+            if ( !anyTransErrors( dataServiceExec ) ) {
+              updateExecutingMessage( startMillis );
+            }
+            if ( svcTrans.isFinishedOrStopped() && genTrans.isFinishedOrStopped() ) {
+              handleCompletion( dataServiceExec );
+              completionPollTimer.cancel();
+            }
+          }
+        } );
+      }
+    };
+    completionPollTimer.schedule( task, POLL_DELAY_MILLIS, POLL_PERIOD_MILLIS );
+  }
+
+  private boolean anyTransErrors( DataServiceExecutor dataServiceExec ) {
+    return dataServiceExec.getServiceTrans().getErrors() > 0
+      || dataServiceExec.getGenTrans().getErrors() > 0;
+  }
+
+  private void checkForFailures( DataServiceExecutor dataServiceExec ) {
+    if ( dataServiceExec.getGenTrans().isFinishedOrStopped()
+        && !dataServiceExec.getServiceTrans().isFinishedOrStopped()
+        && dataServiceExec.getGenTrans().getErrors() > 0 ) {
+      // Gen trans has failed for some reason.
+      // Stop service trans
+      setErrorAlertMessage();
+      dataServiceExec.getServiceTrans().stopAll();
+    } else if ( dataServiceExec.getServiceTrans().isFinishedOrStopped()
+        && dataServiceExec.getServiceTrans().getErrors() > 0 ) {
+      // Svc trans had errors.  Set appropriate message
+      setErrorAlertMessage();
+    }
+  }
+
+  private void checkMaxRows( DataServiceExecutor dataServiceExec ) {
+    if ( model.getMaxRows() > 0
+        && model.getMaxRows() <= model.getResultRows().size() ) {
+      //Exceeded max rows, no need to continue
+      dataServiceExec.getServiceTrans().stopAll();
+    }
+  }
+
+  private void updateExecutingMessage( long start ) {
+    model.setAlertMessage(
+        BaseMessages.getString( PKG, "DataServiceTest.RowsReturned.Text",
+        model.getResultRows().size(),
+        System.currentTimeMillis() - start ) );
+  }
+
+  private void handleCompletion( DataServiceExecutor dataServiceExec ) {
+    maybeSetErrorAlert( dataServiceExec );
     // revert the trans name to the original name.  DataServiceExecutor
     // changes it for logging purposes.
     transMeta.setName( transName );
-
+    model.setExecuting( false );
     callback.onExecuteComplete();
   }
 
@@ -233,15 +328,15 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   private void maybeSetErrorAlert( DataServiceExecutor dataServiceExec ) {
     if ( dataServiceExec.getGenTrans().getErrors() > 0
-      || ( dataServiceExec.getServiceTrans() != null
-      && dataServiceExec.getServiceTrans().getErrors() > 0 ) ) {
+        || ( dataServiceExec.getServiceTrans() != null
+        && dataServiceExec.getServiceTrans().getErrors() > 0 ) ) {
       setErrorAlertMessage();
     }
   }
 
   private void setErrorAlertMessage() {
-    model.setErrorAlertMessage(
-      BaseMessages.getString( PKG, "DataServiceTest.Errors.Label" ) );
+    model.setAlertMessage(
+        BaseMessages.getString( PKG, "DataServiceTest.Errors.Label" ) );
   }
 
   protected DataServiceExecutor getNewDataServiceExecutor( boolean enableMetrics ) throws KettleException {
@@ -254,7 +349,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
         enableMetrics( enableMetrics ).
         build();
     } catch ( KettleException e ) {
-      model.setErrorAlertMessage( e.getMessage() );
+      model.setAlertMessage( e.getMessage() );
       throw e;
     }
   }
@@ -273,12 +368,13 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   private void updateModel( DataServiceExecutor dataServiceExec ) throws KettleException {
+    model.setExecuting( true );
     model.setResultRowMeta( sqlFieldsToRowMeta( dataServiceExec ) );
     model.clearResultRows();
-    model.setErrorAlertMessage( "" );
+    model.setAlertMessage( "" );
 
     model.setServiceTransLogChannel(
-      dataServiceExec.isDual() ? null : dataServiceExec.getServiceTrans().getLogChannel() );
+        dataServiceExec.isDual() ? null : dataServiceExec.getServiceTrans().getLogChannel() );
     model.setGenTransLogChannel( dataServiceExec.getGenTrans().getLogChannel() );
   }
 
@@ -317,9 +413,20 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   public void close() {
+    cleanupCurrentExec();
     resetDatabaseMetaParameters();
     clearLogLines();
     callback.onClose();
+  }
+
+  private void cleanupCurrentExec() {
+    if ( completionPollTimer != null ) {
+      completionPollTimer.cancel();
+    }
+    if ( dataServiceExec != null ) {
+      dataServiceExec.getServiceTrans().stopAll();
+      dataServiceExec.getGenTrans().stopAll();
+    }
   }
 
   private void clearLogLines() {

@@ -33,6 +33,8 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMeta;
@@ -44,10 +46,13 @@ import org.pentaho.di.core.sql.SQLFields;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowListener;
+import org.pentaho.ui.xul.XulDomContainer;
+import org.pentaho.ui.xul.dom.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
@@ -70,6 +75,13 @@ public class DataServiceTestControllerTest  {
   @Mock
   private DataServiceTestCallback callback;
 
+  @Mock
+  private XulDomContainer xulDomContainer;
+
+  @Mock
+  private Document document;
+
+
   @InjectMocks
   private DataServiceTestControllerTester dataServiceTestController;
 
@@ -85,6 +97,18 @@ public class DataServiceTestControllerTest  {
     when( dataServiceExecutor.getSql().getRowMeta() ).thenReturn( new RowMeta() );
     when( dataServiceExecutor.getSql().getSelectFields().getFields() )
       .thenReturn( new ArrayList<SQLField>() );
+
+    // mocks to deal with Xul multithreading.
+    when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
+    dataServiceTestController.setXulDomContainer( xulDomContainer );
+    doAnswer(
+      new Answer() {
+        @Override
+        public Object answer( InvocationOnMock invocationOnMock ) throws Throwable {
+          ((Runnable)invocationOnMock.getArguments()[0]).run();
+          return null;
+        }
+      } ).when( document ).invokeLater( any( Runnable.class ) );
   }
 
   @Test
@@ -105,35 +129,46 @@ public class DataServiceTestControllerTest  {
     dataServiceTestController.executeSql();
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass( String.class );
     // error message should be set to blank
-    verify( model, times( 1 ) ).setErrorAlertMessage( argument.capture() );
+    verify( model, times( 1 ) ).setAlertMessage( argument.capture() );
     assertTrue( argument.getValue().equals( "" ) );
   }
 
   @Test
   public void errorAlertMessageSetIfErrorInGenTrans() throws KettleException {
     when( dataServiceExecutor.getGenTrans().getErrors() ).thenReturn( 1 );
+    when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
+      .thenReturn( true );
     dataServiceTestController.executeSql();
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass( String.class );
-    verify( model, times( 2 ) ).setErrorAlertMessage( argument.capture() );
+    verify( model, timeout( 500 ).atLeast( 2 ) ).setAlertMessage( argument.capture() );
     assertTrue( argument.getValue().length() > 0 );
+    assertEquals( "There were errors, review logs.", argument.getValue() );
   }
 
   @Test
   public void errorAlertMessageSetIfErrorInSvcTrans() throws KettleException {
     when( dataServiceExecutor.getServiceTrans().getErrors() ).thenReturn( 1 );
+    when( dataServiceExecutor.getServiceTrans().isFinishedOrStopped() )
+      .thenReturn( true );
+    when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
+      .thenReturn( true );
     dataServiceTestController.executeSql();
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass( String.class );
-    verify( model, times( 2 ) ).setErrorAlertMessage( argument.capture() );
+    verify( model, timeout( 500 ).atLeast( 2 ) ).setAlertMessage( argument.capture() );
     assertTrue( argument.getValue().length() > 0 );
+    assertEquals( "There were errors, review logs.", argument.getValue() );
   }
 
   @Test
   public void callbackNotifiedOnExecutionComplete() throws Exception {
-    dataServiceTestController.executeSql();
 
-    InOrder inOrder = inOrder( dataServiceExecutor, callback );
-    inOrder.verify( dataServiceExecutor ).waitUntilFinished();
-    inOrder.verify( callback ).onExecuteComplete();
+
+    dataServiceTestController.executeSql();
+    when( dataServiceExecutor.getServiceTrans().isFinishedOrStopped() )
+      .thenReturn( true );
+    when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
+      .thenReturn( true );
+    verify( callback, timeout( 500 ).times( 1 ) ).onExecuteComplete();
   }
 
   @Test
