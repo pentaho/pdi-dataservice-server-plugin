@@ -42,7 +42,6 @@ import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.sql.SqlTransMeta;
 import org.pentaho.di.trans.step.RowListener;
 
 import java.util.*;
@@ -169,11 +168,11 @@ public class DataServiceExecutorTest {
       assertTrue( executor.isDual() );
 
       Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-      SqlTransMeta sqlTransMeta = mockSqlMetaTrans();
+      SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
 
       executor = new DataServiceExecutor.Builder( new SQL( query ), services ).
         lookupServiceTrans( mock( Repository.class ) ).
-        sqlTransGenerator( sqlTransMeta ).
+        sqlTransGenerator( sqlTransGenerator ).
         genTrans( genTrans ).
         prepareExecution( false ).
         build();
@@ -197,7 +196,7 @@ public class DataServiceExecutorTest {
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SQL sql = mock( SQL.class );
     when( sql.getServiceName() ).thenReturn( "test_service" );
-    SqlTransMeta sqlTransMeta = mockSqlMetaTrans();
+    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
 
     when( sql.getWhereClause() ).thenReturn( null );
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
@@ -206,7 +205,7 @@ public class DataServiceExecutorTest {
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, service ).
         serviceTrans( serviceTrans ).
-        sqlTransGenerator( sqlTransMeta ).
+        sqlTransGenerator( sqlTransGenerator ).
         genTrans( genTrans ).
         build();
 
@@ -251,11 +250,11 @@ public class DataServiceExecutorTest {
     DataServiceMeta service = mockDataServiceMeta();
     Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    SqlTransMeta sqlTransMeta = mockSqlMetaTrans();
+    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), service ).
       serviceTrans( serviceTrans ).
-      sqlTransGenerator( sqlTransMeta ).
+      sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
       build();
     Map<String, String> expectedParams = new HashMap<String, String>();
@@ -265,11 +264,11 @@ public class DataServiceExecutorTest {
     assertEquals( expectedParams, executor.getParameters() );
   }
 
-  private SqlTransMeta mockSqlMetaTrans() {
-    SqlTransMeta sqlTransMeta = mock( SqlTransMeta.class );
-    when( sqlTransMeta.getInjectorStepName() ).thenReturn( INJECTOR_STEP_NAME );
-    when( sqlTransMeta.getResultStepName() ).thenReturn( RESULT_STEP_NAME );
-    return sqlTransMeta;
+  private SqlTransGenerator mockSqlTransGenerator() {
+    SqlTransGenerator sqlTransGenerator = mock( SqlTransGenerator.class );
+    when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP_NAME );
+    when( sqlTransGenerator.getResultStepName() ).thenReturn( RESULT_STEP_NAME );
+    return sqlTransGenerator;
   }
 
   private ArrayList<DataServiceMeta> createServicesList( DataServiceMeta service ) {

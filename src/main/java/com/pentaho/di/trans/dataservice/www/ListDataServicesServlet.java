@@ -27,7 +27,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.pentaho.di.core.annotations.CarteServlet;
-import org.pentaho.di.core.jdbc.ThinDriver;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -59,7 +58,7 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
 
   private static final long serialVersionUID = 3634806745372015720L;
 
-  public static final String CONTEXT_PATH = ThinDriver.SERVICE_NAME + "/listServices";
+  public static final String CONTEXT_PATH = "/listServices";
 
   public static final String XML_TAG_SERVICES = "services";
   public static final String XML_TAG_SERVICE = "service";
