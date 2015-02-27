@@ -1,7 +1,7 @@
 /*!
  * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
+ * Copyright 2002 - 2015 Pentaho Corporation (Pentaho). All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Pentaho and its licensors. The intellectual
@@ -41,7 +41,6 @@ import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -77,6 +76,7 @@ public class DataServiceTestDialog implements  java.io.Serializable {
       return BaseMessages.getString( CLZ, key );
     }
   };
+
 
   public DataServiceTestDialog( Composite parent, DataServiceMeta dataService,
                                 TransMeta transMeta ) throws KettleException {
@@ -115,7 +115,7 @@ public class DataServiceTestDialog implements  java.io.Serializable {
 
   private void attachCallback() {
     dataServiceTestController.setCallback(
-      new DataServiceTestCallback() {
+        new DataServiceTestCallback() {
         @Override
         public void onExecuteComplete() {
           resultsView.setRowMeta( model.getResultRowMeta() );
@@ -126,17 +126,6 @@ public class DataServiceTestDialog implements  java.io.Serializable {
           if ( serviceTransLogChannel != null ) {
             serviceTransMetrics.display( MetricsUtil.getAllDurations( serviceTransLogChannel.getLogChannelId() ) );
           }
-          StringBuilder message = new StringBuilder( "Query returned " );
-          message.append( model.getResultRows().size() );
-          message.append( " rows" );
-          if ( !genTransMetrics.isEmpty() ) {
-            message.append( " in " );
-            // Get duration of first genTrans metric (should be Transformation Execution)
-            Long duration = Collections.min( genTransMetrics, DataServiceTestMetrics.METRICS_COMPARATOR ).getDuration();
-            message.append( duration );
-            message.append( " ms" );
-          }
-          model.setErrorAlertMessage( message.toString() );
         }
 
         @Override

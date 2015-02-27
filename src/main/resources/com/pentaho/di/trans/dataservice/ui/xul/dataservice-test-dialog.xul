@@ -23,8 +23,8 @@
             <label  value="${DataServiceTest.MaxRows.Label}"/>
             <textbox id="maxrows-textbox" width="50" value="{default text}"/>
             <spacer flex="1"/>
-            <button  label="${DataServiceTest.PreviewOptimization.Button}" onclick="dataServiceTestController.previewQueries()" />
-            <button  label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()" />
+            <button id="preview-opt-btn" label="${DataServiceTest.PreviewOptimization.Button}" onclick="dataServiceTestController.previewQueries()" />
+            <button id="exec-sql-btn" label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()" />
         </hbox>
         <hbox align="right"  height="50">
             <label  id="error-alert" width="700" />

@@ -1,7 +1,7 @@
 /*!
  * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
+ * Copyright 2002 - 2015 Pentaho Corporation (Pentaho). All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Pentaho and its licensors. The intellectual
@@ -38,7 +38,7 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   private static final LogLevel DEFAULT_LOGLEVEL = LogLevel.DETAILED;
   private LogLevel logLevel = DEFAULT_LOGLEVEL;
 
-  private String errorAlertMessage;
+  private String alertMessage;
 
   private List<OptimizationImpactInfo> optimizationImpact = new ArrayList<OptimizationImpactInfo>();
 
@@ -50,6 +50,7 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
 
   private static final int DEFAULT_MAXROWS = 100;
   private int maxRows = DEFAULT_MAXROWS;
+  private boolean executing = false;
 
   public String getSql() {
     return sql;
@@ -107,13 +108,13 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
     this.maxRows = maxRows;
   }
 
-  public String getErrorAlertMessage() {
-    return errorAlertMessage;
+  public String getAlertMessage() {
+    return alertMessage;
   }
 
-  public void setErrorAlertMessage( String errorAlertMessage ) {
-    this.errorAlertMessage = errorAlertMessage;
-    firePropertyChange( "errorAlertMessage", null, errorAlertMessage );
+  public void setAlertMessage( String alertMessage ) {
+    this.alertMessage = alertMessage;
+    firePropertyChange( "alertMessage", null, alertMessage );
   }
 
   public RowMetaInterface getResultRowMeta() {
@@ -147,4 +148,12 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
     return builder.toString();
   }
 
+  public boolean isExecuting() {
+    return executing;
+  }
+
+  public void setExecuting( boolean executing ) {
+    this.executing = executing;
+    firePropertyChange( "executing", null, executing );
+  }
 }
