@@ -43,7 +43,6 @@ import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.sql.SqlTransMeta;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
@@ -61,7 +60,7 @@ public class DataServiceExecutor {
   private final DataServiceMeta service;
   private final SQL sql;
   private final Map<String, String> parameters;
-  private final SqlTransMeta sqlTransGenerator;
+  private final SqlTransGenerator sqlTransGenerator;
 
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
@@ -82,7 +81,7 @@ public class DataServiceExecutor {
     private int rowLimit = 0;
     private Map<String, String> parameters = Collections.emptyMap();
     private LogLevel logLevel;
-    private SqlTransMeta sqlTransGenerator;
+    private SqlTransGenerator sqlTransGenerator;
 
     private boolean normalizeConditions = true;
     private boolean prepareExecution = true;
@@ -158,8 +157,8 @@ public class DataServiceExecutor {
       return serviceTrans( transMeta );
     }
 
-    public Builder sqlTransGenerator( SqlTransMeta sqlTransMeta ) {
-      this.sqlTransGenerator = sqlTransMeta;
+    public Builder sqlTransGenerator( SqlTransGenerator sqlTransGenerator ) {
+      this.sqlTransGenerator = sqlTransGenerator;
       return this;
     }
 
@@ -198,7 +197,7 @@ public class DataServiceExecutor {
       }
 
       if ( sqlTransGenerator == null ) {
-        sqlTransGenerator = new SqlTransMeta( sql, rowLimit );
+        sqlTransGenerator = new SqlTransGenerator( sql, rowLimit );
       }
       if ( genTrans == null ) {
         genTrans = new Trans( sqlTransGenerator.generateTransMeta() );
