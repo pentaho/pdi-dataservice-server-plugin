@@ -186,9 +186,17 @@ public class SqlTransGenerator {
 
     // If there is a row limit specified, adhere to it but do not block the transformation from being executed.
     //
-    if ( rowLimit > 0 ) {
+    if ( rowLimit > 0 && sql.getLimitClause() != null ) {
       StepMeta sampleStep = generateSampleStep();
       lastStep = addToTrans( sampleStep, transMeta, lastStep );
+    }
+
+    // Limit the data from the limit keyword
+    if ( sql.getLimitClause() != null ) {
+      int limit = sql.getLimitValues().getLimit();
+      int offset = sql.getLimitValues().getOffset();
+      StepMeta limitStep = generateLimitStep( offset, limit );
+      lastStep = addToTrans( limitStep, transMeta, lastStep );
     }
 
     // Finally add a dummy step containing the result
@@ -375,6 +383,17 @@ public class SqlTransGenerator {
     meta.setLinesRange( "1.." + rowLimit );
 
     StepMeta stepMeta = new StepMeta( "Sample rows", meta );
+    stepMeta.setLocation( xLocation, 50 );
+    xLocation += 100;
+    stepMeta.setDraw( true );
+    return stepMeta;
+  }
+
+  private StepMeta generateLimitStep( int offset, int limit ) {
+    SampleRowsMeta meta = new SampleRowsMeta();
+    meta.setLinesRange( ( offset + 1 ) + ".." + ( offset + limit ) );
+
+    StepMeta stepMeta = new StepMeta( "Limit rows", meta );
     stepMeta.setLocation( xLocation, 50 );
     xLocation += 100;
     stepMeta.setDraw( true );
