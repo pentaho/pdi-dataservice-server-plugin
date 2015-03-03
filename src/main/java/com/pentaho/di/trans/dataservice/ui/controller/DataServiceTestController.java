@@ -240,10 +240,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
           public void run() {
             checkMaxRows( dataServiceExec );
             checkForFailures( dataServiceExec );
-            if ( !anyTransErrors( dataServiceExec ) ) {
-              updateExecutingMessage( startMillis );
-            }
-            if ( svcTrans.isFinishedOrStopped() && genTrans.isFinishedOrStopped() ) {
+            updateExecutingMessage( startMillis, dataServiceExec );
+
+            if ( anyTransErrors( dataServiceExec ) || transDone( svcTrans, genTrans ) ) {
               handleCompletion( dataServiceExec );
               completionPollTimer.cancel();
             }
@@ -254,23 +253,19 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     completionPollTimer.schedule( task, POLL_DELAY_MILLIS, POLL_PERIOD_MILLIS );
   }
 
+  private boolean transDone( Trans svcTrans, Trans genTrans ) {
+    return svcTrans.isFinishedOrStopped() && genTrans.isFinishedOrStopped();
+  }
+
   private boolean anyTransErrors( DataServiceExecutor dataServiceExec ) {
     return dataServiceExec.getServiceTrans().getErrors() > 0
       || dataServiceExec.getGenTrans().getErrors() > 0;
   }
 
   private void checkForFailures( DataServiceExecutor dataServiceExec ) {
-    if ( dataServiceExec.getGenTrans().isFinishedOrStopped()
-        && !dataServiceExec.getServiceTrans().isFinishedOrStopped()
-        && dataServiceExec.getGenTrans().getErrors() > 0 ) {
-      // Gen trans has failed for some reason.
-      // Stop service trans
+    if ( anyTransErrors( dataServiceExec ) ) {
       setErrorAlertMessage();
-      dataServiceExec.getServiceTrans().stopAll();
-    } else if ( dataServiceExec.getServiceTrans().isFinishedOrStopped()
-        && dataServiceExec.getServiceTrans().getErrors() > 0 ) {
-      // Svc trans had errors.  Set appropriate message
-      setErrorAlertMessage();
+      stopDataService( dataServiceExec );
     }
   }
 
@@ -278,15 +273,26 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     if ( model.getMaxRows() > 0
         && model.getMaxRows() <= model.getResultRows().size() ) {
       //Exceeded max rows, no need to continue
-      dataServiceExec.getServiceTrans().stopAll();
+      stopDataService( dataServiceExec );
     }
   }
 
-  private void updateExecutingMessage( long start ) {
-    model.setAlertMessage(
-        BaseMessages.getString( PKG, "DataServiceTest.RowsReturned.Text",
-        model.getResultRows().size(),
-        System.currentTimeMillis() - start ) );
+  private void stopDataService( DataServiceExecutor dataServiceExec ) {
+    if ( dataServiceExec.getServiceTrans().isRunning() ) {
+      dataServiceExec.getServiceTrans().stopAll();
+    }
+    if ( dataServiceExec.getGenTrans().isRunning() ) {
+      dataServiceExec.getGenTrans().stopAll();
+    }
+  }
+
+  private void updateExecutingMessage( long start, DataServiceExecutor dataServiceExec ) {
+    if ( !anyTransErrors( dataServiceExec ) ) {
+      model.setAlertMessage(
+          BaseMessages.getString( PKG, "DataServiceTest.RowsReturned.Text",
+          model.getResultRows().size(),
+          System.currentTimeMillis() - start ) );
+    }
   }
 
   private void handleCompletion( DataServiceExecutor dataServiceExec ) {
@@ -424,8 +430,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       completionPollTimer.cancel();
     }
     if ( dataServiceExec != null ) {
-      dataServiceExec.getServiceTrans().stopAll();
-      dataServiceExec.getGenTrans().stopAll();
+      stopDataService( dataServiceExec );
     }
   }
 
