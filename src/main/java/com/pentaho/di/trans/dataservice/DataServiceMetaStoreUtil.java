@@ -46,8 +46,7 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
     if ( Const.isEmpty( serviceName ) ) {
       return null;
     }
-    return new MetaStoreFactory<DataServiceMeta>(  DataServiceMeta.class, metaStore, PentahoDefaults.NAMESPACE )
-      .loadElement( serviceName );
+    return DataServiceMeta.getMetaStoreFactory( metaStore ).loadElement( serviceName );
   }
 
 
@@ -85,8 +84,7 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
         dataService.setTransFilename( transMeta.getFilename() );
       }
       if ( saveToMetaStore ) {
-        new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, metaStore, namespace )
-          .saveElement( dataService );
+        DataServiceMeta.getMetaStoreFactory( metaStore ).saveElement( dataService );
       }
     }
   }
@@ -121,11 +119,5 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
     }
     return elementType;
   }
-
-  public static List<DataServiceMeta> getDataServices( IMetaStore metaStore ) throws MetaStoreException {
-    return new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, metaStore, namespace )
-      .getElements();
-  }
-
 
 }

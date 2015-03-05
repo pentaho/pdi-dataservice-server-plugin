@@ -82,9 +82,9 @@ public class DataServiceMeta {
   @MetaStoreAttribute( key = PUSH_DOWN_OPT_META  )
   protected List<PushDownOptimizationMeta> pushDownOptimizationMeta;
 
-  public static MetaStoreFactory<DataServiceMeta> getMetaStoreFactory( IMetaStore metaStore, String namespace ) {
+  public static MetaStoreFactory<DataServiceMeta> getMetaStoreFactory( IMetaStore metaStore ) {
     MetaStoreFactory<DataServiceMeta> dataServiceMetaFactory = new MetaStoreFactory<DataServiceMeta>(
-      DataServiceMeta.class, metaStore, namespace );
+      DataServiceMeta.class, metaStore, PentahoDefaults.NAMESPACE );
     return dataServiceMetaFactory;
   }
 

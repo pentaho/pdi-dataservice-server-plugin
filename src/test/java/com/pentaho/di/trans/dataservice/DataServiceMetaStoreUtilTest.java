@@ -13,7 +13,6 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
-import org.pentaho.metastore.util.PentahoDefaults;
 
 public class DataServiceMetaStoreUtilTest {
 
@@ -41,7 +40,7 @@ public class DataServiceMetaStoreUtilTest {
     dataService.setName( DATA_SERVICE_NAME );
     dataService.setStepname( DATA_SERVICE_STEP );
 
-    metaStoreFactory = DataServiceMeta.getMetaStoreFactory( metaStore, PentahoDefaults.NAMESPACE );
+    metaStoreFactory = DataServiceMeta.getMetaStoreFactory( metaStore );
   }
 
   /**

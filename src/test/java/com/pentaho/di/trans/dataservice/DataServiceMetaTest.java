@@ -42,8 +42,7 @@ public class DataServiceMetaTest {
       makeTestDSM( "name2", "stepName 2", "/foo/bar/baz.ktr", "transRepPath", "otherOid", ServiceCacheMethod.None, 15 ),
       makeTestDSM( "name 3", "stepName3", null, "transRepPath", "blahOid", ServiceCacheMethod.LocalMemory, 0 ),
     };
-    MetaStoreFactory<DataServiceMeta> factory = new MetaStoreFactory<DataServiceMeta>(
-      DataServiceMeta.class, metaStore, PentahoDefaults.NAMESPACE );
+    MetaStoreFactory<DataServiceMeta> factory = DataServiceMeta.getMetaStoreFactory( metaStore );
 
     for ( DataServiceMeta meta : dataServiceMetas ) {
       factory.saveElement( meta );

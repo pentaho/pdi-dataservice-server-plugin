@@ -41,7 +41,6 @@ import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.api.IMetaStore;
 
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.
@@ -102,7 +101,7 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
     List<DataServiceMeta> dataServices = Collections.emptyList();
     try {
       repository = transformationMap.getSlaveServerConfig().getRepository(); // loaded lazily
-      dataServices = DataServiceMetaStoreUtil.getDataServices( metaStore );
+      dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
     } catch ( Exception e ) {
       log.logError( "Unable to list extra repository services", e );
     }

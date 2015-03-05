@@ -155,7 +155,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         try {
           if ( wServiceName.getText() != null ) {
             DataServiceMeta selectedServiceMeta =
-              DataServiceMeta.getMetaStoreFactory( transMeta.getMetaStore(), PentahoDefaults.NAMESPACE )
+              DataServiceMeta.getMetaStoreFactory( transMeta.getMetaStore() )
                 .loadElement( wServiceName.getText() );
             optimizationList = selectedServiceMeta.getPushDownOptimizationMeta();
             refreshOptimizationList();
@@ -490,7 +490,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   private String[] getDataServiceElementNames( Shell shell, IMetaStore metaStore ) {
     try {
-      List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices( metaStore );
+      List<DataServiceMeta> dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
       String[] names = new String[ dataServices.size() ];
       int i = 0;
       for ( DataServiceMeta dataService : dataServices ) {
