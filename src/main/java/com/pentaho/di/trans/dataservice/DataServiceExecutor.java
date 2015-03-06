@@ -144,9 +144,7 @@ public class DataServiceExecutor {
         }
       } else {
         try {
-          service.lookupTransObjectId( repository );
-          StringObjectId objectId = new StringObjectId( service.getTransObjectId() );
-          transMeta = repository.loadTransformation( objectId, null );
+          transMeta = service.lookupTransMeta( repository );
           transMeta.getLogChannel().logDetailed(
               "Service transformation was loaded from repository for service [" + service.getName() + "]" );
         } catch ( Exception e ) {

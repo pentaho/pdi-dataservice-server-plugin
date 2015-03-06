@@ -31,8 +31,6 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryDirectoryInterface;
-import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
@@ -113,27 +111,7 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
       // Also include the row layout of the service step.
       //
       try {
-        TransMeta transMeta = null;
-        if ( repository != null && service.getTransObjectId() != null ) {
-          StringObjectId objectId = new StringObjectId( service.getTransObjectId() );
-          transMeta = repository.loadTransformation( objectId, null );
-        } else if ( repository != null && service.getName() != null ) {
-          String path = "/";
-          String name = service.getName();
-          int lastSlashIndex = service.getName().lastIndexOf( '/' );
-          if ( lastSlashIndex >= 0 ) {
-            path = service.getName().substring( 0, lastSlashIndex + 1 );
-            name = service.getName().substring( lastSlashIndex + 1 );
-          }
-          RepositoryDirectoryInterface tree = repository.loadRepositoryDirectoryTree();
-          RepositoryDirectoryInterface rd = tree.findDirectory( path );
-          if ( rd == null ) {
-            rd = tree; // root
-          }
-          transMeta = repository.loadTransformation( name, rd, null, true, null );
-        } else {
-          transMeta = new TransMeta( service.getTransFilename() );
-        }
+        TransMeta transMeta = service.lookupTransMeta( repository );
 
         for ( String name : parameters.keySet() ) {
           transMeta.setParameterValue( name, parameters.get( name ) );

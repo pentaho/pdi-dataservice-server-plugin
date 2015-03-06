@@ -24,13 +24,23 @@ package com.pentaho.di.trans.dataservice;
 
 import org.junit.Test;
 import org.pentaho.di.core.sql.ServiceCacheMethod;
+import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositoryDirectory;
+import org.pentaho.di.repository.RepositoryDirectoryInterface;
+import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 import org.pentaho.metastore.util.PentahoDefaults;
 
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DataServiceMetaTest {
 
@@ -70,5 +80,32 @@ public class DataServiceMetaTest {
     dsm.setCacheMethod( cacheMethod );
     dsm.setCacheMaxAgeMinutes( cacheAgeMinutes );
     return dsm;
+  }
+
+  @Test
+  public void testLookupTransObjectId() throws Exception {
+    Repository repository = mock( Repository.class );
+    RepositoryDirectoryInterface rootDir = mock( RepositoryDirectoryInterface.class );
+    RepositoryDirectoryInterface dataServiceDir = mock( RepositoryDirectoryInterface.class );
+    String repDir = "/public/dataServices/", transName = "myService.ktr";
+    StringObjectId objectId = new StringObjectId( UUID.randomUUID().toString() );
+
+    when( repository.loadRepositoryDirectoryTree() ).thenReturn( rootDir );
+    when( rootDir.findDirectory( repDir ) ).thenReturn( dataServiceDir );
+    when( repository.getTransformationID( transName, dataServiceDir ) ).thenReturn( objectId );
+
+    DataServiceMeta myService = makeTestDSM( "myService", "ServiceStep", null, null, null, ServiceCacheMethod.None, 0 );
+
+    assertNull( myService.lookupTransObjectId( null ) );
+    assertNull( myService.getTransObjectId() );
+
+    assertNull( myService.lookupTransObjectId( repository ) );
+    assertNull( myService.getTransObjectId() );
+
+    myService.setTransRepositoryPath( repDir + transName );
+    assertEquals( objectId, myService.lookupTransObjectId( repository ) );
+    assertEquals( objectId.getId(), myService.getTransObjectId() );
+
+    assertEquals( objectId.getId(), myService.lookupTransObjectId( null ).getId() );
   }
 }
