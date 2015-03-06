@@ -15,12 +15,13 @@
 *
 */
 
-package com.pentaho.di.trans.dataservice;
+package com.pentaho.di.trans.dataservice.ui;
 
+import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
-import com.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.SWT;
@@ -155,7 +156,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         try {
           if ( wServiceName.getText() != null ) {
             DataServiceMeta selectedServiceMeta =
-              DataServiceMeta.getMetaStoreFactory( transMeta.getMetaStore(), PentahoDefaults.NAMESPACE )
+              DataServiceMeta.getMetaStoreFactory( transMeta.getMetaStore() )
                 .loadElement( wServiceName.getText() );
             optimizationList = selectedServiceMeta.getPushDownOptimizationMeta();
             refreshOptimizationList();
@@ -490,7 +491,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   private String[] getDataServiceElementNames( Shell shell, IMetaStore metaStore ) {
     try {
-      List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices( metaStore );
+      List<DataServiceMeta> dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
       String[] names = new String[ dataServices.size() ];
       int i = 0;
       for ( DataServiceMeta dataService : dataServices ) {

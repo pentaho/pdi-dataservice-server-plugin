@@ -123,7 +123,7 @@ public class ParameterGenerationTest {
   @Test
   public void testSaveLoad() throws Exception {
     MetaStoreFactory<DataServiceMeta> metaStoreFactory = DataServiceMeta
-        .getMetaStoreFactory( new MemoryMetaStore(), "Test Namespace" );
+        .getMetaStoreFactory( new MemoryMetaStore() );
 
     // Create parent data service
     DataServiceMeta expectedDataService = new DataServiceMeta();

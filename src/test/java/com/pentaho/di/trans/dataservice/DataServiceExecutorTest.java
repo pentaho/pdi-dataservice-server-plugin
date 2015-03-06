@@ -72,9 +72,9 @@ public class DataServiceExecutorTest {
   public void testCreateExecutorByObjectId() throws Exception {
     String query = "SELECT field1, field2 FROM " + SERVICE_NAME;
 
-    DataServiceMeta service = mockDataServiceMeta();
+    DataServiceMeta service = createDataServiceMeta();
     ObjectId transId = new StringObjectId( UUID.randomUUID().toString() );
-    when( service.getTransObjectId() ).thenReturn( transId.getId() );
+    service.setTransObjectId( transId.getId() );
 
     TransMeta trans = mockTransMeta();
 
@@ -101,7 +101,7 @@ public class DataServiceExecutorTest {
 
   @Test
   public void testLogging() throws Exception {
-    DataServiceMeta serviceMeta = mockDataServiceMeta();
+    DataServiceMeta serviceMeta = createDataServiceMeta();
     Trans serviceTrans = mock( Trans.class );
     TransMeta serviceTransMeta = mockTransMeta();
     when( serviceTrans.getTransMeta() ).thenReturn( serviceTransMeta );
@@ -131,7 +131,7 @@ public class DataServiceExecutorTest {
 
     String query = "SELECT * FROM " + SERVICE_NAME + " WHERE anInt = 2 AND aDate IN ('2014-12-05','2008-01-01')";
 
-    DataServiceMeta service = mockDataServiceMeta();
+    DataServiceMeta service = createDataServiceMeta();
     TransMeta transMeta = mockTransMeta();
     when( transMeta.getStepFields( SERVICE_STEP_NAME ) ).thenReturn( rowMeta );
 
@@ -191,7 +191,7 @@ public class DataServiceExecutorTest {
   @Test
   public void testExecuteQuery() throws Exception {
 
-    DataServiceMeta service = mockDataServiceMeta();
+    DataServiceMeta service = createDataServiceMeta();
     Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SQL sql = mock( SQL.class );
@@ -247,7 +247,7 @@ public class DataServiceExecutorTest {
   @Test
   public void testQueryWithParams() throws Exception {
     String sql = "SELECT * FROM FOO WHERE PARAMETER('foo') = 'bar' AND PARAMETER('baz') = 'bop'";
-    DataServiceMeta service = mockDataServiceMeta();
+    DataServiceMeta service = createDataServiceMeta();
     Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
@@ -291,10 +291,10 @@ public class DataServiceExecutorTest {
     return trans;
   }
 
-  private DataServiceMeta mockDataServiceMeta() {
-    DataServiceMeta service = mock( DataServiceMeta.class );
-    when( service.getName() ).thenReturn( SERVICE_NAME );
-    when( service.getStepname() ).thenReturn( SERVICE_STEP_NAME );
+  private DataServiceMeta createDataServiceMeta() {
+    DataServiceMeta service = new DataServiceMeta(  );
+    service.setName( SERVICE_NAME );
+    service.setStepname( SERVICE_STEP_NAME );
     return service;
   }
 

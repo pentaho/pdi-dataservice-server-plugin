@@ -56,7 +56,6 @@ import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
 
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.
@@ -120,7 +119,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       //
       Repository repository = transformationMap.getSlaveServerConfig().getRepository();
       DelegatingMetaStore metaStore = transformationMap.getSlaveServerConfig().getMetaStore();
-      List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices( metaStore );
+      List<DataServiceMeta> dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
 
       // Execute the SQL using a few transformations...
       //
