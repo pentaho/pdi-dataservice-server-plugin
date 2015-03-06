@@ -15,12 +15,13 @@
 *
 */
 
-package com.pentaho.di.trans.dataservice;
+package com.pentaho.di.trans.dataservice.ui;
 
+import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
-import com.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.SWT;

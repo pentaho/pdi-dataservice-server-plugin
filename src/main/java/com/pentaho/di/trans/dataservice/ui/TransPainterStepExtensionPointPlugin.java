@@ -15,8 +15,9 @@
 *
 */
 
-package com.pentaho.di.trans.dataservice;
+package com.pentaho.di.trans.dataservice.ui;
 
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
@@ -44,7 +45,7 @@ public class TransPainterStepExtensionPointPlugin implements ExtensionPointInter
     TransMeta transMeta= extension.transMeta;
     StepMeta stepMeta = extension.stepMeta;
     
-    String dataServiceName = transMeta.getAttribute(DataServiceMetaStoreUtil.GROUP_DATA_SERVICE, DataServiceMetaStoreUtil.DATA_SERVICE_NAME);
+    String dataServiceName = transMeta.getAttribute( DataServiceMetaStoreUtil.GROUP_DATA_SERVICE, DataServiceMetaStoreUtil.DATA_SERVICE_NAME);
     String dataServiceStep = transMeta.getAttribute(DataServiceMetaStoreUtil.GROUP_DATA_SERVICE, DataServiceMetaStoreUtil.DATA_SERVICE_STEPNAME);
     if (!Const.isEmpty(dataServiceName) && !Const.isEmpty(dataServiceStep)) {
       // Is this step a data service provider?
