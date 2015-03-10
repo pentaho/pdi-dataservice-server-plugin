@@ -17,6 +17,7 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
@@ -84,6 +85,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private CCombo wServiceStep;
 
   private Button testButton;
+  private Button autoOptButton;
   private TableView optimizationListTable;
   private List<PushDownOptimizationMeta> optimizationList = new ArrayList<PushDownOptimizationMeta>();
 
@@ -92,6 +94,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private ToolItem deleteButton;
 
   private int ENABLED_COMBO_COLUMN = 4;
+
+  private List<AutoOptimizationService> autoOptimizationServices;
 
   @Override
   public void addTab( final TransMeta transMeta, final Shell shell, final CTabFolder wTabFolder ) {
@@ -159,12 +163,12 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
                 .loadElement( wServiceName.getText() );
             optimizationList = selectedServiceMeta.getPushDownOptimizationMeta();
             refreshOptimizationList();
-            updateTestButton();
           }
         } catch ( MetaStoreException e ) {
           logger.error(
             String.format( "Failed to load service named '%s'", wServiceName.getText() ), e );
         }
+        updateButtons();
       }
     } );
 
@@ -254,11 +258,35 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       new SelectionAdapter() {
         @Override
         public void widgetSelected( SelectionEvent e ) {
-          super.widgetSelected( e );
-          updateTestButton();
+          updateButtons();
         }
       }
     );
+
+    lastControl = wServiceStep;
+
+    autoOptButton = new Button( serviceGroup, SWT.PUSH );
+    props.setLook( autoOptButton );
+    autoOptButton.setText( "Auto-Optimize" );
+    FormData fdPublish = new FormData();
+    fdPublish.left = new FormAttachment( middle, 0 );
+    fdPublish.right = new FormAttachment( 65, 0 );
+    fdPublish.top = new FormAttachment( lastControl, margin );
+    autoOptButton.setLayoutData( fdPublish );
+
+    autoOptButton.addSelectionListener( new SelectionAdapter() {
+      @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+        try {
+          DataServiceMeta dataServiceMeta = getDataServiceMeta();
+          for ( AutoOptimizationService autoOptimizationService : getAutoOptimizationServices() ) {
+            optimizationList.addAll( autoOptimizationService.apply( transMeta, dataServiceMeta ) );
+          }
+        } catch ( KettleException e ) {
+          logger.error( "Failed to run Auto-Optimization", e );
+        }
+        refreshOptimizationList();
+      }
+    } );
 
     Group optimizationGroup = new Group( wDataServiceComp, SWT.SHADOW_IN );
     optimizationGroup.setLayout( new FormLayout() );
@@ -405,14 +433,12 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     wDataServiceTab.setControl( wDataServiceComp );
   }
 
-  private void updateTestButton() {
+  private void updateButtons() {
     String serviceName = wServiceName.getText();
     String stepName = wServiceStep.getText();
-    testButton.setEnabled(
-      serviceName != null
-      && stepName != null
-      && serviceName.length() > 0
-      && stepName.length() > 0 );
+    boolean enabled = serviceName != null && stepName != null && serviceName.length() > 0 && stepName.length() > 0;
+    testButton.setEnabled( enabled );
+    autoOptButton.setEnabled( enabled );
   }
 
   protected String renameService( Shell shell, IMetaStore metaStore, String elementName ) {
@@ -521,11 +547,11 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         wServiceName.setText( Const.NVL( dataService.getName(), "" ) );
         wServiceStep.setText( getStepname( dataService, transMeta ) );
         refreshOptimizationList();
-        updateTestButton();
       }
     } catch ( Exception e ) {
       throw new KettleException( "Unable to load data service", e );
     }
+    updateButtons();
   }
 
   /**
@@ -622,5 +648,13 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   @Override
   public CTabItem getTab() {
     return wDataServiceTab;
+  }
+
+  public List<AutoOptimizationService> getAutoOptimizationServices() {
+    return autoOptimizationServices;
+  }
+
+  public void setAutoOptimizationServices( List<AutoOptimizationService> autoOptimizationServices ) {
+    this.autoOptimizationServices = autoOptimizationServices;
   }
 }

@@ -170,6 +170,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
+                        <Import-Package>org.pentaho.di.osgi,*</Import-Package>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                     </instructions>
                 </configuration>
