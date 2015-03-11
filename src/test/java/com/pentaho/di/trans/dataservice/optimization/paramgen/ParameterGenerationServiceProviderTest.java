@@ -31,7 +31,7 @@ import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
 
 public class ParameterGenerationServiceProviderTest {
@@ -50,7 +50,7 @@ public class ParameterGenerationServiceProviderTest {
     stepMeta.setStepMetaInterface( mock( StepMetaInterface.class ) );
     assertThat( provider.getService( stepMeta ), nullValue() );
     stepMeta.setStepMetaInterface( new TableInputMeta() );
-    assertThat( provider.getService( stepMeta ), is( TableInputParameterGeneration.class ) );
+    assertThat( provider.getService( stepMeta ), instanceOf( TableInputParameterGeneration.class ) );
   }
 
   @Test
@@ -58,6 +58,15 @@ public class ParameterGenerationServiceProviderTest {
     StepMeta stepMeta = mock( StepMeta.class );
     when( stepMeta.getTypeId() ).thenReturn( "MongoDbInput" );
     when( stepMeta.getStepMetaInterface() ).thenReturn( mock( StepMetaInterface.class ) );
-    assertThat( provider.getService( stepMeta ), is( MongodbInputParameterGeneration.class ) );
+    assertThat( provider.getService( stepMeta ), instanceOf( MongodbInputParameterGeneration.class ) );
+  }
+
+  @Test
+  public void testSupportsStep() throws Exception {
+    StepMeta stepMeta = new StepMeta();
+    stepMeta.setStepMetaInterface( mock( StepMetaInterface.class ) );
+    assertThat( provider.supportsStep( stepMeta ), equalTo( false ) );
+    stepMeta.setStepMetaInterface( new TableInputMeta() );
+    assertThat( provider.supportsStep( stepMeta ), equalTo( true) );
   }
 }

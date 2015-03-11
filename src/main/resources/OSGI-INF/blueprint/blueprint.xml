@@ -71,7 +71,16 @@
         </service-properties>
     </service>
 
+    <service id="autoParamGenService"
+             interface="com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService">
+        <bean class="com.pentaho.di.trans.dataservice.optimization.paramgen.AutoParameterGenerationService">
+            <argument ref="lineageClient"/>
+        </bean>
+    </service>
+
     <!--SERVICE REFERENCES-->
+    <reference id="lineageClient"
+               interface="com.pentaho.metaverse.api.ILineageClient"/>
     <reference-list id="autoOptimizationServices"
                     interface="com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService"
                     availability="optional"
