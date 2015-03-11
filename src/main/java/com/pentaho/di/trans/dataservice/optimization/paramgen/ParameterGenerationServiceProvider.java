@@ -28,11 +28,18 @@ import org.pentaho.di.trans.step.StepMeta;
  * @author nhudak
  */
 public class ParameterGenerationServiceProvider {
+  private final ParameterGenerationServiceFactory[] factories;
 
-  private final ParameterGenerationServiceFactory[] factories = new ParameterGenerationServiceFactory[] {
-    new TableInputParameterGenerationFactory(),
-    new MongodbInputParameterGenerationFactory()
-  };
+  /**
+   * Available parameter generation services should be managed by OSGi
+   */
+  @Deprecated
+  public ParameterGenerationServiceProvider() {
+    factories = new ParameterGenerationServiceFactory[] {
+      new TableInputParameterGenerationFactory(),
+      new MongodbInputParameterGenerationFactory()
+    };
+  }
 
   public ParameterGenerationService getService( StepMeta stepMeta ) {
     for ( ParameterGenerationServiceFactory factory : factories ) {
