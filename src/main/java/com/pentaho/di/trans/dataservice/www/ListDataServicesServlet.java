@@ -1,19 +1,24 @@
 /*!
-* Copyright 2010 - 2013 Pentaho Corporation.  All rights reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-*/
+ * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
+ *
+ * Copyright 2002 - 2015 Pentaho Corporation (Pentaho). All rights reserved.
+ *
+ * NOTICE: All information including source code contained herein is, and
+ * remains the sole property of Pentaho and its licensors. The intellectual
+ * and technical concepts contained herein are proprietary and confidential
+ * to, and are trade secrets of Pentaho and may be covered by U.S. and foreign
+ * patents, or patents in process, and are protected by trade secret and
+ * copyright laws. The receipt or possession of this source code and/or related
+ * information does not convey or imply any rights to reproduce, disclose or
+ * distribute its contents, or to manufacture, use, or sell anything that it
+ * may describe, in whole or in part. Any reproduction, modification, distribution,
+ * or public display of this information without the express written authorization
+ * from Pentaho is strictly prohibited and in violation of applicable laws and
+ * international treaties. Access to the source code contained herein is strictly
+ * prohibited to anyone except those individuals and entities who have executed
+ * confidentiality and non-disclosure agreements or other agreements with Pentaho,
+ * explicitly covering such access.
+ */
 
 package com.pentaho.di.trans.dataservice.www;
 
@@ -31,8 +36,6 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryDirectoryInterface;
-import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
@@ -41,7 +44,6 @@ import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.api.IMetaStore;
 
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.
@@ -102,7 +104,7 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
     List<DataServiceMeta> dataServices = Collections.emptyList();
     try {
       repository = transformationMap.getSlaveServerConfig().getRepository(); // loaded lazily
-      dataServices = DataServiceMetaStoreUtil.getDataServices( metaStore );
+      dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
     } catch ( Exception e ) {
       log.logError( "Unable to list extra repository services", e );
     }
@@ -114,27 +116,7 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
       // Also include the row layout of the service step.
       //
       try {
-        TransMeta transMeta = null;
-        if ( repository != null && service.getTransObjectId() != null ) {
-          StringObjectId objectId = new StringObjectId( service.getTransObjectId() );
-          transMeta = repository.loadTransformation( objectId, null );
-        } else if ( repository != null && service.getName() != null ) {
-          String path = "/";
-          String name = service.getName();
-          int lastSlashIndex = service.getName().lastIndexOf( '/' );
-          if ( lastSlashIndex >= 0 ) {
-            path = service.getName().substring( 0, lastSlashIndex + 1 );
-            name = service.getName().substring( lastSlashIndex + 1 );
-          }
-          RepositoryDirectoryInterface tree = repository.loadRepositoryDirectoryTree();
-          RepositoryDirectoryInterface rd = tree.findDirectory( path );
-          if ( rd == null ) {
-            rd = tree; // root
-          }
-          transMeta = repository.loadTransformation( name, rd, null, true, null );
-        } else {
-          transMeta = new TransMeta( service.getTransFilename() );
-        }
+        TransMeta transMeta = service.lookupTransMeta( repository );
 
         for ( String name : parameters.keySet() ) {
           transMeta.setParameterValue( name, parameters.get( name ) );

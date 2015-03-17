@@ -1,7 +1,7 @@
 /*!
  * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
+ * Copyright 2002 - 2015 Pentaho Corporation (Pentaho). All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Pentaho and its licensors. The intellectual
@@ -123,7 +123,7 @@ public class ParameterGenerationTest {
   @Test
   public void testSaveLoad() throws Exception {
     MetaStoreFactory<DataServiceMeta> metaStoreFactory = DataServiceMeta
-        .getMetaStoreFactory( new MemoryMetaStore(), "Test Namespace" );
+        .getMetaStoreFactory( new MemoryMetaStore() );
 
     // Create parent data service
     DataServiceMeta expectedDataService = new DataServiceMeta();

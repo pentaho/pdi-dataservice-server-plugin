@@ -1,7 +1,7 @@
 /*!
  * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
+ * Copyright 2002 - 2015 Pentaho Corporation (Pentaho). All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Pentaho and its licensors. The intellectual
@@ -23,12 +23,15 @@
 package com.pentaho.di.trans.dataservice;
 
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.ServiceCacheMethod;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
+import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
@@ -82,9 +85,9 @@ public class DataServiceMeta {
   @MetaStoreAttribute( key = PUSH_DOWN_OPT_META  )
   protected List<PushDownOptimizationMeta> pushDownOptimizationMeta;
 
-  public static MetaStoreFactory<DataServiceMeta> getMetaStoreFactory( IMetaStore metaStore, String namespace ) {
+  public static MetaStoreFactory<DataServiceMeta> getMetaStoreFactory( IMetaStore metaStore ) {
     MetaStoreFactory<DataServiceMeta> dataServiceMetaFactory = new MetaStoreFactory<DataServiceMeta>(
-      DataServiceMeta.class, metaStore, namespace );
+      DataServiceMeta.class, metaStore, PentahoDefaults.NAMESPACE );
     return dataServiceMetaFactory;
   }
 
@@ -205,12 +208,11 @@ public class DataServiceMeta {
    * @param repository The repository to use.
    * @throws KettleException
    */
-  public void lookupTransObjectId( Repository repository ) throws KettleException {
-    if ( repository == null ) {
-      return;
+  public ObjectId lookupTransObjectId( Repository repository ) throws KettleException {
+    if ( transObjectId != null ) {
+      return new StringObjectId( transObjectId );
     }
-
-    if ( Const.isEmpty( transFilename ) && transObjectId == null && !Const.isEmpty( transRepositoryPath ) ) {
+    if ( repository != null && StringUtils.isNotEmpty( transRepositoryPath ) ) {
       // see if there is a path specified to a repository name
       //
       String path = "/";
@@ -228,10 +230,22 @@ public class DataServiceMeta {
       ObjectId oid = repository.getTransformationID( name, rd );
       if ( oid != null ) {
         transObjectId = oid.getId();
+        return oid;
       }
     }
+    return null;
   }
 
+  public TransMeta lookupTransMeta( Repository repository ) throws KettleException {
+    if ( StringUtils.isNotEmpty( transFilename )) {
+      return new TransMeta( transFilename );
+    } else if ( repository != null ) {
+      ObjectId objectId = lookupTransObjectId( repository );
+      return repository.loadTransformation( objectId, null );
+    } else {
+      throw new KettleException( "Could not load TransMeta for DataService " + getName() );
+    }
+  }
 
   public List<PushDownOptimizationMeta> getPushDownOptimizationMeta() {
     return pushDownOptimizationMeta;

@@ -1,7 +1,7 @@
 /*!
  * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2014 Pentaho Corporation (Pentaho). All rights reserved.
+ * Copyright 2002 - 2015 Pentaho Corporation (Pentaho). All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Pentaho and its licensors. The intellectual
@@ -28,11 +28,18 @@ import org.pentaho.di.trans.step.StepMeta;
  * @author nhudak
  */
 public class ParameterGenerationServiceProvider {
+  private final ParameterGenerationServiceFactory[] factories;
 
-  private final ParameterGenerationServiceFactory[] factories = new ParameterGenerationServiceFactory[] {
-    new TableInputParameterGenerationFactory(),
-    new MongodbInputParameterGenerationFactory()
-  };
+  /**
+   * Available parameter generation services should be managed by OSGi
+   */
+  @Deprecated
+  public ParameterGenerationServiceProvider() {
+    factories = new ParameterGenerationServiceFactory[] {
+      new TableInputParameterGenerationFactory(),
+      new MongodbInputParameterGenerationFactory()
+    };
+  }
 
   public ParameterGenerationService getService( StepMeta stepMeta ) {
     for ( ParameterGenerationServiceFactory factory : factories ) {

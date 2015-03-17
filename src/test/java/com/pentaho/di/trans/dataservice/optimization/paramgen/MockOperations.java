@@ -20,22 +20,26 @@
  * explicitly covering such access.
  */
 
-package com.pentaho.di.trans.dataservice.optimization;
+package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import com.pentaho.di.trans.dataservice.DataServiceExecutor;
-import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.StepInterface;
+import com.pentaho.metaverse.analyzer.kettle.ChangeType;
+import com.pentaho.metaverse.api.model.IOperation;
+import com.pentaho.metaverse.api.model.Operations;
+
+import java.util.Collections;
+
+import static org.mockito.Mockito.mock;
 
 /**
- * @author nhudak
- */
-public interface PushDownType {
-  public String getTypeName();
+* @author nhudak
+*/
+class MockOperations extends Operations {
+  MockOperations put( ChangeType type ) {
+    return put( type, mock( IOperation.class ) );
+  }
 
-  void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta );
-
-  boolean activate( DataServiceExecutor executor, StepInterface stepInterface );
-
-  OptimizationImpactInfo preview( DataServiceExecutor executor, StepInterface stepInterface );
+  MockOperations put( ChangeType type, IOperation operation ){
+    put( type, Collections.singletonList( operation ) );
+    return this;
+  }
 }

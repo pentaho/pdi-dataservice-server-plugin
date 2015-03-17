@@ -22,20 +22,15 @@
 
 package com.pentaho.di.trans.dataservice.optimization;
 
-import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.StepInterface;
+
+import java.util.Collection;
 
 /**
  * @author nhudak
  */
-public interface PushDownType {
-  public String getTypeName();
-
-  void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta );
-
-  boolean activate( DataServiceExecutor executor, StepInterface stepInterface );
-
-  OptimizationImpactInfo preview( DataServiceExecutor executor, StepInterface stepInterface );
+public interface AutoOptimizationService {
+  public Collection<PushDownOptimizationMeta> apply( TransMeta transMeta, DataServiceMeta dataServiceMeta );
+  public Collection<Class<? extends PushDownType>> getProvidedOptimizationTypes();
 }

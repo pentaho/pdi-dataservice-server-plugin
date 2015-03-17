@@ -1,22 +1,28 @@
 /*!
-* Copyright 2010 - 2013 Pentaho Corporation.  All rights reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-*/
+ * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
+ *
+ * Copyright 2002 - 2015 Pentaho Corporation (Pentaho). All rights reserved.
+ *
+ * NOTICE: All information including source code contained herein is, and
+ * remains the sole property of Pentaho and its licensors. The intellectual
+ * and technical concepts contained herein are proprietary and confidential
+ * to, and are trade secrets of Pentaho and may be covered by U.S. and foreign
+ * patents, or patents in process, and are protected by trade secret and
+ * copyright laws. The receipt or possession of this source code and/or related
+ * information does not convey or imply any rights to reproduce, disclose or
+ * distribute its contents, or to manufacture, use, or sell anything that it
+ * may describe, in whole or in part. Any reproduction, modification, distribution,
+ * or public display of this information without the express written authorization
+ * from Pentaho is strictly prohibited and in violation of applicable laws and
+ * international treaties. Access to the source code contained herein is strictly
+ * prohibited to anyone except those individuals and entities who have executed
+ * confidentiality and non-disclosure agreements or other agreements with Pentaho,
+ * explicitly covering such access.
+ */
 
 package com.pentaho.di.trans.dataservice;
 
+import com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
@@ -84,6 +90,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private CCombo wServiceStep;
 
   private Button testButton;
+  private Button autoOptButton;
   private TableView optimizationListTable;
   private List<PushDownOptimizationMeta> optimizationList = new ArrayList<PushDownOptimizationMeta>();
 
@@ -92,6 +99,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private ToolItem deleteButton;
 
   private int ENABLED_COMBO_COLUMN = 4;
+
+  private List<AutoOptimizationService> autoOptimizationServices;
 
   @Override
   public void addTab( final TransMeta transMeta, final Shell shell, final CTabFolder wTabFolder ) {
@@ -155,16 +164,16 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         try {
           if ( wServiceName.getText() != null ) {
             DataServiceMeta selectedServiceMeta =
-              DataServiceMeta.getMetaStoreFactory( transMeta.getMetaStore(), PentahoDefaults.NAMESPACE )
+              DataServiceMeta.getMetaStoreFactory( transMeta.getMetaStore() )
                 .loadElement( wServiceName.getText() );
             optimizationList = selectedServiceMeta.getPushDownOptimizationMeta();
             refreshOptimizationList();
-            updateTestButton();
           }
         } catch ( MetaStoreException e ) {
           logger.error(
             String.format( "Failed to load service named '%s'", wServiceName.getText() ), e );
         }
+        updateButtons();
       }
     } );
 
@@ -254,11 +263,35 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       new SelectionAdapter() {
         @Override
         public void widgetSelected( SelectionEvent e ) {
-          super.widgetSelected( e );
-          updateTestButton();
+          updateButtons();
         }
       }
     );
+
+    lastControl = wServiceStep;
+
+    autoOptButton = new Button( serviceGroup, SWT.PUSH );
+    props.setLook( autoOptButton );
+    autoOptButton.setText( "Auto-Optimize" );
+    FormData fdPublish = new FormData();
+    fdPublish.left = new FormAttachment( middle, 0 );
+    fdPublish.right = new FormAttachment( 65, 0 );
+    fdPublish.top = new FormAttachment( lastControl, margin );
+    autoOptButton.setLayoutData( fdPublish );
+
+    autoOptButton.addSelectionListener( new SelectionAdapter() {
+      @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+        try {
+          DataServiceMeta dataServiceMeta = getDataServiceMeta();
+          for ( AutoOptimizationService autoOptimizationService : getAutoOptimizationServices() ) {
+            optimizationList.addAll( autoOptimizationService.apply( transMeta, dataServiceMeta ) );
+          }
+        } catch ( KettleException e ) {
+          logger.error( "Failed to run Auto-Optimization", e );
+        }
+        refreshOptimizationList();
+      }
+    } );
 
     Group optimizationGroup = new Group( wDataServiceComp, SWT.SHADOW_IN );
     optimizationGroup.setLayout( new FormLayout() );
@@ -405,14 +438,12 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     wDataServiceTab.setControl( wDataServiceComp );
   }
 
-  private void updateTestButton() {
+  private void updateButtons() {
     String serviceName = wServiceName.getText();
     String stepName = wServiceStep.getText();
-    testButton.setEnabled(
-      serviceName != null
-      && stepName != null
-      && serviceName.length() > 0
-      && stepName.length() > 0 );
+    boolean enabled = serviceName != null && stepName != null && serviceName.length() > 0 && stepName.length() > 0;
+    testButton.setEnabled( enabled );
+    autoOptButton.setEnabled( enabled );
   }
 
   protected String renameService( Shell shell, IMetaStore metaStore, String elementName ) {
@@ -490,7 +521,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   private String[] getDataServiceElementNames( Shell shell, IMetaStore metaStore ) {
     try {
-      List<DataServiceMeta> dataServices = DataServiceMetaStoreUtil.getDataServices( metaStore );
+      List<DataServiceMeta> dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
       String[] names = new String[ dataServices.size() ];
       int i = 0;
       for ( DataServiceMeta dataService : dataServices ) {
@@ -521,11 +552,11 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         wServiceName.setText( Const.NVL( dataService.getName(), "" ) );
         wServiceStep.setText( getStepname( dataService, transMeta ) );
         refreshOptimizationList();
-        updateTestButton();
       }
     } catch ( Exception e ) {
       throw new KettleException( "Unable to load data service", e );
     }
+    updateButtons();
   }
 
   /**
@@ -622,5 +653,13 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   @Override
   public CTabItem getTab() {
     return wDataServiceTab;
+  }
+
+  public List<AutoOptimizationService> getAutoOptimizationServices() {
+    return autoOptimizationServices;
+  }
+
+  public void setAutoOptimizationServices( List<AutoOptimizationService> autoOptimizationServices ) {
+    this.autoOptimizationServices = autoOptimizationServices;
   }
 }
