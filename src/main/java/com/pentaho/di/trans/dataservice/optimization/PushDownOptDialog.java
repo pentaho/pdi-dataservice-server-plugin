@@ -22,6 +22,7 @@
 
 package com.pentaho.di.trans.dataservice.optimization;
 
+import com.pentaho.di.trans.dataservice.optimization.paramgen.ParamGenOptForm;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;

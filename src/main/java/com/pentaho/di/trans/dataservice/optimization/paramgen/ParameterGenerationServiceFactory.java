@@ -26,8 +26,8 @@ import org.pentaho.di.trans.step.StepMeta;
 
 public interface ParameterGenerationServiceFactory {
 
-  public ParameterGenerationService getService( StepMeta stepMeta );
+  ParameterGenerationService getService( StepMeta stepMeta );
 
-  public boolean supportsStep( StepMeta stepMeta );
+  boolean supportsStep( StepMeta stepMeta );
 
 }

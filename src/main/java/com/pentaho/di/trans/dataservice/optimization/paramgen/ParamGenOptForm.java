@@ -20,10 +20,12 @@
  * explicitly covering such access.
  */
 
-package com.pentaho.di.trans.dataservice.optimization;
+package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
-import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceProvider;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
