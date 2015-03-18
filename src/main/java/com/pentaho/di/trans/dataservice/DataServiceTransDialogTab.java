@@ -272,7 +272,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
     autoOptButton = new Button( serviceGroup, SWT.PUSH );
     props.setLook( autoOptButton );
-    autoOptButton.setText( "Auto-Optimize" );
+    autoOptButton.setText( BaseMessages.getString( PKG, "TransDialog.FindOptimizations.Label" ) );
     FormData fdPublish = new FormData();
     fdPublish.left = new FormAttachment( middle, 0 );
     fdPublish.right = new FormAttachment( 65, 0 );
@@ -287,7 +287,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
             optimizationList.addAll( autoOptimizationService.apply( transMeta, dataServiceMeta ) );
           }
         } catch ( KettleException e ) {
-          logger.error( "Failed to run Auto-Optimization", e );
+          logger.error( BaseMessages.getString( PKG, "TransDialog.FindOptimizations.Error" ), e );
         }
         refreshOptimizationList();
       }
