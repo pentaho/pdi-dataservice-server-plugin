@@ -22,6 +22,7 @@
         <property name="classToBeanMap">
             <map>
                 <entry key="org.pentaho.di.core.extension.ExtensionPointInterface" value="dataServicePainter"/>
+
             </map>
         </property>
     </bean>
@@ -30,6 +31,20 @@
             <entry key="PluginType" value="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
         </service-properties>
     </service>
+
+    <bean id="stepValidation" scope="singleton" class="com.pentaho.di.trans.dataservice.validation.StepValidationExtensionPointPlugin" >
+        <property name="stepValidations" >
+            <list>
+                <ref component-id="mongoDbBasicVal" />
+                <ref component-id="tableInputVal" />
+            </list>
+        </property>
+        <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
+    </bean>
+    <bean id="mongoDbBasicVal" class="com.pentaho.di.trans.dataservice.validation.MongoDbBasicValidation" />
+    <bean id="tableInputVal" class="com.pentaho.di.trans.dataservice.validation.TableInputValidation" />
+
+
 
     <bean id="listDataServlet" class="com.pentaho.di.trans.dataservice.www.ListDataServicesServlet" scope="singleton"/>
     <bean id="listDataServletPlugin" class="org.pentaho.di.osgi.OSGIPlugin" scope="singleton">
@@ -85,4 +100,5 @@
                     interface="com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService"
                     availability="optional"
             />
+
 </blueprint>
