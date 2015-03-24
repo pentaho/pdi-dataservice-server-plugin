@@ -44,8 +44,6 @@
     <bean id="mongoDbBasicVal" class="com.pentaho.di.trans.dataservice.validation.MongoDbBasicValidation" />
     <bean id="tableInputVal" class="com.pentaho.di.trans.dataservice.validation.TableInputValidation" />
 
-
-
     <bean id="listDataServlet" class="com.pentaho.di.trans.dataservice.www.ListDataServicesServlet" scope="singleton"/>
     <bean id="listDataServletPlugin" class="org.pentaho.di.osgi.OSGIPlugin" scope="singleton">
         <property name="mainType" value="org.pentaho.di.www.CartePluginInterface"/>
@@ -91,6 +89,13 @@
         <bean class="com.pentaho.di.trans.dataservice.optimization.paramgen.AutoParameterGenerationService">
             <argument ref="lineageClient"/>
         </bean>
+    </service>
+
+    <bean id="dataServiceClient" class="com.pentaho.di.trans.dataservice.client.DataServiceClient" scope="prototype"/>
+    <service id="dataServiceClientService" interface="org.pentaho.di.trans.dataservice.client.DataServiceClientService" ref="dataServiceClient">
+         <registration-listener registration-method="register" unregistration-method="unregister">
+              <bean class="com.pentaho.di.trans.dataservice.client.DataServiceRegistrationListener" />
+         </registration-listener>
     </service>
 
     <!--SERVICE REFERENCES-->
