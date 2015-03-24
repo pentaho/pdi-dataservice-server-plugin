@@ -37,12 +37,16 @@
             <list>
                 <ref component-id="mongoDbBasicVal" />
                 <ref component-id="tableInputVal" />
+                <ref component-id="dataServiceStepVal" />
             </list>
         </property>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
     <bean id="mongoDbBasicVal" class="com.pentaho.di.trans.dataservice.validation.MongoDbBasicValidation" />
     <bean id="tableInputVal" class="com.pentaho.di.trans.dataservice.validation.TableInputValidation" />
+    <bean id="dataServiceStepVal" class="com.pentaho.di.trans.dataservice.validation.DataServiceStepValidation" >
+        <argument ref="lineageClient" />
+    </bean>
 
     <bean id="listDataServlet" class="com.pentaho.di.trans.dataservice.www.ListDataServicesServlet" scope="singleton"/>
     <bean id="listDataServletPlugin" class="org.pentaho.di.osgi.OSGIPlugin" scope="singleton">
