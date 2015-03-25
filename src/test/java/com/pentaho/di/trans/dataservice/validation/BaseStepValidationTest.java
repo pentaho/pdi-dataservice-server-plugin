@@ -28,6 +28,7 @@ import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneratio
 import org.junit.Before;
 import org.mockito.Mock;
 import org.pentaho.di.core.CheckResultInterface;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
@@ -76,7 +77,7 @@ public abstract class BaseStepValidationTest {
   StepMeta[] stepMetas = new StepMeta[ 1 ];
 
   @Before
-  public void before() {
+  public void before() throws KettleStepException {
     initMocks( this );
     stepMetas[ 0 ] = stepMeta;
     space = new Variables();
@@ -88,7 +89,7 @@ public abstract class BaseStepValidationTest {
     init();
   }
 
-  void init() {
+  void init() throws KettleStepException {
     // no-op.  Overriden by child classes to do test setup.
   }
 
