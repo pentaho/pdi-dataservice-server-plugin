@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceProvider;
 import com.pentaho.metaverse.api.ILineageClient;
+import com.pentaho.metaverse.api.MetaverseException;
 import com.pentaho.metaverse.client.StepField;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,7 +37,6 @@ import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.platform.api.metaverse.MetaverseException;
 
 import java.util.Arrays;
 import java.util.Collection;
