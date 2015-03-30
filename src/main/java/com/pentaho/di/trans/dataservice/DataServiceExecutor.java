@@ -279,6 +279,10 @@ public class DataServiceExecutor {
   }
 
   private static void convertAtomicCondition( Condition condition, ValueMetaResolver resolver ) {
+    // No need to convert conditions with no right side argument
+    if ( condition.getRightExact() == null ) {
+      return;
+    }
     String fieldName = condition.getLeftValuename();
     ValueMetaAndData rhs = condition.getRightExact();
     try {

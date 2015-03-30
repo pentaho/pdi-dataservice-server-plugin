@@ -264,6 +264,35 @@ public class DataServiceExecutorTest {
     assertEquals( expectedParams, executor.getParameters() );
   }
 
+  @Test
+  public void testNullNotNullKeywords() throws Exception {
+    String sql = "SELECT * FROM table WHERE column1 IS NOT NULL AND column2 IS NULL";
+
+    DataServiceMeta service = createDataServiceMeta();
+    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), service ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      build();
+
+    Condition condition = executor.getSql().getWhereCondition().getCondition();
+
+    Condition condition1 = condition.getCondition( 0 );
+    Condition condition2 = condition.getCondition( 1 );
+
+    assertEquals( "column1", condition1.getLeftValuename() );
+    assertNull( condition1.getRightExact() );
+    assertEquals( Condition.FUNC_NOT_NULL, condition1.getFunction() );
+
+    assertEquals( "column2", condition2.getLeftValuename() );
+    assertNull( condition2.getRightExact() );
+    assertEquals( Condition.FUNC_NULL, condition2.getFunction() );
+  }
+
   private SqlTransGenerator mockSqlTransGenerator() {
     SqlTransGenerator sqlTransGenerator = mock( SqlTransGenerator.class );
     when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP_NAME );
