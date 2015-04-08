@@ -71,7 +71,7 @@
         <junit.version>4.4</junit.version>
         <kettle.version>6.0-SNAPSHOT</kettle.version>
 	<mongodb.plugin.version>6.0-SNAPSHOT</mongodb.plugin.version>
-        <guava.version>17.0</guava.version>
+        <guava.version>16.0.1</guava.version>
     </properties>
 
 
