@@ -22,24 +22,9 @@
 
 package com.pentaho.di.trans.dataservice.www;
 
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
+import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.exception.KettleException;
@@ -56,11 +41,23 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
-import org.pentaho.di.www.JobMap;
-import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
 
-import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.
@@ -78,14 +75,14 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
   private static final long serialVersionUID = 3634806745372015720L;
 
   public static final String CONTEXT_PATH = "/sql";
-
-  AtomicLong dataSize = new AtomicLong( 0L );
+  private final DataServiceMetaStoreUtil metaStoreUtil;
 
   public TransDataServlet() {
+    this( new DataServiceMetaStoreUtil() );
   }
 
-  public TransDataServlet( TransformationMap transformationMap, JobMap jobMap ) {
-    super( transformationMap, jobMap );
+  public TransDataServlet( DataServiceMetaStoreUtil metaStoreUtil ) {
+    this.metaStoreUtil = metaStoreUtil;
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -118,20 +115,21 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     //
     Map<String, String> parameters = getParametersFromRequestHeader( request );
 
+    final AtomicLong dataSize = new AtomicLong( 0L );
     try {
 
       // Add possible services from the repository...
       //
       Repository repository = transformationMap.getSlaveServerConfig().getRepository();
       DelegatingMetaStore metaStore = transformationMap.getSlaveServerConfig().getMetaStore();
-      List<DataServiceMeta> dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
+      List<DataServiceMeta> dataServices = metaStoreUtil.getMetaStoreFactory( metaStore ).getElements();
 
       // Execute the SQL using a few transformations...
       //
       final DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sqlQuery ), dataServices ).
-          parameters( parameters ).
-          lookupServiceTrans( repository ).
-          build();
+        parameters( parameters ).
+        lookupServiceTrans( repository ).
+        build();
 
       // First write the service name and the metadata
       //
@@ -180,8 +178,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
         }
       } );
 
-
-      // For logging and tracking purposes, let's expose both the service transformation as well 
+      // For logging and tracking purposes, let's expose both the service transformation as well
       // as the generated transformation on this very carte instance
       //
       TransMeta serviceTransMeta = executor.getServiceTransMeta();

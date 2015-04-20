@@ -22,9 +22,12 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.google.common.collect.ImmutableList;
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
+import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
@@ -74,6 +77,11 @@ public class ParameterGenerationTest {
   public static final String OPT_NAME = "My Optimization";
   public static final String OPT_STEP = "Optimized Step";
   public static final String EXPECTED_DEFAULT = "## PARAMETER DEFAULT ##";
+  private final DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil(
+    ImmutableList.<PushDownFactory>of(
+      new ParameterGenerationFactory( ImmutableList.<ParameterGenerationServiceFactory>of() )
+    )
+  );
 
   private ParameterGeneration paramGen;
   @Mock private ParameterGenerationFactory serviceProvider;
@@ -122,8 +130,7 @@ public class ParameterGenerationTest {
 
   @Test
   public void testSaveLoad() throws Exception {
-    MetaStoreFactory<DataServiceMeta> metaStoreFactory = DataServiceMeta
-        .getMetaStoreFactory( new MemoryMetaStore() );
+    MetaStoreFactory<DataServiceMeta> metaStoreFactory = metaStoreUtil.getMetaStoreFactory( new MemoryMetaStore() );
 
     // Create parent data service
     DataServiceMeta expectedDataService = new DataServiceMeta();
@@ -193,7 +200,8 @@ public class ParameterGenerationTest {
     verify( transMeta, times( 2 ) ).addParameterDefinition( eq( PARAM_NAME ), eq( "" ), anyString() );
     verify( transMeta ).addParameterDefinition( eq( PARAM_NAME ), eq( EXPECTED_DEFAULT ), anyString() );
 
-    doThrow( DuplicateParamException.class ).when( transMeta ).addParameterDefinition( eq( PARAM_NAME ), eq( EXPECTED_DEFAULT ), anyString() );
+    doThrow( DuplicateParamException.class ).when( transMeta ).addParameterDefinition( eq( PARAM_NAME ),
+      eq( EXPECTED_DEFAULT ), anyString() );
     paramGen.init( transMeta, dataService, pdo ); //Exception should be silently caught
     verify( transMeta, atLeast( 3 ) ).activateParameters();
   }

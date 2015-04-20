@@ -24,6 +24,7 @@ package com.pentaho.di.trans.dataservice.client;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -34,7 +35,6 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.step.RowAdapter;
-import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayInputStream;
@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DataServiceClient implements DataServiceClientService {
 
   private static Log logger = LogFactory.getLog( DataServiceClient.class );
+  private final DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil();
 
   AtomicLong dataSize = new AtomicLong( 0L );
 
@@ -69,7 +70,8 @@ public class DataServiceClient implements DataServiceClientService {
 
       try {
 
-        List<DataServiceMeta> dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
+        List<DataServiceMeta> dataServices = metaStoreUtil.getMetaStoreFactory( metaStore )
+          .getElements();
 
         final DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sqlQuery ), dataServices ).
             lookupServiceTrans( repository ).
@@ -141,7 +143,7 @@ public class DataServiceClient implements DataServiceClientService {
     List<ThinServiceInformation> services = new ArrayList<ThinServiceInformation>();
 
     try {
-      List<DataServiceMeta> dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
+      List<DataServiceMeta> dataServices = metaStoreUtil.getMetaStoreFactory( metaStore ).getElements();
       for ( DataServiceMeta service : dataServices ) {
         RowMetaInterface serviceFields = null;
         try {

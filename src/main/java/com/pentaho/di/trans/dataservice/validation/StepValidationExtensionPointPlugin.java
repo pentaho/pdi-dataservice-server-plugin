@@ -23,17 +23,18 @@
 package com.pentaho.di.trans.dataservice.validation;
 
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.CheckStepsExtension;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.pentaho.di.trans.dataservice.validation.ValidationUtil.getDataServiceMeta;
-
 
 @ExtensionPoint(
     id = "StepValidationExtensionPointPlugin",
@@ -42,6 +43,7 @@ import static com.pentaho.di.trans.dataservice.validation.ValidationUtil.getData
     )
 public class StepValidationExtensionPointPlugin implements ExtensionPointInterface {
 
+  private final DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil();
   private List<StepValidation> stepValidations =
       new ArrayList<StepValidation>();
 
@@ -88,5 +90,25 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
 
   public void setStepValidations( List<StepValidation> stepValidations ) {
     this.stepValidations = stepValidations;
+  }
+
+  private DataServiceMeta getDataServiceMeta(
+    TransMeta transMeta, IMetaStore metaStore, LogChannelInterface log ) {
+    if ( metaStore == null || transMeta == null ) {
+      log.logBasic(
+        String.format( "Unable to determine whether '%s' is associated with a DataService.",
+          transMeta == null ? "(unknown)" : transMeta.getName() ) );
+      return null;
+    }
+    try {
+      return metaStoreUtil.fromTransMeta( transMeta, metaStore );
+    } catch ( MetaStoreException e ) {
+      log.logError(
+        String.format(
+          "Error while attempting to load DataServiceMeta during step validation for '%s'.",
+          transMeta.getName() ),
+        e );
+    }
+    return null;
   }
 }
