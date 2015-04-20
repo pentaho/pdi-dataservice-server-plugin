@@ -88,7 +88,7 @@ public class SourceLineageMapTest {
     StepMeta unsupportedInput = mock( StepMeta.class );
     when( transMeta.findStep( "Unsupported Input" ) ).thenReturn( unsupportedInput );
 
-    ParameterGenerationServiceProvider serviceProvider = mock( ParameterGenerationServiceProvider.class );
+    ParameterGenerationFactory serviceProvider = mock( ParameterGenerationFactory.class );
     when( serviceProvider.supportsStep( supportedInput ) ).thenReturn( true );
     when( serviceProvider.supportsStep( unsupportedInput ) ).thenReturn( false );
 

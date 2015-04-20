@@ -22,23 +22,48 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.google.common.collect.ImmutableList;
+import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
+import com.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepMeta;
+
+import java.util.List;
 
 /**
  * @author nhudak
  */
-public class ParameterGenerationServiceProvider {
-  private final ParameterGenerationServiceFactory[] factories;
+public class ParameterGenerationFactory implements PushDownFactory {
 
-  /**
-   * Available parameter generation services should be managed by OSGi
-   */
+  private final List<ParameterGenerationServiceFactory> factories;
+
   @Deprecated
-  public ParameterGenerationServiceProvider() {
-    factories = new ParameterGenerationServiceFactory[] {
+  public ParameterGenerationFactory() {
+    this( ImmutableList.of(
       new TableInputParameterGenerationFactory(),
       new MongodbInputParameterGenerationFactory()
-    };
+    ) );
+  }
+
+  public ParameterGenerationFactory(
+    List<ParameterGenerationServiceFactory> factories ) {
+    this.factories = factories;
+  }
+
+  @Override public String getName() {
+    return ParameterGeneration.TYPE_NAME;
+  }
+
+  @Override public Class<? extends PushDownType> getType() {
+    return ParameterGeneration.class;
+  }
+
+  @Override public ParameterGeneration createPushDown() {
+    return new ParameterGeneration();
+  }
+
+  @Override public PushDownOptTypeForm createPushDownOptTypeForm() {
+    return new ParamGenOptForm();
   }
 
   public ParameterGenerationService getService( StepMeta stepMeta ) {
@@ -58,5 +83,4 @@ public class ParameterGenerationServiceProvider {
     }
     return false;
   }
-
 }

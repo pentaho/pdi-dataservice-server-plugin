@@ -73,7 +73,7 @@ public class SourceLineageMap extends ForwardingSetMultimap<String, List<StepFie
   }
 
   public SourceLineageMap filterSupportedInputs( TransMeta transMeta,
-                                                   ParameterGenerationServiceProvider serviceProvider ) {
+                                                   ParameterGenerationFactory serviceProvider ) {
     for ( Iterator<String> iterator = keySet().iterator(); iterator.hasNext(); ) {
       String inputStep = iterator.next();
       StepMeta stepMeta = transMeta.findStep( inputStep );

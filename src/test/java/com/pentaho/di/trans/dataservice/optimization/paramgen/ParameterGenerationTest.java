@@ -76,7 +76,7 @@ public class ParameterGenerationTest {
   public static final String EXPECTED_DEFAULT = "## PARAMETER DEFAULT ##";
 
   private ParameterGeneration paramGen;
-  @Mock private ParameterGenerationServiceProvider serviceProvider;
+  @Mock private ParameterGenerationFactory serviceProvider;
   @Mock private ParameterGenerationService service;
   @Mock private Trans trans;
   @Mock private TransMeta transMeta;

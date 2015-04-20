@@ -65,12 +65,12 @@ public class AutoParameterGenerationServiceTest {
   public static final List<String> SERVICE_FIELDS = ImmutableList.of("field1", "field2", "field3");
   AutoParameterGenerationService service;
   ILineageClient lineageClient;
-  private ParameterGenerationServiceProvider serviceProvider;
+  private ParameterGenerationFactory serviceProvider;
 
   @Before
   public void setUp() throws Exception {
     lineageClient = mock( ILineageClient.class );
-    serviceProvider = mock( ParameterGenerationServiceProvider.class );
+    serviceProvider = mock( ParameterGenerationFactory.class );
     service = new AutoParameterGenerationService( lineageClient, serviceProvider );
   }
 

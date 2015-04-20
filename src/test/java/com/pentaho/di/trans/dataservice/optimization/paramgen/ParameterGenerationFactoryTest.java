@@ -34,14 +34,14 @@ import static org.mockito.Mockito.mock;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
 
-public class ParameterGenerationServiceProviderTest {
+public class ParameterGenerationFactoryTest {
 
-  private ParameterGenerationServiceProvider provider;
+  private ParameterGenerationFactory provider;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks( this );
-    provider = new ParameterGenerationServiceProvider();
+    provider = new ParameterGenerationFactory();
   }
 
   @Test

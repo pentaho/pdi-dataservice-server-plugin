@@ -45,17 +45,17 @@ import java.util.Set;
  */
 public class AutoParameterGenerationService implements AutoOptimizationService {
   final private ILineageClient lineageClient;
-  final private ParameterGenerationServiceProvider serviceProvider;
+  final private ParameterGenerationFactory serviceProvider;
 
   public AutoParameterGenerationService( ILineageClient lineageClient,
-                                         ParameterGenerationServiceProvider serviceProvider ) {
+                                         ParameterGenerationFactory serviceProvider ) {
     this.lineageClient = lineageClient;
     this.serviceProvider = serviceProvider;
   }
 
   public AutoParameterGenerationService( ILineageClient lineageClient ) {
     this.lineageClient = lineageClient;
-    serviceProvider = new ParameterGenerationServiceProvider();
+    serviceProvider = new ParameterGenerationFactory();
   }
 
   @Override public List<PushDownOptimizationMeta> apply( TransMeta transMeta, DataServiceMeta dataServiceMeta ) {

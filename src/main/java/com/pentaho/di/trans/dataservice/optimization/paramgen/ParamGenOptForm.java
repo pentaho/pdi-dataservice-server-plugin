@@ -255,7 +255,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
   private String[] getSupportedSteps( TransMeta transMeta ) {
     java.util.List<String> stepNames = new ArrayList<String>();
-    ParameterGenerationServiceProvider paramGenProvider = new ParameterGenerationServiceProvider();
+    ParameterGenerationFactory paramGenProvider = new ParameterGenerationFactory();
     for ( StepMeta step : transMeta.getSteps() ) {
       if ( paramGenProvider.supportsStep( step ) ) {
         stepNames.add( step.getName() );
