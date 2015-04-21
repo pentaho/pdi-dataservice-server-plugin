@@ -22,8 +22,10 @@
 
 package com.pentaho.di.trans.dataservice.optimization;
 
-import com.pentaho.di.trans.dataservice.optimization.paramgen.ParamGenOptForm;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FormAttachment;
@@ -32,7 +34,7 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Dialog;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
@@ -41,13 +43,13 @@ import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.core.PropsUI;
+import org.pentaho.di.ui.spoon.Spoon;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-public class PushDownOptDialog extends Dialog {
+public class PushDownOptDialog {
 
   public static final int TEXT_WIDTH = 250;
   private static final int DIALOG_WIDTH = 691;
@@ -55,44 +57,42 @@ public class PushDownOptDialog extends Dialog {
   private final PropsUI props;
   private final TransMeta transMeta;
   private PushDownOptimizationMeta optimizationMeta;
-  protected Shell parent;
-  private static Text nameText;
-
-  private Button okButton;
+  private final List<PushDownFactory> pushDownFactories;
+  protected final Shell parent;
 
   private int returnCode = SWT.CANCEL;
 
   private static final Class<?> PKG = PushDownOptDialog.class;
 
-  private final List<PushDownOptTypeForm> pushDownTypes =
-    Collections.unmodifiableList(
-      Arrays.asList( (PushDownOptTypeForm) new ParamGenOptForm() ) );
-
-  private Combo optimizationMethodCombo;
-
-
-  public PushDownOptDialog( Shell parent, PropsUI props, TransMeta transMeta, PushDownOptimizationMeta optMeta ) {
-    super( parent );
+  public PushDownOptDialog( Shell parent, PropsUI props, TransMeta transMeta, PushDownOptimizationMeta optMeta,
+                            List<PushDownFactory> pushDownFactories ) {
     this.props = props;
     this.transMeta = transMeta;
     this.parent = parent;
     this.optimizationMeta = optMeta;
+    this.pushDownFactories = ImmutableList.copyOf( pushDownFactories );
   }
 
   public int open() {
-    layoutDialog();
+    Display display = parent.getDisplay();
+    Shell shell = new Shell( display, SWT.SHELL_TRIM );
+
+    layoutDialog( shell );
+
+    setShellPos( shell );
+    shell.open();
+    while ( !shell.isDisposed() ) {
+      if ( !display.readAndDispatch() ) {
+        display.sleep();
+      }
+    }
     return returnCode;
   }
 
-
-
-  private void layoutDialog() {
-    Display display = parent.getDisplay();
-    final Shell shell = new Shell( display, SWT.APPLICATION_MODAL | SWT.SHELL_TRIM );
-
+  private void layoutDialog( final Shell shell ) {
     props.setLook( shell );
 
-    shell.setText( BaseMessages.getString( PKG, "PushDownOptDialog.PushDownOpt.Label" )  );
+    shell.setText( BaseMessages.getString( PKG, "PushDownOptDialog.PushDownOpt.Label" ) );
     shell.setLayout( new FormLayout() );
 
     shell.setSize( DIALOG_WIDTH, DIALOG_HEIGHT );
@@ -106,7 +106,7 @@ public class PushDownOptDialog extends Dialog {
     nameLabel.setLayoutData( fd_nameLabel );
     nameLabel.setText( BaseMessages.getString( PKG, "PushDownOptDialog.Name.Label" ) );
 
-    nameText = new Text( shell, SWT.BORDER );
+    final Text nameText = new Text( shell, SWT.BORDER );
     props.setLook( nameText );
     nameText.setText( optimizationMeta.getName() );
     FormData fd_nameText = new FormData();
@@ -124,40 +124,45 @@ public class PushDownOptDialog extends Dialog {
     typeLabel.setLayoutData( fd_lblType );
     typeLabel.setText( BaseMessages.getString( PKG, "PushDownOptDialog.OptimizationMethod.Label" ) );
 
-    optimizationMethodCombo = new Combo( shell, SWT.NONE );
+    Combo optimizationMethodCombo = new Combo( shell, SWT.NONE );
     props.setLook( optimizationMethodCombo );
     FormData fd_typeCombo = new FormData();
-    fd_typeCombo.right =  fd_nameText.right;
+    fd_typeCombo.right = fd_nameText.right;
     fd_typeCombo.top = new FormAttachment( nameText, Const.MARGIN );
     fd_typeCombo.left = fd_nameText.left;
     optimizationMethodCombo.setLayoutData( fd_typeCombo );
-    optimizationMethodCombo.setItems( getTypeNames() );
-    optimizationMethodCombo.select( 0 );
 
-    Composite typePlaceholder = new Composite( shell, SWT.NONE );
+    final TypePlaceholder typePlaceholder = new TypePlaceholder( shell, optimizationMethodCombo, SWT.NONE );
     props.setLook( typePlaceholder );
-    typePlaceholder.setLayout( new FormLayout() );
     FormData fd_typePlaceholder = new FormData();
     fd_typePlaceholder.top = new FormAttachment( optimizationMethodCombo, 34 );
     fd_typePlaceholder.left = new FormAttachment( 0, 10 );
     fd_typePlaceholder.bottom = new FormAttachment( 90, 0 );
     fd_typePlaceholder.right = new FormAttachment( 100, -10 );
-
     typePlaceholder.setLayoutData( fd_typePlaceholder );
 
-    okButton = new Button( shell, SWT.NONE );
+    typePlaceholder.select( optimizationMeta.getType() );
+
+    Button okButton = new Button( shell, SWT.NONE );
     props.setLook( okButton );
-    FormData fd_btnOk = new FormData();
-    fd_btnOk.top = new FormAttachment( typePlaceholder, Const.MARGIN * 2 );
-    fd_btnOk.left = new FormAttachment( 50, -40 );
-    okButton.setLayoutData( fd_btnOk );
     okButton.setText( BaseMessages.getString( PKG, "PushDownOptDialog.OK.Label" ) );
     okButton.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( SelectionEvent selectionEvent ) {
-        if ( !isFormValid() ) {
+        List<String> missingFormElements = Lists.newArrayList();
+        PushDownOptTypeForm pushDownOptTypeForm = typePlaceholder.getSelectedTypeForm();
+        missingFormElements.addAll( pushDownOptTypeForm.getMissingFormElements() );
+        if ( nameText.getText().trim().isEmpty() ) {
+          missingFormElements.add( BaseMessages.getString( PKG, "PushDownOptDialog.MissingName.Message" ) );
+        }
+        if ( missingFormElements.isEmpty() ) {
+          optimizationMeta.setName( nameText.getText() );
+          pushDownOptTypeForm.applyOptimizationParameters( optimizationMeta );
+          returnCode = SWT.OK;
+          shell.dispose();
+        } else {
           StringBuilder errors = new StringBuilder().append( "\n\n" );
-          for ( String error : getMissingFormElements() ) {
+          for ( String error : missingFormElements ) {
             errors.append( "- " ).append( error ).append( "\n" );
           }
           MessageBox mb = new MessageBox( shell, SWT.OK | SWT.ICON_INFORMATION );
@@ -165,20 +170,12 @@ public class PushDownOptDialog extends Dialog {
           mb.setMessage( BaseMessages.getString( PKG, "PushDownOptDialog.MissingFields.Message" )
             + errors.toString() );
           mb.open();
-        } else {
-          initializeOptimizationMeta();
-          returnCode = SWT.OK;
-          shell.dispose();
         }
       }
     } );
 
     Button cancelButton = new Button( shell, SWT.NONE );
     props.setLook( cancelButton );
-    FormData fd_btnCancel = new FormData();
-    fd_btnCancel.top = fd_btnOk.top;
-    fd_btnCancel.left = new FormAttachment( okButton, Const.MARGIN * 2 );
-    cancelButton.setLayoutData( fd_btnCancel );
     cancelButton.setText( BaseMessages.getString( PKG, "PushDownOptDialog.Cancel.Label" ) );
     cancelButton.addSelectionListener( new SelectionAdapter() {
       @Override
@@ -186,16 +183,38 @@ public class PushDownOptDialog extends Dialog {
         shell.dispose();
       }
     } );
-    layoutTypeForm( typePlaceholder,
-      optimizationMethodCombo.getSelectionIndex() );
 
-    setShellPos( shell );
-    shell.open();
-    while ( !shell.isDisposed() ) {
-      if ( !display.readAndDispatch() ) {
-        display.sleep();
+    Button editButton = new Button( shell, SWT.NONE );
+    props.setLook( editButton );
+    editButton.setText( "Edit Step" );
+    editButton.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent selectionEvent ) {
+        PushDownOptimizationMeta pushDownOptimizationMeta = new PushDownOptimizationMeta();
+        PushDownOptTypeForm typeForm = typePlaceholder.getSelectedTypeForm();
+        typeForm.applyOptimizationParameters( pushDownOptimizationMeta );
+        StepMeta step = transMeta.findStep( pushDownOptimizationMeta.getStepName() );
+
+        if ( step != null ) {
+          Spoon.getInstance().editStep( transMeta, step );
+        }
       }
-    }
+    } );
+
+    FormData okFormData = new FormData();
+    FormData editFormData = new FormData();
+    FormData cancelFormData = new FormData();
+
+    okFormData.top = new FormAttachment( typePlaceholder, Const.MARGIN * 2 );
+    okFormData.right = new FormAttachment( editButton, Const.MARGIN * -2 );
+    editFormData.top = okFormData.top;
+    editFormData.right = new FormAttachment( 50, editButton.computeSize( SWT.DEFAULT, SWT.DEFAULT ).x / 2 );
+    cancelFormData.top = okFormData.top;
+    cancelFormData.left = new FormAttachment( editButton, Const.MARGIN * 2 );
+
+    okButton.setLayoutData( okFormData );
+    editButton.setLayoutData( editFormData );
+    cancelButton.setLayoutData( cancelFormData );
   }
 
   private void setShellPos( Shell shell ) {
@@ -205,40 +224,61 @@ public class PushDownOptDialog extends Dialog {
       centerY - shell.getBounds().height / 2 );
   }
 
-  private String[] getTypeNames() {
-    String[] typeNames = new String[ pushDownTypes.size() ];
-    for ( int i = 0; i < pushDownTypes.size(); i++ ) {
-      typeNames[ i ] = pushDownTypes.get( i ).getName();
+  private class TypePlaceholder extends Composite {
+    final StackLayout layout;
+    final PushDownOptTypeForm[] typeForms;
+    final Combo typeSelector;
+
+    TypePlaceholder( Shell shell, final Combo typeSelector, int i ) {
+      super( shell, i );
+      this.typeSelector = typeSelector;
+      typeSelector.addSelectionListener( new SelectionAdapter() {
+        @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+          select( typeSelector.getSelectionIndex() );
+        }
+      } );
+
+      layout = new StackLayout();
+      setLayout( layout );
+
+      String[] typeNames = new String[pushDownFactories.size()];
+      typeForms = new PushDownOptTypeForm[pushDownFactories.size()];
+      for ( int n = 0; n < pushDownFactories.size(); n++ ) {
+        PushDownFactory pushDownFactory = pushDownFactories.get( n );
+
+        typeNames[n] = pushDownFactory.getName();
+        typeForms[n] = pushDownFactory.createPushDownOptTypeForm();
+
+        Composite typeForm = new Composite( this, SWT.NONE );
+        props.setLook( typeForm );
+        typeForm.setLayout( new FormLayout() );
+        typeForms[n].populateForm( typeForm, props, transMeta );
+      }
+      typeSelector.setItems( typeNames );
     }
-    return typeNames;
-  }
 
-  private void initializeOptimizationMeta() {
-    optimizationMeta.setName( nameText.getText() );
-    getPushDownOptTypeForm().applyOptimizationParameters( optimizationMeta );
-  }
-
-  private boolean isFormValid() {
-    return getMissingFormElements().size() == 0;
-  }
-
-  private List<String> getMissingFormElements() {
-    List<String> errors = getPushDownOptTypeForm().getMissingFormElements();
-    if ( nameText.getText().trim().length() == 0 ) {
-      errors.add( BaseMessages.getString( PKG, "PushDownOptDialog.MissingName.Message" ) );
+    void select( int i ) {
+      typeSelector.select( i );
+      Control control = getChildren()[i];
+      if ( layout.topControl != control ) {
+        layout.topControl = control;
+        layout();
+      }
+      typeForms[i].setValues( optimizationMeta, transMeta );
     }
-    return errors;
+
+    void select( PushDownType type ) {
+      for ( int i = 0; type != null && i < pushDownFactories.size(); i++ ) {
+        if ( pushDownFactories.get( i ).getType().isInstance( type ) ) {
+          select( i );
+          return;
+        }
+      }
+      select( 0 );
+    }
+
+    PushDownOptTypeForm getSelectedTypeForm() {
+      return typeForms[typeSelector.getSelectionIndex()];
+    }
   }
-
-  private void layoutTypeForm( Composite typePlaceholder, int item ) {
-    getPushDownOptTypeForm()
-      .populateForm( typePlaceholder, props, transMeta, optimizationMeta );
-  }
-
-  private PushDownOptTypeForm getPushDownOptTypeForm() {
-    final int selectionIndex = optimizationMethodCombo.getSelectionIndex();
-    return pushDownTypes.get( selectionIndex < 0 ? 0 : selectionIndex );
-  }
-
-
 }

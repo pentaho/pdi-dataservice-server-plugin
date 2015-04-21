@@ -63,7 +63,7 @@ public class ParameterGenerationFactory implements PushDownFactory {
   }
 
   @Override public PushDownOptTypeForm createPushDownOptTypeForm() {
-    return new ParamGenOptForm();
+    return new ParamGenOptForm( this );
   }
 
   public ParameterGenerationService getService( StepMeta stepMeta ) {

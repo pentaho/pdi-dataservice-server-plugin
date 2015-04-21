@@ -22,7 +22,6 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
@@ -40,7 +39,6 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.core.PropsUI;
-import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
@@ -49,27 +47,15 @@ import java.util.ArrayList;
 
 public class ParamGenOptForm implements PushDownOptTypeForm {
   private static final Class<?> PKG = ParamGenOptForm.class;
-  protected static TextVar paramNameText;
-  protected TableView definitionTable;
-  private ParameterGeneration parameterGeneration = new ParameterGeneration();
 
-  protected List stepList;
+  private final ParameterGenerationFactory serviceProvider;
 
-  @Override
-  public String getName() {
-    return parameterGeneration.getTypeName();
-  }
+  private TextVar paramNameText;
+  private TableView definitionTable;
+  private List stepList;
 
-  @Override
-  public void populateForm( Composite composite, PropsUI props, TransMeta transMeta,
-                            PushDownOptimizationMeta optimizationMeta ) {
-    layoutWidgets( composite, props, transMeta );
-    setInitialValues( optimizationMeta, transMeta );
-  }
-
-  @Override
-  public boolean isFormValid() {
-    return getMissingFormElements().size() == 0;
+  public ParamGenOptForm( ParameterGenerationFactory serviceProvider ) {
+    this.serviceProvider = serviceProvider;
   }
 
   public java.util.List<String> getMissingFormElements() {
@@ -88,7 +74,6 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     return errors;
   }
 
-
   private boolean atLeastOneMappingExists() {
     for ( int i = 0; i < definitionTable.getItemCount(); i++ ) {
       String source = definitionTable.getItem( i, 2 );
@@ -100,22 +85,20 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     return false;
   }
 
-  protected void setInitialValues( PushDownOptimizationMeta optimizationMeta, TransMeta transMeta ) {
-    ParameterGeneration paramType = (ParameterGeneration) optimizationMeta.getType();
-    if ( paramType == null ) {
-      paramType = new ParameterGeneration();
-      optimizationMeta.setType( paramType );
-    }
-    setSourceTargetValues( definitionTable, optimizationMeta );
 
+  @Override public void setValues( PushDownOptimizationMeta optimizationMeta, TransMeta transMeta ) {
     stepList.setItems( getSupportedSteps( transMeta ) );
-    setSelectedStep( stepList, optimizationMeta.getStepName() );
+    setSelectedStep( optimizationMeta.getStepName() );
 
-    paramNameText.setText( paramType.getParameterName() );
+    if ( optimizationMeta.getType() instanceof ParameterGeneration) {
+      ParameterGeneration paramType = (ParameterGeneration) optimizationMeta.getType();
+      setSourceTargetValues( paramType );
+      paramNameText.setText( paramType.getParameterName() );
+    }
   }
 
-  private void layoutWidgets( Composite composite, PropsUI props,
-                              TransMeta transMeta ) {
+  @Override
+  public void populateForm( Composite composite, PropsUI props, final TransMeta transMeta ) {
     Group paramGenGroup = new Group( composite, SWT.SHADOW_IN );
     props.setLook( paramGenGroup );
     paramGenGroup.setText( BaseMessages.getString( PKG, "ParamGenOptForm.ParamGen.Label" ) );
@@ -171,7 +154,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     FormData paramNameFormData = new FormData();
     paramNameFormData.left = new FormAttachment( parameterNameLabel, Const.MARGIN * 2 );
     paramNameFormData.top = fdStepList.top;
-    paramNameFormData.width = PushDownOptDialog.TEXT_WIDTH;
+    paramNameFormData.right = new FormAttachment( 100, -Const.MARGIN );
     paramNameText.setLayoutData( paramNameFormData );
 
     ColumnInfo[] colinf =
@@ -200,22 +183,17 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     definitionTable.setLayoutData( fdDefTable );
   }
 
-  private void setSourceTargetValues( TableView definitionTable, PushDownOptimizationMeta optimizationMeta ) {
-    boolean firstRow = true;
-    for ( SourceTargetFields fields : ( (ParameterGeneration) optimizationMeta.getType() ).getFieldMappings() ) {
+  private void setSourceTargetValues( ParameterGeneration optimization ) {
+    definitionTable.table.removeAll();
+    for ( SourceTargetFields fields : optimization.getFieldMappings() ) {
       TableItem item;
-      if ( firstRow ) {
-        item = definitionTable.table.getItem( 0 );
-        firstRow = false;
-      } else {
-        item = new TableItem( definitionTable.table, SWT.NONE );
-      }
+      item = new TableItem( definitionTable.table, SWT.NONE );
       item.setText( 1, fields.getTargetFieldName() );
       item.setText( 2, fields.getSourceFieldName() );
     }
   }
 
-  private void setSelectedStep( List stepList, String stepName ) {
+  private void setSelectedStep( String stepName ) {
     if ( stepName == null ) {
       return;
     }
@@ -229,10 +207,14 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
   @Override
   public void applyOptimizationParameters( PushDownOptimizationMeta optimizationMeta ) {
-    GUIResource.getInstance().getImageNew();
     if ( stepList.getSelection().length == 1 ) {
       optimizationMeta.setStepName( stepList.getSelection()[ 0 ] );
     }
+    optimizationMeta.setType( getParameterGeneration() );
+  }
+
+  private ParameterGeneration getParameterGeneration() {
+    ParameterGeneration parameterGeneration = serviceProvider.createPushDown();
     for ( int i = 0; i < definitionTable.getItemCount(); i++ ) {
       String source = definitionTable.getItem( i, 2 );
       String target = definitionTable.getItem( i, 1 );
@@ -241,7 +223,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
       }
     }
     parameterGeneration.setParameterName( cleanseParamName( paramNameText.getText() ) );
-    optimizationMeta.setType( parameterGeneration );
+    return parameterGeneration;
   }
 
   private String cleanseParamName( String name ) {
@@ -255,9 +237,8 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
 
   private String[] getSupportedSteps( TransMeta transMeta ) {
     java.util.List<String> stepNames = new ArrayList<String>();
-    ParameterGenerationFactory paramGenProvider = new ParameterGenerationFactory();
     for ( StepMeta step : transMeta.getSteps() ) {
-      if ( paramGenProvider.supportsStep( step ) ) {
+      if ( serviceProvider.supportsStep( step ) ) {
         stepNames.add( step.getName() );
       }
     }

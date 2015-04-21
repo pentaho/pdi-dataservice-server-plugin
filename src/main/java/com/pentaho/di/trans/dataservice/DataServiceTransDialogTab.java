@@ -23,6 +23,7 @@
 package com.pentaho.di.trans.dataservice;
 
 import com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
+import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
@@ -352,8 +353,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
           || optimizationListTable.getSelectionIndex() >= optimizationList.size() ) {
           return;
         }
-        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta,
-          optimizationList.get( optimizationListTable.getSelectionIndex() ) );
+        PushDownOptimizationMeta optMeta = optimizationList.get( optimizationListTable.getSelectionIndex() );
+        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta, optMeta, getPushDownFactories() );
         if ( dialog.open() == SWT.OK ) {
           refreshOptimizationList();
         }
@@ -375,7 +376,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       @Override
       public void widgetSelected( SelectionEvent e ) {
         PushDownOptimizationMeta optMeta = new PushDownOptimizationMeta();
-        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta, optMeta );
+        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta, optMeta, getPushDownFactories() );
         if ( dialog.open() == SWT.OK ) {
           optimizationList.add( optMeta );
           refreshOptimizationList();
@@ -655,5 +656,9 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   public void setAutoOptimizationServices( List<AutoOptimizationService> autoOptimizationServices ) {
     this.autoOptimizationServices = autoOptimizationServices;
+  }
+
+  public List<PushDownFactory> getPushDownFactories() {
+    return metaStoreUtil.getPushDownFactories();
   }
 }
