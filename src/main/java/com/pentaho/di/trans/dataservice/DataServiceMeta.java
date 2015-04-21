@@ -75,7 +75,7 @@ public class DataServiceMeta {
   protected String id;
 
   @MetaStoreAttribute( key = DATA_SERVICE_CACHE_METHOD )
-  protected ServiceCacheMethod cacheMethod;
+  protected ServiceCacheMethod cacheMethod = ServiceCacheMethod.None;
 
   @MetaStoreAttribute( key = DATA_SERVICE_CACHE_MAX_AGE_MINUTES )
   protected int cacheMaxAgeMinutes;
@@ -84,20 +84,16 @@ public class DataServiceMeta {
   protected List<PushDownOptimizationMeta> pushDownOptimizationMeta;
 
   public DataServiceMeta() {
-    this( null, null, true, false, ServiceCacheMethod.None );
+    this( null, null );
   }
 
   /**
    * @param name
    * @param stepname
-   * @param output
-   * @param optimisationAllowed
    */
-  public DataServiceMeta( String name, String stepname, boolean output, boolean optimisationAllowed,
-                          ServiceCacheMethod cacheMethod ) {
+  public DataServiceMeta( String name, String stepname ) {
     this.name = name;
     this.stepname = stepname;
-    this.cacheMethod = cacheMethod;
     pushDownOptimizationMeta = new ArrayList<PushDownOptimizationMeta>();
   }
 

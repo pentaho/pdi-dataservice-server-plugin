@@ -31,6 +31,6 @@ import java.util.Collection;
  * @author nhudak
  */
 public interface AutoOptimizationService {
-  public Collection<PushDownOptimizationMeta> apply( TransMeta transMeta, DataServiceMeta dataServiceMeta );
-  public Collection<Class<? extends PushDownType>> getProvidedOptimizationTypes();
+  Collection<PushDownOptimizationMeta> apply( TransMeta transMeta, DataServiceMeta dataServiceMeta );
+  Collection<Class<? extends PushDownType>> getProvidedOptimizationTypes();
 }

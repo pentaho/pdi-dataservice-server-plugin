@@ -27,6 +27,8 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 
+import java.text.MessageFormat;
+
 /**
  * @author nhudak
  */
@@ -114,6 +116,11 @@ public final class PushDownOptimizationMeta {
         }
       };
     }
+  }
+
+  @Override public String toString() {
+    return MessageFormat.format( "PushDownOptimizationMeta'{'name=''{0}'', stepName=''{1}'', type={2}'}'",
+      name, stepName, type != null ? type.getClass().getName() : null );
   }
 
 }
