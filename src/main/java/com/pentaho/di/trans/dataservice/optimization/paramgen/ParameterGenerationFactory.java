@@ -22,9 +22,10 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import com.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepMeta;
 
@@ -37,16 +38,7 @@ public class ParameterGenerationFactory implements PushDownFactory {
 
   private final List<ParameterGenerationServiceFactory> factories;
 
-  @Deprecated
-  public ParameterGenerationFactory() {
-    this( ImmutableList.of(
-      new TableInputParameterGenerationFactory(),
-      new MongodbInputParameterGenerationFactory()
-    ) );
-  }
-
-  public ParameterGenerationFactory(
-    List<ParameterGenerationServiceFactory> factories ) {
+  public ParameterGenerationFactory( List<ParameterGenerationServiceFactory> factories ) {
     this.factories = factories;
   }
 
@@ -59,28 +51,27 @@ public class ParameterGenerationFactory implements PushDownFactory {
   }
 
   @Override public ParameterGeneration createPushDown() {
-    return new ParameterGeneration();
+    return new ParameterGeneration( this );
   }
 
-  @Override public PushDownOptTypeForm createPushDownOptTypeForm() {
+  @Override public ParamGenOptForm createPushDownOptTypeForm() {
     return new ParamGenOptForm( this );
   }
 
   public ParameterGenerationService getService( StepMeta stepMeta ) {
-    for ( ParameterGenerationServiceFactory factory : factories ) {
-      if ( factory.supportsStep( stepMeta ) ) {
-        return factory.getService( stepMeta );
-      }
-    }
-    return null;
+    Optional<ParameterGenerationServiceFactory> factory = getFactory( stepMeta );
+    return factory.isPresent() ? factory.get().getService( stepMeta ) : null;
   }
 
   public boolean supportsStep( StepMeta stepMeta ) {
-    for ( ParameterGenerationServiceFactory factory : factories ) {
-      if ( factory.supportsStep( stepMeta ) ) {
-        return true;
+    return getFactory( stepMeta ).isPresent();
+  }
+
+  private Optional<ParameterGenerationServiceFactory> getFactory( final StepMeta stepMeta ) {
+    return Iterables.tryFind( factories, new Predicate<ParameterGenerationServiceFactory>() {
+      @Override public boolean apply( ParameterGenerationServiceFactory input ) {
+        return input.supportsStep( stepMeta );
       }
-    }
-    return false;
+    } );
   }
 }

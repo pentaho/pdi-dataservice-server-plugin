@@ -84,10 +84,11 @@ import java.util.List;
 public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   private static Class<?> PKG = DataServiceTransDialogTab.class;
-  private final DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil();
   // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
-
   private CTabItem wDataServiceTab;
+
+  private final DataServiceMetaStoreUtil metaStoreUtil;
+  private final List<AutoOptimizationService> autoOptimizationServices;
   private CCombo wServiceName;
   private CCombo wServiceStep;
 
@@ -100,7 +101,11 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private ToolItem editButton;
   private ToolItem deleteButton;
 
-  private List<AutoOptimizationService> autoOptimizationServices;
+  public DataServiceTransDialogTab( DataServiceMetaStoreUtil metaStoreUtil,
+                                    List<AutoOptimizationService> autoOptimizationServices ) {
+    this.metaStoreUtil = metaStoreUtil;
+    this.autoOptimizationServices = autoOptimizationServices;
+  }
 
   @Override
   public void addTab( final TransMeta transMeta, final Shell shell, final CTabFolder wTabFolder ) {
@@ -652,10 +657,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   public List<AutoOptimizationService> getAutoOptimizationServices() {
     return autoOptimizationServices;
-  }
-
-  public void setAutoOptimizationServices( List<AutoOptimizationService> autoOptimizationServices ) {
-    this.autoOptimizationServices = autoOptimizationServices;
   }
 
   public List<PushDownFactory> getPushDownFactories() {

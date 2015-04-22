@@ -33,9 +33,10 @@ import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.parameters.DuplicateParamException;
@@ -68,6 +69,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith( MockitoJUnitRunner.class )
 public class ParameterGenerationTest {
 
   public static final String DATA_SERVICE_NAME = "My Data Service";
@@ -94,14 +96,11 @@ public class ParameterGenerationTest {
 
   @Before
   public void setup() {
-    MockitoAnnotations.initMocks( this );
-
-    paramGen = new ParameterGeneration();
+    paramGen = new ParameterGeneration( serviceProvider );
     paramGen.setParameterName( PARAM_NAME );
     paramGen.createFieldMapping( "A_src", "A_tgt" );
     paramGen.createFieldMapping( "B_src", "B_tgt" );
     paramGen.createFieldMapping( "C_src", "C_tgt" );
-    paramGen.serviceProvider = serviceProvider;
 
     when( trans.getTransMeta() ).thenReturn( transMeta );
     when( transMeta.findStep( OPT_STEP ) ).thenReturn( stepMeta );
@@ -113,7 +112,7 @@ public class ParameterGenerationTest {
 
   @Test
   public void testCRUDFieldMapping() throws Exception {
-    ParameterGeneration parameterGeneration = new ParameterGeneration();
+    ParameterGeneration parameterGeneration = new ParameterGeneration( serviceProvider );
     // Get live view of field mappings
     List<SourceTargetFields> fieldMappings = parameterGeneration.getFieldMappings();
 
@@ -145,7 +144,7 @@ public class ParameterGenerationTest {
     expectedDataService.getPushDownOptimizationMeta().add( expectedOptimization );
 
     // Define optimization type
-    ParameterGeneration expectedType = new ParameterGeneration();
+    ParameterGeneration expectedType = new ParameterGeneration( serviceProvider );
     expectedType.setParameterName( "MY_PARAMETER" );
     expectedOptimization.setType( expectedType );
 

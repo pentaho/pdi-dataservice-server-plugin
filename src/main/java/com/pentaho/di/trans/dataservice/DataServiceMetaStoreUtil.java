@@ -23,11 +23,9 @@
 package com.pentaho.di.trans.dataservice;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.repository.ObjectId;
@@ -53,11 +51,6 @@ public class DataServiceMetaStoreUtil {
   public static final String DATA_SERVICE_STEPNAME = "stepname";
 
   private final List<PushDownFactory> pushDownFactories;
-
-  @Deprecated
-  public DataServiceMetaStoreUtil() {
-    this( ImmutableList.<PushDownFactory>of( new ParameterGenerationFactory() ) );
-  }
 
   public DataServiceMetaStoreUtil( List<PushDownFactory> pushDownFactories ) {
     this.pushDownFactories = pushDownFactories;

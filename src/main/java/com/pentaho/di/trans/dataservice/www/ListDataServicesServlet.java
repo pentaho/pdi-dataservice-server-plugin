@@ -63,10 +63,6 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
   public static final String XML_TAG_SERVICE = "service";
   private final DataServiceMetaStoreUtil metaStoreUtil;
 
-  public ListDataServicesServlet() {
-    this( new DataServiceMetaStoreUtil() );
-  }
-
   public ListDataServicesServlet( DataServiceMetaStoreUtil metaStoreUtil ) {
     this.metaStoreUtil = metaStoreUtil;
   }

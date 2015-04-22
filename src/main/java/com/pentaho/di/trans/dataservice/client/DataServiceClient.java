@@ -52,12 +52,16 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DataServiceClient implements DataServiceClientService {
 
   private static Log logger = LogFactory.getLog( DataServiceClient.class );
-  private final DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil();
+  private final DataServiceMetaStoreUtil metaStoreUtil;
 
   AtomicLong dataSize = new AtomicLong( 0L );
 
   private Repository repository;
   private IMetaStore metaStore;
+
+  public DataServiceClient( DataServiceMetaStoreUtil metaStoreUtil ) {
+    this.metaStoreUtil = metaStoreUtil;
+  }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
 

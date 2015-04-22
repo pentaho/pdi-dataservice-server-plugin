@@ -77,10 +77,6 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
   public static final String CONTEXT_PATH = "/sql";
   private final DataServiceMetaStoreUtil metaStoreUtil;
 
-  public TransDataServlet() {
-    this( new DataServiceMetaStoreUtil() );
-  }
-
   public TransDataServlet( DataServiceMetaStoreUtil metaStoreUtil ) {
     this.metaStoreUtil = metaStoreUtil;
   }

@@ -55,10 +55,13 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
@@ -73,6 +76,7 @@ public class AutoParameterGenerationServiceTest {
   @Mock private ILineageClient lineageClient;
   @Mock private TransMeta transMeta;
   @Mock private ParameterGenerationFactory serviceProvider;
+  @Mock private ParameterGeneration parameterGeneration;
   private DataServiceMeta dataService;
 
   @Before
@@ -82,6 +86,7 @@ public class AutoParameterGenerationServiceTest {
 
     when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( serviceRowMeta );
     when( serviceRowMeta.getFieldNames() ).thenReturn( SERVICE_FIELDS );
+    when( serviceProvider.createPushDown() ).thenReturn( parameterGeneration );
   }
 
   @Test
@@ -119,10 +124,10 @@ public class AutoParameterGenerationServiceTest {
     List<PushDownOptimizationMeta> optimizationMetaList = service.apply( transMeta, dataService );
     assertThat( optimizationMetaList, contains( allOf(
       hasProperty( "stepName", equalTo( "Input 1" ) ),
-      hasProperty( "type", hasProperty( "fieldMappings", contains(
-          hasProperty( "targetFieldName", equalTo( "field2" ) ) )
-      ) )
+      hasProperty( "type", is( parameterGeneration ) )
     ) ) );
+    verify( parameterGeneration ).setParameterName( anyString() );
+    verify( parameterGeneration ).createFieldMapping( "field2_origin", "field2" );
   }
 
   @Test
@@ -148,7 +153,7 @@ public class AutoParameterGenerationServiceTest {
     PushDownOptimizationMeta optimizationMeta = new PushDownOptimizationMeta();
     optimizationMeta.setName( "Existing PDO" );
     optimizationMeta.setStepName( "Input" );
-    optimizationMeta.setType( new ParameterGeneration() );
+    optimizationMeta.setType( mock( ParameterGeneration.class ) );
     dataService.setPushDownOptimizationMeta( Lists.newArrayList( optimizationMeta ) );
 
     assertThat( service.parametrizedSteps( dataService ), contains( "Input" ) );

@@ -65,11 +65,6 @@ public class AutoParameterGenerationService implements AutoOptimizationService {
     this.serviceProvider = serviceProvider;
   }
 
-  public AutoParameterGenerationService( ILineageClient lineageClient ) {
-    this.lineageClient = lineageClient;
-    serviceProvider = new ParameterGenerationFactory();
-  }
-
   @Override public List<PushDownOptimizationMeta> apply( TransMeta transMeta, DataServiceMeta dataServiceMeta ) {
     LogChannelInterface logChannel = transMeta.getLogChannel() != null ? transMeta.getLogChannel() : LogChannel.GENERAL;
     try {
@@ -128,7 +123,7 @@ public class AutoParameterGenerationService implements AutoOptimizationService {
       String inputStep = inputStepLineage.getKey();
       Set<List<StepFieldOperations>> lineageSet = inputStepLineage.getValue();
       PushDownOptimizationMeta pushDownOptimizationMeta = new PushDownOptimizationMeta();
-      ParameterGeneration parameterGeneration = new ParameterGeneration();
+      ParameterGeneration parameterGeneration = serviceProvider.createPushDown();
       pushDownOptimizationMeta.setName( MessageFormat.format( "Parameter Generator: {0}", inputStep ) );
       pushDownOptimizationMeta.setStepName( inputStep );
       pushDownOptimizationMeta.setType( parameterGeneration );

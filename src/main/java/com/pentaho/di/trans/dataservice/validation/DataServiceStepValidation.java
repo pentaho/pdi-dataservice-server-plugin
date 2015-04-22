@@ -55,12 +55,6 @@ public class DataServiceStepValidation implements StepValidation {
 
   private final ParameterGenerationFactory serviceProvider;
 
-
-  public DataServiceStepValidation( ILineageClient lineageClient ) {
-    this.lineageClient = lineageClient;
-    serviceProvider = new ParameterGenerationFactory();
-  }
-
   public DataServiceStepValidation( ILineageClient lineageClient,
                                     ParameterGenerationFactory serviceProvider ) {
     this.lineageClient = lineageClient;

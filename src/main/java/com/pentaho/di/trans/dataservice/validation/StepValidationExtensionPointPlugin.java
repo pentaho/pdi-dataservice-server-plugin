@@ -43,9 +43,13 @@ import java.util.List;
     )
 public class StepValidationExtensionPointPlugin implements ExtensionPointInterface {
 
-  private final DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil();
+  private final DataServiceMetaStoreUtil metaStoreUtil;
   private List<StepValidation> stepValidations =
       new ArrayList<StepValidation>();
+
+  public StepValidationExtensionPointPlugin( DataServiceMetaStoreUtil metaStoreUtil ) {
+    this.metaStoreUtil = metaStoreUtil;
+  }
 
   @Override
   public void callExtensionPoint( LogChannelInterface log, Object o ) throws KettleException {

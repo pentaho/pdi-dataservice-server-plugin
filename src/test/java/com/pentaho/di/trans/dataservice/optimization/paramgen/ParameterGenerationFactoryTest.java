@@ -22,51 +22,52 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
-import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
 
+@RunWith( MockitoJUnitRunner.class )
 public class ParameterGenerationFactoryTest {
 
   private ParameterGenerationFactory provider;
+  @Mock ParameterGenerationServiceFactory serviceFactory;
+  @Mock StepMeta stepMeta;
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks( this );
-    provider = new ParameterGenerationFactory();
+    provider = new ParameterGenerationFactory( ImmutableList.of( serviceFactory ) );
   }
 
   @Test
-  public void testGetTableInputParameterGeneration() throws Exception {
-    StepMeta stepMeta = new StepMeta();
-    stepMeta.setStepMetaInterface( mock( StepMetaInterface.class ) );
+  public void testFactory() throws Exception {
+    assertThat( provider.getName(), is( ParameterGeneration.TYPE_NAME ) );
+    assertThat( provider.createPushDown(), isA( ParameterGeneration.class ) );
+    assertThat( provider.createPushDownOptTypeForm(), isA( ParamGenOptForm.class ) );
+  }
+
+  @Test
+  public void testServiceProvisioning() throws Exception {
+    assertThat( serviceFactory.supportsStep( mock( StepMeta.class ) ), is( false ) );
+
+    when( serviceFactory.supportsStep( stepMeta ) ).thenReturn( false );
+    assertThat( serviceFactory.supportsStep( stepMeta ), is( false ) );
     assertThat( provider.getService( stepMeta ), nullValue() );
-    stepMeta.setStepMetaInterface( new TableInputMeta() );
-    assertThat( provider.getService( stepMeta ), instanceOf( TableInputParameterGeneration.class ) );
-  }
 
-  @Test
-  public void testGetMongodbInputParameterGeneration() throws Exception {
-    StepMeta stepMeta = mock( StepMeta.class );
-    when( stepMeta.getTypeId() ).thenReturn( "MongoDbInput" );
-    when( stepMeta.getStepMetaInterface() ).thenReturn( mock( StepMetaInterface.class ) );
-    assertThat( provider.getService( stepMeta ), instanceOf( MongodbInputParameterGeneration.class ) );
-  }
-
-  @Test
-  public void testSupportsStep() throws Exception {
-    StepMeta stepMeta = new StepMeta();
-    stepMeta.setStepMetaInterface( mock( StepMetaInterface.class ) );
-    assertThat( provider.supportsStep( stepMeta ), equalTo( false ) );
-    stepMeta.setStepMetaInterface( new TableInputMeta() );
-    assertThat( provider.supportsStep( stepMeta ), equalTo( true) );
+    ParameterGenerationService service = mock( ParameterGenerationService.class );
+    when( serviceFactory.supportsStep( stepMeta ) ).thenReturn( true );
+    when( serviceFactory.getService( stepMeta ) ).thenReturn( service );
+    assertThat( serviceFactory.supportsStep( stepMeta ), is( true ) );
+    assertThat( provider.getService( stepMeta ), is( service ) );
   }
 }
