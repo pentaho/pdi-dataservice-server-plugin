@@ -31,9 +31,9 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import com.pentaho.metaverse.analyzer.kettle.ChangeType;
+import com.pentaho.metaverse.api.ChangeType;
+import com.pentaho.metaverse.api.StepFieldOperations;
 import com.pentaho.metaverse.api.model.Operations;
-import com.pentaho.metaverse.client.StepFieldOperations;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 

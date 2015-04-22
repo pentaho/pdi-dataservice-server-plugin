@@ -22,7 +22,7 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import com.pentaho.metaverse.analyzer.kettle.ChangeType;
+import com.pentaho.metaverse.api.ChangeType;
 import com.pentaho.metaverse.api.model.IOperation;
 import com.pentaho.metaverse.api.model.Operations;
 

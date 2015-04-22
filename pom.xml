@@ -96,6 +96,12 @@
         </dependency>
         <dependency>
             <groupId>com.pentaho</groupId>
+            <artifactId>pentaho-metaverse-api</artifactId>
+            <version>${kettle.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.pentaho</groupId>
             <artifactId>pentaho-metaverse-ee</artifactId>
             <version>${kettle.version}</version>
             <scope>provided</scope>
@@ -190,6 +196,7 @@
                 <configuration>
                     <instructions>
                         <Import-Package>org.pentaho.di.osgi,*</Import-Package>
+                        <DynamicImport-Package>*</DynamicImport-Package>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                     </instructions>
                 </configuration>

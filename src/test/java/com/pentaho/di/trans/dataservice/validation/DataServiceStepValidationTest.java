@@ -27,7 +27,7 @@ import com.google.common.collect.Maps;
 import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceProvider;
 import com.pentaho.metaverse.api.ILineageClient;
 import com.pentaho.metaverse.api.MetaverseException;
-import com.pentaho.metaverse.client.StepField;
+import com.pentaho.metaverse.api.StepField;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
