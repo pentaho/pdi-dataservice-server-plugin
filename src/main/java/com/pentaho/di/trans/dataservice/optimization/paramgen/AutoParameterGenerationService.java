@@ -29,7 +29,7 @@ import com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
 import com.pentaho.metaverse.api.ILineageClient;
-import com.pentaho.metaverse.client.StepFieldOperations;
+import com.pentaho.metaverse.api.StepFieldOperations;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;

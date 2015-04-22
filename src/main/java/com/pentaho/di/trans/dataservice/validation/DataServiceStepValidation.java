@@ -30,7 +30,7 @@ import com.pentaho.di.trans.dataservice.DataServiceMeta;
 import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceProvider;
 import com.pentaho.metaverse.api.ILineageClient;
 import com.pentaho.metaverse.api.MetaverseException;
-import com.pentaho.metaverse.client.StepField;
+import com.pentaho.metaverse.api.StepField;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleStepException;
