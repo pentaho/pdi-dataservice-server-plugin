@@ -22,17 +22,21 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.google.common.collect.ImmutableList;
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
+import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.parameters.DuplicateParamException;
@@ -65,6 +69,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith( MockitoJUnitRunner.class )
 public class ParameterGenerationTest {
 
   public static final String DATA_SERVICE_NAME = "My Data Service";
@@ -74,9 +79,14 @@ public class ParameterGenerationTest {
   public static final String OPT_NAME = "My Optimization";
   public static final String OPT_STEP = "Optimized Step";
   public static final String EXPECTED_DEFAULT = "## PARAMETER DEFAULT ##";
+  private final DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil(
+    ImmutableList.<PushDownFactory>of(
+      new ParameterGenerationFactory( ImmutableList.<ParameterGenerationServiceFactory>of() )
+    )
+  );
 
   private ParameterGeneration paramGen;
-  @Mock private ParameterGenerationServiceProvider serviceProvider;
+  @Mock private ParameterGenerationFactory serviceProvider;
   @Mock private ParameterGenerationService service;
   @Mock private Trans trans;
   @Mock private TransMeta transMeta;
@@ -86,14 +96,11 @@ public class ParameterGenerationTest {
 
   @Before
   public void setup() {
-    MockitoAnnotations.initMocks( this );
-
-    paramGen = new ParameterGeneration();
+    paramGen = new ParameterGeneration( serviceProvider );
     paramGen.setParameterName( PARAM_NAME );
     paramGen.createFieldMapping( "A_src", "A_tgt" );
     paramGen.createFieldMapping( "B_src", "B_tgt" );
     paramGen.createFieldMapping( "C_src", "C_tgt" );
-    paramGen.serviceProvider = serviceProvider;
 
     when( trans.getTransMeta() ).thenReturn( transMeta );
     when( transMeta.findStep( OPT_STEP ) ).thenReturn( stepMeta );
@@ -105,7 +112,7 @@ public class ParameterGenerationTest {
 
   @Test
   public void testCRUDFieldMapping() throws Exception {
-    ParameterGeneration parameterGeneration = new ParameterGeneration();
+    ParameterGeneration parameterGeneration = new ParameterGeneration( serviceProvider );
     // Get live view of field mappings
     List<SourceTargetFields> fieldMappings = parameterGeneration.getFieldMappings();
 
@@ -122,8 +129,7 @@ public class ParameterGenerationTest {
 
   @Test
   public void testSaveLoad() throws Exception {
-    MetaStoreFactory<DataServiceMeta> metaStoreFactory = DataServiceMeta
-        .getMetaStoreFactory( new MemoryMetaStore() );
+    MetaStoreFactory<DataServiceMeta> metaStoreFactory = metaStoreUtil.getMetaStoreFactory( new MemoryMetaStore() );
 
     // Create parent data service
     DataServiceMeta expectedDataService = new DataServiceMeta();
@@ -138,7 +144,7 @@ public class ParameterGenerationTest {
     expectedDataService.getPushDownOptimizationMeta().add( expectedOptimization );
 
     // Define optimization type
-    ParameterGeneration expectedType = new ParameterGeneration();
+    ParameterGeneration expectedType = new ParameterGeneration( serviceProvider );
     expectedType.setParameterName( "MY_PARAMETER" );
     expectedOptimization.setType( expectedType );
 
@@ -193,7 +199,8 @@ public class ParameterGenerationTest {
     verify( transMeta, times( 2 ) ).addParameterDefinition( eq( PARAM_NAME ), eq( "" ), anyString() );
     verify( transMeta ).addParameterDefinition( eq( PARAM_NAME ), eq( EXPECTED_DEFAULT ), anyString() );
 
-    doThrow( DuplicateParamException.class ).when( transMeta ).addParameterDefinition( eq( PARAM_NAME ), eq( EXPECTED_DEFAULT ), anyString() );
+    doThrow( DuplicateParamException.class ).when( transMeta ).addParameterDefinition( eq( PARAM_NAME ),
+      eq( EXPECTED_DEFAULT ), anyString() );
     paramGen.init( transMeta, dataService, pdo ); //Exception should be silently caught
     verify( transMeta, atLeast( 3 ) ).activateParameters();
   }

@@ -22,6 +22,9 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import com.google.common.base.Throwables;
+import com.google.common.collect.Maps;
+import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.logging.LogChannel;
@@ -32,28 +35,37 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.IMetaStoreElementType;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
-import org.pentaho.metastore.util.MetaStoreUtil;
-import org.pentaho.metastore.util.PentahoDefaults;
+import org.pentaho.metastore.persist.IMetaStoreObjectFactory;
+import org.pentaho.metastore.persist.MetaStoreFactory;
 
-public class DataServiceMetaStoreUtil extends MetaStoreUtil {
+import java.util.List;
+import java.util.Map;
 
-  private static String namespace = PentahoDefaults.NAMESPACE;
+import static org.pentaho.metastore.util.PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION;
+import static org.pentaho.metastore.util.PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME;
+import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
+public class DataServiceMetaStoreUtil {
   public static final String GROUP_DATA_SERVICE = "DataService";
   public static final String DATA_SERVICE_NAME = "name";
   public static final String DATA_SERVICE_STEPNAME = "stepname";
 
-  public static DataServiceMeta fromTransMeta( TransMeta transMeta, IMetaStore metaStore ) throws MetaStoreException {
+  private final List<PushDownFactory> pushDownFactories;
+
+  public DataServiceMetaStoreUtil( List<PushDownFactory> pushDownFactories ) {
+    this.pushDownFactories = pushDownFactories;
+  }
+
+  public DataServiceMeta fromTransMeta( TransMeta transMeta, IMetaStore metaStore ) throws MetaStoreException {
     String serviceName = transMeta.getAttribute( GROUP_DATA_SERVICE, DATA_SERVICE_NAME );
     if ( Const.isEmpty( serviceName ) ) {
       return null;
     }
-    return DataServiceMeta.getMetaStoreFactory( metaStore ).loadElement( serviceName );
+    return getMetaStoreFactory( metaStore ).loadElement( serviceName );
   }
 
-
-  public static void toTransMeta( TransMeta transMeta, IMetaStore metaStore, DataServiceMeta dataService,
-                                  boolean saveToMetaStore ) throws MetaStoreException {
+  public void toTransMeta( TransMeta transMeta, IMetaStore metaStore, DataServiceMeta dataService )
+    throws MetaStoreException {
 
     if ( dataService != null && dataService.isDefined() ) {
       // Also make sure the metastore object is stored properly
@@ -85,9 +97,7 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
       } else {
         dataService.setTransFilename( transMeta.getFilename() );
       }
-      if ( saveToMetaStore ) {
-        DataServiceMeta.getMetaStoreFactory( metaStore ).saveElement( dataService );
-      }
+      getMetaStoreFactory( metaStore ).saveElement( dataService );
     }
   }
 
@@ -100,21 +110,23 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
    * @throws MetaStoreException
    * @throws org.pentaho.metastore.api.exceptions.MetaStoreNamespaceExistsException
    */
+  @Deprecated
+  // Should use metastoreFactory instead
   public static IMetaStoreElementType createDataServiceElementTypeIfNeeded( IMetaStore metaStore )
     throws MetaStoreException {
 
-    if ( !metaStore.namespaceExists( namespace ) ) {
-      metaStore.createNamespace( namespace );
+    if ( !metaStore.namespaceExists( NAMESPACE ) ) {
+      metaStore.createNamespace( NAMESPACE );
     }
 
     IMetaStoreElementType elementType =
-      metaStore.getElementTypeByName( namespace, PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME );
+      metaStore.getElementTypeByName( NAMESPACE, KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME );
     if ( elementType == null ) {
       try {
-        elementType = metaStore.newElementType( namespace );
-        elementType.setName( PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME );
-        elementType.setDescription( PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION );
-        metaStore.createElementType( namespace, elementType );
+        elementType = metaStore.newElementType( NAMESPACE );
+        elementType.setName( KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME );
+        elementType.setDescription( KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION );
+        metaStore.createElementType( NAMESPACE, elementType );
       } catch ( MetaStoreException e ) {
         throw new MetaStoreException( "Unable to create new data service element type in the metastore", e );
       }
@@ -122,4 +134,35 @@ public class DataServiceMetaStoreUtil extends MetaStoreUtil {
     return elementType;
   }
 
+  public MetaStoreFactory<DataServiceMeta> getMetaStoreFactory( IMetaStore metaStore ) {
+    MetaStoreFactory<DataServiceMeta> dataServiceMetaFactory = new MetaStoreFactory<DataServiceMeta>(
+      DataServiceMeta.class, metaStore, NAMESPACE );
+    dataServiceMetaFactory.setObjectFactory( objectFactory );
+    return dataServiceMetaFactory;
+  }
+
+  public List<PushDownFactory> getPushDownFactories() {
+    return pushDownFactories;
+  }
+
+  private final IMetaStoreObjectFactory objectFactory = new IMetaStoreObjectFactory() {
+    @Override public Object instantiateClass( final String className, Map<String, String> context ) throws
+      MetaStoreException {
+      for ( PushDownFactory factory : pushDownFactories ) {
+        if ( factory.getType().getName().equals( className ) ) {
+          return factory.createPushDown();
+        }
+      }
+      try {
+        return Class.forName( className ).newInstance();
+      } catch ( Throwable t ) {
+        Throwables.propagateIfPossible( t, MetaStoreException.class );
+        throw new MetaStoreException( t );
+      }
+    }
+
+    @Override public Map<String, String> getContext( Object pluginObject ) throws MetaStoreException {
+      return Maps.newHashMap();
+    }
+  };
 }

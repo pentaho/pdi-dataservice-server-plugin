@@ -37,20 +37,14 @@ import java.util.List;
 public interface PushDownOptTypeForm {
 
   /**
-   * @return the name to be displayed as the optimization type in the dialog
-   */
-  String getName();
-
-  /**
    * Lays out and populates form elements within composite, based on the
    * contents of optimizationMeta.
    */
-  void populateForm( Composite composite, PropsUI props,
-                     TransMeta transMeta, PushDownOptimizationMeta optimizationMeta );
+  void populateForm( Composite composite, PropsUI props, TransMeta transMeta );
 
-  boolean isFormValid();
+  void setValues( PushDownOptimizationMeta optimizationMeta, TransMeta transMeta );
 
-  public List<String> getMissingFormElements();
+  List<String> getMissingFormElements();
 
   /**
    * Apply any user-entered form values to optimizationMeta.

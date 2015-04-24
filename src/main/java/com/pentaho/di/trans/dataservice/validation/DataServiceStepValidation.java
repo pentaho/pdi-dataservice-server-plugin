@@ -27,7 +27,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceProvider;
+import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
 import com.pentaho.metaverse.api.ILineageClient;
 import com.pentaho.metaverse.api.MetaverseException;
 import com.pentaho.metaverse.api.StepField;
@@ -53,16 +53,10 @@ public class DataServiceStepValidation implements StepValidation {
 
   private final ILineageClient lineageClient;
 
-  private final ParameterGenerationServiceProvider serviceProvider;
-
-
-  public DataServiceStepValidation( ILineageClient lineageClient ) {
-    this.lineageClient = lineageClient;
-    serviceProvider = new ParameterGenerationServiceProvider();
-  }
+  private final ParameterGenerationFactory serviceProvider;
 
   public DataServiceStepValidation( ILineageClient lineageClient,
-                                    ParameterGenerationServiceProvider serviceProvider ) {
+                                    ParameterGenerationFactory serviceProvider ) {
     this.lineageClient = lineageClient;
     this.serviceProvider = serviceProvider;
   }

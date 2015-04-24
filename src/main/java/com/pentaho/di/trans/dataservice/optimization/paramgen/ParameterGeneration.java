@@ -61,7 +61,11 @@ public class ParameterGeneration implements PushDownType {
   @MetaStoreAttribute( key = PUSH_DOWN_PARAMETER_NAME )
   private String parameterName;
 
-  protected ParameterGenerationServiceProvider serviceProvider = new ParameterGenerationServiceProvider();
+  protected ParameterGenerationFactory serviceProvider;
+
+  public ParameterGeneration( ParameterGenerationFactory serviceProvider ) {
+    this.serviceProvider = serviceProvider;
+  }
 
   public String getParameterName() {
     return parameterName == null ? "" : parameterName;

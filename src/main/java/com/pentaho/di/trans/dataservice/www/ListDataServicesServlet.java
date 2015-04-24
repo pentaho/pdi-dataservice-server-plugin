@@ -22,15 +22,8 @@
 
 package com.pentaho.di.trans.dataservice.www;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
@@ -39,11 +32,15 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
-import org.pentaho.di.www.JobMap;
-import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.api.IMetaStore;
 
-import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.
@@ -64,12 +61,10 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
 
   public static final String XML_TAG_SERVICES = "services";
   public static final String XML_TAG_SERVICE = "service";
+  private final DataServiceMetaStoreUtil metaStoreUtil;
 
-  public ListDataServicesServlet() {
-  }
-
-  public ListDataServicesServlet( TransformationMap transformationMap, JobMap jobMap ) {
-    super( transformationMap, jobMap );
+  public ListDataServicesServlet( DataServiceMetaStoreUtil metaStoreUtil ) {
+    this.metaStoreUtil = metaStoreUtil;
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -104,7 +99,7 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
     List<DataServiceMeta> dataServices = Collections.emptyList();
     try {
       repository = transformationMap.getSlaveServerConfig().getRepository(); // loaded lazily
-      dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
+      dataServices = metaStoreUtil.getMetaStoreFactory( metaStore ).getElements();
     } catch ( Exception e ) {
       log.logError( "Unable to list extra repository services", e );
     }

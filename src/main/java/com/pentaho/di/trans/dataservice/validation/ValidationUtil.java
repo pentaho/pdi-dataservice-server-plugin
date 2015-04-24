@@ -26,41 +26,16 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
-import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
-import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.variables.VariableSpace;
-import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.util.Collection;
 
 public class ValidationUtil {
-
-  public static DataServiceMeta getDataServiceMeta(
-      TransMeta transMeta, IMetaStore metaStore, LogChannelInterface log ) {
-    if ( metaStore == null || transMeta == null ) {
-      log.logBasic(
-          String.format( "Unable to determine whether '%s' is associated with a DataService.",
-              transMeta == null ? "(unknown)" : transMeta.getName() ) );
-      return null;
-    }
-    try {
-      return DataServiceMetaStoreUtil.fromTransMeta( transMeta, metaStore );
-    } catch ( MetaStoreException e ) {
-      log.logError(
-          String.format(
-              "Error while attempting to load DataServiceMeta during step validation for '%s'.",
-              transMeta.getName() ),
-          e );
-    }
-    return null;
-  }
 
   public static Collection<ParameterGeneration> getParameterGenerationsForStep(
       final DataServiceMeta dataServiceMeta, final String stepName ) {

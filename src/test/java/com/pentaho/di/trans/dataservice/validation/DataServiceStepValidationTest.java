@@ -24,7 +24,7 @@ package com.pentaho.di.trans.dataservice.validation;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceProvider;
+import com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
 import com.pentaho.metaverse.api.ILineageClient;
 import com.pentaho.metaverse.api.MetaverseException;
 import com.pentaho.metaverse.api.StepField;
@@ -53,7 +53,7 @@ public class DataServiceStepValidationTest extends BaseStepValidationTest {
 
   @Mock  private ILineageClient lineageClient;
 
-  @Mock  private ParameterGenerationServiceProvider serviceProvider;
+  @Mock  private ParameterGenerationFactory serviceProvider;
 
   @InjectMocks  private DataServiceStepValidation dataServiceStepValidation;
 

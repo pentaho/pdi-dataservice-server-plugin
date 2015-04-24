@@ -22,6 +22,7 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.junit.Test;
 import org.pentaho.di.core.sql.ServiceCacheMethod;
 import org.pentaho.di.repository.Repository;
@@ -32,6 +33,7 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 
+import java.util.Collections;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -49,7 +51,8 @@ public class DataServiceMetaTest {
       makeTestDSM( "name2", "stepName 2", "/foo/bar/baz.ktr", "transRepPath", "otherOid", ServiceCacheMethod.None, 15 ),
       makeTestDSM( "name 3", "stepName3", null, "transRepPath", "blahOid", ServiceCacheMethod.LocalMemory, 0 ),
     };
-    MetaStoreFactory<DataServiceMeta> factory = DataServiceMeta.getMetaStoreFactory( metaStore );
+    DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil( Collections.<PushDownFactory>emptyList() );
+    MetaStoreFactory<DataServiceMeta> factory = metaStoreUtil.getMetaStoreFactory( metaStore );
 
     for ( DataServiceMeta meta : dataServiceMetas ) {
       factory.saveElement( meta );

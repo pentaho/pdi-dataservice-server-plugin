@@ -22,8 +22,14 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import com.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
+import com.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -33,11 +39,16 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 
+import java.util.Collections;
+
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 
+@RunWith( MockitoJUnitRunner.class )
 public class DataServiceMetaStoreUtilTest {
 
   public static final String DATA_SERVICE_NAME = "DataServiceNameForLoad";
@@ -45,6 +56,8 @@ public class DataServiceMetaStoreUtilTest {
   private TransMeta transMeta;
   private IMetaStore metaStore;
   private DataServiceMeta dataService;
+
+  @Mock private DataServiceMetaStoreUtil metaStoreUtil;
   private MetaStoreFactory<DataServiceMeta>
     metaStoreFactory;
 
@@ -64,36 +77,56 @@ public class DataServiceMetaStoreUtilTest {
     dataService.setName( DATA_SERVICE_NAME );
     dataService.setStepname( DATA_SERVICE_STEP );
 
-    metaStoreFactory = DataServiceMeta.getMetaStoreFactory( metaStore );
+    metaStoreUtil = new DataServiceMetaStoreUtil( Collections.<PushDownFactory>singletonList( new PushDownFactory() {
+      @Override public String getName() {
+        return "Mock Optimization";
+      }
+
+      @Override public Class<? extends PushDownType> getType() {
+        return createPushDown().getClass();
+      }
+
+      @Override public PushDownType createPushDown() {
+        return mock( PushDownType.class );
+      }
+
+      @Override public PushDownOptTypeForm createPushDownOptTypeForm() {
+        return mock( PushDownOptTypeForm.class );
+      }
+    } )
+    );
+    metaStoreFactory = metaStoreUtil.getMetaStoreFactory( metaStore );
   }
 
   /**
    * Test cases for data service description loading
-   * 
+   *
    * @throws MetaStoreException
    */
   @Test
   public void testFromTransMeta() throws MetaStoreException {
     metaStoreFactory.saveElement( dataService );
-    DataServiceMeta dataServiceMeta = DataServiceMetaStoreUtil.fromTransMeta( transMeta, metaStore );
+    DataServiceMeta dataServiceMeta =
+      metaStoreUtil.fromTransMeta( transMeta, metaStore );
+    assertThat( dataServiceMeta, notNullValue() );
     assertEquals( DATA_SERVICE_NAME, dataServiceMeta.getName() );
     assertEquals( DATA_SERVICE_STEP, dataServiceMeta.getStepname() );
   }
 
   /**
    * Test cases for data service description saving
-   * 
+   *
    * @throws MetaStoreException
    */
   @Test
   public void testToTransMeta() throws MetaStoreException {
-    DataServiceMetaStoreUtil.toTransMeta( transMeta, metaStore, dataService, true );
+    metaStoreUtil.toTransMeta( transMeta, metaStore, dataService );
     String savedServiceName =
-        transMeta
-            .getAttribute( DataServiceMetaStoreUtil.GROUP_DATA_SERVICE, DataServiceMetaStoreUtil.DATA_SERVICE_NAME );
+      transMeta
+        .getAttribute( DataServiceMetaStoreUtil.GROUP_DATA_SERVICE, DataServiceMetaStoreUtil.DATA_SERVICE_NAME );
     String savedServiceStepName =
-        transMeta.getAttribute( DataServiceMetaStoreUtil.GROUP_DATA_SERVICE,
-            DataServiceMetaStoreUtil.DATA_SERVICE_STEPNAME );
+      transMeta.getAttribute( DataServiceMetaStoreUtil.GROUP_DATA_SERVICE,
+        DataServiceMetaStoreUtil.DATA_SERVICE_STEPNAME );
     assertEquals( DATA_SERVICE_NAME, savedServiceName );
     assertEquals( DATA_SERVICE_STEP, savedServiceStepName );
     assertEquals( DATA_SERVICE_STEP, metaStoreFactory.loadElement( DATA_SERVICE_NAME ).getStepname() );

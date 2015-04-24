@@ -23,6 +23,7 @@
 package com.pentaho.di.trans.dataservice;
 
 import com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
+import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
@@ -84,8 +85,10 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   private static Class<?> PKG = DataServiceTransDialogTab.class;
   // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
-
   private CTabItem wDataServiceTab;
+
+  private final DataServiceMetaStoreUtil metaStoreUtil;
+  private final List<AutoOptimizationService> autoOptimizationServices;
   private CCombo wServiceName;
   private CCombo wServiceStep;
 
@@ -98,9 +101,11 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   private ToolItem editButton;
   private ToolItem deleteButton;
 
-  private int ENABLED_COMBO_COLUMN = 4;
-
-  private List<AutoOptimizationService> autoOptimizationServices;
+  public DataServiceTransDialogTab( DataServiceMetaStoreUtil metaStoreUtil,
+                                    List<AutoOptimizationService> autoOptimizationServices ) {
+    this.metaStoreUtil = metaStoreUtil;
+    this.autoOptimizationServices = autoOptimizationServices;
+  }
 
   @Override
   public void addTab( final TransMeta transMeta, final Shell shell, final CTabFolder wTabFolder ) {
@@ -136,7 +141,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
     serviceGroup.setText( BaseMessages.getString( PKG, "TransDialog.ServiceGroup.Label" ) );
 
-    // 
+    //
     // Service name
     //
     Label wlServiceName = new Label( serviceGroup, SWT.RIGHT );
@@ -164,7 +169,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         try {
           if ( wServiceName.getText() != null ) {
             DataServiceMeta selectedServiceMeta =
-              DataServiceMeta.getMetaStoreFactory( transMeta.getMetaStore() )
+              metaStoreUtil.getMetaStoreFactory( transMeta.getMetaStore() )
                 .loadElement( wServiceName.getText() );
             optimizationList = selectedServiceMeta.getPushDownOptimizationMeta();
             refreshOptimizationList();
@@ -215,7 +220,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       }
     } );
 
-
     Button wRemove = new Button( serviceGroup, SWT.PUSH );
     props.setLook( wRemove );
     wRemove.setText( BaseMessages.getString( PKG, "TransDialog.RemoveServiceButton.Label" ) );
@@ -235,7 +239,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
         }
       }
     } );
-    lastControl = wServiceName;
 
     //
     // Service step
@@ -304,7 +307,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     fdOptGroup.bottom = new FormAttachment( 90, 0 );
     optimizationGroup.setLayoutData( fdOptGroup );
 
-    optimizationGroup.setText( BaseMessages.getString( PKG, "TransDialog.PushDownOptGroup.Label" )  );
+    optimizationGroup.setText( BaseMessages.getString( PKG, "TransDialog.PushDownOptGroup.Label" ) );
 
     ColumnInfo[] colinf =
       new ColumnInfo[] {
@@ -322,8 +325,10 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
           ColumnInfo.COLUMN_TYPE_CCOMBO,
           new String[] {
             BaseMessages.getString( PKG, "TransDialog.Enabled.Value" ),
-            BaseMessages.getString( PKG, "TransDialog.Disabled.Value" ) },
-          true ) };
+            BaseMessages.getString( PKG, "TransDialog.Disabled.Value" )
+          },
+          true )
+      };
 
     optimizationListTable = new TableView(
       transMeta, optimizationGroup, SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION, colinf, 0, null, props );
@@ -346,7 +351,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     deleteButton.setImage( GUIResource.getInstance().getImageDelete() );
     deleteButton.setWidth( GUIResource.getInstance().getImageDelete().getBounds().width );
 
-
     editButton.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( SelectionEvent selectionEvent ) {
@@ -354,8 +358,8 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
           || optimizationListTable.getSelectionIndex() >= optimizationList.size() ) {
           return;
         }
-        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta,
-          optimizationList.get( optimizationListTable.getSelectionIndex() ) );
+        PushDownOptimizationMeta optMeta = optimizationList.get( optimizationListTable.getSelectionIndex() );
+        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta, optMeta, getPushDownFactories() );
         if ( dialog.open() == SWT.OK ) {
           refreshOptimizationList();
         }
@@ -377,7 +381,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
       @Override
       public void widgetSelected( SelectionEvent e ) {
         PushDownOptimizationMeta optMeta = new PushDownOptimizationMeta();
-        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta, optMeta );
+        PushDownOptDialog dialog = new PushDownOptDialog( shell, props, transMeta, optMeta, getPushDownFactories() );
         if ( dialog.open() == SWT.OK ) {
           optimizationList.add( optMeta );
           refreshOptimizationList();
@@ -403,7 +407,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     fdOptTable.right = new FormAttachment( 100, -margin );
     fdOptTable.bottom = new FormAttachment( 90, -margin );
     optimizationListTable.setLayoutData( fdOptTable );
-
 
     testButton = new Button( optimizationGroup, SWT.PUSH );
     props.setLook( testButton );
@@ -432,7 +435,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     fdDataServiceComp.right = new FormAttachment( 100, 0 );
     fdDataServiceComp.bottom = new FormAttachment( 100, 0 );
     wDataServiceComp.setLayoutData( fdDataServiceComp );
-
 
     wDataServiceComp.layout();
     wDataServiceTab.setControl( wDataServiceComp );
@@ -521,22 +523,22 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
 
   private String[] getDataServiceElementNames( Shell shell, IMetaStore metaStore ) {
     try {
-      List<DataServiceMeta> dataServices = DataServiceMeta.getMetaStoreFactory( metaStore ).getElements();
-      String[] names = new String[ dataServices.size() ];
+      List<DataServiceMeta> dataServices = metaStoreUtil.getMetaStoreFactory( metaStore ).getElements();
+      String[] names = new String[dataServices.size()];
       int i = 0;
       for ( DataServiceMeta dataService : dataServices ) {
-        names[ i ] = dataService.getName();
+        names[i] = dataService.getName();
         i++;
       }
       return names;
     } catch ( Exception e ) {
       KettleRepositoryLostException krle = KettleRepositoryLostException.lookupStackStrace( e );
-      if(krle != null) {
+      if ( krle != null ) {
         throw krle;
       }
       e.printStackTrace();
       new ErrorDialog( shell, "Error", "Error getting list of data services", e );
-      return new String[]{};
+      return new String[] { };
     }
   }
 
@@ -545,7 +547,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     try {
       // Data service metadata
       //
-      DataServiceMeta dataService = DataServiceMetaStoreUtil.fromTransMeta( transMeta, transMeta.getMetaStore() );
+      DataServiceMeta dataService = metaStoreUtil.fromTransMeta( transMeta, transMeta.getMetaStore() );
 
       if ( dataService != null ) {
         optimizationList = dataService.getPushDownOptimizationMeta();
@@ -570,7 +572,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     }
     return "";
   }
-
 
   private void refreshOptimizationList() {
     optimizationListTable.clearAll();
@@ -612,7 +613,6 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     }
   }
 
-
   public DataServiceMeta getDataServiceMeta() throws KettleException {
     DataServiceMeta dataService = new DataServiceMeta();
     String serviceName = wServiceName.getText().trim();
@@ -630,7 +630,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     for ( int i = 0; i < optimizationList.size(); i++ ) {
       PushDownOptimizationMeta optMeta = optimizationList.get( i );
       TableItem tableItem = optimizationListTable.table.getItem( i );
-      String text = tableItem.getText( ENABLED_COMBO_COLUMN );
+      String text = tableItem.getText( 4 );
       optMeta.setEnabled( text.equals( BaseMessages.getString( PKG, "TransDialog.Enabled.Value" ) ) );
     }
 
@@ -642,7 +642,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
   public void ok( TransMeta transMeta ) throws KettleException {
 
     try {
-      DataServiceMetaStoreUtil.toTransMeta( transMeta, transMeta.getMetaStore(), getDataServiceMeta(), true );
+      metaStoreUtil.toTransMeta( transMeta, transMeta.getMetaStore(), getDataServiceMeta() );
       transMeta.setChanged();
     } catch ( Exception e ) {
       throw new KettleException( "Error reading data service metadata", e );
@@ -659,7 +659,7 @@ public class DataServiceTransDialogTab implements TransDialogPluginInterface {
     return autoOptimizationServices;
   }
 
-  public void setAutoOptimizationServices( List<AutoOptimizationService> autoOptimizationServices ) {
-    this.autoOptimizationServices = autoOptimizationServices;
+  public List<PushDownFactory> getPushDownFactories() {
+    return metaStoreUtil.getPushDownFactories();
   }
 }

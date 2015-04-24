@@ -23,8 +23,8 @@
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -36,91 +36,61 @@ import com.pentaho.metaverse.api.ILineageClient;
 import com.pentaho.metaverse.api.StepFieldOperations;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.ValueMeta;
-import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.StepMeta;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.RETURNS_DEFAULTS;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+@RunWith( MockitoJUnitRunner.class )
+@SuppressWarnings( "unchecked" )
 public class AutoParameterGenerationServiceTest {
   public static final String NAME = "testService";
   public static final String SERVICE_STEP = "Service Step";
-  public static final List<String> SERVICE_FIELDS = ImmutableList.of("field1", "field2", "field3");
-  AutoParameterGenerationService service;
-  ILineageClient lineageClient;
-  private ParameterGenerationServiceProvider serviceProvider;
+  public static final String[] SERVICE_FIELDS = new String[] { "field1", "field2", "field3" };
+
+  @InjectMocks private AutoParameterGenerationService service;
+
+  @Mock private ILineageClient lineageClient;
+  @Mock private TransMeta transMeta;
+  @Mock private ParameterGenerationFactory serviceProvider;
+  @Mock private ParameterGeneration parameterGeneration;
+  private DataServiceMeta dataService;
 
   @Before
   public void setUp() throws Exception {
-    lineageClient = mock( ILineageClient.class );
-    serviceProvider = mock( ParameterGenerationServiceProvider.class );
-    service = new AutoParameterGenerationService( lineageClient, serviceProvider );
+    dataService = new DataServiceMeta( NAME, SERVICE_STEP );
+    RowMeta serviceRowMeta = mock( RowMeta.class );
+
+    when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( serviceRowMeta );
+    when( serviceRowMeta.getFieldNames() ).thenReturn( SERVICE_FIELDS );
+    when( serviceProvider.createPushDown() ).thenReturn( parameterGeneration );
   }
 
   @Test
   public void testApply() throws Exception {
-    // Prepare mocks
-    DataServiceMeta dataServiceMeta = new DataServiceMeta( NAME, SERVICE_STEP, false, false, null );
-
-    TransMeta transMeta = mock( TransMeta.class );
-    RowMeta rowMeta = new RowMeta();
-    for ( String serviceField : SERVICE_FIELDS ) {
-      rowMeta.addValueMeta( new ValueMeta( serviceField, ValueMetaInterface.TYPE_STRING ) );
-    }
-    when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( rowMeta );
-
-    SourceLineageMap sourceLineageMap = mock( SourceLineageMap.class, new Answer() {
-      @Override public Object answer( InvocationOnMock invocationOnMock ) throws Throwable {
-        // Return self (fluent-ish interface)
-        Object mock = invocationOnMock.getMock();
-        if ( invocationOnMock.getMethod().getReturnType().isInstance( mock ) ) {
-          return mock;
-        } else {
-          return RETURNS_DEFAULTS.answer( invocationOnMock );
-        }
-      }
-    } );
-
-    AutoParameterGenerationService spy = spy( service );
-    Map<String, Set<List<StepFieldOperations>>> operationPaths = Maps.newHashMap();
-    List<PushDownOptimizationMeta> expectedOptimizations = Lists.newArrayList();
-
-    when( lineageClient.getOperationPaths( transMeta, SERVICE_STEP, SERVICE_FIELDS ) ).thenReturn( operationPaths );
-    doReturn( sourceLineageMap ).when( spy ).convertToTable( same( operationPaths ) );
-    when( sourceLineageMap.generateOptimizationList() ).thenReturn( expectedOptimizations );
-
-    // Execute apply
-    List<PushDownOptimizationMeta> pushDownOptimizations = spy.apply( transMeta, dataServiceMeta );
-
-    // Verify
-    assertThat( pushDownOptimizations, sameInstance( expectedOptimizations ) );
-
-    verify( sourceLineageMap ).filterChangedValues();
-    verify( sourceLineageMap ).filterExistingOptimizations( dataServiceMeta );
-    verify( sourceLineageMap ).filterSupportedInputs( transMeta, serviceProvider );
-    verify( sourceLineageMap ).generateOptimizationList();
-    verifyNoMoreInteractions( sourceLineageMap );
-  }
-
-  @Test
-  public void testConvertToTable() throws Exception {
     Map<String, Set<List<StepFieldOperations>>> operationPaths;
     List<StepFieldOperations> field1_input1 = Lists.newArrayList(
       new StepFieldOperations( "Input 1", "field1_origin", null ),
@@ -142,16 +112,52 @@ public class AutoParameterGenerationServiceTest {
     operationPaths.put( "field1", ImmutableSet.of( field1_input1 ) );
     operationPaths.put( "field2", ImmutableSet.of( field2_input1, field2_input2 ) );
 
-    SourceLineageMap table = service.convertToTable( operationPaths );
+    when( lineageClient.getOperationPaths(
+        same( transMeta ), eq( SERVICE_STEP ),
+        eq( ImmutableList.copyOf( SERVICE_FIELDS ) ) )
+    ).thenReturn( operationPaths );
 
-    SourceLineageMap expected = new SourceLineageMap(
-      ImmutableSetMultimap.<String, List<StepFieldOperations>>builder().
-        put( "Input 1", field1_input1 ).
-        put( "Input 1", field2_input1 ).
-        put( "Input 2", field2_input2 ).
-        build()
+    StepMeta input1Meta = mock( StepMeta.class );
+    when( transMeta.findStep( "Input 1" ) ).thenReturn( input1Meta );
+    when( serviceProvider.supportsStep( input1Meta ) ).thenReturn( true );
+
+    List<PushDownOptimizationMeta> optimizationMetaList = service.apply( transMeta, dataService );
+    assertThat( optimizationMetaList, contains( allOf(
+      hasProperty( "stepName", equalTo( "Input 1" ) ),
+      hasProperty( "type", is( parameterGeneration ) )
+    ) ) );
+    verify( parameterGeneration ).setParameterName( anyString() );
+    verify( parameterGeneration ).createFieldMapping( "field2_origin", "field2" );
+  }
+
+  @Test
+  public void testApplyWithExisting() throws Exception {
+    Map<String, Set<List<StepFieldOperations>>> operationPaths;
+    List<StepFieldOperations> inputOperations = ImmutableList.of(
+      new StepFieldOperations( "Input", "field", null )
     );
-    assertThat( table, equalTo( expected ) );
+    operationPaths = ImmutableMap.of( "Input 1", Collections.singleton( inputOperations ) );
+
+    when( lineageClient.getOperationPaths(
+        same( transMeta ), eq( SERVICE_STEP ),
+        eq( ImmutableList.copyOf( SERVICE_FIELDS ) ) )
+    ).thenReturn( operationPaths );
+
+    StepMeta input1Meta = mock( StepMeta.class );
+    when( transMeta.findStep( "Input" ) ).thenReturn( input1Meta );
+    when( serviceProvider.supportsStep( input1Meta ) ).thenReturn( true );
+
+    assertThat( service.parametrizedSteps( dataService ), empty() );
+    assertThat( service.apply( transMeta, dataService ), hasSize( 1 ) );
+
+    PushDownOptimizationMeta optimizationMeta = new PushDownOptimizationMeta();
+    optimizationMeta.setName( "Existing PDO" );
+    optimizationMeta.setStepName( "Input" );
+    optimizationMeta.setType( mock( ParameterGeneration.class ) );
+    dataService.setPushDownOptimizationMeta( Lists.newArrayList( optimizationMeta ) );
+
+    assertThat( service.parametrizedSteps( dataService ), contains( "Input" ) );
+    assertThat( service.apply( transMeta, dataService ), empty() );
   }
 
   @Test

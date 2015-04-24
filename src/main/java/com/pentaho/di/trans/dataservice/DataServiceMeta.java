@@ -32,10 +32,8 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
-import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.util.PentahoDefaults;
 
 import java.util.ArrayList;
@@ -77,7 +75,7 @@ public class DataServiceMeta {
   protected String id;
 
   @MetaStoreAttribute( key = DATA_SERVICE_CACHE_METHOD )
-  protected ServiceCacheMethod cacheMethod;
+  protected ServiceCacheMethod cacheMethod = ServiceCacheMethod.None;
 
   @MetaStoreAttribute( key = DATA_SERVICE_CACHE_MAX_AGE_MINUTES )
   protected int cacheMaxAgeMinutes;
@@ -85,27 +83,17 @@ public class DataServiceMeta {
   @MetaStoreAttribute( key = PUSH_DOWN_OPT_META  )
   protected List<PushDownOptimizationMeta> pushDownOptimizationMeta;
 
-  public static MetaStoreFactory<DataServiceMeta> getMetaStoreFactory( IMetaStore metaStore ) {
-    MetaStoreFactory<DataServiceMeta> dataServiceMetaFactory = new MetaStoreFactory<DataServiceMeta>(
-      DataServiceMeta.class, metaStore, PentahoDefaults.NAMESPACE );
-    return dataServiceMetaFactory;
-  }
-
   public DataServiceMeta() {
-    this( null, null, true, false, ServiceCacheMethod.None );
+    this( null, null );
   }
 
   /**
    * @param name
    * @param stepname
-   * @param output
-   * @param optimisationAllowed
    */
-  public DataServiceMeta( String name, String stepname, boolean output, boolean optimisationAllowed,
-                          ServiceCacheMethod cacheMethod ) {
+  public DataServiceMeta( String name, String stepname ) {
     this.name = name;
     this.stepname = stepname;
-    this.cacheMethod = cacheMethod;
     pushDownOptimizationMeta = new ArrayList<PushDownOptimizationMeta>();
   }
 

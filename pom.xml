@@ -195,7 +195,12 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Import-Package>org.pentaho.di.osgi,*</Import-Package>
+                        <Import-Package>
+                            org.pentaho.di.osgi,
+                            org.pentaho.di.core.plugins,
+                            org.pentaho.di.core.extension,
+                            *
+                        </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                     </instructions>

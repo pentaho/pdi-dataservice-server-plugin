@@ -20,14 +20,15 @@
  * explicitly covering such access.
  */
 
-package com.pentaho.di.trans.dataservice.optimization.paramgen;
+package com.pentaho.di.trans.dataservice.optimization;
 
-import org.pentaho.di.trans.step.StepMeta;
+/**
+ * @author nhudak
+ */
+public interface PushDownFactory {
+  String getName();
+  Class<? extends PushDownType> getType();
 
-public interface ParameterGenerationServiceFactory {
-
-  ParameterGenerationService getService( StepMeta stepMeta );
-
-  boolean supportsStep( StepMeta stepMeta );
-
+  PushDownType createPushDown();
+  PushDownOptTypeForm createPushDownOptTypeForm();
 }

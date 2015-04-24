@@ -27,11 +27,12 @@ import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationExcepti
 import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
@@ -54,22 +55,38 @@ import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 
 import java.sql.Connection;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.*;
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.AND;
+import static com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.OR;
+import static com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.newCondition;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
+@RunWith( MockitoJUnitRunner.class )
 public class TableInputParameterGenerationTest {
 
   public static final String MOCK_PARTITION_ID = "Mock Partition ID";
   public static final String MOCK_CONNECTION_GROUP = "Mock Connection Group";
+  private ParameterGenerationFactory factory =
+    new ParameterGenerationFactory( Collections.<ParameterGenerationServiceFactory>emptyList() );
   @Mock private TableInput stepInterface;
   @Mock private DatabaseMeta databaseMeta;
   @Mock private ValueMetaResolver resolver;
@@ -82,8 +99,6 @@ public class TableInputParameterGenerationTest {
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks( this );
-
     // Setup Mock Step and Data
     data = new TableInputData();
     when( stepInterface.getLogLevel() ).thenReturn( LogLevel.NOTHING );
@@ -136,7 +151,7 @@ public class TableInputParameterGenerationTest {
         + "FROM Department, Employee "
         + "WHERE Employee.DepartmentId = Department.DepartmentId AND ${EMPLOYEE_FILTER} ";
 
-    ParameterGeneration employeeFilterParamGen = new ParameterGeneration();
+    ParameterGeneration employeeFilterParamGen = factory.createPushDown();
     employeeFilterParamGen.setParameterName( "EMPLOYEE_FILTER" );
 
     // Employee.Grade = "G7"
@@ -186,7 +201,7 @@ public class TableInputParameterGenerationTest {
 
   @Test
   public void testPreview() throws KettleValueException, PushDownOptimizationException {
-    ParameterGeneration param = new ParameterGeneration();
+    ParameterGeneration param = factory.createPushDown();
     param.setParameterName( "param" );
 
     Condition employeeFilter = newCondition( "fooField", "barValue" );
