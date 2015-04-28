@@ -24,9 +24,7 @@ package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
-import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
-import com.pentaho.di.trans.dataservice.optimization.mongod.MongoUtil;
 import com.pentaho.di.trans.dataservice.optimization.mongod.MongodbPredicate;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
@@ -35,7 +33,6 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInput;
-import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.mongo.wrapper.field.MongoField;
 import org.w3c.dom.Document;
