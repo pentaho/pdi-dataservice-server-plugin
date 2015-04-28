@@ -24,7 +24,9 @@ package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
 import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import com.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+import com.pentaho.di.trans.dataservice.optimization.mongod.MongoUtil;
 import com.pentaho.di.trans.dataservice.optimization.mongod.MongodbPredicate;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
@@ -32,6 +34,10 @@ import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.steps.mongodbinput.MongoDbInput;
+import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
+import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
+import org.pentaho.mongo.wrapper.field.MongoField;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -42,6 +48,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MongodbInputParameterGeneration implements ParameterGenerationService {
 
@@ -62,8 +70,9 @@ public class MongodbInputParameterGeneration implements ParameterGenerationServi
     if ( !"MongoDbInput".equals( stepInterface.getStepMeta().getTypeId() ) ) {
       throw new PushDownOptimizationException( "Unable to push down to type " + stepInterface.getClass() );
     }
+
     stepInterface.setVariable( parameterGeneration.getParameterName(),
-      getMongodbPredicate( condition ).asFilterCriteria() );
+      getMongodbPredicate( condition, getFieldMappings( stepInterface ) ).asFilterCriteria() );
   }
 
   @Override
@@ -84,7 +93,7 @@ public class MongodbInputParameterGeneration implements ParameterGenerationServi
         return impactInfo;
       }
 
-      String predicate = getMongodbPredicate( pushDownCondition ).asFilterCriteria();
+      String predicate = getMongodbPredicate( pushDownCondition,  getFieldMappings( stepInterface ) ).asFilterCriteria();
       String modifiedQuery = parameterGeneration.setQueryParameter( jsonQuery, predicate );
       if ( !modifiedQuery.equals( jsonQuery ) ) {
         impactInfo.setQueryAfterOptimization( modifiedQuery );
@@ -119,11 +128,23 @@ public class MongodbInputParameterGeneration implements ParameterGenerationServi
     return jsonQuery;
   }
 
+  private Map<String, String> getFieldMappings( StepInterface stepInterface ) {
+    Map<String, String> fieldMap = new HashMap<String, String>();
+
+    MongoDbInput mongoDbInput = (MongoDbInput) stepInterface;
+    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) mongoDbInput.getStepMeta().getStepMetaInterface();
+    for ( MongoField mongoField : mongoDbInputMeta.getMongoFields() ) {
+      fieldMap.put( mongoField.getName(), mongoField.getPath() );
+    }
+
+    return fieldMap;
+  }
+
   private void logFailedToGetJson( String xml, Exception e ) {
     log.logError( "Failed to read json_query from xml:  " + xml, e );
   }
 
-  protected MongodbPredicate getMongodbPredicate( Condition condition ) {
-    return new MongodbPredicate( condition, valueMetaResolver );
+  protected MongodbPredicate getMongodbPredicate( Condition condition, Map<String, String> fieldMappings ) {
+    return new MongodbPredicate( condition, valueMetaResolver, fieldMappings );
   }
 }

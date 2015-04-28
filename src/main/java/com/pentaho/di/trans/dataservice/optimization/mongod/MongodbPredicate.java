@@ -32,6 +32,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.ValueMetaAndData;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class translates org.pentaho.di.core.Condition objects to Mongodb
@@ -43,10 +44,12 @@ public class MongodbPredicate {
   private static final String MATCH = "$match";
   private final ValueMetaResolver valueMetaResolver;
   private Condition condition;
+  private Map<String, String> fieldMappings;
 
-  public MongodbPredicate( Condition condition, ValueMetaResolver resolver ) {
+  public MongodbPredicate( Condition condition, ValueMetaResolver resolver, Map<String, String> fieldMappings ) {
     this.valueMetaResolver = resolver;
     this.condition = condition;
+    this.fieldMappings = fieldMappings;
   }
 
   public String asMatch() throws PushDownOptimizationException {
@@ -72,7 +75,7 @@ public class MongodbPredicate {
   private QueryBuilder applyAtomicCondition( Condition condition, QueryBuilder queryBuilder )
     throws PushDownOptimizationException {
     MongoFunc func = MongoFunc.getMongoFunc( condition.getFunction() );
-    String fieldName = condition.getLeftValuename();
+    String fieldName = getResolvedFieldName( condition.getLeftValuename() );
     Object value = getResolvedValue( condition );
     if ( condition.isNegated() ) {
       func.negate( queryBuilder, fieldName, value );
@@ -80,6 +83,16 @@ public class MongodbPredicate {
       func.affirm( queryBuilder, fieldName, value );
     }
     return queryBuilder;
+  }
+
+  private String getResolvedFieldName( String fieldName ) {
+
+    String resolvedFieldName = fieldMappings.get( fieldName );
+    if ( resolvedFieldName != null ) {
+      return resolvedFieldName;
+    }
+
+    return fieldName;
   }
 
   /**
