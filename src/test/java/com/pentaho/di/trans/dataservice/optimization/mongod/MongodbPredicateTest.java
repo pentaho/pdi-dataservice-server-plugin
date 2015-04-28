@@ -35,12 +35,16 @@ import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQLCondition;
 import org.pentaho.di.core.sql.SQLFields;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.Assert.*;
 
 public class MongodbPredicateTest {
 
   private RowMeta rowMeta = new RowMeta();
   private ValueMetaResolver resolver;
+  private Map<String, String> fieldMappings;
 
   @Before
   public void setup() {
@@ -51,6 +55,7 @@ public class MongodbPredicateTest {
         ValueMetaInterface.TYPE_INTEGER, 7 ) );
     }
     resolver = new ValueMetaResolver( rowMeta );
+    fieldMappings = new HashMap<String, String>();
   }
 
   @Test
@@ -156,11 +161,11 @@ public class MongodbPredicateTest {
   }
 
   private String asMatch( Condition condition ) throws KettleException {
-    return new MongodbPredicate( condition, resolver ).asMatch();
+    return new MongodbPredicate( condition, resolver, fieldMappings ).asMatch();
   }
 
   private String asFilter( Condition condition ) throws KettleException {
-    return new MongodbPredicate( condition, resolver ).asFilterCriteria();
+    return new MongodbPredicate( condition, resolver, fieldMappings ).asFilterCriteria();
   }
 
   private Condition condition( String sql ) throws KettleSQLException {

@@ -35,6 +35,8 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 
+import java.util.Map;
+
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 import static org.hamcrest.core.StringContains.containsString;
@@ -143,7 +145,7 @@ public class MongodbInputParameterGenerationTest extends MongodbInputParameterGe
 
 
   @Override
-  protected MongodbPredicate getMongodbPredicate( Condition condition ) {
+  protected MongodbPredicate getMongodbPredicate( Condition condition, Map<String, String> fieldMappings ) {
     return mongodbPredicate;
   }
 }
