@@ -52,8 +52,8 @@ import java.util.List;
 public class PushDownOptDialog {
 
   public static final int TEXT_WIDTH = 250;
-  private static final int DIALOG_WIDTH = 691;
-  private static final int DIALOG_HEIGHT = 522;
+  private static final int DIALOG_WIDTH = 700;
+  private static final int DIALOG_HEIGHT = 615;
   private final PropsUI props;
   private final TransMeta transMeta;
   private PushDownOptimizationMeta optimizationMeta;
@@ -99,10 +99,9 @@ public class PushDownOptDialog {
 
     Label nameLabel = new Label( shell, SWT.NONE );
     props.setLook( nameLabel );
-    nameLabel.setAlignment( SWT.RIGHT );
     FormData fd_nameLabel = new FormData();
-    fd_nameLabel.top = new FormAttachment( 0, 10 );
-    fd_nameLabel.left = new FormAttachment( 30, 0 );
+    fd_nameLabel.top = new FormAttachment( 0, Const.FORM_MARGIN * 3 );
+    fd_nameLabel.left = new FormAttachment( 0, Const.FORM_MARGIN * 3 );
     nameLabel.setLayoutData( fd_nameLabel );
     nameLabel.setText( BaseMessages.getString( PKG, "PushDownOptDialog.Name.Label" ) );
 
@@ -110,35 +109,37 @@ public class PushDownOptDialog {
     props.setLook( nameText );
     nameText.setText( optimizationMeta.getName() );
     FormData fd_nameText = new FormData();
-    fd_nameText.right = new FormAttachment( nameLabel, TEXT_WIDTH, SWT.RIGHT );
-    fd_nameText.top = new FormAttachment( 0, 10 );
-    fd_nameText.left = new FormAttachment( nameLabel, Const.MARGIN );
+    fd_nameText.top = new FormAttachment( nameLabel, Const.FORM_MARGIN );
+    fd_nameText.left = new FormAttachment( 0, Const.FORM_MARGIN * 3 );
+    fd_nameText.width = TEXT_WIDTH;
     nameText.setLayoutData( fd_nameText );
 
     Label typeLabel = new Label( shell, SWT.NONE );
     props.setLook( typeLabel );
-    typeLabel.setAlignment( SWT.RIGHT );
+    typeLabel.setAlignment( SWT.LEFT );
     FormData fd_lblType = new FormData();
-    fd_lblType.top = new FormAttachment( nameLabel, 17 );
-    fd_lblType.right = new FormAttachment( nameLabel, 0, SWT.RIGHT );
+    fd_lblType.top = new FormAttachment( nameText, Const.FORM_MARGIN * 2 );
+    fd_lblType.left = new FormAttachment( 0, Const.FORM_MARGIN * 3 );
     typeLabel.setLayoutData( fd_lblType );
     typeLabel.setText( BaseMessages.getString( PKG, "PushDownOptDialog.OptimizationMethod.Label" ) );
 
     Combo optimizationMethodCombo = new Combo( shell, SWT.NONE );
     props.setLook( optimizationMethodCombo );
     FormData fd_typeCombo = new FormData();
-    fd_typeCombo.right = fd_nameText.right;
-    fd_typeCombo.top = new FormAttachment( nameText, Const.MARGIN );
-    fd_typeCombo.left = fd_nameText.left;
+    fd_typeCombo.top = new FormAttachment( typeLabel, Const.FORM_MARGIN );
+    fd_typeCombo.left = new FormAttachment( 0, Const.FORM_MARGIN * 3 );
     optimizationMethodCombo.setLayoutData( fd_typeCombo );
+
+    Label separator = new Label( shell, SWT.HORIZONTAL | SWT.SEPARATOR );
+    props.setLook( separator );
 
     final TypePlaceholder typePlaceholder = new TypePlaceholder( shell, optimizationMethodCombo, SWT.NONE );
     props.setLook( typePlaceholder );
     FormData fd_typePlaceholder = new FormData();
-    fd_typePlaceholder.top = new FormAttachment( optimizationMethodCombo, 34 );
-    fd_typePlaceholder.left = new FormAttachment( 0, 10 );
-    fd_typePlaceholder.bottom = new FormAttachment( 90, 0 );
-    fd_typePlaceholder.right = new FormAttachment( 100, -10 );
+    fd_typePlaceholder.top = new FormAttachment( optimizationMethodCombo, Const.FORM_MARGIN * 2 );
+    fd_typePlaceholder.left = new FormAttachment( 0, Const.FORM_MARGIN * 3 );
+    fd_typePlaceholder.right = new FormAttachment( 100, -Const.FORM_MARGIN * 3 );
+    fd_typePlaceholder.bottom = new FormAttachment( separator, -Const.FORM_MARGIN * 3 );
     typePlaceholder.setLayoutData( fd_typePlaceholder );
 
     typePlaceholder.select( optimizationMeta.getType() );
@@ -184,16 +185,25 @@ public class PushDownOptDialog {
       }
     } );
 
-    FormData okFormData = new FormData();
     FormData cancelFormData = new FormData();
+    cancelFormData.width = 80;
+    cancelFormData.bottom = new FormAttachment( 100, -Const.FORM_MARGIN * 3 );
+    cancelFormData.right = new FormAttachment( 100, -Const.FORM_MARGIN * 3 );
 
-    okFormData.top = new FormAttachment( typePlaceholder, Const.MARGIN * 2 );
-    okFormData.right = new FormAttachment( 50, -Const.MARGIN / 2 );
-    cancelFormData.top = okFormData.top;
-    cancelFormData.left = new FormAttachment( 50, -Const.MARGIN / 2 );
+    FormData okFormData = new FormData();
+    okFormData.width = 80;
+    okFormData.bottom = new FormAttachment( 100, -Const.FORM_MARGIN * 3 );
+    okFormData.right = new FormAttachment( cancelButton, -Const.MARGIN );
 
     okButton.setLayoutData( okFormData );
     cancelButton.setLayoutData( cancelFormData );
+
+    FormData fd_separator = new FormData();
+    fd_separator.bottom = new FormAttachment( okButton, -Const.FORM_MARGIN * 3 );
+    fd_separator.left = new FormAttachment( 0, Const.FORM_MARGIN * 3 );
+    fd_separator.right = new FormAttachment( 100, -Const.FORM_MARGIN * 3 );
+    separator.setLayoutData( fd_separator );
+
   }
 
   private void setShellPos( Shell shell ) {
@@ -220,30 +230,30 @@ public class PushDownOptDialog {
       layout = new StackLayout();
       setLayout( layout );
 
-      String[] typeNames = new String[pushDownFactories.size()];
-      typeForms = new PushDownOptTypeForm[pushDownFactories.size()];
+      String[] typeNames = new String[ pushDownFactories.size() ];
+      typeForms = new PushDownOptTypeForm[ pushDownFactories.size() ];
       for ( int n = 0; n < pushDownFactories.size(); n++ ) {
         PushDownFactory pushDownFactory = pushDownFactories.get( n );
 
-        typeNames[n] = pushDownFactory.getName();
-        typeForms[n] = pushDownFactory.createPushDownOptTypeForm();
+        typeNames[ n ] = pushDownFactory.getName();
+        typeForms[ n ] = pushDownFactory.createPushDownOptTypeForm();
 
         Composite typeForm = new Composite( this, SWT.NONE );
         props.setLook( typeForm );
         typeForm.setLayout( new FormLayout() );
-        typeForms[n].populateForm( typeForm, props, transMeta );
+        typeForms[ n ].populateForm( typeForm, props, transMeta );
       }
       typeSelector.setItems( typeNames );
     }
 
     void select( int i ) {
       typeSelector.select( i );
-      Control control = getChildren()[i];
+      Control control = getChildren()[ i ];
       if ( layout.topControl != control ) {
         layout.topControl = control;
         layout();
       }
-      typeForms[i].setValues( optimizationMeta, transMeta );
+      typeForms[ i ].setValues( optimizationMeta, transMeta );
     }
 
     void select( PushDownType type ) {
@@ -257,7 +267,7 @@ public class PushDownOptDialog {
     }
 
     PushDownOptTypeForm getSelectedTypeForm() {
-      return typeForms[typeSelector.getSelectionIndex()];
+      return typeForms[ typeSelector.getSelectionIndex() ];
     }
   }
 }

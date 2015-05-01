@@ -68,7 +68,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
       errors.add( BaseMessages.getString( PKG, "ParamGenOptForm.MissingParamName.Message" ) );
     }
     if ( !( stepList.getSelection().length == 1
-       && stepList.getSelection()[ 0 ].trim().length() > 0 ) ) {
+      && stepList.getSelection()[ 0 ].trim().length() > 0 ) ) {
       errors.add( BaseMessages.getString( PKG, "ParamGenOptForm.MissingStep.Message" ) );
     }
     return errors;
@@ -90,7 +90,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     stepList.setItems( getSupportedSteps( transMeta ) );
     setSelectedStep( optimizationMeta.getStepName() );
 
-    if ( optimizationMeta.getType() instanceof ParameterGeneration) {
+    if ( optimizationMeta.getType() instanceof ParameterGeneration ) {
       ParameterGeneration paramType = (ParameterGeneration) optimizationMeta.getType();
       setSourceTargetValues( paramType );
       paramNameText.setText( paramType.getParameterName() );
@@ -114,9 +114,8 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     Label stepNameLabel = new Label( paramGenGroup, SWT.NONE );
     props.setLook( stepNameLabel );
     FormData labelStepNameFormData = new FormData();
-    labelStepNameFormData.top = new FormAttachment( 5 );
-    labelStepNameFormData.left = new FormAttachment( 0, Const.MARGIN );
-
+    labelStepNameFormData.top = new FormAttachment( 0, Const.FORM_MARGIN * 3 );
+    labelStepNameFormData.left = new FormAttachment( 0, Const.FORM_MARGIN * 2 );
 
     stepNameLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.StepName.Label" ) );
     stepNameLabel.setLayoutData( labelStepNameFormData );
@@ -124,8 +123,8 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     props.setLook( stepList );
 
     FormData fdStepList = new FormData();
-    fdStepList.top = new FormAttachment( stepNameLabel, Const.MARGIN * 2 );
-    fdStepList.width = 200;
+    fdStepList.top = new FormAttachment( stepNameLabel, Const.FORM_MARGIN );
+    fdStepList.width = 250;
     fdStepList.height = 100;
     fdStepList.left = labelStepNameFormData.left;
     stepList.setLayoutData( fdStepList );
@@ -133,18 +132,16 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     Label definitionLabel = new Label( paramGenGroup, SWT.NONE );
     props.setLook( definitionLabel );
     FormData fdDefinition = new FormData();
-    fdDefinition.top = new FormAttachment( stepList, Const.MARGIN * 2 );
-    fdDefinition.left = labelStepNameFormData.left;
+    fdDefinition.top = new FormAttachment( stepList, Const.FORM_MARGIN * 3 );
+    fdDefinition.left = new FormAttachment( 0, Const.FORM_MARGIN * 2 );
     definitionLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.Definition.Label" ) );
     definitionLabel.setLayoutData( fdDefinition );
 
     Label parameterNameLabel = new Label( paramGenGroup, SWT.NONE );
     props.setLook( parameterNameLabel );
-    parameterNameLabel.setAlignment( SWT.RIGHT );
     FormData fdParamNameLabel = new FormData();
-    fdParamNameLabel.left = new FormAttachment( stepList, Const.MARGIN * 4 );
-    fdParamNameLabel.top = fdStepList.top;
-    fdParamNameLabel.width = 130;
+    fdParamNameLabel.left = new FormAttachment( stepList, Const.FORM_MARGIN * 9 );
+    fdParamNameLabel.top = new FormAttachment( 0, Const.FORM_MARGIN * 3 );
     parameterNameLabel.setText( BaseMessages.getString( PKG, "ParamGenOptForm.ParamName.Label" ) );
     parameterNameLabel.setLayoutData( fdParamNameLabel );
 
@@ -152,34 +149,34 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
     props.setLook( paramNameText );
 
     FormData paramNameFormData = new FormData();
-    paramNameFormData.left = new FormAttachment( parameterNameLabel, Const.MARGIN * 2 );
-    paramNameFormData.top = fdStepList.top;
-    paramNameFormData.right = new FormAttachment( 100, -Const.MARGIN );
+    paramNameFormData.left = new FormAttachment( stepList, Const.FORM_MARGIN * 9 );
+    paramNameFormData.top = new FormAttachment( parameterNameLabel, Const.FORM_MARGIN );
+    paramNameFormData.right = new FormAttachment( 100, -Const.FORM_MARGIN * 2 );
     paramNameText.setLayoutData( paramNameFormData );
 
     ColumnInfo[] colinf =
-      new ColumnInfo[]{
+      new ColumnInfo[] {
         new ColumnInfo(
           BaseMessages.getString( PKG, "ParamGenOptForm.SourceOutputField.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false ),
         new ColumnInfo(
           BaseMessages.getString( PKG, "ParamGenOptForm.SourceStepField.Label" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false )
-//  NO FILTER ALLOWED COMBO YET
-//        ,
-//        new ColumnInfo(
-//          "Filter Allowed",
-//          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[]{ "Yes", "No" }, false )
+        //  NO FILTER ALLOWED COMBO YET
+        //        ,
+        //        new ColumnInfo(
+        //          "Filter Allowed",
+        //          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[]{ "Yes", "No" }, false )
       };
 
     definitionTable = new TableView(
       transMeta, paramGenGroup, SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION, colinf, 1, null, props );
     props.setLook( definitionTable );
     FormData fdDefTable = new FormData();
-    fdDefTable.top = new FormAttachment( definitionLabel, Const.MARGIN * 2 );
-    fdDefTable.left = new FormAttachment( 0, Const.MARGIN );
-    fdDefTable.right = new FormAttachment( 100, -Const.MARGIN );
-    fdDefTable.bottom = new FormAttachment( 100, -Const.MARGIN );
+    fdDefTable.top = new FormAttachment( definitionLabel, Const.FORM_MARGIN );
+    fdDefTable.left = new FormAttachment( 0, Const.FORM_MARGIN * 2 );
+    fdDefTable.right = new FormAttachment( 100, -Const.FORM_MARGIN * 2 );
+    fdDefTable.bottom = new FormAttachment( 100, -Const.FORM_MARGIN * 3 );
     definitionTable.setLayoutData( fdDefTable );
   }
 
@@ -198,7 +195,7 @@ public class ParamGenOptForm implements PushDownOptTypeForm {
       return;
     }
     for ( int i = 0; i < stepList.getItems().length; i++ ) {
-      if ( stepName.equals(stepList.getItem( i ) ) ) {
+      if ( stepName.equals( stepList.getItem( i ) ) ) {
         stepList.setSelection( i );
         return;
       }
