@@ -75,7 +75,7 @@ public class PushDownOptDialog {
 
   public int open() {
     Display display = parent.getDisplay();
-    Shell shell = new Shell( display, SWT.SHELL_TRIM );
+    Shell shell = new Shell( display, SWT.APPLICATION_MODAL | SWT.SHELL_TRIM );
 
     layoutDialog( shell );
 
@@ -184,36 +184,15 @@ public class PushDownOptDialog {
       }
     } );
 
-    Button editButton = new Button( shell, SWT.NONE );
-    props.setLook( editButton );
-    editButton.setText( "Edit Step" );
-    editButton.addSelectionListener( new SelectionAdapter() {
-      @Override
-      public void widgetSelected( SelectionEvent selectionEvent ) {
-        PushDownOptimizationMeta pushDownOptimizationMeta = new PushDownOptimizationMeta();
-        PushDownOptTypeForm typeForm = typePlaceholder.getSelectedTypeForm();
-        typeForm.applyOptimizationParameters( pushDownOptimizationMeta );
-        StepMeta step = transMeta.findStep( pushDownOptimizationMeta.getStepName() );
-
-        if ( step != null ) {
-          Spoon.getInstance().editStep( transMeta, step );
-        }
-      }
-    } );
-
     FormData okFormData = new FormData();
-    FormData editFormData = new FormData();
     FormData cancelFormData = new FormData();
 
     okFormData.top = new FormAttachment( typePlaceholder, Const.MARGIN * 2 );
-    okFormData.right = new FormAttachment( editButton, Const.MARGIN * -2 );
-    editFormData.top = okFormData.top;
-    editFormData.right = new FormAttachment( 50, editButton.computeSize( SWT.DEFAULT, SWT.DEFAULT ).x / 2 );
+    okFormData.right = new FormAttachment( 50, -Const.MARGIN / 2 );
     cancelFormData.top = okFormData.top;
-    cancelFormData.left = new FormAttachment( editButton, Const.MARGIN * 2 );
+    cancelFormData.left = new FormAttachment( 50, -Const.MARGIN / 2 );
 
     okButton.setLayoutData( okFormData );
-    editButton.setLayoutData( editFormData );
     cancelButton.setLayoutData( cancelFormData );
   }
 

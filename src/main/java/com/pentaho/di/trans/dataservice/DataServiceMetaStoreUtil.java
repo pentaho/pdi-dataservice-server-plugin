@@ -26,7 +26,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
@@ -41,14 +40,10 @@ import org.pentaho.metastore.persist.MetaStoreFactory;
 import java.util.List;
 import java.util.Map;
 
-import static org.pentaho.metastore.util.PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION;
-import static org.pentaho.metastore.util.PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME;
-import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
+import static org.pentaho.metastore.util.PentahoDefaults.*;
 
 public class DataServiceMetaStoreUtil {
   public static final String GROUP_DATA_SERVICE = "DataService";
-  public static final String DATA_SERVICE_NAME = "name";
-  public static final String DATA_SERVICE_STEPNAME = "stepname";
 
   private final List<PushDownFactory> pushDownFactories;
 
@@ -56,23 +51,41 @@ public class DataServiceMetaStoreUtil {
     this.pushDownFactories = pushDownFactories;
   }
 
-  public DataServiceMeta fromTransMeta( TransMeta transMeta, IMetaStore metaStore ) throws MetaStoreException {
-    String serviceName = transMeta.getAttribute( GROUP_DATA_SERVICE, DATA_SERVICE_NAME );
-    if ( Const.isEmpty( serviceName ) ) {
-      return null;
+  public DataServiceMeta fromTransMeta( TransMeta transMeta, IMetaStore metaStore, String stepName )
+    throws MetaStoreException {
+    DataServiceMeta dataService = null;
+    List<DataServiceMeta> dataServices = getMetaStoreFactory( metaStore ).getElements();
+    for ( DataServiceMeta dataServiceMeta : dataServices ) {
+      Repository repository = transMeta.getRepository();
+      if ( repository != null ) {
+        if ( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ) {
+          ObjectId objectId = transMeta.getObjectId();
+          if ( objectId != null && objectId.getId().equals( dataServiceMeta.getTransObjectId() ) && dataServiceMeta
+            .getStepname().equals( stepName ) ) {
+            dataService = dataServiceMeta;
+          }
+        }
+        if ( ( transMeta.getRepositoryDirectory().getPath() + RepositoryDirectory.DIRECTORY_SEPARATOR + transMeta
+          .getName() ).equals( dataServiceMeta.getTransRepositoryPath() ) && dataServiceMeta.getStepname()
+          .equals( stepName ) ) {
+          dataService = dataServiceMeta;
+        }
+      } else {
+        String filename = transMeta.getFilename();
+        if ( filename != null && filename.equals( dataServiceMeta.getTransFilename() ) && dataServiceMeta.getStepname()
+          .equals( stepName ) ) {
+          dataService = dataServiceMeta;
+        }
+      }
     }
-    return getMetaStoreFactory( metaStore ).loadElement( serviceName );
+
+    return dataService;
   }
 
   public void toTransMeta( TransMeta transMeta, IMetaStore metaStore, DataServiceMeta dataService )
     throws MetaStoreException {
 
     if ( dataService != null && dataService.isDefined() ) {
-      // Also make sure the metastore object is stored properly
-      //
-      transMeta.setAttribute( GROUP_DATA_SERVICE, DATA_SERVICE_NAME, dataService.getName() );
-      transMeta.setAttribute( GROUP_DATA_SERVICE, DATA_SERVICE_STEPNAME, dataService.getStepname() );
-
       // Initialize optimizations
       for ( PushDownOptimizationMeta optMeta : dataService.getPushDownOptimizationMeta() ) {
         optMeta.getType().init( transMeta, dataService, optMeta );

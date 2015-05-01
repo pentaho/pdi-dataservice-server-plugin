@@ -25,7 +25,7 @@ public class StepValidationExtensionPointPluginTest extends BaseStepValidationTe
   public void setUp() throws Exception {
     spiedCheckStepExtension = spy( checkStepsExtension );
     extensionPointPlugin.setStepValidations( ImmutableList.of( stepValidation ) );
-    when( metaStoreUtil.fromTransMeta( transMeta, metaStore ) ).thenReturn( dataServiceMeta );
+    when( metaStoreUtil.fromTransMeta( transMeta, metaStore, null ) ).thenReturn( dataServiceMeta );
   }
 
   @Test
@@ -57,6 +57,7 @@ public class StepValidationExtensionPointPluginTest extends BaseStepValidationTe
 
   @Test
   public void testCallExtensionPointDataServiceLoadIssue() throws Exception {
+    when( stepValidation.supportsStep( stepMeta, log ) ).thenReturn( true, false );
     when( spiedCheckStepExtension.getMetaStore() )
         .thenReturn( null );
 

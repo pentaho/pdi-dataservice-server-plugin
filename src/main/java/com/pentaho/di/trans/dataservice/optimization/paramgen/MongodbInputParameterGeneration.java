@@ -125,7 +125,7 @@ public class MongodbInputParameterGeneration implements ParameterGenerationServi
     return jsonQuery;
   }
 
-  private Map<String, String> getFieldMappings( StepInterface stepInterface ) {
+  protected Map<String, String> getFieldMappings( StepInterface stepInterface ) {
     Map<String, String> fieldMap = new HashMap<String, String>();
 
     MongoDbInput mongoDbInput = (MongoDbInput) stepInterface;

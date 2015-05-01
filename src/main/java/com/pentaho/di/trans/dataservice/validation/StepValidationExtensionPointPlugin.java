@@ -30,6 +30,7 @@ import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.CheckStepsExtension;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
@@ -57,15 +58,16 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
       return;
     }
     CheckStepsExtension checkStepExtension = (CheckStepsExtension) o;
-    DataServiceMeta dataServiceMeta = getDataServiceMeta(
-        checkStepExtension.getTransMeta(), checkStepExtension.getMetaStore(), log );
-
-    if ( dataServiceMeta == null ) {
-      // We won't validate Trans not associated with a DataService
-      return;
-    }
     for ( StepValidation stepValidation : getStepValidations() ) {
-      if ( stepValidation.supportsStep( checkStepExtension.getStepMetas()[0], log ) ) {
+      StepMeta stepMeta = checkStepExtension.getStepMetas()[0];
+      if ( stepValidation.supportsStep( stepMeta , log ) ) {
+        DataServiceMeta dataServiceMeta = getDataServiceMeta(
+          checkStepExtension.getTransMeta(), checkStepExtension.getMetaStore(), stepMeta.getName(), log );
+
+        if ( dataServiceMeta == null ) {
+          // We won't validate Trans not associated with a DataService
+          return;
+        }
         stepValidation.checkStep( checkStepExtension, dataServiceMeta, log );
       }
     }
@@ -97,7 +99,7 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
   }
 
   private DataServiceMeta getDataServiceMeta(
-    TransMeta transMeta, IMetaStore metaStore, LogChannelInterface log ) {
+    TransMeta transMeta, IMetaStore metaStore, String stepName, LogChannelInterface log ) {
     if ( metaStore == null || transMeta == null ) {
       log.logBasic(
         String.format( "Unable to determine whether '%s' is associated with a DataService.",
@@ -105,7 +107,7 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
       return null;
     }
     try {
-      return metaStoreUtil.fromTransMeta( transMeta, metaStore );
+      return metaStoreUtil.fromTransMeta( transMeta, metaStore, stepName );
     } catch ( MetaStoreException e ) {
       log.logError(
         String.format(

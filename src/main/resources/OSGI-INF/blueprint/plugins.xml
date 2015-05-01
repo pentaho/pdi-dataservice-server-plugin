@@ -6,14 +6,15 @@
             http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
             http://www.pentaho.com/xml/schemas/pentaho-blueprint http://www.pentaho.com/xml/schemas/pentaho-blueprint.xsd">
 
-    <bean id="dialogTab" class="com.pentaho.di.trans.dataservice.DataServiceTransDialogTab" scope="prototype">
-        <argument ref="metaStoreUtil"/>
-        <argument ref="autoOptimizationServices"/>
-        <pen:di-plugin type="org.pentaho.di.ui.trans.dialog.TransDialogPluginType" />
-    </bean>
+    <!--<bean id="dialogTab" class="com.pentaho.di.trans.dataservice.DataServiceTransDialogTab" scope="prototype">-->
+        <!--<argument ref="metaStoreUtil"/>-->
+        <!--<argument ref="autoOptimizationServices"/>-->
+        <!--<pen:di-plugin type="org.pentaho.di.ui.trans.dialog.TransDialogPluginType" />-->
+    <!--</bean>-->
 
     <bean id="dataServicePainter" scope="singleton"
           class="com.pentaho.di.trans.dataservice.TransPainterStepExtensionPointPlugin">
+        <argument ref="metaStoreUtil"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
@@ -31,6 +32,37 @@
     <bean id="dataServlet" class="com.pentaho.di.trans.dataservice.www.TransDataServlet" scope="singleton">
         <argument ref="metaStoreUtil"/>
         <pen:di-plugin type="org.pentaho.di.core.plugins.CartePluginType"/>
+    </bean>
+
+    <bean id="dataServiceStepPlugin" scope="singleton" class="com.pentaho.di.trans.dataservice.DataServiceStepPlugin">
+        <argument ref="metaStoreUtil"/>
+        <argument ref="autoOptimizationServices"/>
+        <argument ref="pushDownFactories"/>
+        <pen:di-plugin type="org.pentaho.di.ui.spoon.SpoonPluginType"/>
+    </bean>
+
+    <bean id="dataServiceViewTree" scope="singleton" class="com.pentaho.di.trans.dataservice.DataServiceViewTreeExtension">
+        <argument ref="metaStoreUtil"/>
+        <argument ref="autoOptimizationServices"/>
+        <argument ref="pushDownFactories"/>
+        <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
+    </bean>
+
+    <bean id="dataServicePopupMenu" scope="singleton" class="com.pentaho.di.trans.dataservice.DataServicePopupMenuExtension">
+        <argument ref="metaStoreUtil"/>
+        <argument ref="autoOptimizationServices"/>
+        <argument ref="pushDownFactories"/>
+        <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
+    </bean>
+
+    <bean id="dataServiceTreeDelegate" scope="singleton" class="com.pentaho.di.trans.dataservice.DataServiceTreeDelegateExtension">
+        <argument ref="metaStoreUtil"/>
+        <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
+    </bean>
+
+    <bean id="dataServiceStepMenu" scope="singleton" class="com.pentaho.di.trans.dataservice.DataServiceStepMenuExtension">
+        <argument ref="metaStoreUtil"/>
+        <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
 </blueprint>
