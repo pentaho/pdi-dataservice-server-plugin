@@ -23,9 +23,17 @@
 package com.pentaho.di.trans.dataservice.optimization;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
+import edu.emory.mathcs.backport.java.util.Arrays;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
+import org.pentaho.ui.xul.XulEventSource;
+
+import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 
 import java.text.MessageFormat;
 
@@ -36,9 +44,13 @@ import java.text.MessageFormat;
   name = "Push Down Optimization",
   description = "Define opportunities to improve Data Service performance by modifying user transformation execution"
 )
-public final class PushDownOptimizationMeta {
+public final class PushDownOptimizationMeta implements XulEventSource {
+
+  private static final Class<?> PKG = PushDownOptimizationMeta.class;
 
   public static final String PUSH_DOWN_STEP_NAME = "step_name";
+
+  private static List<String> statuses;
 
   /**
    * User-defined name for this optimization (required)
@@ -85,12 +97,41 @@ public final class PushDownOptimizationMeta {
     this.type = type;
   }
 
+  public String getTypeName() {
+    return type.getTypeName();
+  }
+
   public boolean isEnabled() {
     return enabled;
   }
 
   public void setEnabled( boolean enabled ) {
     this.enabled = enabled;
+  }
+
+  public void setStatus( String status ) {
+    if ( status.equals( BaseMessages.getString( PKG, "ParamGenOptForm.Enabled.Label" ) ) ) {
+      enabled = true;
+    } else {
+      enabled = false;
+    }
+  }
+
+  public String getStatus() {
+    if ( enabled ) {
+      return BaseMessages.getString( PKG, "ParamGenOptForm.Enabled.Label" );
+    }
+
+    return BaseMessages.getString( PKG, "ParamGenOptForm.Disabled.Label" );
+  }
+
+  public static Vector<String> getStatuses() {
+    if ( statuses == null || statuses.size() == 0 ) {
+      statuses = new ArrayList<String>();
+      statuses.add( BaseMessages.getString( PKG, "ParamGenOptForm.Enabled.Label" ) );
+      statuses.add( BaseMessages.getString( PKG, "ParamGenOptForm.Disabled.Label" ) );
+    }
+    return new Vector<String>( statuses );
   }
 
   public boolean activate( DataServiceExecutor executor ) {
@@ -111,8 +152,7 @@ public final class PushDownOptimizationMeta {
           setQueryBeforeOptimization( preview.getQueryBeforeOptimization() );
         }
         @Override public String getDescription() {
-          return "# " + getName() + " is disabled\n" +
-            super.getDescription();
+          return "# " + getName() + " is disabled\n" + super.getDescription();
         }
       };
     }
@@ -123,4 +163,11 @@ public final class PushDownOptimizationMeta {
       name, stepName, type != null ? type.getClass().getName() : null );
   }
 
+  @Override public void addPropertyChangeListener( PropertyChangeListener propertyChangeListener ) {
+
+  }
+
+  @Override public void removePropertyChangeListener( PropertyChangeListener propertyChangeListener ) {
+
+  }
 }

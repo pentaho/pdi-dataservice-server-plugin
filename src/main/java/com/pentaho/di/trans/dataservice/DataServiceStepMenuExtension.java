@@ -22,63 +22,53 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
-import org.pentaho.di.core.gui.AreaOwner;
-import org.pentaho.di.core.gui.AreaOwner.AreaType;
-import org.pentaho.di.core.gui.PrimitiveGCInterface.EImage;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.TransPainterExtension;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.ui.spoon.SWTGC;
-import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.di.ui.spoon.trans.StepMenuExtension;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.ui.xul.containers.XulMenupopup;
 
-@ExtensionPoint(
-  id = "TransPainterStepExtensionPointPlugin",
-  extensionPointId = "TransPainterStep",
-  description = "Paint a database icon over a step in case a data service is defined"
-)
-public class TransPainterStepExtensionPointPlugin implements ExtensionPointInterface {
-  // private static Class<?> PKG = TransPainterStepExtensionPointPlugin.class; // for i18n purposes, needed by
-  // Translator2!!
+@ExtensionPoint( id = "DataServiceStepMenuExtension", description = "Creates popup menus for data services",
+  extensionPointId = "TransStepRightClick" )
+public class DataServiceStepMenuExtension implements ExtensionPointInterface {
+
+  private static final Log logger = LogFactory.getLog( DataServiceStepMenuExtension.class );
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 
-  public TransPainterStepExtensionPointPlugin( DataServiceMetaStoreUtil metaStoreUtil ) {
+  public DataServiceStepMenuExtension( DataServiceMetaStoreUtil metaStoreUtil ) {
     this.metaStoreUtil = metaStoreUtil;
   }
 
-  @Override
-  public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
-    if ( !( object instanceof TransPainterExtension ) ) {
-      return;
-    }
-    TransPainterExtension extension = (TransPainterExtension) object;
-    TransMeta transMeta = extension.transMeta;
-    StepMeta stepMeta = extension.stepMeta;
-    IMetaStore metaStore = Spoon.getInstance().getMetaStore();
+  @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
+    StepMenuExtension extension = (StepMenuExtension) object;
+    TransMeta transMeta = extension.getTransGraph().getTransMeta();
+    StepMeta stepMeta = extension.getTransGraph().getCurrentStep();
+    XulMenupopup menu = extension.getMenu();
 
+    if ( transMeta.getRepository() != null ) {
+      Boolean isSaved = transMeta.getObjectId() != null || transMeta.getRepositoryDirectory() != null;
+      menu.getElementById( "dataservices-new" ).setDisabled( !isSaved );
+    }
+
+    Boolean hasDataService = false;
     try {
-      DataServiceMeta dataService = metaStoreUtil.fromTransMeta( transMeta, metaStore, stepMeta.getName() );
-      if ( dataService != null ) {
-        // Is this step a data service provider?
-        //
-        extension.gc
-          .drawImage( "images/data-services.svg", getClass().getClassLoader(), extension.x1 - 8 + extension.iconsize,
-            extension.y1 - 8 );
-        extension.areaOwners.add(
-          new AreaOwner( AreaType.CUSTOM, extension.x1 - 8 + extension.iconsize, extension.y1 - 8, 16, 16,
-            extension.offset, transMeta, stepMeta ) );
-      }
+      DataServiceMeta dataServiceMeta =
+        metaStoreUtil.fromTransMeta( transMeta, transMeta.getMetaStore(), stepMeta.getName() );
+      hasDataService = dataServiceMeta != null;
     } catch ( MetaStoreException e ) {
-      // Don't draw anything in the event of an error
+      logger.error( "Unable to load data service", e );
     }
 
+    menu.getElementById( "dataservices-edit" ).setDisabled( !hasDataService );
+    menu.getElementById( "dataservices-delete" ).setDisabled( !hasDataService );
+    menu.getElementById( "dataservices-test" ).setDisabled( !hasDataService );
   }
-
 }

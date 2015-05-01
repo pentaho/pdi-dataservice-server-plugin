@@ -67,15 +67,13 @@ public class DataServiceMetaStoreUtilTest {
     doNothing().when( LogChannel.GENERAL ).logBasic( anyString() );
 
     transMeta = new TransMeta();
-    transMeta.setAttribute( DataServiceMetaStoreUtil.GROUP_DATA_SERVICE, DataServiceMetaStoreUtil.DATA_SERVICE_NAME,
-      DATA_SERVICE_NAME );
-    transMeta.setAttribute( DataServiceMetaStoreUtil.GROUP_DATA_SERVICE,
-      DataServiceMetaStoreUtil.DATA_SERVICE_STEPNAME, DATA_SERVICE_STEP );
+    transMeta.setFilename( "/path/to/transformation.ktr" );
 
     metaStore = new MemoryMetaStore();
     dataService = new DataServiceMeta();
     dataService.setName( DATA_SERVICE_NAME );
     dataService.setStepname( DATA_SERVICE_STEP );
+    dataService.setTransFilename( "/path/to/transformation.ktr" );
 
     metaStoreUtil = new DataServiceMetaStoreUtil( Collections.<PushDownFactory>singletonList( new PushDownFactory() {
       @Override public String getName() {
@@ -106,9 +104,11 @@ public class DataServiceMetaStoreUtilTest {
   @Test
   public void testFromTransMeta() throws MetaStoreException {
     metaStoreFactory.saveElement( dataService );
+
     DataServiceMeta dataServiceMeta =
-      metaStoreUtil.fromTransMeta( transMeta, metaStore );
+      metaStoreUtil.fromTransMeta( transMeta, metaStore, DATA_SERVICE_STEP );
     assertThat( dataServiceMeta, notNullValue() );
+
     assertEquals( DATA_SERVICE_NAME, dataServiceMeta.getName() );
     assertEquals( DATA_SERVICE_STEP, dataServiceMeta.getStepname() );
   }
@@ -121,14 +121,6 @@ public class DataServiceMetaStoreUtilTest {
   @Test
   public void testToTransMeta() throws MetaStoreException {
     metaStoreUtil.toTransMeta( transMeta, metaStore, dataService );
-    String savedServiceName =
-      transMeta
-        .getAttribute( DataServiceMetaStoreUtil.GROUP_DATA_SERVICE, DataServiceMetaStoreUtil.DATA_SERVICE_NAME );
-    String savedServiceStepName =
-      transMeta.getAttribute( DataServiceMetaStoreUtil.GROUP_DATA_SERVICE,
-        DataServiceMetaStoreUtil.DATA_SERVICE_STEPNAME );
-    assertEquals( DATA_SERVICE_NAME, savedServiceName );
-    assertEquals( DATA_SERVICE_STEP, savedServiceStepName );
     assertEquals( DATA_SERVICE_STEP, metaStoreFactory.loadElement( DATA_SERVICE_NAME ).getStepname() );
   }
 

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window id="dataservice-manager-window" orient="vertical" height="600" width="800"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:pen="http://www.pentaho.org/2008/xul"
+        onload="dataServiceDialogController.init()">
+
+  <dialog id="dataservice-dialog"
+          title="${DataServiceDialog.Dialog.Title}"
+          resizable="true"
+          height="700"
+          width="700"
+          appicon="ui/images/spoon.ico"
+          buttons="accept, cancel"
+          ondialogaccept="dataServiceDialogController.saveAndClose()"
+          ondialogcancel="dataServiceDialogController.close()">
+    <vbox flex="1" padding="10">
+      <pen:include src="dataservice-edit-form.xul" ignoreroot="true"/>
+    </vbox>
+  </dialog>
+
+</window>
+
