@@ -8,6 +8,7 @@
     </bean>
 
     <reference id="lineageClient" interface="com.pentaho.metaverse.api.ILineageClient"/>
+    <reference id="cacheManager" interface="org.pentaho.caching.api.PentahoCacheManager" />
 
     <reference-list id="pushDownFactories" interface="com.pentaho.di.trans.dataservice.optimization.PushDownFactory"
                     availability="optional"/>
