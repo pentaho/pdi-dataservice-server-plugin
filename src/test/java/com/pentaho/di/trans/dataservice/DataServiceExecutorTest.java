@@ -157,10 +157,15 @@ public class DataServiceExecutorTest {
     List<DataServiceMeta> services = Collections.emptyList();
 
     for ( String query : queries ) {
+      Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+      SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
+      RowListener clientRowListener = mock( RowListener.class );
+
       DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), services ).
-          lookupServiceTrans( mock( Repository.class ) ).
-          prepareExecution( false ).
-          build();
+        lookupServiceTrans( mock( Repository.class ) ).
+        sqlTransGenerator( sqlTransGenerator ).
+        genTrans( genTrans ).
+        build();
 
       // Verify execution prep
       assertNull( executor.getServiceTrans() );
@@ -169,22 +174,12 @@ public class DataServiceExecutorTest {
       assertNotNull( executor.getGenTrans() );
       assertTrue( executor.isDual() );
 
-      Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-      SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
-
-      executor = new DataServiceExecutor.Builder( new SQL( query ), services ).
-        lookupServiceTrans( mock( Repository.class ) ).
-        sqlTransGenerator( sqlTransGenerator ).
-        genTrans( genTrans ).
-        prepareExecution( false ).
-        build();
-      RowListener clientRowListener = mock( RowListener.class );
-
       // Start Execution
       executor.executeQuery( clientRowListener );
 
       InOrder startup = inOrder( genTrans, genTrans.findRunThread( RESULT_STEP_NAME ) );
 
+      startup.verify( genTrans ).prepareExecution( null );
       startup.verify( genTrans.findRunThread( RESULT_STEP_NAME ) ).addRowListener( clientRowListener );
       startup.verify( genTrans ).startThreads();
     }
