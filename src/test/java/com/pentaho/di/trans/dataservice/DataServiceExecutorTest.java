@@ -43,6 +43,8 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowListener;
+import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -194,6 +196,7 @@ public class DataServiceExecutorTest {
     SQL sql = mock( SQL.class );
     when( sql.getServiceName() ).thenReturn( "test_service" );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
+    StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
 
     when( sql.getWhereClause() ).thenReturn( null );
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
@@ -209,12 +212,14 @@ public class DataServiceExecutorTest {
     // Start Execution
     executor.executeQuery( clientRowListener );
 
-    InOrder genTransStartup = inOrder( genTrans, genTrans.findRunThread( RESULT_STEP_NAME ) );
+    InOrder genTransStartup = inOrder( genTrans, resultStep );
     InOrder serviceTransStartup = inOrder( serviceTrans, serviceTrans.findRunThread( SERVICE_STEP_NAME ) );
     ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );
+    ArgumentCaptor<StepListener> resultStepListener = ArgumentCaptor.forClass( StepListener.class );
 
     genTransStartup.verify( genTrans ).addRowProducer( INJECTOR_STEP_NAME, 0 );
-    genTransStartup.verify( genTrans.findRunThread( RESULT_STEP_NAME ) ).addRowListener( clientRowListener );
+    genTransStartup.verify( resultStep ).addStepListener( resultStepListener.capture() );
+    genTransStartup.verify( resultStep ).addRowListener( clientRowListener );
     genTransStartup.verify( genTrans ).startThreads();
 
     serviceTransStartup.verify( serviceTrans.findRunThread( SERVICE_STEP_NAME ) ).addRowListener( listenerArgumentCaptor.capture() );
@@ -233,6 +238,10 @@ public class DataServiceExecutorTest {
       serviceRowListener.rowWrittenEvent( rowMeta, data );
       verify( sqlTransRowProducer ).putRow( same( rowMeta ), same( data ) );
     }
+
+    doReturn( true ).when( serviceTrans ).isRunning();
+    resultStepListener.getValue().stepFinished( genTrans, resultStep.getStepMeta(), resultStep );
+    verify( serviceTrans ).stopAll();
 
     // Verify Service Trans finished
     ArgumentCaptor<TransListener> serviceTransListener = ArgumentCaptor.forClass( TransListener.class );

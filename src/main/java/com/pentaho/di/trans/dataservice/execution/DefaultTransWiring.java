@@ -11,7 +11,9 @@ import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.step.RowAdapter;
+import org.pentaho.di.trans.step.StepAdapter;
 import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
 
 /**
  * @author nhudak
@@ -64,6 +66,17 @@ public class DefaultTransWiring implements Runnable {
         rowProducer.finished();
       }
     } );
+
+    dataServiceExecutor.getGenTrans()
+      .findRunThread( dataServiceExecutor.getResultStepName() )
+      .addStepListener( new StepAdapter() {
+        @Override public void stepFinished( Trans trans, StepMeta stepMeta, StepInterface step ) {
+          if ( serviceTrans.isRunning() ) {
+            trans.getLogChannel().logBasic( "Query finished, stopping service transformation" );
+            serviceTrans.stopAll();
+          }
+        }
+      } );
   }
 
 }
