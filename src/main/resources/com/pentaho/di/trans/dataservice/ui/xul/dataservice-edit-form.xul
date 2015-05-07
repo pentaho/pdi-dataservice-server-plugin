@@ -20,7 +20,7 @@
     <label value="${DataServiceDialog.Location.Label}"/>
     <hbox>
       <textbox id="trans-location" width="400" disabled="true"/>
-      <button id="trans-browse-btn" label="${DataServiceDialog.OpenButton.Label}"
+      <button id="trans-open-btn" label="${DataServiceDialog.OpenButton.Label}"
               onclick="dataServiceDialogController.openTrans()"/>
     </hbox>
     <label value="${DataServiceDialog.OutputStep.Label}"/>
@@ -28,7 +28,7 @@
       <menulist id="trans-steps" width="300">
         <menupopup/>
       </menulist>
-      <button id="view-step-btn" label="View Step" onclick="dataServiceDialogController.viewStep()"/>
+      <button id="view-step-btn" label="${DataServiceDialog.ViewStep.Label}" onclick="dataServiceDialogController.viewStep()"/>
     </hbox>
   </groupbox>
   <groupbox flex="1" padding="10">

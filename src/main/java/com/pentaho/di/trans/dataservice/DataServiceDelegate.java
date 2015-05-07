@@ -107,19 +107,7 @@ public class DataServiceDelegate {
 
   public void editDataService( DataServiceMeta dataService ) {
     try {
-      TransMeta transMeta = dataService.lookupTransMeta( getRepository() );
-      if ( getRepository() != null ) {
-        transMeta = loadTransformation( transMeta );
-      }
-
-      transMeta.setMetaStore( getSpoon().getMetaStore() );
-      getSpoon().sharedObjectsFileMap
-        .put( transMeta.getSharedObjects().getFilename(), transMeta.getSharedObjects() );
-      getSpoon().setTransMetaVariables( transMeta );
-      transMeta.activateParameters();
-
-      ExtensionPointHandler
-        .callExtensionPoint( getSpoon().getLog(), KettleExtensionPoint.TransAfterOpen.id, transMeta );
+      TransMeta transMeta = getTransMeta( dataService );
 
       DataServiceDialog dataServiceManagerDialog =
         new DataServiceDialog( getSpoon().getShell(), dataService, metaStoreUtil, transMeta, autoOptimizationServices,
@@ -182,6 +170,23 @@ public class DataServiceDelegate {
       getSpoon().refreshGraph();
       getSpoon().refreshTree();
     }
+  }
+
+  private TransMeta getTransMeta( DataServiceMeta dataService ) throws KettleException {
+    TransMeta transMeta = dataService.lookupTransMeta( getRepository() );
+    if ( getRepository() != null ) {
+      transMeta = loadTransformation( transMeta );
+    }
+
+    for ( TransMeta loadedTransMeta : getSpoon().getLoadedTransformations() ) {
+      if ( loadedTransMeta.equals( transMeta ) ) {
+        return loadedTransMeta;
+      }
+    }
+
+    ExtensionPointHandler.callExtensionPoint( getSpoon().getLog(), KettleExtensionPoint.TransAfterOpen.id, transMeta );
+
+    return transMeta;
   }
 
   private TransMeta loadTransformation( TransMeta transMeta ) {

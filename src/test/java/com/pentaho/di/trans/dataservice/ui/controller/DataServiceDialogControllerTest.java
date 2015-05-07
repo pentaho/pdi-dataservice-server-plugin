@@ -31,6 +31,7 @@ import com.pentaho.di.trans.dataservice.optimization.paramgen.AutoParameterGener
 import com.pentaho.di.trans.dataservice.ui.DataServiceDialogCallback;
 import com.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Shell;
 import org.junit.Before;
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
@@ -80,6 +81,8 @@ public class DataServiceDialogControllerTest {
 
   private static final String SERVICE_NAME = "test_service";
 
+  private static final String NEW_SERVICE_NAME = "test_service2";
+
   private static final String SELECTED_STEP = "Output Step";
 
   private static final String STEP_ONE_NAME = "Step One";
@@ -88,7 +91,7 @@ public class DataServiceDialogControllerTest {
 
   @Before
   public void init() throws Exception {
-    parent = mock( Composite.class );
+    parent = mock( Shell.class );
     model = mock( DataServiceModel.class );
     dataService = mock( DataServiceMeta.class );
     transMeta = mock( TransMeta.class );
@@ -104,8 +107,11 @@ public class DataServiceDialogControllerTest {
 
     pushDownFactories = new ArrayList<PushDownFactory>();
 
-    controller = new DataServiceDialogController( parent, model, dataService, metaStoreUtil, transMeta, spoon, autoOptimizationServices, pushDownFactories );
+    controller = new DataServiceDialogControllerTester( parent, model, dataService, metaStoreUtil, transMeta, spoon,
+      autoOptimizationServices, pushDownFactories );
     controller.setCallback( callback );
+
+    doReturn( SERVICE_NAME ).when( dataService ).getName();
   }
 
   @Test
@@ -163,7 +169,8 @@ public class DataServiceDialogControllerTest {
 
     controller.validate();
 
-    verify( model ).getServiceName();
+    verify( dataService, times( 2 ) ).getName();
+    verify( model, times( 3 ) ).getServiceName();
     verify( model ).getSelectedStep();
   }
 
@@ -171,23 +178,46 @@ public class DataServiceDialogControllerTest {
   public void testError() throws Exception {
     doReturn( "" ).when( model ).getServiceName();
 
-    try {
-      controller.validate();
+    if ( controller.validate() ) {
       fail();
-    } catch ( KettleException e ) {
-      // Should hit this
     }
-
-    verify( model ).getServiceName();
 
     doReturn( SERVICE_NAME ).when( model ).getServiceName();
     doReturn( "" ).when( model ).getSelectedStep();
 
-    try {
-      controller.validate();
+    if ( controller.validate() ) {
       fail();
-    } catch ( KettleException e ) {
-      // Should hit this
+    }
+
+    IMetaStore metaStore = mock( DelegatingMetaStore.class );
+    doReturn( metaStore ).when( spoon ).getMetaStore();
+    doReturn( SELECTED_STEP ).when( model ).getSelectedStep();
+    doReturn( SERVICE_NAME ).when( model ).getServiceName();
+    doReturn( NEW_SERVICE_NAME ).when( dataService ).getName();
+    doReturn( mock( DataServiceMeta.class ) ).when( metaStoreUtil ).findByName( metaStore, SERVICE_NAME );
+
+    if ( controller.validate() ) {
+      fail();
+    }
+
+    verify( model, times( 10 ) ).getServiceName();
+    verify( model, times( 3 ) ).getSelectedStep();
+    verify( dataService, times( 4 ) ).getName();
+    verify( metaStoreUtil ).findByName( metaStore, SERVICE_NAME );
+  }
+
+  class DataServiceDialogControllerTester extends DataServiceDialogController {
+    public DataServiceDialogControllerTester( Composite parent, DataServiceModel model, DataServiceMeta dataService,
+                                              DataServiceMetaStoreUtil metaStoreUtil, TransMeta transMeta, Spoon spoon,
+                                              List<AutoOptimizationService> autoOptimizationServices,
+                                              List<PushDownFactory> pushDownFactories )
+      throws KettleException {
+      super( parent, model, dataService, metaStoreUtil, transMeta, spoon, autoOptimizationServices, pushDownFactories );
+    }
+
+    @Override
+    protected void showErrors( StringBuilder errors ) {
+      // Show nothing
     }
   }
 }

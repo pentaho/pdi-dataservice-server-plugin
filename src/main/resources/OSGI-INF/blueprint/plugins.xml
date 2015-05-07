@@ -65,4 +65,11 @@
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
+    <bean id="deleteRepositoryObject" scope="singleton" class="com.pentaho.di.trans.dataservice.DeleteRepositoryObjectExtensionPointPlugin">
+        <argument ref="metaStoreUtil"/>
+        <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
+    </bean>
+
+
+
 </blueprint>

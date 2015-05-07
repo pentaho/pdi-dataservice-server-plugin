@@ -35,6 +35,7 @@ import com.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import com.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
@@ -48,6 +49,7 @@ import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
+import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulTree;
@@ -109,6 +111,7 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
     XulMenuList steps = (XulMenuList) document.getElementById( "trans-steps" );
     optimizations = (XulTree) document.getElementById( "optimizations" );
     XulTextbox serviceName = (XulTextbox) document.getElementById( "service-name" );
+    XulButton viewTrans = (XulButton) document.getElementById( "trans-open-btn" );
 
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
     bindingFactory.createBinding( model, "steps", steps, "elements" );
@@ -120,6 +123,10 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
     bindingFactory.createBinding( model, "serviceName", serviceName, "value" );
+
+    if ( transMeta.equals( spoon.getActiveTransformation() ) ) {
+      viewTrans.setDisabled( true );
+    }
   }
 
   private void setModel() throws XulException, InvocationTargetException {
@@ -142,7 +149,9 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
   }
 
   public void showTestDialog() throws KettleException {
-    validate();
+    if ( !validate() ) {
+      return;
+    }
 
     new DataServiceTestDialog( parent, getDataService(), this.transMeta ).open();
   }
@@ -173,8 +182,6 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
   }
 
   public void save() throws KettleException {
-    validate();
-
     if ( dataService.getName() != null && ( !dataService.getName().equals( model.getServiceName() ) || !dataService
       .getStepname()
       .equals( model.getSelectedStep() ) ) ) {
@@ -189,6 +196,10 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
   }
 
   public void saveAndClose() throws KettleException, XulException, InvocationTargetException {
+    if ( !validate() ) {
+      return;
+    }
+
     save();
     close();
   }
@@ -237,14 +248,43 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
     return dataService;
   }
 
-  public void validate() throws KettleException {
+  public Boolean validate() throws KettleException {
+    StringBuilder errors = new StringBuilder();
+
     if ( Const.isEmpty( model.getServiceName() ) ) {
-      throw new KettleException( BaseMessages.getString( PKG, "DataServiceDialog.NameRequired.Error" ) );
+      errors.append( BaseMessages.getString( PKG, "DataServiceDialog.NameRequired.Error" ) ).append( "\n" );
     }
 
     if ( Const.isEmpty( model.getSelectedStep() ) ) {
-      throw new KettleException( BaseMessages.getString( PKG, "DataServiceDialog.StepRequired.Error" ) );
+      errors.append( BaseMessages.getString( PKG, "DataServiceDialog.StepRequired.Error" ) ).append( "\n" );
     }
+
+    if ( !Const.isEmpty( model.getServiceName() ) && ( dataService.getName() == null || !dataService.getName()
+      .equals( model.getServiceName() ) ) ) {
+      try {
+        DataServiceMeta dataServiceMeta = metaStoreUtil.findByName( spoon.getMetaStore(), model.getServiceName() );
+        if ( dataServiceMeta != null ) {
+          errors
+            .append( BaseMessages.getString( PKG, "DataServiceDialog.AlreadyExists.Error", model.getServiceName() ) );
+        }
+      } catch ( MetaStoreException e ) {
+        // Ignore this error case
+      }
+    }
+
+    if ( errors.length() > 0 ) {
+      showErrors( errors );
+      return false;
+    }
+
+    return true;
+  }
+
+  protected void showErrors( StringBuilder errors ) {
+    MessageBox mb = new MessageBox( (Shell) parent, SWT.OK | SWT.ICON_INFORMATION );
+    mb.setText( BaseMessages.getString( PKG, "DataServiceDialog.Errors.Title" ) );
+    mb.setMessage( errors.toString() );
+    mb.open();
   }
 
   public void close() {

@@ -114,6 +114,10 @@ public class DataServiceMetaStoreUtil {
     }
   }
 
+  public DataServiceMeta findByName( IMetaStore metaStore, String name ) throws MetaStoreException {
+    return getMetaStoreFactory( metaStore ).loadElement( name );
+  }
+
   /**
    * This method creates a new Element Type in the meta store corresponding encapsulating the Kettle Data Service meta
    * data.
