@@ -24,53 +24,53 @@ package com.pentaho.di.trans.dataservice;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.ui.repository.RepositoryExtension;
+import org.pentaho.di.ui.repository.repositoryexplorer.model.UITransformation;
 import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.di.ui.spoon.trans.StepMenuExtension;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
-import org.pentaho.ui.xul.containers.XulMenupopup;
 
-@ExtensionPoint( id = "DataServiceStepMenuExtension", description = "Creates popup menus for data services",
-  extensionPointId = "TransStepRightClick" )
-public class DataServiceStepMenuExtension implements ExtensionPointInterface {
+@ExtensionPoint(
+  id = "DeleteRepositoryObjectExtensionPointPlugin",
+  extensionPointId = "AfterDeleteRepositoryObject",
+  description = "Remove a data service associated with a deleted repository object"
+)
+public class DeleteRepositoryObjectExtensionPointPlugin implements ExtensionPointInterface {
 
-  private static final Log logger = LogFactory.getLog( DataServiceStepMenuExtension.class );
+  private static final Log logger = LogFactory.getLog( DeleteRepositoryObjectExtensionPointPlugin.class );
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 
-  public DataServiceStepMenuExtension( DataServiceMetaStoreUtil metaStoreUtil ) {
+  public DeleteRepositoryObjectExtensionPointPlugin( DataServiceMetaStoreUtil metaStoreUtil ) {
     this.metaStoreUtil = metaStoreUtil;
   }
 
-  @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
-    StepMenuExtension extension = (StepMenuExtension) object;
-    TransMeta transMeta = extension.getTransGraph().getTransMeta();
-    StepMeta stepMeta = extension.getTransGraph().getCurrentStep();
-    XulMenupopup menu = extension.getMenu();
-
-    if ( transMeta.getRepository() != null ) {
-      Boolean isSaved = transMeta.getObjectId() != null || transMeta.getRepositoryDirectory() != null;
-      menu.getElementById( "dataservices-new" ).setDisabled( !isSaved );
+  @Override
+  public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
+    RepositoryExtension repositoryExtension = (RepositoryExtension) object;
+    if ( repositoryExtension.getRepositoryObject() instanceof UITransformation ) {
+      UITransformation transformation = (UITransformation) repositoryExtension.getRepositoryObject();
+      TransMeta transMeta = getSpoon().getRepository().loadTransformation( transformation.getObjectId(), null );
+      for ( StepMeta stepMeta : transMeta.getSteps() ) {
+        try {
+          DataServiceMeta dataService =
+            metaStoreUtil.fromTransMeta( transMeta, getSpoon().getMetaStore(), stepMeta.getName() );
+          metaStoreUtil.getMetaStoreFactory( getSpoon().getMetaStore() ).deleteElement( dataService.getName() );
+          getSpoon().refreshTree();
+        } catch ( MetaStoreException e ) {
+          logger.error( "Unable to load Data Service", e );
+        }
+      }
     }
+  }
 
-    Boolean hasDataService = false;
-    try {
-      DataServiceMeta dataServiceMeta =
-        metaStoreUtil.fromTransMeta( transMeta, Spoon.getInstance().getMetaStore(), stepMeta.getName() );
-      hasDataService = dataServiceMeta != null;
-    } catch ( MetaStoreException e ) {
-      logger.error( "Unable to load data service", e );
-    }
-
-    menu.getElementById( "dataservices-edit" ).setDisabled( !hasDataService );
-    menu.getElementById( "dataservices-delete" ).setDisabled( !hasDataService );
-    menu.getElementById( "dataservices-test" ).setDisabled( !hasDataService );
+  private Spoon getSpoon() {
+    return Spoon.getInstance();
   }
 
 }

@@ -22,18 +22,15 @@
 
 package com.pentaho.di.trans.dataservice;
 
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.gui.AreaOwner;
 import org.pentaho.di.core.gui.AreaOwner.AreaType;
-import org.pentaho.di.core.gui.PrimitiveGCInterface.EImage;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransPainterExtension;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.ui.spoon.SWTGC;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
