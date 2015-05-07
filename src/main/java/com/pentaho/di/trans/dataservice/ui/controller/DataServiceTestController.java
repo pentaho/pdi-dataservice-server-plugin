@@ -36,6 +36,8 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.logging.LoggingRegistry;
 import org.pentaho.di.core.logging.MetricsRegistry;
+import org.pentaho.di.core.parameters.NamedParams;
+import org.pentaho.di.core.parameters.NamedParamsDefault;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
@@ -80,19 +82,37 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   private final DataServiceMeta dataService;
   private final TransMeta transMeta;
+  private final NamedParams startingParameterValues = new NamedParamsDefault();
+
   private XulMenuList<String> logLevels;
   private Timer completionPollTimer;
   private DataServiceExecutor dataServiceExec;
 
 
+
   public DataServiceTestController( DataServiceTestModel model,
                                     DataServiceMeta dataService,
-                                    TransMeta transMeta ) {
+                                    TransMeta transMeta ) throws KettleException {
     this.model = model;
     this.dataService = dataService;
     this.transMeta = transMeta;
     transName = transMeta.getName();
+    model.setSql( getDefaultSql() );
+    initStartingParameterValues();
+
     setName( NAME );
+  }
+
+  /**
+   * Captures parameter values at initialization time to allow
+   * reverting any changes made to the service TransMeta.
+   */
+  void initStartingParameterValues() throws KettleException {
+    dataServiceExec = getNewDataServiceExecutor( true );
+    if ( dataServiceExec == null ) {
+      return;
+    }
+    startingParameterValues.copyParametersFrom( dataServiceExec.getServiceTransMeta() );
   }
 
   public void init() throws InvocationTargetException, XulException {
@@ -201,12 +221,16 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   private void bindSqlText( BindingFactory bindingFactory ) {
     XulTextbox sqlTextBox = (XulTextbox) document.getElementById( "sql-textbox" );
-    String initSql = "SELECT * FROM " + dataService.getName();
+    String initSql = getDefaultSql();
     model.setSql( initSql );
     sqlTextBox.setValue( initSql );
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
     bindingFactory.createBinding( model, "sql", sqlTextBox, "value" );
+  }
+
+  private String getDefaultSql() {
+    return "SELECT * FROM " + dataService.getName();
   }
 
   public void executeSql() throws KettleException {
@@ -347,7 +371,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   protected DataServiceExecutor getNewDataServiceExecutor( boolean enableMetrics ) throws KettleException {
     try {
-      resetDatabaseMetaParameters();
+      resetVariablesAndParameters();
       return new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService ).
         serviceTrans( transMeta ).
         rowLimit( model.getMaxRows() ).
@@ -361,15 +385,20 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   /**
-   *  Assures parameter values are consistent between DatabaseMeta and transMeta.
+   *  Assures variables are consistent between DatabaseMeta and transMeta.
    *  Otherwise DatabaseMeta may have parameter values saved from previous execution.
+   *  Also reverts Parameter values to their initial settings when the Controller
+   *  was constructed.
    */
-  private void resetDatabaseMetaParameters() {
+  private void resetVariablesAndParameters() throws KettleException {
     for ( StepMeta stepMeta :  transMeta.getSteps() ) {
       if ( stepMeta.getStepMetaInterface() instanceof TableInputMeta ) {
         DatabaseMeta dbMeta = ( (TableInputMeta) stepMeta.getStepMetaInterface() ).getDatabaseMeta();
         dbMeta.copyVariablesFrom( transMeta );
       }
+    }
+    if ( startingParameterValues.listParameters().length > 0 ) {
+      transMeta.copyParametersFrom( startingParameterValues );
     }
   }
 
@@ -418,9 +447,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     };
   }
 
-  public void close() {
+  public void close() throws KettleException {
     cleanupCurrentExec();
-    resetDatabaseMetaParameters();
+    resetVariablesAndParameters();
     clearLogLines();
     callback.onClose();
   }

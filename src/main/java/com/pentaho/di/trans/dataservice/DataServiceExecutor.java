@@ -317,17 +317,33 @@ public class DataServiceExecutor {
     }
   }
 
-  private void extractConditionParameters( Condition condition, Map<String, String> map ) {
-
+  private void extractConditionParameters( Condition condition, Map<String, String> parameters ) {
     if ( condition.isAtomic() ) {
       if ( condition.getFunction() == Condition.FUNC_TRUE ) {
-        map.put( condition.getLeftValuename(), condition.getRightExactString() );
+        parameters.put( condition.getLeftValuename(), condition.getRightExactString() );
+        stripFieldNamesFromTrueFunction( condition );
       }
     } else {
       for ( Condition sub : condition.getChildren() ) {
-        extractConditionParameters( sub, map );
+        extractConditionParameters( sub, parameters );
       }
     }
+  }
+
+  /**
+   * Strips the "fake" values from a Condition used
+   * to pass parameter key/value info in the WHERE clause.
+   * E.g. if
+   *    WHERE PARAMETER('foo') = 'bar'
+   * is in the where clause a FUNC_TRUE condition will be
+   * created with leftValueName = 'foo' and rightValueName = 'bar'.
+   * These need to be stripped out to avoid failing checks
+   * for existent field names.
+   */
+  private void stripFieldNamesFromTrueFunction( Condition condition ) {
+    assert condition.getFunction() == Condition.FUNC_TRUE;
+    condition.setLeftValuename( null );
+    condition.setRightValuename( null );
   }
 
   protected void prepareExecution() throws KettleException {
@@ -337,6 +353,7 @@ public class DataServiceExecutor {
       TransMeta serviceTransMeta = getServiceTransMeta();
       for ( Entry<String, String> parameter : parameters.entrySet() ) {
         serviceTransMeta.setParameterValue( parameter.getKey(), parameter.getValue() );
+        serviceTrans.copyParametersFrom( serviceTransMeta );
       }
       serviceTrans.prepareExecution( null );
     }

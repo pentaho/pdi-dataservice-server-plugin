@@ -44,7 +44,13 @@ import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowListener;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -55,11 +61,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class DataServiceExecutorTest {
 
@@ -252,11 +254,28 @@ public class DataServiceExecutorTest {
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), service ).
-      serviceTrans( serviceTrans ).
-      sqlTransGenerator( sqlTransGenerator ).
-      genTrans( genTrans ).
-      build();
+    final SQL theSql = new SQL( sql );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( theSql, service ).
+        serviceTrans( serviceTrans ).
+        sqlTransGenerator( sqlTransGenerator ).
+        genTrans( genTrans ).
+        build();
+
+    List<Condition> conditions = theSql.getWhereCondition().getCondition().getChildren();
+
+    assertEquals( 2, conditions.size() );
+    for ( Condition condition : conditions ) {
+      // verifies that each of the parameter conditions have their left and right valuename
+      // set to null after executor initialization.  This prevents failure due to non-existent
+      // fieldnames being present.
+      assertNull( condition.getLeftValuename() );
+      assertNull( condition.getRightValuename() );
+    }
+    // verify that the parameter values were correctly extracted from the WHERE
+    verify( executor.getServiceTransMeta() ).setParameterValue( "foo", "bar" );
+    verify( executor.getServiceTransMeta() ).setParameterValue( "baz", "bop" );
+
     Map<String, String> expectedParams = new HashMap<String, String>();
     expectedParams.put( "baz", "bop" );
     expectedParams.put( "foo", "bar" );
@@ -274,10 +293,10 @@ public class DataServiceExecutorTest {
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), service ).
-      serviceTrans( serviceTrans ).
-      sqlTransGenerator( sqlTransGenerator ).
-      genTrans( genTrans ).
-      build();
+        serviceTrans( serviceTrans ).
+        sqlTransGenerator( sqlTransGenerator ).
+        genTrans( genTrans ).
+        build();
 
     Condition condition = executor.getSql().getWhereCondition().getCondition();
 
