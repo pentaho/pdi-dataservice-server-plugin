@@ -19,6 +19,7 @@
  * confidentiality and non-disclosure agreements or other agreements with Pentaho,
  * explicitly covering such access.
  */
+
 package com.pentaho.di.trans.dataservice.validation;
 
 import org.junit.Test;
