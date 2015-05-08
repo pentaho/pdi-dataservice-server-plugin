@@ -22,6 +22,10 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.MultimapBuilder;
+import com.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
+import com.pentaho.di.trans.dataservice.execution.TransStarter;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.apache.commons.lang.StringUtils;
@@ -29,8 +33,6 @@ import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
-import org.pentaho.di.core.exception.KettleValueException;
-import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -40,9 +42,7 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 
@@ -60,6 +60,7 @@ public class DataServiceExecutor {
   private final SQL sql;
   private final Map<String, String> parameters;
   private final SqlTransGenerator sqlTransGenerator;
+  private final ListMultimap<ExecutionPoint, Runnable> listenerMap;
 
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
@@ -70,6 +71,8 @@ public class DataServiceExecutor {
     serviceTrans = builder.serviceTrans;
     sqlTransGenerator = builder.sqlTransGenerator;
     genTrans = builder.genTrans;
+
+    listenerMap = MultimapBuilder.enumKeys( ExecutionPoint.class ).linkedListValues().build();
   }
 
   public static class Builder {
@@ -348,6 +351,7 @@ public class DataServiceExecutor {
 
   protected void prepareExecution() throws KettleException {
     genTrans.prepareExecution( null );
+    listenerMap.put( ExecutionPoint.START, new TransStarter( genTrans ) );
 
     if ( !isDual() ) {
       TransMeta serviceTransMeta = getServiceTransMeta();
@@ -356,6 +360,8 @@ public class DataServiceExecutor {
         serviceTrans.copyParametersFrom( serviceTransMeta );
       }
       serviceTrans.prepareExecution( null );
+      listenerMap.put( ExecutionPoint.READY, new DefaultTransWiring( this ) );
+      listenerMap.put( ExecutionPoint.START, new TransStarter( serviceTrans ) );
     }
   }
 
@@ -379,39 +385,7 @@ public class DataServiceExecutor {
         }
       }
 
-      // This is where we will inject the rows from the service transformation step
-      //
-      final RowProducer rowProducer = genTrans.addRowProducer( sqlTransGenerator.getInjectorStepName(), 0 );
-
-      // Now connect the 2 transformations with listeners and injector
-      //
-      StepInterface serviceStep = serviceTrans.findRunThread( service.getStepname() );
-      serviceStep.addRowListener( new RowAdapter() {
-        @Override
-        public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-          // Simply pass along the row to the other transformation (to the Injector step)
-          //
-          LogChannelInterface log = serviceTrans.getLogChannel();
-          try {
-            if ( log.isRowLevel() ) {
-              log.logRowlevel( "Passing along row: " + rowMeta.getString( row ) );
-            }
-          } catch ( KettleValueException e ) {
-            // Ignore errors
-          }
-
-          rowProducer.putRow( rowMeta, row );
-        }
-      } );
-
-      // Let the other transformation know when there are no more rows
-      //
-      serviceTrans.addTransListener( new TransAdapter() {
-        @Override
-        public void transFinished( Trans trans ) throws KettleException {
-          rowProducer.finished();
-        }
-      } );
+      executeListeners( ExecutionPoint.READY );
     }
 
     // Give back the eventual result rows...
@@ -419,13 +393,20 @@ public class DataServiceExecutor {
     StepInterface resultStep = genTrans.findRunThread( getResultStepName() );
     resultStep.addRowListener( resultRowListener );
 
-    // Start both transformations
-    //
-    genTrans.startThreads();
-    if ( !isDual() ) {
-      serviceTrans.startThreads();
+    // Start transformations
+    executeListeners( ExecutionPoint.START );
+  }
+
+  private void executeListeners( ExecutionPoint executionPoint ) {
+    for ( Runnable runnable : listenerMap.get( executionPoint ) ) {
+      runnable.run();
     }
   }
+
+  public RowProducer addRowProducer() throws KettleException {
+    return genTrans.addRowProducer( sqlTransGenerator.getInjectorStepName(), 0 );
+  }
+
 
   public void waitUntilFinished() {
     if ( !isDual() ) {
@@ -446,6 +427,10 @@ public class DataServiceExecutor {
    */
   public TransMeta getGenTransMeta() {
     return genTrans.getTransMeta();
+  }
+
+  public DataServiceMeta getService() {
+    return service;
   }
 
   /**
@@ -513,7 +498,19 @@ public class DataServiceExecutor {
     return sqlTransGenerator.getResultStepName();
   }
 
+  public ListMultimap<ExecutionPoint, Runnable> getListenerMap() {
+    return listenerMap;
+  }
+
   public boolean isDual() {
     return Const.isEmpty( getServiceName() ) || "dual".equalsIgnoreCase( getServiceName() );
   }
+
+  /**
+   * @author nhudak
+   */
+  public enum ExecutionPoint {
+    READY, START
+  }
+
 }

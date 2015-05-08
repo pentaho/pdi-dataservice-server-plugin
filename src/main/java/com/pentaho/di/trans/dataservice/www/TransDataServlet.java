@@ -56,7 +56,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -124,6 +123,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       //
       final DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sqlQuery ), dataServices ).
         parameters( parameters ).
+        rowLimit( maxRows ).
         lookupServiceTrans( repository ).
         build();
 
@@ -146,7 +146,6 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       //
       // TODO: allow global repository configuration in the services config file
       //
-      final AtomicInteger rowCounter = new AtomicInteger( 0 );
       final AtomicBoolean wroteRowMeta = new AtomicBoolean( false );
 
       executor.executeQuery( new RowAdapter() {
@@ -156,15 +155,11 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
           // On the first row, write the metadata...
           //
           try {
-            if ( firstRow.get() ) {
-              firstRow.set( false );
+            if ( firstRow.compareAndSet( true, false ) ) {
               rowMeta.writeMeta( dos );
               wroteRowMeta.set( true );
             }
             rowMeta.writeData( dos, row );
-            if ( maxRows > 0 && rowCounter.incrementAndGet() > maxRows ) {
-              executor.getServiceTrans().stopAll();
-            }
             dataSize.set( dos.size() );
           } catch ( Exception e ) {
             if ( !executor.getServiceTrans().isStopped() ) {

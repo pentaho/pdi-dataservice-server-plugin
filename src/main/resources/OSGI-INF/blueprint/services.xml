@@ -32,6 +32,14 @@
              interface="com.pentaho.di.trans.dataservice.optimization.PushDownFactory">
     </service>
 
+    <bean id="serviceCacheFactory" scope="singleton"
+          class="com.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory">
+        <argument ref="cacheManager"/>
+    </bean>
+    <service id="serviceCacheOptimization" ref="serviceCacheFactory"
+             interface="com.pentaho.di.trans.dataservice.optimization.PushDownFactory">
+    </service>
+
     <service id="tableInputParamGen"
              interface="com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceFactory">
         <bean class="com.pentaho.di.trans.dataservice.optimization.paramgen.TableInputParameterGenerationFactory"/>

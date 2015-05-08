@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DataServiceClient implements DataServiceClientService {
@@ -77,9 +76,10 @@ public class DataServiceClient implements DataServiceClientService {
         List<DataServiceMeta> dataServices = metaStoreUtil.getMetaStoreFactory( metaStore )
           .getElements();
 
-        final DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sqlQuery ), dataServices ).
-            lookupServiceTrans( repository ).
-            build();
+        final DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sqlQuery ), dataServices )
+          .lookupServiceTrans( repository )
+          .rowLimit( maxRows )
+          .build();
 
         dos.writeUTF( executor.getServiceName() );
 
@@ -92,7 +92,6 @@ public class DataServiceClient implements DataServiceClientService {
 
         final AtomicBoolean firstRow = new AtomicBoolean( true );
 
-        final AtomicInteger rowCounter = new AtomicInteger( 0 );
         final AtomicBoolean wroteRowMeta = new AtomicBoolean( false );
 
         executor.executeQuery( new RowAdapter() {
@@ -101,15 +100,11 @@ public class DataServiceClient implements DataServiceClientService {
             // On the first row, write the metadata...
             //
             try {
-              if ( firstRow.get() ) {
-                firstRow.set( false );
+              if ( firstRow.compareAndSet( true, false ) ) {
                 rowMeta.writeMeta( dos );
                 wroteRowMeta.set( true );
               }
               rowMeta.writeData( dos, row );
-              if ( maxRows > 0 && rowCounter.incrementAndGet() > maxRows ) {
-                executor.getServiceTrans().stopAll();
-              }
               dataSize.set( dos.size() );
             } catch ( Exception e ) {
               if ( !executor.getServiceTrans().isStopped() ) {

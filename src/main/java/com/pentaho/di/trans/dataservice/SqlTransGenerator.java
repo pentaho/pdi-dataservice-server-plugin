@@ -22,8 +22,6 @@
 
 package com.pentaho.di.trans.dataservice;
 
-import java.util.List;
-
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
@@ -49,6 +47,8 @@ import org.pentaho.di.trans.steps.rowgenerator.RowGeneratorMeta;
 import org.pentaho.di.trans.steps.samplerows.SampleRowsMeta;
 import org.pentaho.di.trans.steps.selectvalues.SelectValuesMeta;
 import org.pentaho.di.trans.steps.sort.SortRowsMeta;
+
+import java.util.List;
 
 public class SqlTransGenerator {
 
@@ -184,19 +184,19 @@ public class SqlTransGenerator {
       lastStep = addToTrans( selectStep, transMeta, lastStep );
     }
 
-    // If there is a row limit specified, adhere to it but do not block the transformation from being executed.
-    //
-    if ( rowLimit > 0 && sql.getLimitClause() != null ) {
-      StepMeta sampleStep = generateSampleStep();
-      lastStep = addToTrans( sampleStep, transMeta, lastStep );
-    }
-
     // Limit the data from the limit keyword
     if ( sql.getLimitClause() != null ) {
       int limit = sql.getLimitValues().getLimit();
       int offset = sql.getLimitValues().getOffset();
       StepMeta limitStep = generateLimitStep( offset, limit );
       lastStep = addToTrans( limitStep, transMeta, lastStep );
+    }
+
+    // If there is a row limit specified, adhere to it but do not block the transformation from being executed.
+    //
+    if ( rowLimit > 0 ) {
+      StepMeta sampleStep = generateSampleStep();
+      lastStep = addToTrans( sampleStep, transMeta, lastStep );
     }
 
     // Finally add a dummy step containing the result
