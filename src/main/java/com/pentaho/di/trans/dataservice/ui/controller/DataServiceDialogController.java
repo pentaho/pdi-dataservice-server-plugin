@@ -210,6 +210,7 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
       new PushDownOptDialog( (Shell) parent, PropsUI.getInstance(), transMeta, optMeta, pushDownFactories );
     if ( dialog.open() == SWT.OK ) {
       List<PushDownOptimizationMeta> optimizations = model.getPushDownOptimizations();
+      optMeta.getType().init( transMeta, getDataService(), optMeta );
       optimizations.add( optMeta );
       model.setPushDownOptimizations( optimizations );
     }
