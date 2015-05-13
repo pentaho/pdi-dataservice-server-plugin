@@ -10,8 +10,8 @@
     <parent>
         <groupId>com.pentaho</groupId>
         <artifactId>pentaho-ee-jar-parent-pom</artifactId>
-        <version>1.0.8</version>
-        <!-- https://github.com/pentaho/maven-parent-poms/blob/pentaho-ee-jar-parent-pom-1.0.8/pentaho-ee-jar-parent-pom/pom.xml -->
+        <version>1.0.13</version>
+        <!-- https://github.com/pentaho/maven-parent-poms/blob/pentaho-ee-jar-parent-pom-1.0.13/pentaho-ee-jar-parent-pom/pom.xml -->
     </parent>
 
     <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
