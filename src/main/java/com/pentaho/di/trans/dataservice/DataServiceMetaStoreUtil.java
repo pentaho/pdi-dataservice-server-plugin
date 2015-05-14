@@ -24,8 +24,10 @@ package com.pentaho.di.trans.dataservice;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
+import com.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
 import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
@@ -43,41 +45,55 @@ import java.util.Map;
 import static org.pentaho.metastore.util.PentahoDefaults.*;
 
 public class DataServiceMetaStoreUtil {
-  public static final String GROUP_DATA_SERVICE = "DataService";
 
   private final List<PushDownFactory> pushDownFactories;
+  private DataServiceMetaCache dataServiceMetaCache;
 
-  public DataServiceMetaStoreUtil( List<PushDownFactory> pushDownFactories ) {
+  public DataServiceMetaStoreUtil( List<PushDownFactory> pushDownFactories,
+                                   DataServiceMetaCache dataServiceMetaCache ) {
     this.pushDownFactories = pushDownFactories;
+    this.dataServiceMetaCache = dataServiceMetaCache;
   }
 
   public DataServiceMeta fromTransMeta( TransMeta transMeta, IMetaStore metaStore, String stepName )
     throws MetaStoreException {
-    DataServiceMeta dataService = null;
+
+    DataServiceMeta dataService = dataServiceMetaCache.get( transMeta, stepName );
+    if ( dataService != null ) {
+      return dataService.getName() != null ? dataService : null;
+    }
+
     List<DataServiceMeta> dataServices = getMetaStoreFactory( metaStore ).getElements();
+    Repository repository = transMeta.getRepository();
     for ( DataServiceMeta dataServiceMeta : dataServices ) {
-      Repository repository = transMeta.getRepository();
+      if ( !dataServiceMeta.getStepname().equals( stepName ) ) {
+        continue;
+      }
+
       if ( repository != null ) {
         if ( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ) {
           ObjectId objectId = transMeta.getObjectId();
-          if ( objectId != null && objectId.getId().equals( dataServiceMeta.getTransObjectId() ) && dataServiceMeta
-            .getStepname().equals( stepName ) ) {
+          if ( objectId != null && objectId.getId().equals( dataServiceMeta.getTransObjectId() ) ) {
             dataService = dataServiceMeta;
           }
         }
-        if ( ( transMeta.getRepositoryDirectory().getPath() + RepositoryDirectory.DIRECTORY_SEPARATOR + transMeta
-          .getName() ).equals( dataServiceMeta.getTransRepositoryPath() ) && dataServiceMeta.getStepname()
-          .equals( stepName ) ) {
-          dataService = dataServiceMeta;
+        if ( dataService == null ) {
+          String repositoryPath =
+            transMeta.getRepositoryDirectory().getPath() + RepositoryDirectory.DIRECTORY_SEPARATOR + transMeta
+              .getName();
+          if ( repositoryPath.equals( dataServiceMeta.getTransRepositoryPath() ) ) {
+            dataService = dataServiceMeta;
+          }
         }
       } else {
         String filename = transMeta.getFilename();
-        if ( filename != null && filename.equals( dataServiceMeta.getTransFilename() ) && dataServiceMeta.getStepname()
-          .equals( stepName ) ) {
+        if ( filename != null && filename.equals( dataServiceMeta.getTransFilename() ) ) {
           dataService = dataServiceMeta;
         }
       }
     }
+
+    dataServiceMetaCache.put( transMeta, stepName, dataService );
 
     return dataService;
   }
@@ -97,9 +113,7 @@ public class DataServiceMetaStoreUtil {
       //
       Repository repository = transMeta.getRepository();
       if ( transMeta.getRepository() != null ) {
-        dataService.setTransRepositoryPath(
-          transMeta.getRepositoryDirectory().getPath() + RepositoryDirectory.DIRECTORY_SEPARATOR + transMeta
-            .getName() );
+        dataService.setTransRepositoryPath( transMeta.getPathAndName() );
         if ( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ) {
           ObjectId oid = transMeta.getObjectId();
           dataService.setTransObjectId( oid == null ? null : oid.getId() );
@@ -111,11 +125,18 @@ public class DataServiceMetaStoreUtil {
         dataService.setTransFilename( transMeta.getFilename() );
       }
       getMetaStoreFactory( metaStore ).saveElement( dataService );
+      dataServiceMetaCache.put( transMeta, dataService.getStepname(), dataService );
     }
   }
 
   public DataServiceMeta findByName( IMetaStore metaStore, String name ) throws MetaStoreException {
     return getMetaStoreFactory( metaStore ).loadElement( name );
+  }
+
+  public void removeDataService( TransMeta transMeta, IMetaStore metaStore, DataServiceMeta dataService )
+    throws MetaStoreException {
+    getMetaStoreFactory( metaStore ).deleteElement( dataService.getName() );
+    dataServiceMetaCache.put( transMeta, dataService.getStepname(), null );
   }
 
   /**
@@ -182,4 +203,5 @@ public class DataServiceMetaStoreUtil {
       return Maps.newHashMap();
     }
   };
+
 }

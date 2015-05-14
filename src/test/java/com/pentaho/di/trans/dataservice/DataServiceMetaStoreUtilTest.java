@@ -22,6 +22,7 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import com.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
 import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
@@ -44,9 +45,7 @@ import java.util.Collections;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceMetaStoreUtilTest {
@@ -56,10 +55,13 @@ public class DataServiceMetaStoreUtilTest {
   private TransMeta transMeta;
   private IMetaStore metaStore;
   private DataServiceMeta dataService;
+  private MetaStoreFactory<DataServiceMeta> metaStoreFactory;
 
-  @Mock private DataServiceMetaStoreUtil metaStoreUtil;
-  private MetaStoreFactory<DataServiceMeta>
-    metaStoreFactory;
+  @Mock
+  private DataServiceMetaCache cache;
+
+  @Mock
+  private DataServiceMetaStoreUtil metaStoreUtil;
 
   @Before
   public void setUp() throws KettleException, MetaStoreException {
@@ -74,6 +76,8 @@ public class DataServiceMetaStoreUtilTest {
     dataService.setName( DATA_SERVICE_NAME );
     dataService.setStepname( DATA_SERVICE_STEP );
     dataService.setTransFilename( "/path/to/transformation.ktr" );
+
+    doReturn( null ).when( cache ).get( any( TransMeta.class ), anyString() );
 
     metaStoreUtil = new DataServiceMetaStoreUtil( Collections.<PushDownFactory>singletonList( new PushDownFactory() {
       @Override public String getName() {
@@ -91,7 +95,7 @@ public class DataServiceMetaStoreUtilTest {
       @Override public PushDownOptTypeForm createPushDownOptTypeForm() {
         return mock( PushDownOptTypeForm.class );
       }
-    } )
+    } ), cache
     );
     metaStoreFactory = metaStoreUtil.getMetaStoreFactory( metaStore );
   }

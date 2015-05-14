@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
 import com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
+import com.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
 import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
@@ -53,21 +54,10 @@ import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.same;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith( MockitoJUnitRunner.class )
 public class ParameterGenerationTest {
@@ -82,7 +72,7 @@ public class ParameterGenerationTest {
   private final DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil(
     ImmutableList.<PushDownFactory>of(
       new ParameterGenerationFactory( ImmutableList.<ParameterGenerationServiceFactory>of() )
-    )
+    ), mock( DataServiceMetaCache.class )
   );
 
   private ParameterGeneration paramGen;
