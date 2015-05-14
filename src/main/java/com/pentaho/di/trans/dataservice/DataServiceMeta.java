@@ -22,6 +22,7 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import com.google.common.base.Objects;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Const;
@@ -241,5 +242,54 @@ public class DataServiceMeta {
 
   public void setPushDownOptimizationMeta( List<PushDownOptimizationMeta> pushDownOptimizationMeta ) {
     this.pushDownOptimizationMeta = pushDownOptimizationMeta;
+  }
+
+  public static CacheKey createCacheKey( TransMeta transMeta, String stepName ) {
+    String identifier = "";
+    Repository repository = transMeta.getRepository();
+    if ( repository != null ) {
+      if ( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ) {
+        ObjectId objectId = transMeta.getObjectId();
+        if ( objectId != null ) {
+          identifier = objectId.getId();
+        }
+      }
+      if ( Const.isEmpty( identifier ) ) {
+        identifier = transMeta.getPathAndName();
+      }
+    } else {
+      identifier = transMeta.getFilename();
+    }
+
+    return new CacheKey( identifier, stepName );
+  }
+
+  public static final class CacheKey {
+
+    private final String identifier;
+    private final String stepName;
+
+    public CacheKey( String identifier, String stepName ) {
+      this.identifier = identifier;
+      this.stepName = stepName;
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+      if ( this == obj ) {
+        return true;
+      }
+      if ( obj == null || getClass() != obj.getClass() ) {
+        return false;
+      }
+
+      final CacheKey cacheKey = (CacheKey) obj;
+      return Objects.equal( identifier, cacheKey.identifier ) && Objects.equal( stepName, cacheKey.stepName );
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode( identifier, stepName );
+    }
   }
 }

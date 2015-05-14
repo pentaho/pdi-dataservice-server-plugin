@@ -137,7 +137,12 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
 
   class DataServiceDeleteCommand implements DataServiceCommand {
     @Override public void execute() {
-      delegate.removeDataService( selectedDataService );
+      try {
+        TransMeta transMeta = selectedDataService.lookupTransMeta( getRepository() );
+        delegate.removeDataService( transMeta, selectedDataService );
+      } catch ( KettleException e ) {
+        logger.error( "Unable to open transformation", e );
+      }
     }
   }
 

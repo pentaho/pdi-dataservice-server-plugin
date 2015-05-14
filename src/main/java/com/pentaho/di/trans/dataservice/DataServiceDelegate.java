@@ -45,10 +45,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.trans.dialog.TransLoadProgressDialog;
 import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.metastore.api.IMetaStoreElement;
-import org.pentaho.metastore.api.IMetaStoreElementType;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
-import org.pentaho.metastore.util.PentahoDefaults;
 
 import java.util.List;
 
@@ -118,7 +115,7 @@ public class DataServiceDelegate {
     }
   }
 
-  public void removeDataService( DataServiceMeta dataService, boolean prompt ) {
+  public void removeDataService( TransMeta transMeta, DataServiceMeta dataService, boolean prompt ) {
     boolean shouldDelete = true;
     if ( prompt ) {
       MessageBox messageBox = new MessageBox( getSpoon().getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
@@ -133,7 +130,7 @@ public class DataServiceDelegate {
       try {
         if ( dataService != null ) {
           IMetaStore metaStore = getSpoon().getMetaStore();
-          metaStoreUtil.getMetaStoreFactory( metaStore ).deleteElement( dataService.getName() );
+          metaStoreUtil.removeDataService( transMeta, metaStore, dataService );
           getSpoon().refreshTree();
         }
       } catch ( MetaStoreException e ) {
@@ -142,8 +139,8 @@ public class DataServiceDelegate {
     }
   }
 
-  public void removeDataService( DataServiceMeta dataServiceMeta ) {
-    removeDataService( dataServiceMeta, true );
+  public void removeDataService( TransMeta transMeta, DataServiceMeta dataServiceMeta ) {
+    removeDataService( transMeta, dataServiceMeta, true );
   }
 
   public void testDataService( DataServiceMeta dataService ) {

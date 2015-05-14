@@ -22,12 +22,18 @@
 
 package com.pentaho.di.trans.dataservice;
 
+import com.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
 import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.junit.Test;
+import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.sql.ServiceCacheMethod;
+import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositoryCapabilities;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
+import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.StringObjectId;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
@@ -38,8 +44,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class DataServiceMetaTest {
 
@@ -51,7 +56,8 @@ public class DataServiceMetaTest {
       makeTestDSM( "name2", "stepName 2", "/foo/bar/baz.ktr", "transRepPath", "otherOid", ServiceCacheMethod.None, 15 ),
       makeTestDSM( "name 3", "stepName3", null, "transRepPath", "blahOid", ServiceCacheMethod.LocalMemory, 0 ),
     };
-    DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil( Collections.<PushDownFactory>emptyList() );
+    DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil( Collections.<PushDownFactory>emptyList(), mock(
+      DataServiceMetaCache.class ) );
     MetaStoreFactory<DataServiceMeta> factory = metaStoreUtil.getMetaStoreFactory( metaStore );
 
     for ( DataServiceMeta meta : dataServiceMetas ) {
@@ -107,5 +113,64 @@ public class DataServiceMetaTest {
     assertEquals( objectId.getId(), myService.getTransObjectId() );
 
     assertEquals( objectId.getId(), myService.lookupTransObjectId( null ).getId() );
+  }
+
+  @Test
+  public void testCreateCacheKey() throws Exception {
+    String stepName = "Test Step";
+    String id = "1234567890";
+
+    TransMeta transMeta = mock( TransMeta.class );
+    Repository repository = mock( Repository.class );
+    RepositoryMeta repositoryMeta = mock( RepositoryMeta.class );
+    RepositoryCapabilities repositoryCapabilities = mock( RepositoryCapabilities.class );
+    ObjectId objectId = mock( ObjectId.class );
+
+    doReturn( repository ).when( transMeta ).getRepository();
+    doReturn( repositoryMeta ).when( repository ).getRepositoryMeta();
+    doReturn( repositoryCapabilities ).when( repositoryMeta ).getRepositoryCapabilities();
+    doReturn( true ).when( repositoryCapabilities ).supportsReferences();
+
+    doReturn( objectId ).when( transMeta ).getObjectId();
+    doReturn( id ).when( objectId ).getId();
+
+    DataServiceMeta.CacheKey cacheKey = DataServiceMeta.createCacheKey( transMeta, stepName );
+    DataServiceMeta.CacheKey equivalentCacheKey = new DataServiceMeta.CacheKey( id, stepName );
+
+    assertEquals( cacheKey, equivalentCacheKey );
+    assertEquals( cacheKey.hashCode(), equivalentCacheKey.hashCode() );
+
+    // Test for file in repo with no object ID
+    id = "/path/in/repo/file.ktr";
+
+    doReturn( false ).when( repositoryCapabilities ).supportsReferences();
+    doReturn( id ).when( transMeta ).getPathAndName();
+
+    cacheKey = DataServiceMeta.createCacheKey( transMeta, stepName );
+    equivalentCacheKey = new DataServiceMeta.CacheKey( id, stepName );
+
+    assertEquals( cacheKey, equivalentCacheKey );
+    assertEquals( cacheKey.hashCode(), equivalentCacheKey.hashCode() );
+
+    // Test for file not in repo
+    id = "/path/in/system/file.ktr";
+
+    doReturn( null ).when( transMeta ).getRepository();
+    doReturn( id ).when( transMeta ).getFilename();
+
+    cacheKey = DataServiceMeta.createCacheKey( transMeta, stepName );
+    equivalentCacheKey = new DataServiceMeta.CacheKey( id, stepName );
+
+    assertEquals( cacheKey, equivalentCacheKey );
+    assertEquals( cacheKey.hashCode(), equivalentCacheKey.hashCode() );
+
+    verify( transMeta, times( 3 ) ).getRepository();
+    verify( repository, times( 2 ) ).getRepositoryMeta();
+    verify( repositoryMeta, times( 2 ) ).getRepositoryCapabilities();
+    verify( repositoryCapabilities, times( 2 ) ).supportsReferences();
+    verify( transMeta ).getObjectId();
+    verify( objectId ).getId();
+    verify( transMeta ).getPathAndName();
+    verify( transMeta ).getFilename();
   }
 }

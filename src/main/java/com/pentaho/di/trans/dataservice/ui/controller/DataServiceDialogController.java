@@ -237,7 +237,7 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
   }
 
   private void removeDataService() {
-    delegate.removeDataService( dataService, false );
+    delegate.removeDataService( transMeta, dataService, false );
   }
 
   private DataServiceMeta getDataService() {
