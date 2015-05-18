@@ -40,7 +40,6 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
@@ -53,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -60,10 +60,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DataServiceExecutorTest {
 
@@ -196,6 +202,7 @@ public class DataServiceExecutorTest {
     SQL sql = mock( SQL.class );
     when( sql.getServiceName() ).thenReturn( "test_service" );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
+    StepInterface serviceStep = serviceTrans.findRunThread( SERVICE_STEP_NAME );
     StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
 
     when( sql.getWhereClause() ).thenReturn( null );
@@ -213,7 +220,7 @@ public class DataServiceExecutorTest {
     executor.executeQuery( clientRowListener );
 
     InOrder genTransStartup = inOrder( genTrans, resultStep );
-    InOrder serviceTransStartup = inOrder( serviceTrans, serviceTrans.findRunThread( SERVICE_STEP_NAME ) );
+    InOrder serviceTransStartup = inOrder( serviceTrans, serviceStep );
     ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );
     ArgumentCaptor<StepListener> resultStepListener = ArgumentCaptor.forClass( StepListener.class );
 
@@ -222,7 +229,7 @@ public class DataServiceExecutorTest {
     genTransStartup.verify( resultStep ).addRowListener( clientRowListener );
     genTransStartup.verify( genTrans ).startThreads();
 
-    serviceTransStartup.verify( serviceTrans.findRunThread( SERVICE_STEP_NAME ) ).addRowListener( listenerArgumentCaptor.capture() );
+    serviceTransStartup.verify( serviceStep ).addRowListener( listenerArgumentCaptor.capture() );
     serviceTransStartup.verify( serviceTrans ).startThreads();
 
     // Verify linkage
@@ -231,12 +238,12 @@ public class DataServiceExecutorTest {
 
     RowProducer sqlTransRowProducer = genTrans.addRowProducer( INJECTOR_STEP_NAME, 0 );
     // Push row from service to sql Trans
+    RowMeta rowMeta = mock( RowMeta.class );
     for ( int i = 0; i < 50; i++ ) {
-      RowMeta rowMeta =  mock( RowMeta.class );
-      Object[] data = new Object[0];
+      Object[] data = new Object[] { i };
 
       serviceRowListener.rowWrittenEvent( rowMeta, data );
-      verify( sqlTransRowProducer ).putRow( same( rowMeta ), same( data ) );
+      verify( sqlTransRowProducer ).putRowWait( same( rowMeta ), eq( data ), any( Long.class ), any( TimeUnit.class ) );
     }
 
     doReturn( true ).when( serviceTrans ).isRunning();
@@ -244,9 +251,9 @@ public class DataServiceExecutorTest {
     verify( serviceTrans ).stopAll();
 
     // Verify Service Trans finished
-    ArgumentCaptor<TransListener> serviceTransListener = ArgumentCaptor.forClass( TransListener.class );
-    verify( serviceTrans ).addTransListener( serviceTransListener.capture() );
-    serviceTransListener.getValue().transFinished( serviceTrans );
+    ArgumentCaptor<StepListener> serviceStepListener = ArgumentCaptor.forClass( StepListener.class );
+    verify( serviceStep ).addStepListener( serviceStepListener.capture() );
+    serviceStepListener.getValue().stepFinished( serviceTrans, serviceStep.getStepMeta(), serviceStep );
     verify( sqlTransRowProducer ).finished();
   }
 
