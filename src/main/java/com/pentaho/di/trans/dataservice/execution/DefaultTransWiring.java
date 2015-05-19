@@ -31,11 +31,12 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.StepAdapter;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author nhudak
@@ -52,6 +53,7 @@ public class DefaultTransWiring implements Runnable {
     //
     final RowProducer rowProducer;
     final Trans serviceTrans = dataServiceExecutor.getServiceTrans();
+    final Trans genTrans = dataServiceExecutor.getGenTrans();
 
     try {
       rowProducer = dataServiceExecutor.addRowProducer();
@@ -76,15 +78,19 @@ public class DefaultTransWiring implements Runnable {
           // Ignore errors
         }
 
-        rowProducer.putRow( rowMeta, row );
+        while ( !rowProducer.putRowWait( rowMeta, row, 1, TimeUnit.SECONDS ) && genTrans.isRunning() ) {
+          // Row queue was full, try again
+          if ( log.isRowLevel() ) {
+            log.logRowlevel( "Row buffer is full, trying again" );
+          }
+        }
       }
     } );
 
     // Let the other transformation know when there are no more rows
     //
-    serviceTrans.addTransListener( new TransAdapter() {
-      @Override
-      public void transFinished( Trans trans ) throws KettleException {
+    serviceStep.addStepListener( new StepAdapter() {
+      @Override public void stepFinished( Trans trans, StepMeta stepMeta, StepInterface step ) {
         rowProducer.finished();
       }
     } );
