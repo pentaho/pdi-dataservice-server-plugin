@@ -22,7 +22,6 @@
 
 package com.pentaho.di.trans.dataservice.optimization.cache;
 
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
@@ -33,6 +32,7 @@ import com.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.metastore.persist.MetaStoreAttribute;
 
 import javax.cache.Cache;
 import java.text.MessageFormat;
@@ -44,7 +44,9 @@ import java.util.concurrent.CancellationException;
 public class ServiceCache implements PushDownType {
   public static final String NAME = "Service Cache";
   private final ServiceCacheFactory factory;
-  private String templateName = "";
+  public static final String SERVICE_CACHE_TEMPLATE_NAME = "template_name";
+
+  @MetaStoreAttribute( key = SERVICE_CACHE_TEMPLATE_NAME ) private String templateName = "";
 
   public ServiceCache( ServiceCacheFactory factory ) {
     this.factory = factory;
@@ -65,33 +67,31 @@ public class ServiceCache implements PushDownType {
     CachedServiceLoader cachedServiceLoader = cache.get( cacheKey );
     if ( cachedServiceLoader == null ) {
       Futures.addCallback( CachedServiceLoader.observe( stepInterface ), new FutureCallback<CachedServiceLoader>() {
-          @Override public void onSuccess( CachedServiceLoader result ) {
-            if ( cache.putIfAbsent( cacheKey, result ) ) {
-              logChannel.logBasic( "Service Transformation results cached" );
+            @Override public void onSuccess( CachedServiceLoader result ) {
+              if ( cache.putIfAbsent( cacheKey, result ) ) {
+                logChannel.logBasic( "Service Transformation results cached" );
+              }
             }
-          }
 
-          @Override public void onFailure( Throwable t ) {
-            if ( t instanceof CancellationException ) {
-              logChannel.logBasic( "Service was stopped before results could be cached" );
-            } else {
-              logChannel.logError( "Cache failed to observe service transformation", t );
+            @Override public void onFailure( Throwable t ) {
+              if ( t instanceof CancellationException ) {
+                logChannel.logBasic( "Service was stopped before results could be cached" );
+              } else {
+                logChannel.logError( "Cache failed to observe service transformation", t );
+              }
             }
-          }
-        }
-      );
+          } );
       return false;
     } else {
       Futures.addCallback( cachedServiceLoader.replay( executor ), new FutureCallback<Integer>() {
-          @Override public void onSuccess( Integer rowCount ) {
-            logChannel.logBasic( "Service Transformation successfully replayed " + rowCount + " rows from cache" );
-          }
+            @Override public void onSuccess( Integer rowCount ) {
+              logChannel.logBasic( "Service Transformation successfully replayed " + rowCount + " rows from cache" );
+            }
 
-          @Override public void onFailure( Throwable t ) {
-            logChannel.logError( "Cache failed to replay service transformation", t );
-          }
-        }
-      );
+            @Override public void onFailure( Throwable t ) {
+              logChannel.logError( "Cache failed to replay service transformation", t );
+            }
+          } );
       return true;
     }
   }
@@ -107,8 +107,8 @@ public class ServiceCache implements PushDownType {
     } else {
       info.setModified( true );
       info.setQueryBeforeOptimization( MessageFormat.format( "Service results for {0} are available.", cacheKey ) );
-      info.setQueryAfterOptimization( MessageFormat.format( "{0} rows can be read from cache.",
-        cachedServiceLoader.getRowMetaAndData().size() ) );
+      info.setQueryAfterOptimization(
+          MessageFormat.format( "{0} rows can be read from cache.", cachedServiceLoader.getRowMetaAndData().size() ) );
     }
     return info;
   }
