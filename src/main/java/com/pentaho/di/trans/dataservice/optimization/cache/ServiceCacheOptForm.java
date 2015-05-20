@@ -61,12 +61,11 @@ public class ServiceCacheOptForm implements PushDownOptTypeForm {
 
   @Override public void setValues( PushDownOptimizationMeta optimizationMeta, TransMeta transMeta ) {
     templateList.setItems( Iterables.toArray( factory.getTemplates(), String.class ) );
-    setSelectedItem( templateList, optimizationMeta.getType() instanceof ServiceCache ?
-      ( (ServiceCache) optimizationMeta.getType() ).getTemplateName() : null );
+    setSelectedItem( templateList, optimizationMeta.getType() instanceof ServiceCache
+        ? ( (ServiceCache) optimizationMeta.getType() ).getTemplateName() : null );
   }
 
-  @Override
-  public void populateForm( Composite composite, PropsUI props, final TransMeta transMeta ) {
+  @Override public void populateForm( Composite composite, PropsUI props, final TransMeta transMeta ) {
     Group cacheOptGroup = new Group( composite, SWT.SHADOW_IN );
     props.setLook( cacheOptGroup );
     cacheOptGroup.setText( BaseMessages.getString( PKG, "ServiceCacheOptForm.Label" ) );
@@ -110,9 +109,11 @@ public class ServiceCacheOptForm implements PushDownOptTypeForm {
     }
   }
 
-  @Override
-  public void applyOptimizationParameters( PushDownOptimizationMeta optimizationMeta ) {
+  @Override public void applyOptimizationParameters( PushDownOptimizationMeta optimizationMeta ) {
     ServiceCache pushDown = factory.createPushDown();
+    if ( templateList.getSelection().length == 1 ) {
+      pushDown.setTemplateName( templateList.getSelection()[0] );
+    }
     optimizationMeta.setType( pushDown );
   }
 
