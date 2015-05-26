@@ -23,6 +23,7 @@
 package com.pentaho.di.trans.dataservice.cache;
 
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.trans.TransMeta;
 
@@ -47,8 +48,14 @@ public class DataServiceMetaCache {
   }
 
   private Cache<DataServiceMeta.CacheKey, DataServiceMeta> getCache() {
-    return cacheManager
-      .getCache( DataServiceMetaCache.class.getName(), DataServiceMeta.CacheKey.class, DataServiceMeta.class );
+    String cacheName = DataServiceMetaCache.class.getName();
+    Cache<DataServiceMeta.CacheKey, DataServiceMeta> cache;
+    cache = cacheManager.getCache( cacheName, DataServiceMeta.CacheKey.class, DataServiceMeta.class );
+    if ( cache == null ) {
+      cache = cacheManager.getTemplates().get( Constants.DEFAULT_TEMPLATE )
+        .createCache( cacheName, DataServiceMeta.CacheKey.class, DataServiceMeta.class );
+    }
+    return cache;
   }
 
 }
