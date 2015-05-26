@@ -120,6 +120,8 @@ public class DataServiceExecutor {
     }
 
     public Builder serviceTrans( TransMeta serviceTransMeta ) throws KettleException {
+      // Copy TransMeta, we don't want to persist any changes to the meta during execution
+      serviceTransMeta = (TransMeta) serviceTransMeta.realClone( false );
       serviceTransMeta.setName( calculateTransname( sql, true ) );
       serviceTransMeta.activateParameters();
       return serviceTrans( new Trans( serviceTransMeta ) );
