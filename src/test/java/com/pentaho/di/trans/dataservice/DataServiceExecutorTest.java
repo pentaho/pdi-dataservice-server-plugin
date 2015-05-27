@@ -27,12 +27,13 @@ import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.ObjectId;
@@ -55,12 +56,14 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
@@ -68,6 +71,7 @@ import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -98,7 +102,8 @@ public class DataServiceExecutorTest {
         build();
 
     // Verify execution prep
-    assertEquals( trans, executor.getServiceTransMeta() );
+    verify( trans, never() ).setName( anyString() );
+    assertThat( executor.getServiceTransMeta(), sameInstance( trans.clone() ) );
     assertNotNull( executor.getGenTransMeta() );
     assertNotNull( "Service Trans not created", executor.getServiceTrans() );
     assertNotNull( "SQL Trans not created", executor.getGenTrans() );
@@ -343,15 +348,25 @@ public class DataServiceExecutorTest {
 
   private TransMeta mockTransMeta() throws KettleStepException {
     TransMeta trans = mock( TransMeta.class, RETURNS_DEEP_STUBS );
-    RowMetaInterface serviceStep = mock( RowMetaInterface.class, RETURNS_DEEP_STUBS );
-    when( trans.getStepFields( SERVICE_STEP_NAME ) ).thenReturn( serviceStep );
     when( trans.listVariables() ).thenReturn( new String[0] );
     when( trans.listParameters() ).thenReturn( new String[0] );
+    Answer<TransMeta> clone = new Answer<TransMeta>() {
+      private TransMeta clone = null;
+
+      @Override public TransMeta answer( InvocationOnMock invocation ) throws Throwable {
+        if ( clone == null ) {
+          clone = mockTransMeta();
+        }
+        return clone;
+      }
+    };
+    when( trans.realClone( anyBoolean() ) ).thenAnswer( clone );
+    when( trans.clone() ).thenAnswer( clone );
     return trans;
   }
 
   private DataServiceMeta createDataServiceMeta() {
-    DataServiceMeta service = new DataServiceMeta(  );
+    DataServiceMeta service = new DataServiceMeta();
     service.setName( SERVICE_NAME );
     service.setStepname( SERVICE_STEP_NAME );
     return service;
