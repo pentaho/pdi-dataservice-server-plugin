@@ -206,6 +206,9 @@
                             org.pentaho.di.osgi,
                             org.pentaho.di.core.plugins,
                             org.pentaho.di.core.extension,
+                            com.pentaho.dictionary,
+                            com.pentaho.metaverse.api,
+                            com.pentaho.metaverse.api.*,
                             *
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
