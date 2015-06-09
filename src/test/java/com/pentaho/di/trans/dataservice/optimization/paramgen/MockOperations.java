@@ -22,9 +22,9 @@
 
 package com.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import com.pentaho.metaverse.api.ChangeType;
-import com.pentaho.metaverse.api.model.IOperation;
-import com.pentaho.metaverse.api.model.Operations;
+import org.pentaho.metaverse.api.ChangeType;
+import org.pentaho.metaverse.api.model.IOperation;
+import org.pentaho.metaverse.api.model.Operations;
 
 import java.util.Collections;
 

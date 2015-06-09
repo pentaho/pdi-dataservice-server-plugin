@@ -12,7 +12,7 @@
       <argument ref="cacheManager"/>
     </bean>
 
-    <reference id="lineageClient" interface="com.pentaho.metaverse.api.ILineageClient"/>
+    <reference id="lineageClient" interface="org.pentaho.metaverse.api.ILineageClient"/>
     <reference id="cacheManager" interface="org.pentaho.caching.api.PentahoCacheManager" />
 
     <reference-list id="pushDownFactories" interface="com.pentaho.di.trans.dataservice.optimization.PushDownFactory"
