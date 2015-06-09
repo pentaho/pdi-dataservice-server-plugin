@@ -23,7 +23,6 @@
 package com.pentaho.di.trans.dataservice.optimization;
 
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
-import edu.emory.mathcs.backport.java.util.Arrays;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
@@ -31,11 +30,10 @@ import org.pentaho.metastore.persist.MetaStoreElementType;
 import org.pentaho.ui.xul.XulEventSource;
 
 import java.beans.PropertyChangeListener;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
-
-import java.text.MessageFormat;
 
 /**
  * @author nhudak
@@ -44,7 +42,7 @@ import java.text.MessageFormat;
   name = "Push Down Optimization",
   description = "Define opportunities to improve Data Service performance by modifying user transformation execution"
 )
-public final class PushDownOptimizationMeta implements XulEventSource {
+public class PushDownOptimizationMeta implements XulEventSource {
 
   private static final Class<?> PKG = PushDownOptimizationMeta.class;
 

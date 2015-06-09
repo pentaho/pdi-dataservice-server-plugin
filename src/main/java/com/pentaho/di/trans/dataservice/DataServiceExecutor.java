@@ -399,7 +399,7 @@ public class DataServiceExecutor {
     executeListeners( ExecutionPoint.START );
   }
 
-  private void executeListeners( ExecutionPoint executionPoint ) {
+  public void executeListeners( ExecutionPoint executionPoint ) {
     for ( Runnable runnable : listenerMap.get( executionPoint ) ) {
       runnable.run();
     }
@@ -498,6 +498,10 @@ public class DataServiceExecutor {
    */
   public String getResultStepName() {
     return sqlTransGenerator.getResultStepName();
+  }
+
+  public int getRowLimit() {
+    return sqlTransGenerator.getRowLimit();
   }
 
   public ListMultimap<ExecutionPoint, Runnable> getListenerMap() {

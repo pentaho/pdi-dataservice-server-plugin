@@ -22,8 +22,12 @@
 
 package com.pentaho.di.trans.dataservice.optimization.cache;
 
+import com.google.common.base.Function;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.DataServiceMeta;
 import com.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
@@ -36,7 +40,13 @@ import org.pentaho.metastore.persist.MetaStoreAttribute;
 
 import javax.cache.Cache;
 import java.text.MessageFormat;
-import java.util.concurrent.CancellationException;
+import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.notNull;
+import static org.pentaho.caching.api.Constants.DEFAULT_TEMPLATE;
 
 /**
  * @author nhudak
@@ -46,7 +56,7 @@ public class ServiceCache implements PushDownType {
   private final ServiceCacheFactory factory;
   public static final String SERVICE_CACHE_TEMPLATE_NAME = "template_name";
 
-  @MetaStoreAttribute( key = SERVICE_CACHE_TEMPLATE_NAME ) private String templateName = "";
+  @MetaStoreAttribute( key = SERVICE_CACHE_TEMPLATE_NAME ) private String templateName = DEFAULT_TEMPLATE;
 
   public ServiceCache( ServiceCacheFactory factory ) {
     this.factory = factory;
@@ -62,55 +72,122 @@ public class ServiceCache implements PushDownType {
 
   @Override public boolean activate( final DataServiceExecutor executor, StepInterface stepInterface ) {
     final LogChannelInterface logChannel = executor.getGenTrans().getLogChannel();
-    final CachedServiceLoader.CacheKey cacheKey = CachedServiceLoader.createCacheKey( executor );
-    final Cache<CachedServiceLoader.CacheKey, CachedServiceLoader> cache = factory.getCache( this );
-    CachedServiceLoader cachedServiceLoader = cache.get( cacheKey );
-    if ( cachedServiceLoader == null ) {
-      Futures.addCallback( CachedServiceLoader.observe( stepInterface ), new FutureCallback<CachedServiceLoader>() {
-            @Override public void onSuccess( CachedServiceLoader result ) {
-              if ( cache.putIfAbsent( cacheKey, result ) ) {
-                logChannel.logBasic( "Service Transformation results cached" );
-              }
-            }
+    final Cache<CachedService.CacheKey, CachedService> cache = factory.getCache( this );
 
-            @Override public void onFailure( Throwable t ) {
-              if ( t instanceof CancellationException ) {
-                logChannel.logBasic( "Service was stopped before results could be cached" );
-              } else {
-                logChannel.logError( "Cache failed to observe service transformation", t );
-              }
-            }
-          } );
-      return false;
-    } else {
-      Futures.addCallback( cachedServiceLoader.replay( executor ), new FutureCallback<Integer>() {
-            @Override public void onSuccess( Integer rowCount ) {
-              logChannel.logBasic( "Service Transformation successfully replayed " + rowCount + " rows from cache" );
-            }
+    // Check for any cache entries that may answer this query
+    for ( CachedService availableCache : getAvailableCache( executor ).values() ) {
+      try {
+        ListenableFuture<Integer> replay = factory.createCachedServiceLoader( availableCache ).replay( executor );
+        Futures.addCallback( replay, new FutureCallback<Integer>() {
+          @Override public void onSuccess( Integer rowCount ) {
+            logChannel.logBasic( "Service Transformation successfully replayed " + rowCount + " rows from cache" );
+          }
 
-            @Override public void onFailure( Throwable t ) {
-              logChannel.logError( "Cache failed to replay service transformation", t );
-            }
-          } );
-      return true;
+          @Override public void onFailure( Throwable t ) {
+            logChannel.logError( "Cache failed to replay service transformation", t );
+          }
+        }, factory.getExecutorService() );
+        return true;
+      } catch ( Throwable e ) {
+        logChannel.logError( "Unable to replay from cache", e );
+      }
     }
+
+    // Allow service transformation to run, observe rows
+    Futures.addCallback( factory.createObserver( executor ).install(), new FutureCallback<CachedService>() {
+      @Override public void onSuccess( CachedService result ) {
+        CachedService.CacheKey key = createRootKey( executor );
+        // If result set is complete, order is not important
+        if ( result.isComplete() ) {
+          key = key.withoutOrder();
+        }
+        if ( cache.putIfAbsent( key, result ) ) {
+          logChannel.logBasic( "Service Transformation results cached", key );
+        } else {
+          try {
+            CachedService existing = checkNotNull( cache.get( key ) );
+            // If the existing result set can't answer this query, replace it
+            if ( !existing.answersQuery( executor ) && cache.replace( key, existing, result ) ) {
+              logChannel.logBasic( "Service Transformation cache updated", key );
+            } else {
+              logChannel.logDetailed( "Service Transformation cache was not updated", key );
+            }
+          } catch ( Throwable t ) {
+            onFailure( t );
+          }
+        }
+      }
+
+      @Override public void onFailure( Throwable t ) {
+        logChannel.logError( "Cache failed to observe service transformation", t );
+      }
+    }, factory.getExecutorService() );
+    return false;
   }
 
   @Override public OptimizationImpactInfo preview( DataServiceExecutor executor, StepInterface stepInterface ) {
-    OptimizationImpactInfo info = new OptimizationImpactInfo( stepInterface.getStepname() );
-    final CachedServiceLoader.CacheKey cacheKey = CachedServiceLoader.createCacheKey( executor );
-    final Cache<CachedServiceLoader.CacheKey, CachedServiceLoader> cache = factory.getCache( this );
-    CachedServiceLoader cachedServiceLoader = cache.get( cacheKey );
-    if ( cachedServiceLoader == null ) {
-      info.setModified( false );
-      info.setQueryBeforeOptimization( "Service results are not available. Execute this query to cache results." );
-    } else {
+    OptimizationImpactInfo info = new OptimizationImpactInfo( executor.getService().getStepname() );
+    Map<CachedService.CacheKey, CachedService> availableCache = getAvailableCache( executor );
+    for ( Map.Entry<CachedService.CacheKey, CachedService> available : availableCache.entrySet() ) {
       info.setModified( true );
-      info.setQueryBeforeOptimization( MessageFormat.format( "Service results for {0} are available.", cacheKey ) );
-      info.setQueryAfterOptimization(
-          MessageFormat.format( "{0} rows can be read from cache.", cachedServiceLoader.getRowMetaAndData().size() ) );
+      info.setQueryBeforeOptimization( MessageFormat.format( "Service results for {0} are available.",
+        available.getKey() ) );
+      info.setQueryAfterOptimization( MessageFormat.format( "{0} rows can be read from cache.",
+        available.getValue().getRowMetaAndData().size() ) );
+      return info;
     }
+    info.setModified( false );
+    info.setQueryBeforeOptimization( "Service results are not available. Execute this query to cache results." );
     return info;
+  }
+
+  public CachedService.CacheKey createRootKey( DataServiceExecutor executor ) {
+    CachedService.CacheKey rootKey = CachedService.CacheKey.create( executor );
+    // If query is not optimized, the where clause can be ignored
+    if ( !isPushDownOptimized( executor ) ) {
+      rootKey = rootKey.withoutCondition();
+    }
+    return rootKey;
+  }
+
+  Map<CachedService.CacheKey, CachedService> getAvailableCache( final DataServiceExecutor executor ) {
+    final Cache<CachedService.CacheKey, CachedService> cache = factory.getCache( this );
+    CachedService.CacheKey rootKey = createRootKey( executor );
+
+    // First test if the rootKey entry answers the query
+    CachedService exactMatch = cache.get( rootKey );
+    if ( exactMatch != null && exactMatch.answersQuery( executor ) ) {
+      return ImmutableMap.of( rootKey, exactMatch );
+    }
+
+    // Otherwise, check all related keys for a complete set
+    return FluentIterable.from( rootKey.all() )
+      .transform( new Function<CachedService.CacheKey, Map<CachedService.CacheKey, CachedService>>() {
+        @Override public Map<CachedService.CacheKey, CachedService> apply(
+          CachedService.CacheKey key ) {
+          CachedService value = cache.get( key );
+          return value != null && value.isComplete() ? ImmutableMap.of( key, value ) : null;
+        }
+      } )
+      .filter( notNull() )
+      .first().or( ImmutableMap.<CachedService.CacheKey, CachedService>of() );
+  }
+
+  /**
+   * Checks if a query has push down optimizations other than ServiceCache.
+   *
+   * @param executor query to check
+   * @return <code>true</code> if other optimizations are found,
+   * <code>false</code> if no optimizations are defined or all are of <code>ServiceClass</code> type
+   */
+  boolean isPushDownOptimized( DataServiceExecutor executor ) {
+    return FluentIterable.from( executor.getService().getPushDownOptimizationMeta() )
+      .transform( new Function<PushDownOptimizationMeta, PushDownType>() {
+        @Override public PushDownType apply( PushDownOptimizationMeta input ) {
+          return input.getType();
+        }
+      } )
+      .anyMatch( not( instanceOf( ServiceCache.class ) ) );
   }
 
   public String getTemplateName() {
@@ -120,4 +197,5 @@ public class ServiceCache implements PushDownType {
   public void setTemplateName( String templateName ) {
     this.templateName = templateName;
   }
+
 }

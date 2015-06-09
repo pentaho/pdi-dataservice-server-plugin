@@ -22,87 +22,50 @@
 
 package com.pentaho.di.trans.dataservice.optimization.cache;
 
-import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.ListenableFutureTask;
 import com.pentaho.di.trans.dataservice.DataServiceExecutor;
 import com.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
 import com.pentaho.di.trans.dataservice.execution.TransStarter;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.step.RowAdapter;
-import org.pentaho.di.trans.step.StepAdapter;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
 
-import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Predicates.instanceOf;
 
 /**
  * @author nhudak
  */
-class CachedServiceLoader implements Serializable {
-  private final List<RowMetaAndData> rowMetaAndData;
+class CachedServiceLoader {
+  final private Executor executor;
+  final private CachedService cachedService;
 
-  public CachedServiceLoader( List<RowMetaAndData> rowMetaAndData ) {
-    this.rowMetaAndData = rowMetaAndData;
+  CachedServiceLoader( CachedService cachedService, Executor executor ) {
+    this.cachedService = cachedService;
+    this.executor = executor;
   }
 
-  public static CacheKey createCacheKey( DataServiceExecutor executor ) {
-    return new CacheKey( executor.getServiceName(), executor.getSql().getWhereClause() );
-  }
+  public ListenableFuture<Integer> replay( DataServiceExecutor dataServiceExecutor ) throws KettleException {
+    final Trans serviceTrans = dataServiceExecutor.getServiceTrans(), genTrans = dataServiceExecutor.getGenTrans();
+    final CountDownLatch startReplay = new CountDownLatch( 1 );
+    final RowProducer rowProducer = dataServiceExecutor.addRowProducer();
 
-  public List<RowMetaAndData> getRowMetaAndData() {
-    return rowMetaAndData;
-  }
-
-  public static ListenableFuture<CachedServiceLoader> observe( StepInterface serviceStep ) {
-    final SettableFuture<CachedServiceLoader> future = SettableFuture.create();
-    final List<RowMetaAndData> rowMetaAndData = Lists.newLinkedList();
-    serviceStep.addRowListener( new RowAdapter() {
-      @Override public synchronized void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) {
-        rowMetaAndData.add( new RowMetaAndData( rowMeta, row ) );
-      }
-    } );
-    serviceStep.addStepListener( new StepAdapter() {
-      @Override public void stepFinished( Trans trans, StepMeta stepMeta, StepInterface step ) {
-        if ( step.isStopped() ) {
-          future.cancel( false );
-        } else {
-          future.set( new CachedServiceLoader( rowMetaAndData ) );
-        }
-      }
-    } );
-    return future;
-  }
-
-  public ListenableFuture<Integer> replay( final DataServiceExecutor executor ) {
-    final RowProducer rowProducer;
-    final Trans serviceTrans = executor.getServiceTrans();
-    final AtomicInteger rowCount = new AtomicInteger( 0 );
-
-    List<Runnable> startTrans = executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.START ),
-      postOptimization = executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.READY );
-
-    try {
-      rowProducer = executor.addRowProducer();
-    } catch ( KettleException e ) {
-      return Futures.immediateFailedFuture( e );
-    }
-    final SettableFuture<Integer> future = SettableFuture.create();
+    List<Runnable> startTrans = dataServiceExecutor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.START ),
+      postOptimization = dataServiceExecutor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.READY );
 
     Iterables.removeIf( postOptimization,
-      Predicates.instanceOf( DefaultTransWiring.class )
+      instanceOf( DefaultTransWiring.class )
     );
     Iterables.removeIf( startTrans,
       new Predicate<Runnable>() {
@@ -111,58 +74,40 @@ class CachedServiceLoader implements Serializable {
         }
       }
     );
-    startTrans.add( new Runnable() {
+
+    postOptimization.add( new Runnable() {
       @Override public void run() {
-        new Thread( executor.getServiceName() + " - Cached Service Loader" ) {
-          @Override public void run() {
-            serviceTrans.killAll();
-            Iterator<RowMetaAndData> iterator = rowMetaAndData.iterator();
-            while ( iterator.hasNext() && !future.isDone() ) {
-              RowMetaAndData metaAndData = iterator.next();
-              rowProducer.putRow( metaAndData.getRowMeta(), metaAndData.getData() );
-              rowCount.incrementAndGet();
-            }
-            rowProducer.finished();
-            future.set( rowCount.get() );
-          }
-        }.start();
+        serviceTrans.killAll();
       }
     } );
-    executor.getGenTrans().findRunThread( executor.getResultStepName() ).addStepListener( new StepAdapter(){
-      @Override public void stepFinished( Trans trans, StepMeta stepMeta, StepInterface step ) {
-        future.set( rowCount.get() );
+
+    startTrans.add( new Runnable() {
+      @Override public void run() {
+        startReplay.countDown();
       }
-    });
-    return future;
-  }
+    } );
 
-  static final class CacheKey implements Serializable {
-    private final String dataServiceName;
-    private final String whereClause;
-
-    public CacheKey( String dataServiceName, String whereClause ) {
-      this.dataServiceName = dataServiceName;
-      this.whereClause = whereClause;
-    }
-
-    @Override public boolean equals( Object o ) {
-      if ( this == o ) {
-        return true;
+    ListenableFutureTask<Integer> replay = ListenableFutureTask.create( new Callable<Integer>() {
+      @Override public Integer call() throws Exception {
+        checkState( startReplay.await( 30, TimeUnit.SECONDS ), "Cache replay did not start" );
+        int rowCount = 0;
+        for ( Iterator<RowMetaAndData> iterator = cachedService.getRowMetaAndData().iterator();
+              iterator.hasNext() && genTrans.isRunning(); ) {
+          RowMetaAndData metaAndData = iterator.next();
+          boolean rowAdded = false;
+          while ( !rowAdded && genTrans.isRunning() ) {
+            rowAdded =
+              rowProducer.putRowWait( metaAndData.getRowMeta(), metaAndData.getData(), 10, TimeUnit.SECONDS );
+          }
+          if ( rowAdded ) {
+            rowCount += 1;
+          }
+        }
+        rowProducer.finished();
+        return rowCount;
       }
-      if ( o == null || getClass() != o.getClass() ) {
-        return false;
-      }
-      CacheKey cacheKey = (CacheKey) o;
-      return Objects.equal( whereClause, cacheKey.whereClause ) &&
-        Objects.equal( dataServiceName, cacheKey.dataServiceName );
-    }
-
-    @Override public int hashCode() {
-      return Objects.hashCode( dataServiceName, whereClause );
-    }
-
-    @Override public String toString() {
-      return "CacheKey{dataServiceName='" + dataServiceName + "', whereClause='" + whereClause + "'}";
-    }
+    } );
+    executor.execute( replay );
+    return replay;
   }
 }

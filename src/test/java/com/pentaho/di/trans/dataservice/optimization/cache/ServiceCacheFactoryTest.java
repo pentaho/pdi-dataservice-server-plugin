@@ -33,6 +33,8 @@ import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 
 import javax.cache.Cache;
 
+import java.util.concurrent.ExecutorService;
+
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -46,14 +48,15 @@ public class ServiceCacheFactoryTest {
 
   public static final String TEMPLATE_NAME = "template";
   @Mock PentahoCacheManager cacheManager;
+  @Mock ExecutorService executorService;
   @InjectMocks ServiceCacheFactory serviceCacheFactory;
-  @Mock Cache<CachedServiceLoader.CacheKey, CachedServiceLoader> cache;
+  @Mock Cache<CachedService.CacheKey, CachedService> cache;
   @Mock PentahoCacheTemplateConfiguration template;
 
   @Test
   public void testGetCache() throws Exception {
     when( cacheManager.getCache( ServiceCacheFactory.CACHE_NAME,
-      CachedServiceLoader.CacheKey.class, CachedServiceLoader.class ) ).thenReturn( cache );
+      CachedService.CacheKey.class, CachedService.class ) ).thenReturn( cache );
     ServiceCache serviceCache = serviceCacheFactory.createPushDown();
 
     assertThat( serviceCacheFactory.getCache( serviceCache ), is( cache ) );
@@ -63,7 +66,7 @@ public class ServiceCacheFactoryTest {
   public void testCreateCache() throws Exception {
     when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( TEMPLATE_NAME, template ) );
     when( template.createCache(
-      ServiceCacheFactory.CACHE_NAME, CachedServiceLoader.CacheKey.class, CachedServiceLoader.class ) )
+      ServiceCacheFactory.CACHE_NAME, CachedService.CacheKey.class, CachedService.class ) )
       .thenReturn( cache );
 
     ServiceCache serviceCache = serviceCacheFactory.createPushDown();
