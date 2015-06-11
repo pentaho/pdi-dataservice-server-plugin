@@ -28,7 +28,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
-import com.pentaho.metaverse.api.StepFieldOperations;
+import org.pentaho.metaverse.api.StepFieldOperations;
 
 import java.util.List;
 import java.util.Map;
