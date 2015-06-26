@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.pentaho.di.trans.CheckStepsExtension;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
 
 import static org.mockito.Matchers.any;
@@ -49,7 +49,7 @@ public class StepValidationExtensionPointPluginTest extends BaseStepValidationTe
     spiedCheckStepExtension = spy( checkStepsExtension );
 
     when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
-    when( metaStoreUtil.fromTransMeta( transMeta, metaStore, null ) ).thenReturn( dataServiceMeta );
+    when( metaStoreUtil.getDataServiceByStepName( transMeta, null ) ).thenReturn( dataServiceMeta );
     extensionPointPlugin = new StepValidationExtensionPointPlugin( context );
     extensionPointPlugin.setStepValidations( ImmutableList.of( stepValidation ) );
   }
@@ -80,16 +80,4 @@ public class StepValidationExtensionPointPluginTest extends BaseStepValidationTe
     //make sure we logged an error
     verify( log ).logError( any( String.class ) );
   }
-
-  @Test
-  public void testCallExtensionPointDataServiceLoadIssue() throws Exception {
-    when( stepValidation.supportsStep( stepMeta, log ) ).thenReturn( true, false );
-    when( spiedCheckStepExtension.getMetaStore() )
-        .thenReturn( null );
-
-    extensionPointPlugin.callExtensionPoint( log, spiedCheckStepExtension );
-    //make sure we logged a message
-    verify( log ).logBasic( any( String.class ) );
-  }
-
 }

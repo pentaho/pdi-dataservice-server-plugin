@@ -50,7 +50,6 @@ public class DataServiceDialog {
   private DataServiceModel dataServiceModel;
   private final Document document;
   private final XulDialog xulDialog;
-  private final Composite parent;
 
   private static final Class<?> PKG = DataServiceDialog.class;
 
@@ -68,7 +67,6 @@ public class DataServiceDialog {
 
   public DataServiceDialog( Composite parent, DataServiceMeta dataService, TransMeta transMeta,
                             DataServiceContext context ) throws KettleException {
-    this.parent = parent;
     dataServiceModel = new DataServiceModel();
     dataServiceDialogController =
       new DataServiceDialogController( parent, dataServiceModel, dataService, transMeta, Spoon.getInstance(), context );

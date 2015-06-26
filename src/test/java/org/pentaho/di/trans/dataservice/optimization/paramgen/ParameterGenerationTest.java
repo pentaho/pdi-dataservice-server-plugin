@@ -22,16 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import com.google.common.collect.ImmutableList;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
-import org.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
-import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.attributes.metastore.EmbeddedMetaStore;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.core.row.ValueMetaAndData;
@@ -46,18 +37,32 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLCondition;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.metastore.persist.MetaStoreFactory;
-import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 
 import java.util.List;
-import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
 public class ParameterGenerationTest {
@@ -69,11 +74,6 @@ public class ParameterGenerationTest {
   public static final String OPT_NAME = "My Optimization";
   public static final String OPT_STEP = "Optimized Step";
   public static final String EXPECTED_DEFAULT = "## PARAMETER DEFAULT ##";
-  private final DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil(
-    ImmutableList.<PushDownFactory>of(
-      new ParameterGenerationFactory( ImmutableList.<ParameterGenerationServiceFactory>of() )
-    ), mock( DataServiceMetaCache.class )
-  );
 
   private ParameterGeneration paramGen;
   @Mock private ParameterGenerationFactory serviceProvider;
@@ -82,6 +82,7 @@ public class ParameterGenerationTest {
   @Mock private TransMeta transMeta;
   @Mock private StepInterface stepInterface;
   @Mock private StepMeta stepMeta;
+  @Mock private EmbeddedMetaStore embeddedMetaStore;
   @Mock private DataServiceExecutor executor;
 
   @Before
@@ -94,6 +95,7 @@ public class ParameterGenerationTest {
 
     when( trans.getTransMeta() ).thenReturn( transMeta );
     when( transMeta.findStep( OPT_STEP ) ).thenReturn( stepMeta );
+    when( transMeta.getEmbeddedMetaStore() ).thenReturn( embeddedMetaStore );
     when( stepInterface.getStepMeta() ).thenReturn( stepMeta );
     when( serviceProvider.getService( stepMeta ) ).thenReturn( service );
     when( service.getParameterDefault() ).thenReturn( EXPECTED_DEFAULT );
@@ -115,62 +117,6 @@ public class ParameterGenerationTest {
 
     parameterGeneration.removeFieldMapping( mapping );
     assertEquals( 0, fieldMappings.size() );
-  }
-
-  @Test
-  public void testSaveLoad() throws Exception {
-    MetaStoreFactory<DataServiceMeta> metaStoreFactory = metaStoreUtil.getMetaStoreFactory( new MemoryMetaStore() );
-
-    // Create parent data service
-    DataServiceMeta expectedDataService = new DataServiceMeta();
-    expectedDataService.setName( DATA_SERVICE_NAME );
-    expectedDataService.setTransObjectId( UUID.randomUUID().toString() );
-    expectedDataService.setStepname( "Service Output Step" );
-
-    // Define optimization
-    PushDownOptimizationMeta expectedOptimization = new PushDownOptimizationMeta( );
-    expectedOptimization.setName( OPT_NAME );
-    expectedOptimization.setStepName( OPT_STEP );
-    expectedDataService.getPushDownOptimizationMeta().add( expectedOptimization );
-
-    // Define optimization type
-    ParameterGeneration expectedType = new ParameterGeneration( serviceProvider );
-    expectedType.setParameterName( "MY_PARAMETER" );
-    expectedOptimization.setType( expectedType );
-
-    // Define field mapping
-    SourceTargetFields expectedMapping = new SourceTargetFields( "SOURCE", "TARGET" );
-    expectedType.getFieldMappings().add( expectedMapping );
-
-    // Attempt Save
-    metaStoreFactory.saveElement( expectedDataService );
-
-    // Verify 'something' was stored
-    List<DataServiceMeta> loadedElements = metaStoreFactory.getElements();
-    assertEquals( "No elements loaded", 1, loadedElements.size() );
-    // Reload Data Service
-    DataServiceMeta verifyDataService = metaStoreFactory.loadElement( DATA_SERVICE_NAME );
-
-    // Assert Equality of data service optimization and optimization parameters
-    assertEquals( expectedDataService.getName(), verifyDataService.getName() );
-    assertEquals( expectedDataService.getStepname(), verifyDataService.getStepname() );
-    assertEquals( expectedDataService.getTransObjectId(), verifyDataService.getTransObjectId() );
-
-    assertFalse( verifyDataService.getPushDownOptimizationMeta().isEmpty() );
-    PushDownOptimizationMeta verifyOptimization = verifyDataService.getPushDownOptimizationMeta().get( 0 );
-
-    assertEquals( expectedOptimization.getName(), verifyOptimization.getName() );
-    assertEquals( expectedOptimization.getStepName(), verifyOptimization.getStepName() );
-
-    assertTrue( verifyOptimization.getType() instanceof ParameterGeneration );
-    ParameterGeneration verifyType = (ParameterGeneration) verifyOptimization.getType();
-
-    assertEquals( expectedType.getParameterName(), verifyType.getParameterName() );
-    assertFalse( verifyType.getFieldMappings().isEmpty() );
-    SourceTargetFields verifyMapping = verifyType.getFieldMappings().get( 0 );
-
-    assertEquals( expectedMapping.getSourceFieldName(), verifyMapping.getSourceFieldName() );
-    assertEquals( expectedMapping.getTargetFieldName(), verifyMapping.getTargetFieldName() );
   }
 
   @Test

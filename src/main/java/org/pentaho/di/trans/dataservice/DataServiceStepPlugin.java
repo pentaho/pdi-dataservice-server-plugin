@@ -83,7 +83,7 @@ public class DataServiceStepPlugin implements SpoonPluginInterface {
     if ( container == null ) {
       return;
     }
-    ( (Spoon) SpoonFactory.getInstance() ).getDisplay().syncExec( new Runnable() {
+    Spoon.getInstance().getDisplay().syncExec( new Runnable() {
       public void run() {
         try {
           container.removeOverlay( STEP_ADD_DATA_SERVICE );

@@ -81,7 +81,9 @@ public class AutoParameterGenerationServiceTest {
 
   @Before
   public void setUp() throws Exception {
-    dataService = new DataServiceMeta( NAME, SERVICE_STEP );
+    dataService = new DataServiceMeta( transMeta );
+    dataService.setName( NAME );
+    dataService.setStepname( SERVICE_STEP );
     RowMeta serviceRowMeta = mock( RowMeta.class );
 
     when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( serviceRowMeta );

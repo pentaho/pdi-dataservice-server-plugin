@@ -24,40 +24,26 @@ package org.pentaho.di.trans.dataservice.www;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
-import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleStepException;
-import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
-import org.pentaho.di.trans.step.RowAdapter;
+import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
-import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.
@@ -75,10 +61,10 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
   private static final long serialVersionUID = 3634806745372015720L;
 
   public static final String CONTEXT_PATH = "/sql";
-  private final DataServiceMetaStoreUtil metaStoreUtil;
+  private final DataServiceClient client;
 
   public TransDataServlet( DataServiceContext context ) {
-    this.metaStoreUtil = context.getMetaStoreUtil();
+    client = new DataServiceClient( context );
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -99,9 +85,6 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     response.setBufferSize( 10000 );
     // response.setHeader("Content-Length", Integer.toString(Integer.MAX_VALUE));
 
-    final OutputStream outputStream = response.getOutputStream();
-    final DataOutputStream dos = new DataOutputStream( outputStream );
-
     String sqlQuery = request.getHeader( "SQL" );
     final int maxRows = Const.toInt( request.getHeader( "MaxRows" ), -1 );
 
@@ -111,64 +94,18 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     //
     Map<String, String> parameters = getParametersFromRequestHeader( request );
 
-    final AtomicLong dataSize = new AtomicLong( 0L );
     try {
+      // Update client with configured repository and metastore
+      client.setRepository( transformationMap.getSlaveServerConfig().getRepository() );
+      client.setMetaStore( transformationMap.getSlaveServerConfig().getMetaStore() );
 
-      // Add possible services from the repository...
-      //
-      Repository repository = transformationMap.getSlaveServerConfig().getRepository();
-      DelegatingMetaStore metaStore = transformationMap.getSlaveServerConfig().getMetaStore();
-      List<DataServiceMeta> dataServices = metaStoreUtil.getMetaStoreFactory( metaStore ).getElements();
-
-      // Execute the SQL using a few transformations...
-      //
-      final DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sqlQuery ), dataServices ).
+      // Pass query to client
+      DataServiceExecutor executor = client.buildExecutor( sqlQuery ).
         parameters( parameters ).
         rowLimit( maxRows ).
-        lookupServiceTrans( repository ).
         build();
 
-      // First write the service name and the metadata
-      //
-      dos.writeUTF( executor.getServiceName() );
-
-      // Then send the transformation names and carte container IDs
-      //
-      dos.writeUTF( DataServiceExecutor.calculateTransname( executor.getSql(), true ) );
-      String serviceContainerObjectId = UUID.randomUUID().toString();
-      dos.writeUTF( serviceContainerObjectId );
-      dos.writeUTF( DataServiceExecutor.calculateTransname( executor.getSql(), false ) );
-      String genContainerObjectId = UUID.randomUUID().toString();
-      dos.writeUTF( genContainerObjectId );
-
-      final AtomicBoolean firstRow = new AtomicBoolean( true );
-
-      // Now execute the query transformation(s) and pass the data to the output stream...
-      //
-      // TODO: allow global repository configuration in the services config file
-      //
-      final AtomicBoolean wroteRowMeta = new AtomicBoolean( false );
-
-      executor.executeQuery( new RowAdapter() {
-        @Override
-        public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-
-          // On the first row, write the metadata...
-          //
-          try {
-            if ( firstRow.compareAndSet( true, false ) ) {
-              rowMeta.writeMeta( dos );
-              wroteRowMeta.set( true );
-            }
-            rowMeta.writeData( dos, row );
-            dataSize.set( dos.size() );
-          } catch ( Exception e ) {
-            if ( !executor.getServiceTrans().isStopped() ) {
-              throw new KettleStepException( e );
-            }
-          }
-        }
-      } );
+      executor.executeQuery( response.getOutputStream() );
 
       // For logging and tracking purposes, let's expose both the service transformation as well
       // as the generated transformation on this very carte instance
@@ -178,7 +115,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       if ( serviceTrans != null ) {
         // not dual
         TransConfiguration serviceTransConfiguration = new TransConfiguration( serviceTransMeta, new TransExecutionConfiguration() );
-        transformationMap.addTransformation( serviceTransMeta.getName(), serviceContainerObjectId, serviceTrans, serviceTransConfiguration );
+        transformationMap.addTransformation( serviceTransMeta.getName(), serviceTrans.getContainerObjectId(), serviceTrans, serviceTransConfiguration );
       }
 
       // And the generated transformation...
@@ -186,7 +123,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       TransMeta genTransMeta = executor.getGenTransMeta();
       Trans genTrans = executor.getGenTrans();
       TransConfiguration genTransConfiguration = new TransConfiguration( genTransMeta, new TransExecutionConfiguration() );
-      transformationMap.addTransformation( genTransMeta.getName(), genContainerObjectId, genTrans, genTransConfiguration );
+      transformationMap.addTransformation( genTransMeta.getName(), genTrans.getContainerObjectId(), genTrans, genTransConfiguration );
 
       // Log the generated transformation if needed
       //
@@ -198,30 +135,15 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
           fos.write( XMLHandler.getXMLHeader( Const.XML_ENCODING ).getBytes( Const.XML_ENCODING ) );
           fos.write( genTransMeta.getXML().getBytes( Const.XML_ENCODING ) );
           fos.close();
-        } catch ( Exception fnfe ) {
-          throw new KettleException( fnfe );
+        } catch ( Exception e ) {
+          logError( "Unable to write dynamic transformation to file", e );
         }
       }
 
       executor.waitUntilFinished();
-
-      // Check if no row metadata was written.  The client is still going to expect it...
-      // Since we know it, we'll pass it.
-      //
-      if ( !wroteRowMeta.get() ) {
-        RowMetaInterface stepFields = executor.getGenTransMeta().getStepFields( executor.getResultStepName() );
-        stepFields.writeMeta( dos );
-      }
-
-      // The client has to come back to the GetTransStatus servlet to check for errors
-      // So that's all we do here...
-      //
-
     } catch ( Exception e ) {
       log.logError( "Error executing SQL query: " + sqlQuery, e );
       response.sendError( 500, Const.getStackTracker( e ) );
-    } finally {
-      System.out.println( "bytes written: " + dataSize );
     }
   }
 

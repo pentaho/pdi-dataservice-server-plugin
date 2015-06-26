@@ -32,7 +32,7 @@ import org.pentaho.di.shared.SharedObjects;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
@@ -48,7 +48,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.Assert.fail;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -179,32 +180,24 @@ public class DataServiceDialogControllerTest {
   public void testError() throws Exception {
     doReturn( "" ).when( model ).getServiceName();
 
-    if ( controller.validate() ) {
-      fail();
-    }
+    assertFalse( controller.validate() );
 
     doReturn( SERVICE_NAME ).when( model ).getServiceName();
     doReturn( "" ).when( model ).getSelectedStep();
 
-    if ( controller.validate() ) {
-      fail();
-    }
+    assertFalse( controller.validate() );
 
     IMetaStore metaStore = mock( DelegatingMetaStore.class );
     doReturn( metaStore ).when( spoon ).getMetaStore();
     doReturn( SELECTED_STEP ).when( model ).getSelectedStep();
     doReturn( SERVICE_NAME ).when( model ).getServiceName();
     doReturn( NEW_SERVICE_NAME ).when( dataService ).getName();
-    doReturn( mock( DataServiceMeta.class ) ).when( metaStoreUtil ).findByName( metaStore, SERVICE_NAME );
+    when( metaStoreUtil.getDataServiceNames( metaStore ) ).thenReturn( ImmutableList.of( SERVICE_NAME ) );
 
-    if ( controller.validate() ) {
-      fail();
-    }
+    assertFalse( controller.validate() );
 
-    verify( model, times( 10 ) ).getServiceName();
-    verify( model, times( 3 ) ).getSelectedStep();
-    verify( dataService, times( 4 ) ).getName();
-    verify( metaStoreUtil ).findByName( metaStore, SERVICE_NAME );
+    when( metaStoreUtil.getDataServiceNames( metaStore ) ).thenReturn( ImmutableList.<String>of() );
+    assertTrue( controller.validate() );
   }
 
   class DataServiceDialogControllerTester extends DataServiceDialogController {
@@ -216,7 +209,7 @@ public class DataServiceDialogControllerTest {
     }
 
     @Override
-    protected void showErrors( StringBuilder errors ) {
+    protected void showErrors( String errors ) {
       // Show nothing
     }
   }

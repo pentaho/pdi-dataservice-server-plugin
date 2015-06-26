@@ -22,35 +22,39 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
-import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
-import org.pentaho.di.trans.dataservice.execution.TransStarter;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogLevel;
-import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
+import org.pentaho.di.trans.dataservice.execution.TransStarter;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 
+import java.io.DataOutputStream;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DataServiceExecutor {
   private final Trans serviceTrans;
@@ -94,11 +98,6 @@ public class DataServiceExecutor {
       this.service = service;
     }
 
-    public Builder( SQL sql, List<DataServiceMeta> services ) throws KettleException {
-      this.sql = sql;
-      this.service = findService( services );
-    }
-
     public Builder parameters( Map<String, String> parameters ) {
       this.parameters = parameters;
       return this;
@@ -127,38 +126,6 @@ public class DataServiceExecutor {
       return serviceTrans( new Trans( serviceTransMeta ) );
     }
 
-    public Builder lookupServiceTrans( Repository repository ) throws KettleException {
-      TransMeta transMeta;
-      if ( service.getName().equals( "dual" ) ) {
-        return this;
-      }
-
-      if ( !Const.isEmpty( service.getTransFilename() ) ) {
-        try {
-          // OK, load the meta-data from file...
-          //
-          // Don't set internal variables: they belong to the parent thread!
-          //
-          transMeta = new TransMeta( service.getTransFilename(), false );
-          transMeta.getLogChannel().logDetailed(
-              "Service transformation was loaded from XML file [" + service.getTransFilename() + "]" );
-        } catch ( Exception e ) {
-          throw new KettleException( "Unable to load service transformation for service '" + sql.getServiceName() + "'",
-            e );
-        }
-      } else {
-        try {
-          transMeta = service.lookupTransMeta( repository );
-          transMeta.getLogChannel().logDetailed(
-              "Service transformation was loaded from repository for service [" + service.getName() + "]" );
-        } catch ( Exception e ) {
-          throw new KettleException( "Unable to load service transformation for service '"
-            + sql.getServiceName() + "' from the repository", e );
-        }
-      }
-      return serviceTrans( transMeta );
-    }
-
     public Builder sqlTransGenerator( SqlTransGenerator sqlTransGenerator ) {
       this.sqlTransGenerator = sqlTransGenerator;
       return this;
@@ -185,12 +152,10 @@ public class DataServiceExecutor {
     }
 
     public DataServiceExecutor build() throws KettleException {
-      RowMetaInterface serviceFields;
-      if ( serviceTrans != null ) {
-        serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
-      } else {
-        serviceFields = new RowMeta();
+      if ( serviceTrans == null ) {
+        serviceTrans( service.getServiceTrans() );
       }
+      RowMetaInterface serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
 
       sql.parse( serviceFields );
 
@@ -223,29 +188,6 @@ public class DataServiceExecutor {
       return dataServiceExecutor;
     }
 
-    private DataServiceMeta findService( List<DataServiceMeta> serviceMetaList ) throws KettleException {
-      String serviceName = sql.getServiceName();
-      DataServiceMeta foundService = null;
-      if ( StringUtils.isEmpty( serviceName ) || serviceName.equalsIgnoreCase( "dual" ) ) {
-        foundService = new DataServiceMeta();
-        foundService .setName( "dual" );
-        sql.setServiceName( "dual" );
-      } else {
-        for ( DataServiceMeta service : serviceMetaList ) {
-          if ( service.getName().equalsIgnoreCase( serviceName ) ) {
-            foundService = service;
-          }
-        }
-      }
-      if ( foundService == null ) {
-        serviceNotFound();
-      }
-      return foundService;
-    }
-
-    private void serviceNotFound() throws KettleException {
-      throw new KettleException( "Unable to find service with name '" + sql.getServiceName() + "' and SQL: " + sql.getSqlString() );
-    }
   }
 
   private void setLogLevel( LogLevel logLevel ) {
@@ -383,6 +325,68 @@ public class DataServiceExecutor {
     return conditionParameters;
   }
 
+  public DataServiceExecutor executeQuery( OutputStream output ) throws KettleException {
+    return executeQuery( new DataOutputStream( output ) );
+  }
+
+  public DataServiceExecutor executeQuery( final DataOutputStream dos ) throws KettleException {
+    try {
+      // First write the service name and the metadata
+      //
+      dos.writeUTF( getServiceName() );
+
+      // Then send the transformation names and carte container IDs
+      //
+      dos.writeUTF( calculateTransname( getSql(), true ) );
+      String serviceContainerObjectId = UUID.randomUUID().toString();
+      getServiceTrans().setContainerObjectId( serviceContainerObjectId );
+      dos.writeUTF( serviceContainerObjectId );
+
+      dos.writeUTF( calculateTransname( getSql(), false ) );
+      String genContainerObjectId = UUID.randomUUID().toString();
+      getGenTrans().setContainerObjectId( genContainerObjectId );
+      dos.writeUTF( genContainerObjectId );
+
+      final AtomicBoolean firstRow = new AtomicBoolean( true );
+
+      // When done, check if no row metadata was written.  The client is still going to expect it...
+      // Since we know it, we'll pass it.
+      //
+      getGenTrans().addTransListener( new TransAdapter() {
+        @Override public void transFinished( Trans trans ) throws KettleException {
+          if ( !firstRow.get() ) {
+            RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
+            stepFields.writeMeta( dos );
+          }
+        }
+      } );
+
+      // Now execute the query transformation(s) and pass the data to the output stream...
+      executeQuery( new RowAdapter() {
+        @Override
+        public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
+
+          // On the first row, write the metadata...
+          //
+          try {
+            if ( firstRow.compareAndSet( true, false ) ) {
+              rowMeta.writeMeta( dos );
+            }
+            rowMeta.writeData( dos, row );
+          } catch ( Exception e ) {
+            if ( !getServiceTrans().isStopped() ) {
+              throw new KettleStepException( e );
+            }
+          }
+        }
+      } );
+
+      return this;
+    } catch ( Exception e ) {
+      Throwables.propagateIfPossible( e, KettleException.class );
+      throw new KettleException( "Unable to execute query", e );
+    }
+  }
 
   public void executeQuery( RowListener resultRowListener ) throws KettleException {
     if ( !isDual() ) {

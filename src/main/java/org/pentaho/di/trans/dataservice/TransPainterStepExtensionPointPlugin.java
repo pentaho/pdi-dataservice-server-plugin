@@ -30,9 +30,8 @@ import org.pentaho.di.core.gui.AreaOwner.AreaType;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransPainterExtension;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 @ExtensionPoint(
@@ -58,10 +57,9 @@ public class TransPainterStepExtensionPointPlugin implements ExtensionPointInter
     TransPainterExtension extension = (TransPainterExtension) object;
     TransMeta transMeta = extension.transMeta;
     StepMeta stepMeta = extension.stepMeta;
-    IMetaStore metaStore = Spoon.getInstance().getMetaStore();
 
     try {
-      DataServiceMeta dataService = metaStoreUtil.fromTransMeta( transMeta, metaStore, stepMeta.getName() );
+      DataServiceMeta dataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() );
       if ( dataService != null ) {
         // Is this step a data service provider?
         //

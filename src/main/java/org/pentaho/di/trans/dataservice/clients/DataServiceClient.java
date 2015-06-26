@@ -22,9 +22,10 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
+import com.google.common.base.Throwables;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
@@ -32,29 +33,23 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
-import org.pentaho.di.trans.step.RowAdapter;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class DataServiceClient implements DataServiceClientService {
 
   private static Log logger = LogFactory.getLog( DataServiceClient.class );
   private final DataServiceMetaStoreUtil metaStoreUtil;
-
-  AtomicLong dataSize = new AtomicLong( 0L );
 
   private Repository repository;
   private IMetaStore metaStore;
@@ -64,68 +59,18 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
-
     DataInputStream dataInputStream = null;
 
     try {
 
       ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-      final DataOutputStream dos = new DataOutputStream( byteArrayOutputStream );
 
       try {
+        DataServiceExecutor executor = buildExecutor( sqlQuery ).rowLimit( maxRows ).build();
 
-        List<DataServiceMeta> dataServices = metaStoreUtil.getMetaStoreFactory( metaStore )
-          .getElements();
-
-        final DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sqlQuery ), dataServices )
-          .lookupServiceTrans( repository )
-          .rowLimit( maxRows )
-          .build();
-
-        dos.writeUTF( executor.getServiceName() );
-
-        dos.writeUTF( DataServiceExecutor.calculateTransname( executor.getSql(), true ) );
-        String serviceContainerObjectId = UUID.randomUUID().toString();
-        dos.writeUTF( serviceContainerObjectId );
-        dos.writeUTF( DataServiceExecutor.calculateTransname( executor.getSql(), false ) );
-        String genContainerObjectId = UUID.randomUUID().toString();
-        dos.writeUTF( genContainerObjectId );
-
-        final AtomicBoolean firstRow = new AtomicBoolean( true );
-
-        final AtomicBoolean wroteRowMeta = new AtomicBoolean( false );
-
-        executor.executeQuery( new RowAdapter() {
-          @Override
-          public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-            // On the first row, write the metadata...
-            //
-            try {
-              if ( firstRow.compareAndSet( true, false ) ) {
-                rowMeta.writeMeta( dos );
-                wroteRowMeta.set( true );
-              }
-              rowMeta.writeData( dos, row );
-              dataSize.set( dos.size() );
-            } catch ( Exception e ) {
-              if ( !executor.getServiceTrans().isStopped() ) {
-                throw new KettleStepException( e );
-              }
-            }
-          }
-        } );
-
-        executor.waitUntilFinished();
-
-        if ( !wroteRowMeta.get() ) {
-          RowMetaInterface stepFields = executor.getGenTransMeta().getStepFields( executor.getResultStepName() );
-          stepFields.writeMeta( dos );
-        }
-
+        executor.executeQuery( byteArrayOutputStream ).waitUntilFinished();
       } catch ( Exception e ) {
         throw new SQLException( "Unable to get service information from server", e );
-      } finally {
-        System.out.println( "bytes written: " + dataSize );
       }
 
       ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( byteArrayOutputStream.toByteArray() );
@@ -138,20 +83,50 @@ public class DataServiceClient implements DataServiceClientService {
     return dataInputStream;
   }
 
-  @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
+  public DataServiceExecutor.Builder buildExecutor( String sqlQuery ) throws KettleException {
+    // Parse SQL
+    SQL sql = new SQL( sqlQuery );
 
+      // Locate data service and return a new builder
+      DataServiceMeta dataService = findDataService( sql );
+
+      return new DataServiceExecutor.Builder( sql, dataService );
+  }
+
+  private DataServiceMeta findDataService( SQL sql ) throws KettleException {
+    List<String> dataServiceNames;
+    try {
+      dataServiceNames = metaStoreUtil.getDataServiceNames( metaStore );
+    } catch ( Exception e ) {
+      Throwables.propagateIfPossible( e, KettleException.class );
+      throw new KettleException( "Unable to get list of data services from MetaStore", e );
+    }
+
+    for ( String serviceName : dataServiceNames ) {
+      if ( serviceName.equalsIgnoreCase( sql.getServiceName() ) ) {
+        try {
+          return metaStoreUtil.getDataService( serviceName, repository, metaStore );
+        } catch ( Exception e ) {
+          Throwables.propagateIfPossible( e, KettleException.class );
+          throw new KettleException( "Unable to execute query", e );
+        }
+      }
+    }
+    throw new KettleException( "Data service " + sql.getServiceName() + " not found" );
+  }
+
+  @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
     List<ThinServiceInformation> services = new ArrayList<ThinServiceInformation>();
 
     try {
-      List<DataServiceMeta> dataServices = metaStoreUtil.getMetaStoreFactory( metaStore ).getElements();
-      for ( DataServiceMeta service : dataServices ) {
+      for ( DataServiceMeta service : metaStoreUtil.getDataServices( repository, metaStore ) ) {
+        TransMeta transMeta = service.getServiceTrans();
         RowMetaInterface serviceFields = null;
         try {
-          TransMeta transMeta = service.lookupTransMeta( repository );
           serviceFields = transMeta.getStepFields( service.getStepname() );
         } catch ( Exception e ) {
-          logger.error( "Unable to get fields for service " + service.getName() + ", transformation: " + service
-              .getTransFilename() );
+          logger.error( MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
+            service.getName(), transMeta.getName() ) );
         }
 
         ThinServiceInformation serviceInformation = new ThinServiceInformation( service.getName(), serviceFields );
