@@ -22,6 +22,15 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
+import com.google.common.collect.ImmutableList;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Shell;
+import org.junit.Before;
+import org.junit.Test;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.shared.SharedObjects;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
@@ -30,13 +39,6 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.AutoParameterGenerationService;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialogCallback;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Shell;
-import org.junit.Before;
-import org.junit.Test;
-import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.shared.SharedObjects;
-import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.IMetaStore;
@@ -46,24 +48,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Mockito.*;
-import static junit.framework.Assert.*;
+import static junit.framework.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DataServiceDialogControllerTest {
 
   private DataServiceDialogController controller;
-
-  private Composite parent;
 
   private DataServiceModel model;
 
   private DataServiceMeta dataService;
 
   private TransMeta transMeta;
-
-  private List<AutoOptimizationService> autoOptimizationServices;
-
-  private List<PushDownFactory> pushDownFactories;
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 
@@ -91,7 +92,7 @@ public class DataServiceDialogControllerTest {
 
   @Before
   public void init() throws Exception {
-    parent = mock( Shell.class );
+    Composite parent = mock( Shell.class );
     model = mock( DataServiceModel.class );
     dataService = mock( DataServiceMeta.class );
     transMeta = mock( TransMeta.class );
@@ -102,13 +103,13 @@ public class DataServiceDialogControllerTest {
     callback = mock( DataServiceDialogCallback.class );
     metaStoreUtil = mock( DataServiceMetaStoreUtil.class );
 
-    autoOptimizationServices = new ArrayList<AutoOptimizationService>();
-    autoOptimizationServices.add( autoParameterGenerationService );
+    DataServiceContext context = mock( DataServiceContext.class );
+    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
+    when( context.getAutoOptimizationServices() ).thenReturn(
+      ImmutableList.<AutoOptimizationService>of( autoParameterGenerationService ) );
+    when( context.getPushDownFactories() ).thenReturn( new ArrayList<PushDownFactory>() );
 
-    pushDownFactories = new ArrayList<PushDownFactory>();
-
-    controller = new DataServiceDialogControllerTester( parent, model, dataService, metaStoreUtil, transMeta, spoon,
-      autoOptimizationServices, pushDownFactories );
+    controller = new DataServiceDialogControllerTester( parent, model, dataService, transMeta, spoon, context );
     controller.setCallback( callback );
 
     doReturn( SERVICE_NAME ).when( dataService ).getName();
@@ -207,12 +208,11 @@ public class DataServiceDialogControllerTest {
   }
 
   class DataServiceDialogControllerTester extends DataServiceDialogController {
-    public DataServiceDialogControllerTester( Composite parent, DataServiceModel model, DataServiceMeta dataService,
-                                              DataServiceMetaStoreUtil metaStoreUtil, TransMeta transMeta, Spoon spoon,
-                                              List<AutoOptimizationService> autoOptimizationServices,
-                                              List<PushDownFactory> pushDownFactories )
+    public DataServiceDialogControllerTester( Composite parent, DataServiceModel model,
+                                              DataServiceMeta dataService, TransMeta transMeta,
+                                              Spoon spoon, DataServiceContext context )
       throws KettleException {
-      super( parent, model, dataService, metaStoreUtil, transMeta, spoon, autoOptimizationServices, pushDownFactories );
+      super( parent, model, dataService, transMeta, spoon, context );
     }
 
     @Override

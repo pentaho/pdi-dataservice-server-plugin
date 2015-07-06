@@ -22,9 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.exception.KettleException;
@@ -38,6 +35,10 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
@@ -76,8 +77,8 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
   public static final String CONTEXT_PATH = "/sql";
   private final DataServiceMetaStoreUtil metaStoreUtil;
 
-  public TransDataServlet( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public TransDataServlet( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {

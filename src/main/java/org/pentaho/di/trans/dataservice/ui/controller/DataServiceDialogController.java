@@ -22,6 +22,15 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Shell;
+import org.pentaho.di.core.Const;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
@@ -33,14 +42,6 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialogCallback;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
-import org.pentaho.di.core.Const;
-import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.spoon.Spoon;
@@ -82,20 +83,18 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
   private static final String NAME = "dataServiceDialogController";
 
   public DataServiceDialogController( Composite parent, DataServiceModel model, DataServiceMeta dataService,
-                                      DataServiceMetaStoreUtil metaStoreUtil, TransMeta transMeta, Spoon spoon,
-                                      List<AutoOptimizationService> autoOptimizationServices,
-                                      List<PushDownFactory> pushDownFactories )
+                                      TransMeta transMeta, Spoon spoon, DataServiceContext context )
     throws KettleException {
     setName( NAME );
-    this.delegate = new DataServiceDelegate( metaStoreUtil, autoOptimizationServices, pushDownFactories );
-    this.autoOptimizationServices = autoOptimizationServices;
+    this.delegate = new DataServiceDelegate( context );
     this.parent = parent;
     this.model = model;
     this.transMeta = transMeta;
     this.spoon = spoon;
     this.dataService = dataService;
-    this.metaStoreUtil = metaStoreUtil;
-    this.pushDownFactories = pushDownFactories;
+    metaStoreUtil = context.getMetaStoreUtil();
+    pushDownFactories = context.getPushDownFactories();
+    autoOptimizationServices = context.getAutoOptimizationServices();
   }
 
   public void init() throws InvocationTargetException, XulException, KettleException {

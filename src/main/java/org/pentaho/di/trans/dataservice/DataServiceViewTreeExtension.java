@@ -51,11 +51,9 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
   public static final String STRING_DATA_SERVICES =
     BaseMessages.getString( PKG, "DataServicesDialog.STRING_DATA_SERVICES" );
 
-  public DataServiceViewTreeExtension( DataServiceMetaStoreUtil metaStoreUtil,
-                                       List<AutoOptimizationService> autoOptimizationServices,
-                                       List<PushDownFactory> pushDownFactories ) {
-    this.metaStoreUtil = metaStoreUtil;
-    delegate = new DataServiceDelegate( metaStoreUtil, autoOptimizationServices, pushDownFactories );
+  public DataServiceViewTreeExtension( DataServiceContext context ) {
+    metaStoreUtil = context.getMetaStoreUtil();
+    delegate = new DataServiceDelegate( context );
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {

@@ -43,8 +43,6 @@ import org.pentaho.di.ui.core.ConstUI;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.TreeSelection;
 
-import java.util.List;
-
 @ExtensionPoint( id = "DataServicePopupMenuExtension", description = "Creates popup menus for data services",
   extensionPointId = "SpoonPopupMenuExtension" )
 public class DataServicePopupMenuExtension implements ExtensionPointInterface {
@@ -55,10 +53,8 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
 
   public DataServiceMeta selectedDataService;
 
-  public DataServicePopupMenuExtension( DataServiceMetaStoreUtil metaStoreUtil,
-                                        List<AutoOptimizationService> autoOptimizationServices,
-                                        List<PushDownFactory> pushDownFactories ) {
-    delegate = new DataServiceDelegate( metaStoreUtil, autoOptimizationServices, pushDownFactories );
+  public DataServicePopupMenuExtension( DataServiceContext context ) {
+    delegate = new DataServiceDelegate( context );
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object extension ) throws KettleException {
@@ -70,7 +66,7 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
     TreeSelection object = objects[ 0 ];
     Object selection = object.getSelection();
 
-    if ( selection instanceof Class<?> && selection.equals( DataServiceMeta.class ) ) {
+    if ( selection == DataServiceMeta.class ) {
       popupMenu = new Menu( selectionTree );
       createRootPopupMenu( popupMenu );
     } else if ( selection instanceof DataServiceMeta ) {

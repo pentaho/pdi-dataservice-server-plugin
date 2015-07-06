@@ -22,14 +22,15 @@
 
 package org.pentaho.di.trans.dataservice.validation;
 
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.CheckStepsExtension;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
@@ -48,8 +49,8 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
   private List<StepValidation> stepValidations =
       new ArrayList<StepValidation>();
 
-  public StepValidationExtensionPointPlugin( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public StepValidationExtensionPointPlugin( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
   }
 
   @Override

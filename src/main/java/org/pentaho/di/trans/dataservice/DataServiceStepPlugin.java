@@ -36,7 +36,6 @@ import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 
 import java.util.Enumeration;
-import java.util.List;
 import java.util.ResourceBundle;
 
 @SpoonPlugin( id = "StepAddDataServicePlugin", image = "" )
@@ -63,10 +62,8 @@ public class DataServiceStepPlugin implements SpoonPluginInterface {
   private final String STEP_ADD_DATA_SERVICE =
     "org/pentaho/di/trans/dataservice/ui/xul/dataservice-overlay.xul";
 
-  public DataServiceStepPlugin( DataServiceMetaStoreUtil metaStoreUtil,
-                                List<AutoOptimizationService> autoOptimizationServices,
-                                List<PushDownFactory> pushDownFactories ) {
-    handler = new DataServiceStepHandler( metaStoreUtil, autoOptimizationServices, pushDownFactories );
+  public DataServiceStepPlugin( DataServiceContext context ) {
+    handler = new DataServiceStepHandler( context );
   }
 
   @Override

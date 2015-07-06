@@ -22,14 +22,15 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
 import org.pentaho.metastore.api.IMetaStore;
@@ -63,8 +64,8 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
   public static final String XML_TAG_SERVICE = "service";
   private final DataServiceMetaStoreUtil metaStoreUtil;
 
-  public ListDataServicesServlet( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public ListDataServicesServlet( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {

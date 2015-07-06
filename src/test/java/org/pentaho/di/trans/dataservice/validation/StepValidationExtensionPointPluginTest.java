@@ -23,12 +23,12 @@
 package org.pentaho.di.trans.dataservice.validation;
 
 import com.google.common.collect.ImmutableList;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.pentaho.di.trans.CheckStepsExtension;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
 
 import static org.mockito.Matchers.any;
@@ -39,15 +39,19 @@ import static org.mockito.Mockito.when;
 public class StepValidationExtensionPointPluginTest extends BaseStepValidationTest {
 
   private CheckStepsExtension spiedCheckStepExtension;
+  @Mock private DataServiceContext context;
   @Mock private DataServiceMetaStoreUtil metaStoreUtil;
   @Mock private StepValidation stepValidation;
-  @InjectMocks private StepValidationExtensionPointPlugin extensionPointPlugin;
+  private StepValidationExtensionPointPlugin extensionPointPlugin;
 
   @Before
   public void setUp() throws Exception {
     spiedCheckStepExtension = spy( checkStepsExtension );
-    extensionPointPlugin.setStepValidations( ImmutableList.of( stepValidation ) );
+
+    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
     when( metaStoreUtil.fromTransMeta( transMeta, metaStore, null ) ).thenReturn( dataServiceMeta );
+    extensionPointPlugin = new StepValidationExtensionPointPlugin( context );
+    extensionPointPlugin.setStepValidations( ImmutableList.of( stepValidation ) );
   }
 
   @Test

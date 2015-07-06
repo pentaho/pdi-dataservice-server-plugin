@@ -26,7 +26,9 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
 import org.junit.Before;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -43,8 +45,8 @@ import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
+@RunWith( MockitoJUnitRunner.class )
 public abstract class BaseStepValidationTest {
 
   @Mock
@@ -78,7 +80,6 @@ public abstract class BaseStepValidationTest {
 
   @Before
   public void before() throws KettleStepException {
-    initMocks( this );
     stepMetas[ 0 ] = stepMeta;
     space = new Variables();
     checkStepsExtension = new CheckStepsExtension(

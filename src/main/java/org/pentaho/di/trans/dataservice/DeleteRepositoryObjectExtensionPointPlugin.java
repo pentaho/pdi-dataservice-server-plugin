@@ -46,8 +46,8 @@ public class DeleteRepositoryObjectExtensionPointPlugin implements ExtensionPoin
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 
-  public DeleteRepositoryObjectExtensionPointPlugin( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public DeleteRepositoryObjectExtensionPointPlugin( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
   }
 
   @Override

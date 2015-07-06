@@ -22,13 +22,7 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownType;
-import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
-import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
-import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
+import com.google.common.collect.Lists;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.SWT;
@@ -45,31 +39,28 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
+import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.trans.dialog.TransLoadProgressDialog;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class DataServiceDelegate {
 
   private static final Class<?> PKG = DataServiceDelegate.class;
   private static final Log logger = LogFactory.getLog( DataServiceDelegate.class );
+  private final DataServiceContext context;
+  private final DataServiceMetaStoreUtil metaStoreUtil;
 
-  private List<AutoOptimizationService> autoOptimizationServices;
-  private DataServiceMetaStoreUtil metaStoreUtil;
-  private List<PushDownFactory> pushDownFactories;
-
-  public DataServiceDelegate( DataServiceMetaStoreUtil metaStoreUtil,
-                              List<AutoOptimizationService> autoOptimizationServices,
-                              List<PushDownFactory> pushDownFactories ) {
-    this.metaStoreUtil = metaStoreUtil;
-    this.autoOptimizationServices = autoOptimizationServices;
-    this.pushDownFactories = pushDownFactories;
+  public DataServiceDelegate( DataServiceContext context ) {
+    this.context = context;
+    metaStoreUtil = context.getMetaStoreUtil();
   }
-
 
   public void createNewDataService() {
     createNewDataService( null );
@@ -98,7 +89,7 @@ public class DataServiceDelegate {
         dataService.setTransFilename( transMeta.getFilename() );
       }
 
-      for ( PushDownFactory pushDownFactory : pushDownFactories ) {
+      for ( PushDownFactory pushDownFactory : context.getPushDownFactories() ) {
         if ( pushDownFactory.getType().equals( ServiceCache.class ) ) {
           PushDownType pushDown = pushDownFactory.createPushDown();
 
@@ -107,16 +98,12 @@ public class DataServiceDelegate {
           pushDownOptimizationMeta.setStepName( dataService.getStepname() );
           pushDownOptimizationMeta.setType( pushDown );
 
-          List<PushDownOptimizationMeta> pushDownOptimizationMetas = new ArrayList<PushDownOptimizationMeta>();
-          pushDownOptimizationMetas.add( pushDownOptimizationMeta );
-
-          dataService.setPushDownOptimizationMeta( pushDownOptimizationMetas );
+          dataService.setPushDownOptimizationMeta( Lists.newArrayList( pushDownOptimizationMeta ) );
         }
       }
 
       DataServiceDialog dialog =
-        new DataServiceDialog( getSpoon().getShell(), dataService, metaStoreUtil, transMeta, autoOptimizationServices,
-          pushDownFactories );
+        new DataServiceDialog( getSpoon().getShell(), dataService, transMeta, context );
       dialog.open();
     } catch ( KettleException e ) {
       logger.error( "Unable to create a new data service", e );
@@ -128,8 +115,7 @@ public class DataServiceDelegate {
       TransMeta transMeta = getTransMeta( dataService );
 
       DataServiceDialog dataServiceManagerDialog =
-        new DataServiceDialog( getSpoon().getShell(), dataService, metaStoreUtil, transMeta, autoOptimizationServices,
-          pushDownFactories );
+        new DataServiceDialog( getSpoon().getShell(), dataService, transMeta, context );
       dataServiceManagerDialog.open();
     } catch ( KettleException e ) {
       logger.error( "Unable to edit a data service", e );

@@ -46,8 +46,8 @@ public class TransPainterStepExtensionPointPlugin implements ExtensionPointInter
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 
-  public TransPainterStepExtensionPointPlugin( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public TransPainterStepExtensionPointPlugin( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
   }
 
   @Override

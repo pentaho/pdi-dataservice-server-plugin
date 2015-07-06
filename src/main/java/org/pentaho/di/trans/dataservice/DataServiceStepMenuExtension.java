@@ -24,7 +24,6 @@ package org.pentaho.di.trans.dataservice;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
@@ -44,8 +43,8 @@ public class DataServiceStepMenuExtension implements ExtensionPointInterface {
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 
-  public DataServiceStepMenuExtension( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public DataServiceStepMenuExtension( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {

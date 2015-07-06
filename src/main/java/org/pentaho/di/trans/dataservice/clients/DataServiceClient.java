@@ -22,9 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -32,6 +29,10 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.step.RowAdapter;
@@ -58,8 +59,8 @@ public class DataServiceClient implements DataServiceClientService {
   private Repository repository;
   private IMetaStore metaStore;
 
-  public DataServiceClient( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public DataServiceClient( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
