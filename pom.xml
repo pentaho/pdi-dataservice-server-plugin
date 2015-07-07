@@ -68,7 +68,7 @@
     <properties>
         <mongo-driver.version>2.11.1</mongo-driver.version>
         <mockito.version>1.9.5</mockito.version>
-        <junit.version>4.4</junit.version>
+        <junit.version>4.11</junit.version>
         <kettle.version>6.0-SNAPSHOT</kettle.version>
         <mongodb.plugin.version>6.0-SNAPSHOT</mongodb.plugin.version>
         <guava.version>16.0.1</guava.version>
