@@ -394,7 +394,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     for ( StepMeta stepMeta :  transMeta.getSteps() ) {
       if ( stepMeta.getStepMetaInterface() instanceof TableInputMeta ) {
         DatabaseMeta dbMeta = ( (TableInputMeta) stepMeta.getStepMetaInterface() ).getDatabaseMeta();
-        dbMeta.copyVariablesFrom( transMeta );
+        if ( dbMeta != null ) {
+          dbMeta.copyVariablesFrom( transMeta );
+        }
       }
     }
     if ( startingParameterValues.listParameters().length > 0 ) {
