@@ -33,6 +33,7 @@ import org.pentaho.di.core.metrics.MetricsDuration;
 import org.pentaho.di.core.metrics.MetricsUtil;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulRunner;
@@ -46,6 +47,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class DataServiceTestDialog implements  java.io.Serializable {
+  public static Class<?> PKG = DataServiceTestDialog.class;
+
   private static final String XUL_PATH = "com/pentaho/di/trans/dataservice/ui/xul/dataservice-test-dialog.xul";
   private static final String XUL_DIALOG_ID = "dataservice-test-dialog";
   private static final String GENTRANS_LOG_XUL_ID = "genTrans-log-tab";
@@ -80,7 +83,13 @@ public class DataServiceTestDialog implements  java.io.Serializable {
 
   public DataServiceTestDialog( Composite parent, DataServiceMeta dataService,
                                 TransMeta transMeta ) throws KettleException {
-    dataServiceTestController = new DataServiceTestController( model, dataService, transMeta );
+    try {
+      dataServiceTestController = new DataServiceTestController( model, dataService, transMeta );
+    } catch ( KettleException ke ) {
+      new ErrorDialog( parent.getShell(), BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Title" ),
+          BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Message" ), ke );
+      throw ke;
+    }
     xulDocument = initXul( parent );
     resultsView = initDataServiceResultsView( dataService, transMeta );
     serviceTransLogBrowser = new DataServiceTestLogBrowser( getComposite( SVCTRANS_LOG_XUL_ID ) );
