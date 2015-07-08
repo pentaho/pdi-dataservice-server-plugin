@@ -24,12 +24,14 @@ package com.pentaho.di.trans.dataservice;
 
 import com.google.common.collect.Lists;
 import com.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogLevel;
@@ -81,6 +83,11 @@ public class DataServiceExecutorTest {
   public static final String SERVICE_STEP_NAME = "Service Step";
   public static final String INJECTOR_STEP_NAME = "Injector Step";
   public static final String RESULT_STEP_NAME = "Result Step";
+
+  @BeforeClass
+  public static void init() throws KettleException {
+    KettleEnvironment.init();
+  }
 
   @Test
   public void testCreateExecutorByObjectId() throws Exception {
