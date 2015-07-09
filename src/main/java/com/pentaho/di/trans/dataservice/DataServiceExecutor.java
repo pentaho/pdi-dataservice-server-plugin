@@ -295,6 +295,12 @@ public class DataServiceExecutor {
       ValueMetaInterface resolvedValueMeta = resolver.getValueMeta( fieldName );
       Object resolvedValue = resolver.getTypedValue( fieldName, rhs.getValueMeta().getType(), rhs.getValueData() );
 
+      // We have normally stored object here, adjust value meta accordingly
+      if ( resolvedValueMeta.getStorageType() != ValueMetaInterface.STORAGE_TYPE_NORMAL ) {
+        resolvedValueMeta = resolvedValueMeta.clone();
+        resolvedValueMeta.setStorageType( ValueMetaInterface.STORAGE_TYPE_NORMAL );
+      }
+
       // Set new condition meta and value
       condition.setRightExact( new ValueMetaAndData( resolvedValueMeta, resolvedValue ) );
     } catch ( KettleException e ) {

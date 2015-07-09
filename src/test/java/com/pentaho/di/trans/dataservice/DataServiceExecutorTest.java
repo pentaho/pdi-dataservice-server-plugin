@@ -37,6 +37,8 @@ import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.ValueMeta;
+import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
@@ -333,6 +335,27 @@ public class DataServiceExecutorTest {
     assertEquals( "column2", condition2.getLeftValuename() );
     assertNull( condition2.getRightExact() );
     assertEquals( Condition.FUNC_NULL, condition2.getFunction() );
+  }
+
+  @Test
+  public void testWithLazyConversion () throws Exception {
+    RowMeta rowMeta = new RowMeta();
+    ValueMeta vm = new ValueMeta( "aBinaryStoredString", ValueMeta.TYPE_STRING, ValueMetaInterface.STORAGE_TYPE_BINARY_STRING );
+    vm.setStorageMetadata( new ValueMetaString() );
+    rowMeta.addValueMeta( vm );
+
+    String query = "SELECT * FROM " + SERVICE_NAME + " WHERE aBinaryStoredString = 'value'";
+
+    DataServiceMeta service = createDataServiceMeta();
+    TransMeta transMeta = mockTransMeta();
+    when( transMeta.getStepFields( SERVICE_STEP_NAME ) ).thenReturn( rowMeta );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), service ).
+        serviceTrans( new Trans(transMeta) ).
+        prepareExecution( false ).
+        build();
+
+    executor.getSql().getWhereCondition().getCondition().evaluate( rowMeta, new Object[] {"value".getBytes()} );
   }
 
   private SqlTransGenerator mockSqlTransGenerator() {
