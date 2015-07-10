@@ -27,10 +27,12 @@ import com.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import com.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
 import com.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -62,6 +64,11 @@ public class DataServiceMetaStoreUtilTest {
 
   @Mock
   private DataServiceMetaStoreUtil metaStoreUtil;
+
+  @BeforeClass
+  public static void init() throws KettleException {
+    KettleEnvironment.init();
+  }
 
   @Before
   public void setUp() throws KettleException, MetaStoreException {
