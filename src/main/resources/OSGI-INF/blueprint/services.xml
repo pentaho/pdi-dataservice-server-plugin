@@ -63,7 +63,7 @@
 
     <service id="dataServiceClientService" interface="org.pentaho.di.trans.dataservice.client.DataServiceClientService">
          <registration-listener registration-method="register" unregistration-method="unregister">
-              <bean class="org.pentaho.di.trans.dataservice.client.DataServiceRegistrationListener"/>
+              <bean class="org.pentaho.di.trans.dataservice.clients.DataServiceRegistrationListener"/>
          </registration-listener>
         <bean class="org.pentaho.di.trans.dataservice.clients.DataServiceClient">
             <argument ref="metaStoreUtil"/>
