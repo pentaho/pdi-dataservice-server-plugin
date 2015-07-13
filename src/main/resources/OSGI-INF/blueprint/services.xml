@@ -8,85 +8,85 @@
              interface="java.util.concurrent.ExecutorService">
     </service>
 
-    <bean id="metaStoreUtil" class="com.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil" scope="singleton">
+    <bean id="metaStoreUtil" class="org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil" scope="singleton">
         <argument ref="pushDownFactories"/>
         <argument ref="dataServiceCache"/>
     </bean>
 
-    <bean id="dataServiceCache" scope="singleton" class="com.pentaho.di.trans.dataservice.cache.DataServiceMetaCache">
+    <bean id="dataServiceCache" scope="singleton" class="org.pentaho.di.trans.dataservice.cache.DataServiceMetaCache">
       <argument ref="cacheManager"/>
     </bean>
 
     <reference id="lineageClient" interface="org.pentaho.metaverse.api.ILineageClient"/>
     <reference id="cacheManager" interface="org.pentaho.caching.api.PentahoCacheManager" />
 
-    <reference-list id="pushDownFactories" interface="com.pentaho.di.trans.dataservice.optimization.PushDownFactory"
+    <reference-list id="pushDownFactories" interface="org.pentaho.di.trans.dataservice.optimization.PushDownFactory"
                     availability="optional"/>
 
     <reference-list id="parameterGenerationServices"
-                    interface="com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceFactory"
+                    interface="org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceFactory"
                     availability="optional"/>
 
-    <reference-list id="stepValidations" interface="com.pentaho.di.trans.dataservice.validation.StepValidation"
+    <reference-list id="stepValidations" interface="org.pentaho.di.trans.dataservice.validation.StepValidation"
                     availability="optional"/>
 
     <reference-list id="autoOptimizationServices"
-                    interface="com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService"
+                    interface="org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService"
                     availability="optional"/>
 
     <bean id="paramGenFactory" scope="singleton"
-          class="com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory">
+          class="org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory">
         <argument ref="parameterGenerationServices"/>
     </bean>
     <service id="parameterGenerationService" ref="paramGenFactory"
-             interface="com.pentaho.di.trans.dataservice.optimization.PushDownFactory">
+             interface="org.pentaho.di.trans.dataservice.optimization.PushDownFactory">
     </service>
 
     <bean id="serviceCacheFactory" scope="singleton"
-          class="com.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory">
+          class="org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory">
         <argument ref="cacheManager"/>
         <argument ref="executor"/>
     </bean>
     <service id="serviceCacheOptimization" ref="serviceCacheFactory"
-             interface="com.pentaho.di.trans.dataservice.optimization.PushDownFactory">
+             interface="org.pentaho.di.trans.dataservice.optimization.PushDownFactory">
     </service>
 
     <service id="tableInputParamGen"
-             interface="com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceFactory">
-        <bean class="com.pentaho.di.trans.dataservice.optimization.paramgen.TableInputParameterGenerationFactory"/>
+             interface="org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceFactory">
+        <bean class="org.pentaho.di.trans.dataservice.optimization.paramgen.TableInputParameterGenerationFactory"/>
     </service>
 
     <service id="mongoInputParamGen"
-             interface="com.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceFactory">
-        <bean class="com.pentaho.di.trans.dataservice.optimization.paramgen.MongodbInputParameterGenerationFactory"/>
+             interface="org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationServiceFactory">
+        <bean class="org.pentaho.di.trans.dataservice.optimization.paramgen.MongodbInputParameterGenerationFactory"/>
     </service>
 
     <service id="dataServiceClientService" interface="org.pentaho.di.trans.dataservice.client.DataServiceClientService">
          <registration-listener registration-method="register" unregistration-method="unregister">
-              <bean class="com.pentaho.di.trans.dataservice.client.DataServiceRegistrationListener"/>
+              <bean class="org.pentaho.di.trans.dataservice.client.DataServiceRegistrationListener"/>
          </registration-listener>
-        <bean class="com.pentaho.di.trans.dataservice.client.DataServiceClient">
+        <bean class="org.pentaho.di.trans.dataservice.clients.DataServiceClient">
             <argument ref="metaStoreUtil"/>
         </bean>
     </service>
 
-    <service id="autoParamGenService" interface="com.pentaho.di.trans.dataservice.optimization.AutoOptimizationService">
-        <bean class="com.pentaho.di.trans.dataservice.optimization.paramgen.AutoParameterGenerationService">
+    <service id="autoParamGenService" interface="org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService">
+        <bean class="org.pentaho.di.trans.dataservice.optimization.paramgen.AutoParameterGenerationService">
             <argument ref="lineageClient"/>
             <argument ref="paramGenFactory"/>
         </bean>
     </service>
 
-    <service id="mongoDbBasicVal" interface="com.pentaho.di.trans.dataservice.validation.StepValidation">
-        <bean class="com.pentaho.di.trans.dataservice.validation.MongoDbBasicValidation"/>
+    <service id="mongoDbBasicVal" interface="org.pentaho.di.trans.dataservice.validation.StepValidation">
+        <bean class="org.pentaho.di.trans.dataservice.validation.MongoDbBasicValidation"/>
     </service>
 
-    <service id="tableInputVal" interface="com.pentaho.di.trans.dataservice.validation.StepValidation">
-        <bean class="com.pentaho.di.trans.dataservice.validation.TableInputValidation"/>
+    <service id="tableInputVal" interface="org.pentaho.di.trans.dataservice.validation.StepValidation">
+        <bean class="org.pentaho.di.trans.dataservice.validation.TableInputValidation"/>
     </service>
 
-    <service id="dataServiceStepVal" interface="com.pentaho.di.trans.dataservice.validation.StepValidation">
-        <bean class="com.pentaho.di.trans.dataservice.validation.DataServiceStepValidation">
+    <service id="dataServiceStepVal" interface="org.pentaho.di.trans.dataservice.validation.StepValidation">
+        <bean class="org.pentaho.di.trans.dataservice.validation.DataServiceStepValidation">
             <argument ref="lineageClient"/>
             <argument ref="paramGenFactory"/>
         </bean>
