@@ -24,6 +24,9 @@ package org.pentaho.di.trans.dataservice;
 
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.apache.commons.logging.Log;
@@ -47,6 +50,7 @@ import org.pentaho.di.ui.trans.dialog.TransLoadProgressDialog;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DataServiceDelegate {
@@ -93,6 +97,23 @@ public class DataServiceDelegate {
       } else {
         dataService.setTransFilename( transMeta.getFilename() );
       }
+
+      for ( PushDownFactory pushDownFactory : pushDownFactories ) {
+        if ( pushDownFactory.getType().equals( ServiceCache.class ) ) {
+          PushDownType pushDown = pushDownFactory.createPushDown();
+
+          PushDownOptimizationMeta pushDownOptimizationMeta = new PushDownOptimizationMeta();
+          pushDownOptimizationMeta.setName( "Default Cache Optimization" );
+          pushDownOptimizationMeta.setStepName( dataService.getStepname() );
+          pushDownOptimizationMeta.setType( pushDown );
+
+          List<PushDownOptimizationMeta> pushDownOptimizationMetas = new ArrayList<PushDownOptimizationMeta>();
+          pushDownOptimizationMetas.add( pushDownOptimizationMeta );
+
+          dataService.setPushDownOptimizationMeta( pushDownOptimizationMetas );
+        }
+      }
+
       DataServiceDialog dialog =
         new DataServiceDialog( getSpoon().getShell(), dataService, metaStoreUtil, transMeta, autoOptimizationServices,
           pushDownFactories );
