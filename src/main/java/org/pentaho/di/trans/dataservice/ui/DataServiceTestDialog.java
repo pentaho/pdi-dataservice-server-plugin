@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
+import org.eclipse.swt.layout.FillLayout;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
@@ -118,8 +119,11 @@ public class DataServiceTestDialog implements  java.io.Serializable {
 
   private DataServiceTestResults initDataServiceResultsView( DataServiceMeta dataService,
                                                              TransMeta transMeta ) throws KettleStepException {
-    return new DataServiceTestResults( dataService, transMeta,
-      getComposite( QUERY_RESULTS_XUL_ID ) );
+
+    Composite results = getComposite( QUERY_RESULTS_XUL_ID );
+    results.setLayout( new FillLayout() );
+
+    return new DataServiceTestResults( dataService, transMeta, results );
   }
 
   private void attachCallback() {
