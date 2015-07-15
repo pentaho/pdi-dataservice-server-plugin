@@ -73,6 +73,8 @@ public class DataServiceTestResults {
     tableView.setRowNums();
     tableView.setShowingConversionErrorsInline( true );
     tableView.optWidth( true );
+
+    container.layout();
   }
 
   private TableView initTableView( List<Object[]> rows ) {
@@ -84,7 +86,7 @@ public class DataServiceTestResults {
         rowMetaToColumnInfo(), rows.size(), true, null,
         PropsUI.getInstance() );
     tableView.table.setItemCount( 0 );
-    tableView.setSize( container.getSize() );
+
     return tableView;
   }
 
