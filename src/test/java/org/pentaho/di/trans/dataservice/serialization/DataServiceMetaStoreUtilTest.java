@@ -20,12 +20,8 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.serialization;
 
-import org.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
-import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,6 +33,11 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
+import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
+import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
@@ -47,7 +48,11 @@ import java.util.Collections;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceMetaStoreUtilTest {
@@ -57,13 +62,12 @@ public class DataServiceMetaStoreUtilTest {
   private TransMeta transMeta;
   private IMetaStore metaStore;
   private DataServiceMeta dataService;
-  private MetaStoreFactory<DataServiceMeta> metaStoreFactory;
 
   @Mock
   private DataServiceMetaCache cache;
 
-  @Mock
   private DataServiceMetaStoreUtil metaStoreUtil;
+  private MetaStoreFactory<DataServiceMeta> embeddedMetaStore;
 
   @BeforeClass
   public static void init() throws KettleException {
@@ -76,13 +80,11 @@ public class DataServiceMetaStoreUtilTest {
     doNothing().when( LogChannel.GENERAL ).logBasic( anyString() );
 
     transMeta = new TransMeta();
-    transMeta.setFilename( "/path/to/transformation.ktr" );
 
     metaStore = new MemoryMetaStore();
-    dataService = new DataServiceMeta();
+    dataService = new DataServiceMeta( transMeta );
     dataService.setName( DATA_SERVICE_NAME );
     dataService.setStepname( DATA_SERVICE_STEP );
-    dataService.setTransFilename( "/path/to/transformation.ktr" );
 
     doReturn( null ).when( cache ).get( any( TransMeta.class ), anyString() );
 
@@ -104,24 +106,6 @@ public class DataServiceMetaStoreUtilTest {
       }
     } ), cache
     );
-    metaStoreFactory = metaStoreUtil.getMetaStoreFactory( metaStore );
-  }
-
-  /**
-   * Test cases for data service description loading
-   *
-   * @throws MetaStoreException
-   */
-  @Test
-  public void testFromTransMeta() throws MetaStoreException {
-    metaStoreFactory.saveElement( dataService );
-
-    DataServiceMeta dataServiceMeta =
-      metaStoreUtil.fromTransMeta( transMeta, metaStore, DATA_SERVICE_STEP );
-    assertThat( dataServiceMeta, notNullValue() );
-
-    assertEquals( DATA_SERVICE_NAME, dataServiceMeta.getName() );
-    assertEquals( DATA_SERVICE_STEP, dataServiceMeta.getStepname() );
   }
 
   /**
@@ -130,9 +114,14 @@ public class DataServiceMetaStoreUtilTest {
    * @throws MetaStoreException
    */
   @Test
-  public void testToTransMeta() throws MetaStoreException {
-    metaStoreUtil.toTransMeta( transMeta, metaStore, dataService );
-    assertEquals( DATA_SERVICE_STEP, metaStoreFactory.loadElement( DATA_SERVICE_NAME ).getStepname() );
+  public void testToFromTransMeta() throws MetaStoreException {
+    metaStoreUtil.save( metaStore, dataService );
+
+    DataServiceMeta dataServiceMeta = metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP );
+    assertThat( dataServiceMeta, notNullValue() );
+
+    assertEquals( DATA_SERVICE_NAME, dataServiceMeta.getName() );
+    assertEquals( DATA_SERVICE_STEP, dataServiceMeta.getStepname() );
   }
 
 }

@@ -22,8 +22,6 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.SWT;
@@ -37,13 +35,10 @@ import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.ConstUI;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.TreeSelection;
-
-import java.util.List;
 
 @ExtensionPoint( id = "DataServicePopupMenuExtension", description = "Creates popup menus for data services",
   extensionPointId = "SpoonPopupMenuExtension" )
@@ -55,10 +50,8 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
 
   public DataServiceMeta selectedDataService;
 
-  public DataServicePopupMenuExtension( DataServiceMetaStoreUtil metaStoreUtil,
-                                        List<AutoOptimizationService> autoOptimizationServices,
-                                        List<PushDownFactory> pushDownFactories ) {
-    delegate = new DataServiceDelegate( metaStoreUtil, autoOptimizationServices, pushDownFactories );
+  public DataServicePopupMenuExtension( DataServiceContext context ) {
+    delegate = new DataServiceDelegate( context );
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object extension ) throws KettleException {
@@ -70,7 +63,7 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
     TreeSelection object = objects[ 0 ];
     Object selection = object.getSelection();
 
-    if ( selection instanceof Class<?> && selection.equals( DataServiceMeta.class ) ) {
+    if ( selection == DataServiceMeta.class ) {
       popupMenu = new Menu( selectionTree );
       createRootPopupMenu( popupMenu );
     } else if ( selection instanceof DataServiceMeta ) {
@@ -137,12 +130,7 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
 
   class DataServiceDeleteCommand implements DataServiceCommand {
     @Override public void execute() {
-      try {
-        TransMeta transMeta = selectedDataService.lookupTransMeta( getRepository() );
-        delegate.removeDataService( transMeta, selectedDataService );
-      } catch ( KettleException e ) {
-        logger.error( "Unable to open transformation", e );
-      }
+      delegate.removeDataService( selectedDataService );
     }
   }
 
@@ -154,16 +142,10 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
 
   class OpenTransformationCommand implements DataServiceCommand {
     @Override public void execute() {
-      try {
-        TransMeta transMeta = selectedDataService.lookupTransMeta( getRepository() );
-        delegate.openTrans( transMeta );
-      } catch ( KettleException e ) {
-        logger.error( "Unable to open transformation", e );
-      }
+      TransMeta transMeta = selectedDataService.getServiceTrans();
+      delegate.openTrans( transMeta );
     }
   }
-
-  private Repository getRepository() { return getSpoon().getRepository(); }
 
   private Spoon getSpoon() {
     return Spoon.getInstance();

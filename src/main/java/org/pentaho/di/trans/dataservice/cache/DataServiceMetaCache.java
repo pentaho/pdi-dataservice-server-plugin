@@ -44,7 +44,7 @@ public class DataServiceMetaCache {
 
   public void put( TransMeta transMeta, String stepName, DataServiceMeta dataService ) {
     DataServiceMeta.CacheKey key = DataServiceMeta.createCacheKey( transMeta, stepName );
-    getCache().put( key, dataService != null ? dataService : new DataServiceMeta() );
+    getCache().put( key, dataService != null ? dataService : new DataServiceMeta( transMeta ) );
   }
 
   private Cache<DataServiceMeta.CacheKey, DataServiceMeta> getCache() {

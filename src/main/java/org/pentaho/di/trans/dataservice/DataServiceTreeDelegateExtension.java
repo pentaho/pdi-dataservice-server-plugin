@@ -22,17 +22,15 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.pentaho.di.base.AbstractMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.ui.spoon.Spoon;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.ui.spoon.TreeSelection;
 import org.pentaho.di.ui.spoon.delegates.SpoonTreeDelegateExtension;
-import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.util.List;
 
@@ -46,51 +44,41 @@ public class DataServiceTreeDelegateExtension implements ExtensionPointInterface
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 
-  public DataServiceTreeDelegateExtension( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public DataServiceTreeDelegateExtension( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object extension ) throws KettleException {
     SpoonTreeDelegateExtension treeDelExt = (SpoonTreeDelegateExtension) extension;
 
     int caseNumber = treeDelExt.getCaseNumber();
-    AbstractMeta transMeta = treeDelExt.getTransMeta();
+    if ( !(treeDelExt.getTransMeta() instanceof TransMeta ) ) {
+      return;
+    }
+    TransMeta transMeta = (TransMeta) treeDelExt.getTransMeta();
     String[] path = treeDelExt.getPath();
     List<TreeSelection> objects = treeDelExt.getObjects();
 
     TreeSelection object = null;
-    Spoon spoon = Spoon.getInstance();
 
-    switch ( caseNumber ) {
-      case 3:
-        if ( path[ 2 ].equals( STRING_DATA_SERVICES ) ) {
-          object = new TreeSelection( path[ 2 ], DataServiceMeta.class, transMeta );
-        }
-        break;
-      case 4:
-        if ( path[ 2 ].equals( STRING_DATA_SERVICES ) ) {
+    if ( path[2].equals( STRING_DATA_SERVICES ) ) {
+      switch ( caseNumber ) {
+        case 3:
+          object = new TreeSelection( path[2], DataServiceMeta.class, transMeta );
+          break;
+        case 4:
           try {
-            DataServiceMeta dataService = extractDataServiceFromMetaStore( path[ 3 ], spoon.getMetaStore() );
+            DataServiceMeta dataService = metaStoreUtil.getDataService( path[3], transMeta );
             object = new TreeSelection( path[ 3 ], dataService, transMeta );
-          } catch ( MetaStoreException e ) {
+          } catch ( Exception e ) {
             // Do Nothing
           }
-        }
-        break;
+          break;
+      }
     }
 
     if ( object != null ) {
       objects.add( object );
     }
-  }
-
-  private DataServiceMeta extractDataServiceFromMetaStore( String serviceName, IMetaStore metaStore ) throws
-    MetaStoreException {
-    for ( DataServiceMeta dataServiceMeta : metaStoreUtil.getMetaStoreFactory( metaStore ).getElements() ) {
-      if ( serviceName.equals( dataServiceMeta.getName() ) ) {
-        return dataServiceMeta;
-      }
-    }
-    return null;
   }
 }

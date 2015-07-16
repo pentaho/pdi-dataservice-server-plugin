@@ -6,67 +6,55 @@
             http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
             http://www.pentaho.com/xml/schemas/pentaho-blueprint http://www.pentaho.com/xml/schemas/pentaho-blueprint.xsd">
 
-    <!--<bean id="dialogTab" class="org.pentaho.di.trans.dataservice.DataServiceTransDialogTab" scope="prototype">-->
-        <!--<argument ref="metaStoreUtil"/>-->
-        <!--<argument ref="autoOptimizationServices"/>-->
-        <!--<pen:di-plugin type="org.pentaho.di.ui.trans.dialog.TransDialogPluginType" />-->
-    <!--</bean>-->
-
     <bean id="dataServicePainter" scope="singleton"
           class="org.pentaho.di.trans.dataservice.TransPainterStepExtensionPointPlugin">
-        <argument ref="metaStoreUtil"/>
+        <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
     <bean id="stepValidation" scope="singleton" class="org.pentaho.di.trans.dataservice.validation.StepValidationExtensionPointPlugin" >
-        <argument ref="metaStoreUtil"/>
+        <argument ref="context"/>
         <property name="stepValidations" ref="stepValidations"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
     <bean id="listDataServlet" class="org.pentaho.di.trans.dataservice.www.ListDataServicesServlet" scope="singleton">
-        <argument ref="metaStoreUtil"/>
+        <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.plugins.CartePluginType"/>
     </bean>
 
     <bean id="dataServlet" class="org.pentaho.di.trans.dataservice.www.TransDataServlet" scope="singleton">
-        <argument ref="metaStoreUtil"/>
+        <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.plugins.CartePluginType"/>
     </bean>
 
     <bean id="dataServiceStepPlugin" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServiceStepPlugin">
-        <argument ref="metaStoreUtil"/>
-        <argument ref="autoOptimizationServices"/>
-        <argument ref="pushDownFactories"/>
+        <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.ui.spoon.SpoonPluginType"/>
     </bean>
 
     <bean id="dataServiceViewTree" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServiceViewTreeExtension">
-        <argument ref="metaStoreUtil"/>
-        <argument ref="autoOptimizationServices"/>
-        <argument ref="pushDownFactories"/>
+        <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
     <bean id="dataServicePopupMenu" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServicePopupMenuExtension">
-        <argument ref="metaStoreUtil"/>
-        <argument ref="autoOptimizationServices"/>
-        <argument ref="pushDownFactories"/>
+        <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
     <bean id="dataServiceTreeDelegate" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServiceTreeDelegateExtension">
-        <argument ref="metaStoreUtil"/>
+        <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
     <bean id="dataServiceStepMenu" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServiceStepMenuExtension">
-        <argument ref="metaStoreUtil"/>
+        <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
     <bean id="deleteRepositoryObject" scope="singleton" class="org.pentaho.di.trans.dataservice.DeleteRepositoryObjectExtensionPointPlugin">
-        <argument ref="metaStoreUtil"/>
+        <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 

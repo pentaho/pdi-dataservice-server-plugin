@@ -22,19 +22,15 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
-
-import java.util.List;
 
 public class DataServiceStepHandler extends AbstractXulEventHandler {
 
@@ -44,13 +40,10 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
 
   private DataServiceMetaStoreUtil metaStoreUtil;
   private DataServiceDelegate delegate;
-  private List<PushDownFactory> pushDownFactories;
 
-  public DataServiceStepHandler( DataServiceMetaStoreUtil metaStoreUtil,
-                                 List<AutoOptimizationService> autoOptimizationServices,
-                                 List<PushDownFactory> pushDownFactories ) {
-    this.metaStoreUtil = metaStoreUtil;
-    delegate = new DataServiceDelegate( metaStoreUtil, autoOptimizationServices, pushDownFactories );
+  public DataServiceStepHandler( DataServiceContext context ) {
+    delegate = new DataServiceDelegate( context );
+    metaStoreUtil = context.getMetaStoreUtil();
   }
 
   @Override
@@ -63,23 +56,24 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
   }
 
   public void editDataService() throws KettleException, MetaStoreException {
-    DataServiceMeta dataService =
-      metaStoreUtil.fromTransMeta( getActiveTrans(), getMetaStore(), getCurrentStep().getName() );
+    DataServiceMeta dataService = getCurrentDataServiceMeta();
 
     delegate.editDataService( dataService );
   }
 
   public void deleteDataService() throws KettleException, MetaStoreException {
-    DataServiceMeta dataService =
-      metaStoreUtil.fromTransMeta( getActiveTrans(), getMetaStore(), getCurrentStep().getName() );
+    DataServiceMeta dataService = getCurrentDataServiceMeta();
 
-    delegate.removeDataService( getActiveTrans(), dataService );
+    delegate.removeDataService( dataService );
   }
 
   public void testDataService() throws MetaStoreException, KettleException {
-    DataServiceMeta dataService =
-      metaStoreUtil.fromTransMeta( getActiveTrans(), getMetaStore(), getCurrentStep().getName() );
+    DataServiceMeta dataService = getCurrentDataServiceMeta();
     new DataServiceTestDialog( getShell(), dataService, getActiveTrans() ).open();
+  }
+
+  private DataServiceMeta getCurrentDataServiceMeta() throws MetaStoreException {
+    return metaStoreUtil.getDataServiceByStepName( getActiveTrans(), getCurrentStep().getName() );
   }
 
   private Spoon getSpoon() {
@@ -92,10 +86,6 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
 
   private StepMeta getCurrentStep() {
     return getSpoon().getActiveTransGraph().getCurrentStep();
-  }
-
-  private IMetaStore getMetaStore() {
-    return getSpoon().getMetaStore();
   }
 
   private TransMeta getActiveTrans() {

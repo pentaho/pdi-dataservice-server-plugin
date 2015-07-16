@@ -22,16 +22,16 @@
 
 package org.pentaho.di.trans.dataservice.validation;
 
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.CheckStepsExtension;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.util.ArrayList;
@@ -48,8 +48,8 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
   private List<StepValidation> stepValidations =
       new ArrayList<StepValidation>();
 
-  public StepValidationExtensionPointPlugin( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public StepValidationExtensionPointPlugin( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
   }
 
   @Override
@@ -58,11 +58,11 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
       return;
     }
     CheckStepsExtension checkStepExtension = (CheckStepsExtension) o;
+    TransMeta transMeta = checkStepExtension.getTransMeta();
     for ( StepValidation stepValidation : getStepValidations() ) {
       StepMeta stepMeta = checkStepExtension.getStepMetas()[0];
       if ( stepValidation.supportsStep( stepMeta , log ) ) {
-        DataServiceMeta dataServiceMeta = getDataServiceMeta(
-          checkStepExtension.getTransMeta(), checkStepExtension.getMetaStore(), stepMeta.getName(), log );
+        DataServiceMeta dataServiceMeta = getDataServiceMeta( transMeta, stepMeta.getName(), log );
 
         if ( dataServiceMeta == null ) {
           // We won't validate Trans not associated with a DataService
@@ -98,16 +98,9 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
     this.stepValidations = stepValidations;
   }
 
-  private DataServiceMeta getDataServiceMeta(
-    TransMeta transMeta, IMetaStore metaStore, String stepName, LogChannelInterface log ) {
-    if ( metaStore == null || transMeta == null ) {
-      log.logBasic(
-        String.format( "Unable to determine whether '%s' is associated with a DataService.",
-          transMeta == null ? "(unknown)" : transMeta.getName() ) );
-      return null;
-    }
+  private DataServiceMeta getDataServiceMeta( TransMeta transMeta, String stepName, LogChannelInterface log ) {
     try {
-      return metaStoreUtil.fromTransMeta( transMeta, metaStore, stepName );
+      return metaStoreUtil.getDataServiceByStepName( transMeta, stepName );
     } catch ( MetaStoreException e ) {
       log.logError(
         String.format(

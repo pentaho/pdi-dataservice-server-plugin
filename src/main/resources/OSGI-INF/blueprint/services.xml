@@ -8,8 +8,9 @@
              interface="java.util.concurrent.ExecutorService">
     </service>
 
-    <bean id="metaStoreUtil" class="org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil" scope="singleton">
+    <bean id="context" class="org.pentaho.di.trans.dataservice.DataServiceContext" scope="singleton">
         <argument ref="pushDownFactories"/>
+        <argument ref="autoOptimizationServices"/>
         <argument ref="dataServiceCache"/>
     </bean>
 
@@ -66,7 +67,7 @@
               <bean class="org.pentaho.di.trans.dataservice.clients.DataServiceRegistrationListener"/>
          </registration-listener>
         <bean class="org.pentaho.di.trans.dataservice.clients.DataServiceClient">
-            <argument ref="metaStoreUtil"/>
+            <argument ref="context"/>
         </bean>
     </service>
 

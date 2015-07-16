@@ -22,98 +22,20 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.junit.Test;
-import org.pentaho.caching.api.PentahoCacheManager;
-import org.pentaho.di.core.sql.ServiceCacheMethod;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryCapabilities;
-import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryMeta;
-import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
-import org.pentaho.metastore.persist.MetaStoreFactory;
-import org.pentaho.metastore.stores.memory.MemoryMetaStore;
-
-import java.util.Collections;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class DataServiceMetaTest {
-
-  @Test
-  public void testDataServiceMetaSerialization() throws MetaStoreException {
-    IMetaStore metaStore = new MemoryMetaStore();
-    DataServiceMeta[] dataServiceMetas = new DataServiceMeta[] {
-      makeTestDSM( "name", "stepName", "/my/transFilename.ktr", "transRepPath", null, ServiceCacheMethod.None, 5 ),
-      makeTestDSM( "name2", "stepName 2", "/foo/bar/baz.ktr", "transRepPath", "otherOid", ServiceCacheMethod.None, 15 ),
-      makeTestDSM( "name 3", "stepName3", null, "transRepPath", "blahOid", ServiceCacheMethod.LocalMemory, 0 ),
-    };
-    DataServiceMetaStoreUtil metaStoreUtil = new DataServiceMetaStoreUtil( Collections.<PushDownFactory>emptyList(), mock(
-      DataServiceMetaCache.class ) );
-    MetaStoreFactory<DataServiceMeta> factory = metaStoreUtil.getMetaStoreFactory( metaStore );
-
-    for ( DataServiceMeta meta : dataServiceMetas ) {
-      factory.saveElement( meta );
-    }
-    for ( DataServiceMeta meta : dataServiceMetas ) {
-      DataServiceMeta returnedDSM = factory.loadElement( meta.getName() );
-      assertEquals( meta.getStepname(), returnedDSM.getStepname() );
-      assertEquals( meta.getTransFilename(), returnedDSM.getTransFilename() );
-      assertEquals( meta.getTransRepositoryPath(), returnedDSM.getTransRepositoryPath() );
-      assertEquals( meta.getTransObjectId(), returnedDSM.getTransObjectId() );
-      assertEquals( meta.getCacheMethod(), returnedDSM.getCacheMethod() );
-      assertEquals( meta.getCacheMaxAgeMinutes(), returnedDSM.getCacheMaxAgeMinutes() );
-    }
-  }
-
-  private DataServiceMeta makeTestDSM( String name, String stepName, String transFilename,
-                                       String transRepPath, String transOid,
-                                       ServiceCacheMethod cacheMethod, int cacheAgeMinutes ) {
-    DataServiceMeta dsm = new DataServiceMeta();
-    dsm.setName( name );
-    dsm.setStepname( stepName );
-    dsm.setTransFilename( transFilename );
-    dsm.setTransRepositoryPath( transRepPath );
-    dsm.setTransObjectId( transOid );
-    dsm.setCacheMethod( cacheMethod );
-    dsm.setCacheMaxAgeMinutes( cacheAgeMinutes );
-    return dsm;
-  }
-
-  @Test
-  public void testLookupTransObjectId() throws Exception {
-    Repository repository = mock( Repository.class );
-    RepositoryDirectoryInterface rootDir = mock( RepositoryDirectoryInterface.class );
-    RepositoryDirectoryInterface dataServiceDir = mock( RepositoryDirectoryInterface.class );
-    String repDir = "/public/dataServices/", transName = "myService.ktr";
-    StringObjectId objectId = new StringObjectId( UUID.randomUUID().toString() );
-
-    when( repository.loadRepositoryDirectoryTree() ).thenReturn( rootDir );
-    when( rootDir.findDirectory( repDir ) ).thenReturn( dataServiceDir );
-    when( repository.getTransformationID( transName, dataServiceDir ) ).thenReturn( objectId );
-
-    DataServiceMeta myService = makeTestDSM( "myService", "ServiceStep", null, null, null, ServiceCacheMethod.None, 0 );
-
-    assertNull( myService.lookupTransObjectId( null ) );
-    assertNull( myService.getTransObjectId() );
-
-    assertNull( myService.lookupTransObjectId( repository ) );
-    assertNull( myService.getTransObjectId() );
-
-    myService.setTransRepositoryPath( repDir + transName );
-    assertEquals( objectId, myService.lookupTransObjectId( repository ) );
-    assertEquals( objectId.getId(), myService.getTransObjectId() );
-
-    assertEquals( objectId.getId(), myService.lookupTransObjectId( null ).getId() );
-  }
 
   @Test
   public void testCreateCacheKey() throws Exception {

@@ -22,17 +22,16 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.Repository;
-import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
+import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
-import org.pentaho.metastore.api.IMetaStore;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -40,7 +39,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.
@@ -62,9 +60,11 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
   public static final String XML_TAG_SERVICES = "services";
   public static final String XML_TAG_SERVICE = "service";
   private final DataServiceMetaStoreUtil metaStoreUtil;
+  private final DataServiceClient client;
 
-  public ListDataServicesServlet( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this.metaStoreUtil = metaStoreUtil;
+  public ListDataServicesServlet( DataServiceContext context ) {
+    this.metaStoreUtil = context.getMetaStoreUtil();
+    client = new DataServiceClient( context );
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -80,50 +80,29 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
       logDebug( BaseMessages.getString( PKG, "LisDataServicesServlet.ListRequested" ) );
     }
     response.setStatus( HttpServletResponse.SC_OK );
-
-    Map<String, String> parameters = TransDataServlet.getParametersFromRequestHeader( request );
-
-
     response.setContentType( "text/xml" );
 
     response.getWriter().println( XMLHandler.getXMLHeader() );
     response.getWriter().println( XMLHandler.openTag( XML_TAG_SERVICES ) );
 
-    // Copy the list locally so we can add the current repository services...
-    //
-    IMetaStore metaStore = transformationMap.getSlaveServerConfig().getMetaStore();
-
-    // Add possible services from the repository...
-    //
-    Repository repository = null;
-    List<DataServiceMeta> dataServices = Collections.emptyList();
+    List<ThinServiceInformation> serviceInformation = Collections.emptyList();
     try {
-      repository = transformationMap.getSlaveServerConfig().getRepository(); // loaded lazily
-      dataServices = metaStoreUtil.getMetaStoreFactory( metaStore ).getElements();
+      client.setRepository( transformationMap.getSlaveServerConfig().getRepository() );
+      client.setMetaStore( transformationMap.getSlaveServerConfig().getMetaStore() );
+      serviceInformation = client.getServiceInformation();
     } catch ( Exception e ) {
       log.logError( "Unable to list extra repository services", e );
     }
 
-    for ( DataServiceMeta service : dataServices ) {
+    for ( ThinServiceInformation thinServiceInformation : serviceInformation ) {
+      String serviceName = thinServiceInformation.getName();
       response.getWriter().println( XMLHandler.openTag( XML_TAG_SERVICE ) );
-      response.getWriter().println( XMLHandler.addTagValue( "name", service.getName() ) );
+      response.getWriter().println( XMLHandler.addTagValue( "name", serviceName ) );
 
       // Also include the row layout of the service step.
       //
-      try {
-        TransMeta transMeta = service.lookupTransMeta( repository );
-
-        for ( String name : parameters.keySet() ) {
-          transMeta.setParameterValue( name, parameters.get( name ) );
-        }
-        transMeta.activateParameters();
-        RowMetaInterface serviceFields = transMeta.getStepFields( service.getStepname() );
-        response.getWriter().println( serviceFields.getMetaXML() );
-
-      } catch ( Exception e ) {
-        // Don't include details
-        log.logError( "Unable to get fields for service " + service.getName() + ", transformation: " + service.getTransFilename() );
-      }
+      RowMetaInterface serviceFields = thinServiceInformation.getServiceFields();
+      response.getWriter().println( serviceFields.getMetaXML() );
 
       response.getWriter().println( XMLHandler.closeTag( XML_TAG_SERVICE ) );
     }

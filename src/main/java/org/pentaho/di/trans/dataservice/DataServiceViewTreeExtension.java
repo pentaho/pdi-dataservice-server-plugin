@@ -22,8 +22,6 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.TreeItem;
@@ -32,36 +30,34 @@ import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.ConstUI;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.spoon.SelectionTreeExtension;
 import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
-
-import java.util.List;
 
 @ExtensionPoint( id = "DataServiceViewTreeExtension", description = "Refreshes data services subtree",
   extensionPointId = "SpoonViewTreeExtension" )
 public class DataServiceViewTreeExtension implements ExtensionPointInterface {
 
+  private final DataServiceContext context;
   private DataServiceDelegate delegate;
 
-  private DataServiceMetaStoreUtil metaStoreUtil;
   private static final Class<?> PKG = DataServiceTreeDelegateExtension.class;
   public static final String STRING_DATA_SERVICES =
     BaseMessages.getString( PKG, "DataServicesDialog.STRING_DATA_SERVICES" );
 
-  public DataServiceViewTreeExtension( DataServiceMetaStoreUtil metaStoreUtil,
-                                       List<AutoOptimizationService> autoOptimizationServices,
-                                       List<PushDownFactory> pushDownFactories ) {
-    this.metaStoreUtil = metaStoreUtil;
-    delegate = new DataServiceDelegate( metaStoreUtil, autoOptimizationServices, pushDownFactories );
+  public DataServiceViewTreeExtension( DataServiceContext context ) {
+    this.context = context;
+    delegate = new DataServiceDelegate( this.context );
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
     SelectionTreeExtension selectionTreeExtension = (SelectionTreeExtension) object;
     if ( selectionTreeExtension.getAction().equals( Spoon.REFRESH_SELECTION_EXTENSION ) ) {
-      refreshTree( selectionTreeExtension );
+      if ( selectionTreeExtension.getMeta() instanceof TransMeta ) {
+        refreshTree( selectionTreeExtension );
+      }
     }
     if ( selectionTreeExtension.getAction().equals( Spoon.EDIT_SELECTION_EXTENSION ) ) {
       editDataService( selectionTreeExtension );
@@ -69,6 +65,7 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
   }
 
   private void refreshTree( SelectionTreeExtension selectionTreeExtension ) {
+    TransMeta meta = (TransMeta) selectionTreeExtension.getMeta();
 
     TreeItem tiRootName = selectionTreeExtension.getTiRootName();
     GUIResource guiResource = selectionTreeExtension.getGuiResource();
@@ -76,15 +73,18 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
     TreeItem tiDSTitle = createTreeItem( tiRootName, STRING_DATA_SERVICES, guiResource.getImageFolder() );
 
     try {
-      List<DataServiceMeta> dataServices = metaStoreUtil.getMetaStoreFactory( getSpoon().getMetaStore() ).getElements();
-      for ( DataServiceMeta dataService : dataServices ) {
-        createTreeItem( tiDSTitle, dataService.getName(), guiResource
-          .getImage( "images/data-services_padding.svg", getClass().getClassLoader(), ConstUI.MEDIUM_ICON_SIZE,
-            ConstUI.MEDIUM_ICON_SIZE ) );
+      for ( DataServiceMeta dataService : context.getMetaStoreUtil().getDataServices( meta ) ) {
+        createTreeItem( tiDSTitle, dataService.getName(), getDataServiceImage( guiResource ) );
       }
-    } catch ( MetaStoreException e ) {
-      // Do Nothing
+    } catch ( Exception e ) {
+      meta.getLogChannel().logError( "Unable to open data service menu", e );
     }
+  }
+
+  private Image getDataServiceImage( GUIResource guiResource ) {
+    return guiResource.getImage(
+      "images/data-services_padding.svg", getClass().getClassLoader(), ConstUI.MEDIUM_ICON_SIZE,
+      ConstUI.MEDIUM_ICON_SIZE );
   }
 
   private void editDataService( SelectionTreeExtension selectionTreeExtension ) {

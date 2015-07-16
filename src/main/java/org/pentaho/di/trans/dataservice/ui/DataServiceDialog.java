@@ -22,17 +22,14 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import org.pentaho.di.trans.dataservice.DataServiceMetaStoreUtil;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.ui.controller.DataServiceDialogController;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
-import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
-import com.sun.istack.NotNull;
 import org.eclipse.swt.widgets.Composite;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.ui.controller.DataServiceDialogController;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
@@ -43,7 +40,6 @@ import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 
 import java.util.Enumeration;
-import java.util.List;
 import java.util.ResourceBundle;
 
 public class DataServiceDialog {
@@ -54,7 +50,6 @@ public class DataServiceDialog {
   private DataServiceModel dataServiceModel;
   private final Document document;
   private final XulDialog xulDialog;
-  private final Composite parent;
 
   private static final Class<?> PKG = DataServiceDialog.class;
 
@@ -70,14 +65,11 @@ public class DataServiceDialog {
     }
   };
 
-  public DataServiceDialog( Composite parent, DataServiceMeta dataService, DataServiceMetaStoreUtil metaStoreUtil,
-                            TransMeta transMeta, List<AutoOptimizationService> autoOptimizationServices,
-                            List<PushDownFactory> pushDownFactories ) throws KettleException {
-    this.parent = parent;
+  public DataServiceDialog( Composite parent, DataServiceMeta dataService, TransMeta transMeta,
+                            DataServiceContext context ) throws KettleException {
     dataServiceModel = new DataServiceModel();
     dataServiceDialogController =
-      new DataServiceDialogController( parent, dataServiceModel, dataService, metaStoreUtil, transMeta,
-        Spoon.getInstance(), autoOptimizationServices, pushDownFactories );
+      new DataServiceDialogController( parent, dataServiceModel, dataService, transMeta, Spoon.getInstance(), context );
     document = initXul( parent );
     xulDialog = (XulDialog) document.getElementById( XUL_DIALOG_ID );
     attachCallback();
