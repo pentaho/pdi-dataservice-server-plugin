@@ -31,6 +31,7 @@ import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogLevel;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.row.ValueMetaInterface;
@@ -152,10 +153,15 @@ public class DataServiceExecutor {
     }
 
     public DataServiceExecutor build() throws KettleException {
-      if ( serviceTrans == null ) {
+      RowMetaInterface serviceFields;
+      if ( serviceTrans != null ) {
+        serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
+      } else if ( service.getServiceTrans() != null ) {
         serviceTrans( service.getServiceTrans() );
+        serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
+      } else {
+        serviceFields = new RowMeta();
       }
-      RowMetaInterface serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
 
       sql.parse( serviceFields );
 
@@ -258,7 +264,7 @@ public class DataServiceExecutor {
       Object[] typedValues = resolver.inListToTypedObjectArray( fieldName, condition.getRightExactString() );
 
       // Encode list values
-      String[] typedValueStrings = new String[ typedValues.length ];
+      String[] typedValueStrings = new String[typedValues.length];
       for ( int i = 0; i < typedValues.length; i++ ) {
         typedValueStrings[i] = resolvedValueMeta.getString( typedValues[i] );
       }
@@ -287,7 +293,7 @@ public class DataServiceExecutor {
    * Strips the "fake" values from a Condition used
    * to pass parameter key/value info in the WHERE clause.
    * E.g. if
-   *    WHERE PARAMETER('foo') = 'bar'
+   * WHERE PARAMETER('foo') = 'bar'
    * is in the where clause a FUNC_TRUE condition will be
    * created with leftValueName = 'foo' and rightValueName = 'bar'.
    * These need to be stripped out to avoid failing checks
@@ -418,7 +424,6 @@ public class DataServiceExecutor {
   public RowProducer addRowProducer() throws KettleException {
     return genTrans.addRowProducer( sqlTransGenerator.getInjectorStepName(), 0 );
   }
-
 
   public void waitUntilFinished() {
     if ( !isDual() ) {
