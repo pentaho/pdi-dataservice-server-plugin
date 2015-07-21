@@ -140,6 +140,7 @@ public class DataServiceTestControllerTest  {
 
   @Test
   public void errorAlertMessageSetIfErrorInGenTrans() throws KettleException {
+    when( model.isExecuting() ).thenReturn( true );
     when( dataServiceExecutor.getGenTrans().getErrors() ).thenReturn( 1 );
     when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
       .thenReturn( true );
@@ -152,6 +153,7 @@ public class DataServiceTestControllerTest  {
 
   @Test
   public void errorAlertMessageSetIfErrorInSvcTrans() throws KettleException {
+    when( model.isExecuting() ).thenReturn( true );
     when( dataServiceExecutor.getServiceTrans().getErrors() ).thenReturn( 1 );
     when( dataServiceExecutor.getServiceTrans().isFinishedOrStopped() )
       .thenReturn( true );
@@ -166,8 +168,7 @@ public class DataServiceTestControllerTest  {
 
   @Test
   public void callbackNotifiedOnExecutionComplete() throws Exception {
-
-
+    when( model.isExecuting() ).thenReturn( true );
     dataServiceTestController.executeSql();
     when( dataServiceExecutor.getServiceTrans().isFinishedOrStopped() )
       .thenReturn( true );
