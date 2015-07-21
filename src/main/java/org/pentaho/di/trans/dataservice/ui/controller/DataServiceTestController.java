@@ -262,13 +262,15 @@ public class DataServiceTestController extends AbstractXulEventHandler {
         document.invokeLater( new Runnable() {
           @Override
           public void run() {
-            checkMaxRows( dataServiceExec );
-            checkForFailures( dataServiceExec );
-            updateExecutingMessage( startMillis, dataServiceExec );
+            if ( model.isExecuting() ) {
+              checkMaxRows( dataServiceExec );
+              checkForFailures( dataServiceExec );
+              updateExecutingMessage( startMillis, dataServiceExec );
 
-            if ( anyTransErrors( dataServiceExec ) || transDone( svcTrans, genTrans ) ) {
-              handleCompletion( dataServiceExec );
-              completionPollTimer.cancel();
+              if ( anyTransErrors( dataServiceExec ) || transDone( svcTrans, genTrans ) ) {
+                handleCompletion( dataServiceExec );
+                completionPollTimer.cancel();
+              }
             }
           }
         } );
@@ -463,6 +465,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     if ( dataServiceExec != null ) {
       stopDataService( dataServiceExec );
     }
+    model.setExecuting( false );
   }
 
   private void clearLogLines() {
