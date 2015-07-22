@@ -40,7 +40,6 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
@@ -53,22 +52,27 @@ import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 
+import javax.cache.Cache;
 import java.util.List;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
@@ -84,7 +88,7 @@ public class DataServiceMetaStoreUtilTest {
   private IMetaStore metaStore;
   private DataServiceMeta dataService;
 
-  @Mock private DataServiceMetaCache cache;
+  @Mock private Cache<String, DataServiceMeta> cache;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) private Repository repository;
 
   private DataServiceMetaStoreUtil metaStoreUtil;
@@ -118,10 +122,36 @@ public class DataServiceMetaStoreUtilTest {
     optimization.setType( optimizationType );
     dataService.setPushDownOptimizationMeta( Lists.newArrayList( optimization ) );
 
-    doReturn( null ).when( cache ).get( any( TransMeta.class ), anyString() );
-
     PushDownFactory optimizationFactory = new TestOptimizationFactory();
     metaStoreUtil = new DataServiceMetaStoreUtil( ImmutableList.of( optimizationFactory ), cache );
+  }
+
+  @Test public void testCacheSave() throws Exception {
+    String transStepKey = DataServiceMeta.createCacheKey( transMeta, DATA_SERVICE_STEP );
+    metaStoreUtil.save( metaStore, dataService );
+
+    verify( cache ).putAll( argThat( allOf( aMapWithSize( 2 ),
+      hasEntry( transStepKey, dataService ),
+      hasEntry( DATA_SERVICE_NAME, dataService )
+    ) ) );
+  }
+
+  @Test public void testCacheLoadByName() throws Exception {
+    when( cache.get( DATA_SERVICE_NAME ) ).thenReturn( dataService );
+    assertThat( metaStoreUtil.getDataService( DATA_SERVICE_NAME, mock( Repository.class ), mock( IMetaStore.class ) ),
+      sameInstance( dataService ) );
+  }
+
+  @Test public void testCacheLoadByStep() throws Exception {
+    String key = DataServiceMeta.createCacheKey( transMeta, DATA_SERVICE_STEP );
+
+    when( cache.get( key ) ).thenReturn( dataService );
+    assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ),
+      sameInstance( dataService ) );
+
+    dataService.setStepname( "different step" );
+    assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), nullValue() );
+    verify( cache ).remove( key, dataService );
   }
 
   @Test public void testGetByName() throws MetaStoreException {

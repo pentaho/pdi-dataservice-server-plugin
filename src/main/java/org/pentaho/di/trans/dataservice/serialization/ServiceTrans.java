@@ -43,11 +43,11 @@ public class ServiceTrans {
   public static ServiceTrans create( String name, TransMeta transMeta ) {
     ServiceTrans serviceTrans = new ServiceTrans();
     serviceTrans.setName( name );
-    serviceTrans.setReference( create( transMeta ) );
+    serviceTrans.setReference( reference( transMeta ) );
     return serviceTrans;
   }
 
-  public static Reference create( TransMeta transMeta ) {
+  public static Reference reference( TransMeta transMeta ) {
     Repository repository = transMeta.getRepository();
     if ( transMeta.getRepository() == null ) {
       return new Reference( StorageMethod.FILE, transMeta.getFilename() );

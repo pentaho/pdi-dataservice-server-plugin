@@ -22,24 +22,40 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.pentaho.di.trans.dataservice.cache.DataServiceMetaCache;
+import org.pentaho.caching.api.Constants;
+import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 
+import javax.cache.Cache;
 import java.util.List;
 
 public class DataServiceContext {
   private final DataServiceMetaStoreUtil metaStoreUtil;
   private final List<AutoOptimizationService> autoOptimizationServices;
   private final List<PushDownFactory> pushDownFactories;
+  private final Cache<String, DataServiceMeta> cache;
 
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
-                             DataServiceMetaCache cache ) {
+                             PentahoCacheManager cacheManager ) {
     this.pushDownFactories = pushDownFactories;
     this.autoOptimizationServices = autoOptimizationServices;
+    this.cache = initCache( cacheManager );
     this.metaStoreUtil = new DataServiceMetaStoreUtil( pushDownFactories, cache );
+  }
+
+  private static Cache<String, DataServiceMeta> initCache( PentahoCacheManager cacheManager ) {
+    String cacheName = DataServiceMeta.class.getName();
+    Cache<String, DataServiceMeta> cache = cacheManager.getCache( cacheName, String.class, DataServiceMeta.class );
+    if ( cache != null ) {
+      return cache;
+    }
+    return cacheManager
+      .getTemplates()
+      .get( Constants.DEFAULT_TEMPLATE )
+      .createCache( cacheName, String.class, DataServiceMeta.class );
   }
 
   public DataServiceMetaStoreUtil getMetaStoreUtil() {
@@ -52,5 +68,9 @@ public class DataServiceContext {
 
   public List<PushDownFactory> getPushDownFactories() {
     return pushDownFactories;
+  }
+
+  public Cache<String, DataServiceMeta> getCache() {
+    return cache;
   }
 }

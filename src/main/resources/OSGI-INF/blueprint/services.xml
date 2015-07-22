@@ -11,11 +11,7 @@
     <bean id="context" class="org.pentaho.di.trans.dataservice.DataServiceContext" scope="singleton">
         <argument ref="pushDownFactories"/>
         <argument ref="autoOptimizationServices"/>
-        <argument ref="dataServiceCache"/>
-    </bean>
-
-    <bean id="dataServiceCache" scope="singleton" class="org.pentaho.di.trans.dataservice.cache.DataServiceMetaCache">
-      <argument ref="cacheManager"/>
+        <argument ref="cacheManager"/>
     </bean>
 
     <reference id="lineageClient" interface="org.pentaho.metaverse.api.ILineageClient"/>
