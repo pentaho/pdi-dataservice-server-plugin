@@ -143,9 +143,11 @@ public class CachedServiceTest {
     assertThat( CacheKey.create( new DataServiceExecutor.Builder( sql, dataServiceMeta )
         .prepareExecution( false )
         .parameters( ImmutableMap.of( "foo", "bar" ) )
+        .serviceTrans( serviceTrans )
         .build() ),
       not( equalTo( CacheKey.create( new DataServiceExecutor.Builder( sql, dataServiceMeta )
         .prepareExecution( false )
+        .serviceTrans( serviceTrans )
         .build() ) ) ) );
   }
 
