@@ -23,17 +23,18 @@
 package org.pentaho.di.trans.dataservice;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.pentaho.di.core.Const;
-import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.serialization.ServiceTrans;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 import org.pentaho.metastore.util.PentahoDefaults;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * This describes a (transformation) data service to the outside world.
@@ -54,7 +55,7 @@ public class DataServiceMeta {
   @MetaStoreAttribute( key = DATA_SERVICE_TRANSFORMATION_STEP_NAME )
   protected String stepname;
 
-  @MetaStoreAttribute( key = PUSH_DOWN_OPT_META  )
+  @MetaStoreAttribute( key = PUSH_DOWN_OPT_META )
   protected List<PushDownOptimizationMeta> pushDownOptimizationMeta = Lists.newArrayList();
 
   private TransMeta serviceTrans;
@@ -117,52 +118,11 @@ public class DataServiceMeta {
     this.pushDownOptimizationMeta = pushDownOptimizationMeta;
   }
 
-  public static CacheKey createCacheKey( TransMeta transMeta, String stepName ) {
-    String identifier = "";
-    Repository repository = transMeta.getRepository();
-    if ( repository != null ) {
-      if ( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ) {
-        ObjectId objectId = transMeta.getObjectId();
-        if ( objectId != null ) {
-          identifier = objectId.getId();
-        }
-      }
-      if ( Const.isEmpty( identifier ) ) {
-        identifier = transMeta.getPathAndName();
-      }
-    } else {
-      identifier = transMeta.getFilename();
-    }
-
-    return new CacheKey( identifier, stepName );
+  public Set<String> createCacheKeys() {
+    return ImmutableSet.of( name, createCacheKey( getServiceTrans(), getStepname() ) );
   }
 
-  public static final class CacheKey {
-
-    private final String identifier;
-    private final String stepName;
-
-    public CacheKey( String identifier, String stepName ) {
-      this.identifier = identifier;
-      this.stepName = stepName;
-    }
-
-    @Override
-    public boolean equals( Object obj ) {
-      if ( this == obj ) {
-        return true;
-      }
-      if ( obj == null || getClass() != obj.getClass() ) {
-        return false;
-      }
-
-      final CacheKey cacheKey = (CacheKey) obj;
-      return Objects.equal( identifier, cacheKey.identifier ) && Objects.equal( stepName, cacheKey.stepName );
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hashCode( identifier, stepName );
-    }
+  public static String createCacheKey( TransMeta transMeta, String stepName ) {
+    return String.valueOf( Objects.hashCode( ServiceTrans.reference( transMeta ).getLocation(), stepName ) );
   }
 }
