@@ -65,10 +65,6 @@ public class ServiceCache implements PushDownType {
     this.factory = factory;
   }
 
-  @Override public String getTypeName() {
-    return NAME;
-  }
-
   @Override public void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta ) {
     optMeta.setStepName( dataService.getStepname() );
   }

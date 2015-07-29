@@ -75,10 +75,6 @@ public class ParameterGeneration implements PushDownType {
     this.parameterName = parameterName;
   }
 
-  @Override public String getTypeName() {
-    return TYPE_NAME;
-  }
-
   public List<SourceTargetFields> getFieldMappings() {
     return fieldMappings;
   }

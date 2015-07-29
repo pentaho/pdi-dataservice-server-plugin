@@ -31,7 +31,6 @@ import org.pentaho.di.trans.step.StepInterface;
  * @author nhudak
  */
 public interface PushDownType {
-  public String getTypeName();
 
   void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta );
 

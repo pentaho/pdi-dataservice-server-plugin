@@ -95,10 +95,6 @@ public class PushDownOptimizationMeta implements XulEventSource {
     this.type = type;
   }
 
-  public String getTypeName() {
-    return type.getTypeName();
-  }
-
   public boolean isEnabled() {
     return enabled;
   }

@@ -275,10 +275,6 @@ public class DataServiceMetaStoreUtilTest {
 
     @MetaStoreAttribute String value;
 
-    @Override public String getTypeName() {
-      return OPTIMIZATION;
-    }
-
     @Override public void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta ) {
     }
 
