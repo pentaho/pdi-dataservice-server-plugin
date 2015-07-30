@@ -215,6 +215,7 @@ public class DataServiceMetaStoreUtil {
 
       // Save to embedded MetaStore
       getDataServiceFactory( transMeta ).saveElement( dataService );
+      transMeta.setChanged();
 
       // Leave trace of this transformation...
       //
