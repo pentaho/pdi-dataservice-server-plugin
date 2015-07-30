@@ -22,15 +22,11 @@
 
 package org.pentaho.di.trans.dataservice.optimization.cache;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.SqlTransGenerator;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,6 +41,11 @@ import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.SqlTransGenerator;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepInterface;
 
 import javax.cache.Cache;
@@ -88,7 +89,8 @@ public class ServiceCacheTest {
     rowMeta.addValueMeta( new ValueMeta( "A", ValueMetaInterface.TYPE_INTEGER ) );
     rowMeta.addValueMeta( new ValueMeta( "B", ValueMetaInterface.TYPE_INTEGER ) );
 
-    when( factory.getCache( serviceCache ) ).thenReturn( cache );
+    when( factory.getCache( "MOCK_SERVICE" ) ).thenReturn( Optional.of( cache ) );
+    when( factory.getCache( serviceCache, "MOCK_SERVICE" ) ).thenReturn( cache );
     when( dataServiceMeta.getStepname() ).thenReturn( SERVICE_STEP );
     serviceStep = serviceTrans.findRunThread( SERVICE_STEP );
 

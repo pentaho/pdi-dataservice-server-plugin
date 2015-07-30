@@ -22,26 +22,27 @@
 
 package org.pentaho.di.trans.dataservice.optimization.cache;
 
-import com.google.common.base.Preconditions;
+import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import org.pentaho.caching.api.PentahoCacheManager;
+import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
-import org.pentaho.caching.api.PentahoCacheManager;
-import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * @author nhudak
  */
 public class ServiceCacheFactory implements PushDownFactory {
-  public static final String CACHE_NAME = ServiceCache.class.getName();
   private final PentahoCacheManager cacheManager;
 
   private final ListeningExecutorService executorService;
@@ -71,31 +72,44 @@ public class ServiceCacheFactory implements PushDownFactory {
     return executorService;
   }
 
-  public Cache<CachedService.CacheKey, CachedService> getCache( ServiceCache serviceCache )
+  public PentahoCacheManager getCacheManager() {
+    return cacheManager;
+  }
+
+  public Cache<CachedService.CacheKey, CachedService> getCache( ServiceCache serviceCache, String dataServiceName )
     throws CacheException {
+    Optional<Cache<CachedService.CacheKey, CachedService>> cache = getCache( dataServiceName );
+    if ( cache.isPresent() ) {
+      return cache.get();
+    }
+
     String templateName = serviceCache.getTemplateName();
     Map<String, PentahoCacheTemplateConfiguration> templates = cacheManager.getTemplates();
+    checkState( !Strings.isNullOrEmpty( templateName ) && templates.containsKey( templateName ),
+      "Cache Template is invalid", templateName );
 
-    Cache<CachedService.CacheKey, CachedService> cache = cacheManager.getCache(
-      CACHE_NAME,
+    return templates.get( templateName ).createCache(
+      cacheName( dataServiceName ),
       CachedService.CacheKey.class,
       CachedService.class
     );
+  }
 
-    if ( cache != null ) {
-      return cache;
-    } else {
-      Preconditions.checkState( !Strings.isNullOrEmpty( templateName ),
-        "Cache Template is not configured" );
-      Preconditions.checkState( templates.containsKey( templateName ),
-        "Cache Template is not configured", templateName );
-
-      return templates.get( templateName ).createCache(
-        CACHE_NAME,
+  public Optional<Cache<CachedService.CacheKey, CachedService>> getCache( String dataServiceName ) {
+    try {
+      return Optional.fromNullable( cacheManager.getCache(
+        cacheName( dataServiceName ),
         CachedService.CacheKey.class,
         CachedService.class
-      );
+      ) );
+    } catch ( Exception e ) {
+      cacheManager.destroyCache( cacheName( dataServiceName ) );
+      return Optional.absent();
     }
+  }
+
+  public String cacheName( String dataServiceName ) {
+    return "SERVICE_CACHE." + dataServiceName;
   }
 
   public ServiceObserver createObserver( DataServiceExecutor executor ) {
