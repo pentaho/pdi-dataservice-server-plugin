@@ -191,6 +191,7 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
     try {
       metaStoreUtil.save( spoon.getMetaStore(), getDataService() );
       spoon.refreshTree();
+      spoon.refreshGraph();
     } catch ( MetaStoreException e ) {
       throw new KettleException( BaseMessages.getString( PKG, "DataServiceDialog.MetaStore.Error" ) );
     }

@@ -28,13 +28,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
-import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 
@@ -43,9 +43,7 @@ import java.text.MessageFormat;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.base.Predicates.notNull;
+import static com.google.common.base.Predicates.*;
 import static org.pentaho.caching.api.Constants.DEFAULT_TEMPLATE;
 
 /**
@@ -55,8 +53,13 @@ public class ServiceCache implements PushDownType {
   public static final String NAME = "Service Cache";
   private final ServiceCacheFactory factory;
   public static final String SERVICE_CACHE_TEMPLATE_NAME = "template_name";
+  public static final String SERVICE_CACHE_TTL = "time_to_live";
 
-  @MetaStoreAttribute( key = SERVICE_CACHE_TEMPLATE_NAME ) private String templateName = DEFAULT_TEMPLATE;
+  @MetaStoreAttribute( key = SERVICE_CACHE_TEMPLATE_NAME )
+  private String templateName = DEFAULT_TEMPLATE;
+
+  @MetaStoreAttribute( key = SERVICE_CACHE_TTL )
+  private String timeToLive;
 
   public ServiceCache( ServiceCacheFactory factory ) {
     this.factory = factory;
@@ -196,6 +199,14 @@ public class ServiceCache implements PushDownType {
 
   public void setTemplateName( String templateName ) {
     this.templateName = templateName;
+  }
+
+  public String getTimeToLive() {
+    return timeToLive;
+  }
+
+  public void setTimeToLive( String timeToLive ) {
+    this.timeToLive = timeToLive;
   }
 
 }

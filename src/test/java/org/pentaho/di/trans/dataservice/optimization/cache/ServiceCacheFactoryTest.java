@@ -71,7 +71,7 @@ public class ServiceCacheFactoryTest {
 
     ServiceCache serviceCache = serviceCacheFactory.createPushDown();
 
-    assertThat( serviceCacheFactory.getTemplates(), contains( TEMPLATE_NAME ) );
+    assertThat( serviceCacheFactory.getTemplateNames(), contains( TEMPLATE_NAME ) );
     serviceCache.setTemplateName( TEMPLATE_NAME );
     assertThat( serviceCacheFactory.getCache( serviceCache ), is( cache ) );
   }

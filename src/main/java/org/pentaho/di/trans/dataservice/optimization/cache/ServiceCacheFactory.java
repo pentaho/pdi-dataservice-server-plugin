@@ -106,8 +106,14 @@ public class ServiceCacheFactory implements PushDownFactory {
     return new CachedServiceLoader( cachedService, executorService );
   }
 
-  public Iterable<String> getTemplates() {
+  public Iterable<String> getTemplateNames() {
+
     // TODO need better template filtering & selection
     return cacheManager.getTemplates().keySet();
+  }
+
+  public Map<String, String> getPropertiesByTemplateName( String templateName ) {
+
+    return cacheManager.getTemplates().get( templateName ).getProperties();
   }
 }
