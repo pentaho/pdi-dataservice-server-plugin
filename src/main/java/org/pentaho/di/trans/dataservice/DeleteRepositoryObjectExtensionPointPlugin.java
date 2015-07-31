@@ -68,7 +68,7 @@ public class DeleteRepositoryObjectExtensionPointPlugin implements ExtensionPoin
 
       for ( DataServiceMeta dataService : dataServices ) {
         try {
-          metaStoreUtil.removeDataService( transMeta, getSpoon().getMetaStore(), dataService );
+          metaStoreUtil.removeDataService( getSpoon().getMetaStore(), dataService );
         } catch ( Exception e ) {
           logger.error( "Unable to delete Data Service", e );
         }

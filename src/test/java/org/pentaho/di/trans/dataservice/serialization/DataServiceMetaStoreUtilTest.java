@@ -26,7 +26,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hamcrest.Matcher;
@@ -59,14 +58,18 @@ import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 
 import javax.cache.Cache;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -74,6 +77,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
@@ -81,8 +85,11 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil.createCacheEntries;
+import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil.createCacheKeys;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceMetaStoreUtilTest {
@@ -97,7 +104,7 @@ public class DataServiceMetaStoreUtilTest {
   private IMetaStore metaStore;
   private DataServiceMeta dataService;
 
-  @Mock Cache<String, DataServiceMeta> cache;
+  @Mock Cache<Integer, String> cache;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Repository repository;
   @Mock Function<Exception, Void> exceptionHandler;
   @Mock KettleException notFoundException;
@@ -143,36 +150,6 @@ public class DataServiceMetaStoreUtilTest {
     return dataService;
   }
 
-  @Test public void testCacheSave() throws Exception {
-    Set<String> transStepKeys = DataServiceMeta.createCacheKeys( transMeta, DATA_SERVICE_STEP );
-    metaStoreUtil.save( repository, metaStore, dataService );
-
-    verify( cache ).putAll( eq( ImmutableMap.<String, DataServiceMeta>builder()
-      .put( DATA_SERVICE_NAME, dataService )
-      .putAll( Maps.asMap( transStepKeys, Functions.constant( dataService ) ) )
-      .build() ) );
-  }
-
-  @Test public void testCacheLoadByName() throws Exception {
-    when( cache.get( DATA_SERVICE_NAME ) ).thenReturn( dataService );
-    assertThat( metaStoreUtil.getDataService( DATA_SERVICE_NAME, mock( Repository.class ), mock( IMetaStore.class ) ),
-      sameInstance( dataService ) );
-  }
-
-  @Test public void testCacheLoadByStep() throws Exception {
-    final Set<String> keySet = DataServiceMeta.createCacheKeys( transMeta, DATA_SERVICE_STEP );
-
-    when( cache.getAll( keySet ) ).thenReturn( Maps.asMap( keySet, Functions.constant( dataService ) ) );
-    assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ),
-      sameInstance( dataService ) );
-
-    dataService.setStepname( "different step" );
-    assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), nullValue() );
-    for ( String key : keySet ) {
-      verify( cache ).remove( key, dataService );
-    }
-  }
-
   @Test public void testSaveLoad() throws Exception {
     metaStoreUtil.save( repository, metaStore, dataService );
 
@@ -210,9 +187,39 @@ public class DataServiceMetaStoreUtilTest {
     assertThat( metaStoreUtil.getDataService( DATA_SERVICE_NAME, repository, metaStore ), validDataService() );
   }
 
+  @Test public void testStepCacheMiss() throws Exception {
+    assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), nullValue() );
+    verify( cache ).putAll( Maps.asMap( createCacheKeys( transMeta, DATA_SERVICE_STEP ), Functions.constant( "" ) ) );
+  }
+
+  @Test public void testStepCacheSave() throws Exception {
+    metaStoreUtil.save( repository, metaStore, dataService );
+    verify( cache ).putAll(
+      Maps.asMap( createCacheKeys( transMeta, DATA_SERVICE_STEP ), Functions.constant( DATA_SERVICE_NAME ) ) );
+  }
+
+  @Test public void testStepCacheHit() throws Exception {
+    Set<Integer> cacheKeys = createCacheKeys( transMeta, DATA_SERVICE_STEP );
+    Map<Integer, String> cacheEntries = createCacheEntries( dataService );
+    assertThat( cacheEntries.keySet(), equalTo( cacheKeys ) );
+
+    metaStoreUtil.save( repository, metaStore, dataService );
+    verify( cache ).putAll( cacheEntries );
+
+    when( cache.getAll( cacheKeys ) ).thenReturn( cacheEntries );
+    assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), validDataService() );
+
+    metaStoreUtil.removeDataService( metaStore, dataService );
+    verify( cache ).removeAll( cacheKeys );
+
+    assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), nullValue() );
+    verify( cache, times( cacheKeys.size() ) ).remove( argThat( in( cacheKeys ) ), eq( DATA_SERVICE_NAME ) );
+    verify( cache ).putAll( argThat( hasEntry( in( cacheKeys ), emptyString() ) ) );
+  }
+
   @Test public void testRemove() throws MetaStoreException {
     metaStoreUtil.save( repository, metaStore, dataService );
-    metaStoreUtil.removeDataService( transMeta, metaStore, dataService );
+    metaStoreUtil.removeDataService( metaStore, dataService );
 
     assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ), emptyIterable() );
     verify( exceptionHandler, never() ).apply( any( Exception.class ) );

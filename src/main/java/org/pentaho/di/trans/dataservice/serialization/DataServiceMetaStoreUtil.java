@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.serialization;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicates;
 import com.google.common.base.Supplier;
@@ -32,10 +33,13 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.pentaho.caching.api.Constants;
+import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
@@ -50,6 +54,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -57,20 +62,25 @@ import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
 public class DataServiceMetaStoreUtil {
   private final List<PushDownFactory> pushDownFactories;
-  private Cache<String, DataServiceMeta> cache;
+  private final Cache<Integer, String> stepCache;
 
-  public DataServiceMetaStoreUtil( List<PushDownFactory> pushDownFactories,
-                                   Cache<String, DataServiceMeta> cache ) {
+  public static DataServiceMetaStoreUtil create( DataServiceContext context ) {
+    return new DataServiceMetaStoreUtil( context.getPushDownFactories(), initCache( context.getCacheManager() ) );
+  }
+
+  private static Cache<Integer, String> initCache( PentahoCacheManager cacheManager ) {
+    String name = DataServiceMetaStoreUtil.class.getName() + UUID.randomUUID().toString();
+    return cacheManager.getTemplates().get( Constants.DEFAULT_TEMPLATE ).
+      createCache( name, Integer.class, String.class );
+  }
+
+  DataServiceMetaStoreUtil( List<PushDownFactory> pushDownFactories, Cache<Integer, String> stepCache ) {
     this.pushDownFactories = pushDownFactories;
-    this.cache = cache;
+    this.stepCache = stepCache;
   }
 
   public DataServiceMeta getDataService( String serviceName, Repository repository, IMetaStore metaStore )
-    throws MetaStoreException, KettleException {
-    DataServiceMeta dataService = cache.get( serviceName );
-    if ( dataService != null ) {
-      return dataService;
-    }
+    throws MetaStoreException {
     ServiceTrans transReference = getServiceTransFactory( metaStore ).loadElement( serviceName );
     if ( transReference == null ) {
       throw new MetaStoreException( MessageFormat.format( "Data Service {0} not found", serviceName ) );
@@ -96,17 +106,11 @@ public class DataServiceMetaStoreUtil {
   }
 
   public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) throws MetaStoreException {
-    DataServiceMeta dataService = cache.get( serviceName );
-    if ( dataService != null && dataService.getServiceTrans() == serviceTrans ) {
-      return dataService;
-    }
     DataServiceMeta dataServiceMeta = getDataServiceFactory( serviceTrans ).loadElement( serviceName );
     if ( dataServiceMeta == null ) {
       throw new MetaStoreException( MessageFormat.format( "Data Service {0} not found in transformation {1}",
         serviceName, serviceTrans.getName() ) );
     }
-    dataServiceMeta.setServiceTrans( serviceTrans );
-    addToCache( dataServiceMeta );
     return dataServiceMeta;
   }
 
@@ -166,12 +170,7 @@ public class DataServiceMetaStoreUtil {
   }
 
   public Iterable<DataServiceMeta> getDataServices( TransMeta transMeta ) throws MetaStoreException {
-    List<DataServiceMeta> dataServices = getDataServiceFactory( transMeta ).getElements();
-    for ( DataServiceMeta dataService : dataServices ) {
-      dataService.setServiceTrans( transMeta );
-      addToCache( dataService );
-    }
-    return dataServices;
+    return getDataServiceFactory( transMeta ).getElements();
   }
 
   public List<String> getDataServiceNames( IMetaStore metaStore )
@@ -180,24 +179,30 @@ public class DataServiceMetaStoreUtil {
   }
 
   public DataServiceMeta getDataServiceByStepName( TransMeta transMeta, String stepName ) throws MetaStoreException {
-    Set<String> cacheKeys = DataServiceMeta.createCacheKeys( transMeta, stepName );
-    Map<String, DataServiceMeta> cachedDataServices = cache.getAll( cacheKeys );
-    for ( Map.Entry<String, DataServiceMeta> entry : cachedDataServices.entrySet() ) {
-      String cacheKey = entry.getKey();
-      DataServiceMeta cachedDataService = entry.getValue();
+    MetaStoreFactory<DataServiceMeta> dataServiceFactory = getDataServiceFactory( transMeta );
+    Set<Integer> cacheKeys = createCacheKeys( transMeta, stepName );
+    for ( Map.Entry<Integer, String> entry : stepCache.getAll( cacheKeys ).entrySet() ) {
+      String serviceName = entry.getValue();
+      if ( serviceName.isEmpty() ) {
+        // Step is marked as not having a Data Service
+        return null;
+      }
       // Check if Data Service is still valid
-      if ( cachedDataService.getServiceTrans() == transMeta && cachedDataService.getStepname().equals( stepName ) ) {
-        return cachedDataService;
+      DataServiceMeta dataServiceMeta = dataServiceFactory.loadElement( serviceName );
+      if ( dataServiceMeta != null ) {
+        return dataServiceMeta;
       } else {
-        cache.remove( cacheKey, cachedDataService );
+        stepCache.remove( entry.getKey(), serviceName );
       }
     }
     // Look up from embedded metastore
-    for ( DataServiceMeta dataServiceMeta : getDataServices( transMeta ) ) {
+    for ( DataServiceMeta dataServiceMeta : dataServiceFactory.getElements() ) {
       if ( dataServiceMeta.getStepname().equalsIgnoreCase( stepName ) ) {
         return dataServiceMeta;
       }
     }
+    // Data service not found on step, store negative result in the cache
+    stepCache.putAll( Maps.asMap( cacheKeys, Functions.constant( "" ) ) );
     return null;
   }
 
@@ -220,31 +225,67 @@ public class DataServiceMetaStoreUtil {
       // Leave trace of this transformation...
       //
       getServiceTransFactory( metaStore ).saveElement( ServiceTrans.create( dataService.getName(), transMeta ) );
-
-      addToCache( dataService );
     }
   }
 
-  public void removeDataService( TransMeta transMeta, IMetaStore metaStore, DataServiceMeta dataService )
+  public void removeDataService( IMetaStore metaStore, DataServiceMeta dataService )
     throws MetaStoreException {
-    getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
     getServiceTransFactory( metaStore ).deleteElement( dataService.getName() );
-    cache.removeAll( dataService.createCacheKeys() );
+
+    TransMeta transMeta = dataService.getServiceTrans();
+    getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
+    stepCache.removeAll( createCacheKeys( transMeta, dataService.getStepname() ) );
   }
 
   private MetaStoreFactory<ServiceTrans> getServiceTransFactory( IMetaStore metaStore ) {
     return new MetaStoreFactory<ServiceTrans>( ServiceTrans.class, metaStore, NAMESPACE );
   }
 
-  private MetaStoreFactory<DataServiceMeta> getDataServiceFactory( TransMeta transMeta ) {
-    MetaStoreFactory<DataServiceMeta> dataServiceMetaFactory = new MetaStoreFactory<DataServiceMeta>(
-      DataServiceMeta.class, transMeta.getEmbeddedMetaStore(), NAMESPACE );
-    dataServiceMetaFactory.setObjectFactory( new DataServiceMetaObjectFactory() );
-    return dataServiceMetaFactory;
+  private MetaStoreFactory<DataServiceMeta> getDataServiceFactory( final TransMeta transMeta ) {
+    return new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, transMeta.getEmbeddedMetaStore(), NAMESPACE ) {
+
+      {
+        setObjectFactory( new DataServiceMetaObjectFactory() );
+      }
+
+      @Override public DataServiceMeta loadElement( String name ) throws MetaStoreException {
+        DataServiceMeta dataServiceMeta = super.loadElement( name );
+        if ( dataServiceMeta != null ) {
+          dataServiceMeta.setServiceTrans( transMeta );
+          stepCache.putAll( createCacheEntries( dataServiceMeta ) );
+        }
+        return dataServiceMeta;
+      }
+
+      @Override public List<DataServiceMeta> getElements() throws MetaStoreException {
+        List<DataServiceMeta> elements = super.getElements();
+        for ( DataServiceMeta dataServiceMeta : elements ) {
+          dataServiceMeta.setServiceTrans( transMeta );
+          stepCache.putAll( createCacheEntries( dataServiceMeta ) );
+        }
+        return elements;
+      }
+
+      @Override public void saveElement( DataServiceMeta dataServiceMeta ) throws MetaStoreException {
+        super.saveElement( dataServiceMeta );
+        stepCache.putAll( createCacheEntries( dataServiceMeta ) );
+      }
+    };
   }
 
-  private void addToCache( DataServiceMeta dataServiceMeta ) {
-    cache.putAll( Maps.asMap( dataServiceMeta.createCacheKeys(), Functions.constant( dataServiceMeta ) ) );
+  static Set<Integer> createCacheKeys( TransMeta transMeta, final String stepName ) {
+    return FluentIterable.from( ServiceTrans.references( transMeta ) ).
+      transform( new Function<ServiceTrans.Reference, Integer>() {
+        @Override public Integer apply( ServiceTrans.Reference input ) {
+          return Objects.hashCode( input, stepName );
+        }
+      } ).
+      toSet();
+  }
+
+  static Map<Integer, String> createCacheEntries( DataServiceMeta dataService ) {
+    Set<Integer> keys = createCacheKeys( dataService.getServiceTrans(), dataService.getStepname() );
+    return Maps.asMap( keys, Functions.constant( dataService.getName() ) );
   }
 
   private class DataServiceMetaObjectFactory implements IMetaStoreObjectFactory {
@@ -266,5 +307,6 @@ public class DataServiceMetaStoreUtil {
     @Override public Map<String, String> getContext( Object pluginObject ) throws MetaStoreException {
       return Collections.emptyMap();
     }
+
   }
 }

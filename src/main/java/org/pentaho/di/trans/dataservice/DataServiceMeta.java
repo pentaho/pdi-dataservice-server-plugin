@@ -118,18 +118,4 @@ public class DataServiceMeta {
     this.pushDownOptimizationMeta = pushDownOptimizationMeta;
   }
 
-  public Set<String> createCacheKeys() {
-    return ImmutableSet.<String>builder().
-      add( name ).
-      addAll( createCacheKeys( getServiceTrans(), getStepname() ) ).
-      build();
-  }
-
-  public static Set<String> createCacheKeys( TransMeta transMeta, String stepName ) {
-    ImmutableSet.Builder<String> set = ImmutableSet.builder();
-    for ( ServiceTrans.Reference reference : ServiceTrans.references( transMeta ) ) {
-      set.add( String.valueOf( Objects.hashCode( reference, stepName ) ) );
-    }
-    return set.build();
-  }
 }
