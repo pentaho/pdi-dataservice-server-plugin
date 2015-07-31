@@ -24,11 +24,14 @@ package org.pentaho.di.trans.dataservice.serialization;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicates;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.repository.Repository;
@@ -46,6 +49,8 @@ import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
@@ -70,8 +75,24 @@ public class DataServiceMetaStoreUtil {
     if ( transReference == null ) {
       throw new MetaStoreException( MessageFormat.format( "Data Service {0} not found", serviceName ) );
     }
-    TransMeta serviceTrans = transReference.getReference().load( repository );
-    return getDataService( serviceName, serviceTrans );
+
+    final AtomicReference<Exception> loadException = new AtomicReference<Exception>();
+    Optional<TransMeta> transMeta = FluentIterable.from( transReference.getReferences() ).
+      transform( createTransMetaLoader( repository, new Function<Exception, Void>() {
+        @Override public Void apply( Exception e ) {
+          loadException.compareAndSet( null, e );
+          return null;
+        }
+      } ) ).
+      transform( Suppliers.<TransMeta>supplierFunction() ).
+      firstMatch( Predicates.notNull() );
+
+    if ( transMeta.isPresent() ) {
+      return getDataService( serviceName, transMeta.get() );
+    } else {
+      throw new MetaStoreException( MessageFormat.format( "Failed to load Data Service {0}", serviceName ),
+        loadException.get() );
+    }
   }
 
   public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) throws MetaStoreException {
@@ -89,24 +110,62 @@ public class DataServiceMetaStoreUtil {
     return dataServiceMeta;
   }
 
-  public List<DataServiceMeta> getDataServices( Repository repository, IMetaStore metaStore )
-    throws MetaStoreException {
-    Multimap<ServiceTrans.Reference, ServiceTrans> transMap = getServiceTransMap( metaStore );
+  public Iterable<DataServiceMeta> getDataServices( final Repository repository, IMetaStore metaStore,
+                                                    final Function<Exception, Void> exceptionHandler ) {
+    MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( metaStore );
 
-    List<DataServiceMeta> dataServices = Lists.newArrayListWithExpectedSize( transMap.size() );
-    for ( ServiceTrans.Reference transReference : transMap.keySet() ) {
-      try {
-        TransMeta transMeta = transReference.load( repository );
-        dataServices.addAll( getDataServices( transMeta ) );
-      } catch ( KettleException ignored ) {
-        // Ignore transformations we cannot access
-      }
+    List<ServiceTrans> serviceTransList;
+    try {
+      serviceTransList = serviceTransFactory.getElements();
+    } catch ( Exception e ) {
+      exceptionHandler.apply( e );
+      serviceTransList = Collections.emptyList();
     }
 
+    Map<ServiceTrans.Reference, Supplier<TransMeta>> transMetaMap = FluentIterable.from( serviceTransList ).
+      transformAndConcat( new Function<ServiceTrans, Iterable<ServiceTrans.Reference>>() {
+        @Override public Iterable<ServiceTrans.Reference> apply( ServiceTrans serviceTrans ) {
+          return serviceTrans.getReferences();
+        }
+      } ).
+      toMap( createTransMetaLoader( repository, exceptionHandler ) );
+
+    List<DataServiceMeta> dataServices = Lists.newArrayListWithExpectedSize( serviceTransList.size() );
+    for ( ServiceTrans serviceTrans : serviceTransList ) {
+      Optional<TransMeta> transMeta = FluentIterable.from( serviceTrans.getReferences() ).
+        transform( Functions.forMap( transMetaMap ) ).
+        transform( Suppliers.<TransMeta>supplierFunction() ).
+        firstMatch( Predicates.notNull() );
+      if ( transMeta.isPresent() ) {
+        try {
+          dataServices.add( getDataService( serviceTrans.getName(), transMeta.get() ) );
+        } catch ( Exception e ) {
+          exceptionHandler.apply( e );
+        }
+      }
+    }
     return dataServices;
   }
 
-  public List<DataServiceMeta> getDataServices( TransMeta transMeta ) throws MetaStoreException {
+  private Function<ServiceTrans.Reference, Supplier<TransMeta>> createTransMetaLoader( final Repository repository,
+                                                                                       final Function<? super Exception, ?> exceptionHandler ) {
+    return new Function<ServiceTrans.Reference, Supplier<TransMeta>>() {
+      @Override public Supplier<TransMeta> apply( final ServiceTrans.Reference reference ) {
+        return Suppliers.memoize( new Supplier<TransMeta>() {
+          @Override public TransMeta get() {
+            try {
+              return reference.load( repository );
+            } catch ( KettleException e ) {
+              exceptionHandler.apply( e );
+              return null;
+            }
+          }
+        } );
+      }
+    };
+  }
+
+  public Iterable<DataServiceMeta> getDataServices( TransMeta transMeta ) throws MetaStoreException {
     List<DataServiceMeta> dataServices = getDataServiceFactory( transMeta ).getElements();
     for ( DataServiceMeta dataService : dataServices ) {
       dataService.setServiceTrans( transMeta );
@@ -115,25 +174,17 @@ public class DataServiceMetaStoreUtil {
     return dataServices;
   }
 
-  private Multimap<ServiceTrans.Reference, ServiceTrans> getServiceTransMap( IMetaStore metaStore )
-    throws MetaStoreException {
-    return Multimaps.index( getServiceTransFactory( metaStore ).getElements(),
-      new Function<ServiceTrans, ServiceTrans.Reference>() {
-        @Override public ServiceTrans.Reference apply( ServiceTrans serviceTrans ) {
-          return serviceTrans.getReference();
-        }
-      } );
-  }
-
   public List<String> getDataServiceNames( IMetaStore metaStore )
     throws MetaStoreException {
     return getServiceTransFactory( metaStore ).getElementNames();
   }
 
   public DataServiceMeta getDataServiceByStepName( TransMeta transMeta, String stepName ) throws MetaStoreException {
-    String cacheKey = DataServiceMeta.createCacheKey( transMeta, stepName );
-    DataServiceMeta cachedDataService = cache.get( cacheKey );
-    if ( cachedDataService != null ) {
+    Set<String> cacheKeys = DataServiceMeta.createCacheKeys( transMeta, stepName );
+    Map<String, DataServiceMeta> cachedDataServices = cache.getAll( cacheKeys );
+    for ( Map.Entry<String, DataServiceMeta> entry : cachedDataServices.entrySet() ) {
+      String cacheKey = entry.getKey();
+      DataServiceMeta cachedDataService = entry.getValue();
       // Check if Data Service is still valid
       if ( cachedDataService.getServiceTrans() == transMeta && cachedDataService.getStepname().equals( stepName ) ) {
         return cachedDataService;
@@ -150,7 +201,7 @@ public class DataServiceMetaStoreUtil {
     return null;
   }
 
-  public void save( IMetaStore metaStore, DataServiceMeta dataService )
+  public void save( Repository repository, IMetaStore metaStore, DataServiceMeta dataService )
     throws MetaStoreException {
 
     if ( dataService != null && dataService.isDefined() ) {
@@ -164,6 +215,7 @@ public class DataServiceMetaStoreUtil {
 
       // Save to embedded MetaStore
       getDataServiceFactory( transMeta ).saveElement( dataService );
+      transMeta.setChanged();
 
       // Leave trace of this transformation...
       //

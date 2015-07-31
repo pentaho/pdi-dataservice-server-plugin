@@ -22,6 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
@@ -31,49 +33,39 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 
+import java.util.List;
+
 @MetaStoreElementType(
   name = "Data Service Transformation",
   description = "Pointer to a saved transformation that supplies a data service" )
 public class ServiceTrans {
   private String name;
 
-  @MetaStoreAttribute( key = "trans_reference" )
-  private Reference reference;
+  @MetaStoreAttribute( key = "trans_references" )
+  private List<Reference> references = Lists.newArrayList();
 
   public static ServiceTrans create( String name, TransMeta transMeta ) {
     ServiceTrans serviceTrans = new ServiceTrans();
     serviceTrans.setName( name );
-    serviceTrans.setReference( reference( transMeta ) );
+    serviceTrans.getReferences().addAll( references( transMeta ) );
     return serviceTrans;
   }
 
-  public static Reference reference( TransMeta transMeta ) {
+  public static List<Reference> references( TransMeta transMeta ) {
+    List<Reference> references = Lists.newArrayList();
     Repository repository = transMeta.getRepository();
-    if ( transMeta.getRepository() == null ) {
-      return new Reference( StorageMethod.FILE, transMeta.getFilename() );
-    } else if ( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ) {
-      ObjectId oid = transMeta.getObjectId();
-      if ( oid != null ) {
-        return new Reference( StorageMethod.REPO_ID, oid.getId() );
+    if ( transMeta.getRepository() != null ) {
+      if ( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ) {
+        ObjectId oid = transMeta.getObjectId();
+        if ( oid != null ) {
+          references.add( new Reference( StorageMethod.REPO_ID, oid.getId() ) );
+        }
       }
+      references.add( new Reference( StorageMethod.REPO_PATH, transMeta.getPathAndName() ) );
+    } else {
+      references.add( new Reference( StorageMethod.FILE, transMeta.getFilename() ) );
     }
-    return new Reference( StorageMethod.REPO_PATH, transMeta.getPathAndName() );
-  }
-
-  public static ObjectId getObjectId( Repository repository, String transRepositoryPath ) throws KettleException {
-    String path = "/";
-    String name = transRepositoryPath;
-    int lastSlashIndex = name.lastIndexOf( '/' );
-    if ( lastSlashIndex >= 0 ) {
-      path = transRepositoryPath.substring( 0, lastSlashIndex + 1 );
-      name = transRepositoryPath.substring( lastSlashIndex + 1 );
-    }
-    RepositoryDirectoryInterface tree = repository.loadRepositoryDirectoryTree();
-    RepositoryDirectoryInterface rd = tree.findDirectory( path );
-    if ( rd == null ) {
-      rd = tree; // root
-    }
-    return repository.getTransformationID( name, rd );
+    return references;
   }
 
   public String getName() {
@@ -84,12 +76,15 @@ public class ServiceTrans {
     this.name = name;
   }
 
-  public void setReference( Reference reference ) {
-    this.reference = reference;
+  public List<Reference> getReferences() {
+    return references;
   }
 
-  public Reference getReference() {
-    return reference;
+  @Override public String toString() {
+    return Objects.toStringHelper( this )
+      .add( "name", name )
+      .add( "references", references )
+      .toString();
   }
 
   public static class Reference {
@@ -122,6 +117,29 @@ public class ServiceTrans {
 
     public void setMethod( StorageMethod method ) {
       this.method = method;
+    }
+
+    @Override public String toString() {
+      return Objects.toStringHelper( this )
+        .add( "method", method )
+        .add( "location", location )
+        .toString();
+    }
+
+    @Override public int hashCode() {
+      return Objects.hashCode( location, method );
+    }
+
+    @Override public boolean equals( Object o ) {
+      if ( this == o ) {
+        return true;
+      }
+      if ( o == null || getClass() != o.getClass() ) {
+        return false;
+      }
+      Reference reference = (Reference) o;
+      return Objects.equal( location, reference.location ) &&
+        Objects.equal( method, reference.method );
     }
 
     public TransMeta load( Repository repository ) throws KettleException {

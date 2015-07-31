@@ -36,8 +36,6 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
-import java.util.List;
-
 @ExtensionPoint(
   id = "DeleteRepositoryObjectExtensionPointPlugin",
   extensionPointId = "AfterDeleteRepositoryObject",
@@ -60,7 +58,7 @@ public class DeleteRepositoryObjectExtensionPointPlugin implements ExtensionPoin
     if ( repositoryObject.getRepositoryElementType().equals( RepositoryObjectType.TRANSFORMATION ) ) {
       TransMeta transMeta = getSpoon().getRepository().loadTransformation( repositoryObject.getObjectId(), null );
 
-      List<DataServiceMeta> dataServices;
+      Iterable<DataServiceMeta> dataServices;
       try {
         dataServices = metaStoreUtil.getDataServices( transMeta );
       } catch ( MetaStoreException e ) {

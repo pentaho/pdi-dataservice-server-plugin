@@ -119,10 +119,17 @@ public class DataServiceMeta {
   }
 
   public Set<String> createCacheKeys() {
-    return ImmutableSet.of( name, createCacheKey( getServiceTrans(), getStepname() ) );
+    return ImmutableSet.<String>builder().
+      add( name ).
+      addAll( createCacheKeys( getServiceTrans(), getStepname() ) ).
+      build();
   }
 
-  public static String createCacheKey( TransMeta transMeta, String stepName ) {
-    return String.valueOf( Objects.hashCode( ServiceTrans.reference( transMeta ).getLocation(), stepName ) );
+  public static Set<String> createCacheKeys( TransMeta transMeta, String stepName ) {
+    ImmutableSet.Builder<String> set = ImmutableSet.builder();
+    for ( ServiceTrans.Reference reference : ServiceTrans.references( transMeta ) ) {
+      set.add( String.valueOf( Objects.hashCode( reference, stepName ) ) );
+    }
+    return set.build();
   }
 }
