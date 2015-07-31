@@ -23,6 +23,8 @@
 package org.pentaho.di.trans.dataservice.optimization.cache;
 
 import com.google.common.collect.Iterables;
+import org.eclipse.swt.widgets.Control;
+import org.pentaho.caching.api.Constants;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.eclipse.swt.SWT;
@@ -37,6 +39,7 @@ import org.pentaho.di.core.Const;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
+import org.pentaho.di.ui.core.widget.TextVar;
 
 import java.util.ArrayList;
 
@@ -46,6 +49,7 @@ public class ServiceCacheOptForm implements PushDownOptTypeForm {
   private final ServiceCacheFactory factory;
 
   private List templateList;
+  private TextVar timeToLiveText;
 
   public ServiceCacheOptForm( ServiceCacheFactory factory ) {
     this.factory = factory;
@@ -60,9 +64,8 @@ public class ServiceCacheOptForm implements PushDownOptTypeForm {
   }
 
   @Override public void setValues( PushDownOptimizationMeta optimizationMeta, TransMeta transMeta ) {
-    templateList.setItems( Iterables.toArray( factory.getTemplates(), String.class ) );
-    setSelectedItem( templateList, optimizationMeta.getType() instanceof ServiceCache
-        ? ( (ServiceCache) optimizationMeta.getType() ).getTemplateName() : null );
+    templateList.setItems( Iterables.toArray( factory.getTemplateNames(), String.class ) );
+    updateForm( optimizationMeta );
   }
 
   @Override public void populateForm( Composite composite, PropsUI props, final TransMeta transMeta ) {
@@ -94,25 +97,53 @@ public class ServiceCacheOptForm implements PushDownOptTypeForm {
     fdTemplateList.height = 100;
     fdTemplateList.left = templateNameFormData.left;
     templateList.setLayoutData( fdTemplateList );
+
+    timeToLiveText = new TextVar( transMeta, cacheOptGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
+    props.setLook( timeToLiveText );
+    FormData fdTimeToLiveText = new FormData();
+    fdTimeToLiveText.top = new FormAttachment( templateList, Const.MARGIN * 2 );
+    fdTimeToLiveText.left = templateNameFormData.left;
+    timeToLiveText.setLayoutData( fdTimeToLiveText );
   }
 
-  private void setSelectedItem( List list, String item ) {
-    for ( int i = 0; item != null && i < list.getItemCount(); i++ ) {
-      if ( item.equals( list.getItem( i ) ) ) {
-        list.setSelection( i );
-        return;
+  private void updateForm( PushDownOptimizationMeta pushDownOptimizationMeta ) {
+    String timeToLive = null;
+    if ( pushDownOptimizationMeta.getType() instanceof ServiceCache ) {
+      ServiceCache serviceCache = (ServiceCache) pushDownOptimizationMeta.getType();
+      for ( int i = 0; i < templateList.getItemCount(); i++ ) {
+        if ( serviceCache.getTemplateName().equals( templateList.getItem( i ) ) ) {
+          templateList.select( i );
+          timeToLive = serviceCache.getTimeToLive();
+        }
+      }
+    } else {
+      if ( templateList.getItemCount() > 0 ) {
+        templateList.select( 0 );
       }
     }
 
-    if ( list.getItemCount() > 0 ) {
-      list.setSelection( 0 );
+    setPropertyValue( timeToLiveText, templateList.getSelection()[ 0 ], Constants.CONFIG_TTL, timeToLive );
+  }
+
+  private void setPropertyValue( Control control, String templateName, String property, String value ) {
+    if ( value == null ) {
+      value = getPropertyValue( templateName, property );
     }
+
+    if ( control instanceof TextVar ) {
+      ( (TextVar) control ).setText( value );
+    }
+  }
+
+  private String getPropertyValue( String templateName, String propertyName ) {
+    return factory.getPropertiesByTemplateName( templateName ).get( propertyName );
   }
 
   @Override public void applyOptimizationParameters( PushDownOptimizationMeta optimizationMeta ) {
     ServiceCache pushDown = factory.createPushDown();
     if ( templateList.getSelection().length == 1 ) {
       pushDown.setTemplateName( templateList.getSelection()[0] );
+      pushDown.setTimeToLive( timeToLiveText.getText() );
     }
     optimizationMeta.setType( pushDown );
   }
