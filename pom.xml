@@ -211,6 +211,7 @@
                             org.pentaho.di.osgi,
                             org.pentaho.di.core.plugins,
                             org.pentaho.di.core.extension,
+                            org.pentaho.di.ui.xul,
                             org.pentaho.dictionary,
                             org.pentaho.metaverse.api,
                             org.pentaho.metaverse.api.*,

@@ -10,7 +10,7 @@
           resizable="true"
           height="700"
           width="700"
-          appicon="ui/images/spoon.ico"
+          appicon="images/data-services.svg"
           buttons="accept, cancel"
           ondialogaccept="dataServiceDialogController.saveAndClose()"
           ondialogcancel="dataServiceDialogController.close()">

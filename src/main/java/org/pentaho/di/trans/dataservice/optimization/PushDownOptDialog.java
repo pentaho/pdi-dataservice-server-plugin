@@ -43,9 +43,9 @@ import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.ui.core.ConstUI;
 import org.pentaho.di.ui.core.PropsUI;
-import org.pentaho.di.ui.spoon.Spoon;
+import org.pentaho.di.ui.core.gui.GUIResource;
 
 import java.util.List;
 
@@ -75,7 +75,9 @@ public class PushDownOptDialog {
 
   public int open() {
     Display display = parent.getDisplay();
-    Shell shell = new Shell( display, SWT.APPLICATION_MODAL | SWT.SHELL_TRIM );
+    Shell shell = new Shell( parent, SWT.APPLICATION_MODAL | SWT.SHELL_TRIM );
+    shell.setImage( GUIResource.getInstance().getImage( "images/data-services.png", getClass().getClassLoader(),
+        ConstUI.SMALL_ICON_SIZE, ConstUI.SMALL_ICON_SIZE ) );
 
     layoutDialog( shell );
 

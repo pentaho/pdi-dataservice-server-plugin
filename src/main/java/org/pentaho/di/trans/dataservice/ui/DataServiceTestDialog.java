@@ -35,6 +35,7 @@ import org.pentaho.di.core.metrics.MetricsUtil;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
+import org.pentaho.di.ui.xul.KettleXulLoader;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulRunner;
@@ -165,7 +166,7 @@ public class DataServiceTestDialog implements  java.io.Serializable {
 
   private Document initXul( Composite parent ) throws KettleException {
     try {
-      SwtXulLoader swtLoader = new SwtXulLoader();
+      SwtXulLoader swtLoader = new KettleXulLoader();
       swtLoader.setOuterContext( parent );
       swtLoader.registerClassLoader( getClass().getClassLoader() );
       XulDomContainer container = swtLoader.loadXul( XUL_PATH, resourceBundle );

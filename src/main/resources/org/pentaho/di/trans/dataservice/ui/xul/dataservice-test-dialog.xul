@@ -6,7 +6,7 @@
             resizable="false"
             height="700"
             width="900"
-            appicon="ui/images/spoon.ico"
+            appicon="images/data-services.svg"
             buttons="accept"
             ondialogaccept="dataServiceTestController.close()"
             ondialogcancel="dataServiceTestController.close()"
