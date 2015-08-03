@@ -95,25 +95,12 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   private DataServiceMeta findDataService( SQL sql ) throws KettleException {
-    List<String> dataServiceNames;
     try {
-      dataServiceNames = metaStoreUtil.getDataServiceNames( metaStore );
+      return metaStoreUtil.getDataService( sql.getServiceName(), repository, metaStore );
     } catch ( Exception e ) {
       Throwables.propagateIfPossible( e, KettleException.class );
-      throw new KettleException( "Unable to get list of data services from MetaStore", e );
+      throw new KettleException( "Unable to locate data service", e );
     }
-
-    for ( String serviceName : dataServiceNames ) {
-      if ( serviceName.equalsIgnoreCase( sql.getServiceName() ) ) {
-        try {
-          return metaStoreUtil.getDataService( serviceName, repository, metaStore );
-        } catch ( Exception e ) {
-          Throwables.propagateIfPossible( e, KettleException.class );
-          throw new KettleException( "Unable to execute query", e );
-        }
-      }
-    }
-    throw new KettleException( "Data service " + sql.getServiceName() + " not found" );
   }
 
   @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
