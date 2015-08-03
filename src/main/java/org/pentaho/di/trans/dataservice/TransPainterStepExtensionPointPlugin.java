@@ -64,10 +64,10 @@ public class TransPainterStepExtensionPointPlugin implements ExtensionPointInter
         // Is this step a data service provider?
         //
         extension.gc
-          .drawImage( "images/data-services.svg", getClass().getClassLoader(), extension.x1 - 8 + extension.iconsize,
-            extension.y1 - 8 );
+          .drawImage( "images/data-services.svg", getClass().getClassLoader(), extension.x1 - 11,
+            extension.y1 - 9 + extension.iconsize );
         extension.areaOwners.add(
-          new AreaOwner( AreaType.CUSTOM, extension.x1 - 8 + extension.iconsize, extension.y1 - 8, 16, 16,
+          new AreaOwner( AreaType.CUSTOM, extension.x1 - 11, extension.y1 - 9 + extension.iconsize, 16, 16,
             extension.offset, transMeta, stepMeta ) );
       }
     } catch ( MetaStoreException e ) {
