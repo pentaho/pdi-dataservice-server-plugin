@@ -47,6 +47,7 @@ import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.SqlTransGenerator;
@@ -90,6 +91,7 @@ public class CachedServiceTest {
 
   public static final String INJECTOR_STEP = "INJECTOR_STEP";
   public static final String OUTPUT = "OUTPUT";
+  private static final String BASE_QUERY = "SELECT * from MOCK_SERVICE";
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
   @Mock StepInterface serviceStep;
@@ -98,6 +100,7 @@ public class CachedServiceTest {
 
   private List<RowMetaAndData> testData;
   private RowMeta rowMeta;
+  private TransMeta transMeta;
 
   @Before
   public void setUp() throws Exception {
@@ -115,29 +118,35 @@ public class CachedServiceTest {
     when( serviceTrans.findRunThread( "service step" ) ).thenReturn( serviceStep );
     when( serviceStep.getTrans() ).thenReturn( serviceTrans );
     when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP );
+
+    transMeta = serviceTrans.getTransMeta();
+    when( dataServiceMeta.getServiceTrans() ).thenReturn( transMeta );
+    when( transMeta.getXML() ).thenReturn( "<transformation mock version=1/>" );
   }
 
   @Test
   public void testCreateCacheKey() throws Exception {
-    CacheKey unbounded, withCondition, withConditionOrdered, withLimit, otherService;
+    CacheKey unbounded, withCondition, withConditionOrdered, withLimit, otherVersion;
 
-    unbounded = cacheKey( "SELECT * from MOCK_SERVICE" );
-    withCondition = cacheKey( "SELECT * from MOCK_SERVICE WHERE A = 42" );
-    withConditionOrdered = cacheKey( "SELECT * from MOCK_SERVICE WHERE A=42 ORDER BY B" );
-    withLimit = cacheKey( "SELECT * from MOCK_SERVICE LIMIT 20" );
-    otherService = cacheKey( "SELECT * from OTHER_SERVICE" );
+    unbounded = cacheKey( BASE_QUERY );
+    withCondition = cacheKey( BASE_QUERY + " WHERE A = 42" );
+    withConditionOrdered = cacheKey( BASE_QUERY + " WHERE A=42 ORDER BY B" );
+    withLimit = cacheKey( BASE_QUERY + " LIMIT 20" );
+
+    when( transMeta.getXML() ).thenReturn( "<transformation mock version=2/>" );
+    otherVersion = cacheKey( BASE_QUERY );
 
     // Verifies order from most specific to general
     assertThat( withConditionOrdered.all(), contains( withConditionOrdered, withCondition, unbounded ) );
     assertThat( withLimit, equalTo( unbounded ) );
-    for ( CacheKey cacheKey : ImmutableList.of( withCondition, withConditionOrdered, otherService ) ) {
+    for ( CacheKey cacheKey : ImmutableList.of( withCondition, withConditionOrdered, otherVersion ) ) {
       assertThat( cacheKey, not( equalTo( unbounded ) ) );
     }
     assertThat( withCondition.withoutCondition(), equalTo( unbounded ) );
     assertThat( withConditionOrdered.withoutOrder(), equalTo( withCondition ) );
 
     // Verify that execution parameters will change the key
-    SQL sql = new SQL( "SELECT * FROM MOCK_SERVICE" );
+    SQL sql = new SQL( BASE_QUERY );
     sql.parse( rowMeta );
 
     assertThat( CacheKey.create( new DataServiceExecutor.Builder( sql, dataServiceMeta )
@@ -156,18 +165,18 @@ public class CachedServiceTest {
     CachedService rowLimit, limit, limitOffset, unlimited;
 
     when( sqlTransGenerator.getRowLimit() ).thenReturn( 10, 0 );
-    rowLimit = partial( dataServiceExecutor( "SELECT * FROM MOCK_SERVICE" ) );
+    rowLimit = partial( dataServiceExecutor( BASE_QUERY ) );
 
     limit = partial( dataServiceExecutor(
-      "SELECT * FROM MOCK_SERVICE LIMIT 20"
+      BASE_QUERY + " LIMIT 20"
     ) );
 
     limitOffset = partial( dataServiceExecutor(
-      "SELECT * FROM MOCK_SERVICE LIMIT 20 OFFSET 10"
+      BASE_QUERY + " LIMIT 20 OFFSET 10"
     ) );
 
     // Not sure if an unlimited partial result is possible, but just in case
-    unlimited = partial( dataServiceExecutor( "SELECT * FROM MOCK_SERVICE" ) );
+    unlimited = partial( dataServiceExecutor( BASE_QUERY ) );
 
     for ( CachedService loader : ImmutableList.of( rowLimit, limit, limitOffset ) ) {
       assertThat( loader.getRowMetaAndData(), equalTo( testData ) );
@@ -200,7 +209,7 @@ public class CachedServiceTest {
 
   @Test
   public void testObserve() throws Exception {
-    DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE" );
+    DataServiceExecutor executor = dataServiceExecutor( BASE_QUERY );
     ServiceObserver observer = new ServiceObserver( executor );
 
     assertThat( observer.install(), sameInstance( (ListenableFuture<CachedService>) observer ) );
@@ -227,7 +236,7 @@ public class CachedServiceTest {
 
   @Test
   public void testObserveCancelled() throws Exception {
-    DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE" );
+    DataServiceExecutor executor = dataServiceExecutor( BASE_QUERY );
     ServiceObserver observer = new ServiceObserver( executor );
 
     observer.install();
@@ -259,7 +268,7 @@ public class CachedServiceTest {
 
   @Test
   public void testObservePartial() throws Exception {
-    DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE LIMIT 20" );
+    DataServiceExecutor executor = dataServiceExecutor( BASE_QUERY + " LIMIT 20" );
     ServiceObserver observer = new ServiceObserver( executor );
 
     observer.install();
@@ -287,7 +296,7 @@ public class CachedServiceTest {
 
   @Test
   public void testReplayFullCache() throws Exception {
-    DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE" );
+    DataServiceExecutor executor = dataServiceExecutor( BASE_QUERY );
     CachedService cachedService = CachedService.complete( testData );
     RowProducer rowProducer = genTrans.addRowProducer( INJECTOR_STEP, 0 );
 
@@ -337,7 +346,7 @@ public class CachedServiceTest {
 
   @Test
   public void testReplayPartialCache() throws Exception {
-    DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE LIMIT 20" );
+    DataServiceExecutor executor = dataServiceExecutor( BASE_QUERY + " LIMIT 20" );
     CachedService cachedService = CachedService.complete( testData );
     RowProducer rowProducer = genTrans.addRowProducer( INJECTOR_STEP, 0 );
 

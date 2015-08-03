@@ -29,14 +29,15 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.RowMetaAndData;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLCondition;
 import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.core.sql.SQLFields;
 import org.pentaho.di.core.sql.SQLLimit;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 
 import java.io.Serializable;
 import java.util.List;
@@ -123,7 +124,7 @@ class CachedService implements Serializable {
     /**
      * Required
      */
-    private final String dataServiceName;
+    private final int transMetaVersionId;
     /**
      * Required
      */
@@ -137,9 +138,9 @@ class CachedService implements Serializable {
      */
     private final ImmutableList<String> orderByFields;
 
-    private CacheKey( String dataServiceName, ImmutableMap<String, String> parameters, Optional<String> whereClause,
+    private CacheKey( int transMetaVersionId, ImmutableMap<String, String> parameters, Optional<String> whereClause,
                       ImmutableList<String> orderByFields ) {
-      this.dataServiceName = dataServiceName;
+      this.transMetaVersionId = transMetaVersionId;
       this.parameters = parameters;
       this.whereClause = whereClause;
       this.orderByFields = orderByFields;
@@ -147,6 +148,16 @@ class CachedService implements Serializable {
 
     public static CacheKey create( DataServiceExecutor executor ) {
       SQL sql = executor.getSql();
+
+      // Calculate trans meta version. If the service transformation changes, keys will no longer match
+      int version;
+      try {
+        version = executor.getServiceTransMeta().getXML().hashCode();
+      } catch ( KettleException e ) {
+        // Something has gone horribly wrong.
+        // If data service is executing, the transformation was loaded and should be serializable
+        throw new IllegalStateException( "Unable to determine version of transMeta", e );
+      }
 
       // Extract where condition
       Optional<String> whereClause = Optional.fromNullable( sql.getWhereCondition() ).transform(
@@ -182,7 +193,7 @@ class CachedService implements Serializable {
       // Copy execution parameters
       ImmutableMap<String, String> parameters = ImmutableMap.copyOf( executor.getParameters() );
 
-      return new CacheKey( sql.getServiceName(), parameters, whereClause, orderByFields );
+      return new CacheKey( version, parameters, whereClause, orderByFields );
     }
 
     /**
@@ -207,11 +218,11 @@ class CachedService implements Serializable {
     }
 
     public CacheKey withoutCondition() {
-      return new CacheKey( dataServiceName, parameters, Optional.<String>absent(), orderByFields );
+      return new CacheKey( transMetaVersionId, parameters, Optional.<String>absent(), orderByFields );
     }
 
     public CacheKey withoutOrder() {
-      return new CacheKey( dataServiceName, parameters, whereClause, ImmutableList.<String>of() );
+      return new CacheKey( transMetaVersionId, parameters, whereClause, ImmutableList.<String>of() );
     }
 
     @Override public boolean equals( Object o ) {
@@ -222,19 +233,19 @@ class CachedService implements Serializable {
         return false;
       }
       CacheKey cacheKey = (CacheKey) o;
-      return Objects.equal( dataServiceName, cacheKey.dataServiceName ) &&
+      return Objects.equal( transMetaVersionId, cacheKey.transMetaVersionId ) &&
         Objects.equal( parameters, cacheKey.parameters ) &&
         Objects.equal( whereClause, cacheKey.whereClause ) &&
         Objects.equal( orderByFields, cacheKey.orderByFields );
     }
 
     @Override public int hashCode() {
-      return Objects.hashCode( dataServiceName, whereClause, orderByFields );
+      return Objects.hashCode( transMetaVersionId, whereClause, orderByFields );
     }
 
     @Override public String toString() {
       return Objects.toStringHelper( CacheKey.class )
-        .add( "dataServiceName", dataServiceName )
+        .add( "transMetaVersionId", transMetaVersionId )
         .add( "parameters", parameters )
         .add( "whereClause", whereClause )
         .add( "orderByFields", orderByFields )

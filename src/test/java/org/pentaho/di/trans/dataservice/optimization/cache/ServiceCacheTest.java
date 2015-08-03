@@ -41,6 +41,7 @@ import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.SqlTransGenerator;
@@ -93,6 +94,8 @@ public class ServiceCacheTest {
     when( factory.getCache( serviceCache, "MOCK_SERVICE" ) ).thenReturn( cache );
     when( dataServiceMeta.getStepname() ).thenReturn( SERVICE_STEP );
     serviceStep = serviceTrans.findRunThread( SERVICE_STEP );
+    TransMeta transMeta = serviceTrans.getTransMeta();
+    when( transMeta.getXML() ).thenReturn( "<transformation/>" );
 
     when( factory.getExecutorService() ).thenReturn( MoreExecutors.sameThreadExecutor() );
 
