@@ -34,16 +34,16 @@ import java.util.List;
 public class DataServiceContext {
   private final DataServiceMetaStoreUtil metaStoreUtil;
   private final List<AutoOptimizationService> autoOptimizationServices;
+  private final PentahoCacheManager cacheManager;
   private final List<PushDownFactory> pushDownFactories;
-  private final Cache<String, DataServiceMeta> cache;
 
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
                              PentahoCacheManager cacheManager ) {
     this.pushDownFactories = pushDownFactories;
     this.autoOptimizationServices = autoOptimizationServices;
-    this.cache = initCache( cacheManager );
-    this.metaStoreUtil = new DataServiceMetaStoreUtil( pushDownFactories, cache );
+    this.cacheManager = cacheManager;
+    this.metaStoreUtil = DataServiceMetaStoreUtil.create( this );
   }
 
   private static Cache<String, DataServiceMeta> initCache( PentahoCacheManager cacheManager ) {
@@ -58,6 +58,10 @@ public class DataServiceContext {
       .createCache( cacheName, String.class, DataServiceMeta.class );
   }
 
+  public PentahoCacheManager getCacheManager() {
+    return cacheManager;
+  }
+
   public DataServiceMetaStoreUtil getMetaStoreUtil() {
     return metaStoreUtil;
   }
@@ -68,9 +72,5 @@ public class DataServiceContext {
 
   public List<PushDownFactory> getPushDownFactories() {
     return pushDownFactories;
-  }
-
-  public Cache<String, DataServiceMeta> getCache() {
-    return cache;
   }
 }

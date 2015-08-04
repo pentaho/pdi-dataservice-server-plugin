@@ -140,7 +140,7 @@ public class DataServiceDelegate {
       try {
         if ( dataService != null ) {
           IMetaStore metaStore = getSpoon().getMetaStore();
-          metaStoreUtil.removeDataService( transMeta, metaStore, dataService );
+          metaStoreUtil.removeDataService( metaStore, dataService );
           getSpoon().refreshTree();
         }
       } catch ( MetaStoreException e ) {

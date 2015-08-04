@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
+import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -87,56 +88,47 @@ public class DataServiceClient implements DataServiceClientService {
     // Parse SQL
     SQL sql = new SQL( sqlQuery );
 
-      // Locate data service and return a new builder
-      DataServiceMeta dataService = findDataService( sql );
+    // Locate data service and return a new builder
+    DataServiceMeta dataService = findDataService( sql );
 
-      return new DataServiceExecutor.Builder( sql, dataService );
+    return new DataServiceExecutor.Builder( sql, dataService );
   }
 
   private DataServiceMeta findDataService( SQL sql ) throws KettleException {
-    List<String> dataServiceNames;
     try {
-      dataServiceNames = metaStoreUtil.getDataServiceNames( metaStore );
+      return metaStoreUtil.getDataService( sql.getServiceName(), repository, metaStore );
     } catch ( Exception e ) {
       Throwables.propagateIfPossible( e, KettleException.class );
-      throw new KettleException( "Unable to get list of data services from MetaStore", e );
+      throw new KettleException( "Unable to locate data service", e );
     }
-
-    for ( String serviceName : dataServiceNames ) {
-      if ( serviceName.equalsIgnoreCase( sql.getServiceName() ) ) {
-        try {
-          return metaStoreUtil.getDataService( serviceName, repository, metaStore );
-        } catch ( Exception e ) {
-          Throwables.propagateIfPossible( e, KettleException.class );
-          throw new KettleException( "Unable to execute query", e );
-        }
-      }
-    }
-    throw new KettleException( "Data service " + sql.getServiceName() + " not found" );
   }
 
   @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
     List<ThinServiceInformation> services = new ArrayList<ThinServiceInformation>();
 
-    try {
-      for ( DataServiceMeta service : metaStoreUtil.getDataServices( repository, metaStore ) ) {
-        TransMeta transMeta = service.getServiceTrans();
-        RowMetaInterface serviceFields = null;
-        try {
-          serviceFields = transMeta.getStepFields( service.getStepname() );
-        } catch ( Exception e ) {
-          logger.error( MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
-            service.getName(), transMeta.getName() ) );
-        }
-
+    for ( DataServiceMeta service : metaStoreUtil.getDataServices( repository, metaStore, logErrors() ) ) {
+      TransMeta transMeta = service.getServiceTrans();
+      try {
+        transMeta.activateParameters();
+        RowMetaInterface serviceFields = transMeta.getStepFields( service.getStepname() );
         ThinServiceInformation serviceInformation = new ThinServiceInformation( service.getName(), serviceFields );
         services.add( serviceInformation );
+      } catch ( Exception e ) {
+        logger.warn( MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
+          service.getName(), transMeta.getName() ) );
       }
-    } catch ( Exception e ) {
-      throw new SQLException( "Unable to get service information from server", e );
     }
 
     return services;
+  }
+
+  private Function<Exception, Void> logErrors() {
+    return new Function<Exception, Void>() {
+      @Override public Void apply( Exception e ) {
+        logger.warn( "Failure loading data service", e );
+        return null;
+      }
+    };
   }
 
   public Repository getRepository() {
