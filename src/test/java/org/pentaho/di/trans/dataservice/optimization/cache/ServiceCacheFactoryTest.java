@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.optimization.cache;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,12 +33,14 @@ import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 
 import javax.cache.Cache;
-
 import java.util.concurrent.ExecutorService;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -47,6 +50,7 @@ import static org.mockito.Mockito.when;
 public class ServiceCacheFactoryTest {
 
   public static final String TEMPLATE_NAME = "template";
+  private static final String DATA_SERVICE_NAME = "dataServiceName";
   @Mock PentahoCacheManager cacheManager;
   @Mock ExecutorService executorService;
   @InjectMocks ServiceCacheFactory serviceCacheFactory;
@@ -55,24 +59,36 @@ public class ServiceCacheFactoryTest {
 
   @Test
   public void testGetCache() throws Exception {
-    when( cacheManager.getCache( ServiceCacheFactory.CACHE_NAME,
-      CachedService.CacheKey.class, CachedService.class ) ).thenReturn( cache );
+    assertThat( serviceCacheFactory.getCache( DATA_SERVICE_NAME ).isPresent(), is( false ) );
+    when( cacheManager.getCache( cacheName(), CachedService.CacheKey.class, CachedService.class ) ).thenReturn( cache );
     ServiceCache serviceCache = serviceCacheFactory.createPushDown();
 
-    assertThat( serviceCacheFactory.getCache( serviceCache ), is( cache ) );
+    assertThat( serviceCacheFactory.getCache( DATA_SERVICE_NAME ), is( Optional.of( cache ) ) );
+    assertThat( serviceCacheFactory.getCache( serviceCache, DATA_SERVICE_NAME ), is( cache ) );
+  }
+
+  @Test
+  public void testGetCacheFailure() throws Exception {
+    when( cacheManager.getCache( anyString(), eq( CachedService.CacheKey.class ), eq( CachedService.class ) ) ).
+      thenThrow( new RuntimeException() );
+
+    assertThat( serviceCacheFactory.getCache( DATA_SERVICE_NAME ).isPresent(), is( false ) );
+    verify( cacheManager ).destroyCache( cacheName() );
   }
 
   @Test
   public void testCreateCache() throws Exception {
     when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( TEMPLATE_NAME, template ) );
-    when( template.createCache(
-      ServiceCacheFactory.CACHE_NAME, CachedService.CacheKey.class, CachedService.class ) )
-      .thenReturn( cache );
+    when( cacheManager.getCache( cacheName(), CachedService.CacheKey.class, CachedService.class ) ).thenReturn( cache );
 
     ServiceCache serviceCache = serviceCacheFactory.createPushDown();
 
     assertThat( serviceCacheFactory.getTemplateNames(), contains( TEMPLATE_NAME ) );
     serviceCache.setTemplateName( TEMPLATE_NAME );
-    assertThat( serviceCacheFactory.getCache( serviceCache ), is( cache ) );
+    assertThat( serviceCacheFactory.getCache( serviceCache, DATA_SERVICE_NAME ), is( cache ) );
+  }
+
+  private String cacheName() {
+    return serviceCacheFactory.cacheName( DATA_SERVICE_NAME );
   }
 }

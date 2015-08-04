@@ -65,17 +65,12 @@ public class ServiceCache implements PushDownType {
     this.factory = factory;
   }
 
-  @Override public String getTypeName() {
-    return NAME;
-  }
-
   @Override public void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta ) {
     optMeta.setStepName( dataService.getStepname() );
   }
 
   @Override public boolean activate( final DataServiceExecutor executor, StepInterface stepInterface ) {
     final LogChannelInterface logChannel = executor.getGenTrans().getLogChannel();
-    final Cache<CachedService.CacheKey, CachedService> cache = factory.getCache( this );
 
     // Check for any cache entries that may answer this query
     for ( CachedService availableCache : getAvailableCache( executor ).values() ) {
@@ -99,6 +94,7 @@ public class ServiceCache implements PushDownType {
     // Allow service transformation to run, observe rows
     Futures.addCallback( factory.createObserver( executor ).install(), new FutureCallback<CachedService>() {
       @Override public void onSuccess( CachedService result ) {
+        Cache<CachedService.CacheKey, CachedService> cache = factory.getCache( ServiceCache.this, executor.getServiceName() );
         CachedService.CacheKey key = createRootKey( executor );
         // If result set is complete, order is not important
         if ( result.isComplete() ) {
@@ -154,10 +150,13 @@ public class ServiceCache implements PushDownType {
   }
 
   Map<CachedService.CacheKey, CachedService> getAvailableCache( final DataServiceExecutor executor ) {
-    final Cache<CachedService.CacheKey, CachedService> cache = factory.getCache( this );
-    CachedService.CacheKey rootKey = createRootKey( executor );
+    final Cache<CachedService.CacheKey, CachedService> cache = factory.getCache( executor.getServiceName() ).orNull();
+    if ( cache == null ) {
+      return ImmutableMap.of();
+    }
 
     // First test if the rootKey entry answers the query
+    CachedService.CacheKey rootKey = createRootKey( executor );
     CachedService exactMatch = cache.get( rootKey );
     if ( exactMatch != null && exactMatch.answersQuery( executor ) ) {
       return ImmutableMap.of( rootKey, exactMatch );
