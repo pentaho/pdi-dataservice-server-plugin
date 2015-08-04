@@ -95,6 +95,7 @@ public class ServiceCacheTest {
     when( dataServiceMeta.getStepname() ).thenReturn( SERVICE_STEP );
     serviceStep = serviceTrans.findRunThread( SERVICE_STEP );
     TransMeta transMeta = serviceTrans.getTransMeta();
+    when( dataServiceMeta.getServiceTrans() ).thenReturn( transMeta );
     when( transMeta.getXML() ).thenReturn( "<transformation/>" );
 
     when( factory.getExecutorService() ).thenReturn( MoreExecutors.sameThreadExecutor() );
