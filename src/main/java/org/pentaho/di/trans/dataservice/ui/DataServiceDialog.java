@@ -31,6 +31,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceDialogController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.spoon.Spoon;
+import org.pentaho.di.ui.xul.KettleXulLoader;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulRunner;
@@ -101,7 +102,7 @@ public class DataServiceDialog {
 
   private Document initXul( Composite parent ) throws KettleException {
     try {
-      SwtXulLoader swtLoader = new SwtXulLoader();
+      SwtXulLoader swtLoader = new KettleXulLoader();
       swtLoader.setOuterContext( parent );
       swtLoader.registerClassLoader( getClass().getClassLoader() );
       XulDomContainer container = swtLoader.loadXul( XUL_DIALOG_PATH, resourceBundle );
