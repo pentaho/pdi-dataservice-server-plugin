@@ -152,7 +152,8 @@ class CachedService implements Serializable {
       // Calculate trans meta version. If the service transformation changes, keys will no longer match
       int version;
       try {
-        version = executor.getServiceTransMeta().getXML().hashCode();
+        // Get trans meta from service instead of executor, since executor modifies the meta with every query
+        version = executor.getService().getServiceTrans().getXML().hashCode();
       } catch ( KettleException e ) {
         // Something has gone horribly wrong.
         // If data service is executing, the transformation was loaded and should be serializable
