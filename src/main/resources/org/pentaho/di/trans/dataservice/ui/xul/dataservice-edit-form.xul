@@ -44,7 +44,6 @@
       <treecols>
         <treecol label="${DataServiceDialog.OptNameColumn.Label}" pen:binding="name"/>
         <treecol label="${DataServiceDialog.StepNameColumn.Label}" pen:binding="stepName"/>
-        <treecol label="${DataServiceDialog.OptMethodColumn.Label}" pen:binding="typeName"/>
         <treecol label="${DataServiceDialog.StateColumn.Label}" type="combobox" editable="true" pen:combobinding="statuses" pen:binding="status"/>
       </treecols>
       <treechildren/>
