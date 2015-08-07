@@ -35,7 +35,7 @@ import java.util.List;
 public class DataServiceTestModel extends XulEventSourceAdapter {
   private String sql;
 
-  private static final LogLevel DEFAULT_LOGLEVEL = LogLevel.DETAILED;
+  protected static final LogLevel DEFAULT_LOGLEVEL = LogLevel.DETAILED;
   private LogLevel logLevel = DEFAULT_LOGLEVEL;
 
   private String alertMessage;
@@ -48,8 +48,9 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   private LogChannelInterface serviceTransLogChannel;
   private LogChannelInterface genTransLogChannel;
 
-  private static final int DEFAULT_MAXROWS = 100;
-  private int maxRows = DEFAULT_MAXROWS;
+  private int maxRows = 0;
+  public static final List<Integer> MAXROWS_CHOICES = Arrays.asList( 100, 500, 1000 );
+
   private boolean executing = false;
 
   public String getSql() {
@@ -101,11 +102,15 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   }
 
   public int getMaxRows() {
-    return maxRows;
+    return MAXROWS_CHOICES.get( maxRows );
   }
 
   public void setMaxRows( int maxRows ) {
     this.maxRows = maxRows;
+  }
+
+  public List<Integer> getAllMaxRows() {
+    return MAXROWS_CHOICES;
   }
 
   public String getAlertMessage() {
@@ -139,7 +144,7 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
     StringBuilder builder = new StringBuilder();
     builder.append( "\n" );
     if ( optimizationImpact.size() == 0 ) {
-      builder.append( "[No Push Down Optimizations Defined]" );
+      builder.append( "[No Push Down Optimizations Defined]\n" );
     }
     for ( OptimizationImpactInfo info : optimizationImpact ) {
       builder.append( info.getDescription() );
