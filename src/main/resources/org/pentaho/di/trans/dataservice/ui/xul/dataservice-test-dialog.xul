@@ -21,7 +21,9 @@
             </menulist>
             <spacer flex="1"/>
             <label  value="${DataServiceTest.MaxRows.Label}"/>
-            <textbox id="maxrows-textbox" width="50" value="{default text}"/>
+            <menulist id="maxrows-combo">
+                <menupopup/>
+            </menulist>
             <spacer flex="1"/>
             <button id="preview-opt-btn" label="${DataServiceTest.PreviewOptimization.Button}" onclick="dataServiceTestController.previewQueries()" />
             <button id="exec-sql-btn" label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()" />

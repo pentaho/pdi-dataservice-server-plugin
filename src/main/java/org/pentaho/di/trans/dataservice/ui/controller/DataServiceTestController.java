@@ -88,7 +88,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   private Timer completionPollTimer;
   private DataServiceExecutor dataServiceExec;
 
-
+  private XulMenuList<String> maxRows;
 
   public DataServiceTestController( DataServiceTestModel model,
                                     DataServiceMeta dataService,
@@ -123,7 +123,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     bindLogLevelsCombo( bindingFactory );
     bindSqlText( bindingFactory );
     bindButtons( bindingFactory );
-    bindMaxRows( bindingFactory );
+    bindMaxRowsCombo( bindingFactory );
     bindErrorAlert( bindingFactory );
     bindOptImpactInfo( bindingFactory );
   }
@@ -160,19 +160,32 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     binding.initialize();
   }
 
-  private void bindMaxRows( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
-    XulTextbox maxRows = (XulTextbox) document.getElementById( "maxrows-textbox" );
-    bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
-    Binding binding = bindingFactory.createBinding( model, "maxRows", maxRows, "value" );
-    BindingConvertor maxRowsConverter = new BindingConvertor<Integer, String>() {
+  private void bindMaxRowsCombo( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
+    bindMaxRowsComboValues( bindingFactory );
+    bindSelectedMaxRows();
+  }
+
+  private void bindMaxRowsComboValues( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
+
+    assert document.getElementById( "maxrows-combo" ) instanceof XulMenuList;
+    maxRows = (XulMenuList<String>) document.getElementById( "maxrows-combo" );
+    bindingFactory.setBindingType( Binding.Type.ONE_WAY );
+    bindingFactory.createBinding( model, "allMaxRows", maxRows, "elements" )
+      .fireSourceChanged();
+  }
+
+  private void bindSelectedMaxRows() throws InvocationTargetException, XulException {
+    Binding binding = new DefaultBinding( model, "maxRows", maxRows, "selectedItem" );
+    binding.setBindingType( Binding.Type.BI_DIRECTIONAL );
+    BindingConvertor maxRowsConverter = new BindingConvertor<Integer, Integer>() {
       @Override
-      public String sourceToTarget( Integer value ) {
-        return value.toString();
+      public Integer sourceToTarget( Integer value ) {
+        return DataServiceTestModel.MAXROWS_CHOICES.indexOf( value );
       }
 
       @Override
-      public Integer targetToSource( String value ) {
-        return Integer.parseInt( value );
+      public Integer targetToSource( Integer value ) {
+        return DataServiceTestModel.MAXROWS_CHOICES.indexOf( value );
       }
     };
     binding.setConversion( maxRowsConverter );
@@ -297,7 +310,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   private void checkMaxRows( DataServiceExecutor dataServiceExec ) {
     if ( model.getMaxRows() > 0
-        && model.getMaxRows() <= model.getResultRows().size() ) {
+      && model.getMaxRows() <= model.getResultRows().size() ) {
       //Exceeded max rows, no need to continue
       stopDataService( dataServiceExec );
     }
@@ -315,7 +328,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   private void updateExecutingMessage( long start, DataServiceExecutor dataServiceExec ) {
     if ( !anyTransErrors( dataServiceExec ) ) {
       model.setAlertMessage(
-          BaseMessages.getString( PKG, "DataServiceTest.RowsReturned.Text",
+        BaseMessages.getString( PKG, "DataServiceTest.RowsReturned.Text",
           model.getResultRows().size(),
           System.currentTimeMillis() - start ) );
     }
@@ -353,22 +366,22 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   private void updateOptimizationImpact( DataServiceExecutor dataServiceExec ) {
     model.clearOptimizationImpact();
 
-    for ( PushDownOptimizationMeta optMeta :  dataService.getPushDownOptimizationMeta() ) {
+    for ( PushDownOptimizationMeta optMeta : dataService.getPushDownOptimizationMeta() ) {
       model.addOptimizationImpact( optMeta.preview( dataServiceExec ) );
     }
   }
 
   private void maybeSetErrorAlert( DataServiceExecutor dataServiceExec ) {
     if ( dataServiceExec.getGenTrans().getErrors() > 0
-        || ( dataServiceExec.getServiceTrans() != null
-        && dataServiceExec.getServiceTrans().getErrors() > 0 ) ) {
+      || ( dataServiceExec.getServiceTrans() != null
+      && dataServiceExec.getServiceTrans().getErrors() > 0 ) ) {
       setErrorAlertMessage();
     }
   }
 
   private void setErrorAlertMessage() {
     model.setAlertMessage(
-        BaseMessages.getString( PKG, "DataServiceTest.Errors.Label" ) );
+      BaseMessages.getString( PKG, "DataServiceTest.Errors.Label" ) );
   }
 
   protected DataServiceExecutor getNewDataServiceExecutor( boolean enableMetrics ) throws KettleException {
@@ -387,13 +400,13 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   /**
-   *  Assures variables are consistent between DatabaseMeta and transMeta.
-   *  Otherwise DatabaseMeta may have parameter values saved from previous execution.
-   *  Also reverts Parameter values to their initial settings when the Controller
-   *  was constructed.
+   * Assures variables are consistent between DatabaseMeta and transMeta.
+   * Otherwise DatabaseMeta may have parameter values saved from previous execution.
+   * Also reverts Parameter values to their initial settings when the Controller
+   * was constructed.
    */
   private void resetVariablesAndParameters() throws KettleException {
-    for ( StepMeta stepMeta :  transMeta.getSteps() ) {
+    for ( StepMeta stepMeta : transMeta.getSteps() ) {
       if ( stepMeta.getStepMetaInterface() instanceof TableInputMeta ) {
         DatabaseMeta dbMeta = ( (TableInputMeta) stepMeta.getStepMetaInterface() ).getDatabaseMeta();
         if ( dbMeta != null ) {
@@ -413,7 +426,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     model.setAlertMessage( "" );
 
     model.setServiceTransLogChannel(
-        dataServiceExec.isDual() ? null : dataServiceExec.getServiceTrans().getLogChannel() );
+      dataServiceExec.isDual() ? null : dataServiceExec.getServiceTrans().getLogChannel() );
     model.setGenTransLogChannel( dataServiceExec.getGenTrans().getLogChannel() );
   }
 
