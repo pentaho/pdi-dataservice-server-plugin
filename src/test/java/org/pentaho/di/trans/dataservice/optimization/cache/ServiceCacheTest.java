@@ -54,6 +54,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.ignoreStubs;
@@ -62,6 +64,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 
 /**
  * @author nhudak
@@ -133,12 +136,12 @@ public class ServiceCacheTest {
 
     // These queries should always ignore WHERE conditions
     for ( Map.Entry<String, List<PushDownOptimizationMeta>> testEntry : ImmutableMultimap
-      .<String, List<PushDownOptimizationMeta>>builder()
-      .put( select, ImmutableList.of( serviceCacheOpt ) )
-      .put( select, ImmutableList.of( serviceCacheOpt, otherOpt ) )
-      .put( selectWithCondition, ImmutableList.of( serviceCacheOpt ) )
-      .put( selectWithCondition, ImmutableList.<PushDownOptimizationMeta>of() )
-      .build().entries() ) {
+        .<String, List<PushDownOptimizationMeta>>builder()
+        .put( select, ImmutableList.of( serviceCacheOpt ) )
+        .put( select, ImmutableList.of( serviceCacheOpt, otherOpt ) )
+        .put( selectWithCondition, ImmutableList.of( serviceCacheOpt ) )
+        .put( selectWithCondition, ImmutableList.<PushDownOptimizationMeta>of() )
+        .build().entries() ) {
       when( dataServiceMeta.getPushDownOptimizationMeta() ).thenReturn( testEntry.getValue() );
 
       DataServiceExecutor executor = dataServiceExecutor( testEntry.getKey() );
@@ -223,6 +226,14 @@ public class ServiceCacheTest {
 
     assertThat( serviceCache.activate( executor, serviceStep ), is( true ) );
     verify( cachedServiceLoader ).replay( executor );
+  }
+
+  @Test
+  public void testTimeToLive() {
+    assertThat( serviceCache.getTemplateOverrides(), not( hasEntry( CONFIG_TTL, "1010" ) ) );
+    serviceCache.setTimeToLive( "1010" );
+    assertThat( serviceCache.getTimeToLive(), is( "1010" ) );
+    assertThat( serviceCache.getTemplateOverrides(), hasEntry(  CONFIG_TTL, "1010" ) );
   }
 
   private DataServiceExecutor dataServiceExecutor( String query ) throws KettleException {
