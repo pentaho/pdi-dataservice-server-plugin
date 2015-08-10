@@ -40,8 +40,11 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 
 /**
  * @author nhudak
@@ -80,12 +83,29 @@ public class ServiceCacheFactoryTest {
   public void testCreateCache() throws Exception {
     when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( TEMPLATE_NAME, template ) );
     when( cacheManager.getCache( cacheName(), CachedService.CacheKey.class, CachedService.class ) ).thenReturn( cache );
-
     ServiceCache serviceCache = serviceCacheFactory.createPushDown();
 
     assertThat( serviceCacheFactory.getTemplateNames(), contains( TEMPLATE_NAME ) );
     serviceCache.setTemplateName( TEMPLATE_NAME );
     assertThat( serviceCacheFactory.getCache( serviceCache, DATA_SERVICE_NAME ), is( cache ) );
+  }
+
+  @Test
+  public void testCreateCacheWithTtlOverride() throws Exception {
+    when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( TEMPLATE_NAME, template ) );
+    PentahoCacheTemplateConfiguration overridenTemplate = mock( PentahoCacheTemplateConfiguration.class );
+    Cache<CachedService.CacheKey, CachedService> overrideCache = mock( Cache.class );
+
+    when( overridenTemplate.createCache( cacheName(), CachedService.CacheKey.class, CachedService.class ) )
+        .thenReturn( overrideCache );
+    when( template.overrideProperties( ImmutableMap.of( CONFIG_TTL, "1010" ) ) ).thenReturn( overridenTemplate );
+
+    ServiceCache serviceCache = serviceCacheFactory.createPushDown();
+    serviceCache.setTimeToLive( "1010" );
+
+    assertThat( serviceCacheFactory.getTemplateNames(), contains( TEMPLATE_NAME ) );
+    serviceCache.setTemplateName( TEMPLATE_NAME );
+    assertThat( serviceCacheFactory.getCache( serviceCache, DATA_SERVICE_NAME ), is( overrideCache ) );
   }
 
   private String cacheName() {

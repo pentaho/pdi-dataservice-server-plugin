@@ -40,10 +40,12 @@ import org.pentaho.metastore.persist.MetaStoreAttribute;
 
 import javax.cache.Cache;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.*;
+import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 import static org.pentaho.caching.api.Constants.DEFAULT_TEMPLATE;
 
 /**
@@ -94,7 +96,9 @@ public class ServiceCache implements PushDownType {
     // Allow service transformation to run, observe rows
     Futures.addCallback( factory.createObserver( executor ).install(), new FutureCallback<CachedService>() {
       @Override public void onSuccess( CachedService result ) {
-        Cache<CachedService.CacheKey, CachedService> cache = factory.getCache( ServiceCache.this, executor.getServiceName() );
+        Cache<CachedService.CacheKey, CachedService>
+            cache =
+            factory.getCache( ServiceCache.this, executor.getServiceName() );
         CachedService.CacheKey key = createRootKey( executor );
         // If result set is complete, order is not important
         if ( result.isComplete() ) {
@@ -130,9 +134,9 @@ public class ServiceCache implements PushDownType {
     for ( Map.Entry<CachedService.CacheKey, CachedService> available : availableCache.entrySet() ) {
       info.setModified( true );
       info.setQueryBeforeOptimization( MessageFormat.format( "Service results for {0} are available.",
-        available.getKey() ) );
+          available.getKey() ) );
       info.setQueryAfterOptimization( MessageFormat.format( "{0} rows can be read from cache.",
-        available.getValue().getRowMetaAndData().size() ) );
+          available.getValue().getRowMetaAndData().size() ) );
       return info;
     }
     info.setModified( false );
@@ -206,6 +210,14 @@ public class ServiceCache implements PushDownType {
 
   public void setTimeToLive( String timeToLive ) {
     this.timeToLive = timeToLive;
+  }
+
+  public Map<String, String> getTemplateOverrides() {
+    if ( getTimeToLive() != null ) {
+      return ImmutableMap.of( CONFIG_TTL, getTimeToLive() );
+    } else {
+      return Collections.emptyMap();
+    }
   }
 
 }

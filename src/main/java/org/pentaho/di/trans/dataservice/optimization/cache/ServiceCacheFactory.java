@@ -86,13 +86,14 @@ public class ServiceCacheFactory implements PushDownFactory {
     String templateName = serviceCache.getTemplateName();
     Map<String, PentahoCacheTemplateConfiguration> templates = cacheManager.getTemplates();
     checkState( !Strings.isNullOrEmpty( templateName ) && templates.containsKey( templateName ),
-      "Cache Template is invalid", templateName );
+        "Cache Template is invalid", templateName );
 
-    return templates.get( templateName ).createCache(
-      cacheName( dataServiceName ),
-      CachedService.CacheKey.class,
-      CachedService.class
-    );
+    return templates.get( templateName )
+        .overrideProperties( serviceCache.getTemplateOverrides() )
+        .createCache(
+            cacheName( dataServiceName ),
+            CachedService.CacheKey.class,
+            CachedService.class );
   }
 
   public Optional<Cache<CachedService.CacheKey, CachedService>> getCache( String dataServiceName ) {
