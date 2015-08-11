@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.ui;
 
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
@@ -34,14 +34,14 @@ import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
-import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
-import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 

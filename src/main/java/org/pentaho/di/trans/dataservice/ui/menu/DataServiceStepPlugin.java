@@ -20,8 +20,9 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.ui.menu;
 
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;

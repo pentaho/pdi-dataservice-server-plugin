@@ -26,7 +26,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceDialogController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;

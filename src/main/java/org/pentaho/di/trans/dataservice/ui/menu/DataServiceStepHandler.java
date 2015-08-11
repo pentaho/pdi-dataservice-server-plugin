@@ -20,10 +20,13 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.ui.menu;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;

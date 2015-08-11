@@ -28,27 +28,27 @@
         <pen:di-plugin type="org.pentaho.di.core.plugins.CartePluginType"/>
     </bean>
 
-    <bean id="dataServiceStepPlugin" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServiceStepPlugin">
+    <bean id="dataServiceStepPlugin" scope="singleton" class="org.pentaho.di.trans.dataservice.ui.menu.DataServiceStepPlugin">
         <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.ui.spoon.SpoonPluginType"/>
     </bean>
 
-    <bean id="dataServiceViewTree" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServiceViewTreeExtension">
+    <bean id="dataServiceViewTree" scope="singleton" class="org.pentaho.di.trans.dataservice.ui.menu.DataServiceViewTreeExtension">
         <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
-    <bean id="dataServicePopupMenu" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServicePopupMenuExtension">
+    <bean id="dataServicePopupMenu" scope="singleton" class="org.pentaho.di.trans.dataservice.ui.menu.DataServicePopupMenuExtension">
         <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
-    <bean id="dataServiceTreeDelegate" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServiceTreeDelegateExtension">
+    <bean id="dataServiceTreeDelegate" scope="singleton" class="org.pentaho.di.trans.dataservice.ui.menu.DataServiceTreeDelegateExtension">
         <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
-    <bean id="dataServiceStepMenu" scope="singleton" class="org.pentaho.di.trans.dataservice.DataServiceStepMenuExtension">
+    <bean id="dataServiceStepMenu" scope="singleton" class="org.pentaho.di.trans.dataservice.ui.menu.DataServiceStepMenuExtension">
         <argument ref="context"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
