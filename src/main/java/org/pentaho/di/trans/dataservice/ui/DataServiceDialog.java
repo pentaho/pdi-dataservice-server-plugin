@@ -26,11 +26,10 @@ import org.eclipse.swt.widgets.Composite;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceDialogController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
-import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.xul.KettleXulLoader;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
@@ -67,10 +66,10 @@ public class DataServiceDialog {
   };
 
   public DataServiceDialog( Composite parent, DataServiceMeta dataService, TransMeta transMeta,
-                            DataServiceContext context ) throws KettleException {
+                            DataServiceDelegate delegate ) throws KettleException {
     dataServiceModel = new DataServiceModel();
     dataServiceDialogController =
-      new DataServiceDialogController( parent, dataServiceModel, dataService, transMeta, Spoon.getInstance(), context );
+      new DataServiceDialogController( parent, dataServiceModel, dataService, transMeta, delegate );
     document = initXul( parent );
     xulDialog = (XulDialog) document.getElementById( XUL_DIALOG_ID );
     attachCallback();

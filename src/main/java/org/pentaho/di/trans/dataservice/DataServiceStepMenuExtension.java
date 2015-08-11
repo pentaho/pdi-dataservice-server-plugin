@@ -53,11 +53,6 @@ public class DataServiceStepMenuExtension implements ExtensionPointInterface {
     StepMeta stepMeta = extension.getTransGraph().getCurrentStep();
     XulMenupopup menu = extension.getMenu();
 
-    if ( transMeta.getRepository() != null ) {
-      Boolean isSaved = transMeta.getObjectId() != null || transMeta.getRepositoryDirectory() != null;
-      menu.getElementById( "dataservices-new" ).setDisabled( !isSaved );
-    }
-
     Boolean hasDataService = false;
     try {
       hasDataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() ) != null;
@@ -65,6 +60,7 @@ public class DataServiceStepMenuExtension implements ExtensionPointInterface {
       logger.error( "Unable to load data service", e );
     }
 
+    menu.getElementById( "dataservices-new" ).setDisabled( hasDataService );
     menu.getElementById( "dataservices-edit" ).setDisabled( !hasDataService );
     menu.getElementById( "dataservices-delete" ).setDisabled( !hasDataService );
     menu.getElementById( "dataservices-test" ).setDisabled( !hasDataService );

@@ -40,7 +40,7 @@ public class DataServiceTreeDelegateExtension implements ExtensionPointInterface
 
   private static final Class<?> PKG = DataServiceTreeDelegateExtension.class;
   public static final String STRING_DATA_SERVICES =
-    BaseMessages.getString( PKG, "DataServicesDialog.STRING_DATA_SERVICES" );
+    BaseMessages.getString( PKG, "DataServicePopupMenu.TITLE" );
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 

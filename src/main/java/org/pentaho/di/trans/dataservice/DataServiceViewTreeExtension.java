@@ -40,16 +40,14 @@ import org.pentaho.di.ui.spoon.Spoon;
   extensionPointId = "SpoonViewTreeExtension" )
 public class DataServiceViewTreeExtension implements ExtensionPointInterface {
 
-  private final DataServiceContext context;
   private DataServiceDelegate delegate;
 
   private static final Class<?> PKG = DataServiceTreeDelegateExtension.class;
   public static final String STRING_DATA_SERVICES =
-    BaseMessages.getString( PKG, "DataServicesDialog.STRING_DATA_SERVICES" );
+    BaseMessages.getString( PKG, "DataServicePopupMenu.TITLE" );
 
   public DataServiceViewTreeExtension( DataServiceContext context ) {
-    this.context = context;
-    delegate = new DataServiceDelegate( this.context );
+    delegate = DataServiceDelegate.withDefaultSpoonInstance( context );
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
@@ -73,7 +71,7 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
     TreeItem tiDSTitle = createTreeItem( tiRootName, STRING_DATA_SERVICES, guiResource.getImageFolder() );
 
     try {
-      for ( DataServiceMeta dataService : context.getMetaStoreUtil().getDataServices( meta ) ) {
+      for ( DataServiceMeta dataService : delegate.getDataServices( meta ) ) {
         createTreeItem( tiDSTitle, dataService.getName(), getDataServiceImage( guiResource ) );
       }
     } catch ( Exception e ) {
@@ -101,7 +99,4 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
     return item;
   }
 
-  private Spoon getSpoon() {
-    return Spoon.getInstance();
-  }
 }

@@ -26,20 +26,18 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptDialog;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.DataServiceDelegate;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialogCallback;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
@@ -52,7 +50,6 @@ import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
-import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulTree;
@@ -85,18 +82,18 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
   private static final String NAME = "dataServiceDialogController";
 
   public DataServiceDialogController( Composite parent, DataServiceModel model, DataServiceMeta dataService,
-                                      TransMeta transMeta, Spoon spoon, DataServiceContext context )
+                                      TransMeta transMeta, DataServiceDelegate delegate )
     throws KettleException {
     setName( NAME );
-    this.delegate = new DataServiceDelegate( context, spoon );
+    this.delegate = delegate;
     this.parent = parent;
     this.model = model;
     this.transMeta = transMeta;
-    this.spoon = spoon;
+    this.spoon = this.delegate.getSpoon();
     this.dataService = dataService;
-    metaStoreUtil = context.getMetaStoreUtil();
-    pushDownFactories = context.getPushDownFactories();
-    autoOptimizationServices = context.getAutoOptimizationServices();
+    metaStoreUtil = this.delegate.getMetaStoreUtil();
+    pushDownFactories = this.delegate.getPushDownFactories();
+    autoOptimizationServices = this.delegate.getAutoOptimizationServices();
   }
 
   public void init() throws InvocationTargetException, XulException, KettleException {
@@ -108,11 +105,9 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
 
   private void createBindings() {
     XulTextbox transName = (XulTextbox) document.getElementById( "trans-name" );
-    XulTextbox transLocation = (XulTextbox) document.getElementById( "trans-location" );
     XulMenuList steps = (XulMenuList) document.getElementById( "trans-steps" );
     optimizations = (XulTree) document.getElementById( "optimizations" );
     XulTextbox serviceName = (XulTextbox) document.getElementById( "service-name" );
-    XulButton viewTrans = (XulButton) document.getElementById( "trans-open-btn" );
 
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
     bindingFactory.createBinding( model, "steps", steps, "elements" );
@@ -120,14 +115,9 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
     stepBinding = bindingFactory.createBinding( model, "selectedStep", steps, "selectedItem" );
     bindingFactory.createBinding( steps, "selectedItem", model, "selectedStep" );
     bindingFactory.createBinding( model, "transName", transName, "value" );
-    bindingFactory.createBinding( model, "transLocation", transLocation, "value" );
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
     bindingFactory.createBinding( model, "serviceName", serviceName, "value" );
-
-    if ( transMeta.equals( spoon.getActiveTransformation() ) ) {
-      viewTrans.setDisabled( true );
-    }
   }
 
   private void setModel() throws XulException, InvocationTargetException {
@@ -234,10 +224,6 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
     }
   }
 
-  public void openTrans() throws KettleException {
-    delegate.openTrans( transMeta );
-  }
-
   private void removeDataService() {
     delegate.removeDataService( transMeta, dataService, false );
   }
@@ -275,18 +261,14 @@ public class DataServiceDialogController extends AbstractXulEventHandler {
     }
 
     if ( errors.size() > 0 ) {
-      showErrors( Joiner.on( '\n' ).join( errors ) );
+      delegate.showErrors(
+        BaseMessages.getString( PKG, "DataServiceDialog.Errors.Title" ),
+        Joiner.on( '\n' ).join( errors )
+      );
       return false;
     }
 
     return true;
-  }
-
-  protected void showErrors( String errors ) {
-    MessageBox mb = new MessageBox( (Shell) parent, SWT.OK | SWT.ICON_INFORMATION );
-    mb.setText( BaseMessages.getString( PKG, "DataServiceDialog.Errors.Title" ) );
-    mb.setMessage( errors );
-    mb.open();
   }
 
   public void close() {

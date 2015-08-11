@@ -22,13 +22,10 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
-import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
-import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
@@ -36,14 +33,12 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
 
   public static Class<?> PKG = DataServiceStepHandler.class;
 
-  private final String HANDLER_NAME = "dataServiceStepHandler";
+  private static final String HANDLER_NAME = "dataServiceStepHandler";
 
-  private DataServiceMetaStoreUtil metaStoreUtil;
   private DataServiceDelegate delegate;
 
   public DataServiceStepHandler( DataServiceContext context ) {
-    delegate = new DataServiceDelegate( context );
-    metaStoreUtil = context.getMetaStoreUtil();
+    delegate = DataServiceDelegate.withDefaultSpoonInstance( context );
   }
 
   @Override
@@ -69,26 +64,18 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
 
   public void testDataService() throws MetaStoreException, KettleException {
     DataServiceMeta dataService = getCurrentDataServiceMeta();
-    new DataServiceTestDialog( getShell(), dataService, getActiveTrans() ).open();
+    new DataServiceTestDialog( delegate.getShell(), dataService, getActiveTrans() ).open();
   }
 
   private DataServiceMeta getCurrentDataServiceMeta() throws MetaStoreException {
-    return metaStoreUtil.getDataServiceByStepName( getActiveTrans(), getCurrentStep().getName() );
-  }
-
-  private Spoon getSpoon() {
-    return Spoon.getInstance();
-  }
-
-  private Shell getShell() {
-    return getSpoon().getShell();
+    return delegate.getDataServiceByStepName( getActiveTrans(), getCurrentStep().getName() );
   }
 
   private StepMeta getCurrentStep() {
-    return getSpoon().getActiveTransGraph().getCurrentStep();
+    return delegate.getSpoon().getActiveTransGraph().getCurrentStep();
   }
 
   private TransMeta getActiveTrans() {
-    return getSpoon().getActiveTransformation();
+    return delegate.getSpoon().getActiveTransformation();
   }
 }
