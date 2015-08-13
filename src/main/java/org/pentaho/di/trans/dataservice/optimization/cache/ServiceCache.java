@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.optimization.cache;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.FutureCallback;
@@ -39,6 +40,9 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 
 import javax.cache.Cache;
+import javax.cache.configuration.CompleteConfiguration;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.ExpiryPolicy;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Map;
@@ -154,7 +158,8 @@ public class ServiceCache implements PushDownType {
   }
 
   Map<CachedService.CacheKey, CachedService> getAvailableCache( final DataServiceExecutor executor ) {
-    final Cache<CachedService.CacheKey, CachedService> cache = factory.getCache( executor.getServiceName() ).orNull();
+    final Cache<CachedService.CacheKey, CachedService> cache =
+        maybeInvalidateCache( executor );
     if ( cache == null ) {
       return ImmutableMap.of();
     }
@@ -177,6 +182,63 @@ public class ServiceCache implements PushDownType {
       } )
       .filter( notNull() )
       .first().or( ImmutableMap.<CachedService.CacheKey, CachedService>of() );
+  }
+
+  /**
+   * Checks whether cache configuration has changed in such a way that the existing cache is
+   * no longer valid.  Will return the cache associated with the data service (if available) otherwise.
+   */
+  private Cache<CachedService.CacheKey, CachedService> maybeInvalidateCache(
+      DataServiceExecutor executor ) {
+    Optional<Cache<CachedService.CacheKey, CachedService>> cache = factory.getCache( executor.getServiceName() );
+    LogChannelInterface logChannel = executor.getServiceTrans().getLogChannel();
+    if ( cache.isPresent() ) {
+      if ( !ttlMatches( cache.get(), logChannel ) ) {
+        logChannel.logBasic( "Dropping cache associated with " + executor.getServiceName() );
+        dropCache( cache.get() );
+      } else {
+        logChannel.logDebug( "Found cache associated with " + executor.getServiceName() );
+        return cache.get();
+      }
+    }
+    return null;
+  }
+
+  private boolean ttlMatches( Cache<CachedService.CacheKey, CachedService> cache, LogChannelInterface log ) {
+    CompleteConfiguration config = cache.getConfiguration( CompleteConfiguration.class );
+    if ( getTimeToLive() == null ) {
+      // ttl has not been modified
+      return true;
+    }
+    if ( config != null ) {
+      try {
+        Duration duration = getConfigDuration( config );
+        long ttl = Long.parseLong( getTimeToLive() );
+        return ttl == duration.getDurationAmount();
+      } catch ( NumberFormatException nfe ) {
+        log.logError(
+            String.format( "Failed to determine configured TTL value for cache '%s'.  TTL value = '%s'",
+                cache.getName(), getTimeToLive() ) );
+        throw nfe;
+      }
+    }
+    log.logError(
+        String.format(
+            "Failed to check TTL consistency with cache for name '%s'.\n  Assuming cache can be used", cache.getName()
+        ) );
+    return true;
+  }
+
+  private synchronized void dropCache( Cache<CachedService.CacheKey, CachedService> cache ) {
+    if ( !cache.isClosed() ) {
+      cache.clear();
+      cache.close();
+    }
+  }
+
+  private Duration getConfigDuration( CompleteConfiguration config ) {
+    ExpiryPolicy policy = (ExpiryPolicy) config.getExpiryPolicyFactory().create();
+    return policy.getExpiryForAccess();
   }
 
   /**
