@@ -22,6 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.optimization;
 
+import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
+
 /**
  * @author nhudak
  */
@@ -30,5 +32,6 @@ public interface PushDownFactory {
   Class<? extends PushDownType> getType();
 
   PushDownType createPushDown();
-  PushDownOptTypeForm createPushDownOptTypeForm();
+
+  DataServiceDialog.OptimizationOverlay createOverlay();
 }

@@ -42,7 +42,6 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.IMetaStoreObjectFactory;
@@ -211,10 +210,6 @@ public class DataServiceMetaStoreUtil {
 
     if ( dataService != null && dataService.isDefined() ) {
       TransMeta transMeta = checkNotNull( dataService.getServiceTrans(), "Service trans not defined for data service" );
-      // Initialize optimizations
-      for ( PushDownOptimizationMeta optMeta : dataService.getPushDownOptimizationMeta() ) {
-        optMeta.getType().init( transMeta, dataService, optMeta );
-      }
 
       LogChannel.GENERAL.logBasic( "Saving data service in meta store '" + transMeta.getMetaStore() + "'" );
 

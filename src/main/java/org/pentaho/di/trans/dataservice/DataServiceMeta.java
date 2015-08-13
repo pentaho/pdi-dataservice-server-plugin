@@ -22,19 +22,15 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.serialization.ServiceTrans;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 import org.pentaho.metastore.util.PentahoDefaults;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * This describes a (transformation) data service to the outside world.

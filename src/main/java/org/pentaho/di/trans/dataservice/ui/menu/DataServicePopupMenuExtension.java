@@ -117,7 +117,7 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
 
   class DataServiceNewCommand implements DataServiceCommand {
     @Override public void execute() {
-      delegate.createNewDataService();
+      delegate.createNewDataService( null );
     }
   }
 

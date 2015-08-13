@@ -35,7 +35,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannel;
@@ -48,7 +50,6 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepInterface;
@@ -132,7 +133,13 @@ public class DataServiceMetaStoreUtilTest {
     metaStore = new MemoryMetaStore();
     this.dataService = createDataService( transMeta );
 
-    PushDownFactory optimizationFactory = new TestOptimizationFactory();
+    PushDownFactory optimizationFactory = mock( PushDownFactory.class );
+    when( (Class) optimizationFactory.getType() ).thenReturn( TestOptimization.class );
+    when( optimizationFactory.createPushDown() ).then( new Answer<PushDownType>() {
+      @Override public PushDownType answer( InvocationOnMock invocation ) throws Throwable {
+        return new TestOptimization();
+      }
+    } );
     metaStoreUtil = new DataServiceMetaStoreUtil( ImmutableList.of( optimizationFactory ), cache );
   }
 
@@ -158,7 +165,8 @@ public class DataServiceMetaStoreUtilTest {
 
     assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), validDataService() );
 
-    assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ), contains( validDataService() ) );
+    assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ),
+      contains( validDataService() ) );
     verify( exceptionHandler, never() ).apply( any( Exception.class ) );
     assertThat( metaStoreUtil.getDataServices( transMeta ), contains( validDataService() ) );
   }
@@ -243,24 +251,6 @@ public class DataServiceMetaStoreUtilTest {
         hasProperty( "value", equalTo( OPTIMIZATION_VALUE ) )
       ) )
     );
-  }
-
-  private class TestOptimizationFactory implements PushDownFactory {
-    @Override public String getName() {
-      return OPTIMIZATION;
-    }
-
-    @Override public Class<? extends PushDownType> getType() {
-      return TestOptimization.class;
-    }
-
-    @Override public PushDownType createPushDown() {
-      return new TestOptimization();
-    }
-
-    @Override public PushDownOptTypeForm createPushDownOptTypeForm() {
-      return mock( PushDownOptTypeForm.class );
-    }
   }
 
   public static class TestOptimization implements PushDownType {

@@ -23,7 +23,6 @@
 package org.pentaho.di.trans.dataservice.optimization;
 
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
@@ -31,9 +30,7 @@ import org.pentaho.ui.xul.XulEventSource;
 
 import java.beans.PropertyChangeListener;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
+import java.util.UUID;
 
 /**
  * @author nhudak
@@ -48,13 +45,11 @@ public class PushDownOptimizationMeta implements XulEventSource {
 
   public static final String PUSH_DOWN_STEP_NAME = "step_name";
 
-  private static List<String> statuses;
-
   /**
    * User-defined name for this optimization (required)
    */
   @MetaStoreAttribute
-  private String name = "";
+  private String name = UUID.randomUUID().toString();
 
   /**
    * Name of step being optimized (optional)
@@ -101,31 +96,6 @@ public class PushDownOptimizationMeta implements XulEventSource {
 
   public void setEnabled( boolean enabled ) {
     this.enabled = enabled;
-  }
-
-  public void setStatus( String status ) {
-    if ( status.equals( BaseMessages.getString( PKG, "ParamGenOptForm.Enabled.Label" ) ) ) {
-      enabled = true;
-    } else {
-      enabled = false;
-    }
-  }
-
-  public String getStatus() {
-    if ( enabled ) {
-      return BaseMessages.getString( PKG, "ParamGenOptForm.Enabled.Label" );
-    }
-
-    return BaseMessages.getString( PKG, "ParamGenOptForm.Disabled.Label" );
-  }
-
-  public static Vector<String> getStatuses() {
-    if ( statuses == null || statuses.size() == 0 ) {
-      statuses = new ArrayList<String>();
-      statuses.add( BaseMessages.getString( PKG, "ParamGenOptForm.Enabled.Label" ) );
-      statuses.add( BaseMessages.getString( PKG, "ParamGenOptForm.Disabled.Label" ) );
-    }
-    return new Vector<String>( statuses );
   }
 
   public boolean activate( DataServiceExecutor executor ) {
