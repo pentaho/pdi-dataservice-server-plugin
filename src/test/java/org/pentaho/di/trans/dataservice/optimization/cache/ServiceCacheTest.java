@@ -50,9 +50,14 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepInterface;
 
 import javax.cache.Cache;
+import javax.cache.configuration.CompleteConfiguration;
+import javax.cache.configuration.Factory;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.ExpiryPolicy;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.IsNot.not;
@@ -79,12 +84,18 @@ public class ServiceCacheTest {
   @Mock SqlTransGenerator sqlTransGenerator;
   @Mock DataServiceMeta dataServiceMeta;
   @Mock Cache<CachedService.CacheKey, CachedService> cache;
+  @Mock CompleteConfiguration config;
+  @Mock Factory expiryFactory;
+  @Mock ExpiryPolicy expiryPolicy;
+  @Mock Duration duration;
 
   @InjectMocks ServiceCache serviceCache;
   RowMeta rowMeta;
   PushDownOptimizationMeta serviceCacheOpt;
   PushDownOptimizationMeta otherOpt;
   StepInterface serviceStep;
+
+  private static final long DEFAULT_TTL = 3600l;
 
   @Before
   public void setUp() throws Exception {
@@ -107,6 +118,13 @@ public class ServiceCacheTest {
       when( mock( PushDownOptimizationMeta.class ).getType() ).thenReturn( mock( ServiceCache.class ) ).getMock();
     otherOpt =
       when( mock( PushDownOptimizationMeta.class ).getType() ).thenReturn( mock( PushDownType.class ) ).getMock();
+
+    when( cache.getConfiguration( CompleteConfiguration.class ) ).thenReturn( config );
+    when( config.getExpiryPolicyFactory() ).thenReturn( expiryFactory );
+    when( expiryFactory.create() ).thenReturn( expiryPolicy );
+    when( expiryPolicy.getExpiryForAccess() ).thenReturn( duration );
+
+    when( duration.getDurationAmount() ).thenReturn( DEFAULT_TTL );
   }
 
   @Test
@@ -158,6 +176,7 @@ public class ServiceCacheTest {
 
       try {
         verify( cache ).putIfAbsent( key, cachedService );
+        verify( cache ).getConfiguration( CompleteConfiguration.class );
         verifyNoMoreInteractions( ignoreStubs( cache ) );
       } catch ( AssertionError e ) {
         throw new AssertionError( testEntry.toString(), e );
@@ -229,11 +248,35 @@ public class ServiceCacheTest {
   }
 
   @Test
-  public void testTimeToLive() {
+  public void testTimeToLiveOverride() {
     assertThat( serviceCache.getTemplateOverrides(), not( hasEntry( CONFIG_TTL, "1010" ) ) );
     serviceCache.setTimeToLive( "1010" );
     assertThat( serviceCache.getTimeToLive(), is( "1010" ) );
-    assertThat( serviceCache.getTemplateOverrides(), hasEntry(  CONFIG_TTL, "1010" ) );
+    assertThat( serviceCache.getTemplateOverrides(), hasEntry( CONFIG_TTL, "1010" ) );
+  }
+
+  @Test
+  public void testTimeToLiveCacheInvalid() throws KettleException {
+    DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE" );
+    // TTL of service cache != template config
+    serviceCache.setTimeToLive( "1010" );
+    CachedService.CacheKey key = CachedService.CacheKey.create( executor );
+    CachedService existingCache = mock( CachedService.class );
+    when( cache.get( key ) ).thenReturn( existingCache );
+    when( existingCache.answersQuery( executor ) ).thenReturn( true );
+    assertThat( serviceCache.getAvailableCache( executor ).size(), is( 0 ) );
+  }
+
+  @Test
+  public void testTimeToLiveCacheValid() throws KettleException {
+    CachedService existingCache = mock( CachedService.class );
+    DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE" );
+    // TTL of service cache == template config
+    serviceCache.setTimeToLive( Long.toString( DEFAULT_TTL )  );
+    CachedService.CacheKey key = CachedService.CacheKey.create( executor );
+    when( cache.get( key ) ).thenReturn( existingCache );
+    when( existingCache.answersQuery( executor ) ).thenReturn( true );
+    assertThat( serviceCache.getAvailableCache( executor ).get( key ), equalTo( existingCache ) );
   }
 
   private DataServiceExecutor dataServiceExecutor( String query ) throws KettleException {
