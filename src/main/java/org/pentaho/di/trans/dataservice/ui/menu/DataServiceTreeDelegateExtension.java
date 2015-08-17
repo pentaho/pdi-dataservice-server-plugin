@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.ui.menu;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
@@ -28,6 +28,8 @@ import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.ui.spoon.TreeSelection;
 import org.pentaho.di.ui.spoon.delegates.SpoonTreeDelegateExtension;
@@ -40,7 +42,7 @@ public class DataServiceTreeDelegateExtension implements ExtensionPointInterface
 
   private static final Class<?> PKG = DataServiceTreeDelegateExtension.class;
   public static final String STRING_DATA_SERVICES =
-    BaseMessages.getString( PKG, "DataServicesDialog.STRING_DATA_SERVICES" );
+    BaseMessages.getString( PKG, "DataServicePopupMenu.TITLE" );
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 

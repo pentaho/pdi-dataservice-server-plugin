@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.ui.menu;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,9 +35,10 @@ import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.ui.core.ConstUI;
-import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.TreeSelection;
 
 @ExtensionPoint( id = "DataServicePopupMenuExtension", description = "Creates popup menus for data services",
@@ -51,7 +52,7 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
   public DataServiceMeta selectedDataService;
 
   public DataServicePopupMenuExtension( DataServiceContext context ) {
-    delegate = new DataServiceDelegate( context );
+    delegate = DataServiceDelegate.withDefaultSpoonInstance( context );
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object extension ) throws KettleException {
@@ -59,7 +60,7 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
     Menu popupMenu = null;
 
     Tree selectionTree = (Tree) extension;
-    TreeSelection[] objects = getSpoon().getTreeObjects( selectionTree );
+    TreeSelection[] objects = delegate.getSpoon().getTreeObjects( selectionTree );
     TreeSelection object = objects[ 0 ];
     Object selection = object.getSelection();
 
@@ -94,8 +95,6 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
     new MenuItem( parent, SWT.SEPARATOR );
     createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.Test.Label" ),
       new DataServiceTestCommand() );
-    createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.ViewTransformation.Label" ),
-      new OpenTransformationCommand() );
   }
 
   private void createPopupMenu( Menu parent, final String label, final DataServiceCommand dataServiceCommand ) {
@@ -138,16 +137,5 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
     @Override public void execute() {
       delegate.testDataService( selectedDataService );
     }
-  }
-
-  class OpenTransformationCommand implements DataServiceCommand {
-    @Override public void execute() {
-      TransMeta transMeta = selectedDataService.getServiceTrans();
-      delegate.openTrans( transMeta );
-    }
-  }
-
-  private Spoon getSpoon() {
-    return Spoon.getInstance();
   }
 }

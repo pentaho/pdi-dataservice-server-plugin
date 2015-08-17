@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.ui.menu;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,6 +29,7 @@ import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.trans.StepMenuExtension;
@@ -53,11 +54,6 @@ public class DataServiceStepMenuExtension implements ExtensionPointInterface {
     StepMeta stepMeta = extension.getTransGraph().getCurrentStep();
     XulMenupopup menu = extension.getMenu();
 
-    if ( transMeta.getRepository() != null ) {
-      Boolean isSaved = transMeta.getObjectId() != null || transMeta.getRepositoryDirectory() != null;
-      menu.getElementById( "dataservices-new" ).setDisabled( !isSaved );
-    }
-
     Boolean hasDataService = false;
     try {
       hasDataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() ) != null;
@@ -65,6 +61,7 @@ public class DataServiceStepMenuExtension implements ExtensionPointInterface {
       logger.error( "Unable to load data service", e );
     }
 
+    menu.getElementById( "dataservices-new" ).setDisabled( hasDataService );
     menu.getElementById( "dataservices-edit" ).setDisabled( !hasDataService );
     menu.getElementById( "dataservices-delete" ).setDisabled( !hasDataService );
     menu.getElementById( "dataservices-test" ).setDisabled( !hasDataService );

@@ -20,8 +20,9 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.ui;
 
+import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Lists;
@@ -30,24 +31,18 @@ import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
-import org.pentaho.di.core.Const;
-import org.pentaho.di.core.LastUsedFile;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.ObjectId;
-import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
-import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
-import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.di.ui.trans.dialog.TransLoadProgressDialog;
-import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.util.List;
@@ -57,7 +52,6 @@ public class DataServiceDelegate {
   private static final Class<?> PKG = DataServiceDelegate.class;
   private static final Log logger = LogFactory.getLog( DataServiceDelegate.class );
   private final DataServiceContext context;
-  private final DataServiceMetaStoreUtil metaStoreUtil;
   private final Supplier<Spoon> spoonSupplier;
 
   private enum DefaultSpoonSupplier implements Supplier<Spoon> {
@@ -68,17 +62,16 @@ public class DataServiceDelegate {
     }
   }
 
-  public DataServiceDelegate( DataServiceContext context ) {
-    this( context, DefaultSpoonSupplier.INSTANCE );
+  public static DataServiceDelegate withDefaultSpoonInstance( DataServiceContext context ) {
+    return new DataServiceDelegate( context, DefaultSpoonSupplier.INSTANCE );
   }
 
   public DataServiceDelegate( DataServiceContext context, Spoon spoon ) {
     this( context, Suppliers.ofInstance( spoon ) );
   }
 
-  private DataServiceDelegate( DataServiceContext context, Supplier<Spoon> spoonSupplier ) {
+  public DataServiceDelegate( DataServiceContext context, Supplier<Spoon> spoonSupplier ) {
     this.context = context;
-    metaStoreUtil = context.getMetaStoreUtil();
     this.spoonSupplier = spoonSupplier;
   }
 
@@ -87,8 +80,13 @@ public class DataServiceDelegate {
   }
 
   public void createNewDataService( String stepName ) {
+    TransMeta transMeta = getSpoon().getActiveTransformation();
+    if ( transMeta.hasChanged() ) {
+      showErrors( BaseMessages.getString( PKG, "Messages.Error.Title" ),
+        BaseMessages.getString( PKG, "Messages.Error.TransChanged" ) );
+      return;
+    }
     try {
-      TransMeta transMeta = getSpoon().getActiveTransformation();
       DataServiceMeta dataService = new DataServiceMeta( transMeta );
       if ( stepName != null ) {
         dataService.setStepname( stepName );
@@ -108,7 +106,7 @@ public class DataServiceDelegate {
       }
 
       DataServiceDialog dialog =
-        new DataServiceDialog( getSpoon().getShell(), dataService, transMeta, context );
+        new DataServiceDialog( getShell(), dataService, transMeta, this );
       dialog.open();
     } catch ( KettleException e ) {
       logger.error( "Unable to create a new data service", e );
@@ -116,21 +114,61 @@ public class DataServiceDelegate {
   }
 
   public void editDataService( DataServiceMeta dataService ) {
+    TransMeta transMeta = dataService.getServiceTrans();
+    if ( transMeta.hasChanged() ) {
+      showErrors( BaseMessages.getString( PKG, "Messages.Error.Title" ),
+        BaseMessages.getString( PKG, "Messages.Error.TransChanged" ) );
+      return;
+    }
+
     try {
       DataServiceDialog dataServiceManagerDialog =
-        new DataServiceDialog( getSpoon().getShell(), dataService, dataService.getServiceTrans(), context );
+        new DataServiceDialog( getShell(), dataService, transMeta, this );
       dataServiceManagerDialog.open();
     } catch ( KettleException e ) {
       logger.error( "Unable to edit a data service", e );
     }
   }
 
+  public void showErrors( String title, String text ) {
+    MessageBox mb = new MessageBox( getShell(), SWT.OK | SWT.ICON_INFORMATION );
+    mb.setText( title );
+    mb.setMessage( text );
+    mb.open();
+  }
+
+  public Iterable<DataServiceMeta> getDataServices( TransMeta transMeta ) throws MetaStoreException {
+    return getMetaStoreUtil().getDataServices( transMeta );
+  }
+
+  public Iterable<DataServiceMeta> getDataServices( Function<Exception, Void> exceptionHandler ) {
+    Spoon spoon = getSpoon();
+    return getMetaStoreUtil().getDataServices( spoon.getRepository(), spoon.getMetaStore(), exceptionHandler );
+  }
+
+  public DataServiceMeta getDataService( String serviceName ) throws MetaStoreException {
+    Spoon spoon = getSpoon();
+    return getMetaStoreUtil().getDataService( serviceName, spoon.getRepository(), spoon.getMetaStore() );
+  }
+
+  public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) throws MetaStoreException {
+    return getMetaStoreUtil().getDataService( serviceName, serviceTrans );
+  }
+
+  public DataServiceMeta getDataServiceByStepName( TransMeta transMeta, String stepName ) throws MetaStoreException {
+    return getMetaStoreUtil().getDataServiceByStepName( transMeta, stepName );
+  }
+
+  public List<String> getDataServiceNames() throws MetaStoreException {
+    return getMetaStoreUtil().getDataServiceNames( getSpoon().getMetaStore() );
+  }
+
   public void removeDataService( TransMeta transMeta, DataServiceMeta dataService, boolean prompt ) {
     boolean shouldDelete = true;
     if ( prompt ) {
-      MessageBox messageBox = new MessageBox( getSpoon().getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
-      messageBox.setText( BaseMessages.getString( PKG, "DataServicePopupMenu.DeleteMessageBox.Title" ) );
-      messageBox.setMessage( BaseMessages.getString( PKG, "DataServicePopupMenu.DeleteMessageBox.Message" ) );
+      MessageBox messageBox = new MessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
+      messageBox.setText( BaseMessages.getString( PKG, "Messages.DeleteMessageBox.Title" ) );
+      messageBox.setMessage( BaseMessages.getString( PKG, "Messages.DeleteMessageBox.Message" ) );
       int answerIndex = messageBox.open();
       if ( answerIndex != SWT.YES ) {
         shouldDelete = false;
@@ -139,8 +177,7 @@ public class DataServiceDelegate {
     if ( shouldDelete ) {
       try {
         if ( dataService != null ) {
-          IMetaStore metaStore = getSpoon().getMetaStore();
-          metaStoreUtil.removeDataService( metaStore, dataService );
+          getMetaStoreUtil().removeDataService( getSpoon().getMetaStore(), dataService );
           getSpoon().refreshTree();
         }
       } catch ( MetaStoreException e ) {
@@ -162,53 +199,24 @@ public class DataServiceDelegate {
     }
   }
 
-  public void openTrans( TransMeta transMeta ) {
-    if ( transMeta.getRepository() == null ) {
-      getSpoon().openFile( transMeta.getFilename(), false );
-    } else {
-      TransMeta loadedTransMeta = loadTransformation( transMeta );
-      if ( loadedTransMeta != null ) {
-        getSpoon().props.addLastFile( LastUsedFile.FILE_TYPE_TRANSFORMATION, loadedTransMeta.getName(),
-          loadedTransMeta.getRepositoryDirectory().getPath(), true, loadedTransMeta.getRepository().getName() );
-        getSpoon().addMenuLast();
-        loadedTransMeta.clearChanged();
-        getSpoon().addTransGraph( loadedTransMeta );
-      }
-      getSpoon().refreshGraph();
-      getSpoon().refreshTree();
-    }
-  }
-
-  public List<String> getDataServiceNames() throws MetaStoreException {
-    return metaStoreUtil.getDataServiceNames( getSpoon().getMetaStore() );
-  }
-
-  private TransMeta loadTransformation( TransMeta transMeta ) {
-    Shell shell = getSpoon().getShell();
-    Repository rep = getSpoon().getRepository();
-    String name = transMeta.getName();
-    RepositoryDirectoryInterface repDir = transMeta.getRepositoryDirectory();
-    ObjectId objId = transMeta.getObjectId();
-    TransLoadProgressDialog transLoadProgressDialog;
-    // prioritize loading file by id
-    if ( objId != null && !Const.isEmpty( objId.getId() ) ) {
-      transLoadProgressDialog = new TransLoadProgressDialog( shell, rep, objId, null );
-    } else {
-      transLoadProgressDialog = new TransLoadProgressDialog( shell, rep, name, repDir, null );
-    }
-
-    return transLoadProgressDialog.open();
-  }
-
-  private Spoon getSpoon() {
+  public Spoon getSpoon() {
     return spoonSupplier.get();
   }
 
-  private Repository getRepository() {
-    return getSpoon().getRepository();
+  public Shell getShell() {
+    return getSpoon().getShell();
   }
 
-  public DataServiceMeta loadDataService( String serviceName ) throws MetaStoreException, KettleException {
-    return metaStoreUtil.getDataService( serviceName, getRepository(), getSpoon().getMetaStore() );
+  public DataServiceMetaStoreUtil getMetaStoreUtil() {
+    return context.getMetaStoreUtil();
   }
+
+  public List<PushDownFactory> getPushDownFactories() {
+    return context.getPushDownFactories();
+  }
+
+  public List<AutoOptimizationService> getAutoOptimizationServices() {
+    return context.getAutoOptimizationServices();
+  }
+
 }

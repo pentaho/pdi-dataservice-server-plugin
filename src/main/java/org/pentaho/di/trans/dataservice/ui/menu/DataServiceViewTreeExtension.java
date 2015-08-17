@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.ui.menu;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -31,6 +31,9 @@ import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.ui.core.ConstUI;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.spoon.SelectionTreeExtension;
@@ -40,16 +43,14 @@ import org.pentaho.di.ui.spoon.Spoon;
   extensionPointId = "SpoonViewTreeExtension" )
 public class DataServiceViewTreeExtension implements ExtensionPointInterface {
 
-  private final DataServiceContext context;
   private DataServiceDelegate delegate;
 
   private static final Class<?> PKG = DataServiceTreeDelegateExtension.class;
   public static final String STRING_DATA_SERVICES =
-    BaseMessages.getString( PKG, "DataServicesDialog.STRING_DATA_SERVICES" );
+    BaseMessages.getString( PKG, "DataServicePopupMenu.TITLE" );
 
   public DataServiceViewTreeExtension( DataServiceContext context ) {
-    this.context = context;
-    delegate = new DataServiceDelegate( this.context );
+    delegate = DataServiceDelegate.withDefaultSpoonInstance( context );
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
@@ -73,7 +74,7 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
     TreeItem tiDSTitle = createTreeItem( tiRootName, STRING_DATA_SERVICES, guiResource.getImageFolder() );
 
     try {
-      for ( DataServiceMeta dataService : context.getMetaStoreUtil().getDataServices( meta ) ) {
+      for ( DataServiceMeta dataService : delegate.getDataServices( meta ) ) {
         createTreeItem( tiDSTitle, dataService.getName(), getDataServiceImage( guiResource ) );
       }
     } catch ( Exception e ) {
@@ -101,7 +102,4 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
     return item;
   }
 
-  private Spoon getSpoon() {
-    return Spoon.getInstance();
-  }
 }

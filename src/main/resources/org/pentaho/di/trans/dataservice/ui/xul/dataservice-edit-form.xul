@@ -17,12 +17,6 @@
       <textbox id="trans-name" width="300" disabled="true"/>
       <spacer flex="1"/>
     </hbox>
-    <label value="${DataServiceDialog.Location.Label}"/>
-    <hbox>
-      <textbox id="trans-location" width="400" disabled="true"/>
-      <button id="trans-open-btn" label="${DataServiceDialog.OpenButton.Label}"
-              onclick="dataServiceDialogController.openTrans()"/>
-    </hbox>
     <label value="${DataServiceDialog.OutputStep.Label}"/>
     <hbox>
       <menulist id="trans-steps" width="300">

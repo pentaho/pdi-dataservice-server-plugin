@@ -20,13 +20,10 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.ui.menu;
 
-import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.core.gui.SpoonFactory;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
@@ -77,22 +74,6 @@ public class DataServiceStepPlugin implements SpoonPluginInterface {
       container.loadOverlay( STEP_ADD_DATA_SERVICE, resourceBundle );
       container.addEventHandler( handler );
     }
-  }
-
-  public void removeFromContainer() throws XulException {
-    if ( container == null ) {
-      return;
-    }
-    Spoon.getInstance().getDisplay().syncExec( new Runnable() {
-      public void run() {
-        try {
-          container.removeOverlay( STEP_ADD_DATA_SERVICE );
-        } catch ( XulException e ) {
-          e.printStackTrace();
-        }
-        container.deRegisterClassLoader( DataServiceStepPlugin.class.getClassLoader() );
-      }
-    } );
   }
 
   @Override public SpoonLifecycleListener getLifecycleListener() {
