@@ -27,6 +27,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.PropsUI;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Defines the UI and layout for forms that populate the PushDownOptDialog.
@@ -44,7 +45,7 @@ public interface PushDownOptTypeForm {
 
   void setValues( PushDownOptimizationMeta optimizationMeta, TransMeta transMeta );
 
-  List<String> getMissingFormElements();
+  Map<String, String> getMissingFormElements();
 
   /**
    * Apply any user-entered form values to optimizationMeta.

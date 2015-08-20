@@ -31,7 +31,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
@@ -42,6 +41,8 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.util.List;
+
+import static org.pentaho.di.i18n.BaseMessages.getString;
 
 public class DataServiceDelegate {
 
@@ -74,8 +75,8 @@ public class DataServiceDelegate {
   public void createNewDataService( String stepName ) {
     TransMeta transMeta = getSpoon().getActiveTransformation();
     if ( transMeta.hasChanged() ) {
-      showErrors( BaseMessages.getString( PKG, "Messages.Error.Title" ),
-        BaseMessages.getString( PKG, "Messages.Error.TransChanged" ) );
+      showError( getString( PKG, "DataServiceDelegate.NewTransChanged.Title" ),
+          getString( PKG, "DataServiceDelegate.NewTransChanged.Message" ) );
       return;
     }
     try {
@@ -88,8 +89,8 @@ public class DataServiceDelegate {
   public void editDataService( DataServiceMeta dataService ) {
     TransMeta transMeta = dataService.getServiceTrans();
     if ( transMeta.hasChanged() ) {
-      showErrors( BaseMessages.getString( PKG, "Messages.Error.Title" ),
-        BaseMessages.getString( PKG, "Messages.Error.TransChanged" ) );
+      showError( getString( PKG, "DataServiceDelegate.EditTransChanged.Title" ),
+          getString( PKG, "DataServiceDelegate.EditTransChanged.Message" ) );
       return;
     }
 
@@ -100,8 +101,8 @@ public class DataServiceDelegate {
     }
   }
 
-  public void showErrors( String title, String text ) {
-    MessageBox mb = new MessageBox( getShell(), SWT.OK | SWT.ICON_INFORMATION );
+  public void showError( String title, String text ) {
+    MessageBox mb = new MessageBox( getShell(), SWT.OK | SWT.ICON_WARNING );
     mb.setText( title );
     mb.setMessage( text );
     mb.open();
@@ -146,15 +147,15 @@ public class DataServiceDelegate {
       spoon.refreshTree();
       spoon.refreshGraph();
     } catch ( MetaStoreException e ) {
-      throw new KettleException( BaseMessages.getString( PKG, "Messages.Error.MetaStore" ) );
+      throw new KettleException( getString( PKG, "Messages.Error.MetaStore" ) );
     }
   }
   public void removeDataService( TransMeta transMeta, DataServiceMeta dataService, boolean prompt ) {
     boolean shouldDelete = true;
     if ( prompt ) {
       MessageBox messageBox = new MessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
-      messageBox.setText( BaseMessages.getString( PKG, "Messages.DeleteMessageBox.Title" ) );
-      messageBox.setMessage( BaseMessages.getString( PKG, "Messages.DeleteMessageBox.Message" ) );
+      messageBox.setText( getString( PKG, "DataServiceDelegate.DeleteDataService.Title" ) );
+      messageBox.setMessage( getString( PKG, "DataServiceDelegate.DeleteDataService.Message", dataService.getName() ) );
       int answerIndex = messageBox.open();
       if ( answerIndex != SWT.YES ) {
         shouldDelete = false;
