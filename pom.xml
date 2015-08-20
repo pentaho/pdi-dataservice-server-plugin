@@ -161,7 +161,7 @@
         </dependency>
         <dependency>
             <groupId>pentaho</groupId>
-            <artifactId>pdi-dataservice-plugin</artifactId>
+            <artifactId>pdi-dataservice-client-plugin</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
