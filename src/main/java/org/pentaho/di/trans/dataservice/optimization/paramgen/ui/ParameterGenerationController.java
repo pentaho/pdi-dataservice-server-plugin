@@ -24,7 +24,9 @@ package org.pentaho.di.trans.dataservice.optimization.paramgen.ui;
 
 import com.google.common.base.Strings;
 import org.eclipse.swt.SWT;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
@@ -44,12 +46,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.pentaho.di.i18n.BaseMessages.getString;
 
 /**
  * @author nhudak
  */
 public class ParameterGenerationController extends AbstractController {
-
+  private static final Class<?> PKG = ParameterGenerationController.class;
   private static final String NAME = "paramGenCtrl";
   private static final BindingConvertor<String, Boolean> stringIsEmpty = new BindingConvertor<String, Boolean>() {
     @Override public Boolean sourceToTarget( String value ) {
@@ -110,8 +113,8 @@ public class ParameterGenerationController extends AbstractController {
     meta.setType( parameterGeneration );
 
     XulPromptBox promptBox = createPromptBox();
-    promptBox.setTitle( "Create Parameter" );
-    promptBox.setMessage( "Parameter Name:" );
+    promptBox.setTitle( getString( PKG, "ParameterGenerationController.Create.Title" ) );
+    promptBox.setMessage( getString( PKG, "ParameterGenerationController.Create.Message" ) );
     ParameterEditor editor = new ParameterEditor( parameterGeneration );
     promptBox.addDialogCallback( editor );
 
@@ -125,8 +128,8 @@ public class ParameterGenerationController extends AbstractController {
     ParameterGeneration parameterGeneration = checkNotNull( model.getParameterGeneration() );
 
     XulPromptBox promptBox = createPromptBox();
-    promptBox.setTitle( "Edit Parameter" );
-    promptBox.setMessage( "Parameter Name:" );
+    promptBox.setTitle( getString( PKG, "ParameterGenerationController.Edit.Title" ) );
+    promptBox.setMessage( getString( PKG, "ParameterGenerationController.Edit.Message" ) );
     promptBox.setValue( parameterGeneration.getParameterName() );
 
     ParameterEditor editor = new ParameterEditor( parameterGeneration );
@@ -143,8 +146,8 @@ public class ParameterGenerationController extends AbstractController {
     String parameterName = ( (ParameterGeneration) meta.getType() ).getParameterName();
 
     XulMessageBox messageBox = createMessageBox();
-    messageBox.setTitle( "Remove Parameter" );
-    messageBox.setMessage( "Are you sure you want to delete " + parameterName + "?" );
+    messageBox.setTitle( getString( PKG, "ParameterGenerationController.Delete.Title" ) );
+    messageBox.setMessage( getString( PKG, "ParameterGenerationController.Delete.Message", parameterName ) );
     messageBox.setIcon( SWT.ICON_QUESTION );
     messageBox.setButtons( new Object[] { SWT.YES, SWT.NO } );
 
@@ -174,8 +177,10 @@ public class ParameterGenerationController extends AbstractController {
     }
 
     private boolean validate( String parameterName ) throws XulException {
+
       if ( Strings.isNullOrEmpty( parameterName ) ) {
-        error( "Parameter can not be empty" );
+        error( getString( PKG, "ParameterGenerationController.NameMissing.Title" ),
+            getString( PKG, "ParameterGenerationController.NameMissing.Message" ) );
         return false;
       }
       if ( parameterName.equals( parameterGeneration.getParameterName() ) ) {
@@ -183,17 +188,19 @@ public class ParameterGenerationController extends AbstractController {
         return false;
       }
       if ( model.getParameterMap().containsKey( parameterName ) ) {
-        error( "Parameter already exists" );
+        error( getString( PKG, "ParameterGenerationController.NameExist.Title" ),
+            getString( PKG, "ParameterGenerationController.NameExist.Message" ) );
         return false;
       }
       return true;
     }
 
-    private void error( String message ) throws XulException {
+    private void error( String title, String message ) throws XulException {
       XulMessageBox messageBox = createMessageBox();
-      messageBox.setTitle( "Invalid Parameter" );
+      messageBox.setTitle( title );
       messageBox.setMessage( message );
-      messageBox.setIcon( SWT.ICON_ERROR );
+      messageBox.setIcon( SWT.ICON_WARNING );
+      messageBox.setButtons( new Object[]{ SWT.OK | SWT.CANCEL } );
       messageBox.open();
     }
 

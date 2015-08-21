@@ -22,12 +22,9 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
@@ -40,7 +37,8 @@ import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulDialog;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
+
+import static org.pentaho.di.i18n.BaseMessages.getString;
 
 public class DataServiceDialogController extends AbstractController {
 
@@ -88,23 +86,13 @@ public class DataServiceDialogController extends AbstractController {
   }
 
   public Boolean validate() throws KettleException {
-    List<String> errors = Lists.newArrayList();
-
     if ( Const.isEmpty( model.getServiceName() ) ) {
-      errors.add( BaseMessages.getString( PKG, "DataServiceDialog.NameRequired.Error" ) );
+      delegate.showError( getString( PKG, "DataServiceDialog.NameRequired.Title" ),
+          getString( PKG, "DataServiceDialog.NameRequired.Message" ) );
+      return false;
     } else if( !delegate.saveAllowed( model.getServiceName(), dataService ) ) {
-      errors.add( BaseMessages.getString( PKG, "DataServiceDialog.AlreadyExists.Error", model.getServiceName() ) );
-    }
-
-    if ( Const.isEmpty( model.getServiceStep() ) ) {
-      errors.add( BaseMessages.getString( PKG, "DataServiceDialog.StepRequired.Error" ) );
-    }
-
-    if ( errors.size() > 0 ) {
-      delegate.showErrors(
-        BaseMessages.getString( PKG, "DataServiceDialog.Errors.Title" ),
-        Joiner.on( '\n' ).join( errors )
-      );
+      delegate.showError( getString( PKG, "DataServiceDialog.AlreadyExists.Title" ),
+          getString( PKG, "DataServiceDialog.AlreadyExists.Message" ) );
       return false;
     }
 

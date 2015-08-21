@@ -102,6 +102,6 @@ public class DataServiceDialogControllerTest {
     doReturn( true ).when( delegate ).saveAllowed( SERVICE_NAME, dataService );
     assertTrue( controller.validate() );
 
-    verify( delegate, times( 3 ) ).showErrors( anyString(), anyString() );
+    verify( delegate, times( 3 ) ).showError( anyString(), anyString() );
   }
 }
