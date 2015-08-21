@@ -53,7 +53,6 @@ public class ParameterGenerationFactoryTest {
   public void testFactory() throws Exception {
     assertThat( provider.getName(), is( ParameterGeneration.TYPE_NAME ) );
     assertThat( provider.createPushDown(), isA( ParameterGeneration.class ) );
-    assertThat( provider.createPushDownOptTypeForm(), isA( ParamGenOptForm.class ) );
   }
 
   @Test

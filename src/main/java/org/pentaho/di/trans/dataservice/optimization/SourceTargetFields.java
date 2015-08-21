@@ -22,19 +22,25 @@
 
 package org.pentaho.di.trans.dataservice.optimization;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
-
 
 @MetaStoreElementType(
   name = "Source Target Fields",
   description = "Defines the mapping of a source to target field and any related metadata.  "
-    +  "Used for push down optimization."
+    + "Used for push down optimization."
 )
 public class SourceTargetFields {
 
   public static final String SOURCE_FIELD_NAME = "source_field_name";
   public static final String TARGET_FIELD_NAME = "target_field_name";
+  public static final Predicate<SourceTargetFields> IS_DEFINED = new Predicate<SourceTargetFields>() {
+    @Override public boolean apply( SourceTargetFields input ) {
+      return input.isDefined();
+    }
+  };
 
   @MetaStoreAttribute( key = SOURCE_FIELD_NAME )
   private String sourceFieldName;
@@ -44,7 +50,8 @@ public class SourceTargetFields {
 
   // protected boolean filterAllowed;  // Not used yet.
 
-  public SourceTargetFields() { }
+  public SourceTargetFields() {
+  }
 
   public SourceTargetFields( String source, String target ) {
     setSourceFieldName( source );
@@ -67,7 +74,7 @@ public class SourceTargetFields {
     this.targetFieldName = targetFieldName;
   }
 
-
-
-
+  public boolean isDefined() {
+    return !Strings.isNullOrEmpty( getSourceFieldName() ) && !Strings.isNullOrEmpty( getTargetFieldName() );
+  }
 }

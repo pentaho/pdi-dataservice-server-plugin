@@ -27,6 +27,8 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ui.ParameterGenerationOverlay;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.step.StepMeta;
 
 import java.util.List;
@@ -54,8 +56,8 @@ public class ParameterGenerationFactory implements PushDownFactory {
     return new ParameterGeneration( this );
   }
 
-  @Override public ParamGenOptForm createPushDownOptTypeForm() {
-    return new ParamGenOptForm( this );
+  @Override public DataServiceDialog.OptimizationOverlay createOverlay() {
+    return new ParameterGenerationOverlay( this );
   }
 
   public ParameterGenerationService getService( StepMeta stepMeta ) {
@@ -74,4 +76,5 @@ public class ParameterGenerationFactory implements PushDownFactory {
       }
     } );
   }
+
 }

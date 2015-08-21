@@ -67,7 +67,7 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
 
   public void testDataService() throws MetaStoreException, KettleException {
     DataServiceMeta dataService = getCurrentDataServiceMeta();
-    new DataServiceTestDialog( delegate.getShell(), dataService, getActiveTrans() ).open();
+    new DataServiceTestDialog( delegate.getShell(), dataService ).open();
   }
 
   private DataServiceMeta getCurrentDataServiceMeta() throws MetaStoreException {

@@ -22,15 +22,10 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
-import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
@@ -38,7 +33,6 @@ import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.parameters.NamedParams;
-import org.pentaho.di.core.parameters.UnknownParamException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
@@ -47,6 +41,10 @@ import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.core.sql.SQLFields;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.dom.Document;
@@ -61,7 +59,14 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DataServiceTestControllerTest  {
 
@@ -87,12 +92,16 @@ public class DataServiceTestControllerTest  {
   private Document document;
 
 
-  @InjectMocks
   private DataServiceTestControllerTester dataServiceTestController;
 
   @Before
-  public void initMocks() throws UnknownParamException {
+  public void initMocks() throws Exception {
     MockitoAnnotations.initMocks( this );
+
+    when( dataService.getServiceTrans() ).thenReturn( transMeta );
+
+    dataServiceTestController = new DataServiceTestControllerTester();
+
     when( dataServiceExecutor.getServiceTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getGenTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getServiceTransMeta() ).thenReturn( transMeta );
@@ -219,23 +228,13 @@ public class DataServiceTestControllerTest  {
   /**
    * Test class for purposes of injecting a mock DataServiceExecutor
    */
-  static class DataServiceTestControllerTester extends DataServiceTestController {
+  class DataServiceTestControllerTester extends DataServiceTestController {
 
     private DataServiceExecutor dataServiceExecutor;
 
-    public DataServiceTestControllerTester( DataServiceTestModel model,
-                                            DataServiceMeta dataService,
-                                            TransMeta transMeta ) throws KettleException {
-      super( model, dataService, transMeta );
-    }
-
-    public DataServiceTestControllerTester( DataServiceTestModel model,
-                                            DataServiceMeta dataService,
-                                            TransMeta transMeta,
-                                            DataServiceExecutor dataServiceExecutor,
-                                            DataServiceTestCallback callback ) throws KettleException {
-      super( model, dataService, transMeta );
-      this.dataServiceExecutor = dataServiceExecutor;
+    public DataServiceTestControllerTester() throws KettleException {
+      super( model, dataService );
+      this.dataServiceExecutor = DataServiceTestControllerTest.this.dataServiceExecutor;
       setCallback( callback );
     }
 

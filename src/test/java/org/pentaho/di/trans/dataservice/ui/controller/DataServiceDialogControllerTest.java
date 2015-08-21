@@ -22,62 +22,34 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import com.google.common.collect.ImmutableList;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Shell;
 import org.junit.Before;
 import org.junit.Test;
-import org.pentaho.di.shared.SharedObjects;
-import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.paramgen.AutoParameterGenerationService;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
-import org.pentaho.di.trans.dataservice.ui.DataServiceDialogCallback;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
-import static org.mockito.Mockito.any;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
+@RunWith( MockitoJUnitRunner.class )
 public class DataServiceDialogControllerTest {
 
   private DataServiceDialogController controller;
 
-  private DataServiceModel model;
+  @Mock DataServiceModel model;
 
-  private DataServiceMeta dataService;
+  @Mock DataServiceMeta dataService;
 
-  private TransMeta transMeta;
-
-  private DataServiceMetaStoreUtil metaStoreUtil;
-
-  private Spoon spoon;
-
-  private IMetaStore metaStore;
-
-  private SharedObjects sharedObjects;
-
-  private AutoParameterGenerationService autoParameterGenerationService;
-
-  private DataServiceDialogCallback callback;
+  @Mock DataServiceDelegate delegate;
 
   private static final String FILE_NAME = "/home/admin/transformation.ktr";
 
@@ -93,93 +65,21 @@ public class DataServiceDialogControllerTest {
 
   @Before
   public void init() throws Exception {
-    Composite parent = mock( Shell.class );
-    model = mock( DataServiceModel.class );
-    dataService = mock( DataServiceMeta.class );
-    transMeta = mock( TransMeta.class );
-    spoon = mock( Spoon.class );
-    metaStore = mock( DelegatingMetaStore.class );
-    sharedObjects = mock( SharedObjects.class );
-    autoParameterGenerationService = mock( AutoParameterGenerationService.class );
-    callback = mock( DataServiceDialogCallback.class );
-    metaStoreUtil = mock( DataServiceMetaStoreUtil.class );
-
-    DataServiceContext context = mock( DataServiceContext.class );
-    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
-    when( context.getAutoOptimizationServices() ).thenReturn(
-      ImmutableList.<AutoOptimizationService>of( autoParameterGenerationService ) );
-    when( context.getPushDownFactories() ).thenReturn( new ArrayList<PushDownFactory>() );
-
-    DataServiceDelegate delegate = new DataServiceDelegate( context, spoon ){
-      @Override public void showErrors( String title, String text ) {
-        // Do nothing
-      }
-    };
-
-    controller = new DataServiceDialogController( parent, model, dataService, transMeta, delegate );
-    controller.setCallback( callback );
+    controller = new DataServiceDialogController( model, delegate );
 
     doReturn( SERVICE_NAME ).when( dataService ).getName();
   }
 
   @Test
-  public void testGetOptimizations() throws Exception {
-    spoon.sharedObjectsFileMap = mock( Map.class );
-
-    List<PushDownOptimizationMeta> pushDownOptimizations = new ArrayList<PushDownOptimizationMeta>();
-
-    doReturn( metaStore ).when( spoon ).getMetaStore();
-    doReturn( sharedObjects ).when( transMeta ).getSharedObjects();
-    doReturn( FILE_NAME ).when( sharedObjects ).getFilename();
-    doReturn( pushDownOptimizations ).when( model ).getPushDownOptimizations();
-
-    controller.getOptimizations();
-
-    verify( transMeta ).setMetaStore( metaStore );
-    verify( spoon.sharedObjectsFileMap ).put( sharedObjects.getFilename(), sharedObjects );
-    verify( spoon ).setTransMetaVariables( transMeta );
-    verify( transMeta ).clearChanged();
-    verify( transMeta ).activateParameters();
-    verify( model ).addPushDownOptimizations( pushDownOptimizations );
-    verify( autoParameterGenerationService ).apply( any( TransMeta.class ), any( DataServiceMeta.class ) );
-  }
-
-  @Test
-  public void viewStep() throws Exception {
-    StepMeta step1 = mock( StepMeta.class );
-    doReturn( STEP_ONE_NAME ).when( step1 ).getName();
-
-    StepMeta step2 = mock( StepMeta.class );
-    doReturn( STEP_TWO_NAME ).when( step2 ).getName();
-
-    List<StepMeta> steps = new ArrayList<StepMeta>();
-    steps.add( step1 );
-    steps.add( step2 );
-
-    doReturn( steps ).when( transMeta ).getSteps();
-    doReturn( STEP_ONE_NAME ).when( model ).getSelectedStep();
-
-    controller.viewStep();
-
-    verify( transMeta ).getSteps();
-    verify( step1 ).getName();
-    verify( step2 ).getName();
-    verify( model, times( 2 ) ).getSelectedStep();
-    verify( callback ).onViewStep();
-    verify( spoon ).editStep( transMeta, step1 );
-    verify( callback ).onHideStep();
-  }
-
-  @Test
   public void testValidate() throws Exception {
+    controller.setDataService( dataService );
     doReturn( SERVICE_NAME ).when( model ).getServiceName();
-    doReturn( SELECTED_STEP ).when( model ).getSelectedStep();
+    doReturn( SELECTED_STEP ).when( model ).getServiceStep();
+    doReturn( true ).when( delegate ).saveAllowed( SERVICE_NAME, dataService );
 
-    controller.validate();
+    assertThat( controller.validate(), is( true ) );
 
-    verify( dataService, times( 2 ) ).getName();
-    verify( model, times( 3 ) ).getServiceName();
-    verify( model ).getSelectedStep();
+    verify( delegate ).saveAllowed( SERVICE_NAME, dataService );
   }
 
   @Test
@@ -189,20 +89,19 @@ public class DataServiceDialogControllerTest {
     assertFalse( controller.validate() );
 
     doReturn( SERVICE_NAME ).when( model ).getServiceName();
-    doReturn( "" ).when( model ).getSelectedStep();
+    doReturn( "" ).when( model ).getServiceStep();
 
     assertFalse( controller.validate() );
 
-    IMetaStore metaStore = mock( DelegatingMetaStore.class );
-    doReturn( metaStore ).when( spoon ).getMetaStore();
-    doReturn( SELECTED_STEP ).when( model ).getSelectedStep();
-    doReturn( SERVICE_NAME ).when( model ).getServiceName();
-    doReturn( NEW_SERVICE_NAME ).when( dataService ).getName();
-    when( metaStoreUtil.getDataServiceNames( metaStore ) ).thenReturn( ImmutableList.of( SERVICE_NAME ) );
+    doReturn( SELECTED_STEP ).when( model ).getServiceStep();
+    controller.setDataService( dataService );
+    doReturn( false ).when( delegate ).saveAllowed( SERVICE_NAME, dataService );
 
     assertFalse( controller.validate() );
 
-    when( metaStoreUtil.getDataServiceNames( metaStore ) ).thenReturn( ImmutableList.<String>of() );
+    doReturn( true ).when( delegate ).saveAllowed( SERVICE_NAME, dataService );
     assertTrue( controller.validate() );
+
+    verify( delegate, times( 3 ) ).showErrors( anyString(), anyString() );
   }
 }

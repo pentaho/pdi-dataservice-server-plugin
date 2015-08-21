@@ -22,13 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownType;
-import org.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.parameters.DuplicateParamException;
@@ -36,6 +31,13 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
@@ -136,7 +138,7 @@ public class ParameterGeneration implements PushDownType {
       }
 
       // Map each child
-      for ( Iterator<Condition> i = children.iterator(); i.hasNext();) {
+      for ( Iterator<Condition> i = children.iterator(); i.hasNext(); ) {
         Condition child = i.next();
         if ( !applyMapping( child, sourceTargetFieldsMap ) ) {
           if ( requireAll ) {
@@ -154,6 +156,9 @@ public class ParameterGeneration implements PushDownType {
   }
 
   @Override public void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta ) {
+    // Ensure all source -> target mappings are well defined
+    fieldMappings = Lists.newArrayList( Iterables.filter( fieldMappings, SourceTargetFields.IS_DEFINED ) );
+
     StepMeta stepMeta = transMeta.findStep( optMeta.getStepName() );
     ParameterGenerationService service = stepMeta != null ? serviceProvider.getService( stepMeta ) : null;
     String parameterDefault = service != null ? service.getParameterDefault() : "";
@@ -215,7 +220,7 @@ public class ParameterGeneration implements PushDownType {
 
   protected String setQueryParameter( String query, String parameterValue ) {
     VariableSpace varSpace = new Variables();
-    varSpace.setVariable( getParameterName(), parameterValue  );
+    varSpace.setVariable( getParameterName(), parameterValue );
     return varSpace.environmentSubstitute( query );
   }
 

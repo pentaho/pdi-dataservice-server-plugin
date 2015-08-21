@@ -90,12 +90,10 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   private XulMenuList<String> maxRows;
 
-  public DataServiceTestController( DataServiceTestModel model,
-                                    DataServiceMeta dataService,
-                                    TransMeta transMeta ) throws KettleException {
+  public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService ) throws KettleException {
     this.model = model;
     this.dataService = dataService;
-    this.transMeta = transMeta;
+    this.transMeta = dataService.getServiceTrans();
     transName = transMeta.getName();
     model.setSql( getDefaultSql() );
     initStartingParameterValues();
@@ -388,7 +386,6 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     try {
       resetVariablesAndParameters();
       return new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService ).
-        serviceTrans( transMeta ).
         rowLimit( model.getMaxRows() ).
         logLevel( model.getLogLevel() ).
         enableMetrics( enableMetrics ).

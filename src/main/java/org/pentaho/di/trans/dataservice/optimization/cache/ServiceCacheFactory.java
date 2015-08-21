@@ -30,7 +30,8 @@ import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptTypeForm;
+import org.pentaho.di.trans.dataservice.optimization.cache.ui.ServiceCacheOverlay;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
@@ -64,8 +65,8 @@ public class ServiceCacheFactory implements PushDownFactory {
     return new ServiceCache( this );
   }
 
-  @Override public PushDownOptTypeForm createPushDownOptTypeForm() {
-    return new ServiceCacheOptForm( this );
+  @Override public DataServiceDialog.OptimizationOverlay createOverlay() {
+    return new ServiceCacheOverlay( this );
   }
 
   public ListeningExecutorService getExecutorService() {
@@ -131,4 +132,5 @@ public class ServiceCacheFactory implements PushDownFactory {
 
     return cacheManager.getTemplates().get( templateName ).getProperties();
   }
+
 }

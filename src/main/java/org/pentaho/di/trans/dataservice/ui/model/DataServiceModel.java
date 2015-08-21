@@ -22,7 +22,14 @@
 
 package org.pentaho.di.trans.dataservice.ui.model;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
 import java.util.Collection;
@@ -30,73 +37,107 @@ import java.util.List;
 
 public class DataServiceModel extends XulEventSourceAdapter {
 
-  private List<String> steps;
-  private String selectedStep;
-  private List<PushDownOptimizationMeta> pushDownOptimizations;
+  private List<PushDownOptimizationMeta> pushDownOptimizations = Lists.newArrayList();
   private String serviceName;
-  private String transName;
-  private String transLocation;
+  private String serviceStep;
+  private final TransMeta transMeta;
+
+  public DataServiceModel( TransMeta transMeta ) {
+    this.transMeta = transMeta;
+  }
+
+  public TransMeta getTransMeta() {
+    return transMeta;
+  }
 
   public String getServiceName() {
     return serviceName;
   }
 
   public void setServiceName( String serviceName ) {
+    String previous = this.serviceName;
     this.serviceName = serviceName;
-    firePropertyChange( "serviceName", null, serviceName );
+    firePropertyChange( "serviceName", previous, serviceName );
   }
 
-  public List<String> getSteps() {
-    return steps;
+  public String getServiceStep() {
+    return serviceStep;
   }
 
-  public void setSteps( List<String> steps ) {
-    this.steps = steps;
-    firePropertyChange( "steps", null, steps );
+  public void setServiceStep( String serviceStep ) {
+    String previous = this.serviceStep;
+    this.serviceStep = serviceStep;
+    firePropertyChange( "serviceStep", previous, serviceStep );
   }
 
-  public String getSelectedStep() {
-    return selectedStep;
-  }
-
-  public void setSelectedStep( String selectedStep ) {
-    this.selectedStep = selectedStep;
-  }
-
-  public List<PushDownOptimizationMeta> getPushDownOptimizations() {
-    return pushDownOptimizations;
+  public ImmutableList<PushDownOptimizationMeta> getPushDownOptimizations() {
+    return ImmutableList.copyOf( pushDownOptimizations );
   }
 
   public void setPushDownOptimizations( List<PushDownOptimizationMeta> pushDownOptimizations ) {
-    this.pushDownOptimizations = pushDownOptimizations;
-    firePropertyChange( "pushDownOptimizations", null, pushDownOptimizations );
+    ImmutableList<PushDownOptimizationMeta> previous = getPushDownOptimizations();
+    this.pushDownOptimizations = Lists.newArrayList( pushDownOptimizations );
+
+    firePropertyChange( "pushDownOptimizations", previous, getPushDownOptimizations() );
   }
 
-  public void addPushDownOptimizations( Collection<PushDownOptimizationMeta> pushDownOptimizations ) {
-    this.pushDownOptimizations.addAll( pushDownOptimizations );
-    firePropertyChange( "pushDownOptimizations", null, this.pushDownOptimizations );
+  public boolean add( PushDownOptimizationMeta pushDownOptimizationMeta ) {
+    return addAll( ImmutableList.of( pushDownOptimizationMeta ) );
   }
 
-  public void removePushDownOptimization( PushDownOptimizationMeta pushDownOptimization ) {
-    this.pushDownOptimizations.remove( pushDownOptimization );
-    firePropertyChange( "pushDownOptimizations", null, this.pushDownOptimizations );
+  public boolean addAll( Collection<PushDownOptimizationMeta> pushDownOptimizations ) {
+    ImmutableList<PushDownOptimizationMeta> previous = getPushDownOptimizations();
+
+    if ( this.pushDownOptimizations.addAll( pushDownOptimizations ) ) {
+      firePropertyChange( "pushDownOptimizations", previous, getPushDownOptimizations() );
+      return true;
+    }
+
+    return false;
   }
 
-  public String getTransName() {
-    return transName;
+  public boolean remove( PushDownOptimizationMeta pushDownOptimization ) {
+    ImmutableList<PushDownOptimizationMeta> previous = getPushDownOptimizations();
+
+    if ( this.pushDownOptimizations.remove( pushDownOptimization ) ) {
+      firePropertyChange( "pushDownOptimizations", previous, getPushDownOptimizations() );
+      return true;
+    }
+
+    return false;
   }
 
-  public void setTransName( String transName ) {
-    this.transName = transName;
-    firePropertyChange( "transName", null, transName );
+  public boolean removeAll( Collection<PushDownOptimizationMeta> c ) {
+    ImmutableList<PushDownOptimizationMeta> previous = getPushDownOptimizations();
+
+    if ( pushDownOptimizations.removeAll( c ) ) {
+      firePropertyChange( "pushDownOptimizations", previous, getPushDownOptimizations() );
+      return true;
+    }
+
+    return false;
   }
 
-  public String getTransLocation() {
-    return transLocation;
+  public DataServiceMeta getDataService() {
+    DataServiceMeta dataService = new DataServiceMeta( transMeta );
+    dataService.setName( getServiceName() );
+    dataService.setPushDownOptimizationMeta( getPushDownOptimizations() );
+    dataService.setStepname( getServiceStep() );
+
+    for ( PushDownOptimizationMeta pushDownOptimization : pushDownOptimizations ) {
+      pushDownOptimization.getType().init( transMeta, dataService, pushDownOptimization );
+    }
+
+    return dataService;
   }
 
-  public void setTransLocation( String transLocation ) {
-    this.transLocation = transLocation;
-    firePropertyChange( "transLocation", null, transLocation );
+  public ImmutableList<PushDownOptimizationMeta> getPushDownOptimizations( final Class<? extends PushDownType> type ) {
+    return FluentIterable.from( getPushDownOptimizations() )
+      .filter( new Predicate<PushDownOptimizationMeta>() {
+        @Override public boolean apply( PushDownOptimizationMeta input ) {
+          return type.isInstance( input.getType() );
+        }
+      } )
+      .toList();
   }
 }

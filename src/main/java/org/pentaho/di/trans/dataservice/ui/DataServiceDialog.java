@@ -22,40 +22,39 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import org.eclipse.swt.widgets.Composite;
+import com.google.common.base.Strings;
+import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceDialogController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.xul.KettleXulLoader;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulRunner;
-import org.pentaho.ui.xul.containers.XulDialog;
-import org.pentaho.ui.xul.dom.Document;
+import org.pentaho.ui.xul.containers.XulTabbox;
 import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class DataServiceDialog {
 
   private static final String XUL_DIALOG_PATH = "org/pentaho/di/trans/dataservice/ui/xul/dataservice-dialog.xul";
-  private static final String XUL_DIALOG_ID = "dataservice-dialog";
-  private DataServiceDialogController dataServiceDialogController;
-  private DataServiceModel dataServiceModel;
-  private final Document document;
-  private final XulDialog xulDialog;
+  private final DataServiceDialogController controller;
+  private final DataServiceModel model;
 
   private static final Class<?> PKG = DataServiceDialog.class;
-
-  private final ResourceBundle resourceBundle = new ResourceBundle() {
+  private static final ResourceBundle RESOURCE_BUNDLE = new ResourceBundle() {
     @Override
     public Enumeration<String> getKeys() {
-      return null;
+      return Collections.emptyEnumeration();
     }
 
     @Override
@@ -64,54 +63,131 @@ public class DataServiceDialog {
     }
   };
 
-  public DataServiceDialog( Composite parent, DataServiceMeta dataService, TransMeta transMeta,
-                            DataServiceDelegate delegate ) throws KettleException {
-    dataServiceModel = new DataServiceModel();
-    dataServiceDialogController =
-      new DataServiceDialogController( parent, dataServiceModel, dataService, transMeta, delegate );
-    document = initXul( parent );
-    xulDialog = (XulDialog) document.getElementById( XUL_DIALOG_ID );
-    attachCallback();
+  public static DataServiceDialog create( DataServiceDelegate delegate, TransMeta serviceTrans, String stepName )
+    throws KettleException {
+    return new Builder( serviceTrans ).serviceStep( stepName ).build( delegate );
+  }
+
+  public static DataServiceDialog edit( DataServiceDelegate delegate, DataServiceMeta dataService )
+    throws KettleException {
+    return new Builder( dataService.getServiceTrans() ).edit( dataService ).build( delegate );
+  }
+
+  public DataServiceDialog( DataServiceDelegate delegate, DataServiceModel model ) {
+    this( new DataServiceDialogController( model, delegate ), model );
+  }
+
+  public DataServiceDialog( DataServiceDialogController controller, DataServiceModel model ) {
+    this.controller = controller;
+    this.model = model;
+  }
+
+  protected DataServiceDialog loadXul( Shell shell ) throws KettleException {
+    try {
+      SwtXulLoader swtLoader = new KettleXulLoader();
+      swtLoader.setOuterContext( shell );
+      swtLoader.registerClassLoader( DataServiceDialog.class.getClassLoader() );
+
+      XulDomContainer container = swtLoader.loadXul( XUL_DIALOG_PATH, RESOURCE_BUNDLE );
+      container.addEventHandler( controller );
+
+      XulRunner runner = new SwtXulRunner();
+      runner.addContainer( container );
+      runner.initialize();
+    } catch ( XulException xulException ) {
+      throw new KettleException( "Failed to open the Data Service Dialog ", xulException );
+    }
+
+    return this;
+  }
+
+  protected DataServiceDialog initOptimizations( List<PushDownFactory> pushDownFactories )
+    throws KettleException {
+    for ( PushDownFactory pushDownFactory : pushDownFactories ) {
+      pushDownFactory.createOverlay().apply( this );
+    }
+    XulTabbox optimizationTabs = controller.getElementById( "optimizationTabs" );
+    if ( optimizationTabs.getTabs().getTabCount() > 0 ) {
+      optimizationTabs.setSelectedIndex( 0 );
+    }
+
+    return this;
+  }
+
+  public XulDomContainer getXulDomContainer() {
+    return controller.getXulDomContainer();
+  }
+
+  /**
+   * Apply an overlay to the dialog.
+   *
+   * @param classLoader ClassLoader to load the xulOverlay from
+   * @param xulOverlay  Path to the XUL overlay to load and apply to the DOM container
+   * @throws KettleException Error loading XUL, wrapped in a KettleException
+   */
+  public XulDomContainer applyOverlay( ClassLoader classLoader, String xulOverlay ) throws KettleException {
+    XulDomContainer xulDomContainer = getXulDomContainer();
+    try {
+      xulDomContainer.registerClassLoader( classLoader );
+      xulDomContainer.loadOverlay( xulOverlay );
+    } catch ( XulException e ) {
+      throw new KettleException( e );
+    }
+    return xulDomContainer;
   }
 
   public void open() {
-    xulDialog.show();
+    controller.open();
   }
 
   public void close() {
-    xulDialog.hide();
+    controller.close();
   }
 
-  private void attachCallback() {
-    dataServiceDialogController.setCallback( new DataServiceDialogCallback() {
-      @Override public void onClose() {
-        close();
-      }
-
-      @Override public void onViewStep() {
-        xulDialog.show();
-      }
-
-      @Override public void onHideStep() {
-        xulDialog.hide();
-      }
-    } );
+  public DataServiceDialogController getController() {
+    return controller;
   }
 
-  private Document initXul( Composite parent ) throws KettleException {
-    try {
-      SwtXulLoader swtLoader = new KettleXulLoader();
-      swtLoader.setOuterContext( parent );
-      swtLoader.registerClassLoader( getClass().getClassLoader() );
-      XulDomContainer container = swtLoader.loadXul( XUL_DIALOG_PATH, resourceBundle );
-      container.addEventHandler( dataServiceDialogController );
+  public DataServiceModel getModel() {
+    return model;
+  }
 
-      final XulRunner runner = new SwtXulRunner();
-      runner.addContainer( container );
-      runner.initialize();
-      return container.getDocumentRoot();
-    } catch ( XulException xulException ) {
-      throw new KettleException( "Failed to initialize DataServicesManagerDialog.", xulException );
+  private static class Builder {
+    private final DataServiceModel model;
+    private DataServiceMeta dataService;
+
+    Builder( TransMeta transMeta ) {
+      this.model = new DataServiceModel( transMeta );
     }
+
+    Builder serviceStep( String serviceStep ) {
+      model.setServiceStep( Strings.nullToEmpty( serviceStep ) );
+      return this;
+    }
+
+    Builder edit( DataServiceMeta dataService ) {
+      this.dataService = dataService;
+      model.setServiceName( dataService.getName() );
+      model.setServiceStep( dataService.getStepname() );
+      model.setPushDownOptimizations( dataService.getPushDownOptimizationMeta() );
+      return this;
+    }
+
+    DataServiceDialog build( DataServiceDelegate delegate ) throws KettleException {
+      DataServiceDialog dialog = new DataServiceDialog( delegate, model );
+      dialog.controller.setDataService( dataService );
+
+      dialog
+        .loadXul( delegate.getShell() )
+        .initOptimizations( delegate.getPushDownFactories() );
+
+      return dialog;
+    }
+
   }
+
+  public interface OptimizationOverlay {
+    void apply( DataServiceDialog dialog ) throws KettleException;
+  }
+
 }

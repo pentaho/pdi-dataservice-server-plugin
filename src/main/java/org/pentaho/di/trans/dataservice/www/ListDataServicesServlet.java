@@ -27,7 +27,6 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.www.BaseHttpServlet;
@@ -59,11 +58,9 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
 
   public static final String XML_TAG_SERVICES = "services";
   public static final String XML_TAG_SERVICE = "service";
-  private final DataServiceMetaStoreUtil metaStoreUtil;
   private final DataServiceClient client;
 
   public ListDataServicesServlet( DataServiceContext context ) {
-    this.metaStoreUtil = context.getMetaStoreUtil();
     client = new DataServiceClient( context );
   }
 

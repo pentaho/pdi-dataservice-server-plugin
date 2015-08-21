@@ -1,23 +1,44 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
-<window id="dataservice-manager-window" orient="vertical" height="600" width="800"
+<dialog id="dataservice-dialog" orient="vertical"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        xmlns:pen="http://www.pentaho.org/2008/xul"
-        onload="dataServiceDialogController.init()">
-
-  <dialog id="dataservice-dialog"
-          title="${DataServiceDialog.Dialog.Title}"
-          resizable="true"
-          height="700"
-          width="700"
-          appicon="images/data-services.svg"
-          buttons="accept, cancel"
-          ondialogaccept="dataServiceDialogController.saveAndClose()"
-          ondialogcancel="dataServiceDialogController.close()">
-    <vbox flex="1" padding="10">
-      <pen:include src="dataservice-edit-form.xul" ignoreroot="true"/>
-    </vbox>
-  </dialog>
-
-</window>
+        title="${DataServiceDialog.Dialog.Title}"
+        resizable="true"
+        height="700"
+        width="700"
+        appicon="images/data-services.svg"
+        buttons=","
+        onload="dataServiceDialogController.init()"
+        ondialogaccept="dataServiceDialogController.saveAndClose()"
+        ondialogcancel="dataServiceDialogController.close()"
+        >
+    <label value="${DataServiceDialog.ServiceName.Label}"/>
+    <hbox>
+        <textbox id="service-name" width="300"/>
+        <spacer flex="1"/>
+    </hbox>
+    <seperator class="thin" orient="horizontal"/>
+    <label value="${DataServiceDialog.OutputStep.Label}"/>
+    <hbox>
+        <menulist id="trans-steps" width="300">
+            <menupopup/>
+        </menulist>
+    </hbox>
+    <seperator class="thin" orient="horizontal"/>
+    <tabbox id="optimizationTabs" flex="2" selectedIndex="2">
+        <tabs id="opt_tabs">
+        </tabs>
+        <tabpanels id="opt_panels">
+        </tabpanels>
+    </tabbox>
+    <hbox>
+        <button label="Help"/>
+        <spacer flex="1"/>
+        <button id="test-dataservice-button" label="${DataServiceDialog.TestDataService.Button}" width="150"
+                onclick="dataServiceDialogController.showTestDialog()"/>
+        <spacer flex="1"/>
+        <button label="OK" onclick="dataServiceDialogController.saveAndClose()" />
+        <button label="Cancel" onclick="dataServiceDialogController.close()" />
+    </hbox>
+</dialog>
 

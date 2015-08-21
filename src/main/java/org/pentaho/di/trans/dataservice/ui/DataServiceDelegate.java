@@ -25,7 +25,6 @@ package org.pentaho.di.trans.dataservice.ui;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.Lists;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.SWT;
@@ -38,9 +37,6 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownType;
-import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
@@ -75,10 +71,6 @@ public class DataServiceDelegate {
     this.spoonSupplier = spoonSupplier;
   }
 
-  public void createNewDataService() {
-    createNewDataService( null );
-  }
-
   public void createNewDataService( String stepName ) {
     TransMeta transMeta = getSpoon().getActiveTransformation();
     if ( transMeta.hasChanged() ) {
@@ -87,27 +79,7 @@ public class DataServiceDelegate {
       return;
     }
     try {
-      DataServiceMeta dataService = new DataServiceMeta( transMeta );
-      if ( stepName != null ) {
-        dataService.setStepname( stepName );
-      }
-
-      for ( PushDownFactory pushDownFactory : context.getPushDownFactories() ) {
-        if ( pushDownFactory.getType().equals( ServiceCache.class ) ) {
-          PushDownType pushDown = pushDownFactory.createPushDown();
-
-          PushDownOptimizationMeta pushDownOptimizationMeta = new PushDownOptimizationMeta();
-          pushDownOptimizationMeta.setName( "Default Cache Optimization" );
-          pushDownOptimizationMeta.setStepName( dataService.getStepname() );
-          pushDownOptimizationMeta.setType( pushDown );
-
-          dataService.setPushDownOptimizationMeta( Lists.newArrayList( pushDownOptimizationMeta ) );
-        }
-      }
-
-      DataServiceDialog dialog =
-        new DataServiceDialog( getShell(), dataService, transMeta, this );
-      dialog.open();
+      DataServiceDialog.create( this, transMeta, stepName ).open();
     } catch ( KettleException e ) {
       logger.error( "Unable to create a new data service", e );
     }
@@ -122,9 +94,7 @@ public class DataServiceDelegate {
     }
 
     try {
-      DataServiceDialog dataServiceManagerDialog =
-        new DataServiceDialog( getShell(), dataService, transMeta, this );
-      dataServiceManagerDialog.open();
+      DataServiceDialog.edit( this, dataService ).open();
     } catch ( KettleException e ) {
       logger.error( "Unable to edit a data service", e );
     }
@@ -163,6 +133,22 @@ public class DataServiceDelegate {
     return getMetaStoreUtil().getDataServiceNames( getSpoon().getMetaStore() );
   }
 
+  public boolean saveAllowed( String serviceName, DataServiceMeta editing ) {
+    // TODO: Check if data service already exists in another transformation
+    return true;
+  }
+
+
+  public void save( DataServiceMeta dataService ) throws KettleException {
+    Spoon spoon = getSpoon();
+    try {
+      getMetaStoreUtil().save( spoon.getRepository(), spoon.getMetaStore(), dataService );
+      spoon.refreshTree();
+      spoon.refreshGraph();
+    } catch ( MetaStoreException e ) {
+      throw new KettleException( BaseMessages.getString( PKG, "Messages.Error.MetaStore" ) );
+    }
+  }
   public void removeDataService( TransMeta transMeta, DataServiceMeta dataService, boolean prompt ) {
     boolean shouldDelete = true;
     if ( prompt ) {
@@ -192,8 +178,7 @@ public class DataServiceDelegate {
 
   public void testDataService( DataServiceMeta dataService ) {
     try {
-      TransMeta transMeta = dataService.getServiceTrans();
-      new DataServiceTestDialog( getSpoon().getShell(), dataService, transMeta ).open();
+      new DataServiceTestDialog( getShell(), dataService ).open();
     } catch ( KettleException e ) {
       logger.error( "Unable to create test data service dialog", e );
     }

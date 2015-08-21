@@ -1,0 +1,50 @@
+<overlay
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:pen="http://www.pentaho.org/2008/xul"
+        >
+    <tabs id="opt_tabs">
+        <tab label="Parameter Generation"/>
+    </tabs>
+    <tabpanels id="opt_panels">
+        <tabpanel orient="horizontal">
+            <vbox flex="1">
+                <hbox>
+                    <label value="Parameters:"/>
+                    <spacer flex="1"/>
+                    <toolbar mode="icons">
+                        <toolbarbutton id="param_gen_edit" image="images/Edit.png" disabled="true"
+                                       onclick="paramGenCtrl.editParameter()"/>
+                        <toolbarbutton id="param_gen_add" image="images/Add.png"
+                                       onclick="paramGenCtrl.addParameter()"/>
+                        <toolbarbutton id="param_gen_remove" image="images/Remove.png" disabled="true"
+                                       onclick="paramGenCtrl.removeParameter()"/>
+                    </toolbar>
+                </hbox>
+                <listbox flex="1" id="param_gen_list"/>
+            </vbox>
+            <vbox flex="4">
+                <label control="param_gen_step" value="Step Name:"/>
+                <hbox>
+                    <menulist id="param_gen_step" width="300" disabled="true">
+                        <menupopup/>
+                    </menulist>
+                </hbox>
+                <label control="param_gen_mapping" value="Definitions:"/>
+                <tree flex="1" id="param_gen_mapping" editable="true">
+                    <treecols>
+                        <treecol label="Data Service Field" editable="true"
+                                 pen:binding="sourceFieldName"/>
+                        <treecol label="Step Field" editable="true"
+                                 pen:binding="targetFieldName"/>
+                    </treecols>
+                    <treechildren/>
+                </tree>
+                <hbox>
+                    <checkbox id="param_gen_enabled" label="Enable This Parameter"/>
+                    <spacer flex="1"/>
+                    <button label="Get Optimizations"/>
+                </hbox>
+            </vbox>
+        </tabpanel>
+    </tabpanels>
+</overlay>
