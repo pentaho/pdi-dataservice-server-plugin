@@ -43,6 +43,10 @@ public class ServiceCacheOverlay implements DataServiceDialog.OptimizationOverla
     this.factory = factory;
   }
 
+  @Override public double getPriority() {
+    return 0;
+  }
+
   @Override public void apply( DataServiceDialog dialog ) throws KettleException {
     ServiceCacheController controller = new ServiceCacheController( dialog );
 
