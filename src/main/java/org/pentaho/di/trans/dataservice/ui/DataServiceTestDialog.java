@@ -23,9 +23,6 @@
 package org.pentaho.di.trans.dataservice.ui;
 
 import org.eclipse.swt.layout.FillLayout;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
-import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.eclipse.swt.widgets.Composite;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -33,7 +30,9 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.metrics.MetricsDuration;
 import org.pentaho.di.core.metrics.MetricsUtil;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.xul.KettleXulLoader;
 import org.pentaho.ui.xul.XulDomContainer;
@@ -44,11 +43,12 @@ import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class DataServiceTestDialog implements  java.io.Serializable {
+public class DataServiceTestDialog implements java.io.Serializable {
   public static Class<?> PKG = DataServiceTestDialog.class;
 
   private static final String XUL_PATH = "org/pentaho/di/trans/dataservice/ui/xul/dataservice-test-dialog.xul";
@@ -73,7 +73,7 @@ public class DataServiceTestDialog implements  java.io.Serializable {
   private final ResourceBundle resourceBundle = new ResourceBundle() {
     @Override
     public Enumeration<String> getKeys() {
-      return null;
+      return Collections.emptyEnumeration();
     }
 
     @Override
@@ -82,18 +82,16 @@ public class DataServiceTestDialog implements  java.io.Serializable {
     }
   };
 
-
-  public DataServiceTestDialog( Composite parent, DataServiceMeta dataService,
-                                TransMeta transMeta ) throws KettleException {
+  public DataServiceTestDialog( Composite parent, DataServiceMeta dataService ) throws KettleException {
     try {
-      dataServiceTestController = new DataServiceTestController( model, dataService, transMeta );
+      dataServiceTestController = new DataServiceTestController( model, dataService );
     } catch ( KettleException ke ) {
       new ErrorDialog( parent.getShell(), BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Title" ),
-          BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Message" ), ke );
+        BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Message" ), ke );
       throw ke;
     }
     xulDocument = initXul( parent );
-    resultsView = initDataServiceResultsView( dataService, transMeta );
+    resultsView = initDataServiceResultsView( dataService );
     serviceTransLogBrowser = new DataServiceTestLogBrowser( getComposite( SVCTRANS_LOG_XUL_ID ) );
     serviceTransMetrics = new DataServiceTestMetrics( getComposite( SVCTRANS_METRICS_XUL_ID ) );
     genTransLogBrowser = new DataServiceTestLogBrowser( getComposite( GENTRANS_LOG_XUL_ID ) );
@@ -106,7 +104,7 @@ public class DataServiceTestDialog implements  java.io.Serializable {
     return (Composite) xulDocument.getElementById( elementId ).getManagedObject();
   }
 
-  public void open( ) throws KettleException {
+  public void open() throws KettleException {
     dialog.show();
   }
 
@@ -118,18 +116,17 @@ public class DataServiceTestDialog implements  java.io.Serializable {
     dialog.hide();
   }
 
-  private DataServiceTestResults initDataServiceResultsView( DataServiceMeta dataService,
-                                                             TransMeta transMeta ) throws KettleStepException {
+  private DataServiceTestResults initDataServiceResultsView( DataServiceMeta dataService ) throws KettleStepException {
 
     Composite results = getComposite( QUERY_RESULTS_XUL_ID );
     results.setLayout( new FillLayout() );
 
-    return new DataServiceTestResults( dataService, transMeta, results );
+    return new DataServiceTestResults( dataService, results );
   }
 
   private void attachCallback() {
     dataServiceTestController.setCallback(
-        new DataServiceTestCallback() {
+      new DataServiceTestCallback() {
         @Override
         public void onExecuteComplete() {
           resultsView.setRowMeta( model.getResultRowMeta() );

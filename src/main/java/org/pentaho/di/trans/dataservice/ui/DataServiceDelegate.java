@@ -178,8 +178,7 @@ public class DataServiceDelegate {
 
   public void testDataService( DataServiceMeta dataService ) {
     try {
-      TransMeta transMeta = dataService.getServiceTrans();
-      new DataServiceTestDialog( getSpoon().getShell(), dataService, transMeta ).open();
+      new DataServiceTestDialog( getShell(), dataService ).open();
     } catch ( KettleException e ) {
       logger.error( "Unable to create test data service dialog", e );
     }

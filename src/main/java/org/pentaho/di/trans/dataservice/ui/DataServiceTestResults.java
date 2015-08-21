@@ -51,9 +51,8 @@ public class DataServiceTestResults {
   private final Composite container;
 
   public DataServiceTestResults( DataServiceMeta dataService,
-                                 TransMeta transMeta,
                                  Composite container ) throws KettleStepException {
-    this.transMeta = transMeta;
+    this.transMeta = dataService.getServiceTrans();
     this.container = container;
     rowMeta = new RowMeta();
   }
