@@ -19,7 +19,7 @@
     </bean>
 
     <reference id="lineageClient" interface="org.pentaho.metaverse.api.ILineageClient"/>
-    <reference id="cacheManager" interface="org.pentaho.caching.api.PentahoCacheManager" />
+    <reference id="cacheManager" interface="org.pentaho.caching.api.PentahoCacheManager"/>
 
     <reference-list id="pushDownFactories" interface="org.pentaho.di.trans.dataservice.optimization.PushDownFactory"
                     availability="optional"/>
@@ -43,6 +43,7 @@
     <bean id="paramGenFactory" scope="singleton"
           class="org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory">
         <argument ref="parameterGenerationServices"/>
+        <property name="lineageClient" ref="lineageClient"/>
     </bean>
 
     <reference-list id="parameterGenerationServices"
@@ -64,10 +65,7 @@
     </service>
 
     <service id="autoParamGenService" interface="org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService">
-        <bean class="org.pentaho.di.trans.dataservice.optimization.paramgen.AutoParameterGenerationService">
-            <argument ref="lineageClient"/>
-            <argument ref="paramGenFactory"/>
-        </bean>
+        <bean factory-ref="paramGenFactory" factory-method="createAutoOptimizationService"/>
     </service>
 
     <service id="mongoDbBasicVal" interface="org.pentaho.di.trans.dataservice.validation.StepValidation">

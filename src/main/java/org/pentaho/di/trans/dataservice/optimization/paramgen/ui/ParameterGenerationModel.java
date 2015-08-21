@@ -36,6 +36,7 @@ import org.pentaho.ui.xul.XulEventSourceAdapter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author nhudak
@@ -112,6 +113,9 @@ public class ParameterGenerationModel extends XulEventSourceAdapter {
   }
 
   public void setSelectedParameter( String selectedParameter ) {
+    if ( Objects.equals( selectedParameter, this.selectedParameter ) ) {
+      return;
+    }
     Map<String, Object> previous = snapshot();
 
     this.selectedParameter = selectedParameter;
@@ -139,6 +143,10 @@ public class ParameterGenerationModel extends XulEventSourceAdapter {
 
   public ImmutableMap<String, StepMeta> getSupportedSteps() {
     return supportedSteps;
+  }
+
+  public DataServiceModel getDialogModel() {
+    return dialogModel;
   }
 
   public String getSelectedStep() {

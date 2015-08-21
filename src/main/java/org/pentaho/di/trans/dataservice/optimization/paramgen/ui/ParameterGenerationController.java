@@ -24,10 +24,12 @@ package org.pentaho.di.trans.dataservice.optimization.paramgen.ui;
 
 import com.google.common.base.Strings;
 import org.eclipse.swt.SWT;
+import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
 import org.pentaho.di.trans.dataservice.ui.controller.AbstractController;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
@@ -41,6 +43,7 @@ import org.pentaho.ui.xul.util.XulDialogCallback;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Collection;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.pentaho.di.i18n.BaseMessages.getString;
@@ -102,6 +105,26 @@ public class ParameterGenerationController extends AbstractController {
     bindingFactory.createBinding( model, "mappings", "param_gen_mapping", "elements" );
 
     model.updateParameterMap();
+  }
+
+  public void runAutoGenerate() throws XulException {
+    DataServiceModel dialogModel = model.getDialogModel();
+    try {
+      AutoOptimizationService autoOptimizationService = factory.createAutoOptimizationService();
+      Collection<PushDownOptimizationMeta> found = autoOptimizationService.apply( dialogModel.getDataService() );
+
+      if ( dialogModel.addAll( found ) ) {
+        model.updateParameterMap();
+      }
+
+      info( getString( PKG, "ParameterGenerationController.AutoGen.Title" ),
+        getString( PKG, "ParameterGenerationController.AutoGen.Message", found.size() ) );
+    } catch ( Exception e ) {
+      String message = getString( PKG, "ParameterGenerationController.AutoGen.Error" );
+      getLogChannel().logError( message, e );
+
+      error( getString( PKG, "ParameterGenerationController.AutoGen.Title" ), message );
+    }
   }
 
   public void addParameter() throws XulException {

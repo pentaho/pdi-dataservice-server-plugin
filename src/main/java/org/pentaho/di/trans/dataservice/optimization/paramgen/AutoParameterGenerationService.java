@@ -65,7 +65,8 @@ public class AutoParameterGenerationService implements AutoOptimizationService {
     this.serviceProvider = serviceProvider;
   }
 
-  @Override public List<PushDownOptimizationMeta> apply( TransMeta transMeta, DataServiceMeta dataServiceMeta ) {
+  @Override public List<PushDownOptimizationMeta> apply( DataServiceMeta dataServiceMeta ) {
+    TransMeta transMeta = dataServiceMeta.getServiceTrans();
     LogChannelInterface logChannel = transMeta.getLogChannel() != null ? transMeta.getLogChannel() : LogChannel.GENERAL;
     try {
       String stepName = dataServiceMeta.getStepname();

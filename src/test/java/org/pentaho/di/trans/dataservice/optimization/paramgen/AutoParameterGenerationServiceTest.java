@@ -123,7 +123,7 @@ public class AutoParameterGenerationServiceTest {
     when( transMeta.findStep( "Input 1" ) ).thenReturn( input1Meta );
     when( serviceProvider.supportsStep( input1Meta ) ).thenReturn( true );
 
-    List<PushDownOptimizationMeta> optimizationMetaList = service.apply( transMeta, dataService );
+    List<PushDownOptimizationMeta> optimizationMetaList = service.apply( dataService );
     assertThat( optimizationMetaList, contains( allOf(
       hasProperty( "stepName", equalTo( "Input 1" ) ),
       hasProperty( "type", is( parameterGeneration ) )
@@ -150,7 +150,7 @@ public class AutoParameterGenerationServiceTest {
     when( serviceProvider.supportsStep( input1Meta ) ).thenReturn( true );
 
     assertThat( service.parametrizedSteps( dataService ), empty() );
-    assertThat( service.apply( transMeta, dataService ), hasSize( 1 ) );
+    assertThat( service.apply( dataService ), hasSize( 1 ) );
 
     PushDownOptimizationMeta optimizationMeta = new PushDownOptimizationMeta();
     optimizationMeta.setName( "Existing PDO" );
@@ -159,7 +159,7 @@ public class AutoParameterGenerationServiceTest {
     dataService.setPushDownOptimizationMeta( Lists.newArrayList( optimizationMeta ) );
 
     assertThat( service.parametrizedSteps( dataService ), contains( "Input" ) );
-    assertThat( service.apply( transMeta, dataService ), empty() );
+    assertThat( service.apply( dataService ), empty() );
   }
 
   @Test
