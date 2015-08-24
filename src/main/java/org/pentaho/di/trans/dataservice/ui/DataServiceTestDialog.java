@@ -22,7 +22,15 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Text;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.eclipse.swt.widgets.Composite;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -30,9 +38,6 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.metrics.MetricsDuration;
 import org.pentaho.di.core.metrics.MetricsUtil;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
-import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.xul.KettleXulLoader;
 import org.pentaho.ui.xul.XulDomContainer;
@@ -97,6 +102,18 @@ public class DataServiceTestDialog implements java.io.Serializable {
     genTransLogBrowser = new DataServiceTestLogBrowser( getComposite( GENTRANS_LOG_XUL_ID ) );
     genTransMetrics = new DataServiceTestMetrics( getComposite( GENTRANS_METRICS_XUL_ID ) );
     dialog = (XulDialog) xulDocument.getElementById( XUL_DIALOG_ID );
+
+    // Add the Ctrl-Enter listener to the main UI components
+    Text textbox = (Text) ( xulDocument.getElementById( "sql-textbox" ).getManagedObject() );
+    if ( textbox != null ) {
+      textbox.addListener( SWT.KeyDown, new SqlKeyListener( dataServiceTestController, true ) );
+    }
+
+    CTabFolder tabFolder = (CTabFolder) ( xulDocument.getElementById( "tabbox" ).getManagedObject() );
+    if ( tabFolder != null ) {
+      tabFolder.addListener( SWT.KeyDown, new SqlKeyListener( dataServiceTestController, false ) );
+    }
+
     attachCallback();
   }
 
@@ -130,7 +147,7 @@ public class DataServiceTestDialog implements java.io.Serializable {
         @Override
         public void onExecuteComplete() {
           resultsView.setRowMeta( model.getResultRowMeta() );
-          resultsView.load( model.getResultRows() );
+          resultsView.load( model.getResultRows(), new SqlKeyListener( dataServiceTestController, false ) );
           List<MetricsDuration> genTransMetrics = MetricsUtil.getAllDurations( model.getGenTransLogChannel().getLogChannelId() );
           DataServiceTestDialog.this.genTransMetrics.display( genTransMetrics );
           LogChannelInterface serviceTransLogChannel = model.getServiceTransLogChannel();
@@ -176,6 +193,31 @@ public class DataServiceTestDialog implements java.io.Serializable {
     } catch ( XulException xulException ) {
       throw new KettleException( "Failed to initialize DataServicesTestDialog.",
         xulException );
+    }
+  }
+
+  static class SqlKeyListener implements Listener {
+
+    DataServiceTestController dataServiceTestController;
+    boolean consume = false;
+
+    public SqlKeyListener( DataServiceTestController dataServiceTestController, boolean consume ) {
+      this.dataServiceTestController = dataServiceTestController;
+      this.consume = consume;
+    }
+
+    @Override
+    public void handleEvent( Event e ) {
+
+      if ( ( e.keyCode == SWT.CR && ( e.stateMask & SWT.CONTROL ) != 0 ) &&
+        dataServiceTestController != null ) {
+        try {
+          dataServiceTestController.executeSql();
+        } catch ( KettleException e1 ) {
+          e1.printStackTrace();
+        }
+        e.doit = !consume;
+      }
     }
   }
 }
