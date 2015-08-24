@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
+import org.eclipse.swt.widgets.Listener;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
@@ -61,8 +62,9 @@ public class DataServiceTestResults {
     this.rowMeta = rowMeta;
   }
 
-  public void load( List<Object[]> rows ) {
+  public void load( List<Object[]> rows, Listener tableKeyListener ) {
     TableView tableView = initTableView( rows );
+    tableView.table.addListener( SWT.KeyDown, tableKeyListener );
 
     for ( Object[] rowData : rows ) {
       TableItem item = new TableItem( tableView.table, SWT.NONE );
@@ -92,7 +94,7 @@ public class DataServiceTestResults {
   private void applyRowDataToTableItem( Object[] rowData, TableItem item ) {
     assert rowData.length == rowMeta.size();
     for ( int colNr = 0; colNr < rowMeta.size(); colNr++ ) {
-      String cellText = getCellTextFromObj( rowData[ colNr ], rowMeta.getValueMeta( colNr ) );
+      String cellText = getCellTextFromObj( rowData[colNr], rowMeta.getValueMeta( colNr ) );
       setCellText( colNr, cellText, item );
     }
   }

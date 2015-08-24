@@ -11,34 +11,35 @@
             ondialogaccept="dataServiceTestController.close()"
             ondialogcancel="dataServiceTestController.close()"
             buttonalign="end"
-            buttonlabelaccept="${DataServiceTest.Dialog.Close}">
-        <label value="SQL:" />
-        <textbox id='sql-textbox' multiline="true" height="100" value="{default text}" />
-        <hbox align="right" >
-            <label value="${DataServiceTest.LogLevel.Label}" />
-            <menulist id="log-levels">
-                <menupopup />
-            </menulist>
-            <spacer flex="1"/>
-            <label  value="${DataServiceTest.MaxRows.Label}"/>
-            <menulist id="maxrows-combo">
-                <menupopup/>
-            </menulist>
+            buttonlabelaccept="${DataServiceTest.Dialog.Close}"
+            padding="10">
+        <label value="SQL:"/>
+        <textbox id='sql-textbox' multiline="true" height="100" value="{default text}" context="global-keys"/>
+        <hbox align="right">
             <spacer flex="1"/>
             <button id="preview-opt-btn" label="${DataServiceTest.PreviewOptimization.Button}" onclick="dataServiceTestController.previewQueries()" />
-            <button id="exec-sql-btn" label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()" />
+            <button id="exec-sql-btn" label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()"/>
         </hbox>
-        <hbox align="right"  height="50">
-            <label  id="error-alert" width="700" />
+        <separator height="10"/>
+        <hbox align="right" >
+            <vbox>
+                <label value="${DataServiceTest.LogLevel.Label}"/>
+                <menulist id="log-levels" width="150">
+                    <menupopup />
+                </menulist>
+            </vbox>
             <spacer flex="1"/>
-            <label id="elapsed-time"  />
-            <spacer flex="1"/>
-            <label id="rows-returned" />
+            <vbox align="right">
+                <label value="${DataServiceTest.MaxRows.Label}"/>
+                <menulist id="maxrows-combo" width="60">
+                    <menupopup accesskey="ctrl-r" command="dataServiceTestController.executeSql()"/>
+                </menulist>
+            </vbox>
         </hbox>
-        <tabbox flex="1" id="tabbox">
+        <tabbox flex="1" id="tabbox" selectedIndex="1">
             <tabs>
                 <tab label="${DataServiceTest.OptimizedQueries.Tab}" />
-                <tab label="${DataServiceTest.Results.Tab}" />
+                <tab label="${DataServiceTest.Results.Tab}"/>
                 <tab label="${DataServiceTest.ServiceTransLog.Tab}" />
                 <tab label="${DataServiceTest.ServiceTransMetrics.Tab}" />
                 <tab label="${DataServiceTest.GenTransLog.Tab}" />
@@ -49,7 +50,7 @@
                 <tabpanel>
                     <textbox multiline="true" height="370" id="optimization-impact-info"  value=""/>
                 </tabpanel>
-                <tabpanel id="results-tab" flex="1"></tabpanel>
+                <tabpanel id="results-tab" flex="1"/>
                 <tabpanel id="serviceTrans-log-tab"></tabpanel>
                 <tabpanel id="serviceTrans-metrics-tab"></tabpanel>
                 <tabpanel id="genTrans-log-tab"></tabpanel>
@@ -57,6 +58,14 @@
 
             </tabpanels>
         </tabbox>
+        <hbox align="right"  height="40">
+            <label  id="error-alert" width="700" />
+            <spacer flex="1"/>
+            <label id="elapsed-time"  />
+            <spacer flex="1"/>
+            <label id="rows-returned" />
+        </hbox>
+        <separator height="5"/>
     </dialog>
 </window>
 
