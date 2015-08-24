@@ -23,7 +23,6 @@
 package org.pentaho.di.trans.dataservice.optimization;
 
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.TransMeta;
 
 import java.util.Collection;
 
@@ -31,6 +30,6 @@ import java.util.Collection;
  * @author nhudak
  */
 public interface AutoOptimizationService {
-  Collection<PushDownOptimizationMeta> apply( TransMeta transMeta, DataServiceMeta dataServiceMeta );
+  Collection<PushDownOptimizationMeta> apply( DataServiceMeta dataServiceMeta );
   Collection<Class<? extends PushDownType>> getProvidedOptimizationTypes();
 }

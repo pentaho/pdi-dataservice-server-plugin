@@ -22,7 +22,12 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
@@ -103,8 +108,20 @@ public class DataServiceDialog {
 
   protected DataServiceDialog initOptimizations( List<PushDownFactory> pushDownFactories )
     throws KettleException {
-    for ( PushDownFactory pushDownFactory : pushDownFactories ) {
-      pushDownFactory.createOverlay().apply( this );
+    ImmutableList<OptimizationOverlay> overlays = FluentIterable.from( pushDownFactories )
+      .transform( new Function<PushDownFactory, OptimizationOverlay>() {
+        @Override public OptimizationOverlay apply( PushDownFactory input ) {
+          return input.createOverlay();
+        }
+      } )
+      .filter( Predicates.notNull() )
+      .toSortedList( Ordering.natural().onResultOf( new Function<OptimizationOverlay, Comparable>() {
+        @Override public Comparable apply( OptimizationOverlay input ) {
+          return input.getPriority();
+        }
+      } ) );
+    for ( OptimizationOverlay overlay : overlays ) {
+      overlay.apply( this );
     }
     XulTabbox optimizationTabs = controller.getElementById( "optimizationTabs" );
     if ( optimizationTabs.getTabs().getTabCount() > 0 ) {
@@ -187,6 +204,8 @@ public class DataServiceDialog {
   }
 
   public interface OptimizationOverlay {
+    double getPriority();
+
     void apply( DataServiceDialog dialog ) throws KettleException;
   }
 

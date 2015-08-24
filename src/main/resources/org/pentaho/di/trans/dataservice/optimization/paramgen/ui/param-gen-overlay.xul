@@ -40,9 +40,9 @@
                     <treechildren/>
                 </tree>
                 <hbox>
-                    <checkbox id="param_gen_enabled" label="Enable This Parameter"/>
+                    <checkbox id="param_gen_enabled" label="Enable This Parameter" disabled="true"/>
                     <spacer flex="1"/>
-                    <button label="Get Optimizations"/>
+                    <button label="Get Optimizations" onclick="paramGenCtrl.runAutoGenerate()"/>
                 </hbox>
             </vbox>
         </tabpanel>

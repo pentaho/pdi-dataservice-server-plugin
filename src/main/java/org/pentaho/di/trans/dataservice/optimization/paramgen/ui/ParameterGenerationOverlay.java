@@ -46,6 +46,10 @@ public class ParameterGenerationOverlay implements DataServiceDialog.Optimizatio
     this.factory = factory;
   }
 
+  @Override public double getPriority() {
+    return 1.0;
+  }
+
   @Override public void apply( DataServiceDialog dialog ) throws KettleException {
     DataServiceModel dialogModel = dialog.getModel();
     TransMeta transMeta = dialogModel.getTransMeta();

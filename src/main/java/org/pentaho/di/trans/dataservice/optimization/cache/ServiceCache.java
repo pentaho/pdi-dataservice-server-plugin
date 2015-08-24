@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
@@ -48,7 +49,9 @@ import java.util.Collections;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.*;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.notNull;
 import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 import static org.pentaho.caching.api.Constants.DEFAULT_TEMPLATE;
 
@@ -272,6 +275,11 @@ public class ServiceCache implements PushDownType {
 
   public void setTimeToLive( String timeToLive ) {
     this.timeToLive = timeToLive;
+  }
+
+  public String getConfiguredTimeToLive() {
+    PentahoCacheTemplateConfiguration configuration = factory.getPentahoCacheTemplateConfiguration( this );
+    return configuration.getProperties().get( CONFIG_TTL );
   }
 
   public Map<String, String> getTemplateOverrides() {

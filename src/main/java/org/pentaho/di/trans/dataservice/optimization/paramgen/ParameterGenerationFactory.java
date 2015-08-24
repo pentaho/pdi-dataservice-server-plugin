@@ -30,8 +30,11 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ui.ParameterGenerationOverlay;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.metaverse.api.ILineageClient;
 
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author nhudak
@@ -39,9 +42,18 @@ import java.util.List;
 public class ParameterGenerationFactory implements PushDownFactory {
 
   private final List<ParameterGenerationServiceFactory> factories;
+  private ILineageClient lineageClient;
 
   public ParameterGenerationFactory( List<ParameterGenerationServiceFactory> factories ) {
     this.factories = factories;
+  }
+
+  public ILineageClient getLineageClient() {
+    return lineageClient;
+  }
+
+  public void setLineageClient( ILineageClient lineageClient ) {
+    this.lineageClient = lineageClient;
   }
 
   @Override public String getName() {
@@ -58,6 +70,10 @@ public class ParameterGenerationFactory implements PushDownFactory {
 
   @Override public DataServiceDialog.OptimizationOverlay createOverlay() {
     return new ParameterGenerationOverlay( this );
+  }
+
+  public AutoParameterGenerationService createAutoOptimizationService() {
+    return new AutoParameterGenerationService( checkNotNull( lineageClient, "Lineage Client is unavailable" ), this );
   }
 
   public ParameterGenerationService getService( StepMeta stepMeta ) {
