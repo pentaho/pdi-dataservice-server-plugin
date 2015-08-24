@@ -22,6 +22,9 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
+import org.eclipse.swt.SWT;
+import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.BindingFactory;
@@ -55,5 +58,27 @@ public class AbstractController extends AbstractXulEventHandler {
     DefaultBindingFactory bindingFactory = new DefaultBindingFactory();
     bindingFactory.setDocument( document );
     return bindingFactory;
+  }
+
+  protected void info( String title, String message ) throws XulException {
+    XulMessageBox messageBox = createMessageBox();
+    messageBox.setTitle( title );
+    messageBox.setMessage( message );
+    messageBox.setIcon( SWT.ICON_INFORMATION );
+    messageBox.setButtons( new Object[] { SWT.OK } );
+    messageBox.open();
+  }
+
+  protected void error( String title, String message ) throws XulException {
+    XulMessageBox messageBox = createMessageBox();
+    messageBox.setTitle( title );
+    messageBox.setMessage( message );
+    messageBox.setIcon( SWT.ICON_WARNING );
+    messageBox.setButtons( new Object[] { SWT.OK | SWT.CANCEL } );
+    messageBox.open();
+  }
+
+  protected LogChannelInterface getLogChannel() {
+    return LogChannel.UI;
   }
 }
