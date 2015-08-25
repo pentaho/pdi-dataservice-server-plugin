@@ -179,7 +179,7 @@ public class DataServiceDelegate {
 
   public void testDataService( DataServiceMeta dataService ) {
     try {
-      new DataServiceTestDialog( getShell(), dataService ).open();
+      new DataServiceTestDialog( new Shell( getShell() ), dataService ).open();
     } catch ( KettleException e ) {
       logger.error( "Unable to create test data service dialog", e );
     }

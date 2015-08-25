@@ -27,6 +27,7 @@ import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
@@ -87,11 +88,11 @@ public class DataServiceTestDialog implements java.io.Serializable {
     }
   };
 
-  public DataServiceTestDialog( Composite parent, DataServiceMeta dataService ) throws KettleException {
+  public DataServiceTestDialog( Shell parent, DataServiceMeta dataService ) throws KettleException {
     try {
       dataServiceTestController = new DataServiceTestController( model, dataService );
     } catch ( KettleException ke ) {
-      new ErrorDialog( parent.getShell(), BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Title" ),
+      new ErrorDialog( parent, BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Title" ),
         BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Message" ), ke );
       throw ke;
     }
