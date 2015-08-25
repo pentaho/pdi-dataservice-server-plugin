@@ -25,16 +25,19 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 import com.google.common.collect.ImmutableList;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
+import org.pentaho.di.ui.util.HelpUtils;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulDialog;
+import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -90,7 +93,7 @@ public class DataServiceDialogController extends AbstractController {
       delegate.showError( getString( PKG, "DataServiceDialog.NameRequired.Title" ),
           getString( PKG, "DataServiceDialog.NameRequired.Message" ) );
       return false;
-    } else if( !delegate.saveAllowed( model.getServiceName(), dataService ) ) {
+    } else if ( !delegate.saveAllowed( model.getServiceName(), dataService ) ) {
       delegate.showError( getString( PKG, "DataServiceDialog.AlreadyExists.Title" ),
           getString( PKG, "DataServiceDialog.AlreadyExists.Message" ) );
       return false;
@@ -99,12 +102,18 @@ public class DataServiceDialogController extends AbstractController {
     return true;
   }
 
-  public void open(){
+  public void open() {
     getDialog().show();
   }
 
   public void close() {
     getDialog().hide();
+  }
+
+  public void showSetupHelp() {
+    HelpUtils.openHelpDialog( ( (SwtDialog) getDialog() ).getShell(),
+        BaseMessages.getString( PKG, "DataServiceDialog.ConnectionSetupLink.Label" ),
+        BaseMessages.getString( PKG, "DataServiceDialog.ConnectionSetupLink.Url" ), "" );
   }
 
   public XulDialog getDialog() {

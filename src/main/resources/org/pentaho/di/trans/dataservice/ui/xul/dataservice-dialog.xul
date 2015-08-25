@@ -18,6 +18,12 @@
         <spacer flex="1"/>
     </hbox>
     <seperator class="thin" orient="horizontal"/>
+    <vbox height="40" align="center">
+        <hbox>
+            <label value="${DataServiceDialog.ConnectionSetupLink.Label}" onclick="dataServiceDialogController.showSetupHelp()" />
+            <image src="${HelpImage.Url}" />
+        </hbox>
+    </vbox>
     <label value="${DataServiceDialog.OutputStep.Label}"/>
     <hbox>
         <menulist id="trans-steps" width="300">
