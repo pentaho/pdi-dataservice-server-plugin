@@ -27,6 +27,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
@@ -75,9 +76,11 @@ public class DataServiceDelegate {
   public void createNewDataService( String stepName ) {
     TransMeta transMeta = getSpoon().getActiveTransformation();
     if ( transMeta.hasChanged() ) {
-      showError( getString( PKG, "DataServiceDelegate.NewTransChanged.Title" ),
+      showSavePrompt( getString( PKG, "DataServiceDelegate.NewTransChanged.Title" ),
           getString( PKG, "DataServiceDelegate.NewTransChanged.Message" ) );
-      return;
+      if ( transMeta.hasChanged() ) {
+        return;
+      }
     }
     try {
       DataServiceDialog.create( this, transMeta, stepName ).open();
@@ -89,15 +92,34 @@ public class DataServiceDelegate {
   public void editDataService( DataServiceMeta dataService ) {
     TransMeta transMeta = dataService.getServiceTrans();
     if ( transMeta.hasChanged() ) {
-      showError( getString( PKG, "DataServiceDelegate.EditTransChanged.Title" ),
+      showSavePrompt( getString( PKG, "DataServiceDelegate.EditTransChanged.Title" ),
           getString( PKG, "DataServiceDelegate.EditTransChanged.Message" ) );
-      return;
+      if ( transMeta.hasChanged() ) {
+        return;
+      }
     }
 
     try {
       DataServiceDialog.edit( this, dataService ).open();
     } catch ( KettleException e ) {
       logger.error( "Unable to edit a data service", e );
+    }
+  }
+
+  private void showSavePrompt( String title, String message ) {
+    MessageDialog dialog =
+        new MessageDialog( getShell(), title,  null, message, MessageDialog.QUESTION,
+            new String[] {
+                getString( PKG, "DataServiceDelegate.Yes.Button" ),
+                getString( PKG, "DataServiceDelegate.No.Button" ) }, 0 );
+    if ( dialog.open() == 0 ) {
+      try {
+        getSpoon().saveToFile( getSpoon().getActiveTransformation() );
+      } catch ( KettleException e ) {
+        logger.error( "Failed to save transformation", e );
+      }
+    } else {
+      showError( title, getString( PKG, "DataServiceDelegate.PleaseSave.Message" ) );
     }
   }
 
