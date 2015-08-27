@@ -1,42 +1,45 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
-<dialog id="dataservice-dialog" orient="vertical"
+<window id="dataservice-manager-window" orient="vertical"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        title="${DataServiceDialog.Dialog.Title}"
-        resizable="true"
-        height="700"
-        width="700"
-        appicon="images/data-services.svg"
-        buttons=","
+        xmlns:pen="http://www.pentaho.org/2008/xul"
         onload="dataServiceDialogController.init()"
-        ondialogaccept="dataServiceDialogController.saveAndClose()"
-        ondialogcancel="dataServiceDialogController.close()"
         >
+
+    <dialog id="dataservice-dialog"
+            title="${DataServiceDialog.Dialog.Title}"
+            appicon="images/data-services.svg"
+            height="750"
+            width="670"
+            padding="15"
+            buttons=""
+            ondialogaccept="dataServiceDialogController.saveAndClose()"
+            ondialogcancel="dataServiceDialogController.close()"
+            >
     <label value="${DataServiceDialog.ServiceName.Label}"/>
     <hbox>
-        <textbox id="service-name" width="300"/>
+        <textbox id="service-name" width="250"/>
         <spacer flex="1"/>
     </hbox>
-    <seperator class="thin" orient="horizontal"/>
-    <vbox height="40" align="center">
+    <separator height="30"/>
         <hbox>
             <label value="${DataServiceDialog.ConnectionSetupLink.Label}" onclick="dataServiceDialogController.showSetupHelp()" />
             <image src="${HelpImage.Url}" />
         </hbox>
-    </vbox>
     <label value="${DataServiceDialog.OutputStep.Label}"/>
     <hbox>
-        <menulist id="trans-steps" width="300">
+        <menulist id="trans-steps" width="206">
             <menupopup/>
         </menulist>
     </hbox>
-    <seperator class="thin" orient="horizontal"/>
+    <spacer/>
     <tabbox id="optimizationTabs" flex="2" selectedIndex="2">
         <tabs id="opt_tabs">
         </tabs>
         <tabpanels id="opt_panels">
         </tabpanels>
     </tabbox>
+    <separator height="30"/>
     <hbox>
         <button label="Help"/>
         <spacer flex="1"/>
@@ -46,5 +49,6 @@
         <button label="OK" onclick="dataServiceDialogController.saveAndClose()" />
         <button label="Cancel" onclick="dataServiceDialogController.close()" />
     </hbox>
-</dialog>
+  </dialog>
+</window>
 
