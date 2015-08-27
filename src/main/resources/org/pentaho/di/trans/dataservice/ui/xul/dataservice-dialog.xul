@@ -17,7 +17,7 @@
         <textbox id="service-name" width="300"/>
         <spacer flex="1"/>
     </hbox>
-    <seperator class="thin" orient="horizontal"/>
+    <separator class="thin" orient="horizontal"/>
     <vbox height="40" align="center">
         <hbox>
             <label value="${DataServiceDialog.ConnectionSetupLink.Label}" onclick="dataServiceDialogController.showSetupHelp()" />
@@ -30,7 +30,7 @@
             <menupopup/>
         </menulist>
     </hbox>
-    <seperator class="thin" orient="horizontal"/>
+    <separator class="thin" orient="horizontal"/>
     <tabbox id="optimizationTabs" flex="2" selectedIndex="2">
         <tabs id="opt_tabs">
         </tabs>
