@@ -64,8 +64,8 @@ public class DataServiceDialogController extends AbstractController {
   public void init() throws InvocationTargetException, XulException, KettleException {
     BindingFactory bindingFactory = createBindingFactory();
 
-    XulTextbox serviceName = (XulTextbox) document.getElementById( "service-name" );
-    XulMenuList steps = (XulMenuList) document.getElementById( "trans-steps" );
+    XulTextbox serviceName = getElementById( "service-name" );
+    XulMenuList<String> steps = getElementById( "trans-steps" );
     steps.setElements( ImmutableList.copyOf( model.getTransMeta().getStepNames() ) );
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
@@ -85,6 +85,10 @@ public class DataServiceDialogController extends AbstractController {
     }
 
     delegate.save( model.getDataService() );
+    // Remove edited data service if name changed
+    if ( dataService != null && !dataService.getName().equals( model.getServiceName() ) ) {
+      delegate.removeDataService( dataService, false );
+    }
     close();
   }
 
@@ -117,7 +121,7 @@ public class DataServiceDialogController extends AbstractController {
   }
 
   public XulDialog getDialog() {
-    return (XulDialog) getXulDomContainer().getDocumentRoot().getElementById( XUL_DIALOG_ID );
+    return getElementById( XUL_DIALOG_ID );
   }
 
   public void setDataService( DataServiceMeta dataService ) {

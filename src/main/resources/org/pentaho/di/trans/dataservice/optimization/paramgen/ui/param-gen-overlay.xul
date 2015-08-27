@@ -3,29 +3,31 @@
         xmlns:pen="http://www.pentaho.org/2008/xul"
         >
     <tabs id="opt_tabs">
-        <tab label="Parameter Generation"/>
+        <tab label="Input Step Optimizations"/>
     </tabs>
     <tabpanels id="opt_panels">
-        <tabpanel orient="horizontal">
-            <vbox flex="1">
+        <tabpanel orient="horizontal" padding="10">
+            <vbox width="150">
                 <hbox>
                     <label value="Parameters:"/>
                     <spacer flex="1"/>
-                    <toolbar mode="icons">
-                        <toolbarbutton id="param_gen_edit" image="images/Edit.png" disabled="true"
-                                       onclick="paramGenCtrl.editParameter()"/>
-                        <toolbarbutton id="param_gen_add" image="images/Add.png"
-                                       onclick="paramGenCtrl.addParameter()"/>
-                        <toolbarbutton id="param_gen_remove" image="images/Remove.png" disabled="true"
-                                       onclick="paramGenCtrl.removeParameter()"/>
-                    </toolbar>
+
+                    <button id="param_gen_edit" image="images/Edit.png" disabled="true"
+                            onclick="paramGenCtrl.editParameter()"/>
+                    <button id="param_gen_add" image="images/Add.png"
+                            onclick="paramGenCtrl.addParameter()"/>
+                    <button id="param_gen_remove" image="images/Remove.png" disabled="true"
+                            onclick="paramGenCtrl.removeParameter()"/>
                 </hbox>
                 <listbox flex="1" id="param_gen_list"/>
             </vbox>
+            <vbox width="5"/>
             <vbox flex="4">
+                <label value="Optimizations can be applied to Table Input and MongoDB Input steps"/>
+                <spacer/>
                 <label control="param_gen_step" value="Step Name:"/>
                 <hbox>
-                    <menulist id="param_gen_step" width="300" disabled="true">
+                    <menulist id="param_gen_step" width="206" disabled="true">
                         <menupopup/>
                     </menulist>
                 </hbox>
@@ -40,7 +42,7 @@
                     <treechildren/>
                 </tree>
                 <hbox>
-                    <checkbox id="param_gen_enabled" label="Enable This Parameter" disabled="true"/>
+                    <checkbox id="param_gen_enabled" label="Disable This Parameter" disabled="true"/>
                     <spacer flex="1"/>
                     <button label="Get Optimizations" onclick="paramGenCtrl.runAutoGenerate()"/>
                 </hbox>

@@ -4,11 +4,15 @@
     </tabs>
     <tabpanels id="opt_panels">
         <tabpanel position="1">
-            <checkbox id="service-cache-checkbox" label="Enable Caching"/>
+            <vbox padding="10">
+            <hbox>
+                <checkbox id="service-cache-checkbox" label="Enable Caching"/>
+            </hbox>
             <hbox>
                 <label control="service-cache-ttl" value="Cache Duration (seconds):"/>
-                <textbox id="service-cache-ttl" />
+                <textbox id="service-cache-ttl" width="50" />
             </hbox>
+            </vbox>
         </tabpanel>
     </tabpanels>
 </overlay>

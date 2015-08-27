@@ -36,26 +36,24 @@
                 </menulist>
             </vbox>
         </hbox>
-        <tabbox flex="1" id="tabbox" selectedIndex="1">
+        <tabbox flex="1" id="tabbox" selectedIndex="0">
             <tabs>
-                <tab label="${DataServiceTest.OptimizedQueries.Tab}" />
                 <tab label="${DataServiceTest.Results.Tab}"/>
+                <tab label="${DataServiceTest.OptimizedQueries.Tab}" />
                 <tab label="${DataServiceTest.ServiceTransLog.Tab}" />
-                <tab label="${DataServiceTest.ServiceTransMetrics.Tab}" />
                 <tab label="${DataServiceTest.GenTransLog.Tab}" />
+                <tab label="${DataServiceTest.ServiceTransMetrics.Tab}" />
                 <tab label="${DataServiceTest.GenTransMetrics.Tab}" />
-
             </tabs>
             <tabpanels id="repository-panels-set" flex="1">
+                <tabpanel id="results-tab" flex="1"/>
                 <tabpanel>
                     <textbox multiline="true" height="370" id="optimization-impact-info"  value=""/>
                 </tabpanel>
-                <tabpanel id="results-tab" flex="1"/>
-                <tabpanel id="serviceTrans-log-tab"></tabpanel>
-                <tabpanel id="serviceTrans-metrics-tab"></tabpanel>
-                <tabpanel id="genTrans-log-tab"></tabpanel>
-                <tabpanel id="genTrans-metrics-tab"></tabpanel>
-
+                <tabpanel id="serviceTrans-log-tab" />
+                <tabpanel id="genTrans-log-tab" />
+                <tabpanel id="serviceTrans-metrics-tab" />
+                <tabpanel id="genTrans-metrics-tab" />
             </tabpanels>
         </tabbox>
         <hbox align="right"  height="40">
