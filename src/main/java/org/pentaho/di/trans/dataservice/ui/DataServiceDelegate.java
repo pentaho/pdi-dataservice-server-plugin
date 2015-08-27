@@ -172,7 +172,7 @@ public class DataServiceDelegate {
       throw new KettleException( getString( PKG, "Messages.Error.MetaStore" ) );
     }
   }
-  public void removeDataService( TransMeta transMeta, DataServiceMeta dataService, boolean prompt ) {
+  public void removeDataService( DataServiceMeta dataService, boolean prompt ) {
     boolean shouldDelete = true;
     if ( prompt ) {
       MessageBox messageBox = new MessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
@@ -196,7 +196,7 @@ public class DataServiceDelegate {
   }
 
   public void removeDataService( DataServiceMeta dataServiceMeta ) {
-    removeDataService( dataServiceMeta.getServiceTrans(), dataServiceMeta, true );
+    removeDataService( dataServiceMeta, true );
   }
 
   public void testDataService( DataServiceMeta dataService ) {

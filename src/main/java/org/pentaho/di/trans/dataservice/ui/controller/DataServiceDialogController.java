@@ -85,6 +85,10 @@ public class DataServiceDialogController extends AbstractController {
     }
 
     delegate.save( model.getDataService() );
+    // Remove edited data service if name changed
+    if ( dataService != null && !dataService.getName().equals( model.getServiceName() ) ) {
+      delegate.removeDataService( dataService, false );
+    }
     close();
   }
 
