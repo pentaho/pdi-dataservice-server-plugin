@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.optimization.paramgen.ui;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import org.eclipse.swt.SWT;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
@@ -30,6 +31,7 @@ import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneratio
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
 import org.pentaho.di.trans.dataservice.ui.controller.AbstractController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
@@ -78,10 +80,12 @@ public class ParameterGenerationController extends AbstractController {
 
   public void initBindings() {
     BindingFactory bindingFactory = createBindingFactory();
+    ImmutableMap<String, StepMeta> supportedSteps = model.getSupportedSteps();
 
     final XulListbox paramGenList = getElementById( "param_gen_list" );
     XulMenuList<String> stepList = getElementById( "param_gen_step" );
-    stepList.setElements( model.getSupportedSteps().keySet().asList() );
+    stepList.setElements( supportedSteps.keySet().asList() );
+    getElementById( "param_gen_add" ).setDisabled( supportedSteps.isEmpty() );
 
     // BI DIRECTIONAL bindings
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
