@@ -42,7 +42,7 @@
                     <treechildren/>
                 </tree>
                 <hbox>
-                    <checkbox id="param_gen_enabled" label="Enable This Parameter" disabled="true"/>
+                    <checkbox id="param_gen_enabled" label="Disable This Parameter" disabled="true"/>
                     <spacer flex="1"/>
                     <button label="Get Optimizations" onclick="paramGenCtrl.runAutoGenerate()"/>
                 </hbox>

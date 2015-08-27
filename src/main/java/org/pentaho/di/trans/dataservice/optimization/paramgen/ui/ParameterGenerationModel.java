@@ -174,7 +174,7 @@ public class ParameterGenerationModel extends XulEventSourceAdapter {
 
   public boolean isEnabled() {
     PushDownOptimizationMeta meta = getSelectedOptimization();
-    return meta == null || meta.isEnabled();
+    return meta != null && meta.isEnabled();
   }
 
   private void resetMappings( ParameterGeneration parameterGeneration ) {

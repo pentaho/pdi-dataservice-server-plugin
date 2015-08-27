@@ -35,7 +35,6 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
-import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulMessageBox;
@@ -49,6 +48,8 @@ import java.util.Collection;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.pentaho.di.i18n.BaseMessages.getString;
+import static org.pentaho.di.trans.dataservice.ui.BindingConverters.not;
+import static org.pentaho.di.trans.dataservice.ui.BindingConverters.stringIsEmpty;
 
 /**
  * @author nhudak
@@ -56,15 +57,6 @@ import static org.pentaho.di.i18n.BaseMessages.getString;
 public class ParameterGenerationController extends AbstractController {
   private static final Class<?> PKG = ParameterGenerationController.class;
   private static final String NAME = "paramGenCtrl";
-  private static final BindingConvertor<String, Boolean> stringIsEmpty = new BindingConvertor<String, Boolean>() {
-    @Override public Boolean sourceToTarget( String value ) {
-      return Strings.isNullOrEmpty( value );
-    }
-
-    @Override public String targetToSource( Boolean value ) {
-      throw new AbstractMethodError( "Boolean to String conversion is not supported" );
-    }
-  };
 
   {
     setName( NAME );
@@ -91,7 +83,7 @@ public class ParameterGenerationController extends AbstractController {
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
     bindingFactory.createBinding( model, "selectedParameter", paramGenList, "selectedItem" );
     bindingFactory.createBinding( model, "selectedStep", stepList, "value" );
-    bindingFactory.createBinding( model, "enabled", "param_gen_enabled", "checked" );
+    bindingFactory.createBinding( model, "enabled", "param_gen_enabled", "checked", not() );
 
     // ONE WAY bindings
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
@@ -101,11 +93,11 @@ public class ParameterGenerationController extends AbstractController {
         paramGenList.setSelectedItem( model.getSelectedParameter() );
       }
     } );
-    bindingFactory.createBinding( model, "selectedParameter", "param_gen_edit", "disabled", stringIsEmpty );
-    bindingFactory.createBinding( model, "selectedParameter", "param_gen_remove", "disabled", stringIsEmpty );
-    bindingFactory.createBinding( model, "selectedParameter", "param_gen_step", "disabled", stringIsEmpty );
-    bindingFactory.createBinding( model, "selectedParameter", "param_gen_mapping", "disabled", stringIsEmpty );
-    bindingFactory.createBinding( model, "selectedParameter", "param_gen_enabled", "disabled", stringIsEmpty );
+    bindingFactory.createBinding( model, "selectedParameter", "param_gen_edit", "disabled", stringIsEmpty() );
+    bindingFactory.createBinding( model, "selectedParameter", "param_gen_remove", "disabled", stringIsEmpty() );
+    bindingFactory.createBinding( model, "selectedParameter", "param_gen_enabled", "disabled", stringIsEmpty() );
+    bindingFactory.createBinding( model, "enabled", "param_gen_step", "disabled", not() );
+    bindingFactory.createBinding( model, "enabled", "param_gen_mapping", "disabled", not() );
     bindingFactory.createBinding( model, "mappings", "param_gen_mapping", "elements" );
 
     model.updateParameterMap();
