@@ -143,7 +143,8 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       executor.waitUntilFinished();
     } catch ( Exception e ) {
       log.logError( "Error executing SQL query: " + sqlQuery, e );
-      response.sendError( 500, Const.getStackTracker( e ) );
+      response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
+      response.getWriter().println( e.getMessage().trim() );
     }
   }
 

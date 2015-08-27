@@ -360,7 +360,7 @@ public class DataServiceExecutor {
       //
       getGenTrans().addTransListener( new TransAdapter() {
         @Override public void transFinished( Trans trans ) throws KettleException {
-          if ( !firstRow.get() ) {
+          if ( firstRow.get() ) {
             RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
             stepFields.writeMeta( dos );
           }
