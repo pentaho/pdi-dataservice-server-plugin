@@ -188,6 +188,7 @@ public class DataServiceDelegate {
         if ( dataService != null ) {
           getMetaStoreUtil().removeDataService( getSpoon().getMetaStore(), dataService );
           getSpoon().refreshTree();
+          getSpoon().refreshGraph();
         }
       } catch ( MetaStoreException e ) {
         logger.error( "Unable to remove a data service", e );

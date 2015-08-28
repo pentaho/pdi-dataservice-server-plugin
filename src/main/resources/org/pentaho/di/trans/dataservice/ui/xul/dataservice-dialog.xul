@@ -41,13 +41,13 @@
     </tabbox>
     <separator height="30"/>
     <hbox>
-        <button label="Help"/>
+        <button label="${DataServiceDialog.Help.Button}" onclick="dataServiceDialogController.showHelp()"/>
         <spacer flex="1"/>
         <button id="test-dataservice-button" label="${DataServiceDialog.TestDataService.Button}" width="150"
                 onclick="dataServiceDialogController.showTestDialog()"/>
         <spacer flex="1"/>
-        <button label="OK" onclick="dataServiceDialogController.saveAndClose()" />
-        <button label="Cancel" onclick="dataServiceDialogController.close()" />
+        <button label="${DataServiceDialog.OK.Button}" onclick="dataServiceDialogController.saveAndClose()" />
+        <button label="${DataServiceDialog.Cancel.Button}" onclick="dataServiceDialogController.close()" />
     </hbox>
   </dialog>
 </window>

@@ -230,6 +230,7 @@ public class DataServiceMetaStoreUtil {
     TransMeta transMeta = dataService.getServiceTrans();
     getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
     stepCache.removeAll( createCacheKeys( transMeta, dataService.getStepname() ) );
+    transMeta.setChanged();
   }
 
   private MetaStoreFactory<ServiceTrans> getServiceTransFactory( IMetaStore metaStore ) {

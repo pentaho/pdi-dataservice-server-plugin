@@ -120,6 +120,10 @@ public class DataServiceDialogController extends AbstractController {
         BaseMessages.getString( PKG, "DataServiceDialog.ConnectionSetupLink.Url" ), "" );
   }
 
+  public void showHelp() {
+    // Show help dialog
+  }
+
   public XulDialog getDialog() {
     return getElementById( XUL_DIALOG_ID );
   }
