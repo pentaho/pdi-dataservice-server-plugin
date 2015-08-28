@@ -56,17 +56,6 @@ public class DataServiceDialog {
   private final DataServiceModel model;
 
   private static final Class<?> PKG = DataServiceDialog.class;
-  private static final ResourceBundle RESOURCE_BUNDLE = new ResourceBundle() {
-    @Override
-    public Enumeration<String> getKeys() {
-      return Collections.emptyEnumeration();
-    }
-
-    @Override
-    protected Object handleGetObject( String key ) {
-      return BaseMessages.getString( PKG, key );
-    }
-  };
 
   public static DataServiceDialog create( DataServiceDelegate delegate, TransMeta serviceTrans, String stepName )
     throws KettleException {
@@ -93,7 +82,7 @@ public class DataServiceDialog {
       swtLoader.setOuterContext( shell );
       swtLoader.registerClassLoader( DataServiceDialog.class.getClassLoader() );
 
-      XulDomContainer container = swtLoader.loadXul( XUL_DIALOG_PATH, RESOURCE_BUNDLE );
+      XulDomContainer container = swtLoader.loadXul( XUL_DIALOG_PATH, createResourceBundle( PKG ) );
       container.addEventHandler( controller );
 
       XulRunner runner = new SwtXulRunner();
@@ -104,6 +93,20 @@ public class DataServiceDialog {
     }
 
     return this;
+  }
+
+  protected ResourceBundle createResourceBundle( final Class<?> packageClass ) {
+    return new ResourceBundle() {
+      @Override
+      public Enumeration<String> getKeys() {
+        return Collections.emptyEnumeration();
+      }
+
+      @Override
+      protected Object handleGetObject( String key ) {
+        return BaseMessages.getString( packageClass, key );
+      }
+    };
   }
 
   protected DataServiceDialog initOptimizations( List<PushDownFactory> pushDownFactories )
@@ -138,15 +141,14 @@ public class DataServiceDialog {
   /**
    * Apply an overlay to the dialog.
    *
-   * @param classLoader ClassLoader to load the xulOverlay from
-   * @param xulOverlay  Path to the XUL overlay to load and apply to the DOM container
+   * @param overlay Optimization overlay to load
+   * @param xulSource  Path to the XUL overlay to load and apply to the DOM container
    * @throws KettleException Error loading XUL, wrapped in a KettleException
    */
-  public XulDomContainer applyOverlay( ClassLoader classLoader, String xulOverlay ) throws KettleException {
+  public XulDomContainer applyOverlay( OptimizationOverlay overlay, String xulSource ) throws KettleException {
     XulDomContainer xulDomContainer = getXulDomContainer();
     try {
-      xulDomContainer.registerClassLoader( classLoader );
-      xulDomContainer.loadOverlay( xulOverlay );
+      xulDomContainer.loadOverlay( xulSource, createResourceBundle( overlay.getClass() ) );
     } catch ( XulException e ) {
       throw new KettleException( e );
     }
