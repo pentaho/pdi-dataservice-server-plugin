@@ -12,11 +12,11 @@
                     <label value="Parameters:"/>
                     <spacer flex="1"/>
 
-                    <button id="param_gen_edit" image="images/Edit.png" disabled="true"
+                    <button id="param_gen_edit" image="ui/images/Edit.svg" disabled="true"
                             onclick="paramGenCtrl.editParameter()"/>
-                    <button id="param_gen_add" image="images/Add.png"
+                    <button id="param_gen_add" image="ui/images/Add.svg"
                             onclick="paramGenCtrl.addParameter()"/>
-                    <button id="param_gen_remove" image="images/Remove.png" disabled="true"
+                    <button id="param_gen_remove" image="ui/images/deleteSmall.svg" disabled="true"
                             onclick="paramGenCtrl.removeParameter()"/>
                 </hbox>
                 <listbox flex="1" id="param_gen_list"/>

@@ -58,7 +58,7 @@ public class ParameterGenerationOverlay implements DataServiceDialog.Optimizatio
     ParameterGenerationController controller = new ParameterGenerationController( factory, model );
 
     dialog
-      .applyOverlay( getClass().getClassLoader(), XUL_OVERLAY )
+      .applyOverlay( this, XUL_OVERLAY )
       .addEventHandler( controller );
 
     controller.initBindings();

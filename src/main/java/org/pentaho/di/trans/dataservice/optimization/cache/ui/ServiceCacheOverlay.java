@@ -46,7 +46,7 @@ public class ServiceCacheOverlay implements DataServiceDialog.OptimizationOverla
   @Override public void apply( DataServiceDialog dialog ) throws KettleException {
     ServiceCacheController controller = new ServiceCacheController( factory );
 
-    dialog.applyOverlay( getClass().getClassLoader(), XUL_OVERLAY ).addEventHandler( controller );
+    dialog.applyOverlay( this, XUL_OVERLAY ).addEventHandler( controller );
 
     controller.initBindings( dialog.getModel() );
   }

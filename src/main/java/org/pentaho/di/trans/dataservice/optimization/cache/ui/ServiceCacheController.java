@@ -34,6 +34,8 @@ import org.pentaho.ui.xul.components.XulTextbox;
 
 import java.util.List;
 
+import static org.pentaho.di.trans.dataservice.ui.BindingConverters.not;
+
 /**
  * @author nhudak
  */
@@ -68,6 +70,9 @@ public class ServiceCacheController extends AbstractController {
       getLogChannel().logError( "Unable to set default TTL", e );
     }
     bindingFactory.createBinding( ttl, "value", serviceCache, "timeToLive" );
+
+    ttl.setDisabled( !meta.isEnabled() );
+    bindingFactory.createBinding( checkbox, "checked", ttl, "disabled", not() );
   }
 
   /**
