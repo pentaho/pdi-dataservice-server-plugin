@@ -83,7 +83,7 @@ public class DataServiceDelegate {
       }
     }
     try {
-      DataServiceDialog.create( this, transMeta, stepName ).open();
+      new DataServiceDialog.Builder( transMeta ).serviceStep( stepName ).build( this ).open();
     } catch ( KettleException e ) {
       logger.error( "Unable to create a new data service", e );
     }
@@ -100,7 +100,7 @@ public class DataServiceDelegate {
     }
 
     try {
-      DataServiceDialog.edit( this, dataService ).open();
+      new DataServiceDialog.Builder( dataService.getServiceTrans() ).edit( dataService ).build( this ).open();
     } catch ( KettleException e ) {
       logger.error( "Unable to edit a data service", e );
     }
