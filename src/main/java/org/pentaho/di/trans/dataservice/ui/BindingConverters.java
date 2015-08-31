@@ -25,6 +25,9 @@ package org.pentaho.di.trans.dataservice.ui;
 import com.google.common.base.Strings;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 
+import java.util.Map;
+import java.util.Set;
+
 /**
  * @author nhudak
  */
@@ -53,6 +56,18 @@ public class BindingConverters {
 
       @Override public Boolean targetToSource( Boolean value ) {
         return !value;
+      }
+    };
+  }
+
+  public static <K, V> BindingConvertor<Map<K, V>, Set<K>> keySet() {
+    return new BindingConvertor<Map<K, V>, Set<K>>() {
+      @Override public Set<K> sourceToTarget( Map<K, V> value ) {
+        return value.keySet();
+      }
+
+      @Override public Map<K, V> targetToSource( Set<K> value ) {
+        throw new AbstractMethodError( "Unable to convert a set to a map" );
       }
     };
   }

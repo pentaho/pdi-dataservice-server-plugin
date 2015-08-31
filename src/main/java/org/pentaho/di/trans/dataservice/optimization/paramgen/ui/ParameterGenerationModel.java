@@ -29,8 +29,8 @@ import com.google.common.collect.Maps;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
-import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
 import java.util.Iterator;
@@ -42,15 +42,15 @@ import java.util.Objects;
  * @author nhudak
  */
 public class ParameterGenerationModel extends XulEventSourceAdapter {
+  private final ParameterGenerationFactory factory;
   private final DataServiceModel dialogModel;
-  private final ImmutableMap<String, StepMeta> supportedSteps;
   private ImmutableMap<String, PushDownOptimizationMeta> parameterMap = ImmutableMap.of();
   private List<SourceTargetAdapter> mappings = Lists.newArrayList();
   private String selectedParameter;
 
-  public ParameterGenerationModel( DataServiceModel dialogModel, ImmutableMap<String, StepMeta> supportedSteps ) {
+  public ParameterGenerationModel( ParameterGenerationFactory factory, DataServiceModel dialogModel ) {
+    this.factory = factory;
     this.dialogModel = dialogModel;
-    this.supportedSteps = supportedSteps;
   }
 
   public void add( PushDownOptimizationMeta meta ) {
@@ -69,8 +69,6 @@ public class ParameterGenerationModel extends XulEventSourceAdapter {
   }
 
   protected void updateParameterMap() {
-    ImmutableMap<String, PushDownOptimizationMeta> previous = parameterMap;
-
     ImmutableList<PushDownOptimizationMeta> list = dialogModel.getPushDownOptimizations( ParameterGeneration.class );
     Map<String, PushDownOptimizationMeta> map = Maps.newHashMapWithExpectedSize( list.size() );
     for ( PushDownOptimizationMeta meta : list ) {
@@ -89,12 +87,18 @@ public class ParameterGenerationModel extends XulEventSourceAdapter {
       map.put( parameterName, meta );
     }
 
+    setParameterMap( map );
+    if ( !map.containsKey( getSelectedParameter() ) ) {
+      setSelectedParameter( null );
+    }
+  }
+
+  public void setParameterMap( Map<String, PushDownOptimizationMeta> map ) {
+    ImmutableMap<String, PushDownOptimizationMeta> previous = parameterMap;
+
     parameterMap = ImmutableMap.copyOf( map );
 
     firePropertyChange( "parameterMap", previous, parameterMap );
-    if ( !parameterMap.containsKey( selectedParameter ) ) {
-      selectedParameter =  null;
-    }
     // Force an update
     firePropertyChanges( ImmutableMap.<String, Object>of() );
   }
@@ -141,10 +145,6 @@ public class ParameterGenerationModel extends XulEventSourceAdapter {
     }
   }
 
-  public ImmutableMap<String, StepMeta> getSupportedSteps() {
-    return supportedSteps;
-  }
-
   public DataServiceModel getDialogModel() {
     return dialogModel;
   }
@@ -185,15 +185,15 @@ public class ParameterGenerationModel extends XulEventSourceAdapter {
       while ( iterator.hasNext() ) {
         SourceTargetFields sourceTargetFields = iterator.next();
         if ( sourceTargetFields.isDefined() ) {
-          mappings.add( new SourceTargetAdapter( sourceTargetFields ) );
+          mappings.add( factory.createSourceTargetAdapter( sourceTargetFields ) );
         } else {
           iterator.remove();
         }
       }
-      // Unable to get the tree to grow, just just adding a bunch of blanks
+      // Unable to get the tree to grow, just adding a bunch of blanks
       //TODO Automatically grow model without getting XUL errors
       for ( int i = 0; i < 10; i++ ) {
-        mappings.add( new SourceTargetAdapter( parameterGeneration.createFieldMapping() ) );
+        mappings.add( factory.createSourceTargetAdapter( parameterGeneration.createFieldMapping() ) );
       }
     }
   }

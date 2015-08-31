@@ -28,6 +28,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ui.ParameterGenerationController;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ui.ParameterGenerationOverlay;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ui.SourceTargetAdapter;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.trans.step.StepMeta;
 
 import static org.hamcrest.Matchers.is;
@@ -53,6 +58,11 @@ public class ParameterGenerationFactoryTest {
   public void testFactory() throws Exception {
     assertThat( provider.getName(), is( ParameterGeneration.TYPE_NAME ) );
     assertThat( provider.createPushDown(), isA( ParameterGeneration.class ) );
+    assertThat( provider.createOverlay(), isA( ParameterGenerationOverlay.class ) );
+    assertThat( provider.createController( mock( DataServiceModel.class ) ),
+      isA( ParameterGenerationController.class ) );
+    assertThat( provider.createSourceTargetAdapter( mock( SourceTargetFields.class ) ),
+      isA( SourceTargetAdapter.class ) );
   }
 
   @Test

@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.optimization;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
@@ -76,5 +77,12 @@ public class SourceTargetFields {
 
   public boolean isDefined() {
     return !Strings.isNullOrEmpty( getSourceFieldName() ) && !Strings.isNullOrEmpty( getTargetFieldName() );
+  }
+
+  @Override public String toString() {
+    return Objects.toStringHelper( this )
+      .add( "sourceFieldName", sourceFieldName )
+      .add( "targetFieldName", targetFieldName )
+      .toString();
   }
 }

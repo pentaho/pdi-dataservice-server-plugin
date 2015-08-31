@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
@@ -224,4 +225,10 @@ public class ParameterGeneration implements PushDownType {
     return varSpace.environmentSubstitute( query );
   }
 
+  @Override public String toString() {
+    return Objects.toStringHelper( this )
+      .add( "fieldMappings", fieldMappings )
+      .add( "parameterName", parameterName )
+      .toString();
+  }
 }
