@@ -30,9 +30,7 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
-import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.variables.VariableSpace;
-import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 
 import java.util.Collection;
@@ -43,13 +41,12 @@ public class ValidationUtil {
       final DataServiceMeta dataServiceMeta, final String stepName ) {
     return Collections2.transform(
         Collections2.filter( dataServiceMeta.getPushDownOptimizationMeta(), new Predicate<PushDownOptimizationMeta>() {
-              @Override
-              public boolean apply( PushDownOptimizationMeta pushDownOptimizationMeta ) {
-                return pushDownOptimizationMeta.getType() instanceof ParameterGeneration
-                    && stepName.equals( pushDownOptimizationMeta.getStepName() );
-              }
-            }
-        ),
+          @Override
+          public boolean apply( PushDownOptimizationMeta pushDownOptimizationMeta ) {
+            return pushDownOptimizationMeta.getType() instanceof ParameterGeneration
+                && stepName.equals( pushDownOptimizationMeta.getStepName() );
+          }
+        } ),
         new Function<PushDownOptimizationMeta, ParameterGeneration>() {
           @Override
           public ParameterGeneration apply( PushDownOptimizationMeta pushDownOptimizationMeta ) {
@@ -69,5 +66,4 @@ public class ValidationUtil {
   public static CheckResult comment( String msg, StepMeta stepMeta ) {
     return new CheckResult( CheckResultInterface.TYPE_RESULT_COMMENT, msg, stepMeta );
   }
-
 }

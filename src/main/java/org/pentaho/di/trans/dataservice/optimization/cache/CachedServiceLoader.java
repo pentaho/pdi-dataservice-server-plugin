@@ -48,8 +48,8 @@ import static com.google.common.base.Predicates.instanceOf;
  * @author nhudak
  */
 class CachedServiceLoader {
-  final private Executor executor;
-  final private CachedService cachedService;
+  private final Executor executor;
+  private final CachedService cachedService;
 
   CachedServiceLoader( CachedService cachedService, Executor executor ) {
     this.cachedService = cachedService;

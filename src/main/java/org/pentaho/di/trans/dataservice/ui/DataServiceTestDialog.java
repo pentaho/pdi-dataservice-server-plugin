@@ -210,8 +210,7 @@ public class DataServiceTestDialog implements java.io.Serializable {
     @Override
     public void handleEvent( Event e ) {
 
-      if ( ( e.keyCode == SWT.CR && ( e.stateMask & SWT.CONTROL ) != 0 ) &&
-        dataServiceTestController != null ) {
+      if ( ( e.keyCode == SWT.CR && ( e.stateMask & SWT.CONTROL ) != 0 ) && dataServiceTestController != null ) {
         try {
           dataServiceTestController.executeSql();
         } catch ( KettleException e1 ) {

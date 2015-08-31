@@ -54,7 +54,7 @@ public class DataServiceTreeDelegateExtension implements ExtensionPointInterface
     SpoonTreeDelegateExtension treeDelExt = (SpoonTreeDelegateExtension) extension;
 
     int caseNumber = treeDelExt.getCaseNumber();
-    if ( !(treeDelExt.getTransMeta() instanceof TransMeta ) ) {
+    if ( !( treeDelExt.getTransMeta() instanceof TransMeta ) ) {
       return;
     }
     TransMeta transMeta = (TransMeta) treeDelExt.getTransMeta();

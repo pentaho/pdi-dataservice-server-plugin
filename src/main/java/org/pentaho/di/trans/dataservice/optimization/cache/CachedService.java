@@ -234,10 +234,10 @@ class CachedService implements Serializable {
         return false;
       }
       CacheKey cacheKey = (CacheKey) o;
-      return Objects.equal( transMetaVersionId, cacheKey.transMetaVersionId ) &&
-        Objects.equal( parameters, cacheKey.parameters ) &&
-        Objects.equal( whereClause, cacheKey.whereClause ) &&
-        Objects.equal( orderByFields, cacheKey.orderByFields );
+      return Objects.equal( transMetaVersionId, cacheKey.transMetaVersionId )
+          && Objects.equal( parameters, cacheKey.parameters )
+          && Objects.equal( whereClause, cacheKey.whereClause )
+          && Objects.equal( orderByFields, cacheKey.orderByFields );
     }
 
     @Override public int hashCode() {

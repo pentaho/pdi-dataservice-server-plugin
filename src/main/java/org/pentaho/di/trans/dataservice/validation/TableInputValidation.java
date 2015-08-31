@@ -74,9 +74,8 @@ public class TableInputValidation implements StepValidation {
     if ( Const.isEmpty( sql ) || !paramSubstitutionModifiesString( sql, checkStepExtension.getVariableSpace() ) ) {
       // No change after variable substitution, so no parameter must have been present
       checkStepExtension.getRemarks().add( warn(
-          BaseMessages.getString( PKG, "TableInputValidation.NoParameters.Message", checkedStepMeta.getName()
-          ), checkedStepMeta ) );
+        BaseMessages.getString( PKG, "TableInputValidation.NoParameters.Message", checkedStepMeta.getName() ),
+          checkedStepMeta ) );
     }
   }
-
 }

@@ -226,9 +226,10 @@ public class ServiceCache implements PushDownType {
       }
     }
     log.logError(
-        String.format(
-            "Failed to check TTL consistency with cache for name '%s'.\n  Assuming cache can be used", cache.getName()
-        ) );
+      String.format(
+          "Failed to check TTL consistency with cache for name '%s'.\n  Assuming cache can be used", cache.getName()
+      )
+    );
     return true;
   }
 
