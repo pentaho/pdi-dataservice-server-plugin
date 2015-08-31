@@ -28,7 +28,6 @@ import com.mongodb.QueryBuilder;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.ValueMetaAndData;
 
 import java.util.List;

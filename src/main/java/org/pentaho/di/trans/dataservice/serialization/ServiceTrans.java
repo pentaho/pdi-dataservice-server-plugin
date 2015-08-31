@@ -138,8 +138,7 @@ public class ServiceTrans {
         return false;
       }
       Reference reference = (Reference) o;
-      return Objects.equal( location, reference.location ) &&
-        Objects.equal( method, reference.method );
+      return Objects.equal( location, reference.location ) && Objects.equal( method, reference.method );
     }
 
     public TransMeta load( Repository repository ) throws KettleException {

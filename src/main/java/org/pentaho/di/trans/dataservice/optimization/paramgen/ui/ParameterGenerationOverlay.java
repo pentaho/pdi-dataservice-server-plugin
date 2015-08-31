@@ -64,7 +64,7 @@ public class ParameterGenerationOverlay implements DataServiceDialog.Optimizatio
     controller.initBindings();
   }
 
-  protected ImmutableMap<String,StepMeta> findSupportedSteps( TransMeta transMeta ) {
+  protected ImmutableMap<String, StepMeta> findSupportedSteps( TransMeta transMeta ) {
     return FluentIterable.from( transMeta.getSteps() )
       .filter( new Predicate<StepMeta>() {
         @Override public boolean apply( StepMeta input ) {

@@ -150,7 +150,7 @@ public class DataServiceTestMetrics {
 
   public void dispose() {
     metricsComposite.dispose();
-    if( canvas != null ) {
+    if ( canvas != null ) {
       canvas.dispose();
     }
   }

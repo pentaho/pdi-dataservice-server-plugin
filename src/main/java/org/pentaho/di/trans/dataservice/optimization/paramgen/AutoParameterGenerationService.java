@@ -56,8 +56,8 @@ import static com.google.common.base.Predicates.not;
  * @author nhudak
  */
 public class AutoParameterGenerationService implements AutoOptimizationService {
-  final private ILineageClient lineageClient;
-  final private ParameterGenerationFactory serviceProvider;
+  private final ILineageClient lineageClient;
+  private final ParameterGenerationFactory serviceProvider;
 
   public AutoParameterGenerationService( ILineageClient lineageClient,
                                          ParameterGenerationFactory serviceProvider ) {
