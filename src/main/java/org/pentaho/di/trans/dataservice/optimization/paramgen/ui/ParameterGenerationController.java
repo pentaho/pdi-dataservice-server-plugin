@@ -75,7 +75,7 @@ public class ParameterGenerationController extends AbstractController {
     ImmutableMap<String, StepMeta> supportedSteps = model.getSupportedSteps();
 
     final XulListbox paramGenList = getElementById( "param_gen_list" );
-    XulMenuList<String> stepList = getElementById( "param_gen_step" );
+    XulMenuList<String> stepList = getStepMenuList();
     stepList.setElements( supportedSteps.keySet().asList() );
     getElementById( "param_gen_add" ).setDisabled( supportedSteps.isEmpty() );
 
@@ -103,6 +103,10 @@ public class ParameterGenerationController extends AbstractController {
     model.updateParameterMap();
   }
 
+  private XulMenuList<String> getStepMenuList() {
+    return getElementById( "param_gen_step" );
+  }
+
   public void runAutoGenerate() throws XulException {
     DataServiceModel dialogModel = model.getDialogModel();
     try {
@@ -127,6 +131,7 @@ public class ParameterGenerationController extends AbstractController {
     PushDownOptimizationMeta meta = new PushDownOptimizationMeta();
     ParameterGeneration parameterGeneration = factory.createPushDown();
     meta.setType( parameterGeneration );
+    meta.setStepName( getStepMenuList().getSelectedItem() );
 
     XulPromptBox promptBox = createPromptBox();
     promptBox.setTitle( getString( PKG, "ParameterGenerationController.Create.Title" ) );
