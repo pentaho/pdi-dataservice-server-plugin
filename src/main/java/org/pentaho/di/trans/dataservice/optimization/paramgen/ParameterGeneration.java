@@ -163,7 +163,7 @@ public class ParameterGeneration implements PushDownType {
     ParameterGenerationService service = stepMeta != null ? serviceProvider.getService( stepMeta ) : null;
     String parameterDefault = service != null ? service.getParameterDefault() : "";
 
-    String description = String.format( "Auto-generated parameter for Push Down Optimization: %s", optMeta.getName() );
+    String description = String.format( "Auto-generated parameter for Push Down Optimization: %s", optMeta.getStepName() );
     try {
       transMeta.addParameterDefinition( getParameterName(), parameterDefault, description );
       transMeta.activateParameters();
