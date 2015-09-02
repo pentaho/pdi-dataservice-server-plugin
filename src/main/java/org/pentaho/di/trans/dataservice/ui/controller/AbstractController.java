@@ -22,6 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import org.eclipse.swt.SWT;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -36,7 +38,15 @@ import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 /**
  * @author nhudak
  */
-public class AbstractController extends AbstractXulEventHandler {
+public abstract class AbstractController extends AbstractXulEventHandler {
+
+  private Supplier<BindingFactory> bindingFactorySupplier = new Supplier<BindingFactory>() {
+    @Override public BindingFactory get() {
+      DefaultBindingFactory bindingFactory = new DefaultBindingFactory();
+      bindingFactory.setDocument( document );
+      return bindingFactory;
+    }
+  };
 
   @SuppressWarnings( "unchecked" ) public <T extends XulComponent> T getElementById( String id ) {
     return (T) document.getElementById( id );
@@ -54,10 +64,12 @@ public class AbstractController extends AbstractXulEventHandler {
     return messageBox;
   }
 
-  protected BindingFactory createBindingFactory() {
-    DefaultBindingFactory bindingFactory = new DefaultBindingFactory();
-    bindingFactory.setDocument( document );
-    return bindingFactory;
+  public void setBindingFactory( BindingFactory bindingFactory ) {
+    this.bindingFactorySupplier = Suppliers.ofInstance( bindingFactory );
+  }
+
+  public BindingFactory getBindingFactory() {
+    return bindingFactorySupplier.get();
   }
 
   protected void info( String title, String message ) throws XulException {

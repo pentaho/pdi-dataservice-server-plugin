@@ -71,7 +71,7 @@ public class ParameterGenerationController extends AbstractController {
   }
 
   public void initBindings() {
-    BindingFactory bindingFactory = createBindingFactory();
+    BindingFactory bindingFactory = getBindingFactory();
     ImmutableMap<String, StepMeta> supportedSteps = model.getSupportedSteps();
 
     final XulListbox paramGenList = getElementById( "param_gen_list" );
