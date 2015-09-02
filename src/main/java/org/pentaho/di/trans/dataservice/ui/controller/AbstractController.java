@@ -74,7 +74,7 @@ public class AbstractController extends AbstractXulEventHandler {
     messageBox.setTitle( title );
     messageBox.setMessage( message );
     messageBox.setIcon( SWT.ICON_WARNING );
-    messageBox.setButtons( new Object[] { SWT.OK | SWT.CANCEL } );
+    messageBox.setButtons( new Object[] { SWT.OK } );
     messageBox.open();
   }
 
