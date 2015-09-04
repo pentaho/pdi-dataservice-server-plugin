@@ -39,6 +39,7 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.ui.core.ConstUI;
+import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.TreeSelection;
 
 @ExtensionPoint( id = "DataServicePopupMenuExtension", description = "Creates popup menus for data services",
@@ -55,13 +56,14 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
     delegate = DataServiceDelegate.withDefaultSpoonInstance( context );
   }
 
-  @Override public void callExtensionPoint( LogChannelInterface log, Object extension ) throws KettleException {
+  @Override
+  public void callExtensionPoint( LogChannelInterface log, Object extension ) throws KettleException {
 
     Menu popupMenu = null;
 
     Tree selectionTree = (Tree) extension;
     TreeSelection[] objects = delegate.getSpoon().getTreeObjects( selectionTree );
-    TreeSelection object = objects[ 0 ];
+    TreeSelection object = objects[0];
     Object selection = object.getSelection();
 
     if ( selection == DataServiceMeta.class ) {
@@ -81,13 +83,13 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
   }
 
   private void createRootPopupMenu( Menu parent ) {
-    createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.New.Label" ),
+    MenuItem newMenu = createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.New.Label" ),
       new DataServiceNewCommand() );
+    newMenu.setEnabled( !delegate.getSpoon().getActiveTransformation().getSteps().isEmpty() );
   }
 
   private void createItemPopupMenu( Menu parent ) {
-    createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.New.Label" ),
-      new DataServiceNewCommand() );
+    createRootPopupMenu( parent );
     createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.Edit.Label" ),
       new DataServiceEditCommand() );
     createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.Delete.Label" ),
@@ -97,18 +99,21 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
       new DataServiceTestCommand() );
   }
 
-  private void createPopupMenu( Menu parent, final String label, final DataServiceCommand dataServiceCommand ) {
+  private MenuItem createPopupMenu( Menu parent, final String label, final DataServiceCommand dataServiceCommand ) {
     MenuItem menuItem = new MenuItem( parent, SWT.NONE );
     menuItem.setText( label );
     menuItem.addSelectionListener( new SelectionListener() {
-      @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+      @Override
+      public void widgetSelected( SelectionEvent selectionEvent ) {
         dataServiceCommand.execute();
       }
 
-      @Override public void widgetDefaultSelected( SelectionEvent selectionEvent ) {
+      @Override
+      public void widgetDefaultSelected( SelectionEvent selectionEvent ) {
 
       }
     } );
+    return menuItem;
   }
 
   interface DataServiceCommand {
@@ -116,25 +121,29 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
   }
 
   class DataServiceNewCommand implements DataServiceCommand {
-    @Override public void execute() {
+    @Override
+    public void execute() {
       delegate.createNewDataService( null );
     }
   }
 
   class DataServiceEditCommand implements DataServiceCommand {
-    @Override public void execute() {
+    @Override
+    public void execute() {
       delegate.editDataService( selectedDataService );
     }
   }
 
   class DataServiceDeleteCommand implements DataServiceCommand {
-    @Override public void execute() {
+    @Override
+    public void execute() {
       delegate.removeDataService( selectedDataService );
     }
   }
 
   class DataServiceTestCommand implements DataServiceCommand {
-    @Override public void execute() {
+    @Override
+    public void execute() {
       delegate.testDataService( selectedDataService );
     }
   }
