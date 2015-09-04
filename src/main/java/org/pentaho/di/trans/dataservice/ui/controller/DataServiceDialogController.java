@@ -121,7 +121,9 @@ public class DataServiceDialogController extends AbstractController {
   }
 
   public void showHelp() {
-    // Show help dialog
+    HelpUtils.openHelpDialog( ( (SwtDialog) getDialog() ).getShell(),
+        BaseMessages.getString( PKG, "DataServiceDialog.Help.Title" ),
+        BaseMessages.getString( PKG, "DataServiceDialog.Help.Url" ), "" );
   }
 
   public XulDialog getDialog() {
