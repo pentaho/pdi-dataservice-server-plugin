@@ -27,8 +27,12 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ui.ParameterGenerationController;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ui.ParameterGenerationModel;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ui.ParameterGenerationOverlay;
-import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ui.SourceTargetAdapter;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metaverse.api.ILineageClient;
 
@@ -68,8 +72,17 @@ public class ParameterGenerationFactory implements PushDownFactory {
     return new ParameterGeneration( this );
   }
 
-  @Override public DataServiceDialog.OptimizationOverlay createOverlay() {
+  @Override public ParameterGenerationOverlay createOverlay() {
     return new ParameterGenerationOverlay( this );
+  }
+
+  public ParameterGenerationController createController( DataServiceModel dialogModel ) {
+    ParameterGenerationModel model = new ParameterGenerationModel( this, dialogModel );
+    return new ParameterGenerationController( this, model );
+  }
+
+  public SourceTargetAdapter createSourceTargetAdapter( SourceTargetFields sourceTargetFields ) {
+    return new SourceTargetAdapter( sourceTargetFields );
   }
 
   public AutoParameterGenerationService createAutoOptimizationService() {
@@ -92,5 +105,4 @@ public class ParameterGenerationFactory implements PushDownFactory {
       }
     } );
   }
-
 }

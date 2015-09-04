@@ -23,7 +23,6 @@
 package org.pentaho.di.trans.dataservice.optimization.paramgen.ui;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import org.eclipse.swt.SWT;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
@@ -31,7 +30,6 @@ import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneratio
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
 import org.pentaho.di.trans.dataservice.ui.controller.AbstractController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
-import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
@@ -39,15 +37,14 @@ import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulPromptBox;
-import org.pentaho.ui.xul.containers.XulListbox;
 import org.pentaho.ui.xul.util.XulDialogCallback;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.Collection;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.pentaho.di.i18n.BaseMessages.getString;
+import static org.pentaho.di.trans.dataservice.ui.BindingConverters.keySet;
 import static org.pentaho.di.trans.dataservice.ui.BindingConverters.not;
 import static org.pentaho.di.trans.dataservice.ui.BindingConverters.stringIsEmpty;
 
@@ -70,29 +67,22 @@ public class ParameterGenerationController extends AbstractController {
     this.model = model;
   }
 
-  public void initBindings() {
-    BindingFactory bindingFactory = createBindingFactory();
-    ImmutableMap<String, StepMeta> supportedSteps = model.getSupportedSteps();
+  public void initBindings( List<String> supportedSteps ) {
+    BindingFactory bindingFactory = getBindingFactory();
 
-    final XulListbox paramGenList = getElementById( "param_gen_list" );
     XulMenuList<String> stepList = getStepMenuList();
-    stepList.setElements( supportedSteps.keySet().asList() );
+    stepList.setElements( supportedSteps );
     getElementById( "param_gen_add" ).setDisabled( supportedSteps.isEmpty() );
 
     // BI DIRECTIONAL bindings
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
-    bindingFactory.createBinding( model, "selectedParameter", paramGenList, "selectedItem" );
+    bindingFactory.createBinding( model, "selectedParameter", "param_gen_list", "selectedItem" );
     bindingFactory.createBinding( model, "selectedStep", stepList, "value" );
     bindingFactory.createBinding( model, "enabled", "param_gen_enabled", "checked", not() );
 
     // ONE WAY bindings
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
-    model.addPropertyChangeListener( "parameterMap", new PropertyChangeListener() {
-      @Override public void propertyChange( PropertyChangeEvent evt ) {
-        paramGenList.setElements( model.getParameterMap().keySet() );
-        paramGenList.setSelectedItem( model.getSelectedParameter() );
-      }
-    } );
+    bindingFactory.createBinding( model, "parameterMap", "param_gen_list", "elements", keySet() );
     bindingFactory.createBinding( model, "selectedParameter", "param_gen_edit", "disabled", stringIsEmpty() );
     bindingFactory.createBinding( model, "selectedParameter", "param_gen_remove", "disabled", stringIsEmpty() );
     bindingFactory.createBinding( model, "selectedParameter", "param_gen_enabled", "disabled", stringIsEmpty() );

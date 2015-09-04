@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.optimization.paramgen;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
@@ -163,7 +164,7 @@ public class ParameterGeneration implements PushDownType {
     ParameterGenerationService service = stepMeta != null ? serviceProvider.getService( stepMeta ) : null;
     String parameterDefault = service != null ? service.getParameterDefault() : "";
 
-    String description = String.format( "Auto-generated parameter for Push Down Optimization: %s", optMeta.getName() );
+    String description = String.format( "Auto-generated parameter for Push Down Optimization: %s", optMeta.getStepName() );
     try {
       transMeta.addParameterDefinition( getParameterName(), parameterDefault, description );
       transMeta.activateParameters();
@@ -224,4 +225,10 @@ public class ParameterGeneration implements PushDownType {
     return varSpace.environmentSubstitute( query );
   }
 
+  @Override public String toString() {
+    return Objects.toStringHelper( this )
+      .add( "fieldMappings", fieldMappings )
+      .add( "parameterName", parameterName )
+      .toString();
+  }
 }

@@ -39,9 +39,9 @@ import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.xul.KettleXulLoader;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
+import org.pentaho.ui.xul.XulLoader;
 import org.pentaho.ui.xul.XulRunner;
 import org.pentaho.ui.xul.containers.XulTabbox;
-import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 
 import java.util.Collections;
@@ -57,40 +57,20 @@ public class DataServiceDialog {
 
   private static final Class<?> PKG = DataServiceDialog.class;
 
-  public static DataServiceDialog create( DataServiceDelegate delegate, TransMeta serviceTrans, String stepName )
-    throws KettleException {
-    return new Builder( serviceTrans ).serviceStep( stepName ).build( delegate );
-  }
-
-  public static DataServiceDialog edit( DataServiceDelegate delegate, DataServiceMeta dataService )
-    throws KettleException {
-    return new Builder( dataService.getServiceTrans() ).edit( dataService ).build( delegate );
-  }
-
-  public DataServiceDialog( DataServiceDelegate delegate, DataServiceModel model ) {
-    this( new DataServiceDialogController( model, delegate ), model );
-  }
-
   public DataServiceDialog( DataServiceDialogController controller, DataServiceModel model ) {
     this.controller = controller;
     this.model = model;
   }
 
-  protected DataServiceDialog loadXul( Shell shell ) throws KettleException {
-    try {
-      SwtXulLoader swtLoader = new KettleXulLoader();
-      swtLoader.setOuterContext( shell );
-      swtLoader.registerClassLoader( DataServiceDialog.class.getClassLoader() );
+  protected DataServiceDialog loadXul( Shell shell, XulLoader xulLoader, XulRunner runner ) throws XulException {
+    xulLoader.setOuterContext( shell );
+    xulLoader.registerClassLoader( DataServiceDialog.class.getClassLoader() );
 
-      XulDomContainer container = swtLoader.loadXul( XUL_DIALOG_PATH, createResourceBundle( PKG ) );
-      container.addEventHandler( controller );
+    XulDomContainer container = xulLoader.loadXul( XUL_DIALOG_PATH, createResourceBundle( PKG ) );
+    container.addEventHandler( controller );
 
-      XulRunner runner = new SwtXulRunner();
-      runner.addContainer( container );
-      runner.initialize();
-    } catch ( XulException xulException ) {
-      throw new KettleException( "Failed to open the Data Service Dialog ", xulException );
-    }
+    runner.addContainer( container );
+    runner.initialize();
 
     return this;
   }
@@ -141,8 +121,8 @@ public class DataServiceDialog {
   /**
    * Apply an overlay to the dialog.
    *
-   * @param overlay Optimization overlay to load
-   * @param xulSource  Path to the XUL overlay to load and apply to the DOM container
+   * @param overlay   Optimization overlay to load
+   * @param xulSource Path to the XUL overlay to load and apply to the DOM container
    * @throws KettleException Error loading XUL, wrapped in a KettleException
    */
   public XulDomContainer applyOverlay( OptimizationOverlay overlay, String xulSource ) throws KettleException {
@@ -171,20 +151,24 @@ public class DataServiceDialog {
     return model;
   }
 
-  private static class Builder {
+  public static class Builder {
     private final DataServiceModel model;
     private DataServiceMeta dataService;
 
-    Builder( TransMeta transMeta ) {
-      this.model = new DataServiceModel( transMeta );
+    public Builder( TransMeta transMeta ) {
+      this( new DataServiceModel( transMeta ) );
     }
 
-    Builder serviceStep( String serviceStep ) {
+    public Builder( DataServiceModel model ) {
+      this.model = model;
+    }
+
+    public Builder serviceStep( String serviceStep ) {
       model.setServiceStep( Strings.nullToEmpty( serviceStep ) );
       return this;
     }
 
-    Builder edit( DataServiceMeta dataService ) {
+    public Builder edit( DataServiceMeta dataService ) {
       this.dataService = dataService;
       model.setServiceName( dataService.getName() );
       model.setServiceStep( dataService.getStepname() );
@@ -192,17 +176,23 @@ public class DataServiceDialog {
       return this;
     }
 
-    DataServiceDialog build( DataServiceDelegate delegate ) throws KettleException {
-      DataServiceDialog dialog = new DataServiceDialog( delegate, model );
-      dialog.controller.setDataService( dataService );
+    protected DataServiceDialog createDialog( DataServiceDelegate delegate ) {
+      return new DataServiceDialog( new DataServiceDialogController( model, delegate ), model );
+    }
 
-      dialog
-        .loadXul( delegate.getShell() )
-        .initOptimizations( delegate.getPushDownFactories() );
+    public DataServiceDialog build( DataServiceDelegate delegate ) throws KettleException {
+      DataServiceDialog dialog = createDialog( delegate );
+      dialog.getController().setDataService( dataService );
+
+      try {
+        dialog.loadXul( delegate.getShell(), new KettleXulLoader(), new SwtXulRunner() );
+      } catch ( XulException xulException ) {
+        throw new KettleException( "Failed to open the Data Service Dialog ", xulException );
+      }
+      dialog.initOptimizations( delegate.getPushDownFactories() );
 
       return dialog;
     }
-
   }
 
   public interface OptimizationOverlay {

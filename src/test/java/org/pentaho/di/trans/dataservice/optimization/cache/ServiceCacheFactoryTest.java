@@ -31,12 +31,15 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
+import org.pentaho.di.trans.dataservice.optimization.cache.ui.ServiceCacheController;
+import org.pentaho.di.trans.dataservice.optimization.cache.ui.ServiceCacheOverlay;
 
 import javax.cache.Cache;
 import java.util.concurrent.ExecutorService;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -59,6 +62,13 @@ public class ServiceCacheFactoryTest {
   @InjectMocks ServiceCacheFactory serviceCacheFactory;
   @Mock Cache<CachedService.CacheKey, CachedService> cache;
   @Mock PentahoCacheTemplateConfiguration template;
+
+  @Test
+  public void testFactory() throws Exception {
+    assertThat( serviceCacheFactory.createPushDown(), isA( ServiceCache.class ) );
+    assertThat( serviceCacheFactory.createOverlay(), isA( ServiceCacheOverlay.class ) );
+    assertThat( serviceCacheFactory.createController(), isA( ServiceCacheController.class ) );
+  }
 
   @Test
   public void testGetCache() throws Exception {
@@ -94,10 +104,9 @@ public class ServiceCacheFactoryTest {
   public void testCreateCacheWithTtlOverride() throws Exception {
     when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( TEMPLATE_NAME, template ) );
     PentahoCacheTemplateConfiguration overridenTemplate = mock( PentahoCacheTemplateConfiguration.class );
-    Cache<CachedService.CacheKey, CachedService> overrideCache = mock( Cache.class );
 
     when( overridenTemplate.createCache( cacheName(), CachedService.CacheKey.class, CachedService.class ) )
-        .thenReturn( overrideCache );
+        .thenReturn( cache );
     when( template.overrideProperties( ImmutableMap.of( CONFIG_TTL, "1010" ) ) ).thenReturn( overridenTemplate );
 
     ServiceCache serviceCache = serviceCacheFactory.createPushDown();
@@ -105,7 +114,7 @@ public class ServiceCacheFactoryTest {
 
     assertThat( serviceCacheFactory.getTemplateNames(), contains( TEMPLATE_NAME ) );
     serviceCache.setTemplateName( TEMPLATE_NAME );
-    assertThat( serviceCacheFactory.getCache( serviceCache, DATA_SERVICE_NAME ), is( overrideCache ) );
+    assertThat( serviceCacheFactory.getCache( serviceCache, DATA_SERVICE_NAME ), is( cache ) );
   }
 
   private String cacheName() {

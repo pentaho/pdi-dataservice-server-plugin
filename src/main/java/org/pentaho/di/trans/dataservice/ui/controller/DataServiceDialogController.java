@@ -62,7 +62,7 @@ public class DataServiceDialogController extends AbstractController {
   }
 
   public void init() throws InvocationTargetException, XulException, KettleException {
-    BindingFactory bindingFactory = createBindingFactory();
+    BindingFactory bindingFactory = getBindingFactory();
 
     XulTextbox serviceName = getElementById( "service-name" );
     XulMenuList<String> steps = getElementById( "trans-steps" );

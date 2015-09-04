@@ -54,14 +54,13 @@ public class ParameterGenerationOverlay implements DataServiceDialog.Optimizatio
     DataServiceModel dialogModel = dialog.getModel();
     TransMeta transMeta = dialogModel.getTransMeta();
 
-    ParameterGenerationModel model = new ParameterGenerationModel( dialogModel, findSupportedSteps( transMeta ) );
-    ParameterGenerationController controller = new ParameterGenerationController( factory, model );
+    ParameterGenerationController controller = factory.createController( dialogModel );
 
     dialog
       .applyOverlay( this, XUL_OVERLAY )
       .addEventHandler( controller );
 
-    controller.initBindings();
+    controller.initBindings( findSupportedSteps( transMeta ).keySet().asList() );
   }
 
   protected ImmutableMap<String, StepMeta> findSupportedSteps( TransMeta transMeta ) {

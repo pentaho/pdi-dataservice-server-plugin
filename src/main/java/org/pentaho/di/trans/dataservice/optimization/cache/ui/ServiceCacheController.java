@@ -54,7 +54,7 @@ public class ServiceCacheController extends AbstractController {
 
   public void initBindings( PushDownOptimizationMeta meta ) {
     ServiceCache serviceCache = (ServiceCache) meta.getType();
-    BindingFactory bindingFactory = createBindingFactory();
+    BindingFactory bindingFactory = getBindingFactory();
 
     XulCheckbox checkbox = getElementById( "service-cache-checkbox" );
     XulTextbox ttl = getElementById( "service-cache-ttl" );

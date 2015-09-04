@@ -116,7 +116,7 @@ public class PushDownOptimizationMeta implements XulEventSource {
           setQueryBeforeOptimization( preview.getQueryBeforeOptimization() );
         }
         @Override public String getDescription() {
-          return "# " + getName() + " is disabled\n" + super.getDescription();
+          return "#Optimization is disabled\n" + super.getDescription();
         }
       };
     }
