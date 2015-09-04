@@ -41,7 +41,7 @@
     </tabbox>
     <separator height="30"/>
     <hbox>
-        <button label="${DataServiceDialog.Help.Button}" onclick="dataServiceDialogController.showHelp()"/>
+        <button label="${DataServiceDialog.Help.Button}" image="${HelpImage.Url}" onclick="dataServiceDialogController.showHelp()"/>
         <spacer flex="1"/>
         <button id="test-dataservice-button" label="${DataServiceDialog.TestDataService.Button}" width="150"
                 onclick="dataServiceDialogController.showTestDialog()"/>
