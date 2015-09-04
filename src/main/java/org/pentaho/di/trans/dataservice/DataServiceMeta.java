@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.serialization.MetaStoreElement;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 import org.pentaho.metastore.util.PentahoDefaults;
@@ -41,7 +42,7 @@ import java.util.List;
 @MetaStoreElementType(
   name = PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_NAME,
   description = PentahoDefaults.KETTLE_DATA_SERVICE_ELEMENT_TYPE_DESCRIPTION )
-public class DataServiceMeta {
+public class DataServiceMeta implements MetaStoreElement {
 
   public static final String DATA_SERVICE_TRANSFORMATION_STEP_NAME = "step_name";
   public static final String PUSH_DOWN_OPT_META = "push_down_opt_meta";
@@ -73,14 +74,14 @@ public class DataServiceMeta {
   /**
    * @return the name
    */
-  public String getName() {
+  @Override public String getName() {
     return name;
   }
 
   /**
    * @param name the name to set
    */
-  public void setName( String name ) {
+  @Override public void setName( String name ) {
     this.name = name;
   }
 

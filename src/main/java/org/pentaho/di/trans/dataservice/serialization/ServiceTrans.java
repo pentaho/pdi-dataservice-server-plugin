@@ -38,7 +38,7 @@ import java.util.List;
 @MetaStoreElementType(
   name = "Data Service Transformation",
   description = "Pointer to a saved transformation that supplies a data service" )
-public class ServiceTrans {
+public class ServiceTrans implements MetaStoreElement {
   private String name;
 
   @MetaStoreAttribute( key = "trans_references" )
@@ -68,10 +68,12 @@ public class ServiceTrans {
     return references;
   }
 
+  @Override
   public String getName() {
     return name;
   }
 
+  @Override
   public void setName( String name ) {
     this.name = name;
   }
