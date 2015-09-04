@@ -32,7 +32,6 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
@@ -41,6 +40,7 @@ import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
+import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.dom.Document;
@@ -81,6 +81,8 @@ public class DataServiceDialogControllerTest {
 
   @Mock XulDialog dialog = mock( XulDialog.class );
 
+  @Mock XulMessageBox messageBox;
+
   private static final String FILE_NAME = "/home/admin/transformation.ktr";
 
   private static final String SERVICE_NAME = "test_service";
@@ -95,6 +97,7 @@ public class DataServiceDialogControllerTest {
   public void init() throws Exception {
     when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
     when( document.getElementById( DataServiceDialogController.XUL_DIALOG_ID ) ).thenReturn( dialog );
+    when( document.createElement( "messagebox" ) ).thenReturn( messageBox );
 
     controller = new DataServiceDialogController( model, delegate );
     controller.setXulDomContainer( xulDomContainer );
@@ -166,7 +169,7 @@ public class DataServiceDialogControllerTest {
     doReturn( true ).when( delegate ).saveAllowed( SERVICE_NAME, dataService );
     assertTrue( controller.validate() );
 
-    verify( delegate, times( 3 ) ).showError( anyString(), anyString() );
+    verify( messageBox, times( 3 ) ).open();
   }
 
   @Test
@@ -185,7 +188,7 @@ public class DataServiceDialogControllerTest {
 
     DataServiceMeta dataServiceMeta = mockModel();
     controller = new DataServiceDialogController( model, delegate ) {
-      @Override public Boolean validate() throws KettleException {
+      @Override public Boolean validate() {
         return valid.get();
       }
     };
