@@ -158,10 +158,9 @@ public class DataServiceDelegate {
     return true;
   }
 
-
   public void save( DataServiceMeta dataService ) throws MetaStoreException {
     Spoon spoon = getSpoon();
-    getMetaStoreUtil().save( spoon.getRepository(), spoon.getMetaStore(), dataService );
+    getMetaStoreUtil().save( dataService );
     spoon.refreshTree();
     spoon.refreshGraph();
   }
@@ -177,7 +176,7 @@ public class DataServiceDelegate {
       }
     }
     if ( dataService != null ) {
-      getMetaStoreUtil().removeDataService( getSpoon().getMetaStore(), dataService );
+      getMetaStoreUtil().removeDataService( dataService );
       getSpoon().refreshTree();
       getSpoon().refreshGraph();
     }

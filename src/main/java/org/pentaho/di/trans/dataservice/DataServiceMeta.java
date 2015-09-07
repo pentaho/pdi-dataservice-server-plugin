@@ -68,7 +68,7 @@ public class DataServiceMeta implements MetaStoreElement {
   }
 
   public boolean isDefined() {
-    return !Const.isEmpty( name ) && !Const.isEmpty( stepname );
+    return !Const.isEmpty( name ) && !Const.isEmpty( stepname ) && serviceTrans.findStep( stepname ) != null;
   }
 
   /**

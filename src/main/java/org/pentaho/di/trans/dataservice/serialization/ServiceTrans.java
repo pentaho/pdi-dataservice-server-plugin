@@ -30,6 +30,7 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 
@@ -43,6 +44,10 @@ public class ServiceTrans implements MetaStoreElement {
 
   @MetaStoreAttribute( key = "trans_references" )
   private List<Reference> references = Lists.newArrayList();
+
+  public static ServiceTrans create( DataServiceMeta dataServiceMeta ) {
+    return create( dataServiceMeta.getName(), dataServiceMeta.getServiceTrans() );
+  }
 
   public static ServiceTrans create( String name, TransMeta transMeta ) {
     ServiceTrans serviceTrans = new ServiceTrans();
@@ -96,6 +101,9 @@ public class ServiceTrans implements MetaStoreElement {
     @MetaStoreAttribute( key = "transformation_storage_method" )
     private StorageMethod method;
 
+    /**
+     * Zero-arg constructor for MetaStoreFactory
+     */
     @Deprecated
     public Reference() {
     }
