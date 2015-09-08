@@ -36,7 +36,6 @@ import com.google.common.collect.Maps;
 import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -60,22 +59,22 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
 public class DataServiceMetaStoreUtil {
-  private final List<PushDownFactory> pushDownFactories;
+  private final DataServiceContext context;
   private final Cache<Integer, String> stepCache;
 
+  public DataServiceMetaStoreUtil( DataServiceContext context, Cache<Integer, String> cache ) {
+    this.context = context;
+    this.stepCache = cache;
+  }
+
   public static DataServiceMetaStoreUtil create( DataServiceContext context ) {
-    return new DataServiceMetaStoreUtil( context.getPushDownFactories(), initCache( context.getCacheManager() ) );
+    return new DataServiceMetaStoreUtil( context, initCache( context.getCacheManager() ) );
   }
 
   private static Cache<Integer, String> initCache( PentahoCacheManager cacheManager ) {
     String name = DataServiceMetaStoreUtil.class.getName() + UUID.randomUUID().toString();
     return cacheManager.getTemplates().get( Constants.DEFAULT_TEMPLATE ).
       createCache( name, Integer.class, String.class );
-  }
-
-  DataServiceMetaStoreUtil( List<PushDownFactory> pushDownFactories, Cache<Integer, String> stepCache ) {
-    this.pushDownFactories = pushDownFactories;
-    this.stepCache = stepCache;
   }
 
   public DataServiceMeta getDataService( String serviceName, Repository repository, IMetaStore metaStore )
@@ -211,7 +210,7 @@ public class DataServiceMetaStoreUtil {
     if ( dataService != null && dataService.isDefined() ) {
       TransMeta transMeta = checkNotNull( dataService.getServiceTrans(), "Service trans not defined for data service" );
 
-      LogChannel.GENERAL.logBasic( "Saving data service in meta store '" + transMeta.getMetaStore() + "'" );
+      context.getLogChannel().logBasic( "Saving data service in meta store '" + transMeta.getMetaStore() + "'" );
 
       // Save to embedded MetaStore
       getDataServiceFactory( transMeta ).saveElement( dataService );
@@ -233,11 +232,11 @@ public class DataServiceMetaStoreUtil {
     transMeta.setChanged();
   }
 
-  private MetaStoreFactory<ServiceTrans> getServiceTransFactory( IMetaStore metaStore ) {
-    return new MetaStoreFactory<ServiceTrans>( ServiceTrans.class, metaStore, NAMESPACE );
+  protected MetaStoreFactory<ServiceTrans> getServiceTransFactory( IMetaStore metaStore ) {
+    return new MetaStoreFactory<>( ServiceTrans.class, metaStore, NAMESPACE );
   }
 
-  private MetaStoreFactory<DataServiceMeta> getDataServiceFactory( final TransMeta transMeta ) {
+  protected MetaStoreFactory<DataServiceMeta> getDataServiceFactory( final TransMeta transMeta ) {
     return new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, transMeta.getEmbeddedMetaStore(), NAMESPACE ) {
 
       {
@@ -285,9 +284,9 @@ public class DataServiceMetaStoreUtil {
   }
 
   private class DataServiceMetaObjectFactory implements IMetaStoreObjectFactory {
-    @Override public Object instantiateClass( final String className, Map<String, String> context ) throws
+    @Override public Object instantiateClass( final String className, Map<String, String> objectContext ) throws
       MetaStoreException {
-      for ( PushDownFactory factory : pushDownFactories ) {
+      for ( PushDownFactory factory : context.getPushDownFactories() ) {
         if ( factory.getType().getName().equals( className ) ) {
           return factory.createPushDown();
         }

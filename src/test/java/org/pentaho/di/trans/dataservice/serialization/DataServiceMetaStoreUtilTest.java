@@ -26,11 +26,11 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hamcrest.Matcher;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
@@ -38,14 +38,16 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.pentaho.di.core.KettleEnvironment;
+import org.pentaho.caching.api.Constants;
+import org.pentaho.caching.api.PentahoCacheManager;
+import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
@@ -81,7 +83,6 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -105,23 +106,17 @@ public class DataServiceMetaStoreUtilTest {
   private IMetaStore metaStore;
   private DataServiceMeta dataService;
 
+  @Mock DataServiceContext context;
   @Mock Cache<Integer, String> cache;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Repository repository;
   @Mock Function<Exception, Void> exceptionHandler;
   @Mock KettleException notFoundException;
+  @Mock LogChannelInterface logChannel;
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 
-  @BeforeClass
-  public static void init() throws KettleException {
-    KettleEnvironment.init();
-  }
-
   @Before
   public void setUp() throws KettleException, MetaStoreException {
-    LogChannel.GENERAL = mock( LogChannelInterface.class );
-    doNothing().when( LogChannel.GENERAL ).logBasic( anyString() );
-
     transMeta = new TransMeta();
     transMeta.setName( "dataServiceTrans" );
     transMeta.setRepository( repository );
@@ -134,13 +129,23 @@ public class DataServiceMetaStoreUtilTest {
     this.dataService = createDataService( transMeta );
 
     PushDownFactory optimizationFactory = mock( PushDownFactory.class );
+    PentahoCacheManager cacheManager = mock( PentahoCacheManager.class );
+    PentahoCacheTemplateConfiguration template = mock( PentahoCacheTemplateConfiguration.class );
+
     when( (Class) optimizationFactory.getType() ).thenReturn( TestOptimization.class );
     when( optimizationFactory.createPushDown() ).then( new Answer<PushDownType>() {
       @Override public PushDownType answer( InvocationOnMock invocation ) throws Throwable {
         return new TestOptimization();
       }
     } );
-    metaStoreUtil = new DataServiceMetaStoreUtil( ImmutableList.of( optimizationFactory ), cache );
+    when( context.getPushDownFactories() ).thenReturn( ImmutableList.of( optimizationFactory ) );
+    when( context.getLogChannel() ).thenReturn( logChannel );
+    when( context.getCacheManager() ).thenReturn( cacheManager );
+
+    when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( Constants.DEFAULT_TEMPLATE, template ) );
+    when( template.createCache( anyString(), eq( Integer.class ), eq( String.class ) ) ).thenReturn( cache );
+
+    metaStoreUtil = DataServiceMetaStoreUtil.create( context );
   }
 
   private static DataServiceMeta createDataService( TransMeta transMeta ) {
