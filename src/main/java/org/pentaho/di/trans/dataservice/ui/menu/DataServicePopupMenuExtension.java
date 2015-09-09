@@ -36,10 +36,9 @@ import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
-import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.ui.core.ConstUI;
-import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.TreeSelection;
 
 @ExtensionPoint( id = "DataServicePopupMenuExtension", description = "Creates popup menus for data services",
@@ -137,7 +136,7 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
   class DataServiceDeleteCommand implements DataServiceCommand {
     @Override
     public void execute() {
-      delegate.removeDataService( selectedDataService );
+      delegate.removeDataService( selectedDataService, true );
     }
   }
 

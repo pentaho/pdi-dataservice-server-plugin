@@ -65,12 +65,16 @@ import static com.google.common.base.Predicates.not;
 import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
 public class DataServiceMetaStoreUtil {
-  private final DataServiceContext context;
-  private final Cache<Integer, String> stepCache;
+  protected final DataServiceContext context;
+  protected final Cache<Integer, String> stepCache;
 
   public DataServiceMetaStoreUtil( DataServiceContext context, Cache<Integer, String> cache ) {
     this.context = context;
     this.stepCache = cache;
+  }
+
+  protected DataServiceMetaStoreUtil( DataServiceMetaStoreUtil metaStoreUtil ) {
+    this( metaStoreUtil.context, metaStoreUtil.stepCache );
   }
 
   public static DataServiceMetaStoreUtil create( DataServiceContext context ) {

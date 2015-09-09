@@ -198,7 +198,7 @@ public class DataServiceDialogControllerTest {
 
     controller.saveAndClose();
     verify( delegate ).save( dataServiceMeta );
-    verify( delegate ).removeDataService( dataServiceMeta, false );
+    verify( delegate ).removeDataService( dataServiceMeta );
     verify( dialog ).hide();
     verifyNoMoreInteractions( delegate );
 

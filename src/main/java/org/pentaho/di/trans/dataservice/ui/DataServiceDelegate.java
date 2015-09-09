@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -30,10 +29,10 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.ui.spoon.Spoon;
@@ -43,10 +42,8 @@ import java.util.List;
 
 import static org.pentaho.di.i18n.BaseMessages.getString;
 
-public class DataServiceDelegate {
-
+public class DataServiceDelegate extends DataServiceMetaStoreUtil {
   private static final Class<?> PKG = DataServiceDelegate.class;
-  private final DataServiceContext context;
   private final Supplier<Spoon> spoonSupplier;
 
   private enum DefaultSpoonSupplier implements Supplier<Spoon> {
@@ -66,7 +63,7 @@ public class DataServiceDelegate {
   }
 
   public DataServiceDelegate( DataServiceContext context, Supplier<Spoon> spoonSupplier ) {
-    this.context = context;
+    super( context.getMetaStoreUtil() );
     this.spoonSupplier = spoonSupplier;
   }
 
@@ -127,45 +124,25 @@ public class DataServiceDelegate {
     mb.open();
   }
 
-  public Iterable<DataServiceMeta> getDataServices( TransMeta transMeta ) throws MetaStoreException {
-    return getMetaStoreUtil().getDataServices( transMeta );
-  }
-
-  public Iterable<DataServiceMeta> getDataServices( Function<Exception, Void> exceptionHandler ) {
-    Spoon spoon = getSpoon();
-    return getMetaStoreUtil().getDataServices( spoon.getRepository(), spoon.getMetaStore(), exceptionHandler );
-  }
-
   public DataServiceMeta getDataService( String serviceName ) throws MetaStoreException {
     Spoon spoon = getSpoon();
-    return getMetaStoreUtil().getDataService( serviceName, spoon.getRepository(), spoon.getMetaStore() );
+    return getDataService( serviceName, spoon.getRepository(), spoon.getMetaStore() );
   }
 
-  public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) throws MetaStoreException {
-    return getMetaStoreUtil().getDataService( serviceName, serviceTrans );
-  }
-
-  public DataServiceMeta getDataServiceByStepName( TransMeta transMeta, String stepName ) throws MetaStoreException {
-    return getMetaStoreUtil().getDataServiceByStepName( transMeta, stepName );
-  }
-
-  public List<String> getDataServiceNames() throws MetaStoreException {
-    return getMetaStoreUtil().getDataServiceNames( getSpoon().getMetaStore() );
-  }
-
-  public boolean saveAllowed( String serviceName, DataServiceMeta editing ) throws MetaStoreException{
+  public boolean saveAllowed( String serviceName, DataServiceMeta editing ) throws MetaStoreException {
     // TODO: Check if data service already exists in another transformation
     return true;
   }
 
+  @Override
   public void save( DataServiceMeta dataService ) throws MetaStoreException {
     Spoon spoon = getSpoon();
-    getMetaStoreUtil().save( dataService );
+    super.save( dataService );
     spoon.refreshTree();
     spoon.refreshGraph();
   }
 
-  public void removeDataService( DataServiceMeta dataService, boolean prompt ) throws MetaStoreException {
+  public void removeDataService( DataServiceMeta dataService, boolean prompt ) {
     if ( prompt ) {
       MessageBox messageBox = new MessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
       messageBox.setText( getString( PKG, "DataServiceDelegate.DeleteDataService.Title" ) );
@@ -175,18 +152,20 @@ public class DataServiceDelegate {
         return;
       }
     }
-    if ( dataService != null ) {
-      getMetaStoreUtil().removeDataService( dataService );
-      getSpoon().refreshTree();
-      getSpoon().refreshGraph();
+    try {
+      removeDataService( dataService );
+    } catch ( MetaStoreException ignored ) {
     }
   }
 
-  public void removeDataService( DataServiceMeta dataServiceMeta ) {
+  @Override public void removeDataService( DataServiceMeta dataService ) throws MetaStoreException {
     try {
-      removeDataService( dataServiceMeta, true );
+      super.removeDataService( dataService );
+      getSpoon().refreshTree();
+      getSpoon().refreshGraph();
     } catch ( MetaStoreException e ) {
       context.getLogChannel().logError( "Unable to remove a data service", e );
+      throw e;
     }
   }
 
@@ -206,16 +185,11 @@ public class DataServiceDelegate {
     return getSpoon().getShell();
   }
 
-  public DataServiceMetaStoreUtil getMetaStoreUtil() {
-    return context.getMetaStoreUtil();
+  public LogChannelInterface getLogChannel() {
+    return context.getLogChannel();
   }
 
   public List<PushDownFactory> getPushDownFactories() {
     return context.getPushDownFactories();
   }
-
-  public List<AutoOptimizationService> getAutoOptimizationServices() {
-    return context.getAutoOptimizationServices();
-  }
-
 }
