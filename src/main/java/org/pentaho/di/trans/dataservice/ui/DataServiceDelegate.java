@@ -25,8 +25,6 @@ package org.pentaho.di.trans.dataservice.ui;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
@@ -48,7 +46,6 @@ import static org.pentaho.di.i18n.BaseMessages.getString;
 public class DataServiceDelegate {
 
   private static final Class<?> PKG = DataServiceDelegate.class;
-  private static final Log logger = LogFactory.getLog( DataServiceDelegate.class );
   private final DataServiceContext context;
   private final Supplier<Spoon> spoonSupplier;
 
@@ -85,7 +82,7 @@ public class DataServiceDelegate {
     try {
       new DataServiceDialog.Builder( transMeta ).serviceStep( stepName ).build( this ).open();
     } catch ( KettleException e ) {
-      logger.error( "Unable to create a new data service", e );
+      context.getLogChannel().logError( "Unable to create a new data service", e );
     }
   }
 
@@ -93,7 +90,7 @@ public class DataServiceDelegate {
     TransMeta transMeta = dataService.getServiceTrans();
     if ( transMeta.hasChanged() ) {
       showSavePrompt( getString( PKG, "DataServiceDelegate.EditTransChanged.Title" ),
-          getString( PKG, "DataServiceDelegate.EditTransChanged.Message" ) );
+        getString( PKG, "DataServiceDelegate.EditTransChanged.Message" ) );
       if ( transMeta.hasChanged() ) {
         return;
       }
@@ -102,7 +99,7 @@ public class DataServiceDelegate {
     try {
       new DataServiceDialog.Builder( dataService.getServiceTrans() ).edit( dataService ).build( this ).open();
     } catch ( KettleException e ) {
-      logger.error( "Unable to edit a data service", e );
+      context.getLogChannel().logError( "Unable to edit a data service", e );
     }
   }
 
@@ -116,7 +113,7 @@ public class DataServiceDelegate {
       try {
         getSpoon().saveToFile( getSpoon().getActiveTransformation() );
       } catch ( KettleException e ) {
-        logger.error( "Failed to save transformation", e );
+        context.getLogChannel().logError( "Failed to save transformation", e );
       }
     } else {
       showError( title, getString( PKG, "DataServiceDelegate.PleaseSave.Message" ) );
@@ -156,55 +153,48 @@ public class DataServiceDelegate {
     return getMetaStoreUtil().getDataServiceNames( getSpoon().getMetaStore() );
   }
 
-  public boolean saveAllowed( String serviceName, DataServiceMeta editing ) {
+  public boolean saveAllowed( String serviceName, DataServiceMeta editing ) throws MetaStoreException{
     // TODO: Check if data service already exists in another transformation
     return true;
   }
 
-
-  public void save( DataServiceMeta dataService ) throws KettleException {
+  public void save( DataServiceMeta dataService ) throws MetaStoreException {
     Spoon spoon = getSpoon();
-    try {
-      getMetaStoreUtil().save( spoon.getRepository(), spoon.getMetaStore(), dataService );
-      spoon.refreshTree();
-      spoon.refreshGraph();
-    } catch ( MetaStoreException e ) {
-      throw new KettleException( getString( PKG, "Messages.Error.MetaStore" ) );
-    }
+    getMetaStoreUtil().save( dataService );
+    spoon.refreshTree();
+    spoon.refreshGraph();
   }
-  public void removeDataService( DataServiceMeta dataService, boolean prompt ) {
-    boolean shouldDelete = true;
+
+  public void removeDataService( DataServiceMeta dataService, boolean prompt ) throws MetaStoreException {
     if ( prompt ) {
       MessageBox messageBox = new MessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
       messageBox.setText( getString( PKG, "DataServiceDelegate.DeleteDataService.Title" ) );
       messageBox.setMessage( getString( PKG, "DataServiceDelegate.DeleteDataService.Message", dataService.getName() ) );
       int answerIndex = messageBox.open();
       if ( answerIndex != SWT.YES ) {
-        shouldDelete = false;
+        return;
       }
     }
-    if ( shouldDelete ) {
-      try {
-        if ( dataService != null ) {
-          getMetaStoreUtil().removeDataService( getSpoon().getMetaStore(), dataService );
-          getSpoon().refreshTree();
-          getSpoon().refreshGraph();
-        }
-      } catch ( MetaStoreException e ) {
-        logger.error( "Unable to remove a data service", e );
-      }
+    if ( dataService != null ) {
+      getMetaStoreUtil().removeDataService( dataService );
+      getSpoon().refreshTree();
+      getSpoon().refreshGraph();
     }
   }
 
   public void removeDataService( DataServiceMeta dataServiceMeta ) {
-    removeDataService( dataServiceMeta, true );
+    try {
+      removeDataService( dataServiceMeta, true );
+    } catch ( MetaStoreException e ) {
+      context.getLogChannel().logError( "Unable to remove a data service", e );
+    }
   }
 
   public void testDataService( DataServiceMeta dataService ) {
     try {
       new DataServiceTestDialog( new Shell( getShell() ), dataService ).open();
     } catch ( KettleException e ) {
-      logger.error( "Unable to create test data service dialog", e );
+      context.getLogChannel().logError( "Unable to create test data service dialog", e );
     }
   }
 

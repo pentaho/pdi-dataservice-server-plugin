@@ -22,13 +22,13 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
+import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 
-import javax.cache.Cache;
 import java.util.List;
 
 public class DataServiceContext {
@@ -36,6 +36,7 @@ public class DataServiceContext {
   private final List<AutoOptimizationService> autoOptimizationServices;
   private final PentahoCacheManager cacheManager;
   private final List<PushDownFactory> pushDownFactories;
+  private final LogChannelInterface logChannel;
 
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
@@ -44,18 +45,7 @@ public class DataServiceContext {
     this.autoOptimizationServices = autoOptimizationServices;
     this.cacheManager = cacheManager;
     this.metaStoreUtil = DataServiceMetaStoreUtil.create( this );
-  }
-
-  private static Cache<String, DataServiceMeta> initCache( PentahoCacheManager cacheManager ) {
-    String cacheName = DataServiceMeta.class.getName();
-    Cache<String, DataServiceMeta> cache = cacheManager.getCache( cacheName, String.class, DataServiceMeta.class );
-    if ( cache != null ) {
-      return cache;
-    }
-    return cacheManager
-      .getTemplates()
-      .get( Constants.DEFAULT_TEMPLATE )
-      .createCache( cacheName, String.class, DataServiceMeta.class );
+    this.logChannel = new LogChannel( "Data Service" );
   }
 
   public PentahoCacheManager getCacheManager() {
@@ -72,5 +62,9 @@ public class DataServiceContext {
 
   public List<PushDownFactory> getPushDownFactories() {
     return pushDownFactories;
+  }
+
+  public LogChannelInterface getLogChannel(){
+    return logChannel;
   }
 }

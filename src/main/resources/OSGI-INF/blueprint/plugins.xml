@@ -58,6 +58,9 @@
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
-
+    <bean id="transOpened" scope="singleton" class="org.pentaho.di.trans.dataservice.serialization.TransOpenedExtensionPointPlugin">
+        <argument ref="context"/>
+        <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
+    </bean>
 
 </blueprint>

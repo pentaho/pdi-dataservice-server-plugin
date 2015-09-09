@@ -24,13 +24,13 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 
 import com.google.common.collect.ImmutableList;
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.util.HelpUtils;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
@@ -52,6 +52,7 @@ public class DataServiceDialogController extends AbstractController {
 
   private static final Class<?> PKG = DataServiceDialog.class;
   private static final String NAME = "dataServiceDialogController";
+
   {
     setName( NAME );
   }
@@ -61,7 +62,7 @@ public class DataServiceDialogController extends AbstractController {
     this.model = model;
   }
 
-  public void init() throws InvocationTargetException, XulException, KettleException {
+  public void init() throws InvocationTargetException, XulException {
     BindingFactory bindingFactory = getBindingFactory();
 
     XulTextbox serviceName = getElementById( "service-name" );
@@ -79,26 +80,33 @@ public class DataServiceDialogController extends AbstractController {
     delegate.testDataService( model.getDataService() );
   }
 
-  public void saveAndClose() throws KettleException {
-    if ( !validate() ) {
-      return;
+  public void saveAndClose() throws XulException {
+    try {
+      if ( !validate() ) {
+        return;
+      }
+      delegate.save( model.getDataService() );
+      // Remove edited data service if name changed
+      if ( dataService != null && !dataService.getName().equals( model.getServiceName() ) ) {
+        delegate.removeDataService( dataService, false );
+      }
+      close();
+    } catch ( MetaStoreException e ) {
+      String message = getString( PKG, "DataServiceDialog.MetaStoreError.Message" );
+      error( getString( PKG, "DataServiceDialog.MetaStoreError.Title" ), message );
+      getLogChannel().logError( message, e );
     }
-
-    delegate.save( model.getDataService() );
-    // Remove edited data service if name changed
-    if ( dataService != null && !dataService.getName().equals( model.getServiceName() ) ) {
-      delegate.removeDataService( dataService, false );
-    }
-    close();
   }
 
-  public Boolean validate() throws KettleException {
+  protected Boolean validate() throws XulException, MetaStoreException {
     if ( Const.isEmpty( model.getServiceName() ) ) {
-      delegate.showError( getString( PKG, "DataServiceDialog.NameRequired.Title" ),
+      error( getString( PKG, "DataServiceDialog.NameRequired.Title" ),
           getString( PKG, "DataServiceDialog.NameRequired.Message" ) );
       return false;
-    } else if ( !delegate.saveAllowed( model.getServiceName(), dataService ) ) {
-      delegate.showError( getString( PKG, "DataServiceDialog.AlreadyExists.Title" ),
+    }
+
+    if ( !delegate.saveAllowed( model.getServiceName(), dataService ) ) {
+      error( getString( PKG, "DataServiceDialog.AlreadyExists.Title" ),
           getString( PKG, "DataServiceDialog.AlreadyExists.Message" ) );
       return false;
     }

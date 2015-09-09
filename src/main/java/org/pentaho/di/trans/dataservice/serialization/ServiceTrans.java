@@ -30,6 +30,7 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 
@@ -38,11 +39,15 @@ import java.util.List;
 @MetaStoreElementType(
   name = "Data Service Transformation",
   description = "Pointer to a saved transformation that supplies a data service" )
-public class ServiceTrans {
+public class ServiceTrans implements MetaStoreElement {
   private String name;
 
   @MetaStoreAttribute( key = "trans_references" )
   private List<Reference> references = Lists.newArrayList();
+
+  public static ServiceTrans create( DataServiceMeta dataServiceMeta ) {
+    return create( dataServiceMeta.getName(), dataServiceMeta.getServiceTrans() );
+  }
 
   public static ServiceTrans create( String name, TransMeta transMeta ) {
     ServiceTrans serviceTrans = new ServiceTrans();
@@ -68,10 +73,12 @@ public class ServiceTrans {
     return references;
   }
 
+  @Override
   public String getName() {
     return name;
   }
 
+  @Override
   public void setName( String name ) {
     this.name = name;
   }
@@ -94,6 +101,9 @@ public class ServiceTrans {
     @MetaStoreAttribute( key = "transformation_storage_method" )
     private StorageMethod method;
 
+    /**
+     * Zero-arg constructor for MetaStoreFactory
+     */
     @Deprecated
     public Reference() {
     }
