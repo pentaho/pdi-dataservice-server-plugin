@@ -347,6 +347,19 @@ public class DataServiceMetaStoreUtilTest {
     verify( cache ).putAll( argThat( hasEntry( in( cacheKeys ), emptyString() ) ) );
   }
 
+  @Test
+  public void testClearReferences() throws Exception {
+    metaStoreUtil.save( dataService );
+    metaStoreUtil.sync( transMeta, exceptionHandler );
+
+    assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ),
+      contains( validDataService() ) );
+
+    metaStoreUtil.clearReferences( transMeta );
+
+    assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ), emptyIterable() );
+  }
+
   private Matcher<DataServiceMeta> validDataService() {
     return allOf(
       hasProperty( "name", equalTo( DATA_SERVICE_NAME ) ),

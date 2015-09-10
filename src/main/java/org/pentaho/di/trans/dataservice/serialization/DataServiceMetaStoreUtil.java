@@ -40,6 +40,7 @@ import com.google.common.collect.Maps;
 import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -338,6 +339,21 @@ public class DataServiceMetaStoreUtil {
     }
   }
 
+  /**
+   * Remove all data services from the metastore provided by a transformation
+   * @param transMeta The transformation which will be un-published
+   */
+  public void clearReferences( TransMeta transMeta ) {
+    MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( transMeta.getMetaStore() );
+    try {
+      for ( String name : getDataServiceNames( transMeta ) ) {
+        serviceTransFactory.deleteElement( name );
+      }
+    } catch ( MetaStoreException e ) {
+      getLogChannel().logError( "Unable to remove orphaned data service", e );
+    }
+  }
+
   protected MetaStoreFactory<ServiceTrans> getServiceTransFactory( IMetaStore metaStore ) {
     return new MetaStoreFactory<>( ServiceTrans.class, metaStore, NAMESPACE );
   }
@@ -389,10 +405,18 @@ public class DataServiceMetaStoreUtil {
     return Maps.asMap( keys, Functions.constant( dataService.getName() ) );
   }
 
+  public LogChannelInterface getLogChannel() {
+    return context.getLogChannel();
+  }
+
+  public List<PushDownFactory> getPushDownFactories() {
+    return context.getPushDownFactories();
+  }
+
   private class DataServiceMetaObjectFactory implements IMetaStoreObjectFactory {
     @Override public Object instantiateClass( final String className, Map<String, String> objectContext ) throws
       MetaStoreException {
-      for ( PushDownFactory factory : context.getPushDownFactories() ) {
+      for ( PushDownFactory factory : getPushDownFactories() ) {
         if ( factory.getType().getName().equals( className ) ) {
           return factory.createPushDown();
         }
