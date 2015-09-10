@@ -22,21 +22,22 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+
+import static org.pentaho.di.i18n.BaseMessages.getString;
 
 /**
  * @author nhudak
  */
-class DataServiceAlreadyExistsException extends KettleException {
-  private final DataServiceMeta dataServiceMeta;
+public class DataServiceAlreadyExistsException extends DataServiceValidationException {
+
+  private static final Class<DataServiceAlreadyExistsException> PKG = DataServiceAlreadyExistsException.class;
 
   public DataServiceAlreadyExistsException( DataServiceMeta dataServiceMeta ) {
-    super( "Data Service " + dataServiceMeta.getName() + " is already defined" );
-    this.dataServiceMeta = dataServiceMeta;
+    this( dataServiceMeta, getString( PKG, "Messages.SaveError.NameConflict", dataServiceMeta.getName() ) );
   }
 
-  public DataServiceMeta getDataService() {
-    return dataServiceMeta;
+  public DataServiceAlreadyExistsException( DataServiceMeta dataServiceMeta, String message ) {
+    super( dataServiceMeta, message );
   }
 }
