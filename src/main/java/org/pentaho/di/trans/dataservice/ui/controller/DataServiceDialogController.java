@@ -23,14 +23,13 @@
 package org.pentaho.di.trans.dataservice.ui.controller;
 
 import com.google.common.collect.ImmutableList;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceValidationException;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.util.HelpUtils;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
@@ -82,36 +81,20 @@ public class DataServiceDialogController extends AbstractController {
 
   public void saveAndClose() throws XulException {
     try {
-      if ( !validate() ) {
-        return;
-      }
-      delegate.save( model.getDataService() );
+      String existing = dataService != null ? dataService.getName() : null;
+
+      delegate.save( delegate.checkConflict( delegate.checkDefined( model.getDataService() ), existing ) );
       // Remove edited data service if name changed
-      if ( dataService != null && !dataService.getName().equals( model.getServiceName() ) ) {
+      if ( dataService != null && !model.getServiceName().equals( existing ) ) {
         delegate.removeDataService( dataService );
       }
       close();
-    } catch ( MetaStoreException e ) {
-      String message = getString( PKG, "DataServiceDialog.MetaStoreError.Message" );
-      error( getString( PKG, "DataServiceDialog.MetaStoreError.Title" ), message );
-      getLogChannel().logError( message, e );
+    } catch ( DataServiceValidationException e ){
+      error( getString( PKG, "DataServiceDialog.SaveError.Title" ), e.getMessage() );
+    } catch ( Exception e ) {
+      error( getString( PKG, "DataServiceDialog.SaveError.Title" ), e.getMessage() );
+      getLogChannel().logError( e.getMessage(), e );
     }
-  }
-
-  protected Boolean validate() throws XulException, MetaStoreException {
-    if ( Const.isEmpty( model.getServiceName() ) ) {
-      error( getString( PKG, "DataServiceDialog.NameRequired.Title" ),
-          getString( PKG, "DataServiceDialog.NameRequired.Message" ) );
-      return false;
-    }
-
-    if ( !delegate.saveAllowed( model.getServiceName(), dataService ) ) {
-      error( getString( PKG, "DataServiceDialog.AlreadyExists.Title" ),
-          getString( PKG, "DataServiceDialog.AlreadyExists.Message" ) );
-      return false;
-    }
-
-    return true;
   }
 
   public void open() {

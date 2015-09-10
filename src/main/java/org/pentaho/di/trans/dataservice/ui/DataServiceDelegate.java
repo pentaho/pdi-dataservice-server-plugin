@@ -100,6 +100,14 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
     }
   }
 
+  public void suggestEdit( DataServiceMeta dataServiceMeta, String title, String text ) {
+    TransMeta serviceTrans = dataServiceMeta.getServiceTrans();
+    if ( !serviceTrans.hasChanged() && showPrompt( title, text ) ) {
+      editDataService( dataServiceMeta );
+      serviceTrans.setChanged();
+    }
+  }
+
   private void showSavePrompt( String title, String message ) {
     MessageDialog dialog =
         new MessageDialog( getShell(), title,  null, message, MessageDialog.QUESTION,
@@ -124,14 +132,16 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
     mb.open();
   }
 
+  public boolean showPrompt( String title, String text ) {
+    MessageBox mb = new MessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_WARNING );
+    mb.setText( title );
+    mb.setMessage( text );
+    return mb.open() == SWT.YES;
+  }
+
   public DataServiceMeta getDataService( String serviceName ) throws MetaStoreException {
     Spoon spoon = getSpoon();
     return getDataService( serviceName, spoon.getRepository(), spoon.getMetaStore() );
-  }
-
-  public boolean saveAllowed( String serviceName, DataServiceMeta editing ) throws MetaStoreException {
-    // TODO: Check if data service already exists in another transformation
-    return true;
   }
 
   @Override

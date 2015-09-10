@@ -170,14 +170,97 @@ public class DataServiceMetaStoreUtilTest {
     return dataService;
   }
 
+  @Test
+  public void testCheckDefined() throws Exception {
+    metaStoreUtil.checkDefined( dataService );
+
+    try {
+      dataService.setName( "" );
+      metaStoreUtil.checkDefined( dataService );
+      fail( "Expected failure for empty name");
+    } catch ( UndefinedDataServiceException e ) {
+      assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
+    }
+
+    dataService = metaStoreUtil.checkDefined( createDataService( transMeta ) );
+    try {
+      dataService.setStepname( "" );
+      metaStoreUtil.checkDefined( dataService );
+      fail( "Expected failure for empty step name");
+    } catch ( UndefinedDataServiceException e ) {
+      assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
+    }
+
+    dataService = metaStoreUtil.checkDefined( createDataService( transMeta ) );
+    try {
+      dataService.setStepname( "Not in Trans" );
+      metaStoreUtil.checkDefined( dataService );
+      fail( "Expected failure for non-existant step name");
+    } catch ( UndefinedDataServiceException e ) {
+      assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
+    }
+  }
+
+  @Test
+  public void testCheckConflict() throws Exception {
+    DataServiceMeta local = createDataService( mock( TransMeta.class ) );
+    local.setName( "OTHER_SERVICE" );
+    local.setStepname( "OTHER_STEP" );
+    metaStoreUtil.getDataServiceFactory( transMeta ).saveElement( local );
+
+    DataServiceMeta published = createDataService( mock( TransMeta.class ) );
+    published.setName( "PUBLISHED_SERVICE" );
+    metaStoreUtil.getServiceTransFactory( metaStore ).saveElement( ServiceTrans.create( published ) );
+
+    // New data service with different properties
+    metaStoreUtil.checkConflict( dataService, null );
+    // Editing a data service with all new properties
+    metaStoreUtil.checkConflict( dataService, local.getName() );
+
+    try {
+      // New data service with the same name as an local data service
+      dataService.setName( local.getName() );
+      metaStoreUtil.checkConflict( dataService, null );
+      fail( "Expected DataServiceAlreadyExistsException");
+    } catch ( DataServiceAlreadyExistsException e ) {
+      assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
+    }
+    // Editing a data service, no name change
+    metaStoreUtil.checkConflict( dataService, local.getName() );
+
+    dataService = createDataService( transMeta );
+    metaStoreUtil.checkConflict( dataService, null );
+    try {
+      // New data service with conflicting output step
+      dataService.setStepname( local.getStepname() );
+      metaStoreUtil.checkConflict( dataService, null );
+      fail( "Expected DataServiceAlreadyExistsException");
+    } catch ( DataServiceAlreadyExistsException e ) {
+      assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
+    }
+    // Editing data service with same output step
+    metaStoreUtil.checkConflict( dataService, local.getName() );
+
+    dataService = createDataService( transMeta );
+    metaStoreUtil.checkConflict( dataService, null );
+    try {
+      // New Data service with conflicting name in metastore
+      dataService.setName( published.getName() );
+      metaStoreUtil.checkConflict( dataService, null );
+      fail( "Expected DataServiceAlreadyExistsException");
+    } catch ( DataServiceAlreadyExistsException e ) {
+      assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
+    }
+    try {
+      // Editing Data service with conflicting name in metastore
+      metaStoreUtil.checkConflict( dataService, local.getName() );
+      fail( "Expected DataServiceAlreadyExistsException");
+    } catch ( DataServiceAlreadyExistsException e ) {
+      assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
+    }
+  }
+
   @Test public void testSaveLocal() throws Exception {
-    metaStoreUtil.save( null );
-
-    DataServiceMeta undefinedDataService = mock( DataServiceMeta.class );
-    when( undefinedDataService.getServiceTrans() ).thenReturn( transMeta );
-    when( undefinedDataService.isDefined() ).thenReturn( false );
-    metaStoreUtil.save( undefinedDataService );
-
     assertThat( metaStoreUtil.getDataServices( transMeta ), emptyIterable() );
 
     metaStoreUtil.save( this.dataService );

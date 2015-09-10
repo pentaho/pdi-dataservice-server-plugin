@@ -22,14 +22,13 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
-import com.google.common.base.Functions;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
-import org.pentaho.di.core.listeners.ContentChangedAdapter;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 
 /**
  * @author nhudak
@@ -37,27 +36,22 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 @ExtensionPoint(
   id = "TransOpenedExtensionPointPlugin",
   extensionPointId = "TransAfterOpen",
-  description = "Registers a ContentChangedListener on each TransMeta to synchronize Data Services with the MetaStore"
+  description = "Registers a ContentChangedListener and StepMetaChangeListener on each TransMeta to synchronize Data Services with the MetaStore"
 )
 public class TransOpenedExtensionPointPlugin implements ExtensionPointInterface {
-  private final DataServiceContext context;
+  private final SynchronizationService synchronizationService;
 
   public TransOpenedExtensionPointPlugin( DataServiceContext context ) {
-    this.context = context;
+    this( new SynchronizationService( DataServiceDelegate.withDefaultSpoonInstance( context ) ) );
+  }
+
+  protected TransOpenedExtensionPointPlugin( SynchronizationService synchronizationService ) {
+    this.synchronizationService = synchronizationService;
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
-    if ( object instanceof TransMeta ) {
-      final TransMeta transMeta = (TransMeta) object;
-      transMeta.addContentChangedListener( new ContentChangedAdapter() {
-        @Override public void contentSafe( Object parentObject ) {
-          try {
-            context.getMetaStoreUtil().sync( transMeta, Functions.constant( null ) );
-          } catch ( Exception e ) {
-            context.getLogChannel().logError( "Unable to sync repository", e );
-          }
-        }
-      } );
-    }
+    final TransMeta transMeta = (TransMeta) object;
+    transMeta.addContentChangedListener( synchronizationService );
+    transMeta.addStepChangeListener( synchronizationService );
   }
 }
