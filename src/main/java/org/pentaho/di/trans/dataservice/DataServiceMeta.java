@@ -22,8 +22,8 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.serialization.MetaStoreElement;
@@ -65,10 +65,6 @@ public class DataServiceMeta implements MetaStoreElement {
   // serviceTrans should otherwise always be given
   @Deprecated
   public DataServiceMeta() {
-  }
-
-  public boolean isDefined() {
-    return !Const.isEmpty( name ) && !Const.isEmpty( stepname ) && serviceTrans.findStep( stepname ) != null;
   }
 
   /**
@@ -115,4 +111,12 @@ public class DataServiceMeta implements MetaStoreElement {
     this.pushDownOptimizationMeta = pushDownOptimizationMeta;
   }
 
+  @Override public String toString() {
+    return Objects.toStringHelper( this )
+      .add( "name", name )
+      .add( "serviceTrans", serviceTrans )
+      .add( "stepname", stepname )
+      .add( "pushDownOptimizationMeta", pushDownOptimizationMeta )
+      .toString();
+  }
 }

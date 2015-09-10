@@ -28,6 +28,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
@@ -62,15 +63,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
+import static org.pentaho.di.i18n.BaseMessages.getString;
 import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
 public class DataServiceMetaStoreUtil {
-  private final DataServiceContext context;
-  private final Cache<Integer, String> stepCache;
+  private static final Class<DataServiceMetaStoreUtil> PKG = DataServiceMetaStoreUtil.class;
+  protected final DataServiceContext context;
+  protected final Cache<Integer, String> stepCache;
 
   public DataServiceMetaStoreUtil( DataServiceContext context, Cache<Integer, String> cache ) {
     this.context = context;
     this.stepCache = cache;
+  }
+
+  protected DataServiceMetaStoreUtil( DataServiceMetaStoreUtil metaStoreUtil ) {
+    this( metaStoreUtil.context, metaStoreUtil.stepCache );
   }
 
   public static DataServiceMetaStoreUtil create( DataServiceContext context ) {
@@ -177,6 +184,11 @@ public class DataServiceMetaStoreUtil {
     return getDataServiceFactory( transMeta ).getElements();
   }
 
+  public List<String> getDataServiceNames( TransMeta transMeta )
+    throws MetaStoreException {
+    return getDataServiceFactory( transMeta ).getElementNames();
+  }
+
   public List<String> getDataServiceNames( IMetaStore metaStore )
     throws MetaStoreException {
     return getServiceTransFactory( metaStore ).getElementNames();
@@ -210,16 +222,60 @@ public class DataServiceMetaStoreUtil {
     return null;
   }
 
-  public void save( DataServiceMeta dataService ) throws MetaStoreException {
-    if ( dataService != null && dataService.isDefined() ) {
-      TransMeta transMeta = checkNotNull( dataService.getServiceTrans(), "Service trans not defined for data service" );
-
-      context.getLogChannel().logBasic( "Saving data service in meta store '" + transMeta.getMetaStore() + "'" );
-
-      // Save to embedded MetaStore
-      getDataServiceFactory( transMeta ).saveElement( dataService );
-      transMeta.setChanged();
+  public DataServiceMeta checkDefined( DataServiceMeta dataServiceMeta ) throws UndefinedDataServiceException {
+    if ( Strings.isNullOrEmpty( dataServiceMeta.getName() ) ) {
+      throw new UndefinedDataServiceException( dataServiceMeta, getString( PKG, "Messages.SaveError.NameMissing" ) );
     }
+
+    if ( Strings.isNullOrEmpty( dataServiceMeta.getStepname() ) ) {
+      throw new UndefinedDataServiceException( dataServiceMeta, getString( PKG, "Messages.SaveError.StepMissing" ) );
+    }
+
+    if ( dataServiceMeta.getServiceTrans().findStep( dataServiceMeta.getStepname() ) == null ) {
+      throw new UndefinedDataServiceException( dataServiceMeta,
+        getString( PKG, "Messages.SaveError.StepNotFound", dataServiceMeta.getStepname() ) );
+    }
+
+    return dataServiceMeta;
+  }
+
+  public DataServiceMeta checkConflict( DataServiceMeta dataServiceMeta, String ignored )
+    throws MetaStoreException, DataServiceAlreadyExistsException {
+    TransMeta serviceTrans = dataServiceMeta.getServiceTrans();
+
+    // Ensure this output step does not already have a data service
+    DataServiceMeta stepConflict = getDataServiceByStepName( serviceTrans, dataServiceMeta.getStepname() );
+    if ( stepConflict != null && !stepConflict.getName().equals( ignored ) ) {
+      throw new DataServiceAlreadyExistsException( dataServiceMeta,
+        getString( PKG, "Messages.SaveError.StepConflict", stepConflict.getStepname(), stepConflict.getName() ) );
+    }
+
+    String name = dataServiceMeta.getName();
+    // If name hasn't changed, look no further
+    if ( name.equals( ignored ) ) {
+      return dataServiceMeta;
+    }
+
+    // Scan local trans and meta store for conflict
+    if ( getDataServiceNames( serviceTrans ).contains( name ) ) {
+      throw new DataServiceAlreadyExistsException( dataServiceMeta );
+    }
+    // Scan MetaStore for conflict
+    if ( getDataServiceNames( serviceTrans.getMetaStore() ).contains( name ) ) {
+      throw new DataServiceAlreadyExistsException( dataServiceMeta );
+    }
+
+    return dataServiceMeta;
+  }
+
+  public void save( DataServiceMeta dataService ) throws MetaStoreException {
+    TransMeta transMeta = checkNotNull( dataService.getServiceTrans(), "Service trans not defined for data service" );
+
+    context.getLogChannel().logBasic( "Saving data service in meta store '" + transMeta.getMetaStore() + "'" );
+
+    // Save to embedded MetaStore
+    getDataServiceFactory( transMeta ).saveElement( dataService );
+    transMeta.setChanged();
   }
 
   public void removeDataService( DataServiceMeta dataService ) throws MetaStoreException {
@@ -265,12 +321,8 @@ public class DataServiceMetaStoreUtil {
 
     for ( DataServiceMeta dataServiceMeta : toSave.values() ) {
       try {
-        if ( dataServiceMeta.isDefined() ) {
-          serviceTransFactory.saveElement( ServiceTrans.create( dataServiceMeta ) );
-        } else {
-          exceptionHandler.apply( new UndefinedDataServiceException( dataServiceMeta ) );
-        }
-      } catch ( MetaStoreException e ) {
+        serviceTransFactory.saveElement( ServiceTrans.create( checkDefined( dataServiceMeta ) ) );
+      } catch ( Exception e ) {
         exceptionHandler.apply( e );
       }
     }

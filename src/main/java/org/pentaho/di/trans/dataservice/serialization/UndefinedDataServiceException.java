@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 
 import java.text.MessageFormat;
@@ -30,15 +29,13 @@ import java.text.MessageFormat;
 /**
  * @author nhudak
  */
-class UndefinedDataServiceException extends KettleException {
-  private final DataServiceMeta dataServiceMeta;
+public class UndefinedDataServiceException extends DataServiceValidationException {
 
   public UndefinedDataServiceException( DataServiceMeta dataServiceMeta ) {
-    super( MessageFormat.format( "Data Service {0} is undefined.", dataServiceMeta.getName() ) );
-    this.dataServiceMeta = dataServiceMeta;
+    super( dataServiceMeta, MessageFormat.format( "Data Service {0} is undefined.", dataServiceMeta.getName() ) );
   }
 
-  public DataServiceMeta getDataServiceMeta() {
-    return dataServiceMeta;
+  public UndefinedDataServiceException( DataServiceMeta dataServiceMeta, String message ) {
+    super( dataServiceMeta, message );
   }
 }

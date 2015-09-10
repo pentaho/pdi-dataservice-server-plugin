@@ -27,15 +27,18 @@ import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceAlreadyExistsException;
+import org.pentaho.di.trans.dataservice.serialization.UndefinedDataServiceException;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
@@ -46,19 +49,18 @@ import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.dom.Document;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -69,9 +71,9 @@ public class DataServiceDialogControllerTest {
 
   @Mock TransMeta transMeta;
 
-  @InjectMocks DataServiceModel model;
+  @Mock DataServiceModel model;
 
-  @Mock DataServiceMeta dataService;
+  @Mock DataServiceMeta dataServiceMeta;
 
   @Mock DataServiceDelegate delegate;
 
@@ -83,14 +85,14 @@ public class DataServiceDialogControllerTest {
 
   @Mock XulMessageBox messageBox;
 
-  private static final String FILE_NAME = "/home/admin/transformation.ktr";
+  @Mock LogChannelInterface logChannel;
 
   private static final String SERVICE_NAME = "test_service";
-
-  private static final String NEW_SERVICE_NAME = "test_service2";
+  private static final String EDITING_SERVICE_NAME = "test_service2";
   private static final String SELECTED_STEP = "Output Step";
   private static final String STEP_ONE_NAME = "Step One";
   private static final String STEP_TWO_NAME = "Step Two";
+
   private DataServiceDialogController controller;
 
   @Before
@@ -99,14 +101,24 @@ public class DataServiceDialogControllerTest {
     when( document.getElementById( DataServiceDialogController.XUL_DIALOG_ID ) ).thenReturn( dialog );
     when( document.createElement( "messagebox" ) ).thenReturn( messageBox );
 
-    controller = new DataServiceDialogController( model, delegate );
+    controller = new DataServiceDialogController( model, delegate ){
+      @Override protected LogChannelInterface getLogChannel() {
+        return logChannel;
+      }
+    };
     controller.setXulDomContainer( xulDomContainer );
 
-    doReturn( SERVICE_NAME ).when( dataService ).getName();
+    doReturn( SERVICE_NAME ).when( dataServiceMeta ).getName();
     doReturn( new String[] { STEP_ONE_NAME, STEP_TWO_NAME } ).when( transMeta ).getStepNames();
 
-    model.setServiceName( SERVICE_NAME );
-    model.setServiceStep( SELECTED_STEP );
+    when( model.getServiceName() ).thenReturn( SERVICE_NAME );
+    when( model.getServiceStep() ).thenReturn( SELECTED_STEP );
+    when( model.getTransMeta() ).thenReturn( transMeta );
+
+    when( dataServiceMeta.getName() ).thenReturn( SERVICE_NAME );
+    when( dataServiceMeta.getStepname() ).thenReturn( SELECTED_STEP );
+
+    when( model.getDataService() ).thenReturn( dataServiceMeta );
   }
 
   @Test
@@ -140,41 +152,41 @@ public class DataServiceDialogControllerTest {
   }
 
   @Test
-  public void testValidate() throws Exception {
-    controller.setDataService( dataService );
-    doReturn( true ).when( delegate ).saveAllowed( SERVICE_NAME, dataService );
-
-    assertThat( controller.validate(), is( true ) );
-
-    verify( delegate ).saveAllowed( SERVICE_NAME, dataService );
-  }
-
-  @Test
   public void testError() throws Exception {
-    model.setServiceName( "" );
+    UndefinedDataServiceException undefinedException = new UndefinedDataServiceException( dataServiceMeta );
+    doThrow( undefinedException )
+      .doReturn( dataServiceMeta )
+      .when( delegate ).checkDefined( dataServiceMeta );
 
-    assertFalse( controller.validate() );
+    DataServiceAlreadyExistsException alreadyExistsException = new DataServiceAlreadyExistsException( dataServiceMeta );
+    doThrow( alreadyExistsException )
+      .doReturn( dataServiceMeta )
+      .when( delegate ).checkConflict( dataServiceMeta, null );
 
-    model.setServiceName( SERVICE_NAME );
-    model.setServiceStep( "" );
+    MetaStoreException metaStoreException = new MetaStoreException();
+    doThrow( metaStoreException ).doNothing().when( delegate ).save( dataServiceMeta );
 
-    assertFalse( controller.validate() );
+    controller.saveAndClose();
+    verify( messageBox ).setMessage( undefinedException.getMessage() );
 
-    model.setServiceStep( SELECTED_STEP );
-    controller.setDataService( dataService );
-    doReturn( false ).when( delegate ).saveAllowed( SERVICE_NAME, dataService );
+    controller.saveAndClose();
+    verify( messageBox ).setMessage( alreadyExistsException.getMessage() );
 
-    assertFalse( controller.validate() );
+    verify( delegate, never() ).save( any( DataServiceMeta.class ) );
 
-    doReturn( true ).when( delegate ).saveAllowed( SERVICE_NAME, dataService );
-    assertTrue( controller.validate() );
+    controller.saveAndClose();
 
     verify( messageBox, times( 3 ) ).open();
+    verify( logChannel ).logError( anyString(), same( metaStoreException ) );
+    verify( dialog, never() ).hide();
+
+    controller.saveAndClose();
+    verify( dialog ).hide();
+    verifyNoMoreInteractions( logChannel );
   }
 
   @Test
   public void testShowTestDialog() throws Exception {
-    DataServiceMeta dataServiceMeta = mockModel();
     controller = new DataServiceDialogController( model, delegate );
 
     controller.showTestDialog();
@@ -184,27 +196,17 @@ public class DataServiceDialogControllerTest {
 
   @Test
   public void testSaveAndClose() throws Exception {
-    final AtomicBoolean valid = new AtomicBoolean( true );
+    DataServiceMeta editingDataService = mock( DataServiceMeta.class );
+    controller.setDataService( editingDataService );
+    when( editingDataService.getName() ).thenReturn( EDITING_SERVICE_NAME );
 
-    DataServiceMeta dataServiceMeta = mockModel();
-    controller = new DataServiceDialogController( model, delegate ) {
-      @Override public Boolean validate() {
-        return valid.get();
-      }
-    };
-    controller.setXulDomContainer( xulDomContainer );
-    controller.setDataService( dataServiceMeta );
-    when( model.getServiceName() ).thenReturn( SERVICE_NAME + "_0" );
+    when( delegate.checkDefined( dataServiceMeta ) ).thenReturn( dataServiceMeta );
+    when( delegate.checkConflict( dataServiceMeta, EDITING_SERVICE_NAME ) ).thenReturn( dataServiceMeta );
 
     controller.saveAndClose();
     verify( delegate ).save( dataServiceMeta );
-    verify( delegate ).removeDataService( dataServiceMeta, false );
+    verify( delegate ).removeDataService( editingDataService );
     verify( dialog ).hide();
-    verifyNoMoreInteractions( delegate );
-
-    valid.set( false );
-    controller.saveAndClose();
-    verifyNoMoreInteractions( delegate );
   }
 
   @Test
@@ -216,18 +218,5 @@ public class DataServiceDialogControllerTest {
 
     controller.close();
     verify( dialog ).hide();
-  }
-
-  private DataServiceMeta mockModel() {
-    model = mock( DataServiceModel.class );
-    when( model.getServiceName() ).thenReturn( SERVICE_NAME );
-    when( model.getServiceStep() ).thenReturn( SELECTED_STEP );
-
-    DataServiceMeta dataServiceMeta = mock( DataServiceMeta.class );
-    when( dataServiceMeta.getName() ).thenReturn( SERVICE_NAME );
-    when( dataServiceMeta.getStepname() ).thenReturn( SELECTED_STEP );
-
-    when( model.getDataService() ).thenReturn( dataServiceMeta );
-    return dataServiceMeta;
   }
 }
