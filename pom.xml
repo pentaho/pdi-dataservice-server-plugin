@@ -78,7 +78,7 @@
         <junit.version>4.11</junit.version>
         <dependency.pentaho-kettle.version>6.0-SNAPSHOT</dependency.pentaho-kettle.version>
         <dependency.pentaho-mongodb-plugin.revision>6.0-SNAPSHOT</dependency.pentaho-mongodb-plugin.revision>
-        <guava.version>16.0.1</guava.version>
+        <guava.version>17.0</guava.version>
     </properties>
 
 
