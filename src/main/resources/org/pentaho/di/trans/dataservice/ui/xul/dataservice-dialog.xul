@@ -2,53 +2,52 @@
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <window id="dataservice-manager-window" orient="vertical"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        xmlns:pen="http://www.pentaho.org/2008/xul"
         onload="dataServiceDialogController.init()"
         >
 
-    <dialog id="dataservice-dialog"
-            title="${DataServiceDialog.Dialog.Title}"
-            appicon="images/data-services.svg"
-            height="750"
-            width="670"
-            padding="15"
-            buttons=""
-            ondialogaccept="dataServiceDialogController.saveAndClose()"
-            ondialogcancel="dataServiceDialogController.close()"
-            >
+  <dialog id="dataservice-dialog"
+          title="${DataServiceDialog.Dialog.Title}"
+          appicon="images/data-services.svg"
+          height="750"
+          width="670"
+          padding="15"
+          buttons=""
+          ondialogaccept="dataServiceDialogController.saveAndClose()"
+          ondialogcancel="dataServiceDialogController.close()"
+          >
     <label value="${DataServiceDialog.ServiceName.Label}"/>
     <hbox>
-        <textbox id="service-name" width="250"/>
-        <spacer flex="1"/>
+      <textbox id="service-name" width="250"/>
+      <spacer flex="1"/>
     </hbox>
     <separator height="30"/>
-        <hbox>
-            <label value="${DataServiceDialog.ConnectionSetupLink.Label}" onclick="dataServiceDialogController.showSetupHelp()" />
-            <image src="${HelpImage.Url}" />
-        </hbox>
     <label value="${DataServiceDialog.OutputStep.Label}"/>
     <hbox>
-        <menulist id="trans-steps" width="206">
-            <menupopup/>
-        </menulist>
+      <menulist id="trans-steps" width="206">
+        <menupopup/>
+      </menulist>
     </hbox>
     <spacer/>
     <tabbox id="optimizationTabs" flex="2" selectedIndex="2">
-        <tabs id="opt_tabs">
-        </tabs>
-        <tabpanels id="opt_panels">
-        </tabpanels>
+      <tabs id="opt_tabs">
+      </tabs>
+      <tabpanels id="opt_panels">
+      </tabpanels>
     </tabbox>
-    <separator height="30"/>
+    <hbox height="7"/>
+    <hbox height="21">
+      <label value="${DataServiceDialog.ConnectionSetupLink.Label}"/>
+      <label value="${DataServiceDialog.ConnectionSetupLink.Link}" onclick="dataServiceDialogController.showSetupHelp()"/>
+    </hbox>
+    <separator height="21"/>
     <hbox>
-        <button label="${DataServiceDialog.Help.Button}" image="${HelpImage.Url}" onclick="dataServiceDialogController.showHelp()"/>
-        <spacer flex="1"/>
-        <button id="test-dataservice-button" label="${DataServiceDialog.TestDataService.Button}" width="150"
-                onclick="dataServiceDialogController.showTestDialog()"/>
-        <spacer flex="1"/>
-        <button label="${DataServiceDialog.OK.Button}" onclick="dataServiceDialogController.saveAndClose()" />
-        <button label="${DataServiceDialog.Cancel.Button}" onclick="dataServiceDialogController.close()" />
+      <button label="${DataServiceDialog.Help.Button}" image="${HelpImage.Url}" onclick="dataServiceDialogController.showHelp()"/>
+      <spacer flex="1"/>
+      <button id="test-dataservice-button" label="${DataServiceDialog.TestDataService.Button}" width="150"
+              onclick="dataServiceDialogController.showTestDialog()"/>
+      <spacer flex="1"/>
+      <button label="${DataServiceDialog.OK.Button}" onclick="dataServiceDialogController.saveAndClose()" width="80"/>
+      <button label="${DataServiceDialog.Cancel.Button}" onclick="dataServiceDialogController.close()" width="80"/>
     </hbox>
   </dialog>
 </window>
-
