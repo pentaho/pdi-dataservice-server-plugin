@@ -158,21 +158,13 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
         return;
       }
     }
-    try {
-      removeDataService( dataService );
-    } catch ( MetaStoreException ignored ) {
-    }
+    removeDataService( dataService );
   }
 
-  @Override public void removeDataService( DataServiceMeta dataService ) throws MetaStoreException {
-    try {
-      super.removeDataService( dataService );
-      getSpoon().refreshTree();
-      getSpoon().refreshGraph();
-    } catch ( MetaStoreException e ) {
-      getLogChannel().logError( "Unable to remove a data service", e );
-      throw e;
-    }
+  @Override public void removeDataService( DataServiceMeta dataService ) {
+    super.removeDataService( dataService );
+    getSpoon().refreshTree();
+    getSpoon().refreshGraph();
   }
 
   public void testDataService( DataServiceMeta dataService ) {

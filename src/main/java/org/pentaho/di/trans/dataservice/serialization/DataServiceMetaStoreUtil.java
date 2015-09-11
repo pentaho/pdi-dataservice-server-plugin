@@ -33,6 +33,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -181,8 +182,13 @@ public class DataServiceMetaStoreUtil {
     };
   }
 
-  public Iterable<DataServiceMeta> getDataServices( TransMeta transMeta ) throws MetaStoreException {
-    return getDataServiceFactory( transMeta ).getElements();
+  public Iterable<DataServiceMeta> getDataServices( TransMeta transMeta ) {
+    try {
+      return getDataServiceFactory( transMeta ).getElements();
+    } catch ( MetaStoreException e ) {
+      getLogChannel().logError( "Unable to list data services for " + transMeta.getName(), e );
+      return ImmutableList.of();
+    }
   }
 
   public List<String> getDataServiceNames( TransMeta transMeta )
@@ -280,11 +286,15 @@ public class DataServiceMetaStoreUtil {
     transMeta.setChanged();
   }
 
-  public void removeDataService( DataServiceMeta dataService ) throws MetaStoreException {
+  public void removeDataService( DataServiceMeta dataService ) {
     TransMeta transMeta = dataService.getServiceTrans();
-    getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
-    stepCache.removeAll( createCacheKeys( transMeta, dataService.getStepname() ) );
-    transMeta.setChanged();
+    try {
+      getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
+      stepCache.removeAll( createCacheKeys( transMeta, dataService.getStepname() ) );
+      transMeta.setChanged();
+    } catch ( MetaStoreException e ) {
+      getLogChannel().logBasic( e.getMessage() );
+    }
   }
 
   public void sync( TransMeta transMeta, Function<? super Exception, ?> exceptionHandler ) {

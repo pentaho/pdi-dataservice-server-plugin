@@ -73,12 +73,8 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
 
     TreeItem tiDSTitle = createTreeItem( tiRootName, STRING_DATA_SERVICES, guiResource.getImageFolder() );
 
-    try {
-      for ( DataServiceMeta dataService : delegate.getDataServices( meta ) ) {
-        createTreeItem( tiDSTitle, dataService.getName(), getDataServiceImage( guiResource ) );
-      }
-    } catch ( Exception e ) {
-      meta.getLogChannel().logError( "Unable to open data service menu", e );
+    for ( DataServiceMeta dataService : delegate.getDataServices( meta ) ) {
+      createTreeItem( tiDSTitle, dataService.getName(), getDataServiceImage( guiResource ) );
     }
   }
 
