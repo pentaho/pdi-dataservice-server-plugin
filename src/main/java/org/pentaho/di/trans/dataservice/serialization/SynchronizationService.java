@@ -48,13 +48,11 @@ public class SynchronizationService implements ContentChangedListener, StepMetaC
         String title = BaseMessages.getString( PKG, "Messages.SaveError.Title" );
         if ( e instanceof DataServiceAlreadyExistsException ) {
           DataServiceMeta dataService = ( (DataServiceAlreadyExistsException) e ).getDataServiceMeta();
-          delegate.suggestEdit( dataService, title,
-            e.getMessage() + "\n" + BaseMessages.getString( PKG, "Messages.SaveError.Edit" ) );
+          delegate.suggestEdit( dataService, title, e.getMessage() + "\n" + BaseMessages.getString( PKG, "Messages.SaveError.Edit" ) );
         }
         if ( e instanceof UndefinedDataServiceException ) {
           DataServiceMeta dataService = ( (UndefinedDataServiceException) e ).getDataServiceMeta();
-          if ( delegate
-            .showPrompt( title, e.getMessage() + "\n" + BaseMessages.getString( PKG, "Messages.SaveError.Remove" ) ) ) {
+          if ( delegate.showPrompt( title, e.getMessage() + "\n" + BaseMessages.getString( PKG, "Messages.SaveError.Remove" ) ) ) {
             delegate.removeDataService( dataService, false );
           }
         }

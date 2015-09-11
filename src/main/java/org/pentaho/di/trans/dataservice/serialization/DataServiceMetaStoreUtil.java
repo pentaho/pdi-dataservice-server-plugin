@@ -40,6 +40,7 @@ import com.google.common.collect.Maps;
 import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -271,7 +272,8 @@ public class DataServiceMetaStoreUtil {
   public void save( DataServiceMeta dataService ) throws MetaStoreException {
     TransMeta transMeta = checkNotNull( dataService.getServiceTrans(), "Service trans not defined for data service" );
 
-    context.getLogChannel().logBasic( "Saving data service in meta store '" + transMeta.getMetaStore() + "'" );
+    getLogChannel().logBasic( MessageFormat.format( "Saving ''{0}'' to ''{1}''",
+      dataService.getName(), transMeta.getName() ) );
 
     // Save to embedded MetaStore
     getDataServiceFactory( transMeta ).saveElement( dataService );
@@ -389,10 +391,27 @@ public class DataServiceMetaStoreUtil {
     return Maps.asMap( keys, Functions.constant( dataService.getName() ) );
   }
 
+  public LogChannelInterface getLogChannel() {
+    return context.getLogChannel();
+  }
+
+  public List<PushDownFactory> getPushDownFactories() {
+    return context.getPushDownFactories();
+  }
+
+  public Function<Exception, Void> logErrors( final String message ) {
+    return new Function<Exception, Void>() {
+      @Override public Void apply( Exception e ) {
+        getLogChannel().logError( message, e );
+        return null;
+      }
+    };
+  }
+
   private class DataServiceMetaObjectFactory implements IMetaStoreObjectFactory {
     @Override public Object instantiateClass( final String className, Map<String, String> objectContext ) throws
       MetaStoreException {
-      for ( PushDownFactory factory : context.getPushDownFactories() ) {
+      for ( PushDownFactory factory : getPushDownFactories() ) {
         if ( factory.getType().getName().equals( className ) ) {
           return factory.createPushDown();
         }
