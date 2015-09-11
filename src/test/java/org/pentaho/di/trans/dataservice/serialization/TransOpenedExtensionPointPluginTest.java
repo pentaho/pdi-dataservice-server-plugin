@@ -1,8 +1,8 @@
 package org.pentaho.di.trans.dataservice.serialization;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.logging.LogChannel;
@@ -18,8 +18,14 @@ import static org.mockito.Mockito.verify;
 public class TransOpenedExtensionPointPluginTest {
 
   @Mock SynchronizationService service;
-  @InjectMocks TransOpenedExtensionPointPlugin extensionPointPlugin;
   @Mock TransMeta transMeta;
+
+  TransOpenedExtensionPointPlugin extensionPointPlugin;
+
+  @Before
+  public void setUp() throws Exception {
+    extensionPointPlugin = new TransOpenedExtensionPointPlugin( service );
+  }
 
   @Test
   public void testCallExtensionPoint() throws Exception {
