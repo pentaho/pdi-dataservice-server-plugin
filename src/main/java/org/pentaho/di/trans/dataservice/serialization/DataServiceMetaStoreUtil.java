@@ -300,24 +300,16 @@ public class DataServiceMetaStoreUtil {
   public void sync( TransMeta transMeta, Function<? super Exception, ?> exceptionHandler ) {
     final MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( transMeta.getMetaStore() );
 
-    final Set<ServiceTrans.Reference> references;
     final Set<String> defined;
     final Map<String, DataServiceMeta> dataServices;
     final Map<String, ServiceTrans> published;
 
     try {
-      references = ImmutableSet.copyOf( ServiceTrans.references( transMeta ) );
-
       dataServices = Maps.uniqueIndex( getDataServices( transMeta ), MetaStoreElement.getName );
-
       List<ServiceTrans> serviceTransElements = serviceTransFactory.getElements();
       defined = FluentIterable.from( serviceTransElements ).transform( MetaStoreElement.getName ).toSet();
       published = FluentIterable.from( serviceTransElements )
-        .filter( new Predicate<ServiceTrans>() {
-          @Override public boolean apply( ServiceTrans serviceTrans ) {
-            return Iterables.any( serviceTrans.getReferences(), in( references ) );
-          }
-        } )
+        .filter( byTransMeta( transMeta ) )
         .uniqueIndex( MetaStoreElement.getName );
     } catch ( MetaStoreException e ) {
       exceptionHandler.apply( e );
@@ -347,6 +339,35 @@ public class DataServiceMetaStoreUtil {
     }
     for ( DataServiceMeta dataServiceMeta : nameConflicts.values() ) {
       exceptionHandler.apply( new DataServiceAlreadyExistsException( dataServiceMeta ) );
+    }
+  }
+
+  private Predicate<ServiceTrans> byTransMeta( final TransMeta transMeta ) {
+    return new Predicate<ServiceTrans>() {
+      final Set<ServiceTrans.Reference> references = ImmutableSet.copyOf( ServiceTrans.references( transMeta ) );
+
+      @Override public boolean apply( ServiceTrans serviceTrans ) {
+        return Iterables.any( serviceTrans.getReferences(), in( references ) );
+      }
+    };
+  }
+
+  /**
+   * Remove all data services from the metastore provided by a transformation
+   * @param transMeta The transformation which will be un-published
+   */
+  public void clearReferences( TransMeta transMeta ) {
+    MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( transMeta.getMetaStore() );
+    try {
+      FluentIterable<String> names = FluentIterable.from( serviceTransFactory.getElements() )
+        .filter( byTransMeta( transMeta ) )
+        .transform( MetaStoreElement.getName );
+
+      for ( String name : names ) {
+        serviceTransFactory.deleteElement( name );
+      }
+    } catch ( MetaStoreException e ) {
+      getLogChannel().logError( "Unable to remove orphaned data service", e );
     }
   }
 
