@@ -32,7 +32,6 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransPainterExtension;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 @ExtensionPoint(
   id = "TransPainterStepExtensionPointPlugin",
@@ -58,20 +57,16 @@ public class TransPainterStepExtensionPointPlugin implements ExtensionPointInter
     TransMeta transMeta = extension.transMeta;
     StepMeta stepMeta = extension.stepMeta;
 
-    try {
-      DataServiceMeta dataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() );
-      if ( dataService != null ) {
-        // Is this step a data service provider?
-        //
-        extension.gc
-          .drawImage( "images/data-services.svg", getClass().getClassLoader(), extension.x1 - 11,
-            extension.y1 - 9 + extension.iconsize );
-        extension.areaOwners.add(
-          new AreaOwner( AreaType.CUSTOM, extension.x1 - 11, extension.y1 - 9 + extension.iconsize, 16, 16,
-            extension.offset, transMeta, stepMeta ) );
-      }
-    } catch ( MetaStoreException e ) {
-      // Don't draw anything in the event of an error
+    DataServiceMeta dataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() );
+    if ( dataService != null ) {
+      // Is this step a data service provider?
+      //
+      extension.gc
+        .drawImage( "images/data-services.svg", getClass().getClassLoader(), extension.x1 - 11,
+          extension.y1 - 9 + extension.iconsize );
+      extension.areaOwners.add(
+        new AreaOwner( AreaType.CUSTOM, extension.x1 - 11, extension.y1 - 9 + extension.iconsize, 16, 16,
+          extension.offset, transMeta, stepMeta ) );
     }
 
   }

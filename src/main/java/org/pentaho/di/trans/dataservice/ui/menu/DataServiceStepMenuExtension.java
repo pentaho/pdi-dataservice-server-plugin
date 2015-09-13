@@ -33,7 +33,6 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.trans.StepMenuExtension;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.ui.xul.containers.XulMenupopup;
 
 @ExtensionPoint( id = "DataServiceStepMenuExtension", description = "Creates popup menus for data services",
@@ -55,11 +54,7 @@ public class DataServiceStepMenuExtension implements ExtensionPointInterface {
     XulMenupopup menu = extension.getMenu();
 
     Boolean hasDataService = false;
-    try {
-      hasDataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() ) != null;
-    } catch ( MetaStoreException e ) {
-      logger.error( "Unable to load data service", e );
-    }
+    hasDataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() ) != null;
 
     menu.getElementById( "dataservices-new" ).setDisabled( hasDataService );
     menu.getElementById( "dataservices-edit" ).setDisabled( !hasDataService );
