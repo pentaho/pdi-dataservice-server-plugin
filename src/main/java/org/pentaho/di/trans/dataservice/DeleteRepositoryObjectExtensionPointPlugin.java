@@ -22,19 +22,15 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryObjectType;
-import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.ui.repository.RepositoryExtension;
 import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
-import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 @ExtensionPoint(
   id = "DeleteRepositoryObjectExtensionPointPlugin",
@@ -42,10 +38,7 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
   description = "Remove a data service associated with a deleted repository object"
 )
 public class DeleteRepositoryObjectExtensionPointPlugin implements ExtensionPointInterface {
-
-  private static final Log logger = LogFactory.getLog( DeleteRepositoryObjectExtensionPointPlugin.class );
-
-  private DataServiceMetaStoreUtil metaStoreUtil;
+  private final DataServiceMetaStoreUtil metaStoreUtil;
 
   public DeleteRepositoryObjectExtensionPointPlugin( DataServiceContext context ) {
     this.metaStoreUtil = context.getMetaStoreUtil();
@@ -56,28 +49,9 @@ public class DeleteRepositoryObjectExtensionPointPlugin implements ExtensionPoin
     RepositoryExtension repositoryExtension = (RepositoryExtension) object;
     UIRepositoryObject repositoryObject = repositoryExtension.getRepositoryObject();
     if ( repositoryObject.getRepositoryElementType().equals( RepositoryObjectType.TRANSFORMATION ) ) {
-      TransMeta transMeta = getSpoon().getRepository().loadTransformation( repositoryObject.getObjectId(), null );
-
-      Iterable<DataServiceMeta> dataServices;
-      try {
-        dataServices = metaStoreUtil.getDataServices( transMeta );
-      } catch ( MetaStoreException e ) {
-        logger.error( "Unable to delete Data Service", e );
-        return;
-      }
-
-      for ( DataServiceMeta dataService : dataServices ) {
-        try {
-          metaStoreUtil.removeDataService( dataService );
-        } catch ( Exception e ) {
-          logger.error( "Unable to delete Data Service", e );
-        }
-      }
+      Repository repository = repositoryObject.getRepository();
+      metaStoreUtil.clearReferences( repository.loadTransformation( repositoryObject.getObjectId(), null ) );
     }
-  }
-
-  private Spoon getSpoon() {
-    return Spoon.getInstance();
   }
 
 }

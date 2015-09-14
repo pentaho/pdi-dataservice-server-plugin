@@ -24,8 +24,6 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
@@ -48,8 +46,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataServiceClient implements DataServiceClientService {
-
-  private static Log logger = LogFactory.getLog( DataServiceClient.class );
   private final DataServiceMetaStoreUtil metaStoreUtil;
 
   private Repository repository;
@@ -114,8 +110,9 @@ public class DataServiceClient implements DataServiceClientService {
         ThinServiceInformation serviceInformation = new ThinServiceInformation( service.getName(), serviceFields );
         services.add( serviceInformation );
       } catch ( Exception e ) {
-        logger.warn( MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
-          service.getName(), transMeta.getName() ) );
+        String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
+          service.getName(), transMeta.getName() );
+        metaStoreUtil.getLogChannel().logError( message, e );
       }
     }
 
@@ -123,12 +120,7 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   private Function<Exception, Void> logErrors() {
-    return new Function<Exception, Void>() {
-      @Override public Void apply( Exception e ) {
-        logger.warn( "Failure loading data service", e );
-        return null;
-      }
-    };
+    return metaStoreUtil.logErrors( "Unable to retrieve data service" );
   }
 
   public Repository getRepository() {

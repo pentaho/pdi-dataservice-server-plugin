@@ -33,6 +33,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -40,6 +41,7 @@ import com.google.common.collect.Maps;
 import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -180,8 +182,13 @@ public class DataServiceMetaStoreUtil {
     };
   }
 
-  public Iterable<DataServiceMeta> getDataServices( TransMeta transMeta ) throws MetaStoreException {
-    return getDataServiceFactory( transMeta ).getElements();
+  public Iterable<DataServiceMeta> getDataServices( TransMeta transMeta ) {
+    try {
+      return getDataServiceFactory( transMeta ).getElements();
+    } catch ( MetaStoreException e ) {
+      getLogChannel().logError( "Unable to list data services for " + transMeta.getName(), e );
+      return ImmutableList.of();
+    }
   }
 
   public List<String> getDataServiceNames( TransMeta transMeta )
@@ -271,41 +278,38 @@ public class DataServiceMetaStoreUtil {
   public void save( DataServiceMeta dataService ) throws MetaStoreException {
     TransMeta transMeta = checkNotNull( dataService.getServiceTrans(), "Service trans not defined for data service" );
 
-    context.getLogChannel().logBasic( "Saving data service in meta store '" + transMeta.getMetaStore() + "'" );
+    getLogChannel().logBasic( MessageFormat.format( "Saving ''{0}'' to ''{1}''",
+      dataService.getName(), transMeta.getName() ) );
 
     // Save to embedded MetaStore
     getDataServiceFactory( transMeta ).saveElement( dataService );
     transMeta.setChanged();
   }
 
-  public void removeDataService( DataServiceMeta dataService ) throws MetaStoreException {
+  public void removeDataService( DataServiceMeta dataService ) {
     TransMeta transMeta = dataService.getServiceTrans();
-    getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
-    stepCache.removeAll( createCacheKeys( transMeta, dataService.getStepname() ) );
-    transMeta.setChanged();
+    try {
+      getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
+      stepCache.removeAll( createCacheKeys( transMeta, dataService.getStepname() ) );
+      transMeta.setChanged();
+    } catch ( MetaStoreException e ) {
+      getLogChannel().logBasic( e.getMessage() );
+    }
   }
 
   public void sync( TransMeta transMeta, Function<? super Exception, ?> exceptionHandler ) {
     final MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( transMeta.getMetaStore() );
 
-    final Set<ServiceTrans.Reference> references;
     final Set<String> defined;
     final Map<String, DataServiceMeta> dataServices;
     final Map<String, ServiceTrans> published;
 
     try {
-      references = ImmutableSet.copyOf( ServiceTrans.references( transMeta ) );
-
       dataServices = Maps.uniqueIndex( getDataServices( transMeta ), MetaStoreElement.getName );
-
       List<ServiceTrans> serviceTransElements = serviceTransFactory.getElements();
       defined = FluentIterable.from( serviceTransElements ).transform( MetaStoreElement.getName ).toSet();
       published = FluentIterable.from( serviceTransElements )
-        .filter( new Predicate<ServiceTrans>() {
-          @Override public boolean apply( ServiceTrans serviceTrans ) {
-            return Iterables.any( serviceTrans.getReferences(), in( references ) );
-          }
-        } )
+        .filter( byTransMeta( transMeta ) )
         .uniqueIndex( MetaStoreElement.getName );
     } catch ( MetaStoreException e ) {
       exceptionHandler.apply( e );
@@ -335,6 +339,35 @@ public class DataServiceMetaStoreUtil {
     }
     for ( DataServiceMeta dataServiceMeta : nameConflicts.values() ) {
       exceptionHandler.apply( new DataServiceAlreadyExistsException( dataServiceMeta ) );
+    }
+  }
+
+  private Predicate<ServiceTrans> byTransMeta( final TransMeta transMeta ) {
+    return new Predicate<ServiceTrans>() {
+      final Set<ServiceTrans.Reference> references = ImmutableSet.copyOf( ServiceTrans.references( transMeta ) );
+
+      @Override public boolean apply( ServiceTrans serviceTrans ) {
+        return Iterables.any( serviceTrans.getReferences(), in( references ) );
+      }
+    };
+  }
+
+  /**
+   * Remove all data services from the metastore provided by a transformation
+   * @param transMeta The transformation which will be un-published
+   */
+  public void clearReferences( TransMeta transMeta ) {
+    MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( transMeta.getMetaStore() );
+    try {
+      FluentIterable<String> names = FluentIterable.from( serviceTransFactory.getElements() )
+        .filter( byTransMeta( transMeta ) )
+        .transform( MetaStoreElement.getName );
+
+      for ( String name : names ) {
+        serviceTransFactory.deleteElement( name );
+      }
+    } catch ( MetaStoreException e ) {
+      getLogChannel().logError( "Unable to remove orphaned data service", e );
     }
   }
 
@@ -389,10 +422,27 @@ public class DataServiceMetaStoreUtil {
     return Maps.asMap( keys, Functions.constant( dataService.getName() ) );
   }
 
+  public LogChannelInterface getLogChannel() {
+    return context.getLogChannel();
+  }
+
+  public List<PushDownFactory> getPushDownFactories() {
+    return context.getPushDownFactories();
+  }
+
+  public Function<Exception, Void> logErrors( final String message ) {
+    return new Function<Exception, Void>() {
+      @Override public Void apply( Exception e ) {
+        getLogChannel().logError( message, e );
+        return null;
+      }
+    };
+  }
+
   private class DataServiceMetaObjectFactory implements IMetaStoreObjectFactory {
     @Override public Object instantiateClass( final String className, Map<String, String> objectContext ) throws
       MetaStoreException {
-      for ( PushDownFactory factory : context.getPushDownFactories() ) {
+      for ( PushDownFactory factory : getPushDownFactories() ) {
         if ( factory.getType().getName().equals( className ) ) {
           return factory.createPushDown();
         }

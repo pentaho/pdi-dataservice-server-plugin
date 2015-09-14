@@ -29,16 +29,12 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
-
-import java.util.List;
 
 import static org.pentaho.di.i18n.BaseMessages.getString;
 
@@ -79,7 +75,7 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
     try {
       new DataServiceDialog.Builder( transMeta ).serviceStep( stepName ).build( this ).open();
     } catch ( KettleException e ) {
-      context.getLogChannel().logError( "Unable to create a new data service", e );
+      getLogChannel().logError( "Unable to create a new data service", e );
     }
   }
 
@@ -96,7 +92,7 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
     try {
       new DataServiceDialog.Builder( dataService.getServiceTrans() ).edit( dataService ).build( this ).open();
     } catch ( KettleException e ) {
-      context.getLogChannel().logError( "Unable to edit a data service", e );
+      getLogChannel().logError( "Unable to edit a data service", e );
     }
   }
 
@@ -118,7 +114,7 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
       try {
         getSpoon().saveToFile( getSpoon().getActiveTransformation() );
       } catch ( KettleException e ) {
-        context.getLogChannel().logError( "Failed to save transformation", e );
+        getLogChannel().logError( "Failed to save transformation", e );
       }
     } else {
       showError( title, getString( PKG, "DataServiceDelegate.PleaseSave.Message" ) );
@@ -162,28 +158,20 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
         return;
       }
     }
-    try {
-      removeDataService( dataService );
-    } catch ( MetaStoreException ignored ) {
-    }
+    removeDataService( dataService );
   }
 
-  @Override public void removeDataService( DataServiceMeta dataService ) throws MetaStoreException {
-    try {
-      super.removeDataService( dataService );
-      getSpoon().refreshTree();
-      getSpoon().refreshGraph();
-    } catch ( MetaStoreException e ) {
-      context.getLogChannel().logError( "Unable to remove a data service", e );
-      throw e;
-    }
+  @Override public void removeDataService( DataServiceMeta dataService ) {
+    super.removeDataService( dataService );
+    getSpoon().refreshTree();
+    getSpoon().refreshGraph();
   }
 
   public void testDataService( DataServiceMeta dataService ) {
     try {
       new DataServiceTestDialog( new Shell( getShell() ), dataService ).open();
     } catch ( KettleException e ) {
-      context.getLogChannel().logError( "Unable to create test data service dialog", e );
+      getLogChannel().logError( "Unable to create test data service dialog", e );
     }
   }
 
@@ -193,13 +181,5 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
 
   public Shell getShell() {
     return getSpoon().getShell();
-  }
-
-  public LogChannelInterface getLogChannel() {
-    return context.getLogChannel();
-  }
-
-  public List<PushDownFactory> getPushDownFactories() {
-    return context.getPushDownFactories();
   }
 }

@@ -69,6 +69,7 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.emptyString;
@@ -290,6 +291,33 @@ public class DataServiceMetaStoreUtilTest {
     assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ), emptyIterable() );
 
     verify( exceptionHandler, never() ).apply( any( Exception.class ) );
+  }
+
+  @Test
+  public void testClearReferences() throws Exception {
+    MetaStoreFactory<DataServiceMeta> dataServiceFactory = metaStoreUtil.getDataServiceFactory( transMeta );
+    MetaStoreFactory<ServiceTrans> serviceTransFactory = metaStoreUtil.getServiceTransFactory( metaStore );
+
+    String otherName = "OTHER";
+    DataServiceMeta other = createDataService( transMeta );
+    other.setName( otherName );
+
+    dataServiceFactory.saveElement( dataService );
+    dataServiceFactory.saveElement( other );
+
+    serviceTransFactory.saveElement( ServiceTrans.create( dataService ) );
+    serviceTransFactory.saveElement( ServiceTrans.create( other.getName(), mock( TransMeta.class ) ) );
+
+    assertThat( metaStoreUtil.getDataServiceNames( transMeta ), containsInAnyOrder( DATA_SERVICE_NAME, otherName ) );
+    assertThat( metaStoreUtil.getDataServiceNames( metaStore ), containsInAnyOrder( DATA_SERVICE_NAME, otherName ) );
+
+    metaStoreUtil.clearReferences( transMeta );
+
+    // Local unchanged
+    assertThat( metaStoreUtil.getDataServiceNames( transMeta ), containsInAnyOrder( DATA_SERVICE_NAME, otherName ) );
+
+    // Published data service should be removed from the metaStore
+    assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( otherName ) );
   }
 
   @Test public void testInaccessibleTransMeta() throws Exception {
