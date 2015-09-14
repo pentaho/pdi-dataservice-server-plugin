@@ -23,6 +23,10 @@
 package org.pentaho.di.trans.dataservice.serialization;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectId;
@@ -34,7 +38,9 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 
+import java.io.File;
 import java.util.List;
+import java.util.Set;
 
 @MetaStoreElementType(
   name = "Data Service Transformation",
@@ -71,6 +77,24 @@ public class ServiceTrans implements MetaStoreElement {
       references.add( new Reference( StorageMethod.FILE, transMeta.getFilename() ) );
     }
     return references;
+  }
+
+  public static Predicate<ServiceTrans> isReferenceTo( final TransMeta transMeta ) {
+    return new Predicate<ServiceTrans>() {
+      final Set<Reference> references = ImmutableSet.copyOf( references( transMeta ) );
+
+      @Override public boolean apply( ServiceTrans serviceTrans ) {
+        return Iterables.any( serviceTrans.getReferences(), Predicates.in( references ) );
+      }
+    };
+  }
+
+  public static Predicate<ServiceTrans> isValid( final Repository repository ) {
+    return new Predicate<ServiceTrans>(){
+      @Override public boolean apply( ServiceTrans input ) {
+        return Iterables.any( input.getReferences(), Reference.isValid( repository ) );
+      }
+    };
   }
 
   @Override
@@ -113,6 +137,14 @@ public class ServiceTrans implements MetaStoreElement {
       this.method = method;
     }
 
+    public static Predicate<Reference> isValid( final Repository repository ) {
+      return new Predicate<Reference>() {
+        @Override public boolean apply( Reference reference ) {
+          return reference.exists( repository );
+        }
+      };
+    }
+
     public String getLocation() {
       return location;
     }
@@ -151,16 +183,25 @@ public class ServiceTrans implements MetaStoreElement {
       return Objects.equal( location, reference.location ) && Objects.equal( method, reference.method );
     }
 
+    public boolean exists( Repository repository ) {
+      return method.exists( repository, location );
+    }
+
     public TransMeta load( Repository repository ) throws KettleException {
       return method.load( repository, location );
     }
   }
   public enum StorageMethod {
     FILE {
+      @Override public boolean exists( Repository repository, String location ) {
+        return new File( location ).exists();
+      }
+
       @Override public TransMeta load( Repository repository, String location ) throws KettleException {
         return new TransMeta( location );
       }
-    }, REPO_PATH {
+    },
+    REPO_PATH {
       @Override public TransMeta load( Repository repository, String location ) throws KettleException {
         String path;
         String name;
@@ -181,12 +222,18 @@ public class ServiceTrans implements MetaStoreElement {
         }
         return repository.loadTransformation( repository.getTransformationID( name, rd ), null );
       }
-    }, REPO_ID {
+    },
+    REPO_ID {
       @Override public TransMeta load( Repository repository, String location ) throws KettleException {
         return repository.loadTransformation( new StringObjectId( location ), null );
       }
     };
 
     public abstract TransMeta load( Repository repository, String location ) throws KettleException;
+
+    public boolean exists( Repository repository, String location ) {
+      // Assume true, unless we know otherwise.
+      return true;
+    }
   }
 }

@@ -56,7 +56,6 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreFactory;
@@ -92,6 +91,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil.createCacheEntries;
 import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil.createCacheKeys;
@@ -106,7 +106,7 @@ public class DataServiceMetaStoreUtilTest {
   static final String OPTIMIZATION_VALUE = "Optimization Value";
   private final ObjectId objectId = new StringObjectId( UUID.randomUUID().toString() );
   private TransMeta transMeta;
-  private IMetaStore metaStore;
+  private MemoryMetaStore metaStore;
   private DataServiceMeta dataService;
 
   @Mock DataServiceContext context;
@@ -132,6 +132,7 @@ public class DataServiceMetaStoreUtilTest {
     doReturn( transMeta ).when( repository ).loadTransformation( objectId, null );
 
     metaStore = new MemoryMetaStore();
+    metaStore.setName( DataServiceMetaStoreUtilTest.class.getName() );
     transMeta.setMetaStore( metaStore );
     this.dataService = createDataService( transMeta );
 
@@ -289,6 +290,41 @@ public class DataServiceMetaStoreUtilTest {
     assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ), emptyIterable() );
 
     verify( exceptionHandler, never() ).apply( any( Exception.class ) );
+  }
+
+  @Test
+  public void testSyncWithConflicts() throws Exception {
+    TransMeta conflictTransMeta = new TransMeta();
+    conflictTransMeta.setName( "conflict" );
+    conflictTransMeta.setRepository( repository );
+    conflictTransMeta.setObjectId( new StringObjectId( UUID.randomUUID().toString() ) );
+
+    metaStoreUtil.getServiceTransFactory( metaStore ).saveElement(
+      ServiceTrans.create( DATA_SERVICE_NAME, conflictTransMeta ) );
+    assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( DATA_SERVICE_NAME ) );
+
+    metaStoreUtil.save( dataService );
+    metaStoreUtil.sync( transMeta, exceptionHandler );
+
+    assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( DATA_SERVICE_NAME ) );
+    verify( exceptionHandler ).apply( any( DataServiceAlreadyExistsException.class ) );
+
+    conflictTransMeta.setRepository( null );
+    conflictTransMeta.setFilename( "non-existant-file.ktr" );
+
+    metaStoreUtil.getServiceTransFactory( metaStore ).saveElement(
+      ServiceTrans.create( DATA_SERVICE_NAME, conflictTransMeta ) );
+    assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( DATA_SERVICE_NAME ) );
+
+    metaStoreUtil.save( dataService );
+    metaStoreUtil.sync( transMeta, exceptionHandler );
+
+    assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( DATA_SERVICE_NAME ) );
+    assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ),
+      contains( validDataService() ) );
+    assertThat( metaStoreUtil.getDataService( DATA_SERVICE_NAME, repository, metaStore ), validDataService() );
+
+    verifyNoMoreInteractions( exceptionHandler );
   }
 
   @Test
