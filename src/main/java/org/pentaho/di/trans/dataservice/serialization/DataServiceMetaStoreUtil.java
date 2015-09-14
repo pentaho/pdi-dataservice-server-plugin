@@ -26,7 +26,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
@@ -35,7 +34,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.hash.HashCode;
@@ -310,17 +308,16 @@ public class DataServiceMetaStoreUtil {
   public void sync( TransMeta transMeta, Function<? super Exception, ?> exceptionHandler ) {
     final MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( transMeta.getMetaStore() );
 
-    final Set<String> defined;
     final Map<String, DataServiceMeta> dataServices;
+    final Map<String, ServiceTrans> defined;
     final Map<String, ServiceTrans> published;
 
     try {
-      dataServices = Maps.uniqueIndex( getDataServices( transMeta ), MetaStoreElement.getName );
-      List<ServiceTrans> serviceTransElements = serviceTransFactory.getElements();
-      defined = FluentIterable.from( serviceTransElements ).transform( MetaStoreElement.getName ).toSet();
-      published = FluentIterable.from( serviceTransElements )
-        .filter( byTransMeta( transMeta ) )
-        .uniqueIndex( MetaStoreElement.getName );
+      dataServices = Maps.uniqueIndex( getDataServices( transMeta ), DataServiceMeta.getName );
+      defined = FluentIterable.from( serviceTransFactory.getElements() )
+        .filter( ServiceTrans.isValid( transMeta.getRepository() ) )
+        .uniqueIndex( ServiceTrans.getName );
+      published = Maps.filterValues( defined, ServiceTrans.isReferenceTo( transMeta ) );
     } catch ( MetaStoreException e ) {
       exceptionHandler.apply( e );
       return;
@@ -328,7 +325,7 @@ public class DataServiceMetaStoreUtil {
 
     Map<String, ServiceTrans> toDelete = Maps.filterKeys( published, not( in( dataServices.keySet() ) ) );
     Map<String, DataServiceMeta> nameConflicts = Maps.filterKeys( dataServices, and(
-      in( defined ),
+      in( defined.keySet() ),
       not( in( published.keySet() ) )
     ) );
     Map<String, DataServiceMeta> toSave = Maps.filterKeys( dataServices, not( in( nameConflicts.keySet() ) ) );
@@ -352,16 +349,6 @@ public class DataServiceMetaStoreUtil {
     }
   }
 
-  private Predicate<ServiceTrans> byTransMeta( final TransMeta transMeta ) {
-    return new Predicate<ServiceTrans>() {
-      final Set<ServiceTrans.Reference> references = ImmutableSet.copyOf( ServiceTrans.references( transMeta ) );
-
-      @Override public boolean apply( ServiceTrans serviceTrans ) {
-        return Iterables.any( serviceTrans.getReferences(), in( references ) );
-      }
-    };
-  }
-
   /**
    * Remove all data services from the metastore provided by a transformation
    * @param transMeta The transformation which will be un-published
@@ -370,7 +357,7 @@ public class DataServiceMetaStoreUtil {
     MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( transMeta.getMetaStore() );
     try {
       FluentIterable<String> names = FluentIterable.from( serviceTransFactory.getElements() )
-        .filter( byTransMeta( transMeta ) )
+        .filter( ServiceTrans.isReferenceTo( transMeta ) )
         .transform( MetaStoreElement.getName );
 
       for ( String name : names ) {
