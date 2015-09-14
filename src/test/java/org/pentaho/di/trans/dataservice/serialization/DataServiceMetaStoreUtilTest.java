@@ -72,7 +72,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyIterable;
-import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
@@ -92,7 +91,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil.createCacheEntries;
@@ -204,7 +202,7 @@ public class DataServiceMetaStoreUtilTest {
 
   @Test
   public void testCheckConflict() throws Exception {
-    DataServiceMeta local = createDataService( mock( TransMeta.class ) );
+    DataServiceMeta local = createDataService( transMeta );
     local.setName( "OTHER_SERVICE" );
     local.setStepname( "OTHER_STEP" );
     metaStoreUtil.getDataServiceFactory( transMeta ).saveElement( local );
@@ -352,27 +350,61 @@ public class DataServiceMetaStoreUtilTest {
 
   @Test public void testStepCacheSave() throws Exception {
     metaStoreUtil.save( dataService );
-    verify( cache ).putAll(
-      Maps.asMap( createCacheKeys( transMeta, DATA_SERVICE_STEP ), Functions.constant( DATA_SERVICE_NAME ) ) );
+    Set<Integer> keys = createCacheKeys( transMeta, DATA_SERVICE_STEP );
+    verify( cache ).putAll( argThat( hasEntry( in( keys ), equalTo( DATA_SERVICE_NAME ) ) ) );
   }
 
   @Test public void testStepCacheHit() throws Exception {
-    Set<Integer> cacheKeys = createCacheKeys( transMeta, DATA_SERVICE_STEP );
-    Map<Integer, String> cacheEntries = createCacheEntries( dataService );
-    assertThat( cacheEntries.keySet(), equalTo( cacheKeys ) );
+    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ) {
+      @Override public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) {
+        assertThat( serviceName, is( DATA_SERVICE_NAME ) );
+        assertThat( serviceTrans, is( transMeta ) );
+        return dataService;
+      }
+    };
+    Map<Integer, String> entries = createCacheEntries( dataService );
+    when( cache.getAll( entries.keySet() ) ).thenReturn( entries );
 
-    metaStoreUtil.save( dataService );
-    verify( cache ).putAll( cacheEntries );
-
-    when( cache.getAll( cacheKeys ) ).thenReturn( cacheEntries );
     assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), validDataService() );
+  }
 
-    metaStoreUtil.removeDataService( dataService );
-    verify( cache ).removeAll( cacheKeys );
+  @Test public void testStepCacheFalsePositive() throws Exception {
+    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ) {
+      @Override public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) {
+        assertThat( serviceName, is( DATA_SERVICE_NAME ) );
+        assertThat( serviceTrans, is( transMeta ) );
+        return dataService;
+      }
+
+      @Override public Iterable<DataServiceMeta> getDataServices( TransMeta serviceTrans ) {
+        assertThat( serviceTrans, is( transMeta ) );
+        return ImmutableList.of( dataService );
+      }
+    };
+    Set<Integer> keys = createCacheKeys( transMeta, "OTHER_STEP" );
+    when( cache.getAll( keys ) ).thenReturn( Maps.asMap( keys, Functions.constant( DATA_SERVICE_NAME ) ) );
+
+    assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, "OTHER_STEP" ), nullValue() );
+    for ( Integer key : keys ) {
+      verify( cache ).remove( key, DATA_SERVICE_NAME );
+    }
+    verify( cache ).putAll( Maps.asMap( keys, Functions.constant( "" ) ) );
+  }
+
+  @Test public void testStepCacheNegative() throws Exception {
+    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ) {
+      @Override public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) {
+        throw new AssertionError( "No data services should be queried" );
+      }
+
+      @Override public Iterable<DataServiceMeta> getDataServices( TransMeta serviceTrans ) {
+        throw new AssertionError( "No data services should be queried" );
+      }
+    };
+    Set<Integer> keys = createCacheKeys( transMeta, DATA_SERVICE_STEP );
+    when( cache.getAll( keys ) ).thenReturn( Maps.asMap( keys, Functions.constant( "" ) ) );
 
     assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), nullValue() );
-    verify( cache, times( cacheKeys.size() ) ).remove( argThat( in( cacheKeys ) ), eq( DATA_SERVICE_NAME ) );
-    verify( cache ).putAll( argThat( hasEntry( in( cacheKeys ), emptyString() ) ) );
   }
 
   private Matcher<DataServiceMeta> validDataService() {

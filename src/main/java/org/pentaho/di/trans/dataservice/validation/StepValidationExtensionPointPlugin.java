@@ -32,7 +32,6 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +61,7 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
     for ( StepValidation stepValidation : getStepValidations() ) {
       StepMeta stepMeta = checkStepExtension.getStepMetas()[0];
       if ( stepValidation.supportsStep( stepMeta , log ) ) {
-        DataServiceMeta dataServiceMeta = getDataServiceMeta( transMeta, stepMeta.getName(), log );
+        DataServiceMeta dataServiceMeta = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() );
 
         if ( dataServiceMeta == null ) {
           // We won't validate Trans not associated with a DataService
@@ -96,18 +95,5 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
 
   public void setStepValidations( List<StepValidation> stepValidations ) {
     this.stepValidations = stepValidations;
-  }
-
-  private DataServiceMeta getDataServiceMeta( TransMeta transMeta, String stepName, LogChannelInterface log ) {
-    try {
-      return metaStoreUtil.getDataServiceByStepName( transMeta, stepName );
-    } catch ( MetaStoreException e ) {
-      log.logError(
-        String.format(
-          "Error while attempting to load DataServiceMeta during step validation for '%s'.",
-          transMeta.getName() ),
-        e );
-    }
-    return null;
   }
 }

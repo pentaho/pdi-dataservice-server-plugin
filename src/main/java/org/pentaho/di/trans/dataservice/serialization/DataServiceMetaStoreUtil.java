@@ -22,9 +22,9 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -38,6 +38,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.exception.KettleException;
@@ -70,6 +73,7 @@ import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
 public class DataServiceMetaStoreUtil {
   private static final Class<DataServiceMetaStoreUtil> PKG = DataServiceMetaStoreUtil.class;
+  private static final HashFunction hashFunction = Hashing.goodFastHash( Integer.SIZE );
   protected final DataServiceContext context;
   protected final Cache<Integer, String> stepCache;
 
@@ -201,8 +205,7 @@ public class DataServiceMetaStoreUtil {
     return getServiceTransFactory( metaStore ).getElementNames();
   }
 
-  public DataServiceMeta getDataServiceByStepName( TransMeta transMeta, String stepName ) throws MetaStoreException {
-    MetaStoreFactory<DataServiceMeta> dataServiceFactory = getDataServiceFactory( transMeta );
+  public DataServiceMeta getDataServiceByStepName( TransMeta transMeta, String stepName ) {
     Set<Integer> cacheKeys = createCacheKeys( transMeta, stepName );
     for ( Map.Entry<Integer, String> entry : stepCache.getAll( cacheKeys ).entrySet() ) {
       String serviceName = entry.getValue();
@@ -211,15 +214,20 @@ public class DataServiceMetaStoreUtil {
         return null;
       }
       // Check if Data Service is still valid
-      DataServiceMeta dataServiceMeta = dataServiceFactory.loadElement( serviceName );
-      if ( dataServiceMeta != null ) {
+      DataServiceMeta dataServiceMeta;
+      try {
+        dataServiceMeta = getDataService( serviceName, transMeta );
+      } catch ( MetaStoreException e ) {
+        dataServiceMeta = null;
+      }
+      if ( dataServiceMeta != null && dataServiceMeta.getStepname().equals( stepName ) ) {
         return dataServiceMeta;
       } else {
         stepCache.remove( entry.getKey(), serviceName );
       }
     }
     // Look up from embedded metastore
-    for ( DataServiceMeta dataServiceMeta : dataServiceFactory.getElements() ) {
+    for ( DataServiceMeta dataServiceMeta : getDataServices( transMeta ) ) {
       if ( dataServiceMeta.getStepname().equalsIgnoreCase( stepName ) ) {
         return dataServiceMeta;
       }
@@ -290,7 +298,9 @@ public class DataServiceMetaStoreUtil {
     TransMeta transMeta = dataService.getServiceTrans();
     try {
       getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
-      stepCache.removeAll( createCacheKeys( transMeta, dataService.getStepname() ) );
+      for ( Integer key : createCacheKeys( transMeta, dataService.getStepname() ) ) {
+        stepCache.replace( key, dataService.getName(), "" );
+      }
       transMeta.setChanged();
     } catch ( MetaStoreException e ) {
       getLogChannel().logBasic( e.getMessage() );
@@ -408,13 +418,11 @@ public class DataServiceMetaStoreUtil {
   }
 
   static Set<Integer> createCacheKeys( TransMeta transMeta, final String stepName ) {
-    return FluentIterable.from( ServiceTrans.references( transMeta ) ).
-      transform( new Function<ServiceTrans.Reference, Integer>() {
-        @Override public Integer apply( ServiceTrans.Reference input ) {
-          return Objects.hashCode( input, stepName );
-        }
-      } ).
-      toSet();
+    HashCode hash = hashFunction.newHasher()
+      .putString( transMeta.getName(), Charsets.UTF_8 )
+      .putString( stepName, Charsets.UTF_8 )
+      .hash();
+    return ImmutableSet.of( hash.asInt() );
   }
 
   static Map<Integer, String> createCacheEntries( DataServiceMeta dataService ) {

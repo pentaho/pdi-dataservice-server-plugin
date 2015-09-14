@@ -82,17 +82,11 @@ public class SynchronizationServiceTest {
 
     verifyNoMoreInteractions( dataServiceMeta );
 
-    MetaStoreException metaStoreException = new MetaStoreException();
     when( delegate.getDataServiceByStepName( transMeta, "ORIGINAL STEP" ) )
-      .thenThrow( metaStoreException )
       .thenReturn( dataServiceMeta );
-    service.onStepChange( transMeta, oldMeta, newMeta );
-
-    verify( logChannel ).logError( anyString(), same( metaStoreException ) );
 
     service.onStepChange( transMeta, oldMeta, newMeta );
     verify( dataServiceMeta ).setStepname( "DIFFERENT STEP" );
     verify( delegate ).save( dataServiceMeta );
-    verifyNoMoreInteractions( logChannel );
   }
 }
