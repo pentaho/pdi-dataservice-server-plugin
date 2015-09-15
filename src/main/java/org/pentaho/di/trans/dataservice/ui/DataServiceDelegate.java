@@ -22,10 +22,12 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
@@ -182,4 +184,9 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
   public Shell getShell() {
     return getSpoon().getShell();
   }
+
+  public Display getDisplay() {
+    return Objects.firstNonNull( Display.getCurrent(), Display.getDefault() );
+  }
+
 }
