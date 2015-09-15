@@ -48,20 +48,40 @@ public class SynchronizationService implements ContentChangedListener, StepMetaC
   Function<Exception, Void> syncErrors() {
     return new Function<Exception, Void>() {
       @Override public Void apply( Exception e ) {
-        String title = BaseMessages.getString( PKG, "Messages.SaveError.Title" );
+        String message = e.getMessage();
         if ( e instanceof DataServiceAlreadyExistsException ) {
           DataServiceMeta dataService = ( (DataServiceAlreadyExistsException) e ).getDataServiceMeta();
-          delegate.suggestEdit( dataService, title, e.getMessage() + "\n" + BaseMessages.getString( PKG, "Messages.SaveError.Edit" ) );
+          delegate.getDisplay().syncExec( suggestEdit( dataService, message ) );
         }
         if ( e instanceof UndefinedDataServiceException ) {
           DataServiceMeta dataService = ( (UndefinedDataServiceException) e ).getDataServiceMeta();
-          if ( delegate.showPrompt( title, e.getMessage() + "\n" + BaseMessages.getString( PKG, "Messages.SaveError.Remove" ) ) ) {
-            delegate.removeDataService( dataService, false );
-          }
+          delegate.getDisplay().syncExec( suggestRemove( dataService, message ) );
         }
 
-        delegate.getLogChannel().logError( e.getMessage(), e );
+        delegate.getLogChannel().logError( message, e );
         return null;
+      }
+    };
+  }
+
+  public Runnable suggestEdit( final DataServiceMeta dataService, final String message ) {
+    return new Runnable() {
+      @Override public void run() {
+        delegate.suggestEdit( dataService, BaseMessages.getString( PKG, "Messages.SaveError.Title" ),
+          message + "\n" + BaseMessages.getString( PKG, "Messages.SaveError.Edit" ) );
+      }
+    };
+  }
+
+  private Runnable suggestRemove( final DataServiceMeta dataService, final String message ) {
+    return new Runnable() {
+      @Override public void run() {
+        boolean remove = delegate.showPrompt( BaseMessages.getString( PKG, "Messages.SaveError.Title" ),
+          message + "\n" + BaseMessages.getString( PKG, "Messages.SaveError.Remove" ) );
+
+        if ( remove ) {
+          delegate.removeDataService( dataService );
+        }
       }
     };
   }

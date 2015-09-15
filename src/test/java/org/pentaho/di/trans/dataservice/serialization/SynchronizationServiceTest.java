@@ -2,6 +2,7 @@ package org.pentaho.di.trans.dataservice.serialization;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import org.eclipse.swt.widgets.Display;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,7 +10,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.listeners.ContentChangedListener;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.trans.TransMeta;
@@ -18,8 +21,10 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.same;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.ignoreStubs;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,6 +43,7 @@ public class SynchronizationServiceTest {
   @Mock DataServiceDelegate delegate;
   @Mock LogChannel logChannel;
   @Mock DataServiceMeta dataServiceMeta;
+  @Mock Display display;
   @InjectMocks SynchronizationService service;
 
   @Captor ArgumentCaptor<Function<? super Exception, ?>> errorHandler;
@@ -59,6 +65,13 @@ public class SynchronizationServiceTest {
   @Before
   public void setUp() throws Exception {
     when( delegate.getLogChannel() ).thenReturn( logChannel );
+    when( delegate.getDisplay() ).thenReturn( display );
+    doAnswer( new Answer() {
+      @Override public Object answer( InvocationOnMock invocation ) throws Throwable {
+        ( (Runnable) invocation.getArguments()[0] ).run();
+        return null;
+      }
+    } ).when( display ).syncExec( any( Runnable.class ) );
   }
 
   @Test
@@ -72,7 +85,7 @@ public class SynchronizationServiceTest {
     errorHandler.getValue().apply( undefinedException );
     verify( delegate, never() ).removeDataService( dataServiceMeta, false );
     errorHandler.getValue().apply( undefinedException );
-    verify( delegate ).removeDataService( dataServiceMeta, false );
+    verify( delegate ).removeDataService( dataServiceMeta );
     verify( logChannel, times( 2 ) ).logError( anyString(), same( undefinedException ) );
 
     DataServiceAlreadyExistsException conflictException = new DataServiceAlreadyExistsException( dataServiceMeta );
