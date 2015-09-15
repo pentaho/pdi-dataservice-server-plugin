@@ -2,6 +2,7 @@ package org.pentaho.di.trans.dataservice.serialization;
 
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
+import com.google.common.collect.FluentIterable;
 import org.pentaho.di.core.listeners.ContentChangedListener;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
@@ -10,6 +11,8 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaChangeListenerInterface;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
+
+import java.util.List;
 
 public class SynchronizationService implements ContentChangedListener, StepMetaChangeListenerInterface {
   static Class<TransOpenedExtensionPointPlugin> PKG = TransOpenedExtensionPointPlugin.class;
@@ -61,5 +64,13 @@ public class SynchronizationService implements ContentChangedListener, StepMetaC
         return null;
       }
     };
+  }
+
+  public void install( TransMeta transMeta ) {
+    List<ContentChangedListener> listeners = transMeta.getContentChangedListeners();
+    if ( FluentIterable.from( listeners ).filter( SynchronizationService.class ).isEmpty() ) {
+      transMeta.addContentChangedListener( this );
+      transMeta.addStepChangeListener( this );
+    }
   }
 }

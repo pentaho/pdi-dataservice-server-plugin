@@ -31,7 +31,6 @@ public class TransOpenedExtensionPointPluginTest {
   public void testCallExtensionPoint() throws Exception {
     extensionPointPlugin.callExtensionPoint( mock( LogChannel.class ), transMeta );
 
-    verify( transMeta ).addStepChangeListener( service );
-    verify( transMeta ).addContentChangedListener( service );
+    verify( service ).install( transMeta );
   }
 }

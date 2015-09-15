@@ -51,7 +51,6 @@ public class TransOpenedExtensionPointPlugin implements ExtensionPointInterface 
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
     final TransMeta transMeta = (TransMeta) object;
-    transMeta.addContentChangedListener( synchronizationService );
-    transMeta.addStepChangeListener( synchronizationService );
+    synchronizationService.install( transMeta );
   }
 }

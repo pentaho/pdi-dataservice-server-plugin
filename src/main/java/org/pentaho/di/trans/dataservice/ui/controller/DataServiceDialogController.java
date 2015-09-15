@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceValidationException;
+import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
@@ -88,6 +89,10 @@ public class DataServiceDialogController extends AbstractController {
       if ( dataService != null && !model.getServiceName().equals( existing ) ) {
         delegate.removeDataService( dataService );
       }
+
+      // Ensure the synchronization service is installed
+      new SynchronizationService( delegate ).install( model.getTransMeta() );
+
       close();
     } catch ( DataServiceValidationException e ){
       error( getString( PKG, "DataServiceDialog.SaveError.Title" ), e.getMessage() );
