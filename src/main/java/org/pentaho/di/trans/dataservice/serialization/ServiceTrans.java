@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice.serialization;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -194,7 +195,7 @@ public class ServiceTrans implements MetaStoreElement {
   public enum StorageMethod {
     FILE {
       @Override public boolean exists( Repository repository, String location ) {
-        return new File( location ).exists();
+        return !Strings.isNullOrEmpty( location ) && new File( location ).exists();
       }
 
       @Override public TransMeta load( Repository repository, String location ) throws KettleException {
