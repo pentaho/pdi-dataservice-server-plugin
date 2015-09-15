@@ -422,8 +422,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     model.clearResultRows();
     model.setAlertMessage( "" );
 
-    model.setServiceTransLogChannel(
-      dataServiceExec.isDual() ? null : dataServiceExec.getServiceTrans().getLogChannel() );
+    model.setServiceTransLogChannel( dataServiceExec.getServiceTrans().getLogChannel() );
     model.setGenTransLogChannel( dataServiceExec.getGenTrans().getLogChannel() );
   }
 

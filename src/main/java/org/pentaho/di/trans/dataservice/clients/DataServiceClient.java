@@ -25,7 +25,9 @@ package org.pentaho.di.trans.dataservice.clients;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
@@ -40,16 +42,20 @@ import org.pentaho.metastore.api.IMetaStore;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class DataServiceClient implements DataServiceClientService {
   private final DataServiceMetaStoreUtil metaStoreUtil;
 
   private Repository repository;
   private IMetaStore metaStore;
+
+  public static final String DUMMY_TABLE_NAME = "dual";
 
   public DataServiceClient( DataServiceContext context ) {
     this.metaStoreUtil = context.getMetaStoreUtil();
@@ -62,12 +68,19 @@ public class DataServiceClient implements DataServiceClientService {
 
       ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-      try {
-        DataServiceExecutor executor = buildExecutor( sqlQuery ).rowLimit( maxRows ).build();
+      SQL sql = new SQL( sqlQuery );
+      if ( sql.getServiceName() == null || sql.getServiceName().equals( DUMMY_TABLE_NAME ) ) {
+        // Support for SELECT 1 and SELECT 1 FROM dual
+        DataOutputStream dos = new DataOutputStream( byteArrayOutputStream );
+        writeDummyRow( sql, dos );
+      } else {
+        try {
+          DataServiceExecutor executor = buildExecutor( sql ).rowLimit( maxRows ).build();
 
-        executor.executeQuery( byteArrayOutputStream ).waitUntilFinished();
-      } catch ( Exception e ) {
-        throw new SQLException( "Unable to get service information from server", e );
+          executor.executeQuery( byteArrayOutputStream ).waitUntilFinished();
+        } catch ( Exception e ) {
+          throw new SQLException( "Unable to get service information from server", e );
+        }
       }
 
       ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( byteArrayOutputStream.toByteArray() );
@@ -80,14 +93,24 @@ public class DataServiceClient implements DataServiceClientService {
     return dataInputStream;
   }
 
-  public DataServiceExecutor.Builder buildExecutor( String sqlQuery ) throws KettleException {
-    // Parse SQL
-    SQL sql = new SQL( sqlQuery );
-
+  public DataServiceExecutor.Builder buildExecutor( SQL sql ) throws KettleException {
     // Locate data service and return a new builder
     DataServiceMeta dataService = findDataService( sql );
 
     return new DataServiceExecutor.Builder( sql, dataService );
+  }
+
+  public void writeDummyRow( SQL sql, DataOutputStream dos ) throws Exception {
+    sql.setServiceName( DUMMY_TABLE_NAME );
+
+    DataServiceExecutor.writeMetadata( dos, new String[] { DUMMY_TABLE_NAME, "", "", "", "" } );
+
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaString( "DUMMY" ) );
+    rowMeta.writeMeta( dos );
+
+    Object[] row = new Object[] { "x" };
+    rowMeta.writeData( dos, row );
   }
 
   private DataServiceMeta findDataService( SQL sql ) throws KettleException {
