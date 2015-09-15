@@ -309,16 +309,14 @@ public class DataServiceExecutor {
     genTrans.prepareExecution( null );
     listenerMap.put( ExecutionPoint.START, new TransStarter( genTrans ) );
 
-    if ( !isDual() ) {
-      TransMeta serviceTransMeta = getServiceTransMeta();
-      for ( Entry<String, String> parameter : parameters.entrySet() ) {
-        serviceTransMeta.setParameterValue( parameter.getKey(), parameter.getValue() );
-        serviceTrans.copyParametersFrom( serviceTransMeta );
-      }
-      serviceTrans.prepareExecution( null );
-      listenerMap.put( ExecutionPoint.READY, new DefaultTransWiring( this ) );
-      listenerMap.put( ExecutionPoint.START, new TransStarter( serviceTrans ) );
+    TransMeta serviceTransMeta = getServiceTransMeta();
+    for ( Entry<String, String> parameter : parameters.entrySet() ) {
+      serviceTransMeta.setParameterValue( parameter.getKey(), parameter.getValue() );
+      serviceTrans.copyParametersFrom( serviceTransMeta );
     }
+    serviceTrans.prepareExecution( null );
+    listenerMap.put( ExecutionPoint.READY, new DefaultTransWiring( this ) );
+    listenerMap.put( ExecutionPoint.START, new TransStarter( serviceTrans ) );
   }
 
   private Map<String, String> getWhereConditionParameters() {
@@ -335,23 +333,24 @@ public class DataServiceExecutor {
     return executeQuery( new DataOutputStream( output ) );
   }
 
+  public static void writeMetadata( DataOutputStream dos, String[] metadatas ) throws Exception {
+    for ( String metadata : metadatas ) {
+      dos.writeUTF( metadata );
+    }
+  }
+
   public DataServiceExecutor executeQuery( final DataOutputStream dos ) throws KettleException {
     try {
-      // First write the service name and the metadata
-      //
-      dos.writeUTF( getServiceName() );
 
-      // Then send the transformation names and carte container IDs
-      //
-      dos.writeUTF( calculateTransname( getSql(), true ) );
       String serviceContainerObjectId = UUID.randomUUID().toString();
-      getServiceTrans().setContainerObjectId( serviceContainerObjectId );
-      dos.writeUTF( serviceContainerObjectId );
-
-      dos.writeUTF( calculateTransname( getSql(), false ) );
       String genContainerObjectId = UUID.randomUUID().toString();
+
+      getServiceTrans().setContainerObjectId( serviceContainerObjectId );
       getGenTrans().setContainerObjectId( genContainerObjectId );
-      dos.writeUTF( genContainerObjectId );
+
+      writeMetadata( dos,
+          new String[] { getServiceName(), calculateTransname( getSql(), true ), serviceContainerObjectId,
+              calculateTransname( getSql(), false ), genContainerObjectId } );
 
       final AtomicBoolean firstRow = new AtomicBoolean( true );
 
@@ -395,16 +394,14 @@ public class DataServiceExecutor {
   }
 
   public void executeQuery( RowListener resultRowListener ) throws KettleException {
-    if ( !isDual() ) {
-      // Apply Push Down Optimizations
-      for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
-        if ( optimizationMeta.isEnabled() ) {
-          optimizationMeta.activate( this );
-        }
+    // Apply Push Down Optimizations
+    for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
+      if ( optimizationMeta.isEnabled() ) {
+        optimizationMeta.activate( this );
       }
-
-      executeListeners( ExecutionPoint.READY );
     }
+
+    executeListeners( ExecutionPoint.READY );
 
     // Give back the eventual result rows...
     //
@@ -426,9 +423,7 @@ public class DataServiceExecutor {
   }
 
   public void waitUntilFinished() {
-    if ( !isDual() ) {
-      serviceTrans.waitUntilFinished();
-    }
+    serviceTrans.waitUntilFinished();
     genTrans.waitUntilFinished();
   }
 
@@ -436,7 +431,7 @@ public class DataServiceExecutor {
    * @return the serviceTransMeta
    */
   public TransMeta getServiceTransMeta() {
-    return isDual() ? null : serviceTrans.getTransMeta();
+    return serviceTrans.getTransMeta();
   }
 
   /**
@@ -521,10 +516,6 @@ public class DataServiceExecutor {
 
   public ListMultimap<ExecutionPoint, Runnable> getListenerMap() {
     return listenerMap;
-  }
-
-  public boolean isDual() {
-    return Const.isEmpty( getServiceName() ) || "dual".equalsIgnoreCase( getServiceName() );
   }
 
   /**
