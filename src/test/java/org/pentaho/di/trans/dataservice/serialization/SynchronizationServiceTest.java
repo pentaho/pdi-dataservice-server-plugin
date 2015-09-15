@@ -1,6 +1,7 @@
 package org.pentaho.di.trans.dataservice.serialization;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,6 +10,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.pentaho.di.core.listeners.ContentChangedListener;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
@@ -18,6 +20,7 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.same;
+import static org.mockito.Mockito.ignoreStubs;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -38,6 +41,20 @@ public class SynchronizationServiceTest {
   @InjectMocks SynchronizationService service;
 
   @Captor ArgumentCaptor<Function<? super Exception, ?>> errorHandler;
+
+  @Test
+  public void testInstall() throws Exception {
+    when( transMeta.getContentChangedListeners() ).thenReturn( ImmutableList.<ContentChangedListener>of() );
+
+    service.install( transMeta );
+
+    verify( transMeta ).addStepChangeListener( service );
+    verify( transMeta ).addContentChangedListener( service );
+
+    when( transMeta.getContentChangedListeners() ).thenReturn( ImmutableList.<ContentChangedListener>of( service ) );
+
+    verifyNoMoreInteractions( ignoreStubs( transMeta ) );
+  }
 
   @Before
   public void setUp() throws Exception {
