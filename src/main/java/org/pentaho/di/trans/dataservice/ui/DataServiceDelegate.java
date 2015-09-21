@@ -170,8 +170,12 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
   }
 
   public void testDataService( DataServiceMeta dataService ) {
+    testDataService( dataService, getShell() );
+  }
+
+  public void testDataService( DataServiceMeta dataService, Shell shell ) {
     try {
-      new DataServiceTestDialog( new Shell( getShell() ), dataService ).open();
+      new DataServiceTestDialog( new Shell( shell ), dataService ).open();
     } catch ( KettleException e ) {
       getLogChannel().logError( "Unable to create test data service dialog", e );
     }

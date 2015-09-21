@@ -25,29 +25,29 @@ package org.pentaho.di.trans.dataservice.ui;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
-import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
-import org.eclipse.swt.widgets.Composite;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.metrics.MetricsDuration;
 import org.pentaho.di.core.metrics.MetricsUtil;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.xul.KettleXulLoader;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulRunner;
-import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
+import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
 import java.util.Collections;
 import java.util.Enumeration;
@@ -73,7 +73,7 @@ public class DataServiceTestDialog implements java.io.Serializable {
   private final DataServiceTestMetrics serviceTransMetrics;
   private final DataServiceTestMetrics genTransMetrics;
   private final Document xulDocument;
-  private final XulDialog dialog;
+  private final SwtDialog dialog;
 
   private static final Class<?> CLZ = DataServiceTestDialog.class;
   private final ResourceBundle resourceBundle = new ResourceBundle() {
@@ -102,7 +102,7 @@ public class DataServiceTestDialog implements java.io.Serializable {
     serviceTransMetrics = new DataServiceTestMetrics( getComposite( SVCTRANS_METRICS_XUL_ID ) );
     genTransLogBrowser = new DataServiceTestLogBrowser( getComposite( GENTRANS_LOG_XUL_ID ) );
     genTransMetrics = new DataServiceTestMetrics( getComposite( GENTRANS_METRICS_XUL_ID ) );
-    dialog = (XulDialog) xulDocument.getElementById( XUL_DIALOG_ID );
+    dialog = (SwtDialog) xulDocument.getElementById( XUL_DIALOG_ID );
 
     // Add the Ctrl-Enter listener to the main UI components
     Text textbox = (Text) ( xulDocument.getElementById( "sql-textbox" ).getManagedObject() );
@@ -131,7 +131,7 @@ public class DataServiceTestDialog implements java.io.Serializable {
     genTransMetrics.dispose();
     serviceTransLogBrowser.dispose();
     serviceTransMetrics.dispose();
-    dialog.hide();
+    dialog.dispose();
   }
 
   private DataServiceTestResults initDataServiceResultsView( DataServiceMeta dataService ) throws KettleStepException {
