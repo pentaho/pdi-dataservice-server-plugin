@@ -56,12 +56,14 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 
 import javax.cache.Cache;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -95,6 +97,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil.createCacheEntries;
 import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil.createCacheKeys;
+import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceMetaStoreUtilTest {
@@ -203,14 +206,23 @@ public class DataServiceMetaStoreUtilTest {
 
   @Test
   public void testCheckConflict() throws Exception {
+    final ServiceTrans published = mock( ServiceTrans.class );
+    when( published.getName() ).thenReturn( "PUBLISHED_SERVICE" );
+
+    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ){
+      @Override protected MetaStoreFactory<ServiceTrans> getServiceTransFactory( IMetaStore metaStore ) {
+        return new MetaStoreFactory<ServiceTrans>( ServiceTrans.class, metaStore, NAMESPACE ){
+          @Override public List<ServiceTrans> getElements() throws MetaStoreException {
+            return ImmutableList.of( published );
+          }
+        };
+      }
+    };
+
     DataServiceMeta local = createDataService( transMeta );
     local.setName( "OTHER_SERVICE" );
     local.setStepname( "OTHER_STEP" );
     metaStoreUtil.getDataServiceFactory( transMeta ).saveElement( local );
-
-    DataServiceMeta published = createDataService( mock( TransMeta.class ) );
-    published.setName( "PUBLISHED_SERVICE" );
-    metaStoreUtil.getServiceTransFactory( metaStore ).saveElement( ServiceTrans.create( published ) );
 
     // New data service with different properties
     metaStoreUtil.checkConflict( dataService, null );
@@ -243,9 +255,18 @@ public class DataServiceMetaStoreUtilTest {
 
     dataService = createDataService( transMeta );
     metaStoreUtil.checkConflict( dataService, null );
+    dataService.setName( published.getName() );
+    when( published.getReferences() ).thenReturn( ImmutableList.<ServiceTrans.Reference>of() );
+    metaStoreUtil.checkConflict( dataService, null );
+
+    ServiceTrans.Reference reference = mock( ServiceTrans.Reference.class );
+    when( reference.exists( repository ) ).thenReturn( false, true );
+    when( published.getReferences() ).thenReturn( ImmutableList.of( reference ) );
+    metaStoreUtil.checkConflict( dataService, null );
+    // Name is published but not valid
+
     try {
       // New Data service with conflicting name in metastore
-      dataService.setName( published.getName() );
       metaStoreUtil.checkConflict( dataService, null );
       fail( "Expected DataServiceAlreadyExistsException");
     } catch ( DataServiceAlreadyExistsException e ) {
