@@ -36,7 +36,6 @@ import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
-import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
 import java.lang.reflect.InvocationTargetException;
@@ -77,7 +76,7 @@ public class DataServiceDialogController extends AbstractController {
   }
 
   public void showTestDialog() {
-    delegate.testDataService( model.getDataService() );
+    delegate.testDataService( model.getDataService(), getDialog().getShell() );
   }
 
   public void saveAndClose() throws XulException {
@@ -107,22 +106,22 @@ public class DataServiceDialogController extends AbstractController {
   }
 
   public void close() {
-    getDialog().hide();
+    getDialog().dispose();
   }
 
   public void showSetupHelp() {
-    HelpUtils.openHelpDialog( ( (SwtDialog) getDialog() ).getShell(),
+    HelpUtils.openHelpDialog( getDialog().getShell(),
         BaseMessages.getString( PKG, "DataServiceDialog.ConnectionSetupLink.Label" ),
         BaseMessages.getString( PKG, "DataServiceDialog.ConnectionSetupLink.Url" ), "" );
   }
 
   public void showHelp() {
-    HelpUtils.openHelpDialog( ( (SwtDialog) getDialog() ).getShell(),
+    HelpUtils.openHelpDialog( getDialog().getShell(),
         BaseMessages.getString( PKG, "DataServiceDialog.Help.Title" ),
         BaseMessages.getString( PKG, "DataServiceDialog.Help.Url" ), "" );
   }
 
-  public XulDialog getDialog() {
+  public SwtDialog getDialog() {
     return getElementById( XUL_DIALOG_ID );
   }
 
