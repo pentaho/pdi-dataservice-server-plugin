@@ -132,7 +132,7 @@ public class SqlTransGenerator {
     List<SQLField> aggFields = sql.getSelectFields().getAggregateFields();
     if ( sql.getHavingCondition() != null ) {
       List<SQLField> havingFields =
-        sql.getHavingCondition().extractHavingFields(
+          sql.getHavingCondition().extractHavingFields(
           sql.getSelectFields().getFields(), aggFields, transMeta.getStepFields( lastStep ) );
       aggFields.addAll( havingFields );
     }
@@ -176,12 +176,8 @@ public class SqlTransGenerator {
       lastStep = addToTrans( sortStep, transMeta, lastStep );
     }
 
-    // We need only the fields from the select clause, rename if needed
-    // In case we're using a group by clause this is done automatically.
-    //
-    if ( !sql.getSelectFields().hasAggregates() && sql.getSelectFields().getRegularFields().size() > 0 ) {
-      StepMeta selectStep = generateSelectStep();
-      lastStep = addToTrans( selectStep, transMeta, lastStep );
+    if ( sql.getSelectFields().getFields().size() > 0 ) {
+      lastStep = addToTrans( generateSelectStep(), transMeta, lastStep );
     }
 
     // Limit the data from the limit keyword
@@ -563,16 +559,19 @@ public class SqlTransGenerator {
   }
 
   private StepMeta generateSelectStep() {
-    // Only rename the non function fields
-    //
-    List<SQLField> fields = sql.getSelectFields().getRegularFields();
+    List<SQLField> fields = sql.getSelectFields().getFields();
 
     SelectValuesMeta meta = new SelectValuesMeta();
     meta.allocate( fields.size(), 0, 0 );
     for ( int i = 0; i < fields.size(); i++ ) {
       SQLField sqlField = fields.get( i );
-      meta.getSelectName()[i] = sqlField.getField();
-      meta.getSelectRename()[i] = sqlField.getAlias();
+      if ( sqlField.getAggregation() == null ) {
+        meta.getSelectName()[i] = sqlField.getField();
+        meta.getSelectRename()[i] = sqlField.getAlias();
+      } else {
+        // agg field names are assigned in the group by
+        meta.getSelectName()[i] = Const.NVL( sqlField.getAlias(), sqlField.getField() );
+      }
     }
 
     StepMeta stepMeta = new StepMeta( "Select values", meta );
