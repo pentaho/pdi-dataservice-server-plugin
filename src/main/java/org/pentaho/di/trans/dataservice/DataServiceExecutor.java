@@ -484,7 +484,7 @@ public class DataServiceExecutor {
       sbsql.append( "SQL" );
     }
     sbsql.append( " - " );
-    sbsql.append( sql.getSqlString() );
+    sbsql.append( sql.getSqlString().hashCode() );
 
     // Get rid of newlines...
     //
