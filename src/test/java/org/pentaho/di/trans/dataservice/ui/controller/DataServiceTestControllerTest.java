@@ -63,6 +63,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -100,8 +101,6 @@ public class DataServiceTestControllerTest  {
 
     when( dataService.getServiceTrans() ).thenReturn( transMeta );
 
-    dataServiceTestController = new DataServiceTestControllerTester();
-
     when( dataServiceExecutor.getServiceTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getGenTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getServiceTransMeta() ).thenReturn( transMeta );
@@ -118,13 +117,14 @@ public class DataServiceTestControllerTest  {
     when( transMeta.getParameterDefault( "bar" ) ).thenReturn( "barVal" );
     // mocks to deal with Xul multithreading.
     when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
-    dataServiceTestController.setXulDomContainer( xulDomContainer );
     doAnswer( new Answer() {
           @Override public Object answer( InvocationOnMock invocationOnMock ) throws Throwable {
             ( (Runnable) invocationOnMock.getArguments()[0] ).run();
             return null;
           }
         } ).when( document ).invokeLater( any( Runnable.class ) );
+
+    dataServiceTestController = new DataServiceTestControllerTester();
   }
 
   @Test
@@ -215,6 +215,7 @@ public class DataServiceTestControllerTest  {
     // is initialized are reset on close, i.e. that params set during
     // use of the dialog do not leak.
     dataServiceTestController.initStartingParameterValues();
+    verify( dataServiceExecutor.getServiceTrans(), never() ).prepareExecution( any( String[].class ) );
     dataServiceTestController.close();
     ArgumentCaptor<NamedParams> paramCaptor = ArgumentCaptor.forClass( NamedParams.class );
     verify( transMeta ).copyParametersFrom( paramCaptor.capture() );
@@ -230,17 +231,17 @@ public class DataServiceTestControllerTest  {
    */
   class DataServiceTestControllerTester extends DataServiceTestController {
 
-    private DataServiceExecutor dataServiceExecutor;
+    private final DataServiceTestControllerTest test = DataServiceTestControllerTest.this;
 
     public DataServiceTestControllerTester() throws KettleException {
       super( model, dataService );
-      this.dataServiceExecutor = DataServiceTestControllerTest.this.dataServiceExecutor;
-      setCallback( callback );
+      setCallback( test.callback );
+      setXulDomContainer( test.xulDomContainer );
     }
 
     @Override
     protected DataServiceExecutor getNewDataServiceExecutor( boolean enableMetrics ) throws KettleException {
-      return dataServiceExecutor;
+      return test.dataServiceExecutor;
     }
   }
 }
