@@ -105,12 +105,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
    * Captures parameter values at initialization time to allow
    * reverting any changes made to the service TransMeta.
    */
-  void initStartingParameterValues() throws KettleException {
-    dataServiceExec = getNewDataServiceExecutor( true );
-    if ( dataServiceExec == null ) {
-      return;
-    }
-    startingParameterValues.copyParametersFrom( dataServiceExec.getServiceTransMeta() );
+  void initStartingParameterValues() {
+    startingParameterValues.copyParametersFrom( transMeta );
   }
 
   public void init() throws InvocationTargetException, XulException {
