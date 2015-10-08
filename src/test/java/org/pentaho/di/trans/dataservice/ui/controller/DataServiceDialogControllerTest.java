@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import org.eclipse.swt.widgets.Shell;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,8 +46,8 @@ import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.components.XulTextbox;
-import org.pentaho.ui.xul.containers.XulDialog;
 import org.pentaho.ui.xul.dom.Document;
+import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
 import java.util.List;
 
@@ -81,7 +82,9 @@ public class DataServiceDialogControllerTest {
 
   @Mock Document document;
 
-  @Mock XulDialog dialog = mock( XulDialog.class );
+  @Mock SwtDialog dialog;
+
+  @Mock Shell shell;
 
   @Mock XulMessageBox messageBox;
 
@@ -119,6 +122,8 @@ public class DataServiceDialogControllerTest {
     when( dataServiceMeta.getStepname() ).thenReturn( SELECTED_STEP );
 
     when( model.getDataService() ).thenReturn( dataServiceMeta );
+
+    when( dialog.getShell() ).thenReturn( shell );
   }
 
   @Test
@@ -178,20 +183,18 @@ public class DataServiceDialogControllerTest {
 
     verify( messageBox, times( 3 ) ).open();
     verify( logChannel ).logError( anyString(), same( metaStoreException ) );
-    verify( dialog, never() ).hide();
+    verify( dialog, never() ).dispose();
 
     controller.saveAndClose();
-    verify( dialog ).hide();
+    verify( dialog ).dispose();
     verifyNoMoreInteractions( logChannel );
   }
 
   @Test
   public void testShowTestDialog() throws Exception {
-    controller = new DataServiceDialogController( model, delegate );
-
     controller.showTestDialog();
 
-    verify( delegate ).testDataService( dataServiceMeta );
+    verify( delegate ).testDataService( dataServiceMeta, shell );
   }
 
   @Test
@@ -206,7 +209,7 @@ public class DataServiceDialogControllerTest {
     controller.saveAndClose();
     verify( delegate ).save( dataServiceMeta );
     verify( delegate ).removeDataService( editingDataService );
-    verify( dialog ).hide();
+    verify( dialog ).dispose();
   }
 
   @Test
@@ -217,6 +220,6 @@ public class DataServiceDialogControllerTest {
     verify( dialog ).show();
 
     controller.close();
-    verify( dialog ).hide();
+    verify( dialog ).dispose();
   }
 }
