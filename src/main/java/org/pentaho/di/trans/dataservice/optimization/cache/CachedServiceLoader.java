@@ -33,6 +33,7 @@ import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.step.StepMetaDataCombi;
 
 import java.util.Iterator;
 import java.util.List;
@@ -77,7 +78,12 @@ class CachedServiceLoader {
 
     postOptimization.add( new Runnable() {
       @Override public void run() {
-        serviceTrans.killAll();
+        serviceTrans.stopAll();
+        for ( StepMetaDataCombi stepMetaDataCombi : serviceTrans.getSteps() ) {
+          stepMetaDataCombi.step.setOutputDone();
+          stepMetaDataCombi.step.dispose( stepMetaDataCombi.meta, stepMetaDataCombi.data );
+          stepMetaDataCombi.step.markStop();
+        }
       }
     } );
 
