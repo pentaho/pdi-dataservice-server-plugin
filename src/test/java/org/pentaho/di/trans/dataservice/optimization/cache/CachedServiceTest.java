@@ -53,10 +53,14 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.SqlTransGenerator;
 import org.pentaho.di.trans.dataservice.optimization.cache.CachedService.CacheKey;
 import org.pentaho.di.trans.step.RowListener;
+import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepListener;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.StepMetaDataCombi;
+import org.pentaho.di.trans.step.StepMetaInterface;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -97,6 +101,10 @@ public class CachedServiceTest {
   @Mock StepInterface serviceStep;
   @Mock SqlTransGenerator sqlTransGenerator;
   @Mock DataServiceMeta dataServiceMeta;
+  @Mock StepMetaDataCombi stepMetaDataCombi;
+  @Mock StepInterface inputStep;
+  @Mock StepMetaInterface inputStepMetaInterface;
+  @Mock StepDataInterface inputStepDataInterface;
 
   private List<RowMetaAndData> testData;
   private RowMeta rowMeta;
@@ -307,12 +315,22 @@ public class CachedServiceTest {
     ArgumentCaptor<Runnable> replayRunnable = ArgumentCaptor.forClass( Runnable.class );
     verify( mockExecutor ).execute( replayRunnable.capture() );
 
+    stepMetaDataCombi.step = inputStep;
+    stepMetaDataCombi.meta = inputStepMetaInterface;
+    stepMetaDataCombi.data = inputStepDataInterface;
+    List<StepMetaDataCombi> stepMetaDataCombis = new ArrayList<>();
+    stepMetaDataCombis.add( stepMetaDataCombi );
+    when( serviceTrans.getSteps() ).thenReturn( stepMetaDataCombis );
+
     // Simulate executing data service
     executor.executeListeners( DataServiceExecutor.ExecutionPoint.READY );
     executor.executeListeners( DataServiceExecutor.ExecutionPoint.START );
 
     // Verify that serviceTrans never started, genTrans is accepting rows
-    verify( serviceTrans ).killAll();
+    verify( serviceTrans ).stopAll();
+    verify( inputStep ).setOutputDone();
+    verify( inputStep ).dispose( inputStepMetaInterface, inputStepDataInterface );
+    verify( inputStep ).markStop();
     verify( serviceTrans, never() ).startThreads();
     verify( genTrans ).startThreads();
 
@@ -357,12 +375,22 @@ public class CachedServiceTest {
     ArgumentCaptor<Runnable> replayRunnable = ArgumentCaptor.forClass( Runnable.class );
     verify( mockExecutor ).execute( replayRunnable.capture() );
 
+    stepMetaDataCombi.step = inputStep;
+    stepMetaDataCombi.meta = inputStepMetaInterface;
+    stepMetaDataCombi.data = inputStepDataInterface;
+    List<StepMetaDataCombi> stepMetaDataCombis = new ArrayList<>();
+    stepMetaDataCombis.add( stepMetaDataCombi );
+    when( serviceTrans.getSteps() ).thenReturn( stepMetaDataCombis );
+
     // Simulate executing data service
     executor.executeListeners( DataServiceExecutor.ExecutionPoint.READY );
     executor.executeListeners( DataServiceExecutor.ExecutionPoint.START );
 
     // Verify that serviceTrans never started, genTrans is accepting rows
-    verify( serviceTrans ).killAll();
+    verify( serviceTrans ).stopAll();
+    verify( inputStep ).setOutputDone();
+    verify( inputStep ).dispose( inputStepMetaInterface, inputStepDataInterface );
+    verify( inputStep ).markStop();
     verify( serviceTrans, never() ).startThreads();
     verify( genTrans ).startThreads();
 
