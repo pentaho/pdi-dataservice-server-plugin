@@ -95,7 +95,8 @@ public class CachedServiceTest {
 
   public static final String INJECTOR_STEP = "INJECTOR_STEP";
   public static final String OUTPUT = "OUTPUT";
-  private static final String BASE_QUERY = "SELECT * from MOCK_SERVICE";
+  private static final String SERVICE_NAME = "MOCK_SERVICE";
+  private static final String BASE_QUERY = "SELECT * from " + SERVICE_NAME;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
   @Mock StepInterface serviceStep;
@@ -122,6 +123,7 @@ public class CachedServiceTest {
       testData.add( new RowMetaAndData( rowMeta, String.valueOf( i ), i % 13, i % 17 ) );
     }
 
+    when( dataServiceMeta.getName() ).thenReturn( SERVICE_NAME );
     when( dataServiceMeta.getStepname() ).thenReturn( "service step" );
     when( serviceTrans.findRunThread( "service step" ) ).thenReturn( serviceStep );
     when( serviceStep.getTrans() ).thenReturn( serviceTrans );
@@ -424,7 +426,7 @@ public class CachedServiceTest {
 
   @Test
   public void testAnswersQuery() throws Exception {
-    String query = "SELECT ID, A FROM mock_service" + " WHERE B = 1";
+    String query = "SELECT ID, A FROM " + SERVICE_NAME + " WHERE B = 1";
     String limit = " LIMIT 20";
     String offset = " OFFSET 10";
     String groupBy = " GROUP BY A";

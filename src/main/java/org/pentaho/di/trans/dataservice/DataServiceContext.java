@@ -64,7 +64,7 @@ public class DataServiceContext {
     return pushDownFactories;
   }
 
-  public LogChannelInterface getLogChannel(){
+  public LogChannelInterface getLogChannel() {
     return logChannel;
   }
 }

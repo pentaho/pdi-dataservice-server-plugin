@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.ui.controller;
 
 import com.google.common.collect.ImmutableList;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceValidationException;
@@ -75,7 +76,13 @@ public class DataServiceDialogController extends AbstractController {
     bindingFactory.createBinding( model, "serviceName", serviceName, "value" ).fireSourceChanged();
   }
 
-  public void showTestDialog() {
+  public void showTestDialog() throws XulException {
+    if ( Const.isEmpty( model.getServiceName() ) ) {
+      error( getString( PKG, "DataServiceDialog.TestError.Title" ), getString( PKG,
+          "DataServiceDialog.TestError.NameMissing" ) );
+      return;
+    }
+
     delegate.testDataService( model.getDataService(), getDialog().getShell() );
   }
 
@@ -93,7 +100,7 @@ public class DataServiceDialogController extends AbstractController {
       new SynchronizationService( delegate ).install( model.getTransMeta() );
 
       close();
-    } catch ( DataServiceValidationException e ){
+    } catch ( DataServiceValidationException e ) {
       error( getString( PKG, "DataServiceDialog.SaveError.Title" ), e.getMessage() );
     } catch ( Exception e ) {
       error( getString( PKG, "DataServiceDialog.SaveError.Title" ), e.getMessage() );

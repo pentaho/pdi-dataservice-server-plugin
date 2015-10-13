@@ -91,7 +91,7 @@ public class ServiceTrans implements MetaStoreElement {
   }
 
   public static Predicate<ServiceTrans> isValid( final Repository repository ) {
-    return new Predicate<ServiceTrans>(){
+    return new Predicate<ServiceTrans>() {
       @Override public boolean apply( ServiceTrans input ) {
         return Iterables.any( input.getReferences(), Reference.isValid( repository ) );
       }
