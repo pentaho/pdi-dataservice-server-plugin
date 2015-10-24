@@ -41,6 +41,7 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.ui.xul.XulDomContainer;
+import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
@@ -58,14 +59,7 @@ import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceDialogControllerTest {
@@ -221,5 +215,14 @@ public class DataServiceDialogControllerTest {
 
     controller.close();
     verify( dialog ).dispose();
+  }
+
+  @Test
+  public void testShowsErrorOnTestWithNameEmpty() throws XulException {
+    DataServiceDialogController controller = spy( new DataServiceDialogController( model,delegate ) );
+    doNothing().when( controller ).error( anyString(), anyString() );
+    when( model.getServiceName() ).thenReturn( null );
+    controller.showTestDialog();
+    verify( controller, times( 1 ) ).error( anyString(), anyString() );
   }
 }

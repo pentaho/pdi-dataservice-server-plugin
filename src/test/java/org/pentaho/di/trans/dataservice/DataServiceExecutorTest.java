@@ -53,10 +53,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
@@ -113,7 +110,7 @@ public class DataServiceExecutorTest {
     TransMeta genTransMeta = mock( TransMeta.class );
     when( genTrans.getTransMeta() ).thenReturn( genTransMeta );
 
-    new DataServiceExecutor.Builder( new SQL( "SELECT foo FROM bar" ), service ).
+    new DataServiceExecutor.Builder( new SQL( "SELECT foo FROM " + SERVICE_NAME ), service ).
       serviceTrans( serviceTrans ).
       genTrans( genTrans ).
       prepareExecution( false ).
@@ -157,7 +154,7 @@ public class DataServiceExecutorTest {
     Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SQL sql = mock( SQL.class );
-    when( sql.getServiceName() ).thenReturn( "test_service" );
+    when( sql.getServiceName() ).thenReturn( SERVICE_NAME );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
     StepInterface serviceStep = serviceTrans.findRunThread( SERVICE_STEP_NAME );
     StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
@@ -216,7 +213,7 @@ public class DataServiceExecutorTest {
 
   @Test
   public void testQueryWithParams() throws Exception {
-    String sql = "SELECT * FROM FOO WHERE PARAMETER('foo') = 'bar' AND PARAMETER('baz') = 'bop'";
+    String sql = "SELECT * FROM " + SERVICE_NAME + " WHERE PARAMETER('foo') = 'bar' AND PARAMETER('baz') = 'bop'";
     Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
@@ -252,7 +249,7 @@ public class DataServiceExecutorTest {
 
   @Test
   public void testNullNotNullKeywords() throws Exception {
-    String sql = "SELECT * FROM table WHERE column1 IS NOT NULL AND column2 IS NULL";
+    String sql = "SELECT * FROM " + SERVICE_NAME + " WHERE column1 IS NOT NULL AND column2 IS NULL";
 
     Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
@@ -304,4 +301,20 @@ public class DataServiceExecutorTest {
     return sqlTransGenerator;
   }
 
+  @Test
+  public void testBuilderFailsOnNulls() {
+    try {
+      new DataServiceExecutor.Builder( null, mock( DataServiceMeta.class ) );
+      fail( "Should fail when SQL is null" );
+    } catch ( NullPointerException npe ) {
+      // Expected exception
+    }
+
+    try {
+      new DataServiceExecutor.Builder( mock( SQL.class ), null );
+      fail( "Should fail when service is null" );
+    } catch ( NullPointerException npe ) {
+      // Expected exception
+    }
+  }
 }

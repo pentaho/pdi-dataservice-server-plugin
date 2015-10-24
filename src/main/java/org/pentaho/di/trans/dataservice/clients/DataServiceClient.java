@@ -47,7 +47,6 @@ import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class DataServiceClient implements DataServiceClientService {
   private final DataServiceMetaStoreUtil metaStoreUtil;

@@ -22,12 +22,12 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogLevel;
@@ -36,6 +36,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransAdapter;
@@ -58,6 +59,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DataServiceExecutor {
+  private static final Class<?> PKG = DataServiceExecutor.class;
   private final Trans serviceTrans;
   private final Trans genTrans;
 
@@ -70,7 +72,7 @@ public class DataServiceExecutor {
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
     service = builder.service;
-    Map<String, String> param = new HashMap<String, String>( builder.parameters );
+    Map<String, String> param = new HashMap<>( builder.parameters );
     param.putAll( getWhereConditionParameters() );
     parameters = Collections.unmodifiableMap( param );
     serviceTrans = builder.serviceTrans;
@@ -95,8 +97,8 @@ public class DataServiceExecutor {
     private boolean enableMetrics = false;
 
     public Builder( SQL sql, DataServiceMeta service ) {
-      this.sql = sql;
-      this.service = service;
+      this.sql = Preconditions.checkNotNull( sql, "SQL must not be null." );
+      this.service = Preconditions.checkNotNull( service, "Service must not be null." );
     }
 
     public Builder parameters( Map<String, String> parameters ) {
@@ -154,6 +156,13 @@ public class DataServiceExecutor {
 
     public DataServiceExecutor build() throws KettleException {
       RowMetaInterface serviceFields;
+
+      if ( sql.getServiceName() != null && !sql.getServiceName().equals( service.getName() ) ) {
+        throw new KettleException(
+            BaseMessages.getString( PKG, "DataServiceExecutor.Error.TableNameAndDataServiceNameDifferent",
+                sql.getServiceName(), service.getName() ) );
+      }
+
       if ( serviceTrans != null ) {
         serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
       } else if ( service.getServiceTrans() != null ) {
@@ -322,7 +331,7 @@ public class DataServiceExecutor {
   private Map<String, String> getWhereConditionParameters() {
     // Parameters: see which ones are defined in the SQL
     //
-    Map<String, String> conditionParameters = new HashMap<String, String>();
+    Map<String, String> conditionParameters = new HashMap<>();
     if ( sql.getWhereCondition() != null ) {
       extractConditionParameters( sql.getWhereCondition().getCondition(), conditionParameters );
     }

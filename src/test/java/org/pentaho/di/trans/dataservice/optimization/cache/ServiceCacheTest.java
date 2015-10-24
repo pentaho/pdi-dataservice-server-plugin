@@ -107,6 +107,7 @@ public class ServiceCacheTest {
     when( factory.getCache( "MOCK_SERVICE" ) ).thenReturn( Optional.of( cache ) );
     when( factory.getCache( serviceCache, "MOCK_SERVICE" ) ).thenReturn( cache );
     when( dataServiceMeta.getStepname() ).thenReturn( SERVICE_STEP );
+    when( dataServiceMeta.getName() ).thenReturn( "MOCK_SERVICE" );
     serviceStep = serviceTrans.findRunThread( SERVICE_STEP );
     TransMeta transMeta = serviceTrans.getTransMeta();
     when( dataServiceMeta.getServiceTrans() ).thenReturn( transMeta );
