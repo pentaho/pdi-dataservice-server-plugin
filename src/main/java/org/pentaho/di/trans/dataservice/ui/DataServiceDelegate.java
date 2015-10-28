@@ -61,7 +61,7 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
   }
 
   public DataServiceDelegate( DataServiceContext context, Supplier<Spoon> spoonSupplier ) {
-    super( context.getMetaStoreUtil() );
+    super( context );
     this.spoonSupplier = spoonSupplier;
   }
 
@@ -75,7 +75,8 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
       }
     }
     try {
-      new DataServiceDialog.Builder( transMeta ).serviceStep( stepName ).build( this ).open();
+      DataServiceDialog.Builder builder = context.getUIFactory().getDataServiceDialogBuilder( transMeta );
+      builder.serviceStep( stepName ).build( this ).open();
     } catch ( KettleException e ) {
       getLogChannel().logError( "Unable to create a new data service", e );
     }
@@ -92,7 +93,8 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
     }
 
     try {
-      new DataServiceDialog.Builder( dataService.getServiceTrans() ).edit( dataService ).build( this ).open();
+      DataServiceDialog.Builder builder = context.getUIFactory().getDataServiceDialogBuilder( dataService.getServiceTrans() );
+      builder.edit( dataService ).build( this ).open();
     } catch ( KettleException e ) {
       getLogChannel().logError( "Unable to edit a data service", e );
     }
@@ -107,8 +109,7 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
   }
 
   private void showSavePrompt( String title, String message ) {
-    MessageDialog dialog =
-        new MessageDialog( getShell(), title,  null, message, MessageDialog.QUESTION,
+    MessageDialog dialog = context.getUIFactory().getMessageDialog( getShell(), title,  null, message, MessageDialog.QUESTION,
             new String[] {
                 getString( PKG, "DataServiceDelegate.Yes.Button" ),
                 getString( PKG, "DataServiceDelegate.No.Button" ) }, 0 );
@@ -124,14 +125,14 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
   }
 
   public void showError( String title, String text ) {
-    MessageBox mb = new MessageBox( getShell(), SWT.OK | SWT.ICON_WARNING );
+    MessageBox mb = context.getUIFactory().getMessageBox( getShell(), SWT.OK | SWT.ICON_WARNING );
     mb.setText( title );
     mb.setMessage( text );
     mb.open();
   }
 
   public boolean showPrompt( String title, String text ) {
-    MessageBox mb = new MessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_WARNING );
+    MessageBox mb = context.getUIFactory().getMessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_WARNING );
     mb.setText( title );
     mb.setMessage( text );
     return mb.open() == SWT.YES;
@@ -152,7 +153,7 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
 
   public void removeDataService( DataServiceMeta dataService, boolean prompt ) {
     if ( prompt ) {
-      MessageBox messageBox = new MessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
+      MessageBox messageBox = context.getUIFactory().getMessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
       messageBox.setText( getString( PKG, "DataServiceDelegate.DeleteDataService.Title" ) );
       messageBox.setMessage( getString( PKG, "DataServiceDelegate.DeleteDataService.Message", dataService.getName() ) );
       int answerIndex = messageBox.open();
@@ -175,7 +176,7 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
 
   public void testDataService( DataServiceMeta dataService, Shell shell ) {
     try {
-      new DataServiceTestDialog( new Shell( shell ), dataService ).open();
+      context.getUIFactory().getDataServiceTestDialog( context.getUIFactory().getShell( shell ), dataService ).open();
     } catch ( KettleException e ) {
       getLogChannel().logError( "Unable to create test data service dialog", e );
     }

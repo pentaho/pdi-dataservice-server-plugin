@@ -25,9 +25,13 @@ package org.pentaho.di.trans.dataservice;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
+import org.pentaho.di.trans.dataservice.ui.UIFactory;
 
 import java.util.List;
 
@@ -37,15 +41,17 @@ public class DataServiceContext {
   private final PentahoCacheManager cacheManager;
   private final List<PushDownFactory> pushDownFactories;
   private final LogChannelInterface logChannel;
+  private final UIFactory uiFactory;
 
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
-                             PentahoCacheManager cacheManager ) {
+                             PentahoCacheManager cacheManager, UIFactory uiFactory ) {
     this.pushDownFactories = pushDownFactories;
     this.autoOptimizationServices = autoOptimizationServices;
     this.cacheManager = cacheManager;
     this.metaStoreUtil = DataServiceMetaStoreUtil.create( this );
     this.logChannel = new LogChannel( "Data Service" );
+    this.uiFactory = uiFactory;
   }
 
   public PentahoCacheManager getCacheManager() {
@@ -64,7 +70,23 @@ public class DataServiceContext {
     return pushDownFactories;
   }
 
-  public LogChannelInterface getLogChannel(){
+  public LogChannelInterface getLogChannel() {
     return logChannel;
+  }
+
+  public DataServiceExecutor.Builder createBuilder( SQL sql, DataServiceMeta dataServiceMeta ) {
+    return new DataServiceExecutor.Builder( sql, dataServiceMeta );
+  }
+
+  public UIFactory getUIFactory() {
+    return this.uiFactory;
+  }
+
+  public DataServiceClient getDataServiceClient() {
+    return new DataServiceClient( this );
+  }
+
+  public DataServiceDelegate getDataServiceDelegate() {
+    return DataServiceDelegate.withDefaultSpoonInstance( this );
   }
 }

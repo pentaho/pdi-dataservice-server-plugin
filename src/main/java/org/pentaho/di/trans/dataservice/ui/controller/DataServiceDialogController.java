@@ -93,7 +93,7 @@ public class DataServiceDialogController extends AbstractController {
       new SynchronizationService( delegate ).install( model.getTransMeta() );
 
       close();
-    } catch ( DataServiceValidationException e ){
+    } catch ( DataServiceValidationException e ) {
       error( getString( PKG, "DataServiceDialog.SaveError.Title" ), e.getMessage() );
     } catch ( Exception e ) {
       error( getString( PKG, "DataServiceDialog.SaveError.Title" ), e.getMessage() );

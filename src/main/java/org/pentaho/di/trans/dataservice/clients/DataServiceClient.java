@@ -43,14 +43,16 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class DataServiceClient implements DataServiceClientService {
   private final DataServiceMetaStoreUtil metaStoreUtil;
+  private final DataServiceContext context;
 
   private Repository repository;
   private IMetaStore metaStore;
@@ -59,6 +61,7 @@ public class DataServiceClient implements DataServiceClientService {
 
   public DataServiceClient( DataServiceContext context ) {
     this.metaStoreUtil = context.getMetaStoreUtil();
+    this.context = context;
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
@@ -97,7 +100,7 @@ public class DataServiceClient implements DataServiceClientService {
     // Locate data service and return a new builder
     DataServiceMeta dataService = findDataService( sql );
 
-    return new DataServiceExecutor.Builder( sql, dataService );
+    return context.createBuilder( sql, dataService );
   }
 
   public void writeDummyRow( SQL sql, DataOutputStream dos ) throws Exception {
@@ -113,7 +116,7 @@ public class DataServiceClient implements DataServiceClientService {
     rowMeta.writeData( dos, row );
   }
 
-  private DataServiceMeta findDataService( SQL sql ) throws KettleException {
+  public DataServiceMeta findDataService( SQL sql ) throws KettleException {
     try {
       return metaStoreUtil.getDataService( sql.getServiceName(), repository, metaStore );
     } catch ( Exception e ) {
@@ -160,5 +163,9 @@ public class DataServiceClient implements DataServiceClientService {
 
   public void setMetaStore( IMetaStore metaStore ) {
     this.metaStore = metaStore;
+  }
+
+  public FileOutputStream getDebugFileOutputStream( String filename ) throws FileNotFoundException {
+    return new FileOutputStream( filename );
   }
 }
