@@ -22,14 +22,11 @@
 
 package org.pentaho.di.trans.dataservice.ui.menu;
 
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
-import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
 public class DataServiceStepHandler extends AbstractXulEventHandler {
@@ -49,28 +46,23 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
     return HANDLER_NAME;
   }
 
-  public void newDataService() throws KettleException {
+  public void newDataService() {
     delegate.createNewDataService( getCurrentStep().getName() );
   }
 
-  public void editDataService() throws KettleException, MetaStoreException {
-    DataServiceMeta dataService = getCurrentDataServiceMeta();
-
-    delegate.editDataService( dataService );
+  public void editDataService() {
+    delegate.editDataService( getCurrentDataServiceMeta() );
   }
 
-  public void deleteDataService() throws KettleException, MetaStoreException {
-    DataServiceMeta dataService = getCurrentDataServiceMeta();
-
-    delegate.removeDataService( dataService, true );
+  public void deleteDataService() {
+    delegate.removeDataService( getCurrentDataServiceMeta(), true );
   }
 
-  public void testDataService() throws MetaStoreException, KettleException {
-    DataServiceMeta dataService = getCurrentDataServiceMeta();
-    new DataServiceTestDialog( delegate.getShell(), dataService ).open();
+  public void testDataService() {
+    delegate.testDataService( getCurrentDataServiceMeta() );
   }
 
-  private DataServiceMeta getCurrentDataServiceMeta() throws MetaStoreException {
+  private DataServiceMeta getCurrentDataServiceMeta() {
     return delegate.getDataServiceByStepName( getActiveTrans(), getCurrentStep().getName() );
   }
 
