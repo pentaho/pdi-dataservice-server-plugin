@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.www;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -66,7 +67,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
   private final DataServiceClient client;
 
   public TransDataServlet( DataServiceContext context ) {
-    client = new DataServiceClient( context );
+    client = context.getDataServiceClient();
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -138,7 +139,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
           // Store it to temp file for debugging!
           //
           try {
-            FileOutputStream fos = new FileOutputStream( debugTransFile );
+            FileOutputStream fos = client.getDebugFileOutputStream( debugTransFile );
             fos.write( XMLHandler.getXMLHeader( Const.XML_ENCODING ).getBytes( Const.XML_ENCODING ) );
             fos.write( genTransMeta.getXML().getBytes( Const.XML_ENCODING ) );
             fos.close();
@@ -186,4 +187,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     return CONTEXT_PATH;
   }
 
+  public void setLog( LogChannelInterface log ) {
+    this.log =  log;
+  }
 }

@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.www;
 
 import org.pentaho.di.core.annotations.CarteServlet;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -61,7 +62,7 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
   private final DataServiceClient client;
 
   public ListDataServicesServlet( DataServiceContext context ) {
-    client = new DataServiceClient( context );
+    client = context.getDataServiceClient();
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -118,4 +119,7 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
     return CONTEXT_PATH;
   }
 
+  public void setLog( LogChannelInterface log ) {
+    this.log =  log;
+  }
 }

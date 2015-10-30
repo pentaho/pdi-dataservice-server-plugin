@@ -38,7 +38,7 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
   private DataServiceDelegate delegate;
 
   public DataServiceStepHandler( DataServiceContext context ) {
-    delegate = DataServiceDelegate.withDefaultSpoonInstance( context );
+    delegate = context.getDataServiceDelegate();
   }
 
   @Override

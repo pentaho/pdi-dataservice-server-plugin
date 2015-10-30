@@ -36,6 +36,7 @@ import java.util.Arrays;
 
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SqlTransGeneratorTest {
@@ -127,4 +128,89 @@ public class SqlTransGeneratorTest {
     return (SelectValuesMeta) transMeta.getStep( selectValuesIndex ).getStepMetaInterface();
   }
 
+  @Test
+  public void testLimitClause() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM table LIMIT 1" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaString( "foo" ) );
+    sql.parse( rowMeta );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 0 );
+
+    SelectValuesMeta selectValuesMeta = getSelectStepValuesMeta( generator.generateTransMeta() );
+    assertThat( selectValuesMeta.getSelectName(), equalTo( new String[] { "foo" } ) );
+    assertThat( selectValuesMeta.getSelectRename(), equalTo( new String[] { null } ) );
+    assertThat( sql.getLimitClause(), notNullValue() );
+  }
+
+  @Test
+  public void testGenerateIifStep() throws KettleException {
+    SQL sql = new SQL( "SELECT IIF(10 > 1, 'TRUE', 'FALSE') FROM table" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaInteger( "foo" ) );
+    sql.parse( rowMeta );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 0 );
+
+    SelectValuesMeta selectValuesMeta = getSelectStepValuesMeta( generator.generateTransMeta() );
+    assertThat( selectValuesMeta.getSelectName(), equalTo( new String[] { "IIF(10 > 1, 'TRUE', 'FALSE')" } ) );
+    assertThat( selectValuesMeta.getSelectRename(), equalTo( new String[] { null } ) );
+  }
+
+  @Test
+  public void testGenerateConstStep() throws KettleException {
+    SQL sql = new SQL( "SELECT 'FOO' as foo FROM table" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaInteger( "foo" ) );
+    sql.parse( rowMeta );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 0 );
+
+    SelectValuesMeta selectValuesMeta = getSelectStepValuesMeta( generator.generateTransMeta() );
+    assertThat( selectValuesMeta.getSelectName(), equalTo( new String[] { "'FOO'" } ) );
+    assertThat( selectValuesMeta.getSelectRename(), equalTo( new String[] { "foo" } ) );
+  }
+
+  @Test
+  public void testFilterStep() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM table WHERE foo > 1" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaInteger( "foo" ) );
+    sql.parse( rowMeta );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 0 );
+
+    SelectValuesMeta selectValuesMeta = getSelectStepValuesMeta( generator.generateTransMeta() );
+    assertThat( selectValuesMeta.getSelectName(), equalTo( new String[] { "foo" } ) );
+    assertThat( selectValuesMeta.getSelectRename(), equalTo( new String[] { null } ) );
+  }
+
+  @Test
+  public void testUniqueStep() throws KettleException {
+    SQL sql = new SQL( "SELECT DISTINCT foo FROM table" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaInteger( "foo" ) );
+    sql.parse( rowMeta );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 0 );
+
+    SelectValuesMeta selectValuesMeta = getSelectStepValuesMeta( generator.generateTransMeta() );
+    assertThat( selectValuesMeta.getSelectName(), equalTo( new String[] { "foo" } ) );
+    assertThat( selectValuesMeta.getSelectRename(), equalTo( new String[] { null } ) );
+  }
+
+  @Test
+  public void testRowLimit() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM table" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaString( "foo" ) );
+    sql.parse( rowMeta );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 1 );
+
+    SelectValuesMeta selectValuesMeta = getSelectStepValuesMeta( generator.generateTransMeta() );
+    assertThat( selectValuesMeta.getSelectName(), equalTo( new String[] { "foo" } ) );
+    assertThat( selectValuesMeta.getSelectRename(), equalTo( new String[] { null } ) );
+  }
 }
+

@@ -40,6 +40,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.ui.core.ConstUI;
 import org.pentaho.di.ui.spoon.TreeSelection;
+import org.pentaho.di.trans.dataservice.ui.UIFactory;
 
 @ExtensionPoint( id = "DataServicePopupMenuExtension", description = "Creates popup menus for data services",
   extensionPointId = "SpoonPopupMenuExtension" )
@@ -48,11 +49,13 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
   private static final Class<?> PKG = DataServicePopupMenuExtension.class;
   private static final Log logger = LogFactory.getLog( DataServicePopupMenuExtension.class );
   private DataServiceDelegate delegate;
+  private UIFactory uiFactory;
 
   public DataServiceMeta selectedDataService;
 
   public DataServicePopupMenuExtension( DataServiceContext context ) {
-    delegate = DataServiceDelegate.withDefaultSpoonInstance( context );
+    delegate = context.getDataServiceDelegate();
+    uiFactory = context.getUIFactory();
   }
 
   @Override
@@ -66,11 +69,11 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
     Object selection = object.getSelection();
 
     if ( selection == DataServiceMeta.class ) {
-      popupMenu = new Menu( selectionTree );
+      popupMenu = uiFactory.getMenu( selectionTree );
       createRootPopupMenu( popupMenu );
     } else if ( selection instanceof DataServiceMeta ) {
       selectedDataService = (DataServiceMeta) selection;
-      popupMenu = new Menu( selectionTree );
+      popupMenu = uiFactory.getMenu( selectionTree );
       createItemPopupMenu( popupMenu );
     }
 
@@ -93,13 +96,13 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
       new DataServiceEditCommand() );
     createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.Delete.Label" ),
       new DataServiceDeleteCommand() );
-    new MenuItem( parent, SWT.SEPARATOR );
+    uiFactory.getMenuItem( parent, SWT.SEPARATOR );
     createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.Test.Label" ),
       new DataServiceTestCommand() );
   }
 
   private MenuItem createPopupMenu( Menu parent, final String label, final DataServiceCommand dataServiceCommand ) {
-    MenuItem menuItem = new MenuItem( parent, SWT.NONE );
+    MenuItem menuItem = uiFactory.getMenuItem( parent, SWT.NONE );
     menuItem.setText( label );
     menuItem.addSelectionListener( new SelectionListener() {
       @Override

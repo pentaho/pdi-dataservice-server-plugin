@@ -43,7 +43,6 @@ import org.pentaho.di.trans.steps.dummytrans.DummyTransMeta;
 import org.pentaho.di.trans.steps.filterrows.FilterRowsMeta;
 import org.pentaho.di.trans.steps.injector.InjectorMeta;
 import org.pentaho.di.trans.steps.memgroupby.MemoryGroupByMeta;
-import org.pentaho.di.trans.steps.rowgenerator.RowGeneratorMeta;
 import org.pentaho.di.trans.steps.samplerows.SampleRowsMeta;
 import org.pentaho.di.trans.steps.selectvalues.SelectValuesMeta;
 import org.pentaho.di.trans.steps.sort.SortRowsMeta;
@@ -87,19 +86,9 @@ public class SqlTransGenerator {
     transMeta.setName( sbsql.toString() );
     xLocation = 50;
 
-    StepMeta firstStep;
-    if ( Const.isEmpty( sql.getServiceName() ) || "dual".equalsIgnoreCase( sql.getServiceName() ) ) {
-
-      // Generate 1 empty row
-      //
-      firstStep = generateEmptyRowStep();
-
-    } else {
-
-      // Add an injector where we will pump in the rows from the service transformation.
-      //
-      firstStep = generateInjectorStep();
-    }
+    // Add an injector where we will pump in the rows from the service transformation.
+    //
+    StepMeta firstStep = generateInjectorStep();
     transMeta.addStep( firstStep );
     injectorStepName = firstStep.getName();
     StepMeta lastStep = firstStep;
@@ -202,19 +191,6 @@ public class SqlTransGenerator {
     lastStep = addToTrans( resultStep, transMeta, lastStep );
 
     return transMeta;
-  }
-
-  private StepMeta generateEmptyRowStep() {
-    RowGeneratorMeta meta = new RowGeneratorMeta();
-    meta.allocate( 0 );
-    meta.setRowLimit( "1" );
-
-    StepMeta stepMeta = new StepMeta( "dual", meta );
-    stepMeta.setLocation( xLocation, 50 );
-    xLocation += 100;
-    stepMeta.setDraw( true );
-    return stepMeta;
-
   }
 
   private StepMeta addToTrans( StepMeta sortStep, TransMeta transMeta, StepMeta lastStep ) {

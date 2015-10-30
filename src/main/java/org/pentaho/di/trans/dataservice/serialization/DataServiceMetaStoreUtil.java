@@ -81,6 +81,10 @@ public class DataServiceMetaStoreUtil {
     this.stepCache = cache;
   }
 
+  protected DataServiceMetaStoreUtil( DataServiceContext context ) {
+    this( context, context.getMetaStoreUtil().stepCache );
+  }
+
   protected DataServiceMetaStoreUtil( DataServiceMetaStoreUtil metaStoreUtil ) {
     this( metaStoreUtil.context, metaStoreUtil.stepCache );
   }

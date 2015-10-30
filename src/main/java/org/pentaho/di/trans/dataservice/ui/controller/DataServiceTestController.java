@@ -22,12 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
-import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
-import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -45,6 +39,12 @@ import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
+import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
@@ -52,7 +52,6 @@ import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
-import org.pentaho.ui.xul.binding.DefaultBinding;
 import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulLabel;
@@ -88,12 +87,19 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   private Timer completionPollTimer;
   private DataServiceExecutor dataServiceExec;
 
+  private BindingFactory bindingFactory;
+
   private XulMenuList<String> maxRows;
 
   public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService ) throws KettleException {
+    this( model, dataService, new DefaultBindingFactory() );
+  }
+
+  public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService, BindingFactory bindingFactory ) throws KettleException {
     this.model = model;
     this.dataService = dataService;
     this.transMeta = dataService.getServiceTrans();
+    this.bindingFactory = bindingFactory;
     transName = transMeta.getName();
     model.setSql( getDefaultSql() );
     initStartingParameterValues();
@@ -110,8 +116,6 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   public void init() throws InvocationTargetException, XulException {
-
-    BindingFactory bindingFactory = new DefaultBindingFactory();
     bindingFactory.setDocument( this.getXulDomContainer().getDocumentRoot() );
 
     bindLogLevelsCombo( bindingFactory );
@@ -156,7 +160,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   private void bindMaxRowsCombo( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
     bindMaxRowsComboValues( bindingFactory );
-    bindSelectedMaxRows();
+    bindSelectedMaxRows( bindingFactory );
   }
 
   private void bindMaxRowsComboValues( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
@@ -168,8 +172,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       .fireSourceChanged();
   }
 
-  private void bindSelectedMaxRows() throws InvocationTargetException, XulException {
-    Binding binding = new DefaultBinding( model, "maxRows", maxRows, "selectedItem" );
+  private void bindSelectedMaxRows( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
+    Binding binding = bindingFactory.createBinding( model, "maxRows", maxRows, "selectedItem" );
     binding.setBindingType( Binding.Type.BI_DIRECTIONAL );
     BindingConvertor maxRowsConverter = new BindingConvertor<Integer, Integer>() {
       @Override
@@ -189,7 +193,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   private void bindLogLevelsCombo( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
     bindLogLevelComboValues( bindingFactory );
-    bindSelectedLogLevel();
+    bindSelectedLogLevel( bindingFactory );
   }
 
   @SuppressWarnings( "unchecked" )
@@ -201,8 +205,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       .fireSourceChanged();
   }
 
-  private void bindSelectedLogLevel() throws InvocationTargetException, XulException {
-    Binding logBinding = new DefaultBinding( model, "logLevel", logLevels, "selectedItem" );
+  private void bindSelectedLogLevel( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
+    Binding logBinding = bindingFactory.createBinding( model, "logLevel", logLevels, "selectedItem" );
     logBinding.setBindingType( Binding.Type.BI_DIRECTIONAL );
     BindingConvertor logLevelConverter = new BindingConvertor<LogLevel, String>() {
       @Override
@@ -485,5 +489,4 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   public void setCallback( DataServiceTestCallback callback ) {
     this.callback = callback;
   }
-
 }

@@ -47,6 +47,10 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.ui.xul.XulDomContainer;
+import org.pentaho.ui.xul.binding.Binding;
+import org.pentaho.ui.xul.binding.BindingFactory;
+import org.pentaho.ui.xul.components.XulMenuList;
+import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.dom.Document;
 
 import java.util.ArrayList;
@@ -59,6 +63,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
@@ -92,6 +98,17 @@ public class DataServiceTestControllerTest  {
   @Mock
   private Document document;
 
+  @Mock
+  private BindingFactory bindingFactory;
+
+  @Mock
+  private Binding binding;
+
+  @Mock
+  private XulMenuList xulMenuList;
+
+  @Mock
+  private XulTextbox xulTextBox;
 
   private DataServiceTestControllerTester dataServiceTestController;
 
@@ -115,8 +132,11 @@ public class DataServiceTestControllerTest  {
     when( transMeta.listParameters() ).thenReturn( new String[] { "foo", "bar" } );
     when( transMeta.getParameterDefault( "foo" ) ).thenReturn( "fooVal" );
     when( transMeta.getParameterDefault( "bar" ) ).thenReturn( "barVal" );
-    // mocks to deal with Xul multithreading.
-    when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
+
+    when( bindingFactory.createBinding( anyObject(), anyString(), anyObject(), anyString() ) ).thenReturn( binding );
+
+        // mocks to deal with Xul multithreading.
+        when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
     doAnswer( new Answer() {
           @Override public Object answer( InvocationOnMock invocationOnMock ) throws Throwable {
             ( (Runnable) invocationOnMock.getArguments()[0] ).run();
@@ -125,6 +145,19 @@ public class DataServiceTestControllerTest  {
         } ).when( document ).invokeLater( any( Runnable.class ) );
 
     dataServiceTestController = new DataServiceTestControllerTester();
+    dataServiceTestController.setXulDomContainer( xulDomContainer );
+  }
+
+  @Test
+  public void testInit() throws Exception {
+    when( document.getElementById( "log-levels" ) ).thenReturn( xulMenuList );
+    when( document.getElementById( "sql-textbox" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "maxrows-combo" ) ).thenReturn( xulMenuList );
+
+    dataServiceTestController.init();
+
+    verify( bindingFactory ).setDocument( document );
+    verify( document, times( 9 ) ).getElementById( anyString() );
   }
 
   @Test
@@ -234,7 +267,7 @@ public class DataServiceTestControllerTest  {
     private final DataServiceTestControllerTest test = DataServiceTestControllerTest.this;
 
     public DataServiceTestControllerTester() throws KettleException {
-      super( model, dataService );
+      super( model, dataService, bindingFactory );
       setCallback( test.callback );
       setXulDomContainer( test.xulDomContainer );
     }
