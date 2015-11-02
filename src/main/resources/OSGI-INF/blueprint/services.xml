@@ -41,9 +41,7 @@
 
     <!-- Local Client Service -->
     <service id="dataServiceClientService" interface="org.pentaho.di.trans.dataservice.client.DataServiceClientService">
-        <bean class="org.pentaho.di.trans.dataservice.clients.DataServiceClient">
-            <argument ref="context"/>
-        </bean>
+        <bean factory-ref="context" factory-method="createLocalClient"/>
     </service>
     <!-- /Local Client Service -->
 

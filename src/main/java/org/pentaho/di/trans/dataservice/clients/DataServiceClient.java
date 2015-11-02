@@ -25,19 +25,17 @@ package org.pentaho.di.trans.dataservice.clients;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayInputStream;
@@ -49,17 +47,16 @@ import java.text.MessageFormat;
 import java.util.List;
 
 public class DataServiceClient implements DataServiceClientService {
-  private final DataServiceMetaStoreUtil metaStoreUtil;
-  private final DataServiceContext context;
-
-  private Repository repository;
-  private IMetaStore metaStore;
+  private final DataServiceFactory factory;
 
   public static final String DUMMY_TABLE_NAME = "dual";
 
-  public DataServiceClient( DataServiceContext context ) {
-    this.metaStoreUtil = context.getMetaStoreUtil();
-    this.context = context;
+  public DataServiceClient( DataServiceFactory dataServiceFactory ) {
+    this.factory = dataServiceFactory;
+  }
+
+  public DataServiceFactory getFactory() {
+    return factory;
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
@@ -75,7 +72,7 @@ public class DataServiceClient implements DataServiceClientService {
         DataOutputStream dos = new DataOutputStream( byteArrayOutputStream );
         writeDummyRow( sql, dos );
       } else {
-        DataServiceExecutor executor = buildExecutor( sql )
+        DataServiceExecutor executor = factory.createBuilder( sql )
           .rowLimit( maxRows )
           .build();
         executor
@@ -94,13 +91,6 @@ public class DataServiceClient implements DataServiceClientService {
     return dataInputStream;
   }
 
-  public DataServiceExecutor.Builder buildExecutor( SQL sql ) throws KettleException {
-    // Locate data service and return a new builder
-    DataServiceMeta dataService = findDataService( sql );
-
-    return context.createBuilder( sql, dataService );
-  }
-
   public void writeDummyRow( SQL sql, DataOutputStream dos ) throws Exception {
     sql.setServiceName( DUMMY_TABLE_NAME );
 
@@ -114,19 +104,10 @@ public class DataServiceClient implements DataServiceClientService {
     rowMeta.writeData( dos, row );
   }
 
-  private DataServiceMeta findDataService( SQL sql ) throws KettleException {
-    try {
-      return metaStoreUtil.getDataService( sql.getServiceName(), repository, metaStore );
-    } catch ( Exception e ) {
-      Throwables.propagateIfPossible( e, KettleException.class );
-      throw new KettleException( "Unable to locate data service", e );
-    }
-  }
-
   @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
     List<ThinServiceInformation> services = Lists.newArrayList();
 
-    for ( DataServiceMeta service : metaStoreUtil.getDataServices( repository, metaStore, logErrors() ) ) {
+    for ( DataServiceMeta service : factory.getDataServices( logErrors() ) ) {
       TransMeta transMeta = service.getServiceTrans();
       try {
         transMeta.activateParameters();
@@ -136,7 +117,7 @@ public class DataServiceClient implements DataServiceClientService {
       } catch ( Exception e ) {
         String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
           service.getName(), transMeta.getName() );
-        context.getLogChannel().logError( message, e );
+        factory.getLogChannel().logError( message, e );
       }
     }
 
@@ -144,15 +125,20 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   private Function<Exception, Void> logErrors() {
-    return metaStoreUtil.logErrors( "Unable to retrieve data service" );
+    return factory.logErrors( "Unable to retrieve data service" );
   }
 
+  /**
+   * @deprecated Property is unused. See {@link DataServiceClientService#setRepository(Repository)}
+   */
+  @Deprecated
   public void setRepository( Repository repository ) {
-    this.repository = repository;
   }
 
+  /**
+   * @deprecated Property is unused. See {@link DataServiceClientService#setMetaStore(IMetaStore)}
+   */
+  @Deprecated
   public void setMetaStore( IMetaStore metaStore ) {
-    this.metaStore = metaStore;
   }
-
 }

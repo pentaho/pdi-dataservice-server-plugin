@@ -23,12 +23,14 @@
 package org.pentaho.di.trans.dataservice;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Supplier;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
@@ -87,19 +89,23 @@ public class DataServiceContext {
     return logChannel;
   }
 
-  public DataServiceExecutor.Builder createBuilder( SQL sql, DataServiceMeta dataServiceMeta ) {
-    return new DataServiceExecutor.Builder( sql, dataServiceMeta );
-  }
-
   public UIFactory getUIFactory() {
     return this.uiFactory;
   }
 
-  public DataServiceClient getDataServiceClient() {
-    return new DataServiceClient( this );
-  }
-
   public DataServiceDelegate getDataServiceDelegate() {
     return DataServiceDelegate.withDefaultSpoonInstance( this );
+  }
+
+  public DataServiceClient createClient( final Supplier<Repository> supplier ) {
+    return new DataServiceClient( new DataServiceFactory( getMetaStoreUtil() ) {
+      @Override public Repository getRepository() {
+        return supplier.get();
+      }
+    } );
+  }
+
+  public DataServiceClient createLocalClient() {
+    return new DataServiceClient( getDataServiceDelegate() );
   }
 }

@@ -40,6 +40,7 @@ import java.util.List;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +67,8 @@ public class ListDataServicesServletTest extends BaseServletTest {
     servlet.setup( transformationMap, null, null, null );
 
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
+
+    verify( context ).createClient( argThat( new ValidRepositorySupplier() ) );
 
     StringWriter out = new StringWriter();
     ThinServiceInformation thinServiceInformation = new ThinServiceInformation( DATA_SERVICE_NAME, rowMetaInterface );
@@ -101,8 +104,6 @@ public class ListDataServicesServletTest extends BaseServletTest {
       "</service>",
       "</services>"
     ) ) );
-    verify( client ).setRepository( repository );
-    verify( client ).setMetaStore( metaStore );
   }
 
   @Test

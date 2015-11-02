@@ -34,12 +34,12 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.DataOutput;
@@ -117,6 +117,8 @@ public class TransDataServletTest extends BaseServletTest {
     servlet.setLog( logChannel );
     servlet.setup( transformationMap, null, null, null );
 
+    verify( context ).createClient( argThat( new ValidRepositorySupplier() ) );
+
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
     debugTrans = fs.newFile( DEBUG_TRANS_FILE );
   }
@@ -125,7 +127,7 @@ public class TransDataServletTest extends BaseServletTest {
   public void testDoPut() throws Exception {
     DataServiceExecutor.Builder builder = mock( DataServiceExecutor.Builder.class, RETURNS_SELF );
 
-    when( client.buildExecutor( argThat( sql( TEST_SQL_QUERY ) ) ) ).thenReturn( builder );
+    when( factory.createBuilder( argThat( sql( TEST_SQL_QUERY ) ) ) ).thenReturn( builder );
     when( builder.build() ).thenReturn( executor );
     when( executor.executeQuery( (DataOutputStream) any() ) ).then( new Answer<DataServiceExecutor>() {
       @Override public DataServiceExecutor answer( InvocationOnMock invocation ) throws Throwable {
@@ -142,9 +144,6 @@ public class TransDataServletTest extends BaseServletTest {
     when( request.getMethod() ).thenReturn( "PUT" );
     servlet.service( request, response );
     verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
-
-    verify( client ).setRepository( repository );
-    verify( client ).setMetaStore( metaStore );
 
     verify( response ).setStatus( HttpServletResponse.SC_OK );
     verify( response ).setContentType( "binary/jdbc" );
@@ -170,7 +169,7 @@ public class TransDataServletTest extends BaseServletTest {
 
   @Test
   public void testDoGetException() throws Exception {
-    when( client.buildExecutor( any( SQL.class ) ) ).thenThrow( new KettleException( "expected" ) );
+    when( factory.createBuilder( any( SQL.class ) ) ).thenThrow( new MetaStoreException( "expected" ) );
 
     headers.put( HEADER_SQL, TEST_SQL_QUERY );
     servlet.service( request, response );

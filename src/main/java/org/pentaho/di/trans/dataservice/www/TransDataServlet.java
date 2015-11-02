@@ -69,7 +69,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
   private final DataServiceClient client;
 
   public TransDataServlet( DataServiceContext context ) {
-    client = context.getDataServiceClient();
+    this.client = context.createClient( new ServletRepositoryAdapter( this ) );
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -108,12 +108,8 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
         response.setContentType( "binary/jdbc" );
         client.writeDummyRow( sql, new DataOutputStream( response.getOutputStream() ) );
       } else {
-        // Update client with configured repository and metastore
-        client.setRepository( transformationMap.getSlaveServerConfig().getRepository() );
-        client.setMetaStore( transformationMap.getSlaveServerConfig().getMetaStore() );
-
         // Pass query to client
-        DataServiceExecutor executor = client.buildExecutor( sql ).
+        DataServiceExecutor executor = client.getFactory().createBuilder( sql ).
             parameters( parameters ).
             rowLimit( maxRows ).
             build();
