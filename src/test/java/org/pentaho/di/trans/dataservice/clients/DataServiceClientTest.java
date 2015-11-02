@@ -26,32 +26,38 @@ import com.google.common.base.Function;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
-import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by bmorrise on 9/30/15.
@@ -69,12 +75,6 @@ public class DataServiceClientTest {
   private TransMeta trans;
 
   @Mock
-  private Repository repository;
-
-  @Mock
-  private IMetaStore metaStore;
-
-  @Mock
   private DataServiceMeta dataServiceMeta;
 
   @Mock
@@ -84,7 +84,7 @@ public class DataServiceClientTest {
   private DataServiceContext context;
 
   @Mock
-  private DataServiceMetaStoreUtil metaStoreUtil;
+  private DataServiceFactory dataServiceFactory;
 
   @Mock
   private DataServiceExecutor executor;
@@ -99,7 +99,6 @@ public class DataServiceClientTest {
 
   @Before
   public void setUp() throws Exception {
-    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
     when( context.createBuilder( any( SQL.class ), any( DataServiceMeta.class ) ) ).thenReturn( builder );
     when( builder.rowLimit( MAX_ROWS ) ).thenReturn( builder );
     when( builder.build() ).thenReturn( executor );
@@ -108,9 +107,7 @@ public class DataServiceClientTest {
 
     doNothing().when( executor ).waitUntilFinished();
 
-    dataServiceClient = new DataServiceClient( context );
-    dataServiceClient.setMetaStore( metaStore );
-    dataServiceClient.setRepository( repository );
+    dataServiceClient = new DataServiceClient( context, dataServiceFactory );
   }
 
   @Test
@@ -147,23 +144,23 @@ public class DataServiceClientTest {
 
   @Test
   public void testFindDataService() throws Exception {
-    when( metaStoreUtil.getDataService( sql.getServiceName(), repository, metaStore ) ).thenReturn( dataServiceMeta );
+    when( dataServiceFactory.getDataService( sql.getServiceName() ) ).thenReturn( dataServiceMeta );
     DataServiceMeta dataServiceMeta1 = dataServiceClient.findDataService( sql );
 
     assertEquals( dataServiceMeta1, dataServiceMeta );
 
     when( sql.getServiceName() ).thenReturn( SERVICE_NAME );
-    when( metaStoreUtil.getDataService( sql.getServiceName(), repository, metaStore ) ).thenThrow(
-        new MetaStoreException() );
+
+    Exception metaStoreException = new MetaStoreException();
+    when( dataServiceFactory.getDataService( sql.getServiceName() ) ).thenThrow( metaStoreException );
 
     try {
       dataServiceClient.findDataService( sql );
       fail();
     } catch ( Exception e ) {
       // Should get here
+      assertThat( e.getCause(), sameInstance( (Throwable) metaStoreException ) );
     }
-
-    verify( metaStoreUtil ).getDataService( sql.getServiceName(), repository, metaStore );
   }
 
   @Test
@@ -175,8 +172,7 @@ public class DataServiceClientTest {
     List<DataServiceMeta> dataServices = new ArrayList<>();
     dataServices.add( dataServiceMeta );
 
-    when( metaStoreUtil.getDataServices( any( Repository.class ), any( IMetaStore.class ), any( Function.class ) ) )
-        .thenReturn( dataServices );
+    when( dataServiceFactory.getDataServices( Matchers.<Function<Exception, Void>>any() ) ).thenReturn( dataServices );
 
     List<ThinServiceInformation> serviceInformation = dataServiceClient.getServiceInformation();
     assertEquals( 1, serviceInformation.size() );
@@ -192,21 +188,5 @@ public class DataServiceClientTest {
 
     verify( trans, times( 2 ) ).activateParameters();
     verify( trans, times( 2 ) ).getStepFields( dataServiceMeta.getStepname() );
-  }
-
-  public void testGetRepository() {
-    dataServiceClient.getRepository();
-  }
-
-  public void testSetRepository() {
-    dataServiceClient.setRepository( repository );
-  }
-
-  public void testGetMetaStore() {
-    dataServiceClient.getMetaStore();
-  }
-
-  public void testSetMetaStore() {
-    dataServiceClient.setMetaStore( metaStore );
   }
 }

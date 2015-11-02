@@ -102,33 +102,33 @@ import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceMetaStoreUtilTest {
 
-  public static final String DATA_SERVICE_NAME = "DataServiceNameForLoad";
-  public static final String DATA_SERVICE_STEP = "DataServiceStepNameForLoad";
+  static final String DATA_SERVICE_NAME = "DataServiceNameForLoad";
+  static final String DATA_SERVICE_STEP = "DataServiceStepNameForLoad";
   static final String OPTIMIZATION = "Optimization";
   static final String OPTIMIZED_STEP = "Optimized Step";
   static final String OPTIMIZATION_VALUE = "Optimization Value";
-  private final ObjectId objectId = new StringObjectId( UUID.randomUUID().toString() );
-  private TransMeta transMeta;
-  private MemoryMetaStore metaStore;
-  private DataServiceMeta dataService;
+  final ObjectId objectId = new StringObjectId( UUID.randomUUID().toString() );
+  TransMeta transMeta;
+  MemoryMetaStore metaStore;
+  DataServiceMeta dataService;
 
   @Mock DataServiceContext context;
   @Mock Cache<Integer, String> cache;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Repository repository;
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StepMeta serviceStep;
   @Mock Function<Exception, Void> exceptionHandler;
   @Mock KettleException notFoundException;
   @Mock LogChannelInterface logChannel;
 
-  private DataServiceMetaStoreUtil metaStoreUtil;
+  DataServiceMetaStoreUtil metaStoreUtil;
 
   @Before
-  public void setUp() throws KettleException, MetaStoreException {
+  public void setUp() throws Exception {
     transMeta = new TransMeta();
     transMeta.setName( "dataServiceTrans" );
     transMeta.setRepository( repository );
-    StepMeta stepMeta = mock( StepMeta.class );
-    when( stepMeta.getName() ).thenReturn( DATA_SERVICE_STEP );
-    transMeta.addStep( stepMeta );
+    when( serviceStep.getName() ).thenReturn( DATA_SERVICE_STEP );
+    transMeta.addStep( serviceStep );
     when( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ).thenReturn( true );
     transMeta.setObjectId( objectId );
     doThrow( notFoundException ).when( repository ).loadTransformation( any( ObjectId.class ), anyString() );
@@ -137,6 +137,7 @@ public class DataServiceMetaStoreUtilTest {
     metaStore = new MemoryMetaStore();
     metaStore.setName( DataServiceMetaStoreUtilTest.class.getName() );
     transMeta.setMetaStore( metaStore );
+    when( repository.getMetaStore() ).thenReturn( metaStore );
     this.dataService = createDataService( transMeta );
 
     PushDownFactory optimizationFactory = mock( PushDownFactory.class );
@@ -159,7 +160,7 @@ public class DataServiceMetaStoreUtilTest {
     metaStoreUtil = DataServiceMetaStoreUtil.create( context );
   }
 
-  private static DataServiceMeta createDataService( TransMeta transMeta ) {
+  DataServiceMeta createDataService( TransMeta transMeta ) {
     DataServiceMeta dataService = new DataServiceMeta( transMeta );
     dataService.setName( DATA_SERVICE_NAME );
     dataService.setStepname( DATA_SERVICE_STEP );
@@ -296,8 +297,7 @@ public class DataServiceMetaStoreUtilTest {
   public void testSync() throws Exception {
     assertThat( metaStoreUtil.getDataServiceNames( metaStore ), empty() );
 
-    metaStoreUtil.save( dataService );
-    metaStoreUtil.sync( transMeta, exceptionHandler );
+    saveDataService();
 
     assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( DATA_SERVICE_NAME ) );
     assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ),
@@ -324,8 +324,7 @@ public class DataServiceMetaStoreUtilTest {
       ServiceTrans.create( DATA_SERVICE_NAME, conflictTransMeta ) );
     assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( DATA_SERVICE_NAME ) );
 
-    metaStoreUtil.save( dataService );
-    metaStoreUtil.sync( transMeta, exceptionHandler );
+    saveDataService();
 
     assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( DATA_SERVICE_NAME ) );
     verify( exceptionHandler ).apply( any( DataServiceAlreadyExistsException.class ) );
@@ -337,8 +336,7 @@ public class DataServiceMetaStoreUtilTest {
       ServiceTrans.create( DATA_SERVICE_NAME, conflictTransMeta ) );
     assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( DATA_SERVICE_NAME ) );
 
-    metaStoreUtil.save( dataService );
-    metaStoreUtil.sync( transMeta, exceptionHandler );
+    saveDataService();
 
     assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( DATA_SERVICE_NAME ) );
     assertThat( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ),
@@ -376,8 +374,7 @@ public class DataServiceMetaStoreUtilTest {
   }
 
   @Test public void testInaccessibleTransMeta() throws Exception {
-    metaStoreUtil.save( dataService );
-    metaStoreUtil.sync( transMeta, exceptionHandler );
+    saveDataService();
 
     TransMeta invalidTransMeta = new TransMeta();
     invalidTransMeta.setName( "brokenTrans" );
@@ -398,6 +395,11 @@ public class DataServiceMetaStoreUtilTest {
       assertThat( Throwables.getRootCause( e ), equalTo( (Throwable) notFoundException ) );
     }
     assertThat( metaStoreUtil.getDataService( DATA_SERVICE_NAME, repository, metaStore ), validDataService() );
+  }
+
+  protected void saveDataService() throws MetaStoreException {
+    metaStoreUtil.save( dataService );
+    metaStoreUtil.sync( transMeta, exceptionHandler );
   }
 
   @Test public void testStepCacheMiss() throws Exception {
@@ -464,7 +466,7 @@ public class DataServiceMetaStoreUtilTest {
     assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), nullValue() );
   }
 
-  private Matcher<DataServiceMeta> validDataService() {
+  Matcher<DataServiceMeta> validDataService() {
     return allOf(
       hasProperty( "name", equalTo( DATA_SERVICE_NAME ) ),
       hasProperty( "stepname", equalTo( DATA_SERVICE_STEP ) ),
@@ -473,7 +475,7 @@ public class DataServiceMetaStoreUtilTest {
     );
   }
 
-  private Matcher<PushDownOptimizationMeta> validPushDownOptimization() {
+  Matcher<PushDownOptimizationMeta> validPushDownOptimization() {
     return allOf(
       hasProperty( "name", equalTo( OPTIMIZATION ) ),
       hasProperty( "stepName", equalTo( OPTIMIZED_STEP ) ),

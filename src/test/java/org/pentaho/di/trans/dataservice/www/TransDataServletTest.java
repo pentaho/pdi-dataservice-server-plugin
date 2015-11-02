@@ -22,9 +22,13 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
+import com.google.common.base.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
@@ -37,6 +41,8 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.www.SlaveServerConfig;
 import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
@@ -52,8 +58,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyMapOf;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by bmorrise on 10/1/15.
@@ -126,16 +140,33 @@ public class TransDataServletTest {
   @Mock
   private DataServiceContext context;
 
+  @Mock
+  private DataServiceMetaStoreUtil metaStoreUtil;
+
+  @Mock
+  private DataServiceFactory dataServiceFactory;
+
+  @Captor
+  private ArgumentCaptor<Supplier<Repository>> repoSupplier;
+
   private TransDataServlet servlet;
 
   @Before
   public void setUp() throws Exception {
-    when( context.getDataServiceClient() ).thenReturn( client );
+    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
+    when( metaStoreUtil.createFactory( Matchers.<Supplier<Repository>>any() ) ).thenReturn( dataServiceFactory );
+    when( dataServiceFactory.createClient() ).thenReturn( client );
 
     servlet = new TransDataServlet( context );
     servlet.setJettyMode( true );
     servlet.setLog( log );
     servlet.setup( transformationMap, null, null, null );
+
+    when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
+    when( slaveServerConfig.getRepository() ).thenReturn( repository );
+
+    verify( metaStoreUtil ).createFactory( repoSupplier.capture() );
+    assertThat( repoSupplier.getValue().get(), sameInstance( repository ) );
 
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
     when( request.getHeader( HEADER_SQL ) ).thenReturn( TEST_SQL_QUERY );
@@ -143,11 +174,8 @@ public class TransDataServletTest {
     when( request.getParameter( PARAM_DEBUG_TRANS ) ).thenReturn( DEBUG_TRANS_FILE );
     when( request.getParameterNames() ).thenReturn( Collections.enumeration( new HashSet() ) );
     when( response.getOutputStream() ).thenReturn( outputStream );
-    when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
-    when( slaveServerConfig.getRepository() ).thenReturn( repository );
-    when( slaveServerConfig.getMetaStore() ).thenReturn( metaStore );
     when( client.buildExecutor( any( SQL.class ) )).thenReturn( builder );
-    when( builder.parameters( any( Map.class ) ) ).thenReturn( builder );
+    when( builder.parameters( anyMapOf( String.class, String.class ) ) ).thenReturn( builder );
     when( builder.rowLimit( Integer.valueOf( TEST_MAX_ROWS ) ) ).thenReturn( builder );
     when( builder.build() ).thenReturn( executor );
     when( executor.executeQuery( outputStream ) ).thenReturn( executor );
@@ -188,10 +216,8 @@ public class TransDataServletTest {
     verify( request ).getHeader( HEADER_SQL );
     verify( request ).getHeader( HEADER_MAX_ROWS );
     verify( request ).getParameter( PARAM_DEBUG_TRANS );
-    verify( client ).setRepository( repository );
-    verify( client ).setMetaStore( metaStore );
     verify( client ).buildExecutor( any( SQL.class ) );
-    verify( builder ).parameters( any( Map.class ) );
+    verify( builder ).parameters( anyMapOf( String.class, String.class ) );
     verify( builder ).rowLimit( Integer.valueOf( TEST_MAX_ROWS ) );
     verify( builder ).build();
     verify( executor ).executeQuery( outputStream );

@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -36,7 +37,7 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayInputStream;
@@ -47,21 +48,17 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 public class DataServiceClient implements DataServiceClientService {
-  private final DataServiceMetaStoreUtil metaStoreUtil;
   private final DataServiceContext context;
-
-  private Repository repository;
-  private IMetaStore metaStore;
+  private final DataServiceFactory dataServiceFactory;
 
   public static final String DUMMY_TABLE_NAME = "dual";
 
-  public DataServiceClient( DataServiceContext context ) {
-    this.metaStoreUtil = context.getMetaStoreUtil();
+  public DataServiceClient( DataServiceContext context, DataServiceFactory dataServiceFactory ) {
     this.context = context;
+    this.dataServiceFactory = dataServiceFactory;
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
@@ -118,7 +115,7 @@ public class DataServiceClient implements DataServiceClientService {
 
   public DataServiceMeta findDataService( SQL sql ) throws KettleException {
     try {
-      return metaStoreUtil.getDataService( sql.getServiceName(), repository, metaStore );
+      return dataServiceFactory.getDataService( sql.getServiceName() );
     } catch ( Exception e ) {
       Throwables.propagateIfPossible( e, KettleException.class );
       throw new KettleException( "Unable to locate data service", e );
@@ -126,9 +123,9 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
-    List<ThinServiceInformation> services = new ArrayList<ThinServiceInformation>();
+    List<ThinServiceInformation> services = Lists.newArrayList();
 
-    for ( DataServiceMeta service : metaStoreUtil.getDataServices( repository, metaStore, logErrors() ) ) {
+    for ( DataServiceMeta service : dataServiceFactory.getDataServices( logErrors() ) ) {
       TransMeta transMeta = service.getServiceTrans();
       try {
         transMeta.activateParameters();
@@ -138,7 +135,7 @@ public class DataServiceClient implements DataServiceClientService {
       } catch ( Exception e ) {
         String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
           service.getName(), transMeta.getName() );
-        metaStoreUtil.getLogChannel().logError( message, e );
+        context.getLogChannel().logError( message, e );
       }
     }
 
@@ -146,23 +143,21 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   private Function<Exception, Void> logErrors() {
-    return metaStoreUtil.logErrors( "Unable to retrieve data service" );
+    return dataServiceFactory.logErrors( "Unable to retrieve data service" );
   }
 
-  public Repository getRepository() {
-    return repository;
-  }
-
+  /**
+   * @deprecated See {@link DataServiceClientService#setRepository(Repository)}
+   */
+  @Deprecated
   public void setRepository( Repository repository ) {
-    this.repository = repository;
   }
 
-  public IMetaStore getMetaStore() {
-    return metaStore;
-  }
-
+  /**
+   * @deprecated See {@link DataServiceClientService#setMetaStore(IMetaStore)}
+   */
+  @Deprecated
   public void setMetaStore( IMetaStore metaStore ) {
-    this.metaStore = metaStore;
   }
 
   public FileOutputStream getDebugFileOutputStream( String filename ) throws FileNotFoundException {

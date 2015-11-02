@@ -20,14 +20,12 @@
  *
  ******************************************************************************/
 
-
 package org.pentaho.di.trans.dataservice.ui;
 
 /**
  * Created by bmorrise on 10/16/15.
  */
 
-import com.google.common.base.Supplier;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -38,18 +36,25 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.ui.spoon.Spoon;
+import org.pentaho.metastore.api.IMetaStore;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.CoreMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceDelegateTest {
@@ -58,9 +63,6 @@ public class DataServiceDelegateTest {
   private static final String TITLE = "Test Title";
   private static final String TEXT = "Test Text";
   private static final String DATA_SERVICE_NAME = "Data Service Name";
-
-  @Mock
-  private DataServiceMetaStoreUtil dataServiceMetaStoreUtil;
 
   @Mock
   private DataServiceContext context;
@@ -100,7 +102,7 @@ public class DataServiceDelegateTest {
   @Before
   public void setUp() throws Exception {
     when( dataServiceMeta.getName() ).thenReturn( DATA_SERVICE_NAME );
-    when( context.getMetaStoreUtil() ).thenReturn( dataServiceMetaStoreUtil );
+    when( context.getMetaStoreUtil() ).thenReturn( new DataServiceMetaStoreUtil( context, null ) );
     when( spoon.getActiveTransformation() ).thenReturn( transMeta );
     when( spoon.getShell() ).thenReturn( shell );
     when( context.getUIFactory() ).thenReturn( uiFactory );
@@ -114,11 +116,7 @@ public class DataServiceDelegateTest {
             anyInt() ) ).thenReturn( messageDialog );
     when( messageDialog.open() ).thenReturn( 0 );
 
-    delegate = new DataServiceDelegate( context, new Supplier<Spoon>() {
-      @Override public Spoon get() {
-        return spoon;
-      }
-    } );
+    delegate = new DataServiceDelegate( context, spoon );
   }
 
   @Test
@@ -219,6 +217,18 @@ public class DataServiceDelegateTest {
     verify( context ).getUIFactory();
     verify( messageDialog ).open();
     verify( spoon ).saveToFile( transMeta );
+  }
+
+  @Test
+  public void testSpoonDelegation(){
+    Repository repository = mock( Repository.class );
+    IMetaStore metaStore = mock( IMetaStore.class );
+
+    when( spoon.getRepository() ).thenReturn( repository );
+    when( repository.getMetaStore() ).thenReturn( metaStore );
+
+    assertThat( delegate.getRepository(), is( repository ) );
+    assertThat( delegate.getMetaStore(), is( metaStore ) );
   }
 
 }

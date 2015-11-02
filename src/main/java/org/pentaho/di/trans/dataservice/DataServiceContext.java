@@ -82,11 +82,11 @@ public class DataServiceContext {
     return this.uiFactory;
   }
 
-  public DataServiceClient getDataServiceClient() {
-    return new DataServiceClient( this );
-  }
-
   public DataServiceDelegate getDataServiceDelegate() {
     return DataServiceDelegate.withDefaultSpoonInstance( this );
+  }
+
+  public DataServiceClient createLocalClient() {
+    return getDataServiceDelegate().createClient();
   }
 }

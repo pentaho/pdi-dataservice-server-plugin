@@ -22,9 +22,13 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
+import com.google.common.base.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -33,9 +37,10 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.www.SlaveServerConfig;
 import org.pentaho.di.www.TransformationMap;
-import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,7 +48,9 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -73,9 +80,6 @@ public class ListDataServicesServletTest {
   private Repository repository;
 
   @Mock
-  private DelegatingMetaStore metaStore;
-
-  @Mock
   private PrintWriter printWriter;
 
   @Mock
@@ -93,11 +97,22 @@ public class ListDataServicesServletTest {
   @Mock
   private DataServiceContext context;
 
+  @Mock
+  private DataServiceMetaStoreUtil metaStoreUtil;
+
+  @Mock
+  private DataServiceFactory dataServiceFactory;
+
+  @Captor
+  private ArgumentCaptor<Supplier<Repository>> repoSupplier;
+
   private ListDataServicesServlet servlet;
 
   @Before
   public void setUp() throws Exception {
-    when( context.getDataServiceClient() ).thenReturn( client );
+    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
+    when( metaStoreUtil.createFactory( Matchers.<Supplier<Repository>>any() ) ).thenReturn( dataServiceFactory );
+    when( dataServiceFactory.createClient() ).thenReturn( client );
 
     servlet = new ListDataServicesServlet( context );
     servlet.setJettyMode( true );
@@ -106,9 +121,11 @@ public class ListDataServicesServletTest {
 
     when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
     when( slaveServerConfig.getRepository() ).thenReturn( repository );
-    when( slaveServerConfig.getMetaStore() ).thenReturn( metaStore );
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
     when( response.getWriter() ).thenReturn( printWriter );
+
+    verify( metaStoreUtil ).createFactory( repoSupplier.capture() );
+    assertThat( repoSupplier.getValue().get(), sameInstance( repository ) );
 
     when( thinServiceInformation.getName() ).thenReturn( SERVICE_NAME );
     when( thinServiceInformation.getServiceFields() ).thenReturn( rowMetaInterface );
@@ -135,8 +152,6 @@ public class ListDataServicesServletTest {
   private void verifyRun() throws Exception {
     verify( response ).setStatus( HttpServletResponse.SC_OK );
     verify( response ).setContentType( "text/xml" );
-    verify( client ).setRepository( repository );
-    verify( client ).setMetaStore( metaStore );
     verify( client ).getServiceInformation();
     verify( thinServiceInformation ).getName();
     verify( thinServiceInformation ).getServiceFields();
