@@ -23,10 +23,13 @@
 package org.pentaho.di.trans.dataservice.www;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -35,7 +38,6 @@ import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.www.SlaveServerConfig;
 import org.pentaho.di.www.TransformationMap;
-import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -44,6 +46,7 @@ import java.io.StringWriter;
 import java.util.List;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
@@ -74,18 +77,16 @@ public class ListDataServicesServletTest extends BaseTest {
   private Repository repository;
 
   @Mock
-  private DelegatingMetaStore metaStore;
-
-  @Mock
   private RowMetaInterface rowMetaInterface;
+
+  @Captor
+  private ArgumentCaptor<Supplier<Repository>> repoSupplier;
 
   private ListDataServicesServlet servlet;
   private StringBuffer outputBuffer;
 
   @Before
   public void setUp() throws Exception {
-    when( context.getDataServiceClient() ).thenReturn( client );
-
     servlet = new ListDataServicesServlet( context );
     servlet.setJettyMode( true );
     servlet.setLog( logChannel );
@@ -93,7 +94,6 @@ public class ListDataServicesServletTest extends BaseTest {
 
     when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
     when( slaveServerConfig.getRepository() ).thenReturn( repository );
-    when( slaveServerConfig.getMetaStore() ).thenReturn( metaStore );
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
 
     StringWriter out = new StringWriter();
@@ -117,6 +117,8 @@ public class ListDataServicesServletTest extends BaseTest {
   }
 
   private void verifyRun() throws Exception {
+    verify( metaStoreUtil ).createFactory( repoSupplier.capture() );
+    assertThat( repoSupplier.getValue().get(), sameInstance( repository ) );
     verify( response ).setStatus( HttpServletResponse.SC_OK );
     verify( response ).setContentType( "text/xml" );
     List<String> outputLines = Splitter.on( '\n' ).omitEmptyStrings().splitToList( outputBuffer );
@@ -129,8 +131,6 @@ public class ListDataServicesServletTest extends BaseTest {
       "</service>",
       "</services>"
     ) ) );
-    verify( client ).setRepository( repository );
-    verify( client ).setMetaStore( metaStore );
   }
 
   @Test

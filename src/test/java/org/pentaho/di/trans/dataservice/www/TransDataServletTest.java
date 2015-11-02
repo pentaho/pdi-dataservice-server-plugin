@@ -22,9 +22,12 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
+import com.google.common.base.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
@@ -37,7 +40,6 @@ import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.www.SlaveServerConfig;
 import org.pentaho.di.www.TransformationMap;
-import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -50,7 +52,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
@@ -92,9 +96,6 @@ public class TransDataServletTest extends BaseTest {
   private Repository repository;
 
   @Mock
-  private DelegatingMetaStore metaStore;
-
-  @Mock
   private DataServiceExecutor executor;
 
   @Mock
@@ -118,12 +119,13 @@ public class TransDataServletTest extends BaseTest {
   @Mock
   private PrintWriter printWriter;
 
+  @Captor
+  private ArgumentCaptor<Supplier<Repository>> repoSupplier;
+
   private TransDataServlet servlet;
 
   @Before
   public void setUp() throws Exception {
-    when( context.getDataServiceClient() ).thenReturn( client );
-
     servlet = new TransDataServlet( context );
     servlet.setJettyMode( true );
     servlet.setLog( logChannel );
@@ -137,7 +139,6 @@ public class TransDataServletTest extends BaseTest {
     when( response.getOutputStream() ).thenReturn( outputStream );
     when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
     when( slaveServerConfig.getRepository() ).thenReturn( repository );
-    when( slaveServerConfig.getMetaStore() ).thenReturn( metaStore );
     when( client.buildExecutor( any( SQL.class ) )).thenReturn( builder );
     when( builder.parameters( anyMapOf( String.class, String.class ) ) ).thenReturn( builder );
     when( builder.rowLimit( Integer.valueOf( TEST_MAX_ROWS ) ) ).thenReturn( builder );
@@ -149,6 +150,9 @@ public class TransDataServletTest extends BaseTest {
     when( executor.getGenTrans() ).thenReturn( genTrans );
     when( client.getDebugFileOutputStream( DEBUG_TRANS_FILE ) ).thenReturn( fileOutputStream );
     when( genTransMeta.getXML() ).thenReturn( "" );
+
+    verify( metaStoreUtil ).createFactory( repoSupplier.capture() );
+    assertThat( repoSupplier.getValue().get(), sameInstance( repository ) );
   }
 
   @Test
@@ -180,8 +184,6 @@ public class TransDataServletTest extends BaseTest {
     verify( request ).getHeader( HEADER_SQL );
     verify( request ).getHeader( HEADER_MAX_ROWS );
     verify( request ).getParameter( PARAM_DEBUG_TRANS );
-    verify( client ).setRepository( repository );
-    verify( client ).setMetaStore( metaStore );
     verify( client ).buildExecutor( any( SQL.class ) );
     verify( builder ).parameters( anyMapOf( String.class, String.class ) );
     verify( builder ).rowLimit( Integer.valueOf( TEST_MAX_ROWS ) );
