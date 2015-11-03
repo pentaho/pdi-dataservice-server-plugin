@@ -72,12 +72,21 @@
     <guava.version>17.0</guava.version>
     <junit.version>4.11</junit.version>
     <mongo-driver.version>2.11.1</mongo-driver.version>
+    <servlet-api.version>2.3</servlet-api.version>
+    <swt.version>4.3.2</swt.version>
+    <jface.version>3.3.0-I20070606-0010</jface.version>
   </properties>
   <dependencies>
     <dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-core</artifactId>
       <version>${dependency.pentaho-kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <version>${servlet-api.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -94,13 +103,31 @@
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
-      <artifactId>pentaho-metaverse-api</artifactId>
+      <artifactId>metastore</artifactId>
       <version>${dependency.pentaho-kettle.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.swt</groupId>
+      <artifactId>swt-linux-x86_64</artifactId>
+      <version>${swt.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse</groupId>
+      <artifactId>jface</artifactId>
+      <version>${jface.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>pentaho</groupId>
-      <artifactId>pentaho-metaverse-core</artifactId>
+      <artifactId>pentaho-metaverse-api</artifactId>
       <version>${dependency.pentaho-kettle.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -137,12 +164,6 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>pentaho-kettle</groupId>
-      <artifactId>kettle-engine-test</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
