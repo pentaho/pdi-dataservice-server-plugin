@@ -20,7 +20,6 @@
  *
  ******************************************************************************/
 
-
 package org.pentaho.di.trans.dataservice.serialization;
 
 import org.junit.Before;
