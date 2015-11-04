@@ -62,7 +62,9 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
   private final DataServiceClient client;
 
   public ListDataServicesServlet( DataServiceContext context ) {
-    client = context.getDataServiceClient();
+    client = context.getMetaStoreUtil()
+      .createFactory( new ServletRepositoryAdapter( this ) )
+      .createClient();
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -85,8 +87,6 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
 
     List<ThinServiceInformation> serviceInformation = Collections.emptyList();
     try {
-      client.setRepository( transformationMap.getSlaveServerConfig().getRepository() );
-      client.setMetaStore( transformationMap.getSlaveServerConfig().getMetaStore() );
       serviceInformation = client.getServiceInformation();
     } catch ( Exception e ) {
       log.logError( "Unable to list extra repository services", e );
@@ -122,4 +122,5 @@ public class ListDataServicesServlet extends BaseHttpServlet implements CartePlu
   public void setLog( LogChannelInterface log ) {
     this.log =  log;
   }
+
 }

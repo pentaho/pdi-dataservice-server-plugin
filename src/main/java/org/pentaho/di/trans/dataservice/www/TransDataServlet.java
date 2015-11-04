@@ -67,7 +67,9 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
   private final DataServiceClient client;
 
   public TransDataServlet( DataServiceContext context ) {
-    client = context.getDataServiceClient();
+    client = context.getMetaStoreUtil()
+      .createFactory( new ServletRepositoryAdapter( this ) )
+      .createClient();
   }
 
   public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -103,10 +105,6 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
         // Support for SELECT 1 and SELECT 1 FROM dual
         client.writeDummyRow( sql, new DataOutputStream( response.getOutputStream() ) );
       } else {
-        // Update client with configured repository and metastore
-        client.setRepository( transformationMap.getSlaveServerConfig().getRepository() );
-        client.setMetaStore( transformationMap.getSlaveServerConfig().getMetaStore() );
-
         // Pass query to client
         DataServiceExecutor executor = client.buildExecutor( sql ).
             parameters( parameters ).

@@ -81,10 +81,6 @@ public class DataServiceMetaStoreUtil {
     this.stepCache = cache;
   }
 
-  protected DataServiceMetaStoreUtil( DataServiceContext context ) {
-    this( context, context.getMetaStoreUtil().stepCache );
-  }
-
   protected DataServiceMetaStoreUtil( DataServiceMetaStoreUtil metaStoreUtil ) {
     this( metaStoreUtil.context, metaStoreUtil.stepCache );
   }
@@ -97,6 +93,14 @@ public class DataServiceMetaStoreUtil {
     String name = DataServiceMetaStoreUtil.class.getName() + UUID.randomUUID().toString();
     return cacheManager.getTemplates().get( Constants.DEFAULT_TEMPLATE ).
       createCache( name, Integer.class, String.class );
+  }
+
+  public DataServiceFactory createFactory( final Supplier<Repository> repositorySupplier ) {
+    return new DataServiceFactory( this ) {
+      @Override public Repository getRepository() {
+        return repositorySupplier.get();
+      }
+    };
   }
 
   public DataServiceMeta getDataService( String serviceName, Repository repository, IMetaStore metaStore )

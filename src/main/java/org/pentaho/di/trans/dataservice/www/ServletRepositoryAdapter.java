@@ -20,39 +20,29 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice.serialization;
+package org.pentaho.di.trans.dataservice.www;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.pentaho.di.core.logging.LogChannel;
-import org.pentaho.di.trans.TransMeta;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import com.google.common.base.Supplier;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.Repository;
+import org.pentaho.di.www.BaseHttpServlet;
 
 /**
  * @author nhudak
  */
-@RunWith( MockitoJUnitRunner.class )
-public class TransOpenedExtensionPointPluginTest {
+public class ServletRepositoryAdapter implements Supplier<Repository> {
+  private final BaseHttpServlet servlet;
 
-  @Mock SynchronizationService service;
-  @Mock TransMeta transMeta;
-
-  TransOpenedExtensionPointPlugin extensionPointPlugin;
-
-  @Before
-  public void setUp() throws Exception {
-    extensionPointPlugin = new TransOpenedExtensionPointPlugin( service );
+  public ServletRepositoryAdapter( BaseHttpServlet servlet ) {
+    this.servlet = servlet;
   }
 
-  @Test
-  public void testCallExtensionPoint() throws Exception {
-    extensionPointPlugin.callExtensionPoint( mock( LogChannel.class ), transMeta );
-
-    verify( service ).install( transMeta );
+  @Override public Repository get() {
+    try {
+      return servlet.getTransformationMap().getSlaveServerConfig().getRepository();
+    } catch ( KettleException e ) {
+      servlet.logError( "Unable to connect to repository", e );
+      return null;
+    }
   }
 }

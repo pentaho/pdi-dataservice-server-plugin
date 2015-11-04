@@ -31,16 +31,17 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import static org.pentaho.di.i18n.BaseMessages.getString;
 
-public class DataServiceDelegate extends DataServiceMetaStoreUtil {
+public class DataServiceDelegate extends DataServiceFactory {
   private static final Class<?> PKG = DataServiceDelegate.class;
   private final Supplier<Spoon> spoonSupplier;
 
@@ -61,7 +62,7 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
   }
 
   public DataServiceDelegate( DataServiceContext context, Supplier<Spoon> spoonSupplier ) {
-    super( context );
+    super( context.getMetaStoreUtil() );
     this.spoonSupplier = spoonSupplier;
   }
 
@@ -138,11 +139,6 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
     return mb.open() == SWT.YES;
   }
 
-  public DataServiceMeta getDataService( String serviceName ) throws MetaStoreException {
-    Spoon spoon = getSpoon();
-    return getDataService( serviceName, spoon.getRepository(), spoon.getMetaStore() );
-  }
-
   @Override
   public void save( DataServiceMeta dataService ) throws MetaStoreException {
     Spoon spoon = getSpoon();
@@ -180,6 +176,10 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
     } catch ( KettleException e ) {
       getLogChannel().logError( "Unable to create test data service dialog", e );
     }
+  }
+
+  @Override public Repository getRepository() {
+    return getSpoon().getRepository();
   }
 
   public Spoon getSpoon() {
