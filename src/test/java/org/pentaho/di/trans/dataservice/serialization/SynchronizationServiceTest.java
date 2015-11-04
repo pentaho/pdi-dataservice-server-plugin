@@ -24,7 +24,6 @@ package org.pentaho.di.trans.dataservice.serialization;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import org.eclipse.swt.widgets.Display;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,7 +64,6 @@ public class SynchronizationServiceTest {
   @Mock DataServiceDelegate delegate;
   @Mock LogChannel logChannel;
   @Mock DataServiceMeta dataServiceMeta;
-  @Mock Display display;
   @InjectMocks SynchronizationService service;
 
   @Captor ArgumentCaptor<Function<? super Exception, ?>> errorHandler;
@@ -87,13 +85,12 @@ public class SynchronizationServiceTest {
   @Before
   public void setUp() throws Exception {
     when( delegate.getLogChannel() ).thenReturn( logChannel );
-    when( delegate.getDisplay() ).thenReturn( display );
     doAnswer( new Answer() {
       @Override public Object answer( InvocationOnMock invocation ) throws Throwable {
         ( (Runnable) invocation.getArguments()[0] ).run();
         return null;
       }
-    } ).when( display ).syncExec( any( Runnable.class ) );
+    } ).when( delegate ).syncExec( any( Runnable.class ) );
   }
 
   @Test

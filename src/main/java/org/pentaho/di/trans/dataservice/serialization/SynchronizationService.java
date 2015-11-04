@@ -73,11 +73,11 @@ public class SynchronizationService implements ContentChangedListener, StepMetaC
         String message = e.getMessage();
         if ( e instanceof DataServiceAlreadyExistsException ) {
           DataServiceMeta dataService = ( (DataServiceAlreadyExistsException) e ).getDataServiceMeta();
-          delegate.getDisplay().syncExec( suggestEdit( dataService, message ) );
+          delegate.syncExec( suggestEdit( dataService, message ) );
         }
         if ( e instanceof UndefinedDataServiceException ) {
           DataServiceMeta dataService = ( (UndefinedDataServiceException) e ).getDataServiceMeta();
-          delegate.getDisplay().syncExec( suggestRemove( dataService, message ) );
+          delegate.syncExec( suggestRemove( dataService, message ) );
         }
 
         delegate.getLogChannel().logError( message, e );

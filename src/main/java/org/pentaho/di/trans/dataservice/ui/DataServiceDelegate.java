@@ -35,6 +35,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
@@ -124,6 +125,10 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
     }
   }
 
+  public SynchronizationService createSyncService() {
+    return new SynchronizationService( this );
+  }
+
   public void showError( String title, String text ) {
     MessageBox mb = context.getUIFactory().getMessageBox( getShell(), SWT.OK | SWT.ICON_WARNING );
     mb.setText( title );
@@ -192,6 +197,10 @@ public class DataServiceDelegate extends DataServiceMetaStoreUtil {
 
   public Display getDisplay() {
     return Objects.firstNonNull( Display.getCurrent(), Display.getDefault() );
+  }
+
+  public void syncExec( Runnable runnable ) {
+    getDisplay().syncExec( runnable );
   }
 
 }
