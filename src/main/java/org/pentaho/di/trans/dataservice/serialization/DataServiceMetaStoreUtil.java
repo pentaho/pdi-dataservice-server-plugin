@@ -42,6 +42,7 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
+import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.Repository;
@@ -73,20 +74,16 @@ import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 public class DataServiceMetaStoreUtil {
   private static final Class<DataServiceMetaStoreUtil> PKG = DataServiceMetaStoreUtil.class;
   private static final HashFunction hashFunction = Hashing.goodFastHash( Integer.SIZE );
-  protected final DataServiceContext context;
-  protected final Cache<Integer, String> stepCache;
+  private final DataServiceContext context;
+  private final Cache<Integer, String> stepCache;
 
-  public DataServiceMetaStoreUtil( DataServiceContext context, Cache<Integer, String> cache ) {
+  protected DataServiceMetaStoreUtil( DataServiceContext context, Cache<Integer, String> cache ) {
     this.context = context;
     this.stepCache = cache;
   }
 
-  protected DataServiceMetaStoreUtil( DataServiceContext context ) {
-    this( context, context.getMetaStoreUtil().stepCache );
-  }
-
   protected DataServiceMetaStoreUtil( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this( metaStoreUtil.context, metaStoreUtil.stepCache );
+    this( metaStoreUtil.getContext(), metaStoreUtil.getStepCache() );
   }
 
   public static DataServiceMetaStoreUtil create( DataServiceContext context ) {
@@ -95,8 +92,8 @@ public class DataServiceMetaStoreUtil {
 
   private static Cache<Integer, String> initCache( PentahoCacheManager cacheManager ) {
     String name = DataServiceMetaStoreUtil.class.getName() + UUID.randomUUID().toString();
-    return cacheManager.getTemplates().get( Constants.DEFAULT_TEMPLATE ).
-      createCache( name, Integer.class, String.class );
+    PentahoCacheTemplateConfiguration template = cacheManager.getTemplates().get( Constants.DEFAULT_TEMPLATE );
+    return template.createCache( name, Integer.class, String.class );
   }
 
   public DataServiceMeta getDataService( String serviceName, Repository repository, IMetaStore metaStore )
@@ -444,6 +441,14 @@ public class DataServiceMetaStoreUtil {
         return null;
       }
     };
+  }
+
+  public DataServiceContext getContext() {
+    return context;
+  }
+
+  public Cache<Integer, String> getStepCache() {
+    return stepCache;
   }
 
   private class DataServiceMetaObjectFactory implements IMetaStoreObjectFactory {

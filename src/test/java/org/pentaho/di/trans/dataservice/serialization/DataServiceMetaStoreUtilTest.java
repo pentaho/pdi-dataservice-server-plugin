@@ -26,7 +26,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hamcrest.Matcher;
@@ -38,16 +37,12 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.pentaho.caching.api.Constants;
-import org.pentaho.caching.api.PentahoCacheManager;
-import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
@@ -55,18 +50,15 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 
-import javax.cache.Cache;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -86,7 +78,6 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -100,69 +91,48 @@ import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStor
 import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
 @RunWith( MockitoJUnitRunner.class )
-public class DataServiceMetaStoreUtilTest {
-
-  public static final String DATA_SERVICE_NAME = "DataServiceNameForLoad";
-  public static final String DATA_SERVICE_STEP = "DataServiceStepNameForLoad";
+public class DataServiceMetaStoreUtilTest extends BaseTest {
   static final String OPTIMIZATION = "Optimization";
   static final String OPTIMIZED_STEP = "Optimized Step";
   static final String OPTIMIZATION_VALUE = "Optimization Value";
-  private final ObjectId objectId = new StringObjectId( UUID.randomUUID().toString() );
-  private TransMeta transMeta;
-  private MemoryMetaStore metaStore;
-  private DataServiceMeta dataService;
 
-  @Mock DataServiceContext context;
-  @Mock Cache<Integer, String> cache;
+  MemoryMetaStore metaStore;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Repository repository;
   @Mock Function<Exception, Void> exceptionHandler;
   @Mock KettleException notFoundException;
-  @Mock LogChannelInterface logChannel;
-
-  private DataServiceMetaStoreUtil metaStoreUtil;
 
   @Before
   public void setUp() throws KettleException, MetaStoreException {
-    transMeta = new TransMeta();
-    transMeta.setName( "dataServiceTrans" );
     transMeta.setRepository( repository );
-    StepMeta stepMeta = mock( StepMeta.class );
-    when( stepMeta.getName() ).thenReturn( DATA_SERVICE_STEP );
-    transMeta.addStep( stepMeta );
     when( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ).thenReturn( true );
-    transMeta.setObjectId( objectId );
     doThrow( notFoundException ).when( repository ).loadTransformation( any( ObjectId.class ), anyString() );
-    doReturn( transMeta ).when( repository ).loadTransformation( objectId, null );
+    doReturn( transMeta ).when( repository ).loadTransformation( transMeta.getObjectId(), null );
 
     metaStore = new MemoryMetaStore();
     metaStore.setName( DataServiceMetaStoreUtilTest.class.getName() );
     transMeta.setMetaStore( metaStore );
-    this.dataService = createDataService( transMeta );
 
     PushDownFactory optimizationFactory = mock( PushDownFactory.class );
-    PentahoCacheManager cacheManager = mock( PentahoCacheManager.class );
-    PentahoCacheTemplateConfiguration template = mock( PentahoCacheTemplateConfiguration.class );
-
     when( (Class) optimizationFactory.getType() ).thenReturn( TestOptimization.class );
     when( optimizationFactory.createPushDown() ).then( new Answer<PushDownType>() {
       @Override public PushDownType answer( InvocationOnMock invocation ) throws Throwable {
         return new TestOptimization();
       }
     } );
-    when( context.getPushDownFactories() ).thenReturn( ImmutableList.of( optimizationFactory ) );
-    when( context.getLogChannel() ).thenReturn( logChannel );
-    when( context.getCacheManager() ).thenReturn( cacheManager );
+    pushDownFactories.add( optimizationFactory );
 
-    when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( Constants.DEFAULT_TEMPLATE, template ) );
-    when( template.createCache( anyString(), eq( Integer.class ), eq( String.class ) ) ).thenReturn( cache );
-
-    metaStoreUtil = DataServiceMetaStoreUtil.create( context );
+    metaStoreUtil = new DataServiceMetaStoreUtil( context, cache );
   }
 
-  private static DataServiceMeta createDataService( TransMeta transMeta ) {
-    DataServiceMeta dataService = new DataServiceMeta( transMeta );
-    dataService.setName( DATA_SERVICE_NAME );
-    dataService.setStepname( DATA_SERVICE_STEP );
+  @Test
+  public void testProperties() throws Exception {
+    assertThat( metaStoreUtil.getContext(), is( context ) );
+    assertThat( metaStoreUtil.getStepCache(), is( cache ) );
+    assertThat( metaStoreUtil.getLogChannel(), is( (LogChannelInterface) logChannel ) );
+  }
+
+  @Override protected DataServiceMeta createDataService( String dataServiceName, TransMeta transMeta ) {
+    DataServiceMeta dataService = super.createDataService( dataServiceName, transMeta );
     PushDownOptimizationMeta optimization = new PushDownOptimizationMeta();
     optimization.setName( OPTIMIZATION );
     optimization.setStepName( OPTIMIZED_STEP );
@@ -171,6 +141,13 @@ public class DataServiceMetaStoreUtilTest {
     optimization.setType( optimizationType );
     dataService.setPushDownOptimizationMeta( Lists.newArrayList( optimization ) );
     return dataService;
+  }
+
+  @Override protected TransMeta createTransMeta( String dataServiceTrans ) {
+    TransMeta transMeta = super.createTransMeta( dataServiceTrans );
+    transMeta.setRepository( repository );
+    transMeta.setMetaStore( metaStore );
+    return transMeta;
   }
 
   @Test
@@ -185,7 +162,7 @@ public class DataServiceMetaStoreUtilTest {
       assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
     }
 
-    dataService = metaStoreUtil.checkDefined( createDataService( transMeta ) );
+    dataService = metaStoreUtil.checkDefined( createDataService( DATA_SERVICE_NAME, transMeta ) );
     try {
       dataService.setStepname( "" );
       metaStoreUtil.checkDefined( dataService );
@@ -194,7 +171,7 @@ public class DataServiceMetaStoreUtilTest {
       assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
     }
 
-    dataService = metaStoreUtil.checkDefined( createDataService( transMeta ) );
+    dataService = metaStoreUtil.checkDefined( createDataService( DATA_SERVICE_NAME, transMeta ) );
     try {
       dataService.setStepname( "Not in Trans" );
       metaStoreUtil.checkDefined( dataService );
@@ -219,8 +196,7 @@ public class DataServiceMetaStoreUtilTest {
       }
     };
 
-    DataServiceMeta local = createDataService( transMeta );
-    local.setName( "OTHER_SERVICE" );
+    DataServiceMeta local = createDataService( "OTHER_SERVICE", transMeta );
     local.setStepname( "OTHER_STEP" );
     metaStoreUtil.getDataServiceFactory( transMeta ).saveElement( local );
 
@@ -240,7 +216,7 @@ public class DataServiceMetaStoreUtilTest {
     // Editing a data service, no name change
     metaStoreUtil.checkConflict( dataService, local.getName() );
 
-    dataService = createDataService( transMeta );
+    dataService = createDataService( DATA_SERVICE_NAME, transMeta );
     metaStoreUtil.checkConflict( dataService, null );
     try {
       // New data service with conflicting output step
@@ -253,7 +229,7 @@ public class DataServiceMetaStoreUtilTest {
     // Editing data service with same output step
     metaStoreUtil.checkConflict( dataService, local.getName() );
 
-    dataService = createDataService( transMeta );
+    dataService = createDataService( DATA_SERVICE_NAME, transMeta );
     metaStoreUtil.checkConflict( dataService, null );
     dataService.setName( published.getName() );
     when( published.getReferences() ).thenReturn( ImmutableList.<ServiceTrans.Reference>of() );
@@ -315,10 +291,7 @@ public class DataServiceMetaStoreUtilTest {
 
   @Test
   public void testSyncWithConflicts() throws Exception {
-    TransMeta conflictTransMeta = new TransMeta();
-    conflictTransMeta.setName( "conflict" );
-    conflictTransMeta.setRepository( repository );
-    conflictTransMeta.setObjectId( new StringObjectId( UUID.randomUUID().toString() ) );
+    TransMeta conflictTransMeta = createTransMeta( "conflict" );
 
     metaStoreUtil.getServiceTransFactory( metaStore ).saveElement(
       ServiceTrans.create( DATA_SERVICE_NAME, conflictTransMeta ) );
@@ -354,8 +327,7 @@ public class DataServiceMetaStoreUtilTest {
     MetaStoreFactory<ServiceTrans> serviceTransFactory = metaStoreUtil.getServiceTransFactory( metaStore );
 
     String otherName = "OTHER";
-    DataServiceMeta other = createDataService( transMeta );
-    other.setName( otherName );
+    DataServiceMeta other = createDataService( otherName, transMeta );
 
     dataServiceFactory.saveElement( dataService );
     dataServiceFactory.saveElement( other );
@@ -379,10 +351,7 @@ public class DataServiceMetaStoreUtilTest {
     metaStoreUtil.save( dataService );
     metaStoreUtil.sync( transMeta, exceptionHandler );
 
-    TransMeta invalidTransMeta = new TransMeta();
-    invalidTransMeta.setName( "brokenTrans" );
-    invalidTransMeta.setObjectId( new StringObjectId( "Not In Repo" ) );
-    invalidTransMeta.setRepository( repository );
+    TransMeta invalidTransMeta = createTransMeta( "brokenTrans" );
 
     MetaStoreFactory<ServiceTrans> serviceTransFactory = metaStoreUtil.getServiceTransFactory( metaStore );
     serviceTransFactory.saveElement( ServiceTrans.create( "Invalid", invalidTransMeta ) );

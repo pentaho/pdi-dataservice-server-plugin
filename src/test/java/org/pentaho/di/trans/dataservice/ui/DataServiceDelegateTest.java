@@ -20,14 +20,12 @@
  *
  ******************************************************************************/
 
-
 package org.pentaho.di.trans.dataservice.ui;
 
 /**
  * Created by bmorrise on 10/16/15.
  */
 
-import com.google.common.base.Supplier;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -37,45 +35,35 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.mockito.stubbing.Answer;
+import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
 import org.pentaho.di.ui.spoon.Spoon;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.CoreMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
-public class DataServiceDelegateTest {
+public class DataServiceDelegateTest extends BaseTest {
 
   private static final String STEP_NAME = "Step Name";
   private static final String TITLE = "Test Title";
   private static final String TEXT = "Test Text";
-  private static final String DATA_SERVICE_NAME = "Data Service Name";
-
-  @Mock
-  private DataServiceMetaStoreUtil dataServiceMetaStoreUtil;
-
-  @Mock
-  private DataServiceContext context;
-
-  @Mock
-  private TransMeta transMeta;
 
   @Mock
   private Spoon spoon;
-
-  @Mock
-  private UIFactory uiFactory;
-
-  @Mock
-  private DataServiceDialog.Builder builder;
 
   @Mock
   private DataServiceDialog dataServiceDialog;
@@ -84,27 +72,25 @@ public class DataServiceDelegateTest {
   private DataServiceTestDialog dataServiceTestDialog;
 
   @Mock
-  private DataServiceMeta dataServiceMeta;
-
-  @Mock
   private Shell shell;
 
   @Mock
   private MessageBox messageBox;
 
+  @Mock DataServiceDialog.Builder dialogBuilder;
+
   @Mock
   private MessageDialog messageDialog;
 
-  private DataServiceDelegate delegate;
+  @Test
+  public void testDefaultSpoonFactoryMethod() throws Exception {
+    assertThat( DataServiceDelegate.withDefaultSpoonInstance( context ), notNullValue() );
+  }
 
   @Before
   public void setUp() throws Exception {
-    when( dataServiceMeta.getName() ).thenReturn( DATA_SERVICE_NAME );
-    when( context.getMetaStoreUtil() ).thenReturn( dataServiceMetaStoreUtil );
     when( spoon.getActiveTransformation() ).thenReturn( transMeta );
     when( spoon.getShell() ).thenReturn( shell );
-    when( context.getUIFactory() ).thenReturn( uiFactory );
-    when( dataServiceMeta.getServiceTrans() ).thenReturn( transMeta );
     when( uiFactory.getMessageBox( any( Shell.class ), anyInt() ) ).thenReturn( messageBox );
     when( uiFactory.getShell( shell ) ).thenReturn( shell );
     when( uiFactory.getDataServiceTestDialog( any( Shell.class ), any( DataServiceMeta.class ) ) )
@@ -114,60 +100,37 @@ public class DataServiceDelegateTest {
             anyInt() ) ).thenReturn( messageDialog );
     when( messageDialog.open() ).thenReturn( 0 );
 
-    delegate = new DataServiceDelegate( context, new Supplier<Spoon>() {
-      @Override public Spoon get() {
-        return spoon;
-      }
-    } );
+    delegate = new DataServiceDelegate( context, spoon );
+
+    when( uiFactory.getDataServiceDialogBuilder( transMeta ) ).thenReturn( dialogBuilder );
+    when( dialogBuilder.serviceStep( STEP_NAME ) ).thenReturn( dialogBuilder );
+    when( dialogBuilder.edit( dataService ) ).thenReturn( dialogBuilder );
+    when( dialogBuilder.build( delegate ) ).thenReturn( dataServiceDialog );
   }
 
   @Test
   public void testCreateNewDataService() throws Exception {
-    when( transMeta.hasChanged() ).thenReturn( false );
-    when( uiFactory.getDataServiceDialogBuilder( transMeta ) ).thenReturn( builder );
-    when( builder.serviceStep( STEP_NAME ) ).thenReturn( builder );
-    when( builder.build( delegate ) ).thenReturn( dataServiceDialog );
-
     delegate.createNewDataService( STEP_NAME );
 
-    verify( transMeta ).hasChanged();
-    verify( context ).getUIFactory();
-    verify( uiFactory ).getDataServiceDialogBuilder( transMeta );
-    verify( builder ).serviceStep( STEP_NAME );
-    verify( builder ).build( delegate );
+    verify( dialogBuilder ).serviceStep( STEP_NAME );
     verify( dataServiceDialog ).open();
   }
 
   @Test
   public void testEditDataService() throws Exception {
-    when( transMeta.hasChanged() ).thenReturn( false );
-    when( uiFactory.getDataServiceDialogBuilder( transMeta ) ).thenReturn( builder );
-    when( builder.edit( dataServiceMeta ) ).thenReturn( builder );
-    when( builder.build( delegate ) ).thenReturn( dataServiceDialog );
+    delegate.editDataService( dataService );
 
-    delegate.editDataService( dataServiceMeta );
-
-    verify( transMeta ).hasChanged();
-    verify( context ).getUIFactory();
-    verify( uiFactory ).getDataServiceDialogBuilder( transMeta );
-    verify( builder ).edit( dataServiceMeta );
-    verify( builder ).build( delegate );
+    verify( dialogBuilder ).edit( dataService );
     verify( dataServiceDialog ).open();
   }
 
   @Test
   public void testSuggestEdit() throws Exception {
-    when( uiFactory.getDataServiceDialogBuilder( transMeta ) ).thenReturn( builder );
-    when( builder.edit( dataServiceMeta ) ).thenReturn( builder );
-    when( builder.build( delegate ) ).thenReturn( dataServiceDialog );
     when( messageBox.open() ).thenReturn( SWT.YES );
-    when( transMeta.hasChanged() ).thenReturn( false );
 
-    delegate.suggestEdit( dataServiceMeta, TITLE, TEXT );
+    delegate.suggestEdit( dataService, TITLE, TEXT );
 
-    verify( dataServiceMeta, times( 3 ) ).getServiceTrans();
-    verify( transMeta, times( 2 ) ).hasChanged();
-    verify( transMeta ).setChanged();
+    assertThat( transMeta.hasChanged(), is( true ) );
   }
 
   @Test
@@ -195,30 +158,45 @@ public class DataServiceDelegateTest {
   @Test
   public void testRemoveDataService() throws Exception {
     when( messageBox.open() ).thenReturn( SWT.YES );
-
-    DataServiceDelegate spyDelegate = spy( delegate );
-    doNothing().when( spyDelegate ).removeDataService( dataServiceMeta );
-
-    spyDelegate.removeDataService( dataServiceMeta, true );
+    delegate.removeDataService( dataService, true );
   }
 
   @Test
   public void testTestDataService() throws Exception {
-    delegate.testDataService( dataServiceMeta );
+    delegate.testDataService( dataService );
 
-    verify( context, times( 2 ) ).getUIFactory();
-    verify( uiFactory ).getDataServiceTestDialog( shell, dataServiceMeta );
+    verify( uiFactory ).getDataServiceTestDialog( shell, dataService );
   }
 
   @Test
   public void testShowSavePrompt() throws Exception {
-    when( transMeta.hasChanged() ).thenReturn( true );
+    transMeta.setChanged();
+
+    when( messageDialog.open() ).thenReturn( 0 );
+    when( spoon.saveToFile( transMeta ) ).then( new Answer<Boolean>() {
+      @Override public Boolean answer( InvocationOnMock invocation ) throws Throwable {
+        transMeta.clearChanged();
+        return true;
+      }
+    } );
 
     delegate.createNewDataService( STEP_NAME );
 
-    verify( context ).getUIFactory();
-    verify( messageDialog ).open();
     verify( spoon ).saveToFile( transMeta );
+    verify( dialogBuilder ).serviceStep( STEP_NAME );
+    verify( dataServiceDialog ).open();
+  }
+
+  @Test
+  public void testSyncService() throws Exception {
+    assertThat( delegate.createSyncService(), instanceOf( SynchronizationService.class ) );
+  }
+
+  @Test
+  public void testSave() throws Exception {
+    assertThat( delegate.getDataServiceNames( transMeta ), is( empty() ) );
+    delegate.save( dataService );
+    assertThat( delegate.getDataServiceNames( transMeta ), contains( DATA_SERVICE_NAME ) );
   }
 
 }
