@@ -20,7 +20,6 @@
  *
  ******************************************************************************/
 
-
 package org.pentaho.di.trans.dataservice.serialization;
 
 import org.junit.Before;
@@ -30,9 +29,12 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author nhudak
@@ -47,7 +49,13 @@ public class TransOpenedExtensionPointPluginTest {
 
   @Before
   public void setUp() throws Exception {
-    extensionPointPlugin = new TransOpenedExtensionPointPlugin( service );
+    DataServiceContext context = mock( DataServiceContext.class );
+    DataServiceDelegate delegate = mock( DataServiceDelegate.class );
+
+    when( context.getDataServiceDelegate() ).thenReturn( delegate );
+    when( delegate.createSyncService() ).thenReturn( service );
+
+    extensionPointPlugin = new TransOpenedExtensionPointPlugin( context );
   }
 
   @Test

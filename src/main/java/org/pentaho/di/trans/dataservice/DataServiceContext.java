@@ -46,11 +46,17 @@ public class DataServiceContext {
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
                              PentahoCacheManager cacheManager, UIFactory uiFactory ) {
+    this( pushDownFactories, autoOptimizationServices, cacheManager, uiFactory, new LogChannel( "Data Service" ) );
+  }
+
+  public DataServiceContext( List<PushDownFactory> pushDownFactories,
+                             List<AutoOptimizationService> autoOptimizationServices,
+                             PentahoCacheManager cacheManager, UIFactory uiFactory, LogChannelInterface logChannel ) {
     this.pushDownFactories = pushDownFactories;
     this.autoOptimizationServices = autoOptimizationServices;
     this.cacheManager = cacheManager;
     this.metaStoreUtil = DataServiceMetaStoreUtil.create( this );
-    this.logChannel = new LogChannel( "Data Service" );
+    this.logChannel = logChannel;
     this.uiFactory = uiFactory;
   }
 

@@ -36,6 +36,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceAlreadyExistsException;
+import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
 import org.pentaho.di.trans.dataservice.serialization.UndefinedDataServiceException;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
@@ -71,6 +72,8 @@ public class DataServiceDialogControllerTest {
   @Mock DataServiceMeta dataServiceMeta;
 
   @Mock DataServiceDelegate delegate;
+
+  @Mock SynchronizationService synchronizationService;
 
   @Mock XulDomContainer xulDomContainer;
 
@@ -118,6 +121,8 @@ public class DataServiceDialogControllerTest {
     when( model.getDataService() ).thenReturn( dataServiceMeta );
 
     when( dialog.getShell() ).thenReturn( shell );
+
+    when( delegate.createSyncService() ).thenReturn( synchronizationService );
   }
 
   @Test
@@ -203,6 +208,7 @@ public class DataServiceDialogControllerTest {
     controller.saveAndClose();
     verify( delegate ).save( dataServiceMeta );
     verify( delegate ).removeDataService( editingDataService );
+    verify( synchronizationService ).install( transMeta );
     verify( dialog ).dispose();
   }
 

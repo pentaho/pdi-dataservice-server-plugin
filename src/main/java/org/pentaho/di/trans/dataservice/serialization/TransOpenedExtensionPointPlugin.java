@@ -28,7 +28,6 @@ import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
-import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 
 /**
  * @author nhudak
@@ -42,11 +41,7 @@ public class TransOpenedExtensionPointPlugin implements ExtensionPointInterface 
   private final SynchronizationService synchronizationService;
 
   public TransOpenedExtensionPointPlugin( DataServiceContext context ) {
-    this( new SynchronizationService( DataServiceDelegate.withDefaultSpoonInstance( context ) ) );
-  }
-
-  protected TransOpenedExtensionPointPlugin( SynchronizationService synchronizationService ) {
-    this.synchronizationService = synchronizationService;
+    this.synchronizationService = context.getDataServiceDelegate().createSyncService();
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
