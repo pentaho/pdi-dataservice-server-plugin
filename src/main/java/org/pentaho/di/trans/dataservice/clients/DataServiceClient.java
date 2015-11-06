@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -47,7 +48,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 public class DataServiceClient implements DataServiceClientService {
@@ -65,7 +65,7 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
-    DataInputStream dataInputStream = null;
+    DataInputStream dataInputStream;
 
     try {
 
@@ -77,20 +77,20 @@ public class DataServiceClient implements DataServiceClientService {
         DataOutputStream dos = new DataOutputStream( byteArrayOutputStream );
         writeDummyRow( sql, dos );
       } else {
-        try {
-          DataServiceExecutor executor = buildExecutor( sql ).rowLimit( maxRows ).build();
-
-          executor.executeQuery( byteArrayOutputStream ).waitUntilFinished();
-        } catch ( Exception e ) {
-          throw new SQLException( "Unable to get service information from server", e );
-        }
+        DataServiceExecutor executor = buildExecutor( sql )
+          .rowLimit( maxRows )
+          .build();
+        executor
+          .executeQuery( byteArrayOutputStream )
+          .waitUntilFinished();
       }
 
       ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( byteArrayOutputStream.toByteArray() );
       dataInputStream = new DataInputStream( byteArrayInputStream );
 
     } catch ( Exception e ) {
-      e.printStackTrace();
+      Throwables.propagateIfPossible( e, SQLException.class );
+      throw new SQLException( e );
     }
 
     return dataInputStream;
@@ -116,7 +116,7 @@ public class DataServiceClient implements DataServiceClientService {
     rowMeta.writeData( dos, row );
   }
 
-  public DataServiceMeta findDataService( SQL sql ) throws KettleException {
+  private DataServiceMeta findDataService( SQL sql ) throws KettleException {
     try {
       return metaStoreUtil.getDataService( sql.getServiceName(), repository, metaStore );
     } catch ( Exception e ) {
@@ -126,7 +126,7 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
-    List<ThinServiceInformation> services = new ArrayList<ThinServiceInformation>();
+    List<ThinServiceInformation> services = Lists.newArrayList();
 
     for ( DataServiceMeta service : metaStoreUtil.getDataServices( repository, metaStore, logErrors() ) ) {
       TransMeta transMeta = service.getServiceTrans();
@@ -138,7 +138,7 @@ public class DataServiceClient implements DataServiceClientService {
       } catch ( Exception e ) {
         String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
           service.getName(), transMeta.getName() );
-        metaStoreUtil.getLogChannel().logError( message, e );
+        context.getLogChannel().logError( message, e );
       }
     }
 
@@ -149,16 +149,8 @@ public class DataServiceClient implements DataServiceClientService {
     return metaStoreUtil.logErrors( "Unable to retrieve data service" );
   }
 
-  public Repository getRepository() {
-    return repository;
-  }
-
   public void setRepository( Repository repository ) {
     this.repository = repository;
-  }
-
-  public IMetaStore getMetaStore() {
-    return metaStore;
   }
 
   public void setMetaStore( IMetaStore metaStore ) {
