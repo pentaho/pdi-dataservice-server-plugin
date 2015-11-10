@@ -22,16 +22,16 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
-import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
+import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.www.SlaveServerConfig;
 import org.pentaho.di.www.TransformationMap;
@@ -40,22 +40,23 @@ import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
-import java.util.ArrayList;
+import java.io.StringWriter;
 import java.util.List;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Created by bmorrise on 10/6/15.
+ * @author bmorrise
  */
 @RunWith( MockitoJUnitRunner.class )
-public class ListDataServicesServletTest {
+public class ListDataServicesServletTest extends BaseTest {
 
   private static final String SERVLET_STRING = "List data services";
   private static final String CONTEXT_PATH = "/listServices";
-  private static final String SERVICE_NAME = "dataservice_test";
 
   @Mock
   private HttpServletRequest request;
@@ -76,24 +77,10 @@ public class ListDataServicesServletTest {
   private DelegatingMetaStore metaStore;
 
   @Mock
-  private PrintWriter printWriter;
-
-  @Mock
-  private DataServiceClient client;
-
-  @Mock
-  private LogChannelInterface log;
-
-  @Mock
-  private ThinServiceInformation thinServiceInformation;
-
-  @Mock
   private RowMetaInterface rowMetaInterface;
 
-  @Mock
-  private DataServiceContext context;
-
   private ListDataServicesServlet servlet;
+  private StringBuffer outputBuffer;
 
   @Before
   public void setUp() throws Exception {
@@ -101,23 +88,20 @@ public class ListDataServicesServletTest {
 
     servlet = new ListDataServicesServlet( context );
     servlet.setJettyMode( true );
-    servlet.setLog( log );
+    servlet.setLog( logChannel );
     servlet.setup( transformationMap, null, null, null );
 
     when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
     when( slaveServerConfig.getRepository() ).thenReturn( repository );
     when( slaveServerConfig.getMetaStore() ).thenReturn( metaStore );
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
-    when( response.getWriter() ).thenReturn( printWriter );
 
-    when( thinServiceInformation.getName() ).thenReturn( SERVICE_NAME );
-    when( thinServiceInformation.getServiceFields() ).thenReturn( rowMetaInterface );
-
-    when( rowMetaInterface.getMetaXML() ).thenReturn( "" );
-
-    List<ThinServiceInformation> serviceInformation = new ArrayList<>();
-    serviceInformation.add( thinServiceInformation );
-    when( client.getServiceInformation() ).thenReturn( serviceInformation );
+    StringWriter out = new StringWriter();
+    ThinServiceInformation thinServiceInformation = new ThinServiceInformation( DATA_SERVICE_NAME, rowMetaInterface );
+    when( response.getWriter() ).thenReturn( new PrintWriter( out ) );
+    when( rowMetaInterface.getMetaXML() ).thenReturn( "<rowMeta mock/>" );
+    when( client.getServiceInformation() ).thenReturn( ImmutableList.of( thinServiceInformation ) );
+    outputBuffer = out.getBuffer();
   }
 
   @Test
@@ -135,11 +119,18 @@ public class ListDataServicesServletTest {
   private void verifyRun() throws Exception {
     verify( response ).setStatus( HttpServletResponse.SC_OK );
     verify( response ).setContentType( "text/xml" );
+    List<String> outputLines = Splitter.on( '\n' ).omitEmptyStrings().splitToList( outputBuffer );
+    assertThat( outputLines, equalTo( (List<String>) ImmutableList.of(
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+      "<services>",
+      "<service>",
+      "<name>" + DATA_SERVICE_NAME + "</name>",
+      "<rowMeta mock/>",
+      "</service>",
+      "</services>"
+    ) ) );
     verify( client ).setRepository( repository );
     verify( client ).setMetaStore( metaStore );
-    verify( client ).getServiceInformation();
-    verify( thinServiceInformation ).getName();
-    verify( thinServiceInformation ).getServiceFields();
   }
 
   @Test

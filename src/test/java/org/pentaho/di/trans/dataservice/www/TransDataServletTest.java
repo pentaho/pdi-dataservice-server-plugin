@@ -28,15 +28,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.www.SlaveServerConfig;
 import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
@@ -52,14 +50,20 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyMapOf;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by bmorrise on 10/1/15.
  */
 @RunWith( MockitoJUnitRunner.class )
-public class TransDataServletTest {
+public class TransDataServletTest extends BaseTest {
 
   private static final String BAD_CONTEXT_PATH = "/badsql";
   private static final String CONTEXT_PATH = "/sql";
@@ -77,9 +81,6 @@ public class TransDataServletTest {
 
   @Mock
   private HttpServletResponse response;
-
-  @Mock
-  private DataServiceClient client;
 
   @Mock
   private TransformationMap transformationMap;
@@ -103,9 +104,6 @@ public class TransDataServletTest {
   private ServletOutputStream outputStream;
 
   @Mock
-  private TransMeta serviceTransMeta;
-
-  @Mock
   private Trans serviceTrans;
 
   @Mock
@@ -120,12 +118,6 @@ public class TransDataServletTest {
   @Mock
   private PrintWriter printWriter;
 
-  @Mock
-  private LogChannelInterface log;
-
-  @Mock
-  private DataServiceContext context;
-
   private TransDataServlet servlet;
 
   @Before
@@ -134,7 +126,7 @@ public class TransDataServletTest {
 
     servlet = new TransDataServlet( context );
     servlet.setJettyMode( true );
-    servlet.setLog( log );
+    servlet.setLog( logChannel );
     servlet.setup( transformationMap, null, null, null );
 
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
@@ -147,11 +139,11 @@ public class TransDataServletTest {
     when( slaveServerConfig.getRepository() ).thenReturn( repository );
     when( slaveServerConfig.getMetaStore() ).thenReturn( metaStore );
     when( client.buildExecutor( any( SQL.class ) )).thenReturn( builder );
-    when( builder.parameters( any( Map.class ) ) ).thenReturn( builder );
+    when( builder.parameters( anyMapOf( String.class, String.class ) ) ).thenReturn( builder );
     when( builder.rowLimit( Integer.valueOf( TEST_MAX_ROWS ) ) ).thenReturn( builder );
     when( builder.build() ).thenReturn( executor );
     when( executor.executeQuery( outputStream ) ).thenReturn( executor );
-    when( executor.getServiceTransMeta() ).thenReturn( serviceTransMeta );
+    when( executor.getServiceTransMeta() ).thenReturn( transMeta );
     when( executor.getServiceTrans() ).thenReturn( serviceTrans );
     when( executor.getGenTransMeta() ).thenReturn( genTransMeta );
     when( executor.getGenTrans() ).thenReturn( genTrans );
@@ -191,7 +183,7 @@ public class TransDataServletTest {
     verify( client ).setRepository( repository );
     verify( client ).setMetaStore( metaStore );
     verify( client ).buildExecutor( any( SQL.class ) );
-    verify( builder ).parameters( any( Map.class ) );
+    verify( builder ).parameters( anyMapOf( String.class, String.class ) );
     verify( builder ).rowLimit( Integer.valueOf( TEST_MAX_ROWS ) );
     verify( builder ).build();
     verify( executor ).executeQuery( outputStream );
