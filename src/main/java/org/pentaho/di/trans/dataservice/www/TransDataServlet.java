@@ -113,7 +113,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
             rowLimit( maxRows ).
             build();
 
-        executor.executeQuery( response.getOutputStream() );
+        executor.executeQuery( new DataOutputStream( response.getOutputStream() ) );
 
         // For logging and tracking purposes, let's expose both the service transformation as well
         // as the generated transformation on this very carte instance

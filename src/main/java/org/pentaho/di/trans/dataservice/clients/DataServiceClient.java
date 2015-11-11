@@ -81,7 +81,7 @@ public class DataServiceClient implements DataServiceClientService {
           .rowLimit( maxRows )
           .build();
         executor
-          .executeQuery( byteArrayOutputStream )
+          .executeQuery( new DataOutputStream( byteArrayOutputStream ) )
           .waitUntilFinished();
       }
 

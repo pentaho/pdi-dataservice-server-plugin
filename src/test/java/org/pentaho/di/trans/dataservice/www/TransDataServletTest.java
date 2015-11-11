@@ -142,7 +142,7 @@ public class TransDataServletTest extends BaseTest {
     when( builder.parameters( anyMapOf( String.class, String.class ) ) ).thenReturn( builder );
     when( builder.rowLimit( Integer.valueOf( TEST_MAX_ROWS ) ) ).thenReturn( builder );
     when( builder.build() ).thenReturn( executor );
-    when( executor.executeQuery( outputStream ) ).thenReturn( executor );
+    when( executor.executeQuery( (DataOutputStream) any() ) ).thenReturn( executor );
     when( executor.getServiceTransMeta() ).thenReturn( transMeta );
     when( executor.getServiceTrans() ).thenReturn( serviceTrans );
     when( executor.getGenTransMeta() ).thenReturn( genTransMeta );
@@ -186,7 +186,7 @@ public class TransDataServletTest extends BaseTest {
     verify( builder ).parameters( anyMapOf( String.class, String.class ) );
     verify( builder ).rowLimit( Integer.valueOf( TEST_MAX_ROWS ) );
     verify( builder ).build();
-    verify( executor ).executeQuery( outputStream );
+    verify( executor ).executeQuery( (DataOutputStream) any() );
     verify( executor ).getServiceTransMeta();
     verify( executor ).getServiceTrans();
     verify( transformationMap, times( 2 ) )

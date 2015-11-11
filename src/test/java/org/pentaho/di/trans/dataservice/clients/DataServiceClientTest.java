@@ -43,7 +43,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.OutputStream;
 import java.sql.SQLException;
 
 import static org.hamcrest.Matchers.anything;
@@ -109,7 +108,7 @@ public class DataServiceClientTest extends BaseTest {
     builder = mock( DataServiceExecutor.Builder.class, RETURNS_SELF );
     when( context.createBuilder( argThat( isTestSqlQuery() ), same( dataService ) ) ).thenReturn( builder );
     doReturn( executor ).when( builder ).build();
-    when( executor.executeQuery( any( OutputStream.class ) ) ).thenReturn( executor );
+    when( executor.executeQuery( any( DataOutputStream.class ) ) ).thenReturn( executor );
 
     dataServiceClient = new DataServiceClient( context );
     dataServiceClient.setMetaStore( metaStore );
