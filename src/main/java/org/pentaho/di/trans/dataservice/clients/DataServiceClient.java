@@ -44,8 +44,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.List;
@@ -81,7 +79,7 @@ public class DataServiceClient implements DataServiceClientService {
           .rowLimit( maxRows )
           .build();
         executor
-          .executeQuery( byteArrayOutputStream )
+          .executeQuery( new DataOutputStream( byteArrayOutputStream ) )
           .waitUntilFinished();
       }
 
@@ -157,7 +155,4 @@ public class DataServiceClient implements DataServiceClientService {
     this.metaStore = metaStore;
   }
 
-  public FileOutputStream getDebugFileOutputStream( String filename ) throws FileNotFoundException {
-    return new FileOutputStream( filename );
-  }
 }

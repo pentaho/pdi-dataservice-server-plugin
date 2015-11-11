@@ -22,6 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
+import com.google.common.base.Strings;
+import com.google.common.net.MediaType;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -82,13 +84,14 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     if ( log.isDebug() ) {
       logDebug( BaseMessages.getString( PKG, "GetStatusServlet.StatusRequested" ) );
     }
-    response.setStatus( HttpServletResponse.SC_OK );
-
-    response.setContentType( "binary/jdbc" );
-    response.setBufferSize( 10000 );
-    // response.setHeader("Content-Length", Integer.toString(Integer.MAX_VALUE));
 
     String sqlQuery = request.getHeader( "SQL" );
+    if ( Strings.isNullOrEmpty( sqlQuery ) ) {
+      response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
+      response.setContentType( MediaType.PLAIN_TEXT_UTF_8.toString() );
+      response.getWriter().println( "SQL query not specified" );
+      return;
+    }
     final int maxRows = Const.toInt( request.getHeader( "MaxRows" ), -1 );
 
     final String debugTransFile = request.getParameter( "debugtrans" );
@@ -101,6 +104,8 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       SQL sql = new SQL( sqlQuery );
       if ( sql.getServiceName() == null || sql.getServiceName().equals( DataServiceClient.DUMMY_TABLE_NAME ) ) {
         // Support for SELECT 1 and SELECT 1 FROM dual
+        response.setStatus( HttpServletResponse.SC_OK );
+        response.setContentType( "binary/jdbc" );
         client.writeDummyRow( sql, new DataOutputStream( response.getOutputStream() ) );
       } else {
         // Update client with configured repository and metastore
@@ -112,8 +117,10 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
             parameters( parameters ).
             rowLimit( maxRows ).
             build();
+        response.setStatus( HttpServletResponse.SC_OK );
+        response.setContentType( "binary/jdbc" );
 
-        executor.executeQuery( response.getOutputStream() );
+        executor.executeQuery( new DataOutputStream( response.getOutputStream() ) );
 
         // For logging and tracking purposes, let's expose both the service transformation as well
         // as the generated transformation on this very carte instance
@@ -139,7 +146,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
           // Store it to temp file for debugging!
           //
           try {
-            FileOutputStream fos = client.getDebugFileOutputStream( debugTransFile );
+            FileOutputStream fos = new FileOutputStream( debugTransFile );
             fos.write( XMLHandler.getXMLHeader( Const.XML_ENCODING ).getBytes( Const.XML_ENCODING ) );
             fos.write( genTransMeta.getXML().getBytes( Const.XML_ENCODING ) );
             fos.close();
@@ -154,7 +161,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     } catch ( Exception e ) {
       log.logError( "Error executing SQL query: " + sqlQuery, e );
       response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
-      response.getWriter().println( e.getMessage().trim() );
+      response.getWriter().println( Strings.nullToEmpty( e.getMessage() ).trim() );
     }
   }
 
@@ -190,4 +197,5 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
   public void setLog( LogChannelInterface log ) {
     this.log =  log;
   }
+
 }

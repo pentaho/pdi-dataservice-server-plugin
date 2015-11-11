@@ -22,8 +22,8 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.pentaho.caching.api.PentahoCacheManager;
-import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
@@ -45,17 +45,24 @@ public class DataServiceContext {
 
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
-                             PentahoCacheManager cacheManager, UIFactory uiFactory ) {
-    this( pushDownFactories, autoOptimizationServices, cacheManager, uiFactory, new LogChannel( "Data Service" ) );
-  }
-
-  public DataServiceContext( List<PushDownFactory> pushDownFactories,
-                             List<AutoOptimizationService> autoOptimizationServices,
                              PentahoCacheManager cacheManager, UIFactory uiFactory, LogChannelInterface logChannel ) {
     this.pushDownFactories = pushDownFactories;
     this.autoOptimizationServices = autoOptimizationServices;
     this.cacheManager = cacheManager;
     this.metaStoreUtil = DataServiceMetaStoreUtil.create( this );
+    this.logChannel = logChannel;
+    this.uiFactory = uiFactory;
+  }
+
+  @VisibleForTesting
+  protected DataServiceContext( List<PushDownFactory> pushDownFactories,
+                                List<AutoOptimizationService> autoOptimizationServices,
+                                PentahoCacheManager cacheManager, DataServiceMetaStoreUtil metaStoreUtil,
+                                UIFactory uiFactory, LogChannelInterface logChannel ) {
+    this.pushDownFactories = pushDownFactories;
+    this.autoOptimizationServices = autoOptimizationServices;
+    this.cacheManager = cacheManager;
+    this.metaStoreUtil = metaStoreUtil;
     this.logChannel = logChannel;
     this.uiFactory = uiFactory;
   }

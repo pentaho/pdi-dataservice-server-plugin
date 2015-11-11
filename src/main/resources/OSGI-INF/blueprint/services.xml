@@ -12,13 +12,18 @@
              interface="java.util.concurrent.ExecutorService">
     </service>
 
-    <bean id="uiFactory" class="org.pentaho.di.trans.dataservice.ui.UIFactory" scope="singleton"></bean>
+    <bean id="uiFactory" class="org.pentaho.di.trans.dataservice.ui.UIFactory" scope="singleton"/>
 
     <bean id="context" class="org.pentaho.di.trans.dataservice.DataServiceContext" scope="singleton">
         <argument ref="pushDownFactories"/>
         <argument ref="autoOptimizationServices"/>
         <argument ref="cacheManager"/>
         <argument ref="uiFactory"/>
+        <argument>
+            <bean class="org.pentaho.di.core.logging.LogChannel">
+                <argument value="Data Services"/>
+            </bean>
+        </argument>
     </bean>
 
     <reference id="lineageClient" interface="org.pentaho.metaverse.api.ILineageClient"/>
