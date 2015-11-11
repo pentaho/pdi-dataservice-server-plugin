@@ -22,17 +22,18 @@
 
 package org.pentaho.di.trans.dataservice.optimization.cache;
 
-import com.google.common.base.Strings;
+import com.google.common.base.Function;
+import com.google.common.base.Predicates;
+import com.google.common.collect.FluentIterable;
 import com.google.common.net.MediaType;
 import org.pentaho.di.core.annotations.CarteServlet;
-import org.pentaho.di.www.BaseHttpServlet;
-import org.pentaho.di.www.CartePluginInterface;
+import org.pentaho.di.www.BaseCartePlugin;
 
 import javax.cache.Cache;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * This servlet allows a user to clear the data service cache
@@ -42,9 +43,8 @@ import java.io.PrintWriter;
 @CarteServlet(
   id = "ds_clearServiceCache",
   name = "PDI Data Service: ServiceCache reset",
-  description = "Clear a data service Cache"
-)
-public class ResetCacheServlet extends BaseHttpServlet implements CartePluginInterface {
+  description = "Clear a data service Cache" )
+public class ResetCacheServlet extends BaseCartePlugin {
   private static final String NAME_PARAMETER = "name";
   private final ServiceCacheFactory factory;
 
@@ -54,38 +54,37 @@ public class ResetCacheServlet extends BaseHttpServlet implements CartePluginInt
 
   private static final String CONTEXT_PATH = "/clearDataServiceCache";
 
-  @Override public String toString() {
-    return "Data Service Cache Reset";
-  }
-
-  public String getService() {
-    return CONTEXT_PATH + " (" + toString() + ")";
-  }
-
   public String getContextPath() {
     return CONTEXT_PATH;
   }
 
-  @Override public void doGet( HttpServletRequest req, HttpServletResponse resp ) throws IOException {
-    doPost( req, resp );
-  }
-
-  @Override protected void doPost( HttpServletRequest request, HttpServletResponse response ) throws IOException {
-    String name = request.getParameter( NAME_PARAMETER );
-
-    if ( Strings.isNullOrEmpty( name ) ) {
-      response.sendError( HttpServletResponse.SC_BAD_REQUEST, NAME_PARAMETER + " not specified" );
+  @Override public void handleRequest( CarteRequest request ) throws IOException {
+    Collection<String> names = request.getParameters().get( NAME_PARAMETER );
+    if ( names == null || names.isEmpty() ) {
+      request.respond( 400 ).withMessage( NAME_PARAMETER + " not specified" );
       return;
     }
 
-    response.setStatus( HttpServletResponse.SC_OK );
-    response.setContentType( MediaType.PLAIN_TEXT_UTF_8.toString() );
+    final Set<Cache> cacheSet = FluentIterable.from( names )
+      .transform( new Function<String, Cache>() {
+        @Override public Cache apply( String name ) {
+          return factory.getCache( name ).orNull();
+        }
+      } )
+      .filter( Predicates.notNull() )
+      .toSet();
 
-    PrintWriter writer = response.getWriter();
-    for ( Cache cache : factory.getCache( name ).asSet() ) {
+    for ( Cache cache : cacheSet ) {
       cache.clear();
-      writer.println( "Cleared cache: " + cache.getName() );
     }
-    writer.println( "Done" );
+
+    request.respond( 200 ).with( MediaType.PLAIN_TEXT_UTF_8.toString(), new WriterResponse() {
+      @Override public void write( PrintWriter writer ) throws IOException {
+        for ( Cache cache : cacheSet ) {
+          writer.println( "Cleared cache: " + cache.getName() );
+        }
+        writer.println( "Done" );
+      }
+    } );
   }
 }
