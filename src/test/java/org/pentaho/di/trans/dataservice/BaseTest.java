@@ -22,6 +22,8 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import com.google.common.base.Function;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.Before;
@@ -33,8 +35,10 @@ import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
@@ -46,9 +50,15 @@ import javax.cache.Cache;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.same;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
@@ -70,7 +80,10 @@ public abstract class BaseTest {
   @Mock protected UIFactory uiFactory;
   @Mock protected LogChannelInterface logChannel;
   @Mock protected Cache<Integer, String> cache;
+  @Mock protected DataServiceClient client;
+
   protected DataServiceDelegate delegate;
+  @Mock protected Function<Exception, Void> exceptionHandler;
 
   protected DataServiceMeta createDataService( String dataServiceName, TransMeta transMeta ) {
     DataServiceMeta dataService = new DataServiceMeta( transMeta );
@@ -80,14 +93,20 @@ public abstract class BaseTest {
   }
 
   protected TransMeta createTransMeta( String dataServiceTrans ) {
-    TransMeta transMeta = new TransMeta();
+    TransMeta transMeta = spy( new TransMeta() );
     transMeta.setName( dataServiceTrans );
     transMeta.setObjectId( new StringObjectId( UUID.randomUUID().toString() ) );
+    try {
+      doNothing().when( transMeta ).activateParameters();
+      doAnswer( RETURNS_DEEP_STUBS ).when( transMeta ).getStepFields( any( StepMeta.class ) );
+    } catch ( KettleException e ) {
+      Throwables.propagate( e );
+    }
     return transMeta;
   }
 
   @Before
-  public void setUpBase() throws KettleException {
+  public void setUpBase() throws Exception {
     transMeta = createTransMeta( "dataServiceTrans" );
 
     StepMeta stepMeta = mock( StepMeta.class );
@@ -101,15 +120,14 @@ public abstract class BaseTest {
     when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( Constants.DEFAULT_TEMPLATE, template ) );
     when( template.createCache( anyString(), eq( Integer.class ), eq( String.class ) ) ).thenReturn( cache );
 
-    context = new DataServiceContext(
-      pushDownFactories = Lists.newArrayList(),
-      autoOptimizationServices = Lists.newArrayList(),
-      cacheManager, uiFactory, logChannel
-    ) {
-      @Override public DataServiceMetaStoreUtil getMetaStoreUtil() {
-        return metaStoreUtil;
-      }
-    };
+    context = mock( DataServiceContext.class );
+    when( context.getPushDownFactories() ).thenReturn( pushDownFactories = Lists.newArrayList() );
+    when( context.getAutoOptimizationServices() ).thenReturn( autoOptimizationServices = Lists.newArrayList() );
+    when( context.getCacheManager() ).thenReturn( cacheManager );
+    when( context.getUIFactory() ).thenReturn( uiFactory );
+    when( context.getLogChannel() ).thenReturn( logChannel );
+    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
+    when( context.createBuilder( any( SQL.class ), same( dataService ) ) ).then( RETURNS_DEEP_STUBS );
 
     when( metaStoreUtil.getContext() ).thenReturn( context );
     when( metaStoreUtil.getStepCache() ).thenReturn( cache );

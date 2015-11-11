@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
-import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -33,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -76,11 +76,9 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -96,21 +94,26 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
   static final String OPTIMIZED_STEP = "Optimized Step";
   static final String OPTIMIZATION_VALUE = "Optimization Value";
 
-  MemoryMetaStore metaStore;
+  @InjectMocks MemoryMetaStore metaStore;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Repository repository;
-  @Mock Function<Exception, Void> exceptionHandler;
   @Mock KettleException notFoundException;
 
   @Before
-  public void setUp() throws KettleException, MetaStoreException {
-    transMeta.setRepository( repository );
+  public void setUp() throws Exception {
     when( repository.getRepositoryMeta().getRepositoryCapabilities().supportsReferences() ).thenReturn( true );
-    doThrow( notFoundException ).when( repository ).loadTransformation( any( ObjectId.class ), anyString() );
-    doReturn( transMeta ).when( repository ).loadTransformation( transMeta.getObjectId(), null );
+    when( repository.loadTransformation( any( ObjectId.class ), isNull( String.class ) ) )
+      .then( new Answer<TransMeta>() {
+        @Override public TransMeta answer( InvocationOnMock invocation ) throws Throwable {
+          if ( invocation.getArguments()[0].equals( transMeta.getObjectId() ) ) {
+            return transMeta;
+          } else {
+            throw notFoundException;
+          }
+        }
+      } );
 
-    metaStore = new MemoryMetaStore();
     metaStore.setName( DataServiceMetaStoreUtilTest.class.getName() );
-    transMeta.setMetaStore( metaStore );
+    when( repository.getMetaStore() ).thenReturn( metaStore );
 
     PushDownFactory optimizationFactory = mock( PushDownFactory.class );
     when( (Class) optimizationFactory.getType() ).thenReturn( TestOptimization.class );
@@ -121,7 +124,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     } );
     pushDownFactories.add( optimizationFactory );
 
-    metaStoreUtil = new DataServiceMetaStoreUtil( context, cache );
+    metaStoreUtil = DataServiceMetaStoreUtil.create( context );
   }
 
   @Test
@@ -433,7 +436,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     assertThat( metaStoreUtil.getDataServiceByStepName( transMeta, DATA_SERVICE_STEP ), nullValue() );
   }
 
-  private Matcher<DataServiceMeta> validDataService() {
+  Matcher<DataServiceMeta> validDataService() {
     return allOf(
       hasProperty( "name", equalTo( DATA_SERVICE_NAME ) ),
       hasProperty( "stepname", equalTo( DATA_SERVICE_STEP ) ),
@@ -442,7 +445,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     );
   }
 
-  private Matcher<PushDownOptimizationMeta> validPushDownOptimization() {
+  Matcher<PushDownOptimizationMeta> validPushDownOptimization() {
     return allOf(
       hasProperty( "name", equalTo( OPTIMIZATION ) ),
       hasProperty( "stepName", equalTo( OPTIMIZED_STEP ) ),
