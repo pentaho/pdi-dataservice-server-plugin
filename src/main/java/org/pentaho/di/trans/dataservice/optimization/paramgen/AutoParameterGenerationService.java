@@ -28,18 +28,18 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metaverse.api.ChangeType;
 import org.pentaho.metaverse.api.ILineageClient;
 import org.pentaho.metaverse.api.StepFieldOperations;
 import org.pentaho.metaverse.api.model.Operations;
-import org.pentaho.di.core.logging.LogChannel;
-import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.StepMeta;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -132,7 +132,7 @@ public class AutoParameterGenerationService implements AutoOptimizationService {
       for ( List<StepFieldOperations> fieldLineage : lineageSet ) {
         StepFieldOperations origin = fieldLineage.get( 0 );
         StepFieldOperations last = Iterables.getLast( fieldLineage );
-        parameterGeneration.createFieldMapping( origin.getFieldName(), last.getFieldName() );
+        parameterGeneration.createFieldMapping( last.getFieldName(), origin.getFieldName() );
       }
       optimizationList.add( pushDownOptimizationMeta );
     }

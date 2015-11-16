@@ -28,12 +28,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownType;
-import org.pentaho.metaverse.api.ChangeType;
-import org.pentaho.metaverse.api.ILineageClient;
-import org.pentaho.metaverse.api.StepFieldOperations;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,7 +36,13 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.metaverse.api.ChangeType;
+import org.pentaho.metaverse.api.ILineageClient;
+import org.pentaho.metaverse.api.StepFieldOperations;
 
 import java.util.Collections;
 import java.util.List;
@@ -129,7 +129,7 @@ public class AutoParameterGenerationServiceTest {
       hasProperty( "type", is( parameterGeneration ) )
     ) ) );
     verify( parameterGeneration ).setParameterName( anyString() );
-    verify( parameterGeneration ).createFieldMapping( "field2_origin", "field2" );
+    verify( parameterGeneration ).createFieldMapping( "field2", "field2_origin" );
   }
 
   @Test
