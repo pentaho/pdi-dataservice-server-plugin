@@ -30,8 +30,8 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
+import org.pentaho.di.trans.dataservice.ui.AbstractModel;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
-import org.pentaho.ui.xul.XulEventSourceAdapter;
 
 import java.util.Iterator;
 import java.util.List;
@@ -41,7 +41,7 @@ import java.util.Objects;
 /**
  * @author nhudak
  */
-public class ParameterGenerationModel extends XulEventSourceAdapter {
+public class ParameterGenerationModel extends AbstractModel {
   private final ParameterGenerationFactory factory;
   private final DataServiceModel dialogModel;
   private ImmutableMap<String, PushDownOptimizationMeta> parameterMap = ImmutableMap.of();
@@ -116,33 +116,26 @@ public class ParameterGenerationModel extends XulEventSourceAdapter {
     return meta == null ? null : (ParameterGeneration) meta.getType();
   }
 
-  public void setSelectedParameter( String selectedParameter ) {
+  public void setSelectedParameter( final String selectedParameter ) {
     if ( Objects.equals( selectedParameter, this.selectedParameter ) ) {
       return;
     }
-    Map<String, Object> previous = snapshot();
-
-    this.selectedParameter = selectedParameter;
-    resetMappings( getParameterGeneration() );
-
-    // Fire property change for all derived properties
-    firePropertyChanges( previous );
+    final ParameterGenerationModel model = this;
+    modify( new Runnable() {
+      public void run() {
+        model.selectedParameter = selectedParameter;
+        resetMappings( getParameterGeneration() );
+      }
+    } );
   }
 
-  private Map<String, Object> snapshot() {
+  @Override public Map<String, Object> snapshot() {
     Map<String, Object> map = Maps.newHashMap();
     map.put( "selectedParameter", getSelectedParameter() );
     map.put( "selectedStep", getSelectedStep() );
     map.put( "enabled", isEnabled() );
     map.put( "mappings", getMappings() );
     return map;
-  }
-
-  private void firePropertyChanges( Map<String, Object> previous ) {
-    for ( Map.Entry<String, Object> entry : snapshot().entrySet() ) {
-      String attr = entry.getKey();
-      firePropertyChange( attr, previous.get( attr ), entry.getValue() );
-    }
   }
 
   public DataServiceModel getDialogModel() {
