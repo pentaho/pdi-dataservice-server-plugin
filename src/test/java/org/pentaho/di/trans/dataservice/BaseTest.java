@@ -23,11 +23,13 @@
 package org.pentaho.di.trans.dataservice;
 
 import com.google.common.base.Function;
+import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.caching.api.Constants;
@@ -36,11 +38,13 @@ import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
@@ -80,6 +84,7 @@ public abstract class BaseTest {
   @Mock protected UIFactory uiFactory;
   @Mock protected LogChannelInterface logChannel;
   @Mock protected Cache<Integer, String> cache;
+  @Mock protected DataServiceFactory factory;
   @Mock protected DataServiceClient client;
 
   protected DataServiceDelegate delegate;
@@ -132,6 +137,10 @@ public abstract class BaseTest {
     when( metaStoreUtil.getContext() ).thenReturn( context );
     when( metaStoreUtil.getStepCache() ).thenReturn( cache );
     when( metaStoreUtil.getLogChannel() ).thenReturn( logChannel );
+
+    when( metaStoreUtil.createFactory( Matchers.<Supplier<Repository>>any() ) ).thenReturn( factory );
+    when( factory.getLogChannel() ).thenReturn( logChannel );
+    when( factory.createClient() ).thenReturn( client );
   }
 
 }

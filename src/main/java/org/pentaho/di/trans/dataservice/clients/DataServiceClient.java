@@ -37,7 +37,7 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayInputStream;
@@ -51,17 +51,14 @@ import java.text.MessageFormat;
 import java.util.List;
 
 public class DataServiceClient implements DataServiceClientService {
-  private final DataServiceMetaStoreUtil metaStoreUtil;
+  private final DataServiceFactory factory;
   private final DataServiceContext context;
-
-  private Repository repository;
-  private IMetaStore metaStore;
 
   public static final String DUMMY_TABLE_NAME = "dual";
 
-  public DataServiceClient( DataServiceContext context ) {
-    this.metaStoreUtil = context.getMetaStoreUtil();
+  public DataServiceClient( DataServiceContext context, DataServiceFactory dataServiceFactory ) {
     this.context = context;
+    this.factory = dataServiceFactory;
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
@@ -81,7 +78,7 @@ public class DataServiceClient implements DataServiceClientService {
           .rowLimit( maxRows )
           .build();
         executor
-          .executeQuery( byteArrayOutputStream )
+          .executeQuery( new DataOutputStream( byteArrayOutputStream ) )
           .waitUntilFinished();
       }
 
@@ -118,7 +115,7 @@ public class DataServiceClient implements DataServiceClientService {
 
   private DataServiceMeta findDataService( SQL sql ) throws KettleException {
     try {
-      return metaStoreUtil.getDataService( sql.getServiceName(), repository, metaStore );
+      return factory.getDataService( sql.getServiceName() );
     } catch ( Exception e ) {
       Throwables.propagateIfPossible( e, KettleException.class );
       throw new KettleException( "Unable to locate data service", e );
@@ -128,7 +125,7 @@ public class DataServiceClient implements DataServiceClientService {
   @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
     List<ThinServiceInformation> services = Lists.newArrayList();
 
-    for ( DataServiceMeta service : metaStoreUtil.getDataServices( repository, metaStore, logErrors() ) ) {
+    for ( DataServiceMeta service : factory.getDataServices( logErrors() ) ) {
       TransMeta transMeta = service.getServiceTrans();
       try {
         transMeta.activateParameters();
@@ -146,15 +143,21 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   private Function<Exception, Void> logErrors() {
-    return metaStoreUtil.logErrors( "Unable to retrieve data service" );
+    return factory.logErrors( "Unable to retrieve data service" );
   }
 
+  /**
+   * @deprecated Property is unused. See {@link DataServiceClientService#setRepository(Repository)}
+   */
+  @Deprecated
   public void setRepository( Repository repository ) {
-    this.repository = repository;
   }
 
+  /**
+   * @deprecated Property is unused. See {@link DataServiceClientService#setMetaStore(IMetaStore)}
+   */
+  @Deprecated
   public void setMetaStore( IMetaStore metaStore ) {
-    this.metaStore = metaStore;
   }
 
   public FileOutputStream getDebugFileOutputStream( String filename ) throws FileNotFoundException {

@@ -96,6 +96,14 @@ public class DataServiceMetaStoreUtil {
     return template.createCache( name, Integer.class, String.class );
   }
 
+  public DataServiceFactory createFactory( final Supplier<Repository> repositorySupplier ) {
+    return new DataServiceFactory( this ) {
+      @Override public Repository getRepository() {
+        return repositorySupplier.get();
+      }
+    };
+  }
+
   public DataServiceMeta getDataService( String serviceName, Repository repository, IMetaStore metaStore )
     throws MetaStoreException {
     ServiceTrans transReference = getServiceTransFactory( metaStore ).loadElement( serviceName );

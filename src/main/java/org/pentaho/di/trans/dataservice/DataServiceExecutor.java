@@ -23,7 +23,6 @@
 package org.pentaho.di.trans.dataservice;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import org.apache.commons.lang.StringUtils;
@@ -50,7 +49,7 @@ import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 
 import java.io.DataOutputStream;
-import java.io.OutputStream;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -121,7 +120,7 @@ public class DataServiceExecutor {
       return this;
     }
 
-    public Builder serviceTrans( TransMeta serviceTransMeta ) throws KettleException {
+    public Builder serviceTrans( TransMeta serviceTransMeta ) {
       // Copy TransMeta, we don't want to persist any changes to the meta during execution
       serviceTransMeta = (TransMeta) serviceTransMeta.realClone( false );
       serviceTransMeta.setName( calculateTransname( sql, true ) );
@@ -159,8 +158,8 @@ public class DataServiceExecutor {
 
       if ( sql.getServiceName() != null && !sql.getServiceName().equals( service.getName() ) ) {
         throw new KettleException(
-            BaseMessages.getString( PKG, "DataServiceExecutor.Error.TableNameAndDataServiceNameDifferent",
-                sql.getServiceName(), service.getName() ) );
+          BaseMessages.getString( PKG, "DataServiceExecutor.Error.TableNameAndDataServiceNameDifferent",
+            sql.getServiceName(), service.getName() ) );
       }
 
       if ( serviceTrans != null ) {
@@ -184,6 +183,9 @@ public class DataServiceExecutor {
       if ( genTrans == null ) {
         genTrans = new Trans( sqlTransGenerator.generateTransMeta() );
       }
+
+      serviceTrans.setContainerObjectId( UUID.randomUUID().toString() );
+      genTrans.setContainerObjectId( UUID.randomUUID().toString() );
 
       DataServiceExecutor dataServiceExecutor = new DataServiceExecutor( this );
 
@@ -216,7 +218,7 @@ public class DataServiceExecutor {
     }
   }
 
-  protected static void normalizeConditions( SQL sql, RowMetaInterface fields ) throws KettleStepException {
+  protected static void normalizeConditions( SQL sql, RowMetaInterface fields ) {
     ValueMetaResolver resolver = new ValueMetaResolver( fields );
     if ( sql.getWhereCondition() != null && sql.getWhereCondition().getCondition() != null ) {
       convertCondition( sql.getWhereCondition().getCondition(), resolver );
@@ -338,71 +340,58 @@ public class DataServiceExecutor {
     return conditionParameters;
   }
 
-  public DataServiceExecutor executeQuery( OutputStream output ) throws KettleException {
-    return executeQuery( new DataOutputStream( output ) );
-  }
-
-  public static void writeMetadata( DataOutputStream dos, String[] metadatas ) throws Exception {
+  public static void writeMetadata( DataOutputStream dos, String[] metadatas ) throws IOException {
     for ( String metadata : metadatas ) {
       dos.writeUTF( metadata );
     }
   }
 
-  public DataServiceExecutor executeQuery( final DataOutputStream dos ) throws KettleException {
-    try {
+  public DataServiceExecutor executeQuery( final DataOutputStream dos ) throws IOException {
 
-      String serviceContainerObjectId = UUID.randomUUID().toString();
-      String genContainerObjectId = UUID.randomUUID().toString();
+    writeMetadata( dos, new String[] {
+      getServiceName(),
+      calculateTransname( getSql(), true ),
+      getServiceTrans().getContainerObjectId(),
+      calculateTransname( getSql(), false ),
+      getGenTrans().getContainerObjectId()
+    } );
 
-      getServiceTrans().setContainerObjectId( serviceContainerObjectId );
-      getGenTrans().setContainerObjectId( genContainerObjectId );
+    final AtomicBoolean rowMetaWritten = new AtomicBoolean( false );
 
-      writeMetadata( dos,
-          new String[] { getServiceName(), calculateTransname( getSql(), true ), serviceContainerObjectId,
-              calculateTransname( getSql(), false ), genContainerObjectId } );
+    // When done, check if no row metadata was written.  The client is still going to expect it...
+    // Since we know it, we'll pass it.
+    //
+    getGenTrans().addTransListener( new TransAdapter() {
+      @Override public void transFinished( Trans trans ) throws KettleException {
+        if ( !rowMetaWritten.compareAndSet( false, true ) ) {
+          RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
+          stepFields.writeMeta( dos );
+        }
+      }
+    } );
 
-      final AtomicBoolean firstRow = new AtomicBoolean( true );
+    // Now execute the query transformation(s) and pass the data to the output stream...
+    return executeQuery( new RowAdapter() {
+      @Override
+      public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
 
-      // When done, check if no row metadata was written.  The client is still going to expect it...
-      // Since we know it, we'll pass it.
-      //
-      getGenTrans().addTransListener( new TransAdapter() {
-        @Override public void transFinished( Trans trans ) throws KettleException {
-          if ( firstRow.get() ) {
-            RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
-            stepFields.writeMeta( dos );
+        // On the first row, write the metadata...
+        //
+        try {
+          if ( rowMetaWritten.compareAndSet( false, true ) ) {
+            rowMeta.writeMeta( dos );
+          }
+          rowMeta.writeData( dos, row );
+        } catch ( Exception e ) {
+          if ( !getServiceTrans().isStopped() ) {
+            throw new KettleStepException( e );
           }
         }
-      } );
-
-      // Now execute the query transformation(s) and pass the data to the output stream...
-      executeQuery( new RowAdapter() {
-        @Override
-        public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-
-          // On the first row, write the metadata...
-          //
-          try {
-            if ( firstRow.compareAndSet( true, false ) ) {
-              rowMeta.writeMeta( dos );
-            }
-            rowMeta.writeData( dos, row );
-          } catch ( Exception e ) {
-            if ( !getServiceTrans().isStopped() ) {
-              throw new KettleStepException( e );
-            }
-          }
-        }
-      } );
-
-      return this;
-    } catch ( Exception e ) {
-      Throwables.propagateIfPossible( e, KettleException.class );
-      throw new KettleException( "Unable to execute query", e );
-    }
+      }
+    } );
   }
 
-  public void executeQuery( RowListener resultRowListener ) throws KettleException {
+  public DataServiceExecutor executeQuery( RowListener resultRowListener ) {
     // Apply Push Down Optimizations
     for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
       if ( optimizationMeta.isEnabled() ) {
@@ -419,6 +408,8 @@ public class DataServiceExecutor {
 
     // Start transformations
     executeListeners( ExecutionPoint.START );
+
+    return this;
   }
 
   public void executeListeners( ExecutionPoint executionPoint ) {

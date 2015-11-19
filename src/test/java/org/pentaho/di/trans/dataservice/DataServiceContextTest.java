@@ -68,7 +68,7 @@ public class DataServiceContextTest extends BaseTest {
 
   @Test
   public void testGetDataServiceClient() throws Exception {
-    assertThat( context.getDataServiceClient(), notNullValue() );
+    assertThat( context.createLocalClient(), notNullValue() );
   }
 
   @Test
