@@ -163,6 +163,7 @@ public class ParameterGenerationController extends AbstractController {
     messageBox.setButtons( new Object[] { SWT.YES, SWT.NO } );
 
     if ( messageBox.open() == SWT.YES ) {
+      model.setSelectedParameter( null );
       model.remove( meta );
     }
   }

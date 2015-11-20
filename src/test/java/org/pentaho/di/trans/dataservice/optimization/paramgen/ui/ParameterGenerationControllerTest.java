@@ -278,6 +278,7 @@ public class ParameterGenerationControllerTest {
 
     when( messageBox.open() ).thenReturn( SWT.YES );
     controller.removeParameter();
+    verify( model ).setSelectedParameter( null );
     verify( model ).remove( meta );
 
     verify( messageBox, times( 2 ) ).setIcon( SWT.ICON_QUESTION );
