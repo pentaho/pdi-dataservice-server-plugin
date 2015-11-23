@@ -450,6 +450,14 @@ public class CachedServiceTest {
     // Only complete sets will answer a GROUP BY query
     assertThat( partial.answersQuery( dataServiceExecutor( query + groupBy ) ), is( false ) );
     assertThat( complete.answersQuery( dataServiceExecutor( query + groupBy ) ), is( true ) );
+
+    String distinctQuery = "SELECT DISTINCT ID FROM " + SERVICE_NAME + limit;
+    assertThat( partial.answersQuery( dataServiceExecutor( distinctQuery ) ), is( false ) );
+    assertThat( complete.answersQuery( dataServiceExecutor( distinctQuery ) ), is( true ) );
+
+    String aggregateQuery = "SELECT count(*) FROM " + SERVICE_NAME;
+    assertThat( partial.answersQuery( dataServiceExecutor( aggregateQuery ) ), is( false ) );
+    assertThat( complete.answersQuery( dataServiceExecutor( aggregateQuery ) ), is( true ) );
   }
 
   private CachedService partial( DataServiceExecutor executor ) {

@@ -113,7 +113,9 @@ class CachedService implements Serializable {
       return true;
     }
     // If aggregate functions or grouping is queried, a complete set is needed
-    if ( !sql.getGroupFields().getFields().isEmpty() || !sql.getSelectFields().getAggregateFields().isEmpty() ) {
+    SQLFields selectFields = sql.getSelectFields();
+    SQLFields groupFields = sql.getGroupFields();
+    if ( selectFields.hasAggregates() || selectFields.isDistinct() || !groupFields.getFields().isEmpty() ) {
       return false;
     }
     // Compare ranking
