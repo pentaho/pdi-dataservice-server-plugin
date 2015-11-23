@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -316,5 +317,34 @@ public class DataServiceExecutorTest {
     } catch ( NullPointerException npe ) {
       // Expected exception
     }
+  }
+
+  @Test
+  public void testStop() throws KettleException {
+
+    String sql = "SELECT * FROM " + SERVICE_NAME;
+    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
+
+    when( serviceTrans.isRunning() ).thenReturn( true );
+    when( genTrans.isRunning() ).thenReturn( true );
+
+    final SQL theSql = new SQL( sql );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( theSql, service ).
+        serviceTrans( serviceTrans ).
+        sqlTransGenerator( sqlTransGenerator ).
+        genTrans( genTrans ).
+        build();
+
+    assertThat( executor.getState(), equalTo( DataServiceExecutor.ExecutionState.CREATED ) );
+
+    executor.stop();
+
+    assertThat( executor.getState(), equalTo( DataServiceExecutor.ExecutionState.STOPPED ) );
+
+    verify( serviceTrans ).stopAll();
+    verify( genTrans ).stopAll();
   }
 }

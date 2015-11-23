@@ -314,13 +314,14 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     }
   }
 
+  public void stopExecution() {
+    if ( dataServiceExec != null ) {
+      stopDataService( dataServiceExec );
+    }
+  }
+
   private void stopDataService( DataServiceExecutor dataServiceExec ) {
-    if ( dataServiceExec.getServiceTrans().isRunning() ) {
-      dataServiceExec.getServiceTrans().stopAll();
-    }
-    if ( dataServiceExec.getGenTrans().isRunning() ) {
-      dataServiceExec.getGenTrans().stopAll();
-    }
+    dataServiceExec.stop();
   }
 
   private void updateExecutingMessage( long start, DataServiceExecutor dataServiceExec ) {

@@ -68,6 +68,7 @@ public class DataServiceExecutor {
   private final Map<String, String> parameters;
   private final SqlTransGenerator sqlTransGenerator;
   private final ListMultimap<ExecutionPoint, Runnable> listenerMap;
+  private ExecutionState state;
 
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
@@ -199,6 +200,8 @@ public class DataServiceExecutor {
       if ( prepareExecution ) {
         dataServiceExecutor.prepareExecution();
       }
+
+      dataServiceExecutor.setStatus( ExecutionState.CREATED );
 
       return dataServiceExecutor;
     }
@@ -350,7 +353,7 @@ public class DataServiceExecutor {
 
   public DataServiceExecutor executeQuery( final DataOutputStream dos ) throws KettleException {
     try {
-
+      state = ExecutionState.RUNNING;
       String serviceContainerObjectId = UUID.randomUUID().toString();
       String genContainerObjectId = UUID.randomUUID().toString();
 
@@ -397,6 +400,7 @@ public class DataServiceExecutor {
 
       return this;
     } catch ( Exception e ) {
+      state = ExecutionState.STOPPED;
       Throwables.propagateIfPossible( e, KettleException.class );
       throw new KettleException( "Unable to execute query", e );
     }
@@ -434,6 +438,7 @@ public class DataServiceExecutor {
   public void waitUntilFinished() {
     serviceTrans.waitUntilFinished();
     genTrans.waitUntilFinished();
+    state = ExecutionState.COMPLETED;
   }
 
   /**
@@ -527,11 +532,33 @@ public class DataServiceExecutor {
     return listenerMap;
   }
 
+  public void stop() {
+    if ( serviceTrans.isRunning() ) {
+      serviceTrans.stopAll();
+    }
+    if ( genTrans.isRunning() ) {
+      genTrans.stopAll();
+    }
+    state = ExecutionState.STOPPED;
+  }
+
+  public ExecutionState getState() {
+    return state;
+  }
+
+  private void setStatus( ExecutionState state ) {
+    this.state = state;
+  }
+
   /**
    * @author nhudak
    */
   public enum ExecutionPoint {
     READY, START
+  }
+
+  public enum ExecutionState {
+    CREATED, RUNNING, STOPPED, COMPLETED
   }
 
 }

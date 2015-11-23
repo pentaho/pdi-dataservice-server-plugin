@@ -127,6 +127,7 @@ public class DataServiceTestDialog implements java.io.Serializable {
   }
 
   public void close() {
+    dataServiceTestController.stopExecution();
     genTransLogBrowser.dispose();
     genTransMetrics.dispose();
     serviceTransLogBrowser.dispose();
