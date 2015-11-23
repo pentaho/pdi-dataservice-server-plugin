@@ -259,6 +259,14 @@ public class DataServiceTestControllerTest  {
     assertThat( params.getParameterDefault( "bar" ), is( "barVal" ) );
   }
 
+  @Test
+  public void testStopExecution() throws  KettleException {
+    dataServiceTestController.executeSql();
+    dataServiceTestController.stopExecution();
+
+    verify( dataServiceExecutor ).stop();
+  }
+
   /**
    * Test class for purposes of injecting a mock DataServiceExecutor
    */

@@ -73,6 +73,8 @@ public class ServiceObserver extends AbstractFuture<CachedService> implements Ru
         if ( executor.getGenTrans().getErrors() > 0 ) {
           setException(
             new KettleException( "Dynamic transformation finished with errors, could not cache results" ) );
+        } else if ( executor.getState().equals( DataServiceExecutor.ExecutionState.STOPPED ) ) {
+          setException( new KettleException( "Data service stopped prematurely. Could not cache results." ) );
         } else if ( step.isStopped() ) {
           set( CachedService.partial( rowMetaAndData, executor ) );
         } else {
