@@ -26,6 +26,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -50,10 +51,11 @@ import javax.cache.Cache;
 import java.util.List;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -107,7 +109,7 @@ public abstract class BaseTest {
 
   @Before
   public void setUpBase() throws Exception {
-    transMeta = createTransMeta( "dataServiceTrans" );
+    transMeta = createTransMeta( DATA_SERVICE_NAME );
 
     StepMeta stepMeta = mock( StepMeta.class );
     when( stepMeta.getName() ).thenReturn( DATA_SERVICE_STEP );
@@ -120,18 +122,21 @@ public abstract class BaseTest {
     when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( Constants.DEFAULT_TEMPLATE, template ) );
     when( template.createCache( anyString(), eq( Integer.class ), eq( String.class ) ) ).thenReturn( cache );
 
-    context = mock( DataServiceContext.class );
-    when( context.getPushDownFactories() ).thenReturn( pushDownFactories = Lists.newArrayList() );
-    when( context.getAutoOptimizationServices() ).thenReturn( autoOptimizationServices = Lists.newArrayList() );
-    when( context.getCacheManager() ).thenReturn( cacheManager );
-    when( context.getUIFactory() ).thenReturn( uiFactory );
-    when( context.getLogChannel() ).thenReturn( logChannel );
-    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
-    when( context.createBuilder( any( SQL.class ), same( dataService ) ) ).then( RETURNS_DEEP_STUBS );
+    context = new DataServiceContext(
+      pushDownFactories = Lists.newArrayList(),
+      autoOptimizationServices = Lists.newArrayList(),
+      cacheManager,
+      metaStoreUtil, uiFactory,
+      logChannel
+    );
 
     when( metaStoreUtil.getContext() ).thenReturn( context );
     when( metaStoreUtil.getStepCache() ).thenReturn( cache );
     when( metaStoreUtil.getLogChannel() ).thenReturn( logChannel );
+  }
+
+  protected Matcher<SQL> sql( String sqlString ) {
+    return hasProperty( "sqlString", equalTo( sqlString ) );
   }
 
 }

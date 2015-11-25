@@ -24,7 +24,7 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import org.hamcrest.Matcher;
+import com.google.common.io.ByteStreams;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,17 +33,14 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
+import java.io.DataInput;
 import java.io.DataOutputStream;
-import java.io.OutputStream;
 import java.sql.SQLException;
 
 import static org.hamcrest.Matchers.anything;
@@ -54,7 +51,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -62,7 +58,6 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.ignoreStubs;
 import static org.mockito.Mockito.mock;
@@ -82,95 +77,71 @@ public class DataServiceClientTest extends BaseTest {
   private static final String TEST_DUMMY_SQL_QUERY = "SELECT 1";
   private static final String TEST_SQL_QUERY = "SELECT * FROM " + DATA_SERVICE_NAME;
   private static final int MAX_ROWS = 100;
-
-  @Mock
-  private Repository repository;
-
-  @Mock
-  private IMetaStore metaStore;
-
   private DataServiceExecutor.Builder builder;
-
-  @Mock
-  private DataServiceExecutor executor;
 
   private SQL sql;
 
-  @Mock
-  private RowMetaInterface rowMetaInterface;
-
-  private DataServiceClient dataServiceClient;
+  @Mock DataServiceFactory factory;
+  @Mock DataServiceExecutor executor;
+  @Mock RowMetaInterface rowMetaInterface;
 
   @Before
   public void setUp() throws Exception {
-    when( metaStoreUtil.getDataService( DATA_SERVICE_NAME, repository, metaStore ) ).thenReturn( dataService );
+    when( factory.getDataService( DATA_SERVICE_NAME ) ).thenReturn( dataService );
+    when( factory.logErrors( anyString() ) ).thenReturn( exceptionHandler );
+    when( factory.getLogChannel() ).thenReturn( logChannel );
+    when( factory.getDataServices( exceptionHandler ) ).thenReturn( ImmutableList.of( dataService ) );
+
     sql = new SQL( TEST_SQL_QUERY );
 
     builder = mock( DataServiceExecutor.Builder.class, RETURNS_SELF );
-    when( context.createBuilder( argThat( isTestSqlQuery() ), same( dataService ) ) ).thenReturn( builder );
+    when( factory.createBuilder( argThat( sql( TEST_SQL_QUERY ) ) ) ).thenReturn( builder );
     doReturn( executor ).when( builder ).build();
-    when( executor.executeQuery( any( OutputStream.class ) ) ).thenReturn( executor );
+    when( executor.executeQuery( any( DataOutputStream.class ) ) ).thenReturn( executor );
 
-    dataServiceClient = new DataServiceClient( context );
-    dataServiceClient.setMetaStore( metaStore );
-    dataServiceClient.setRepository( repository );
+    client = new DataServiceClient( factory );
   }
 
   @Test
   public void testQuery() throws Exception {
-    assertNotNull( dataServiceClient.query( TEST_SQL_QUERY, MAX_ROWS ) );
+    assertNotNull( client.query( TEST_SQL_QUERY, MAX_ROWS ) );
     verify( builder ).rowLimit( MAX_ROWS );
     verify( executor ).waitUntilFinished();
 
-    assertNotNull( dataServiceClient.query( TEST_DUMMY_SQL_QUERY, MAX_ROWS ) );
+    assertNotNull( client.query( TEST_DUMMY_SQL_QUERY, MAX_ROWS ) );
     verifyNoMoreInteractions( ignoreStubs( executor ) );
     verify( logChannel, never() ).logError( anyString(), any( Throwable.class ) );
 
     MetaStoreException exception = new MetaStoreException();
-    when( metaStoreUtil.getDataService( DATA_SERVICE_NAME, repository, metaStore ) ).thenThrow( exception );
+    when( factory.createBuilder( (SQL) any() ) ).thenThrow( exception );
     try {
-      assertThat( dataServiceClient.query( TEST_SQL_QUERY, MAX_ROWS ), not( anything() ) );
+      assertThat( client.query( TEST_SQL_QUERY, MAX_ROWS ), not( anything() ) );
     } catch ( SQLException e ) {
       assertThat( Throwables.getCausalChain( e ), hasItem( exception ) );
     }
   }
 
   @Test
-  public void testBuildExecutor() throws Exception {
-    assertThat( dataServiceClient.buildExecutor( sql ).build(), sameInstance( executor ) );
-  }
-
-  @Test
   public void testWriteDummyRow() throws Exception {
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream( byteArrayOutputStream );
-    dataServiceClient.writeDummyRow( sql, dos );
+    client.writeDummyRow( sql, dos );
 
-    ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( byteArrayOutputStream.toByteArray() );
-    DataInputStream dataInputStream = new DataInputStream( byteArrayInputStream );
-
-    assertEquals( DUAL_TABLE_NAME, dataInputStream.readUTF() );
+    DataInput dataInput = ByteStreams.newDataInput( byteArrayOutputStream.toByteArray() );
+    assertEquals( DUAL_TABLE_NAME, dataInput.readUTF() );
   }
 
   @Test
   public void testGetServiceInformation() throws Exception {
     when( transMeta.getStepFields( dataService.getStepname() ) ).thenReturn( rowMetaInterface );
 
-    when( metaStoreUtil.logErrors( anyString() ) ).thenReturn( exceptionHandler );
-    when( metaStoreUtil.getDataServices( repository, metaStore, exceptionHandler ) )
-      .thenReturn( ImmutableList.of( dataService ) );
-
-    assertThat( dataServiceClient.getServiceInformation(), contains( allOf(
+    assertThat( client.getServiceInformation(), contains( allOf(
       hasProperty( "name", equalTo( DATA_SERVICE_NAME ) ),
       hasProperty( "serviceFields", equalTo( rowMetaInterface ) )
     ) ) );
     verify( transMeta ).activateParameters();
 
     when( transMeta.getStepFields( DATA_SERVICE_STEP ) ).thenThrow( new KettleStepException() );
-    assertThat( dataServiceClient.getServiceInformation(), is( empty() ) );
-  }
-
-  protected Matcher<SQL> isTestSqlQuery() {
-    return hasProperty( "sqlString", equalTo( TEST_SQL_QUERY ) );
+    assertThat( client.getServiceInformation(), is( empty() ) );
   }
 }

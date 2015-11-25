@@ -251,12 +251,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     updateOptimizationImpact( dataServiceExec );
     updateModel( dataServiceExec );
     callback.onLogChannelUpdate();
-    try {
-      dataServiceExec.executeQuery( getDataServiceRowListener() );
-    } catch ( KettleException ke ) {
-      setErrorAlertMessage();
-      return;
-    }
+    dataServiceExec.executeQuery( getDataServiceRowListener() );
     pollForCompletion( dataServiceExec );
   }
 

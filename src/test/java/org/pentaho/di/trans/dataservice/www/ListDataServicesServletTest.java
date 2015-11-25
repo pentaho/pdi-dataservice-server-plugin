@@ -30,14 +30,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.repository.Repository;
-import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
-import org.pentaho.di.www.SlaveServerConfig;
-import org.pentaho.di.www.TransformationMap;
-import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -46,6 +40,7 @@ import java.util.List;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,28 +48,10 @@ import static org.mockito.Mockito.when;
  * @author bmorrise
  */
 @RunWith( MockitoJUnitRunner.class )
-public class ListDataServicesServletTest extends BaseTest {
+public class ListDataServicesServletTest extends BaseServletTest {
 
   private static final String SERVLET_STRING = "List data services";
   private static final String CONTEXT_PATH = "/listServices";
-
-  @Mock
-  private HttpServletRequest request;
-
-  @Mock
-  private HttpServletResponse response;
-
-  @Mock
-  private TransformationMap transformationMap;
-
-  @Mock
-  private SlaveServerConfig slaveServerConfig;
-
-  @Mock
-  private Repository repository;
-
-  @Mock
-  private DelegatingMetaStore metaStore;
 
   @Mock
   private RowMetaInterface rowMetaInterface;
@@ -84,17 +61,14 @@ public class ListDataServicesServletTest extends BaseTest {
 
   @Before
   public void setUp() throws Exception {
-    when( context.getDataServiceClient() ).thenReturn( client );
-
     servlet = new ListDataServicesServlet( context );
     servlet.setJettyMode( true );
     servlet.setLog( logChannel );
     servlet.setup( transformationMap, null, null, null );
 
-    when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
-    when( slaveServerConfig.getRepository() ).thenReturn( repository );
-    when( slaveServerConfig.getMetaStore() ).thenReturn( metaStore );
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
+
+    verify( context ).createClient( argThat( new ValidRepositorySupplier() ) );
 
     StringWriter out = new StringWriter();
     ThinServiceInformation thinServiceInformation = new ThinServiceInformation( DATA_SERVICE_NAME, rowMetaInterface );
@@ -106,13 +80,14 @@ public class ListDataServicesServletTest extends BaseTest {
 
   @Test
   public void testDoGet() throws Exception {
-    servlet.doGet( request, response );
+    servlet.service( request, response );
     verifyRun();
   }
 
   @Test
   public void testDoPost() throws Exception {
-    servlet.doGet( request, response );
+    when( request.getMethod() ).thenReturn( "POST" );
+    servlet.service( request, response );
     verifyRun();
   }
 
@@ -129,8 +104,6 @@ public class ListDataServicesServletTest extends BaseTest {
       "</service>",
       "</services>"
     ) ) );
-    verify( client ).setRepository( repository );
-    verify( client ).setMetaStore( metaStore );
   }
 
   @Test

@@ -22,19 +22,24 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import com.google.common.base.Suppliers;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
+import org.pentaho.metastore.api.IMetaStore;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author nhudak
@@ -42,6 +47,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith( org.mockito.runners.MockitoJUnitRunner.class )
 public class DataServiceContextTest extends BaseTest {
+
   @Before
   public void setUp() throws Exception {
     context = new DataServiceContext(
@@ -62,13 +68,18 @@ public class DataServiceContextTest extends BaseTest {
   }
 
   @Test
-  public void testCreateBuilder() throws Exception {
-    assertThat( context.createBuilder( mock( SQL.class ), dataService ), notNullValue() );
-  }
-
-  @Test
   public void testGetDataServiceClient() throws Exception {
-    assertThat( context.getDataServiceClient(), notNullValue() );
+    assertThat( context.createLocalClient(), hasProperty( "factory", allOf(
+      instanceOf( DataServiceDelegate.class ),
+      validMetaStoreUtil()
+    ) ) );
+
+    Repository repository = mock( Repository.class );
+    when( repository.getMetaStore() ).thenReturn( mock( IMetaStore.class ) );
+
+    assertThat( context.createClient( Suppliers.ofInstance( repository ) ),
+      hasProperty( "factory", hasProperty( "metaStore", is( repository.getMetaStore() ) ) )
+    );
   }
 
   @Test
