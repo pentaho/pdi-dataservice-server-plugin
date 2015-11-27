@@ -22,7 +22,10 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import com.google.common.collect.ImmutableList;
+import static org.pentaho.di.i18n.BaseMessages.getString;
+
+import java.lang.reflect.InvocationTargetException;
+
 import org.pentaho.di.core.Const;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
@@ -38,17 +41,14 @@ import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
-import java.lang.reflect.InvocationTargetException;
-
-import static org.pentaho.di.i18n.BaseMessages.getString;
+import com.google.common.collect.ImmutableList;
 
 public class DataServiceDialogController extends AbstractController {
-
   public static final String XUL_DIALOG_ID = "dataservice-dialog";
+
   private final DataServiceDelegate delegate;
   private final DataServiceModel model;
   private DataServiceMeta dataService;
-
   private static final Class<?> PKG = DataServiceDialog.class;
   private static final String NAME = "dataServiceDialogController";
 
@@ -75,17 +75,17 @@ public class DataServiceDialogController extends AbstractController {
     bindingFactory.createBinding( model, "serviceName", serviceName, "value" ).fireSourceChanged();
   }
 
-  public void showTestDialog() throws XulException {
+  void showTestDialog() throws XulException {
     if ( Const.isEmpty( model.getServiceName() ) ) {
       error( getString( PKG, "DataServiceDialog.TestError.Title" ), getString( PKG,
           "DataServiceDialog.TestError.NameMissing" ) );
       return;
     }
 
-    delegate.testDataService( model.getDataService(), getDialog().getShell() );
+    delegate.showTestDataServiceDialog( model.getDataService(), getDialog().getShell() );
   }
 
-  public void saveAndClose() throws XulException {
+  void saveAndClose() throws XulException {
     try {
       String existing = dataService != null ? dataService.getName() : null;
 
@@ -115,24 +115,23 @@ public class DataServiceDialogController extends AbstractController {
     getDialog().dispose();
   }
 
-  public void showSetupHelp() {
-    HelpUtils.openHelpDialog( getDialog().getShell(),
-        BaseMessages.getString( PKG, "DataServiceDialog.ConnectionSetupLink.Label" ),
-        BaseMessages.getString( PKG, "DataServiceDialog.ConnectionSetupLink.Url" ), "" );
-  }
-
+  @SuppressWarnings( "unused" ) // Bound via XUL
   public void showHelp() {
     HelpUtils.openHelpDialog( getDialog().getShell(),
         BaseMessages.getString( PKG, "DataServiceDialog.Help.Title" ),
         BaseMessages.getString( PKG, "DataServiceDialog.Help.Url" ), "" );
   }
 
-  public SwtDialog getDialog() {
+  @SuppressWarnings( "unused" ) // Bound via XUL
+  public void showDriverDetailsDialog() {
+    delegate.showDriverDetailsDialog( getDialog().getShell() );
+  }
+
+  SwtDialog getDialog() {
     return getElementById( XUL_DIALOG_ID );
   }
 
   public void setDataService( DataServiceMeta dataService ) {
     this.dataService = dataService;
   }
-
 }

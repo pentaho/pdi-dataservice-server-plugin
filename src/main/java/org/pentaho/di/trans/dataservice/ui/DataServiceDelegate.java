@@ -22,9 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import com.google.common.base.Objects;
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
+import static org.pentaho.di.i18n.BaseMessages.getString;
+
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -40,7 +39,9 @@ import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
-import static org.pentaho.di.i18n.BaseMessages.getString;
+import com.google.common.base.Objects;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 
 public class DataServiceDelegate extends DataServiceFactory {
   private static final Class<?> PKG = DataServiceDelegate.class;
@@ -166,17 +167,18 @@ public class DataServiceDelegate extends DataServiceFactory {
     removeDataService( dataService );
   }
 
-  @Override public void removeDataService( DataServiceMeta dataService ) {
+  @Override
+  public void removeDataService( DataServiceMeta dataService ) {
     super.removeDataService( dataService );
     getSpoon().refreshTree();
     getSpoon().refreshGraph();
   }
 
-  public void testDataService( DataServiceMeta dataService ) {
-    testDataService( dataService, getShell() );
+  public void showTestDataServiceDialog( DataServiceMeta dataService ) {
+    showTestDataServiceDialog( dataService, getShell() );
   }
 
-  public void testDataService( DataServiceMeta dataService, Shell shell ) {
+  public void showTestDataServiceDialog( DataServiceMeta dataService, Shell shell ) {
     try {
       getUiFactory().getDataServiceTestDialog( getUiFactory().getShell( shell ), dataService ).open();
     } catch ( KettleException e ) {
@@ -184,8 +186,22 @@ public class DataServiceDelegate extends DataServiceFactory {
     }
   }
 
-  @Override public Repository getRepository() {
+  @Override
+  public Repository getRepository() {
     return getSpoon().getRepository();
+  }
+
+  // TODO use it from context menu
+  public void showDriverDetailsDialog() {
+    showDriverDetailsDialog( getShell() );
+  }
+
+  public void showDriverDetailsDialog( Shell shell ) {
+    try {
+      getUiFactory().getDriverDetailsDialog( shell ).open();
+    } catch ( KettleException e ) {
+      getLogChannel().logError( "Unable to create driver details dialog", e );
+    }
   }
 
   public Spoon getSpoon() {

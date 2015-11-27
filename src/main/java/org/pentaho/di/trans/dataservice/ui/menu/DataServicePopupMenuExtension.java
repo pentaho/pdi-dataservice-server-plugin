@@ -38,12 +38,12 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
+import org.pentaho.di.trans.dataservice.ui.UIFactory;
 import org.pentaho.di.ui.core.ConstUI;
 import org.pentaho.di.ui.spoon.TreeSelection;
-import org.pentaho.di.trans.dataservice.ui.UIFactory;
 
 @ExtensionPoint( id = "DataServicePopupMenuExtension", description = "Creates popup menus for data services",
-  extensionPointId = "SpoonPopupMenuExtension" )
+    extensionPointId = "SpoonPopupMenuExtension" )
 public class DataServicePopupMenuExtension implements ExtensionPointInterface {
 
   private static final Class<?> PKG = DataServicePopupMenuExtension.class;
@@ -84,21 +84,32 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
     }
   }
 
-  private void createRootPopupMenu( Menu parent ) {
-    MenuItem newMenu = createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.New.Label" ),
-      new DataServiceNewCommand() );
+  private void createNewMenuItem( Menu parent ) {
+    MenuItem newMenu =
+        createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.New.Label" ),
+            new DataServiceNewCommand() );
     newMenu.setEnabled( !delegate.getSpoon().getActiveTransformation().getSteps().isEmpty() );
   }
 
+  private void createRootPopupMenu( Menu parent ) {
+    createNewMenuItem( parent );
+    uiFactory.getMenuItem( parent, SWT.SEPARATOR );
+    createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.DriverDetails.Label" ),
+        new DriverDetailsCommand() );
+  }
+
   private void createItemPopupMenu( Menu parent ) {
-    createRootPopupMenu( parent );
+    createNewMenuItem( parent );
     createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.Edit.Label" ),
-      new DataServiceEditCommand() );
+        new DataServiceEditCommand() );
     createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.Delete.Label" ),
-      new DataServiceDeleteCommand() );
+        new DataServiceDeleteCommand() );
     uiFactory.getMenuItem( parent, SWT.SEPARATOR );
     createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.Test.Label" ),
-      new DataServiceTestCommand() );
+        new DataServiceTestCommand() );
+    uiFactory.getMenuItem( parent, SWT.SEPARATOR );
+    createPopupMenu( parent, BaseMessages.getString( PKG, "DataServicePopupMenu.DriverDetails.Label" ),
+        new DriverDetailsCommand() );
   }
 
   private MenuItem createPopupMenu( Menu parent, final String label, final DataServiceCommand dataServiceCommand ) {
@@ -146,7 +157,14 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
   class DataServiceTestCommand implements DataServiceCommand {
     @Override
     public void execute() {
-      delegate.testDataService( selectedDataService );
+      delegate.showTestDataServiceDialog( selectedDataService );
+    }
+  }
+
+  class DriverDetailsCommand implements DataServiceCommand {
+    @Override
+    public void execute() {
+      delegate.showDriverDetailsDialog();
     }
   }
 }

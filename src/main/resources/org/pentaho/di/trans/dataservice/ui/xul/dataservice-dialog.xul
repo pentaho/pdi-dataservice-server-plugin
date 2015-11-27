@@ -35,14 +35,12 @@
       </tabpanels>
     </tabbox>
     <hbox height="7"/>
-    <hbox height="21">
-      <label value="${DataServiceDialog.ConnectionSetupLink.Label}"/>
-      <label value="${DataServiceDialog.ConnectionSetupLink.Link}" onclick="dataServiceDialogController.showSetupHelp()"/>
-    </hbox>
     <separator height="21"/>
     <hbox>
       <button label="${DataServiceDialog.Help.Button}" image="${HelpImage.Url}" onclick="dataServiceDialogController.showHelp()"/>
       <spacer flex="1"/>
+      <button id="driver-details-button" label="${DataServiceDialog.DriverDetails.Button}" width="120"
+              onclick="dataServiceDialogController.showDriverDetailsDialog()"/>
       <button id="test-dataservice-button" label="${DataServiceDialog.TestDataService.Button}" width="150"
               onclick="dataServiceDialogController.showTestDialog()"/>
       <spacer flex="1"/>

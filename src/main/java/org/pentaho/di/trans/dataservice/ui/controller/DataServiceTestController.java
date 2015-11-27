@@ -22,6 +22,12 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -59,12 +65,6 @@ import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-
 public class DataServiceTestController extends AbstractXulEventHandler {
 
   public static final int POLL_DELAY_MILLIS = 500;
@@ -95,7 +95,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     this( model, dataService, new DefaultBindingFactory() );
   }
 
-  public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService, BindingFactory bindingFactory ) throws KettleException {
+  public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService,
+      BindingFactory bindingFactory ) throws KettleException {
     this.model = model;
     this.dataService = dataService;
     this.transMeta = dataService.getServiceTrans();
@@ -163,8 +164,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     bindSelectedMaxRows( bindingFactory );
   }
 
+  @SuppressWarnings( "unchecked" )
   private void bindMaxRowsComboValues( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
-
     assert document.getElementById( "maxrows-combo" ) instanceof XulMenuList;
     maxRows = (XulMenuList<String>) document.getElementById( "maxrows-combo" );
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
@@ -351,6 +352,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     }
   }
 
+  @SuppressWarnings( "unused" ) // Bound via XUL
   public void previewQueries() throws KettleException {
     DataServiceExecutor dataServiceExec = getNewDataServiceExecutor( false );
     updateOptimizationImpact( dataServiceExec );

@@ -22,8 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.ui.menu;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
@@ -38,9 +36,6 @@ import org.pentaho.ui.xul.containers.XulMenupopup;
 @ExtensionPoint( id = "DataServiceStepMenuExtension", description = "Creates popup menus for data services",
   extensionPointId = "TransStepRightClick" )
 public class DataServiceStepMenuExtension implements ExtensionPointInterface {
-
-  private static final Log logger = LogFactory.getLog( DataServiceStepMenuExtension.class );
-
   private DataServiceMetaStoreUtil metaStoreUtil;
 
   public DataServiceStepMenuExtension( DataServiceContext context ) {
@@ -53,13 +48,11 @@ public class DataServiceStepMenuExtension implements ExtensionPointInterface {
     StepMeta stepMeta = extension.getTransGraph().getCurrentStep();
     XulMenupopup menu = extension.getMenu();
 
-    Boolean hasDataService = false;
-    hasDataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() ) != null;
+    Boolean hasDataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() ) != null;
 
     menu.getElementById( "dataservices-new" ).setDisabled( hasDataService );
     menu.getElementById( "dataservices-edit" ).setDisabled( !hasDataService );
     menu.getElementById( "dataservices-delete" ).setDisabled( !hasDataService );
     menu.getElementById( "dataservices-test" ).setDisabled( !hasDataService );
   }
-
 }

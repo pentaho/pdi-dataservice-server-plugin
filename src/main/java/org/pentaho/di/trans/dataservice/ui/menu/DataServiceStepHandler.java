@@ -59,7 +59,11 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
   }
 
   public void testDataService() {
-    delegate.testDataService( getCurrentDataServiceMeta() );
+    delegate.showTestDataServiceDialog( getCurrentDataServiceMeta() );
+  }
+
+  public void showDriverDetailsDialog() {
+    delegate.showDriverDetailsDialog();
   }
 
   private DataServiceMeta getCurrentDataServiceMeta() {

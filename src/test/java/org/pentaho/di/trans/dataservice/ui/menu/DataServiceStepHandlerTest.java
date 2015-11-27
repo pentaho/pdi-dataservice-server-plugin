@@ -22,6 +22,10 @@
 
 package org.pentaho.di.trans.dataservice.ui.menu;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,9 +38,6 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.trans.TransGraph;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceStepHandlerTest {
@@ -105,7 +106,7 @@ public class DataServiceStepHandlerTest {
   public void testTestDataService() {
     stepHandler.testDataService();
 
-    verify( delegate ).testDataService( dataServiceMeta );
+    verify( delegate ).showTestDataServiceDialog( dataServiceMeta );
   }
 
   @Test
