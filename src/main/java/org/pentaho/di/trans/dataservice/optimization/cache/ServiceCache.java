@@ -103,6 +103,10 @@ public class ServiceCache implements PushDownType {
     // Allow service transformation to run, observe rows
     Futures.addCallback( factory.createObserver( executor ).install(), new FutureCallback<CachedService>() {
       @Override public void onSuccess( CachedService result ) {
+        if ( !executor.isComplete() ) {
+          return;
+        }
+
         Cache<CachedService.CacheKey, CachedService>
             cache =
             factory.getCache( ServiceCache.this, executor.getServiceName() );

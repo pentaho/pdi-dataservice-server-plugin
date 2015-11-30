@@ -496,6 +496,19 @@ public class DataServiceExecutor {
     return sbsql.toString();
   }
 
+  public void stop() {
+    if ( serviceTrans.isRunning() ) {
+      serviceTrans.stopAll();
+    }
+    if ( genTrans.isRunning() ) {
+      genTrans.stopAll();
+    }
+  }
+
+  public boolean isComplete() {
+    return !getGenTrans().getResult().isStopped();
+  }
+
   /**
    * @return the sql
    */

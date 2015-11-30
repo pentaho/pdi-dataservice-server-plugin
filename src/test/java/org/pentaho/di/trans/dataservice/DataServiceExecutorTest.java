@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.Result;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
@@ -60,6 +62,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -343,4 +346,50 @@ public class DataServiceExecutorTest extends BaseTest {
       // Expected exception
     }
   }
+
+  @Test
+  public void testStop() throws KettleException {
+    String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
+
+    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
+
+    when( serviceTrans.isRunning() ).thenReturn( true );
+    when( genTrans.isRunning() ).thenReturn( true );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService ).
+        serviceTrans( serviceTrans ).
+        sqlTransGenerator( sqlTransGenerator ).
+        genTrans( genTrans ).
+        build();
+
+    executor.stop();
+
+    verify( serviceTrans ).stopAll();
+    verify( genTrans ).stopAll();
+  }
+
+  @Test
+  public void testIsComplete() throws KettleException {
+    String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
+
+    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
+
+    Result result = mock( Result.class );
+
+    when( genTrans.getResult() ).thenReturn( result );
+    when( result.isStopped() ).thenReturn( false );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService ).
+        serviceTrans( serviceTrans ).
+        sqlTransGenerator( sqlTransGenerator ).
+        genTrans( genTrans ).
+        build();
+
+    assertTrue( executor.isComplete() );
+  }
+
 }
