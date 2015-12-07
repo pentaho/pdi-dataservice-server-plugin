@@ -32,6 +32,7 @@ import org.eclipse.swt.widgets.Tree;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.ui.xul.XulException;
 
 public class UIFactory {
   public Menu getMenu( Tree tree ) {
@@ -62,7 +63,7 @@ public class UIFactory {
   }
 
   public DriverDetailsDialog getDriverDetailsDialog( Shell shell ) throws
-      KettleException {
+      KettleException, XulException {
     return new DriverDetailsDialog( shell );
   }
 

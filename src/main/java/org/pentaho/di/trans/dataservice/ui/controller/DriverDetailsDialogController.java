@@ -60,10 +60,14 @@ public class DriverDetailsDialogController extends AbstractController {
 
       FileUtils.copyFile( driverBundle, saveLocation );
     } catch ( IOException ioe ) {
-      new ErrorDialog( getDialog().getShell(), getString( PKG, "DriverDetailsDialog.ErrorCopyingDriver.Title" ),
-          getString( PKG, "DriverDetailsDialog.ErrorCopyingDriver.Message" ), ioe );
+      showErrorDialog( ioe );
       ioe.printStackTrace();
     }
+  }
+
+  ErrorDialog showErrorDialog( IOException ioe ) {
+    return new ErrorDialog( getDialog().getShell(), getString( PKG, "DriverDetailsDialog.ErrorCopyingDriver.Title" ),
+        getString( PKG, "DriverDetailsDialog.ErrorCopyingDriver.Message" ), ioe );
   }
 
   @SuppressWarnings( "unused" ) // Bound via XUL
