@@ -63,6 +63,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -387,6 +388,30 @@ public class DataServiceExecutorTest extends BaseTest {
         build();
 
     assertTrue( executor.isStopped() );
+  }
+
+  @Test
+  public void testHasErrors() throws Exception {
+    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
+
+    when( serviceTrans.getErrors() ).thenReturn( 1 );
+    when( genTrans.getErrors() ).thenReturn( 1 );
+
+    String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
+    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService ).
+        serviceTrans( serviceTrans ).
+        sqlTransGenerator( sqlTransGenerator ).
+        genTrans( genTrans ).
+        build();
+
+    assertTrue( executor.hasErrors() );
+
+    when( serviceTrans.getErrors() ).thenReturn( 0 );
+    when( genTrans.getErrors() ).thenReturn( 0 );
+
+    assertFalse( executor.hasErrors() );
   }
 
 }

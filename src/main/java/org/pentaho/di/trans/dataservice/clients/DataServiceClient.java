@@ -78,6 +78,10 @@ public class DataServiceClient implements DataServiceClientService {
         executor
           .executeQuery( new DataOutputStream( byteArrayOutputStream ) )
           .waitUntilFinished();
+
+        if ( executor.hasErrors() ) {
+          throw new SQLException( "There were errors in the execution of this SQL." );
+        }
       }
 
       ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( byteArrayOutputStream.toByteArray() );

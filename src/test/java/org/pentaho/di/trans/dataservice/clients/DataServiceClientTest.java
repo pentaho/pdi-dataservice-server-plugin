@@ -55,6 +55,7 @@ import static org.hamcrest.core.AllOf.allOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
@@ -107,6 +108,7 @@ public class DataServiceClientTest extends BaseTest {
     assertNotNull( client.query( TEST_SQL_QUERY, MAX_ROWS ) );
     verify( builder ).rowLimit( MAX_ROWS );
     verify( executor ).waitUntilFinished();
+    verify( executor ).hasErrors();
 
     assertNotNull( client.query( TEST_DUMMY_SQL_QUERY, MAX_ROWS ) );
     verifyNoMoreInteractions( ignoreStubs( executor ) );
@@ -143,5 +145,23 @@ public class DataServiceClientTest extends BaseTest {
 
     when( transMeta.getStepFields( DATA_SERVICE_STEP ) ).thenThrow( new KettleStepException() );
     assertThat( client.getServiceInformation(), is( empty() ) );
+  }
+
+  @Test
+  public void testQueryError() throws Exception {
+    when( executor.hasErrors() ).thenReturn( true );
+
+    try {
+      client.query( TEST_SQL_QUERY, MAX_ROWS );
+      fail();
+    } catch ( SQLException e ) {
+      // Should catch exception
+    }
+
+    verify( builder ).rowLimit( MAX_ROWS );
+    verify( executor ).waitUntilFinished();
+    verify( executor ).hasErrors();
+
+    verifyNoMoreInteractions( ignoreStubs( executor ) );
   }
 }
