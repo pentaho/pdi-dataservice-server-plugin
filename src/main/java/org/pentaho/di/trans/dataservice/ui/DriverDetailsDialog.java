@@ -22,26 +22,24 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.ResourceBundle;
-
-import javax.annotation.Nonnull;
-
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.ui.controller.DriverDetailsDialogController;
-import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.xul.KettleXulLoader;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulRunner;
 import org.pentaho.ui.xul.dom.Document;
-import org.pentaho.ui.xul.swt.SwtXulLoader;
+import org.pentaho.ui.xul.impl.AbstractXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
+
+import javax.annotation.Nonnull;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.ResourceBundle;
 
 public class DriverDetailsDialog {
   public static final String XUL_DIALOG_ID = "driver-details-dialog";
@@ -63,41 +61,36 @@ public class DriverDetailsDialog {
     }
   };
 
-  DriverDetailsDialog( Shell parent ) throws KettleException {
+  DriverDetailsDialog( Shell parent ) throws KettleException, XulException {
+    controller = new DriverDetailsDialogController();
+    Document xulDocument = initXul( parent, new KettleXulLoader(), new SwtXulRunner() );
+    dialog = (SwtDialog) xulDocument.getElementById( XUL_DIALOG_ID );
+  }
+
+  Document initXul( Composite parent, AbstractXulLoader xulLoader, XulRunner xulRunner ) throws KettleException {
     try {
-      controller = new DriverDetailsDialogController();
-      Document xulDocument = initXul( parent );
-      dialog = (SwtDialog) xulDocument.getElementById( XUL_DIALOG_ID );
-    } catch ( KettleException ke ) {
-      new ErrorDialog( parent, BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Title" ),
-          BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Message" ), ke );
-      throw ke;
+      xulLoader.setOuterContext( parent );
+      xulLoader.registerClassLoader( getClass().getClassLoader() );
+      XulDomContainer container = xulLoader.loadXul( XUL_DIALOG_PATH, resourceBundle );
+      container.addEventHandler( controller );
+
+      xulRunner.addContainer( container );
+      xulRunner.initialize();
+      return container.getDocumentRoot();
+    } catch ( XulException xulException ) {
+      throw new KettleException( "Failed to initialize DriverDetailsDialog.", xulException );
     }
   }
 
-  private Document initXul( Composite parent ) throws KettleException {
-    try {
-      SwtXulLoader swtLoader = new KettleXulLoader();
-      swtLoader.setOuterContext( parent );
-      swtLoader.registerClassLoader( getClass().getClassLoader() );
-      XulDomContainer container = swtLoader.loadXul( XUL_DIALOG_PATH, resourceBundle );
-      container.addEventHandler( controller );
-
-      final XulRunner runner = new SwtXulRunner();
-      runner.addContainer( container );
-      runner.initialize();
-      return container.getDocumentRoot();
-    } catch ( XulException xulException ) {
-      throw new KettleException( "Failed to initialize DataServicesTestDialog.",
-          xulException );
-    }
+  SwtDialog getDialog() {
+    return dialog;
   }
 
   void open() {
-    dialog.show();
+    getDialog().show();
   }
 
   void close() {
-    dialog.dispose();
+    getDialog().dispose();
   }
 }

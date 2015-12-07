@@ -22,8 +22,9 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import static org.pentaho.di.i18n.BaseMessages.getString;
-
+import com.google.common.base.Objects;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -39,9 +40,7 @@ import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
-import com.google.common.base.Objects;
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
+import static org.pentaho.di.i18n.BaseMessages.getString;
 
 public class DataServiceDelegate extends DataServiceFactory {
   private static final Class<?> PKG = DataServiceDelegate.class;
@@ -199,7 +198,7 @@ public class DataServiceDelegate extends DataServiceFactory {
   public void showDriverDetailsDialog( Shell shell ) {
     try {
       getUiFactory().getDriverDetailsDialog( shell ).open();
-    } catch ( KettleException e ) {
+    } catch ( Exception e ) {
       getLogChannel().logError( "Unable to create driver details dialog", e );
     }
   }

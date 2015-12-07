@@ -22,18 +22,10 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.*;
-
-import java.util.List;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.eclipse.swt.widgets.Shell;
+import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,8 +52,27 @@ import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
+import java.util.List;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.same;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceDialogControllerTest {
@@ -232,4 +243,38 @@ public class DataServiceDialogControllerTest {
     controller.showTestDialog();
     verify( controller, times( 1 ) ).error( anyString(), anyString() );
   }
+
+  @Test
+  public void testShowDriverDetails() {
+    DataServiceDelegate delegate = mock( DataServiceDelegate.class );
+    controller = spy ( new DataServiceDialogController( null, delegate ) );
+    SwtDialog dialog = mock( SwtDialog.class );
+    doReturn( dialog ).when( controller ).getDialog();
+    Shell shell = mock( Shell.class );
+    doReturn( shell ).when( dialog ).getShell();
+    doCallRealMethod().when( controller ).showDriverDetailsDialog();
+
+    controller.showDriverDetailsDialog();
+
+    verify( delegate ).showDriverDetailsDialog( shell );
+  }
+
+  @Test
+  public void testShowHelpUsesDialogShell() throws Exception {
+    controller = mock( DataServiceDialogController.class );
+    doCallRealMethod().when( controller ).showHelp();
+    SwtDialog dialog = mock( SwtDialog.class );
+    doReturn( dialog ).when( controller ).getDialog();
+    IllegalStateException runtimeException = new IllegalStateException();
+    doThrow( runtimeException ).when( dialog ).getShell();
+
+    try {
+      controller.showHelp();
+    } catch ( Exception e ) {
+      MatcherAssert.assertThat( runtimeException, is( sameInstance( e ) ) );
+    }
+
+    verify( dialog ).getShell();
+  }
+
 }

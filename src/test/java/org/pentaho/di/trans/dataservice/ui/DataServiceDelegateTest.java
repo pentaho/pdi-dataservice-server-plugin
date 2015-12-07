@@ -34,10 +34,12 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
 import org.pentaho.di.ui.spoon.Spoon;
+import org.pentaho.ui.xul.XulException;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -48,6 +50,8 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -195,4 +199,13 @@ public class DataServiceDelegateTest extends BaseTest {
     assertThat( delegate.getDataServiceNames( transMeta ), contains( DATA_SERVICE_NAME ) );
   }
 
+  @Test
+  public void testShowDriverDetailsDialog() throws KettleException, XulException {
+    DriverDetailsDialog dialog = mock( DriverDetailsDialog.class );
+    doReturn( dialog ).when( uiFactory ).getDriverDetailsDialog( shell );
+
+    delegate.showDriverDetailsDialog();
+
+    verify( dialog ).open();
+  }
 }
