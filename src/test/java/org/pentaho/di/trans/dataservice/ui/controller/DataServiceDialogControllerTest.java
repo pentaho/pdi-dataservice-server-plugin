@@ -22,8 +22,17 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.same;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
+
 import org.eclipse.swt.widgets.Shell;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,16 +60,8 @@ import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
-import java.util.List;
-
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceDialogControllerTest {
@@ -193,7 +194,7 @@ public class DataServiceDialogControllerTest {
   public void testShowTestDialog() throws Exception {
     controller.showTestDialog();
 
-    verify( delegate ).testDataService( dataServiceMeta, shell );
+    verify( delegate ).showTestDataServiceDialog( dataServiceMeta, shell );
   }
 
   @Test

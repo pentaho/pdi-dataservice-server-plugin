@@ -16,6 +16,9 @@
         <menuseparator/>
         <menuitem id="dataservices-test"
                   label="${DataServicePopupMenu.Test.Label}" command="dataServiceStepHandler.testDataService()"/>
+        <menuseparator/>
+        <menuitem id="driverdetails"
+                  label="${DataServicePopupMenu.DriverDetails.Label}" command="dataServiceStepHandler.showDriverDetailsDialog()"/>
       </menupopup>
     </menu>
   </menupopup>

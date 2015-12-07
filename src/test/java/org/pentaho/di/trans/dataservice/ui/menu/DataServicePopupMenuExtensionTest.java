@@ -43,8 +43,11 @@ import org.pentaho.di.ui.spoon.TreeSelection;
 
 import java.util.ArrayList;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServicePopupMenuExtensionTest {
@@ -107,7 +110,7 @@ public class DataServicePopupMenuExtensionTest {
 
     verify( delegate, times( 2 ) ).getSpoon();
     verify( spoon ).getTreeObjects( extension );
-    verify( uiFactory ).getMenuItem( menu, SWT.NONE );
+    verify( uiFactory, times( 2 ) ).getMenuItem( menu, SWT.NONE );
   }
 
   @Test
@@ -119,6 +122,6 @@ public class DataServicePopupMenuExtensionTest {
 
     verify( delegate, times( 2 ) ).getSpoon();
     verify( spoon ).getTreeObjects( extension );
-    verify( uiFactory, times( 4 ) ).getMenuItem( null, SWT.NONE );
+    verify( uiFactory, times( 5 ) ).getMenuItem( null, SWT.NONE );
   }
 }

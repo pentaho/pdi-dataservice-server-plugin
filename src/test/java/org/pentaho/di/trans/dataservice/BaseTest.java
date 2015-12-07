@@ -34,6 +34,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
+import org.pentaho.di.core.KettleClientEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.sql.SQL;
@@ -95,6 +96,11 @@ public abstract class BaseTest {
   }
 
   protected TransMeta createTransMeta( String dataServiceTrans ) {
+    try {
+      KettleClientEnvironment.init();
+    } catch ( KettleException e ) {
+      e.printStackTrace();
+    }
     TransMeta transMeta = spy( new TransMeta() );
     transMeta.setName( dataServiceTrans );
     transMeta.setObjectId( new StringObjectId( UUID.randomUUID().toString() ) );

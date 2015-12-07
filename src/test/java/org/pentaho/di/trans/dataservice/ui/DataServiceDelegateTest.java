@@ -22,10 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-/**
- * Created by bmorrise on 10/16/15.
- */
-
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -163,7 +159,7 @@ public class DataServiceDelegateTest extends BaseTest {
 
   @Test
   public void testTestDataService() throws Exception {
-    delegate.testDataService( dataService );
+    delegate.showTestDataServiceDialog( dataService );
 
     verify( uiFactory ).getDataServiceTestDialog( shell, dataService );
   }

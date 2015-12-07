@@ -33,9 +33,6 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 
-/**
- * Created by bmorrise on 10/7/15.
- */
 public class UIFactory {
   public Menu getMenu( Tree tree ) {
     return new Menu( tree );
@@ -62,6 +59,11 @@ public class UIFactory {
   public DataServiceTestDialog getDataServiceTestDialog( Shell shell, DataServiceMeta dataServiceMeta ) throws
       KettleException {
     return new DataServiceTestDialog( shell, dataServiceMeta );
+  }
+
+  public DriverDetailsDialog getDriverDetailsDialog( Shell shell ) throws
+      KettleException {
+    return new DriverDetailsDialog( shell );
   }
 
   public Shell getShell( Shell shell ) {
