@@ -509,6 +509,10 @@ public class DataServiceExecutor {
     return genTrans.isStopped();
   }
 
+  public boolean hasErrors() {
+    return serviceTrans.getErrors() > 0 || genTrans.getErrors() > 0;
+  }
+
   /**
    * @return the sql
    */

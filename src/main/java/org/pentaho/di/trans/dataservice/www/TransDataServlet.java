@@ -26,6 +26,7 @@ import com.google.common.base.Strings;
 import com.google.common.net.MediaType;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.xml.XMLHandler;
@@ -152,6 +153,10 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
         }
 
         executor.waitUntilFinished();
+
+        if ( executor.hasErrors() ) {
+          throw new KettleException( "An error has occurred while executing transformations." );
+        }
       }
 
     } catch ( Exception e ) {

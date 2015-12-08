@@ -291,8 +291,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   private boolean anyTransErrors( DataServiceExecutor dataServiceExec ) {
-    return dataServiceExec.getServiceTrans().getErrors() > 0
-      || dataServiceExec.getGenTrans().getErrors() > 0;
+    return dataServiceExec.hasErrors();
   }
 
   private void checkForFailures( DataServiceExecutor dataServiceExec ) {

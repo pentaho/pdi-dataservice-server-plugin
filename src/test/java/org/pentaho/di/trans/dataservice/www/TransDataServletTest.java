@@ -205,6 +205,26 @@ public class TransDataServletTest extends BaseServletTest {
   }
 
   @Test
+  public void testExecutorErrors() throws Exception {
+    DataServiceExecutor.Builder builder = mock( DataServiceExecutor.Builder.class, RETURNS_SELF );
+
+    when( factory.createBuilder( argThat( sql( TEST_SQL_QUERY ) ) ) ).thenReturn( builder );
+    when( builder.build() ).thenReturn( executor );
+    when( executor.executeQuery( (DataOutputStream) any() ) ).then( new Answer<DataServiceExecutor>() {
+      @Override public DataServiceExecutor answer( InvocationOnMock invocation ) throws Throwable {
+        ( (DataOutput) invocation.getArguments()[0] ).write( 32 );
+        return executor;
+      }
+    } );
+
+    headers.put( HEADER_SQL, TEST_SQL_QUERY );
+    when( executor.hasErrors() ).thenReturn( true );
+    servlet.service( request, response );
+    verify( logChannel ).logError( anyString(), (Throwable) any() );
+    verify( response ).setStatus( HttpServletResponse.SC_BAD_REQUEST );
+  }
+
+  @Test
   public void testToString() {
     assertEquals( SERVLET_STRING, servlet.toString() );
   }
