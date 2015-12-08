@@ -1,0 +1,29 @@
+<overlay
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:pen="http://www.pentaho.org/2008/xul"
+>
+    <tabs id="opt_tabs">
+        <tab label="Parameter Pushdown"/>
+    </tabs>
+    <tabpanels id="opt_panels">
+        <tabpanel orient="vertical" padding="10">
+            <label value="### Brief text explaining this optimization ###"/>
+            <label control="param_definitions" value="Definitions:"/>
+            <tree flex="1" id="param_definitions" editable="true">
+                <treecols>
+                    <treecol label="Data Service Field" editable="true"
+                             pen:binding="fieldName"/>
+                    <treecol label="Parameter" editable="true"
+                             pen:binding="parameter"/>
+                    <treecol label="Format" editable="true"
+                             pen:binding="format"/>
+                </treecols>
+                <treechildren/>
+            </tree>
+            <hbox>
+                <spacer flex="1"/>
+                <button label="Select Fields..." onclick="pushDownParam.selectFields()"/>
+            </hbox>
+        </tabpanel>
+    </tabpanels>
+</overlay>
