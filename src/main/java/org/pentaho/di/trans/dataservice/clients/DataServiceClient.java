@@ -24,14 +24,13 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.value.ValueMetaString;
-import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
@@ -41,18 +40,22 @@ import org.pentaho.metastore.api.IMetaStore;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Map;
 
-public class DataServiceClient implements DataServiceClientService {
+public class DataServiceClient implements DataServiceClientService, Query.Service {
   private final DataServiceFactory factory;
-
-  public static final String DUMMY_TABLE_NAME = "dual";
+  private final ImmutableList<Query.Service> queryServices;
 
   public DataServiceClient( DataServiceFactory dataServiceFactory ) {
     this.factory = dataServiceFactory;
+    //TODO Query.Service list would be a good candidate for OSGi dependency injection
+    queryServices = ImmutableList.of(
+      new DualQueryService(),
+      new ExecutorQueryService( factory )
+    );
   }
 
   public DataServiceFactory getFactory() {
@@ -66,19 +69,7 @@ public class DataServiceClient implements DataServiceClientService {
 
       ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-      SQL sql = new SQL( sqlQuery );
-      if ( sql.getServiceName() == null || sql.getServiceName().equals( DUMMY_TABLE_NAME ) ) {
-        // Support for SELECT 1 and SELECT 1 FROM dual
-        DataOutputStream dos = new DataOutputStream( byteArrayOutputStream );
-        writeDummyRow( sql, dos );
-      } else {
-        DataServiceExecutor executor = factory.createBuilder( sql )
-          .rowLimit( maxRows )
-          .build();
-        executor
-          .executeQuery( new DataOutputStream( byteArrayOutputStream ) )
-          .waitUntilFinished();
-      }
+      prepareQuery( sqlQuery, maxRows ).writeTo( byteArrayOutputStream );
 
       ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( byteArrayOutputStream.toByteArray() );
       dataInputStream = new DataInputStream( byteArrayInputStream );
@@ -91,17 +82,19 @@ public class DataServiceClient implements DataServiceClientService {
     return dataInputStream;
   }
 
-  public void writeDummyRow( SQL sql, DataOutputStream dos ) throws Exception {
-    sql.setServiceName( DUMMY_TABLE_NAME );
+  public Query prepareQuery( String sql, int maxRows ) throws KettleException {
+    return prepareQuery( sql, maxRows, ImmutableMap.<String, String>of() );
+  }
 
-    DataServiceExecutor.writeMetadata( dos, new String[] { DUMMY_TABLE_NAME, "", "", "", "" } );
-
-    RowMetaInterface rowMeta = new RowMeta();
-    rowMeta.addValueMeta( new ValueMetaString( "DUMMY" ) );
-    rowMeta.writeMeta( dos );
-
-    Object[] row = new Object[] { "x" };
-    rowMeta.writeData( dos, row );
+  public Query prepareQuery( String sql, int maxRows, Map<String, String> parameters )
+    throws KettleException {
+    for ( Query.Service queryService : queryServices ) {
+      Query query = queryService.prepareQuery( sql, maxRows, parameters );
+      if ( query != null ) {
+        return query;
+      }
+    }
+    throw new KettleException( "Unable to resolve query: " + sql );
   }
 
   @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
@@ -141,4 +134,5 @@ public class DataServiceClient implements DataServiceClientService {
   @Deprecated
   public void setMetaStore( IMetaStore metaStore ) {
   }
+
 }

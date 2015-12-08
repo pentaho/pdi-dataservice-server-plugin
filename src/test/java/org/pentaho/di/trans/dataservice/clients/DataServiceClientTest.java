@@ -39,7 +39,6 @@ import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.sql.SQLException;
 
@@ -52,7 +51,6 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.AllOf.allOf;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
@@ -79,8 +77,6 @@ public class DataServiceClientTest extends BaseTest {
   private static final int MAX_ROWS = 100;
   private DataServiceExecutor.Builder builder;
 
-  private SQL sql;
-
   @Mock DataServiceFactory factory;
   @Mock DataServiceExecutor executor;
   @Mock RowMetaInterface rowMetaInterface;
@@ -91,8 +87,6 @@ public class DataServiceClientTest extends BaseTest {
     when( factory.logErrors( anyString() ) ).thenReturn( exceptionHandler );
     when( factory.getLogChannel() ).thenReturn( logChannel );
     when( factory.getDataServices( exceptionHandler ) ).thenReturn( ImmutableList.of( dataService ) );
-
-    sql = new SQL( TEST_SQL_QUERY );
 
     builder = mock( DataServiceExecutor.Builder.class, RETURNS_SELF );
     when( factory.createBuilder( argThat( sql( TEST_SQL_QUERY ) ) ) ).thenReturn( builder );
@@ -124,11 +118,11 @@ public class DataServiceClientTest extends BaseTest {
   @Test
   public void testWriteDummyRow() throws Exception {
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream( byteArrayOutputStream );
-    client.writeDummyRow( sql, dos );
+    client.prepareQuery( TEST_DUMMY_SQL_QUERY, -1 ).writeTo( byteArrayOutputStream );
 
-    DataInput dataInput = ByteStreams.newDataInput( byteArrayOutputStream.toByteArray() );
-    assertEquals( DUAL_TABLE_NAME, dataInput.readUTF() );
+    byte[] data = byteArrayOutputStream.toByteArray();
+    assertThat( ByteStreams.newDataInput( data ).readUTF(), equalTo( DUAL_TABLE_NAME ) );
+    assertThat( data, equalTo( DualQueryService.DATA ) );
   }
 
   @Test

@@ -23,11 +23,11 @@
 package org.pentaho.di.trans.dataservice.www;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import com.google.common.net.MediaType;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
@@ -35,19 +35,19 @@ import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
+import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.www.BaseHttpServlet;
 import org.pentaho.di.www.CartePluginInterface;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -101,63 +101,48 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     Map<String, String> parameters = getParametersFromRequestHeader( request );
 
     try {
-      SQL sql = new SQL( sqlQuery );
-      if ( sql.getServiceName() == null || sql.getServiceName().equals( DataServiceClient.DUMMY_TABLE_NAME ) ) {
-        // Support for SELECT 1 and SELECT 1 FROM dual
-        response.setStatus( HttpServletResponse.SC_OK );
-        response.setContentType( "binary/jdbc" );
-        client.writeDummyRow( sql, new DataOutputStream( response.getOutputStream() ) );
-      } else {
-        // Pass query to client
-        DataServiceExecutor executor = client.getFactory().createBuilder( sql ).
-            parameters( parameters ).
-            rowLimit( maxRows ).
-            build();
-        response.setStatus( HttpServletResponse.SC_OK );
-        response.setContentType( "binary/jdbc" );
+      Query query = client.prepareQuery( sqlQuery, maxRows, parameters );
 
-        executor.executeQuery( new DataOutputStream( response.getOutputStream() ) );
-
-        // For logging and tracking purposes, let's expose both the service transformation as well
-        // as the generated transformation on this very carte instance
-        //
-        TransMeta serviceTransMeta = executor.getServiceTransMeta();
-        Trans serviceTrans = executor.getServiceTrans();
-        if ( serviceTrans != null ) {
-          // not dual
-          TransConfiguration serviceTransConfiguration = new TransConfiguration( serviceTransMeta, new TransExecutionConfiguration() );
-          transformationMap.addTransformation( serviceTransMeta.getName(), serviceTrans.getContainerObjectId(), serviceTrans, serviceTransConfiguration );
-        }
-
-        // And the generated transformation...
-        //
-        TransMeta genTransMeta = executor.getGenTransMeta();
-        Trans genTrans = executor.getGenTrans();
-        TransConfiguration genTransConfiguration = new TransConfiguration( genTransMeta, new TransExecutionConfiguration() );
-        transformationMap.addTransformation( genTransMeta.getName(), genTrans.getContainerObjectId(), genTrans, genTransConfiguration );
-
-        // Log the generated transformation if needed
-        //
-        if ( !Const.isEmpty( debugTransFile ) ) {
-          // Store it to temp file for debugging!
-          //
-          try {
-            FileOutputStream fos = new FileOutputStream( debugTransFile );
-            fos.write( XMLHandler.getXMLHeader( Const.XML_ENCODING ).getBytes( Const.XML_ENCODING ) );
-            fos.write( genTransMeta.getXML().getBytes( Const.XML_ENCODING ) );
-            fos.close();
-          } catch ( Exception e ) {
-            logError( "Unable to write dynamic transformation to file", e );
-          }
-        }
-
-        executor.waitUntilFinished();
+      // For logging and tracking purposes, let's expose both the service transformation as well
+      // as the generated transformation on this very carte instance
+      //
+      List<Trans> transList = query.getTransList();
+      for ( Trans trans : transList ) {
+        monitorTransformation( trans );
       }
+
+      // Log the generated transformation if needed
+      //
+      if ( !Strings.isNullOrEmpty( debugTransFile ) && !transList.isEmpty() ) {
+        saveGeneratedTransformation( Iterables.getLast( transList ).getTransMeta(), debugTransFile );
+      }
+
+      response.setStatus( HttpServletResponse.SC_OK );
+      response.setContentType( "binary/jdbc" );
+      query.writeTo( response.getOutputStream() );
 
     } catch ( Exception e ) {
       log.logError( "Error executing SQL query: " + sqlQuery, e );
       response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
       response.getWriter().println( Strings.nullToEmpty( e.getMessage() ).trim() );
+    }
+  }
+
+  private void monitorTransformation( Trans trans ) {
+    TransMeta transMeta = trans.getTransMeta();
+    TransExecutionConfiguration executionConfiguration = new TransExecutionConfiguration();
+    TransConfiguration config = new TransConfiguration( transMeta, executionConfiguration );
+    transformationMap.addTransformation( transMeta.getName(), trans.getContainerObjectId(), trans, config );
+  }
+
+  private void saveGeneratedTransformation( TransMeta genTransMeta, String debugTrans ) {
+    try {
+      FileOutputStream fos = new FileOutputStream( debugTrans );
+      fos.write( XMLHandler.getXMLHeader( Const.XML_ENCODING ).getBytes( Const.XML_ENCODING ) );
+      fos.write( genTransMeta.getXML().getBytes( Const.XML_ENCODING ) );
+      fos.close();
+    } catch ( Exception e ) {
+      logError( "Unable to write dynamic transformation to file", e );
     }
   }
 
@@ -191,7 +176,7 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
   }
 
   public void setLog( LogChannelInterface log ) {
-    this.log =  log;
+    this.log = log;
   }
 
 }

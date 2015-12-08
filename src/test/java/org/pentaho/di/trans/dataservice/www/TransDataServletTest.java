@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.www;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import org.junit.Before;
@@ -30,20 +31,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.util.UUID;
 
@@ -60,7 +56,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
-import static org.pentaho.di.trans.dataservice.testing.answers.ReturnsSelf.RETURNS_SELF;
 
 /**
  * @author bmorrise nhudak
@@ -74,7 +69,6 @@ public class TransDataServletTest extends BaseServletTest {
   private static final String HEADER_MAX_ROWS = "MaxRows";
   private static final String TEST_SQL_QUERY = "SELECT * FROM dataservice_test";
   private static final String DEBUG_TRANS_FILE = "debugtransfile";
-  private static final String TEST_DUMMY_SQL_QUERY = "SELECT 1";
   private static final String TEST_MAX_ROWS = "100";
   private static final String PARAM_DEBUG_TRANS = "debugtrans";
   private static final String SERVLET_STRING = "Transformation data service";
@@ -83,9 +77,6 @@ public class TransDataServletTest extends BaseServletTest {
   private static final String GEN_TRANS_XML = "<trans name=genTrans mock/>";
 
   @Rule public TemporaryFolder fs = new TemporaryFolder();
-
-  @Mock
-  private DataServiceExecutor executor;
 
   private Trans serviceTrans;
 
@@ -107,11 +98,6 @@ public class TransDataServletTest extends BaseServletTest {
 
     doReturn( GEN_TRANS_XML ).when( genTransMeta ).getXML();
 
-    when( executor.getServiceTrans() ).thenReturn( serviceTrans );
-    when( executor.getServiceTransMeta() ).thenReturn( transMeta );
-    when( executor.getGenTrans() ).thenReturn( genTrans );
-    when( executor.getGenTransMeta() ).thenReturn( genTransMeta );
-
     servlet = new TransDataServlet( context );
     servlet.setJettyMode( true );
     servlet.setLog( logChannel );
@@ -125,21 +111,16 @@ public class TransDataServletTest extends BaseServletTest {
 
   @Test
   public void testDoPut() throws Exception {
-    DataServiceExecutor.Builder builder = mock( DataServiceExecutor.Builder.class, RETURNS_SELF );
-
-    when( factory.createBuilder( argThat( sql( TEST_SQL_QUERY ) ) ) ).thenReturn( builder );
-    when( builder.build() ).thenReturn( executor );
-    when( executor.executeQuery( (DataOutputStream) any() ) ).then( new Answer<DataServiceExecutor>() {
-      @Override public DataServiceExecutor answer( InvocationOnMock invocation ) throws Throwable {
-        ( (DataOutput) invocation.getArguments()[0] ).write( 32 );
-        return executor;
-      }
-    } );
-
     headers.put( HEADER_MAX_ROWS, TEST_MAX_ROWS );
     headers.put( HEADER_SQL, TEST_SQL_QUERY );
     parameters.put( "PARAMETER_FOO", "BAR" );
     parameters.put( PARAM_DEBUG_TRANS, debugTrans.getPath() );
+
+    Query query = mock( Query.class );
+    doReturn( query )
+      .when( client )
+      .prepareQuery( TEST_SQL_QUERY, Integer.valueOf( TEST_MAX_ROWS ), ImmutableMap.of( "FOO", "BAR" ) );
+    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
 
     when( request.getMethod() ).thenReturn( "PUT" );
     servlet.service( request, response );
@@ -147,9 +128,7 @@ public class TransDataServletTest extends BaseServletTest {
 
     verify( response ).setStatus( HttpServletResponse.SC_OK );
     verify( response ).setContentType( "binary/jdbc" );
-    verify( builder ).parameters( ImmutableMap.of( "FOO", "BAR" ) );
-    verify( builder ).rowLimit( Integer.valueOf( TEST_MAX_ROWS ) );
-    verify( outputStream ).write( 32 );
+    verify( query ).writeTo( outputStream );
 
     verify( transformationMap ).addTransformation(
       eq( DATA_SERVICE_NAME ),
@@ -163,7 +142,6 @@ public class TransDataServletTest extends BaseServletTest {
       eq( genTrans ),
       (TransConfiguration) argThat( hasProperty( "transMeta", is( genTransMeta ) ) )
     );
-    verify( executor ).waitUntilFinished();
     Files.readLines( debugTrans, Charsets.UTF_8 ).contains( GEN_TRANS_XML );
   }
 
@@ -187,15 +165,6 @@ public class TransDataServletTest extends BaseServletTest {
   }
 
   @Test
-  public void testWriteDummyRow() throws Exception {
-    when( request.getHeader( HEADER_SQL ) ).thenReturn( TEST_DUMMY_SQL_QUERY );
-
-    servlet.service( request, response );
-
-    verify( client ).writeDummyRow( any( SQL.class ), any( DataOutputStream.class ) );
-  }
-
-  @Test
   public void testDoGetBadPath() throws Exception {
     when( request.getContextPath() ).thenReturn( BAD_CONTEXT_PATH );
 
@@ -211,7 +180,7 @@ public class TransDataServletTest extends BaseServletTest {
 
   @Test
   public void testGetService() {
-    assertEquals( CONTEXT_PATH + " ("+SERVLET_STRING+")", servlet.getService() );
+    assertEquals( CONTEXT_PATH + " (" + SERVLET_STRING + ")", servlet.getService() );
   }
 
   @Test
