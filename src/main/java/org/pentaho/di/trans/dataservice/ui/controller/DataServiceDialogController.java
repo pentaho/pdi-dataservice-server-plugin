@@ -75,7 +75,7 @@ public class DataServiceDialogController extends AbstractController {
     bindingFactory.createBinding( model, "serviceName", serviceName, "value" ).fireSourceChanged();
   }
 
-  void showTestDialog() throws XulException {
+  public void showTestDialog() throws XulException {
     if ( Const.isEmpty( model.getServiceName() ) ) {
       error( getString( PKG, "DataServiceDialog.TestError.Title" ), getString( PKG,
           "DataServiceDialog.TestError.NameMissing" ) );
@@ -85,7 +85,7 @@ public class DataServiceDialogController extends AbstractController {
     delegate.showTestDataServiceDialog( model.getDataService(), getDialog().getShell() );
   }
 
-  void saveAndClose() throws XulException {
+  public void saveAndClose() throws XulException {
     try {
       String existing = dataService != null ? dataService.getName() : null;
 
