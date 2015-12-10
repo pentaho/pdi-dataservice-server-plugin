@@ -27,10 +27,10 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.Result;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaDate;
 import org.pentaho.di.core.row.value.ValueMetaInteger;
@@ -56,7 +56,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -198,7 +197,7 @@ public class DataServiceExecutorTest extends BaseTest {
     assertNotNull( serviceRowListener );
 
     // Push row from service to sql Trans
-    RowMeta rowMeta = mock( RowMeta.class );
+    RowMetaInterface rowMeta = genTrans.getTransMeta().getStepFields( RESULT_STEP_NAME );
     Object[] data;
     for ( int i = 0; i < 50; i++ ) {
       data = new Object[] { i };
@@ -222,17 +221,14 @@ public class DataServiceExecutorTest extends BaseTest {
       Object[] row = { i };
       clientRowListener.rowWrittenEvent( rowMeta, row );
     }
+    transListenerCaptor.getValue().transFinished( genTrans );
 
     InOrder writeRows = inOrder( rowMeta );
     ArgumentCaptor<DataOutputStream> streamCaptor = ArgumentCaptor.forClass( DataOutputStream.class );
     writeRows.verify( rowMeta ).writeMeta( streamCaptor.capture() );
     DataOutputStream dataOutputStream = streamCaptor.getValue();
     writeRows.verify( rowMeta, times( 50 ) ).writeData( same( dataOutputStream ), argThat( arrayWithSize( 1 ) ) );
-
-    // Gen trans finished, assert no more data is written
-    outputStream.reset();
-    transListenerCaptor.getValue().transFinished( genTrans );
-    assertThat( outputStream.size(), equalTo( 0 ) );
+    writeRows.verifyNoMoreInteractions();
 
     executor.waitUntilFinished();
     verify( serviceTrans ).waitUntilFinished();
