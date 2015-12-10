@@ -3,7 +3,7 @@
         xmlns:pen="http://www.pentaho.org/2008/xul"
         >
     <tabs id="opt_tabs">
-        <tab label="Input Step Optimizations"/>
+        <tab label="Query Pushdown"/>
     </tabs>
     <tabpanels id="opt_panels">
         <tabpanel orient="horizontal" padding="10">

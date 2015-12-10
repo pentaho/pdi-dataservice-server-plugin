@@ -106,4 +106,10 @@
         <pen:di-plugin type="org.pentaho.di.core.plugins.CartePluginType"/>
     </bean>
     <!-- /Service Cache Optimization -->
+
+    <!-- Parameter Push down Optimization -->
+    <service id="paramPushDownOptimization" interface="org.pentaho.di.trans.dataservice.optimization.PushDownFactory">
+        <bean class="org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdownFactory"/>
+    </service>
+    <!-- /Parameter Push down Optimization -->
 </blueprint>
