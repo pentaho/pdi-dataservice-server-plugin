@@ -22,10 +22,13 @@
 
 package org.pentaho.di.trans.dataservice.optimization.cache;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
@@ -41,9 +44,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Predicates.instanceOf;
 
 /**
  * @author nhudak
@@ -65,9 +65,7 @@ class CachedServiceLoader {
     List<Runnable> startTrans = dataServiceExecutor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.START ),
       postOptimization = dataServiceExecutor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.READY );
 
-    Iterables.removeIf( postOptimization,
-      instanceOf( DefaultTransWiring.class )
-    );
+    Iterables.removeIf( postOptimization, Predicates.instanceOf( DefaultTransWiring.class ) );
     Iterables.removeIf( startTrans,
       new Predicate<Runnable>() {
         @Override public boolean apply( Runnable runnable ) {
@@ -95,15 +93,16 @@ class CachedServiceLoader {
 
     ListenableFutureTask<Integer> replay = ListenableFutureTask.create( new Callable<Integer>() {
       @Override public Integer call() throws Exception {
-        checkState( startReplay.await( 30, TimeUnit.SECONDS ), "Cache replay did not start" );
+        Preconditions.checkState( startReplay.await( 30, TimeUnit.SECONDS ), "Cache replay did not start" );
         int rowCount = 0;
         for ( Iterator<RowMetaAndData> iterator = cachedService.getRowMetaAndData().iterator();
               iterator.hasNext() && genTrans.isRunning(); ) {
           RowMetaAndData metaAndData = iterator.next();
           boolean rowAdded = false;
+          RowMetaInterface rowMeta = metaAndData.getRowMeta();
+          Object[] rowData = rowMeta.cloneRow( metaAndData.getData() );
           while ( !rowAdded && genTrans.isRunning() ) {
-            rowAdded =
-              rowProducer.putRowWait( metaAndData.getRowMeta(), metaAndData.getData(), 10, TimeUnit.SECONDS );
+            rowAdded = rowProducer.putRowWait( rowMeta, rowData, 10, TimeUnit.SECONDS );
           }
           if ( rowAdded ) {
             rowCount += 1;

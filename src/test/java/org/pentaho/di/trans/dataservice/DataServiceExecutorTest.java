@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.Result;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
@@ -64,6 +63,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.AdditionalMatchers.and;
+import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.argThat;
@@ -203,8 +204,12 @@ public class DataServiceExecutorTest extends BaseTest {
     for ( int i = 0; i < 50; i++ ) {
       data = new Object[] { i };
 
+      Object[] dataClone = { i };
+      when( rowMeta.cloneRow( data ) ).thenReturn( dataClone );
       serviceRowListener.rowWrittenEvent( rowMeta, data );
-      verify( sqlTransRowProducer ).putRowWait( same( rowMeta ), eq( data ), any( Long.class ), any( TimeUnit.class ) );
+      verify( sqlTransRowProducer )
+        .putRowWait( same( rowMeta ), and( eq( dataClone ), not( same( data ) ) ), any( Long.class ), any( TimeUnit.class ) );
+      verify( rowMeta ).cloneRow( data );
     }
 
     doReturn( true ).when( serviceTrans ).isRunning();
