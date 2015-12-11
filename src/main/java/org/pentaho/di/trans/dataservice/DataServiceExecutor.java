@@ -340,7 +340,7 @@ public class DataServiceExecutor {
     return conditionParameters;
   }
 
-  public static void writeMetadata( DataOutputStream dos, String[] metadatas ) throws IOException {
+  public static void writeMetadata( DataOutputStream dos, String... metadatas ) throws IOException {
     for ( String metadata : metadatas ) {
       dos.writeUTF( metadata );
     }
