@@ -31,6 +31,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.AdditionalMatchers;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -77,9 +78,11 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -357,8 +360,9 @@ public class CachedServiceTest {
     for ( int i = 0; i < testData.size(); i++ ) {
       RowMetaAndData metaAndData = testData.get( i );
       // Tenth row was called twice, since row set was full
+      Object[] data = metaAndData.getData();
       rowsProduced.verify( rowProducer, times( i == 9 ? 2 : 1 ) )
-        .putRowWait( eq( metaAndData.getRowMeta() ), eq( metaAndData.getData() ), anyInt(), any( TimeUnit.class ) );
+        .putRowWait( eq( metaAndData.getRowMeta() ), and( eq( data ), AdditionalMatchers.not( same( data ) ) ), anyInt(), any( TimeUnit.class ) );
     }
     rowsProduced.verify( rowProducer ).finished();
     rowsProduced.verifyNoMoreInteractions();
@@ -419,8 +423,9 @@ public class CachedServiceTest {
     assertThat( rowsProduced.get(), equalTo( 20 ) );
 
     for ( RowMetaAndData metaAndData : Iterables.limit( testData, 20 ) ) {
+      Object[] data = metaAndData.getData();
       verify( rowProducer )
-        .putRowWait( eq( metaAndData.getRowMeta() ), eq( metaAndData.getData() ), anyInt(), any( TimeUnit.class ) );
+        .putRowWait( eq( metaAndData.getRowMeta() ), and( eq( data ), AdditionalMatchers.not( same( data ) ) ), anyInt(), any( TimeUnit.class ) );
     }
   }
 

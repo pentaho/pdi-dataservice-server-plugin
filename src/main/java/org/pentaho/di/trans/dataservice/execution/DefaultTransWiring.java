@@ -25,18 +25,11 @@ package org.pentaho.di.trans.dataservice.execution;
 import com.google.common.base.Throwables;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleStepException;
-import org.pentaho.di.core.exception.KettleValueException;
-import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.StepAdapter;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author nhudak
@@ -64,28 +57,7 @@ public class DefaultTransWiring implements Runnable {
     // Now connect the 2 transformations with listeners and injector
     //
     StepInterface serviceStep = serviceTrans.findRunThread( dataServiceExecutor.getService().getStepname() );
-    serviceStep.addRowListener( new RowAdapter() {
-      @Override
-      public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-        // Simply pass along the row to the other transformation (to the Injector step)
-        //
-        LogChannelInterface log = serviceTrans.getLogChannel();
-        try {
-          if ( log.isRowLevel() ) {
-            log.logRowlevel( "Passing along row: " + rowMeta.getString( row ) );
-          }
-        } catch ( KettleValueException e ) {
-          // Ignore errors
-        }
-
-        while ( !rowProducer.putRowWait( rowMeta, row, 1, TimeUnit.SECONDS ) && genTrans.isRunning() ) {
-          // Row queue was full, try again
-          if ( log.isRowLevel() ) {
-            log.logRowlevel( "Row buffer is full, trying again" );
-          }
-        }
-      }
-    } );
+    serviceStep.addRowListener( new DefaultTransWiringRowAdapter( serviceTrans, genTrans, rowProducer ) );
 
     // Let the other transformation know when there are no more rows
     //
