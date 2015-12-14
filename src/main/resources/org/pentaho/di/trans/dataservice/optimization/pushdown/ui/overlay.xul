@@ -7,7 +7,7 @@
     </tabs>
     <tabpanels id="opt_panels">
         <tabpanel orient="vertical" padding="10">
-            <label value="### Brief text explaining this optimization ###"/>
+            <label value="Map the value of a condition of the incoming SQL WHERE clause to a transformation parameter."/>
             <label control="param_definitions" value="Definitions:"/>
             <tree flex="1" id="param_definitions" editable="true">
                 <treecols>
