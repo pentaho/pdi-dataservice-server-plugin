@@ -27,6 +27,7 @@ import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.metastore.MetaStoreConst;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.metastore.api.IMetaStore;
@@ -50,8 +51,8 @@ public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
     }
   }
 
-  protected DataServiceFactory( DataServiceMetaStoreUtil metaStoreUtil ) {
-    super( metaStoreUtil );
+  protected DataServiceFactory( DataServiceContext context ) {
+    super( context.getMetaStoreUtil() );
   }
 
   public abstract Repository getRepository();
@@ -78,7 +79,7 @@ public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
   public DataServiceExecutor.Builder createBuilder( SQL sql ) throws MetaStoreException {
     // Locate data service and return a new builder
     DataServiceMeta dataService = getDataService( sql.getServiceName() );
-    return new DataServiceExecutor.Builder( sql, dataService );
+    return new DataServiceExecutor.Builder( sql, dataService, context );
   }
 
 }

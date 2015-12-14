@@ -74,8 +74,8 @@ import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 public class DataServiceMetaStoreUtil {
   private static final Class<DataServiceMetaStoreUtil> PKG = DataServiceMetaStoreUtil.class;
   private static final HashFunction hashFunction = Hashing.goodFastHash( Integer.SIZE );
-  private final DataServiceContext context;
   private final Cache<Integer, String> stepCache;
+  protected final DataServiceContext context;
 
   protected DataServiceMetaStoreUtil( DataServiceContext context, Cache<Integer, String> cache ) {
     this.context = context;

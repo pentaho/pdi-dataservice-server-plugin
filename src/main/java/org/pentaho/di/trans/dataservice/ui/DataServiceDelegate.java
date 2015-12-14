@@ -61,7 +61,7 @@ public class DataServiceDelegate extends DataServiceFactory {
   }
 
   public DataServiceDelegate( DataServiceContext context, Supplier<Spoon> spoonSupplier ) {
-    super( context.getMetaStoreUtil() );
+    super( context );
     this.spoonSupplier = spoonSupplier;
   }
 
@@ -179,7 +179,7 @@ public class DataServiceDelegate extends DataServiceFactory {
 
   public void showTestDataServiceDialog( DataServiceMeta dataService, Shell shell ) {
     try {
-      getUiFactory().getDataServiceTestDialog( getUiFactory().getShell( shell ), dataService ).open();
+      getUiFactory().getDataServiceTestDialog( getUiFactory().getShell( shell ), dataService, context ).open();
     } catch ( KettleException e ) {
       getLogChannel().logError( "Unable to create test data service dialog", e );
     }

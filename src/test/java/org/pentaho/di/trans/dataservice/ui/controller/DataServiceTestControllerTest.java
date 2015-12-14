@@ -41,6 +41,7 @@ import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.core.sql.SQLFields;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
@@ -109,6 +110,9 @@ public class DataServiceTestControllerTest  {
 
   @Mock
   private XulTextbox xulTextBox;
+
+  @Mock
+  private DataServiceContext context;
 
   private DataServiceTestControllerTester dataServiceTestController;
 
@@ -267,7 +271,7 @@ public class DataServiceTestControllerTest  {
     private final DataServiceTestControllerTest test = DataServiceTestControllerTest.this;
 
     public DataServiceTestControllerTester() throws KettleException {
-      super( model, dataService, bindingFactory );
+      super( model, dataService, bindingFactory, context );
       setCallback( test.callback );
       setXulDomContainer( test.xulDomContainer );
     }

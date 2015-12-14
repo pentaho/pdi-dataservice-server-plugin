@@ -36,6 +36,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.BaseTest;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
 import org.pentaho.di.ui.spoon.Spoon;
@@ -93,7 +94,8 @@ public class DataServiceDelegateTest extends BaseTest {
     when( spoon.getShell() ).thenReturn( shell );
     when( uiFactory.getMessageBox( any( Shell.class ), anyInt() ) ).thenReturn( messageBox );
     when( uiFactory.getShell( shell ) ).thenReturn( shell );
-    when( uiFactory.getDataServiceTestDialog( any( Shell.class ), any( DataServiceMeta.class ) ) )
+    when( uiFactory.getDataServiceTestDialog( any( Shell.class ), any( DataServiceMeta.class ), any(
+        DataServiceContext.class ) ) )
         .thenReturn( dataServiceTestDialog );
     when( uiFactory
         .getMessageDialog( any( Shell.class ), anyString(), any( Image.class ), anyString(), anyInt(), any( String[].class ),
@@ -165,7 +167,7 @@ public class DataServiceDelegateTest extends BaseTest {
   public void testTestDataService() throws Exception {
     delegate.showTestDataServiceDialog( dataService );
 
-    verify( uiFactory ).getDataServiceTestDialog( shell, dataService );
+    verify( uiFactory ).getDataServiceTestDialog( shell, dataService, context );
   }
 
   @Test

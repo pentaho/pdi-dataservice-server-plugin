@@ -83,6 +83,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
   public static final String INJECTOR_STEP_NAME = "Injector Step";
   public static final String RESULT_STEP_NAME = "Result Step";
+  public static final String CONTAINER_ID = "12345";
 
   @Before
   public void setUp() throws Exception {
@@ -97,8 +98,9 @@ public class DataServiceExecutorTest extends BaseTest {
     Trans genTrans = mock( Trans.class );
     TransMeta genTransMeta = mock( TransMeta.class );
     when( genTrans.getTransMeta() ).thenReturn( genTransMeta );
+    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
 
-    new DataServiceExecutor.Builder( new SQL( "SELECT foo FROM " + DATA_SERVICE_NAME ), dataService ).
+    new DataServiceExecutor.Builder( new SQL( "SELECT foo FROM " + DATA_SERVICE_NAME ), dataService, context ).
       serviceTrans( serviceTrans ).
       genTrans( genTrans ).
       prepareExecution( false ).
@@ -122,7 +124,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
     when( transMeta.getStepFields( DATA_SERVICE_STEP ) ).thenReturn( rowMeta );
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), dataService ).
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), dataService, context ).
       serviceTrans( transMeta ).
       prepareExecution( false ).
       build();
@@ -151,8 +153,9 @@ public class DataServiceExecutorTest extends BaseTest {
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
     when( optimization.isEnabled() ).thenReturn( true );
     dataService.getPushDownOptimizationMeta().add( optimization );
+    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService ).
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
       serviceTrans( serviceTrans ).
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
@@ -246,9 +249,11 @@ public class DataServiceExecutorTest extends BaseTest {
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
 
+    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
+
     final SQL theSql = new SQL( sql );
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( theSql, dataService ).
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( theSql, dataService, context ).
       serviceTrans( serviceTrans ).
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
@@ -283,7 +288,9 @@ public class DataServiceExecutorTest extends BaseTest {
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService ).
+    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
       serviceTrans( serviceTrans ).
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
@@ -315,7 +322,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
     when( transMeta.getStepFields( DATA_SERVICE_STEP ) ).thenReturn( rowMeta );
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), dataService ).
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), dataService, context ).
       serviceTrans( new Trans( transMeta ) ).
       prepareExecution( false ).
       build();
@@ -333,14 +340,14 @@ public class DataServiceExecutorTest extends BaseTest {
   @Test
   public void testBuilderFailsOnNulls() {
     try {
-      new DataServiceExecutor.Builder( null, mock( DataServiceMeta.class ) );
+      new DataServiceExecutor.Builder( null, mock( DataServiceMeta.class ), context );
       fail( "Should fail when SQL is null" );
     } catch ( NullPointerException npe ) {
       // Expected exception
     }
 
     try {
-      new DataServiceExecutor.Builder( mock( SQL.class ), null );
+      new DataServiceExecutor.Builder( mock( SQL.class ), null, context );
       fail( "Should fail when service is null" );
     } catch ( NullPointerException npe ) {
       // Expected exception
@@ -355,10 +362,11 @@ public class DataServiceExecutorTest extends BaseTest {
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
 
+    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
     when( serviceTrans.isRunning() ).thenReturn( true );
     when( genTrans.isRunning() ).thenReturn( true );
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService ).
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
         serviceTrans( serviceTrans ).
         sqlTransGenerator( sqlTransGenerator ).
         genTrans( genTrans ).
@@ -378,9 +386,10 @@ public class DataServiceExecutorTest extends BaseTest {
     Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
 
+    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
     when( genTrans.isStopped() ).thenReturn( true );
 
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService ).
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
         serviceTrans( serviceTrans ).
         sqlTransGenerator( sqlTransGenerator ).
         genTrans( genTrans ).

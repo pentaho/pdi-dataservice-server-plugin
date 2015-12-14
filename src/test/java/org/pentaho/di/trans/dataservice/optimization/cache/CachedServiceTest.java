@@ -48,6 +48,7 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.SqlTransGenerator;
@@ -106,6 +107,7 @@ public class CachedServiceTest {
   @Mock StepInterface inputStep;
   @Mock StepMetaInterface inputStepMetaInterface;
   @Mock StepDataInterface inputStepDataInterface;
+  @Mock DataServiceContext context;
 
   private List<RowMetaAndData> testData;
   private RowMeta rowMeta;
@@ -159,12 +161,12 @@ public class CachedServiceTest {
     SQL sql = new SQL( BASE_QUERY );
     sql.parse( rowMeta );
 
-    assertThat( CacheKey.create( new DataServiceExecutor.Builder( sql, dataServiceMeta )
+    assertThat( CacheKey.create( new DataServiceExecutor.Builder( sql, dataServiceMeta, context )
         .prepareExecution( false )
         .parameters( ImmutableMap.of( "foo", "bar" ) )
         .serviceTrans( serviceTrans )
         .build() ),
-      not( equalTo( CacheKey.create( new DataServiceExecutor.Builder( sql, dataServiceMeta )
+      not( equalTo( CacheKey.create( new DataServiceExecutor.Builder( sql, dataServiceMeta, context )
         .prepareExecution( false )
         .serviceTrans( serviceTrans )
         .build() ) ) ) );
@@ -467,7 +469,7 @@ public class CachedServiceTest {
   private DataServiceExecutor dataServiceExecutor( String query ) throws KettleException {
     SQL sql = new SQL( query );
     sql.parse( rowMeta );
-    return new DataServiceExecutor.Builder( sql, dataServiceMeta )
+    return new DataServiceExecutor.Builder( sql, dataServiceMeta, context )
       .sqlTransGenerator( sqlTransGenerator )
       .serviceTrans( serviceTrans )
       .genTrans( genTrans )
