@@ -31,6 +31,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.ui.xul.XulException;
 
@@ -57,9 +58,9 @@ public class UIFactory {
     return new DataServiceDialog.Builder( transMeta );
   }
 
-  public DataServiceTestDialog getDataServiceTestDialog( Shell shell, DataServiceMeta dataServiceMeta ) throws
-      KettleException {
-    return new DataServiceTestDialog( shell, dataServiceMeta );
+  public DataServiceTestDialog getDataServiceTestDialog( Shell shell, DataServiceMeta dataServiceMeta,
+      DataServiceContext context ) throws KettleException {
+    return new DataServiceTestDialog( shell, dataServiceMeta, context );
   }
 
   public DriverDetailsDialog getDriverDetailsDialog( Shell shell ) throws

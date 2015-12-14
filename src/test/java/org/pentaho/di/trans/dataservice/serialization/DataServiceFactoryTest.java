@@ -57,7 +57,7 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
     super.setUp();
 
     when( supplier.get() ).thenReturn( repository );
-    metaStoreUtil = factory = new DataServiceFactory( metaStoreUtil ) {
+    metaStoreUtil = factory = new DataServiceFactory( context ) {
       @Override public Repository getRepository() {
         return supplier.get();
       }

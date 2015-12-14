@@ -42,6 +42,7 @@ import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.SqlTransGenerator;
@@ -88,6 +89,7 @@ public class ServiceCacheTest {
   @Mock Factory expiryFactory;
   @Mock ExpiryPolicy expiryPolicy;
   @Mock Duration duration;
+  @Mock DataServiceContext context;
 
   @InjectMocks ServiceCache serviceCache;
   RowMeta rowMeta;
@@ -283,7 +285,7 @@ public class ServiceCacheTest {
   private DataServiceExecutor dataServiceExecutor( String query ) throws KettleException {
     SQL sql = new SQL( query );
     sql.parse( rowMeta );
-    return new DataServiceExecutor.Builder( sql, dataServiceMeta )
+    return new DataServiceExecutor.Builder( sql, dataServiceMeta, context )
       .sqlTransGenerator( sqlTransGenerator )
       .serviceTrans( serviceTrans )
       .genTrans( genTrans )

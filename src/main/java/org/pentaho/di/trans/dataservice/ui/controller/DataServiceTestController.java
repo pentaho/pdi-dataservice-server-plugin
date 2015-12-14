@@ -45,6 +45,7 @@ import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
@@ -86,22 +87,24 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   private XulMenuList<String> logLevels;
   private Timer completionPollTimer;
   private DataServiceExecutor dataServiceExec;
+  private DataServiceContext context;
 
   private BindingFactory bindingFactory;
 
   private XulMenuList<String> maxRows;
 
-  public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService ) throws KettleException {
-    this( model, dataService, new DefaultBindingFactory() );
+  public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService, DataServiceContext context ) throws KettleException {
+    this( model, dataService, new DefaultBindingFactory(), context );
   }
 
   public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService,
-      BindingFactory bindingFactory ) throws KettleException {
+      BindingFactory bindingFactory, DataServiceContext context ) throws KettleException {
     this.model = model;
     this.dataService = dataService;
     this.transMeta = dataService.getServiceTrans();
     this.bindingFactory = bindingFactory;
     transName = transMeta.getName();
+    this.context = context;
     model.setSql( getDefaultSql() );
     initStartingParameterValues();
 
@@ -377,7 +380,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   protected DataServiceExecutor getNewDataServiceExecutor( boolean enableMetrics ) throws KettleException {
     try {
       resetVariablesAndParameters();
-      return new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService ).
+      return new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService, context ).
         rowLimit( model.getMaxRows() ).
         logLevel( model.getLogLevel() ).
         enableMetrics( enableMetrics ).

@@ -36,6 +36,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.metrics.MetricsDuration;
 import org.pentaho.di.core.metrics.MetricsUtil;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
@@ -88,9 +89,9 @@ public class DataServiceTestDialog implements java.io.Serializable {
     }
   };
 
-  public DataServiceTestDialog( Shell parent, DataServiceMeta dataService ) throws KettleException {
+  public DataServiceTestDialog( Shell parent, DataServiceMeta dataService, DataServiceContext context ) throws KettleException {
     try {
-      dataServiceTestController = new DataServiceTestController( model, dataService );
+      dataServiceTestController = new DataServiceTestController( model, dataService, context );
     } catch ( KettleException ke ) {
       new ErrorDialog( parent, BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Title" ),
         BaseMessages.getString( PKG, "DataServiceTest.TestDataServiceError.Message" ), ke );

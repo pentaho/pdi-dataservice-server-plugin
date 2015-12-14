@@ -84,6 +84,7 @@ public class DataServiceExecutor {
   public static class Builder {
     private final SQL sql;
     private final DataServiceMeta service;
+    private final DataServiceContext context;
     private Trans serviceTrans;
     private Trans genTrans;
     private int rowLimit = 0;
@@ -95,9 +96,10 @@ public class DataServiceExecutor {
     private boolean prepareExecution = true;
     private boolean enableMetrics = false;
 
-    public Builder( SQL sql, DataServiceMeta service ) {
+    public Builder( SQL sql, DataServiceMeta service, DataServiceContext context ) {
       this.sql = Preconditions.checkNotNull( sql, "SQL must not be null." );
       this.service = Preconditions.checkNotNull( service, "Service must not be null." );
+      this.context = context;
     }
 
     public Builder parameters( Map<String, String> parameters ) {
@@ -188,6 +190,8 @@ public class DataServiceExecutor {
       genTrans.setContainerObjectId( UUID.randomUUID().toString() );
 
       DataServiceExecutor dataServiceExecutor = new DataServiceExecutor( this );
+
+      context.addExecutor( dataServiceExecutor );
 
       if ( logLevel != null ) {
         dataServiceExecutor.setLogLevel( logLevel );
@@ -340,7 +344,7 @@ public class DataServiceExecutor {
     return conditionParameters;
   }
 
-  public static void writeMetadata( DataOutputStream dos, String[] metadatas ) throws IOException {
+  public static void writeMetadata( DataOutputStream dos, String... metadatas ) throws IOException {
     for ( String metadata : metadatas ) {
       dos.writeUTF( metadata );
     }
@@ -348,13 +352,9 @@ public class DataServiceExecutor {
 
   public DataServiceExecutor executeQuery( final DataOutputStream dos ) throws IOException {
 
-    writeMetadata( dos, new String[] {
-      getServiceName(),
-      calculateTransname( getSql(), true ),
-      getServiceTrans().getContainerObjectId(),
-      calculateTransname( getSql(), false ),
-      getGenTrans().getContainerObjectId()
-    } );
+    writeMetadata( dos, getServiceName(), calculateTransname( getSql(), true ),
+        getServiceTrans().getContainerObjectId(), calculateTransname( getSql(), false ),
+        getGenTrans().getContainerObjectId() );
 
     final AtomicBoolean rowMetaWritten = new AtomicBoolean( false );
 
@@ -468,6 +468,14 @@ public class DataServiceExecutor {
 
   public Map<String, String> getParameters() {
     return parameters;
+  }
+
+  public String getId() {
+    return serviceTrans.getContainerObjectId();
+  }
+
+  public Boolean hasErrors() {
+    return serviceTrans.getErrors() > 0 || genTrans.getErrors() > 0;
   }
 
   /**
