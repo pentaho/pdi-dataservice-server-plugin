@@ -20,21 +20,27 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice.optimization;
+package org.pentaho.di.trans.dataservice.execution;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.TransMeta;
+import com.google.common.base.Throwables;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.trans.Trans;
 
 /**
  * @author nhudak
  */
-public interface PushDownType {
+public class PrepareExecution implements Runnable {
+  private final Trans trans;
 
-  void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta );
+  public PrepareExecution( Trans trans ) {
+    this.trans = trans;
+  }
 
-  ListenableFuture<Boolean> activate( DataServiceExecutor executor, PushDownOptimizationMeta meta );
-
-  OptimizationImpactInfo preview( DataServiceExecutor executor, PushDownOptimizationMeta meta );
+  @Override public void run() {
+    try {
+      trans.prepareExecution( null );
+    } catch ( KettleException e ) {
+      Throwables.propagate( e );
+    }
+  }
 }

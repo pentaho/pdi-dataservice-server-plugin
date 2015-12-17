@@ -37,8 +37,8 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.dataservice.optimization.SourceTargetFields;
+import org.pentaho.di.trans.dataservice.optimization.StepOptimization;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
@@ -52,7 +52,7 @@ import java.util.Map;
 /**
  * @author nhudak
  */
-public class ParameterGeneration implements PushDownType {
+public class ParameterGeneration extends StepOptimization {
 
   public static final String PUSH_DOWN_FIELD_MAPPINGS = "field_mappings";
   public static final String PUSH_DOWN_PARAMETER_NAME = "parameter_name";

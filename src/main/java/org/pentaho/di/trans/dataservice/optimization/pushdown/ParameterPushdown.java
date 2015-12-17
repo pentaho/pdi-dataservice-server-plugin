@@ -25,6 +25,8 @@ package org.pentaho.di.trans.dataservice.optimization.pushdown;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
@@ -32,7 +34,6 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
-import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 
 import java.util.Iterator;
@@ -81,12 +82,13 @@ public class ParameterPushdown implements PushDownType {
     transMeta.activateParameters();
   }
 
-  @Override public boolean activate( DataServiceExecutor executor, StepInterface stepInterface ) {
-    return false;
+  @Override
+  public ListenableFuture<Boolean> activate( DataServiceExecutor executor, PushDownOptimizationMeta meta ) {
+    return Futures.immediateFuture( false );
   }
 
-  @Override public OptimizationImpactInfo preview( DataServiceExecutor executor, StepInterface stepInterface ) {
-    return new OptimizationImpactInfo( stepInterface.getStepname() );
+  @Override public OptimizationImpactInfo preview( DataServiceExecutor executor, PushDownOptimizationMeta meta ) {
+    return new OptimizationImpactInfo( meta.getStepName() );
   }
 
   public static class Definition {
