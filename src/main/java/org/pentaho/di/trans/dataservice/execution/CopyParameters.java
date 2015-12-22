@@ -48,6 +48,7 @@ public class CopyParameters implements Runnable {
       try {
         first.setParameterValue( parameter.getKey(), parameter.getValue() );
       } catch ( UnknownParamException ignored ) {
+        // Ignore unknown parameters
       }
     }
     for ( NamedParams namedParams : rest ) {
