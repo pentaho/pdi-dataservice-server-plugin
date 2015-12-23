@@ -23,7 +23,10 @@
 package org.pentaho.di.trans.dataservice;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.MultimapBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
@@ -40,7 +43,9 @@ import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.execution.CopyParameters;
 import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
+import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
@@ -53,7 +58,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -71,9 +75,8 @@ public class DataServiceExecutor {
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
     service = builder.service;
-    Map<String, String> param = new HashMap<>( builder.parameters );
-    param.putAll( getWhereConditionParameters() );
-    parameters = Collections.unmodifiableMap( param );
+    parameters = Maps.newHashMap( builder.parameters );
+    parameters.putAll( getWhereConditionParameters() );
     serviceTrans = builder.serviceTrans;
     sqlTransGenerator = builder.sqlTransGenerator;
     genTrans = builder.genTrans;
@@ -321,17 +324,24 @@ public class DataServiceExecutor {
   }
 
   protected void prepareExecution() throws KettleException {
-    genTrans.prepareExecution( null );
-    listenerMap.put( ExecutionPoint.START, new TransStarter( genTrans ) );
+    // Setup executor with default execution plan
+    ImmutableMultimap.Builder<ExecutionPoint, Runnable> builder = ImmutableMultimap.builder();
+    builder.putAll( ExecutionPoint.PREPARE,
+      new CopyParameters( parameters, serviceTrans ),
+      new PrepareExecution( genTrans ),
+      new PrepareExecution( serviceTrans )
+    );
 
-    TransMeta serviceTransMeta = getServiceTransMeta();
-    for ( Entry<String, String> parameter : parameters.entrySet() ) {
-      serviceTransMeta.setParameterValue( parameter.getKey(), parameter.getValue() );
-      serviceTrans.copyParametersFrom( serviceTransMeta );
-    }
-    serviceTrans.prepareExecution( null );
-    listenerMap.put( ExecutionPoint.READY, new DefaultTransWiring( this ) );
-    listenerMap.put( ExecutionPoint.START, new TransStarter( serviceTrans ) );
+    builder.putAll( ExecutionPoint.READY,
+      new DefaultTransWiring( this )
+    );
+
+    builder.putAll( ExecutionPoint.START,
+      new TransStarter( genTrans ),
+      new TransStarter( serviceTrans )
+    );
+
+    listenerMap.putAll( builder.build() );
   }
 
   private Map<String, String> getWhereConditionParameters() {
@@ -391,7 +401,19 @@ public class DataServiceExecutor {
     } );
   }
 
-  public DataServiceExecutor executeQuery( RowListener resultRowListener ) {
+  public DataServiceExecutor executeQuery( final RowListener resultRowListener ) {
+    listenerMap.get( ExecutionPoint.READY ).add( new Runnable() {
+      @Override public void run() {
+        // Give back the eventual result rows...
+        //
+        StepInterface resultStep = genTrans.findRunThread( getResultStepName() );
+        resultStep.addRowListener( resultRowListener );
+      }
+    } );
+    return executeQuery();
+  }
+
+  public DataServiceExecutor executeQuery() {
     // Apply Push Down Optimizations
     for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
       if ( optimizationMeta.isEnabled() ) {
@@ -399,22 +421,25 @@ public class DataServiceExecutor {
       }
     }
 
-    executeListeners( ExecutionPoint.READY );
-
-    // Give back the eventual result rows...
-    //
-    StepInterface resultStep = genTrans.findRunThread( getResultStepName() );
-    resultStep.addRowListener( resultRowListener );
-
-    // Start transformations
-    executeListeners( ExecutionPoint.START );
+    // Run execution plan
+    executeListeners( ExecutionPoint.values() );
 
     return this;
   }
 
-  public void executeListeners( ExecutionPoint executionPoint ) {
-    for ( Runnable runnable : listenerMap.get( executionPoint ) ) {
-      runnable.run();
+  public void executeListeners( ExecutionPoint... stages ) {
+    for ( ExecutionPoint stage : stages ) {
+      // Copy stage tasks to a new list to prevent accidental concurrent modification
+      ImmutableList<Runnable> tasks = ImmutableList.copyOf( listenerMap.get( stage ) );
+      for ( Runnable task : tasks ) {
+        task.run();
+      }
+      if ( !listenerMap.get( stage ).equals( tasks ) ) {
+        getGenTrans().getLogChannel().logError(
+          "Listeners were modified while executing {0}. Started with {1} and ended with {2}",
+          stage, tasks, listenerMap.get( stage )
+        );
+      }
     }
   }
 
@@ -543,7 +568,7 @@ public class DataServiceExecutor {
    * @author nhudak
    */
   public enum ExecutionPoint {
-    READY, START
+    PREPARE, OPTIMIZE, READY, START
   }
 
 }

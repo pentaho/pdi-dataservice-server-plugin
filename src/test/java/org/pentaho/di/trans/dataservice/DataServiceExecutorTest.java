@@ -22,10 +22,16 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ListMultimap;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.mockito.Mock;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogLevel;
@@ -49,13 +55,13 @@ import org.pentaho.di.trans.step.StepListener;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.Matchers.arrayWithSize;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -67,39 +73,45 @@ import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.pentaho.di.trans.dataservice.testing.answers.ReturnsSelf.RETURNS_SELF;
 
+@RunWith( org.mockito.runners.MockitoJUnitRunner.class )
 public class DataServiceExecutorTest extends BaseTest {
 
   public static final String INJECTOR_STEP_NAME = "Injector Step";
   public static final String RESULT_STEP_NAME = "Result Step";
   public static final String CONTAINER_ID = "12345";
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
+  @Mock SqlTransGenerator sqlTransGenerator;
 
   @Before
   public void setUp() throws Exception {
     doAnswer( RETURNS_SELF ).when( transMeta ).realClone( anyBoolean() );
     doAnswer( RETURNS_SELF ).when( transMeta ).clone();
+
+    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
+    when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP_NAME );
+    when( sqlTransGenerator.getResultStepName() ).thenReturn( RESULT_STEP_NAME );
   }
 
   @Test
   public void testLogging() throws Exception {
-    Trans serviceTrans = mock( Trans.class );
     when( serviceTrans.getTransMeta() ).thenReturn( transMeta );
-    Trans genTrans = mock( Trans.class );
     TransMeta genTransMeta = mock( TransMeta.class );
     when( genTrans.getTransMeta() ).thenReturn( genTransMeta );
-    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
 
     new DataServiceExecutor.Builder( new SQL( "SELECT foo FROM " + DATA_SERVICE_NAME ), dataService, context ).
       serviceTrans( serviceTrans ).
@@ -142,10 +154,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Test
   public void testExecuteQuery() throws Exception {
-    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
-    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
     StepInterface serviceStep = serviceTrans.findRunThread( DATA_SERVICE_STEP );
     StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
 
@@ -154,7 +163,6 @@ public class DataServiceExecutorTest extends BaseTest {
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
     when( optimization.isEnabled() ).thenReturn( true );
     dataService.getPushDownOptimizationMeta().add( optimization );
-    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
       serviceTrans( serviceTrans ).
@@ -247,11 +255,6 @@ public class DataServiceExecutorTest extends BaseTest {
   @Test
   public void testQueryWithParams() throws Exception {
     String sql = "SELECT * FROM " + DATA_SERVICE_NAME + " WHERE PARAMETER('foo') = 'bar' AND PARAMETER('baz') = 'bop'";
-    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
-
-    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
 
     final SQL theSql = new SQL( sql );
 
@@ -259,6 +262,7 @@ public class DataServiceExecutorTest extends BaseTest {
       serviceTrans( serviceTrans ).
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
+      parameters( ImmutableMap.of( "BUILD_PARAM", "TRUE" ) ).
       build();
 
     List<Condition> conditions = theSql.getWhereCondition().getCondition().getChildren();
@@ -271,26 +275,30 @@ public class DataServiceExecutorTest extends BaseTest {
       assertNull( condition.getLeftValuename() );
       assertNull( condition.getRightValuename() );
     }
-    // verify that the parameter values were correctly extracted from the WHERE
-    verify( executor.getServiceTransMeta() ).setParameterValue( "foo", "bar" );
-    verify( executor.getServiceTransMeta() ).setParameterValue( "baz", "bop" );
 
-    Map<String, String> expectedParams = new HashMap<String, String>();
-    expectedParams.put( "baz", "bop" );
-    expectedParams.put( "foo", "bar" );
+    assertThat( executor.getParameters(), equalTo( (Map<String, String>) ImmutableMap.of(
+      "baz", "bop",
+      "foo", "bar",
+      "BUILD_PARAM", "TRUE"
+    ) ) );
 
-    assertEquals( expectedParams, executor.getParameters() );
+    // Late parameter modification is okay
+    executor.getParameters().put( "AFTER_BUILD", "TRUE" );
+
+    // Parameters should not be set on the trans until execute
+    verify( serviceTrans, never() ).setParameterValue( anyString(), anyString() );
+
+    executor.executeQuery();
+    // verify that the parameter values were correctly extracted from the WHERE and applied
+    verify( serviceTrans ).setParameterValue( "foo", "bar" );
+    verify( serviceTrans ).setParameterValue( "baz", "bop" );
+    verify( serviceTrans ).setParameterValue( "BUILD_PARAM", "TRUE" );
+    verify( serviceTrans ).setParameterValue( "AFTER_BUILD", "TRUE" );
   }
 
   @Test
   public void testNullNotNullKeywords() throws Exception {
     String sql = "SELECT * FROM " + DATA_SERVICE_NAME + " WHERE column1 IS NOT NULL AND column2 IS NULL";
-
-    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
-
-    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
       serviceTrans( serviceTrans ).
@@ -332,13 +340,6 @@ public class DataServiceExecutorTest extends BaseTest {
     executor.getSql().getWhereCondition().getCondition().evaluate( rowMeta, new Object[] { "value".getBytes() } );
   }
 
-  private SqlTransGenerator mockSqlTransGenerator() {
-    SqlTransGenerator sqlTransGenerator = mock( SqlTransGenerator.class );
-    when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP_NAME );
-    when( sqlTransGenerator.getResultStepName() ).thenReturn( RESULT_STEP_NAME );
-    return sqlTransGenerator;
-  }
-
   @Test
   public void testBuilderFailsOnNulls() {
     try {
@@ -360,11 +361,6 @@ public class DataServiceExecutorTest extends BaseTest {
   public void testStop() throws KettleException {
     String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
 
-    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
-
-    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
     when( serviceTrans.isRunning() ).thenReturn( true );
     when( genTrans.isRunning() ).thenReturn( true );
 
@@ -384,11 +380,6 @@ public class DataServiceExecutorTest extends BaseTest {
   public void testIsComplete() throws KettleException {
     String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
 
-    Trans serviceTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    Trans genTrans = mock( Trans.class, RETURNS_DEEP_STUBS );
-    SqlTransGenerator sqlTransGenerator = mockSqlTransGenerator();
-
-    when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
     when( genTrans.isStopped() ).thenReturn( true );
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
@@ -400,4 +391,32 @@ public class DataServiceExecutorTest extends BaseTest {
     assertTrue( executor.isStopped() );
   }
 
+  @Test
+  public void testExecuteConcurrentModification() throws Exception {
+
+    String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
+      prepareExecution( false ).
+      sqlTransGenerator( sqlTransGenerator ).
+      serviceTrans( serviceTrans ).
+      genTrans( genTrans ).
+      build();
+
+    final DataServiceExecutor.ExecutionPoint stage = DataServiceExecutor.ExecutionPoint.OPTIMIZE;
+    final ListMultimap<DataServiceExecutor.ExecutionPoint, Runnable> listenerMap = executor.getListenerMap();
+    final Runnable task = new Runnable() {
+      @Override public void run() {
+        // Remove itself on run
+        assertTrue( listenerMap.remove( stage, this ) );
+      }
+    };
+
+    listenerMap.put( stage, task );
+    executor.executeQuery();
+
+    // Note the error reported to logs
+    verify( genTrans.getLogChannel() ).logError( anyString(),
+      eq( stage ), eq( ImmutableList.of( task ) ), eq( ImmutableList.of() )
+    );
+  }
 }

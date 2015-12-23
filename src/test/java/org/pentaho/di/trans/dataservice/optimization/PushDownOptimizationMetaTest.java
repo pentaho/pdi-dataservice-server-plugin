@@ -22,14 +22,15 @@
 
 package org.pentaho.di.trans.dataservice.optimization;
 
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.junit.Before;
 import org.junit.Test;
-import org.pentaho.di.core.sql.SQL;
-import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 
-import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,34 +39,37 @@ public class PushDownOptimizationMetaTest {
 
   private PushDownOptimizationMeta pushDownOptimizationMeta;
   private DataServiceExecutor executor;
-  private Trans trans;
   private PushDownType pushDownType;
-  private SQL sql;
   public static final String STEP_NAME = "Optimized Step";
 
   @Before
   public void setUp() throws Exception {
     pushDownOptimizationMeta = new PushDownOptimizationMeta();
     executor = mock( DataServiceExecutor.class );
-    trans = mock( Trans.class );
     pushDownType = mock( PushDownType.class );
-    sql = mock( SQL.class );
 
     pushDownOptimizationMeta.setStepName( STEP_NAME );
     pushDownOptimizationMeta.setType( pushDownType );
-    when( executor.getServiceTrans() ).thenReturn( trans );
-    when( executor.getSql() ).thenReturn( sql );
   }
 
   @Test
   public void testActivate() throws Exception {
-    assertThat( pushDownOptimizationMeta.activate( executor ), is( false ) );
+    ListenableFuture<Boolean> future = Futures.immediateFuture( true );
+    when( pushDownType.activate( executor, pushDownOptimizationMeta ) ).thenReturn( future );
+    assertThat( pushDownOptimizationMeta.activate( executor ), sameInstance( future ) );
+  }
 
-    StepInterface stepInterface = mock( StepInterface.class );
-    when( trans.findRunThread( STEP_NAME ) ).thenReturn( stepInterface );
+  @Test
+  public void testPreview() throws Exception {
+    OptimizationImpactInfo info = new OptimizationImpactInfo( STEP_NAME );
+    info.setModified( true );
+    when( pushDownType.preview( executor, pushDownOptimizationMeta ) ).thenReturn( info );
 
-    when( pushDownType.activate( executor, stepInterface ) ).thenReturn( true, false );
-    assertThat( pushDownOptimizationMeta.activate( executor ), is( true ) );
-    assertThat( pushDownOptimizationMeta.activate( executor ), is( false ) );
+    assertThat( pushDownOptimizationMeta.preview( executor ), sameInstance( info ) );
+
+    pushDownOptimizationMeta.setEnabled( false );
+    OptimizationImpactInfo disabled = pushDownOptimizationMeta.preview( executor );
+    assertThat( disabled.isModified(), is( false ) );
+    assertThat( disabled.getDescription(), startsWith( "#Optimization is disabled" ) );
   }
 }

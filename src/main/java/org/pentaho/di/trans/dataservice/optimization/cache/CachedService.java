@@ -243,7 +243,7 @@ class CachedService implements Serializable {
     }
 
     @Override public int hashCode() {
-      return Objects.hashCode( transMetaVersionId, whereClause, orderByFields );
+      return Objects.hashCode( transMetaVersionId, parameters, whereClause, orderByFields );
     }
 
     @Override public String toString() {

@@ -22,8 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.optimization;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
 import org.pentaho.ui.xul.XulEventSource;
@@ -98,14 +98,12 @@ public class PushDownOptimizationMeta implements XulEventSource {
     this.enabled = enabled;
   }
 
-  public boolean activate( DataServiceExecutor executor ) {
-    StepInterface stepInterface = executor.getServiceTrans().findRunThread( getStepName() );
-    return getType().activate( executor, stepInterface );
+  public ListenableFuture<Boolean> activate( DataServiceExecutor executor ) {
+    return getType().activate( executor, this );
   }
 
   public OptimizationImpactInfo preview( DataServiceExecutor executor ) {
-    StepInterface stepInterface = executor.getServiceTrans().findRunThread( getStepName() );
-    final OptimizationImpactInfo preview = getType().preview( executor, stepInterface );
+    final OptimizationImpactInfo preview = getType().preview( executor, this );
     if ( enabled ) {
       return preview;
     } else {

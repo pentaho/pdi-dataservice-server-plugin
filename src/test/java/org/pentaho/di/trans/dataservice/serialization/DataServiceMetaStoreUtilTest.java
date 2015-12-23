@@ -27,6 +27,8 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +51,6 @@ import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
-import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
@@ -471,12 +472,12 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     @Override public void init( TransMeta transMeta, DataServiceMeta dataService, PushDownOptimizationMeta optMeta ) {
     }
 
-    @Override public boolean activate( DataServiceExecutor executor, StepInterface stepInterface ) {
-      return false;
+    @Override public ListenableFuture<Boolean> activate( DataServiceExecutor executor, PushDownOptimizationMeta meta ) {
+      return Futures.immediateFuture( false );
     }
 
-    @Override public OptimizationImpactInfo preview( DataServiceExecutor executor, StepInterface stepInterface ) {
-      return null;
+    @Override public OptimizationImpactInfo preview( DataServiceExecutor executor, PushDownOptimizationMeta meta ) {
+      return new OptimizationImpactInfo( meta.getStepName() );
     }
 
   }

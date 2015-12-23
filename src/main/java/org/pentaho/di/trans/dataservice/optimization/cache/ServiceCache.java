@@ -37,6 +37,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.dataservice.optimization.StepOptimization;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 
@@ -58,7 +59,7 @@ import static org.pentaho.caching.api.Constants.DEFAULT_TEMPLATE;
 /**
  * @author nhudak
  */
-public class ServiceCache implements PushDownType {
+public class ServiceCache extends StepOptimization {
   public static final String NAME = "Service Cache";
   private final ServiceCacheFactory factory;
   public static final String SERVICE_CACHE_TEMPLATE_NAME = "template_name";
