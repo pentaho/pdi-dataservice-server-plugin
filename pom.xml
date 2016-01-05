@@ -2,11 +2,13 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
+  
   <parent>
     <groupId>org.pentaho</groupId>
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
-    <version>1.1.6</version>
+    <version>1.1.7</version>
   </parent>
+  
   <groupId>pentaho</groupId>
   <artifactId>pdi-dataservice-server-plugin</artifactId>
   <version>6.1-SNAPSHOT</version>
@@ -14,6 +16,21 @@
   <name>Pentaho Community Edition Project: ${project.artifactId}</name>
   <description>A server for PDI Data Services</description>
   <url>http://www.pentaho.com</url>
+  
+  <scm>
+    <connection>scm:git:git@github.com:pentaho/${project.artifactId}.git</connection>
+    <developerConnection>scm:git:git@github.com:pentaho/${project.artifactId}.git</developerConnection>
+    <url>scm:git:git@github.com:pentaho/${project.artifactId}.git</url>
+  </scm>
+  
+  <distributionManagement>
+    <site>
+      <id>pentaho.public.snapshot.repo</id>
+      <name>${project.artifactId}-${project.version}</name>
+      <url>dav:${site.publish.url}/${project.groupId}/pdi-dataservice-server-plugin-${project.version}</url>
+    </site>
+  </distributionManagement>
+  
   <licenses>
     <license>
       <name>Pentaho Proprietary License</name>
@@ -21,6 +38,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+  
   <developers>
     <developer>
       <name>Matt Casters</name>
@@ -65,17 +83,18 @@
       </roles>
     </developer>
   </developers>
+  
   <properties>
     <dependency.pentaho-kettle.version>6.1-SNAPSHOT</dependency.pentaho-kettle.version>
     <mockito.version>1.9.5</mockito.version>
     <dependency.pentaho-mongodb-plugin.revision>6.1-SNAPSHOT</dependency.pentaho-mongodb-plugin.revision>
     <guava.version>17.0</guava.version>
-    <junit.version>4.11</junit.version>
     <mongo-driver.version>2.11.1</mongo-driver.version>
     <servlet-api.version>2.3</servlet-api.version>
     <swt.version>4.3.2</swt.version>
     <jface.version>3.3.0-I20070606-0010</jface.version>
   </properties>
+  
   <dependencies>
     <dependency>
       <groupId>pentaho-kettle</groupId>
@@ -161,12 +180,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-mapper-asl</artifactId>
       <version>1.9.2</version>
@@ -215,7 +228,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.0</version>
         <configuration>
           <source>1.7</source>
           <target>1.7</target>
@@ -244,25 +256,4 @@
       </plugin>
     </plugins>
   </build>
-  <!-- this is for bootstrapping only; you should really just add this to your settings.xml -->
-  <repositories>
-    <repository>
-      <id>pentaho.resolve.repo</id>
-      <name>Pentaho Group Resolve Repository</name>
-      <url>http://nexus.pentaho.org/content/groups/omni/</url>
-      <releases>
-        <updatePolicy>always</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
-      </releases>
-      <snapshots>
-        <updatePolicy>always</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>repo.pentaho.org</id>
-      <name>repo.pentaho.org</name>
-      <url>http://repository.pentaho.org/artifactory/pentaho</url>
-    </repository>
-  </repositories>
 </project>
