@@ -26,6 +26,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,6 +54,7 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -68,6 +70,7 @@ public class TransDataServletTest extends BaseServletTest {
   private static final String HEADER_SQL = "SQL";
   private static final String HEADER_MAX_ROWS = "MaxRows";
   private static final String TEST_SQL_QUERY = "SELECT * FROM dataservice_test";
+  private static final String TEST_LARGE_SQL_QUERY = TEST_SQL_QUERY + " /" + StringUtils.repeat( "*", 8000 ) + "/";
   private static final String DEBUG_TRANS_FILE = "debugtransfile";
   private static final String TEST_MAX_ROWS = "100";
   private static final String PARAM_DEBUG_TRANS = "debugtrans";
@@ -122,9 +125,12 @@ public class TransDataServletTest extends BaseServletTest {
       .prepareQuery( TEST_SQL_QUERY, Integer.valueOf( TEST_MAX_ROWS ), ImmutableMap.of( "FOO", "BAR" ) );
     when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
 
-    when( request.getMethod() ).thenReturn( "PUT" );
+    when( request.getMethod() ).thenReturn( "POST" );
     servlet.service( request, response );
     verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
+
+    verify( request, times( 1 ) ).getParameter( HEADER_SQL );
+    verify( request, times( 1 ) ).getParameter( HEADER_MAX_ROWS );
 
     verify( response ).setStatus( HttpServletResponse.SC_OK );
     verify( response ).setContentType( "binary/jdbc" );
@@ -143,6 +149,25 @@ public class TransDataServletTest extends BaseServletTest {
       (TransConfiguration) argThat( hasProperty( "transMeta", is( genTransMeta ) ) )
     );
     Files.readLines( debugTrans, Charsets.UTF_8 ).contains( GEN_TRANS_XML );
+  }
+
+  @Test
+  public void testLargeSQLQuery() throws Exception {
+    parameters.put( HEADER_MAX_ROWS, TEST_MAX_ROWS );
+    parameters.put( HEADER_SQL, TEST_LARGE_SQL_QUERY );
+
+    Query query = mock( Query.class );
+    doReturn( query )
+        .when( client )
+        .prepareQuery( TEST_LARGE_SQL_QUERY, Integer.valueOf( TEST_MAX_ROWS ), ImmutableMap.<String, String>of() );
+    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+
+    when( request.getMethod() ).thenReturn( "POST" );
+    servlet.service( request, response );
+    verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
+
+    verify( request, never() ).getHeader( HEADER_SQL );
+    verify( request, never() ).getHeader( HEADER_MAX_ROWS );
   }
 
   @Test
