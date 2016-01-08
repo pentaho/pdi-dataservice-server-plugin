@@ -65,8 +65,11 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
 
   private static final long serialVersionUID = 3634806745372015720L;
 
-  public static final String CONTEXT_PATH = "/sql";
+  private static final String MAX_ROWS = "MaxRows";
+  private static final String SQL = "SQL";
   private final DataServiceClient client;
+
+  public static final String CONTEXT_PATH = "/sql";
 
   public TransDataServlet( DataServiceContext context ) {
     this.client = context.createClient( new ServletRepositoryAdapter( this ) );
@@ -85,14 +88,20 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
       logDebug( BaseMessages.getString( PKG, "GetStatusServlet.StatusRequested" ) );
     }
 
-    String sqlQuery = request.getHeader( "SQL" );
+    String
+        sqlQuery =
+        !Strings.isNullOrEmpty( request.getParameter( SQL ) ) ? request.getParameter( SQL ) : request.getHeader( SQL );
     if ( Strings.isNullOrEmpty( sqlQuery ) ) {
       response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
       response.setContentType( MediaType.PLAIN_TEXT_UTF_8.toString() );
       response.getWriter().println( "SQL query not specified" );
       return;
     }
-    final int maxRows = Const.toInt( request.getHeader( "MaxRows" ), -1 );
+    String
+        maxRowsValue =
+        !Strings.isNullOrEmpty( request.getParameter( MAX_ROWS ) ) ? request.getParameter( MAX_ROWS )
+            : request.getHeader( MAX_ROWS );
+    final int maxRows = Const.toInt( maxRowsValue, -1 );
 
     final String debugTransFile = request.getParameter( "debugtrans" );
 
