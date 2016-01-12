@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.optimization.mongod;
 
 import com.mongodb.QueryBuilder;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.jdbc.ThinUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -107,6 +108,14 @@ public enum MongoFunc {
       queryBuilder
         .and( attribute )
         .notIn( value );
+    }
+  },
+
+  LIKE( Condition.FUNC_LIKE ) {
+    @Override public void affirm( QueryBuilder queryBuilder, String attribute, Object value ) {
+      queryBuilder
+          .and( attribute )
+          .regex( ThinUtil.like( value.toString() ) );
     }
   };
 

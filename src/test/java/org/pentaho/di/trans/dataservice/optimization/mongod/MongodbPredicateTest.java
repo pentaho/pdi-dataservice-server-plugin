@@ -160,6 +160,11 @@ public class MongodbPredicateTest {
       asMatch( condition( "sField1 = 'baz' OR NOT (sField2 = 'foo')" ) ) );
   }
 
+  @Test public void testLike() throws KettleException {
+    assertJsonEquals( "{ \"$match\" : { \"sField1\" : { \"$regex\" : \".*?foo.*?\" , \"$options\" : \"is\"}}}",
+        asMatch( condition( "sField1 LIKE '%foo%'" ) ) );
+  }
+
   private String asMatch( Condition condition ) throws KettleException {
     return new MongodbPredicate( condition, resolver, fieldMappings ).asMatch();
   }
