@@ -22,11 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import static org.pentaho.di.i18n.BaseMessages.getString;
-
-import java.lang.reflect.InvocationTargetException;
-
-import org.pentaho.di.core.Const;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceValidationException;
@@ -41,7 +38,9 @@ import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
-import com.google.common.collect.ImmutableList;
+import java.lang.reflect.InvocationTargetException;
+
+import static org.pentaho.di.i18n.BaseMessages.getString;
 
 public class DataServiceDialogController extends AbstractController {
   public static final String XUL_DIALOG_ID = "dataservice-dialog";
@@ -76,9 +75,7 @@ public class DataServiceDialogController extends AbstractController {
   }
 
   public void showTestDialog() throws XulException {
-    if ( Const.isEmpty( model.getServiceName() ) ) {
-      error( getString( PKG, "DataServiceDialog.TestError.Title" ), getString( PKG,
-          "DataServiceDialog.TestError.NameMissing" ) );
+    if ( dataServiceHasNoName( model ) ) {
       return;
     }
 
@@ -87,6 +84,10 @@ public class DataServiceDialogController extends AbstractController {
 
   public void saveAndClose() throws XulException {
     try {
+      if ( dataServiceHasNoName( model ) ) {
+        return;
+      }
+
       String existing = dataService != null ? dataService.getName() : null;
 
       delegate.save( delegate.checkConflict( delegate.checkDefined( model.getDataService() ), existing ) );
@@ -133,5 +134,15 @@ public class DataServiceDialogController extends AbstractController {
 
   public void setDataService( DataServiceMeta dataService ) {
     this.dataService = dataService;
+  }
+
+  private boolean dataServiceHasNoName( DataServiceModel serviceModel ) throws XulException {
+    boolean noName = Strings.isNullOrEmpty( serviceModel.getServiceName() );
+    if ( noName ) {
+      error( getString( PKG, "DataServiceDialog.NameMissingError.Title" ), getString( PKG,
+          "DataServiceDialog.NameMissingError.Message" ) );
+    }
+
+    return noName;
   }
 }
