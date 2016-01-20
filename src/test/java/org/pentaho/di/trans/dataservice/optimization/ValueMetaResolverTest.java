@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.optimization;
 
+import com.google.common.collect.ObjectArrays;
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
@@ -33,6 +34,7 @@ import java.text.SimpleDateFormat;
 
 import static com.mongodb.util.MyAsserts.assertTrue;
 import static junit.framework.Assert.assertEquals;
+import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -115,7 +117,16 @@ public class ValueMetaResolverTest  {
     ValueMetaResolver resolver = new ValueMetaResolver(
       getTestRowMeta( ValueMetaInterface.TYPE_INTEGER ) );
     Object[] values = resolver.inListToTypedObjectArray( "field", "1;2;3" );
-    assertThat( values, equalTo( new Object[]{1l, 2l, 3l} ) );
+    assertThat( values, arrayContaining( (Object) 1L, 2L, 3L ) );
+
+    final ValueMetaInterface valueMeta = resolver.getValueMeta( "field" );
+
+    String[] stringValues = ObjectArrays.newArray( String.class, values.length );
+    for ( int i = 0; i < values.length; i++ ) {
+      stringValues[i] = valueMeta.getString( values[i] );
+    }
+
+    assertThat( stringValues, arrayContaining( "1", "2", "3" ) );
   }
 
   @Test

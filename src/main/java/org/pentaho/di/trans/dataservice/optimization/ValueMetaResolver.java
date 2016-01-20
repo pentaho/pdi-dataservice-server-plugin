@@ -22,6 +22,9 @@
 
 package org.pentaho.di.trans.dataservice.optimization;
 
+import com.google.common.base.Function;
+import com.google.common.base.Strings;
+import com.google.common.collect.FluentIterable;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -31,12 +34,8 @@ import org.pentaho.di.core.row.value.ValueMetaTimestamp;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-
-import static org.pentaho.di.core.row.ValueMetaInterface.*;
 
 /**
  * Class to support retrieval of typed values and ValueMeta.
@@ -49,16 +48,39 @@ public class ValueMetaResolver {
   private final Map<String, ValueMetaInterface> fieldNameValueMetaMap;
   private static final String ANSI_DATE_LITERAL = "yyyy-MM-dd";
   private static final String ANSI_TIMESTAMP_LITERAL = "yyyy-MM-dd HH:mm:ss.SSS";
-
+  private static final String NUMERIC_LITERAL = "###0.###";
   public ValueMetaResolver( RowMetaInterface rowMeta ) {
-    Map<String, ValueMetaInterface> tempFieldNameValueMetaMap =
-      new HashMap<String, ValueMetaInterface>();
-    for ( int i = 0; i < rowMeta.size(); i++ ) {
-      tempFieldNameValueMetaMap.put( rowMeta.getFieldNames()[i],
-        rowMeta.getValueMeta( i ) );
-    }
-    fieldNameValueMetaMap = Collections.unmodifiableMap( tempFieldNameValueMetaMap );
+    fieldNameValueMetaMap = FluentIterable.from( rowMeta.getValueMetaList() )
+      .transform( setDefaultConversionMask )
+      .uniqueIndex( new Function<ValueMetaInterface, String>() {
+        @Override public String apply( ValueMetaInterface valueMetaInterface ) {
+          return valueMetaInterface.getName();
+        }
+      } );
   }
+
+  private static final Function<ValueMetaInterface, ValueMetaInterface> setDefaultConversionMask =
+    new Function<ValueMetaInterface, ValueMetaInterface>() {
+      @Override public ValueMetaInterface apply( ValueMetaInterface valueMetaInterface ) {
+        valueMetaInterface = valueMetaInterface.clone();
+
+        if ( Strings.isNullOrEmpty( valueMetaInterface.getConversionMask() ) ) {
+          switch ( valueMetaInterface.getType() ) {
+            case ValueMetaInterface.TYPE_DATE:
+              valueMetaInterface.setConversionMask( ANSI_DATE_LITERAL );
+              break;
+            case ValueMetaInterface.TYPE_TIMESTAMP:
+              valueMetaInterface.setConversionMask( ANSI_TIMESTAMP_LITERAL );
+              break;
+            case ValueMetaInterface.TYPE_INTEGER:
+            case ValueMetaInterface.TYPE_NUMBER:
+            case ValueMetaInterface.TYPE_BIGNUMBER:
+              valueMetaInterface.setConversionMask( NUMERIC_LITERAL );
+          }
+        }
+        return valueMetaInterface;
+      }
+    };
 
   public ValueMetaInterface getValueMeta( String fieldName ) throws PushDownOptimizationException {
     ValueMetaInterface valueMeta = fieldNameValueMetaMap.get( fieldName );
@@ -106,24 +128,24 @@ public class ValueMetaResolver {
     final int type = valueMeta.getType();
     Object[] objects = getTypedArray( type, inList.length );
     for ( int i = 0; i < inList.length; i++ ) {
-      objects[i] = convertToType( valueMeta, TYPE_STRING, inList[i] );
+      objects[i] = convertToType( valueMeta, ValueMetaInterface.TYPE_STRING, inList[i] );
     }
     return objects;
   }
 
   private Object[] getTypedArray( int type, int length ) throws PushDownOptimizationException {
     switch ( type ) {
-      case TYPE_NUMBER:
+      case ValueMetaInterface.TYPE_NUMBER:
         return new Double[ length ];
-      case TYPE_DATE:
+      case ValueMetaInterface.TYPE_DATE:
         return new Date[ length ];
-      case TYPE_TIMESTAMP:
+      case ValueMetaInterface.TYPE_TIMESTAMP:
         return new Timestamp[ length ];
-      case TYPE_BOOLEAN:
+      case ValueMetaInterface.TYPE_BOOLEAN:
         return new Boolean[ length ];
-      case TYPE_INTEGER:
+      case ValueMetaInterface.TYPE_INTEGER:
         return new Long[ length ];
-      case TYPE_BIGNUMBER:
+      case ValueMetaInterface.TYPE_BIGNUMBER:
         return new BigDecimal[ length ];
       default:
         throw new PushDownOptimizationException( "Cannot create an array of type code " + type );
@@ -147,10 +169,10 @@ public class ValueMetaResolver {
 
   private Object tryAnsiFormatConversion( ValueMetaInterface valueMeta, int originalType, Object value )
     throws PushDownOptimizationException {
-    if ( valueMeta.getType() == TYPE_DATE ) {
+    if ( valueMeta.getType() == ValueMetaInterface.TYPE_DATE ) {
       return tryConversionWithMask(
         valueMeta, originalType, value, ANSI_DATE_LITERAL );
-    } else if ( valueMeta.getType() == TYPE_TIMESTAMP ) {
+    } else if ( valueMeta.getType() == ValueMetaInterface.TYPE_TIMESTAMP ) {
       return tryConversionWithMask(
         new ValueMetaTimestamp(), originalType, value, ANSI_TIMESTAMP_LITERAL );
     }
