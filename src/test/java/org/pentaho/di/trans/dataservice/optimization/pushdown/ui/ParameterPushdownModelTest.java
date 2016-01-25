@@ -32,9 +32,11 @@ import org.mockito.Mock;
 import org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdown;
 
 import java.beans.PropertyChangeSupport;
+import java.util.Vector;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasProperty;
@@ -90,5 +92,28 @@ public class ParameterPushdownModelTest {
   public void testDefinitionAdapter() throws Exception {
     ParameterPushdown.Definition definition = parameterPushdown.createDefinition();
     ParameterPushdownModel.DefinitionAdapter adapter = model.createAdapter( definition );
+  }
+
+  @Test
+  public void testSetFieldList() throws Exception {
+    model.reset();
+    model.setFieldList( ImmutableList.of( "field1", "field2", "field3" ) );
+
+    Vector<String> fieldList = model.getDefinitions().get( 0 ).getFieldList();
+    assertThat( fieldList.get( 0 ), equalTo( "" ) );
+    assertThat( fieldList.get( 1 ), equalTo( "field1" ) );
+    assertThat( fieldList.get( 2 ), equalTo( "field2" ) );
+    assertThat( fieldList.get( 3 ), equalTo( "field3" ) );
+  }
+
+  @Test
+  public void testGetParameter() throws Exception {
+    model.reset();
+    ParameterPushdownModel.DefinitionAdapter definitionAdapter =  model.getDefinitions().get( 0 );
+    definitionAdapter.setFieldName( "field1" );
+    definitionAdapter.setFieldList( ImmutableList.of( "field1", "field2", "field3" ) );
+
+    assertThat( definitionAdapter.getParameter(),
+        equalTo( definitionAdapter.getFieldName().toUpperCase() + ParameterPushdown.PARAMETER_PREFIX ) );
   }
 }

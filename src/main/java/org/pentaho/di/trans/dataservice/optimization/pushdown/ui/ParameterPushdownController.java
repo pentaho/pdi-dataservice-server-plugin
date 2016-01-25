@@ -59,9 +59,6 @@ public class ParameterPushdownController extends AbstractController {
     model.reset();
   }
 
-  public void selectFields() {
-  }
-
   public ParameterPushdownModel getModel() {
     return model;
   }

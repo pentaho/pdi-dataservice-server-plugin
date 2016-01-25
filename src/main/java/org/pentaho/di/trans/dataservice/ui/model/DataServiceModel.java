@@ -26,12 +26,16 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -68,6 +72,24 @@ public class DataServiceModel extends XulEventSourceAdapter {
     String previous = this.serviceStep;
     this.serviceStep = serviceStep;
     firePropertyChange( "serviceStep", previous, serviceStep );
+  }
+
+  public ImmutableList<String> getStepFields() {
+    List<String> fields = new ArrayList<>();
+    if ( getTransMeta() != null && getServiceStep() != null ) {
+      StepMeta stepMeta = transMeta.findStep( serviceStep );
+      try {
+        RowMetaInterface row = transMeta.getStepFields( stepMeta );
+        for ( int i = 0; i < row.size(); i++ ) {
+          fields.add( row.getValueMeta( i ).getName() );
+        }
+        return ImmutableList.copyOf( fields );
+      } catch ( KettleException e ) {
+        // Do nothing for now
+      }
+    }
+
+    return ImmutableList.of();
   }
 
   public ImmutableList<PushDownOptimizationMeta> getPushDownOptimizations() {
