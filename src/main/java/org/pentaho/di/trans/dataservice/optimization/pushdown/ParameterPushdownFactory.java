@@ -31,6 +31,8 @@ import org.pentaho.di.trans.dataservice.optimization.pushdown.ui.ParameterPushdo
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.List;
 
 /**
@@ -69,7 +71,7 @@ public class ParameterPushdownFactory implements PushDownFactory {
     return new ParameterPushdownController( createModel( dialogModel ) );
   }
 
-  public ParameterPushdownModel createModel( DataServiceModel dialogModel ) {
+  public ParameterPushdownModel createModel( final DataServiceModel dialogModel ) {
     List<PushDownOptimizationMeta> optimizations = dialogModel.getPushDownOptimizations( ParameterPushdown.class );
 
     ParameterPushdown parameterPushdown;
@@ -89,6 +91,14 @@ public class ParameterPushdownFactory implements PushDownFactory {
       dialogModel.removeAll( optimizations.subList( 1, optimizations.size() ) );
     }
 
-    return new ParameterPushdownModel( parameterPushdown );
+    final ParameterPushdownModel parameterPushdownModel = new ParameterPushdownModel( parameterPushdown );
+    parameterPushdownModel.setFieldList( dialogModel.getStepFields() );
+    dialogModel.addPropertyChangeListener( "serviceStep", new PropertyChangeListener() {
+      @Override public void propertyChange( PropertyChangeEvent propertyChangeEvent ) {
+        parameterPushdownModel.setFieldList( dialogModel.getStepFields() );
+      }
+    } );
+
+    return parameterPushdownModel;
   }
 }

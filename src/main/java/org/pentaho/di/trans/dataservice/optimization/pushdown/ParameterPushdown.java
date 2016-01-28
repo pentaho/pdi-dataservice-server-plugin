@@ -65,6 +65,8 @@ public class ParameterPushdown implements PushDownType {
   public static final String FIELD_NAME_ATTRIBUTE = "column_name";
   public static final String FORMAT_ATTRIBUTE = "parameter_format";
   public static final String DEFAULT_FORMAT = "%s";
+  public static final String PARAMETER_PREFIX = "_QUERY";
+
   private static final Joiner.MapJoiner mapJoiner = Joiner.on( '\n' ).withKeyValueSeparator( " = " ).useForNull( "" );
 
   @MetaStoreAttribute( key = DEFINITIONS_LIST_ATTRIBUTE )

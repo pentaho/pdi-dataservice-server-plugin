@@ -29,13 +29,18 @@ import com.google.common.collect.ImmutableMap;
 import org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdown;
 import org.pentaho.di.trans.dataservice.ui.AbstractModel;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 /**
  * @author nhudak
  */
 public class ParameterPushdownModel extends AbstractModel {
+  private List<String> fieldList = new ArrayList<>();
+
   private final ParameterPushdown parameterPushdown;
   private ImmutableList<DefinitionAdapter> definitions = ImmutableList.of();
 
@@ -77,6 +82,14 @@ public class ParameterPushdownModel extends AbstractModel {
     return definitions;
   }
 
+  public void setFieldList( ImmutableList<String> fieldList ) {
+    this.fieldList = fieldList;
+    for ( DefinitionAdapter definitionAdapter : definitions ) {
+      definitionAdapter.setFieldList( fieldList );
+    }
+    firePropertyChange( "definitions", null, definitions );
+  }
+
   @Override public Map<String, Object> snapshot() {
     return ImmutableMap.of(
       "definitions", (Object) getDefinitions()
@@ -85,19 +98,38 @@ public class ParameterPushdownModel extends AbstractModel {
 
   @VisibleForTesting
   protected DefinitionAdapter createAdapter( ParameterPushdown.Definition definition ) {
-    return new DefinitionAdapter( definition );
+    DefinitionAdapter definitionAdapter = new DefinitionAdapter( definition );
+    definitionAdapter.setFieldList( fieldList );
+    return definitionAdapter;
   }
 
   public class DefinitionAdapter extends AbstractModel {
 
     private final ParameterPushdown.Definition definition;
+    private List<String> fieldList;
 
     public String getFieldName() {
       return Strings.nullToEmpty( definition.getFieldName() );
     }
 
     public String getParameter() {
+      if ( Strings.isNullOrEmpty( definition.getParameter() ) && !Strings.isNullOrEmpty( definition.getFieldName() ) ) {
+        if ( fieldList.contains( definition.getFieldName() ) ) {
+          definition.setParameter( definition.getFieldName().toUpperCase() + ParameterPushdown.PARAMETER_PREFIX );
+        }
+      }
       return Strings.nullToEmpty( definition.getParameter() );
+    }
+
+    public void setFieldList( List<String> fieldList ) {
+      this.fieldList = fieldList;
+    }
+
+    public Vector<String> getFieldList() {
+      Vector<String> v = new Vector<>();
+      v.add( "" );
+      v.addAll( fieldList );
+      return v;
     }
 
     public String getFormat() {

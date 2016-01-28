@@ -29,10 +29,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.step.StepMeta;
 
 import java.beans.PropertyChangeSupport;
 import java.util.Collections;
@@ -46,6 +50,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -59,6 +64,9 @@ public class DataServiceModelTest {
 
   @Mock TransMeta transMeta;
   @Mock PropertyChangeSupport propertyChangeSupport;
+  @Mock StepMeta stepMeta;
+  @Mock RowMetaInterface rowMetaInterface;
+  @Mock ValueMetaInterface valueMetaInterface;
   DataServiceModel model;
 
   @Before
@@ -140,6 +148,38 @@ public class DataServiceModelTest {
       hasProperty( "pushDownOptimizationMeta", contains( optimizationMeta ) )
     ) );
     verify( pushDownType ).init( transMeta, dataService, optimizationMeta );
+  }
+
+  @Test
+  public void testGetStepFields() throws Exception {
+    model.setServiceStep( "step" );
+    when( transMeta.findStep( model.getServiceStep() ) ).thenReturn( stepMeta );
+    when( transMeta.getStepFields( stepMeta ) ).thenReturn( rowMetaInterface );
+    when( rowMetaInterface.size() ).thenReturn( 1 );
+    when( rowMetaInterface.getValueMeta( 0 ) ).thenReturn( valueMetaInterface );
+    when( valueMetaInterface.getName() ).thenReturn( "serviceField" );
+
+    ImmutableList<String> stepFields = model.getStepFields();
+
+    verify( transMeta ).findStep( "step" );
+    verify( transMeta ).getStepFields( stepMeta );
+
+    assertThat( stepFields.size(), equalTo( 1 ) );
+    assertThat( stepFields.get( 0 ), equalTo( "serviceField" ) );
+  }
+
+  @Test
+  public void testGetStepFieldsException() throws Exception {
+    model.setServiceStep( "step" );
+    when( transMeta.findStep( model.getServiceStep() ) ).thenReturn( stepMeta );
+    when( transMeta.getStepFields( stepMeta ) ).thenThrow( new KettleStepException() );
+
+    ImmutableList<String> stepFields = model.getStepFields();
+
+    verify( transMeta ).findStep( "step" );
+    verify( transMeta ).getStepFields( stepMeta );
+
+    assertThat( stepFields.size(), equalTo( 0 ) );
   }
 
 }
