@@ -14,7 +14,7 @@
             buttonlabelaccept="${DataServiceTest.Dialog.Close}"
             padding="10">
         <label value="SQL:"/>
-        <textbox id='sql-textbox' multiline="true" height="100" value="{default text}" context="global-keys"/>
+        <textbox id='sql-textbox' multiline="true" height="100" value="{default text}"/>
         <hbox align="right">
             <spacer flex="1"/>
             <button id="preview-opt-btn" label="${DataServiceTest.PreviewOptimization.Button}" onclick="dataServiceTestController.previewQueries()" />
