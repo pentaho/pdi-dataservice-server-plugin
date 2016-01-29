@@ -7,15 +7,14 @@
     </tabs>
     <tabpanels id="opt_panels">
         <tabpanel orient="vertical" padding="10">
-            <label value="Map the value of a condition of the incoming SQL WHERE clause to a transformation parameter."/>
             <label control="param_definitions" value="Definitions:"/>
             <tree flex="1" id="param_definitions" editable="true">
                 <treecols>
-                    <treecol label="Data Service Field" editable="true" pen:binding="fieldName"
+                    <treecol label="WHERE Clause Column" editable="true" pen:binding="fieldName"
                              pen:combobinding="fieldList" type="editablecombobox"/>
-                    <treecol label="Parameter" editable="true"
+                    <treecol label="Transformation Parameter" editable="true"
                              pen:binding="parameter"/>
-                    <treecol label="Format" editable="true"
+                    <treecol label="Value Format" editable="true"
                              pen:binding="format"/>
                 </treecols>
                 <treechildren/>
