@@ -113,10 +113,9 @@ public class ParameterPushdownModel extends AbstractModel {
     }
 
     public String getParameter() {
-      if ( Strings.isNullOrEmpty( definition.getParameter() ) && !Strings.isNullOrEmpty( definition.getFieldName() ) ) {
-        if ( fieldList.contains( definition.getFieldName() ) ) {
-          definition.setParameter( definition.getFieldName().toUpperCase() + ParameterPushdown.PARAMETER_PREFIX );
-        }
+      if ( !Strings.isNullOrEmpty( definition.getFieldName() ) && ( Strings.isNullOrEmpty( definition.getParameter() )
+          || definition.getParameter().endsWith( ParameterPushdown.PARAMETER_PREFIX ) ) ) {
+        definition.setParameter( definition.getFieldName().toUpperCase() + ParameterPushdown.PARAMETER_PREFIX );
       }
       return Strings.nullToEmpty( definition.getParameter() );
     }
