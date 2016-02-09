@@ -24,12 +24,10 @@ package org.pentaho.di.trans.dataservice.www;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
-import com.google.common.net.MediaType;
+import com.google.common.collect.Maps;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
-import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.xml.XMLHandler;
-import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
@@ -37,16 +35,13 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.clients.Query;
-import org.pentaho.di.www.BaseHttpServlet;
-import org.pentaho.di.www.CartePluginInterface;
+import org.pentaho.di.www.BaseCartePlugin;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.HashMap;
+import java.io.OutputStream;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -58,12 +53,11 @@ import java.util.Map;
 @CarteServlet(
   id = "sql",
   name = "Get data from a data service",
-  description = "Get data from a transformation data service using SQL"
-  )
-public class TransDataServlet extends BaseHttpServlet implements CartePluginInterface {
-  private static Class<?> PKG = TransDataServlet.class; // for i18n purposes, needed by Translator2!! $NON-NLS-1$
-
+  description = "Get data from a transformation data service using SQL" )
+public class TransDataServlet extends BaseCartePlugin {
   private static final long serialVersionUID = 3634806745372015720L;
+
+  public static final String PARAMETER_PREFIX = "PARAMETER_";
 
   private static final String MAX_ROWS = "MaxRows";
   private static final String SQL = "SQL";
@@ -73,67 +67,60 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
 
   public TransDataServlet( DataServiceContext context ) {
     this.client = context.createClient( new ServletRepositoryAdapter( this ) );
+    log = context.getLogChannel();
   }
 
-  public void doPut( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-    doGet( request, response );
-  }
-
-  public void doGet( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-    if ( isJettyMode() && !request.getContextPath().startsWith( CONTEXT_PATH ) ) {
-      return;
-    }
-
-    if ( log.isDebug() ) {
-      logDebug( BaseMessages.getString( PKG, "GetStatusServlet.StatusRequested" ) );
-    }
-
+  public void handleRequest( CarteRequest request ) throws IOException {
     String
-        sqlQuery =
-        !Strings.isNullOrEmpty( request.getParameter( SQL ) ) ? request.getParameter( SQL ) : request.getHeader( SQL );
+      sqlQuery =
+      !Strings.isNullOrEmpty( request.getParameter( SQL ) ) ? request.getParameter( SQL ) : request.getHeader( SQL );
     if ( Strings.isNullOrEmpty( sqlQuery ) ) {
-      response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
-      response.setContentType( MediaType.PLAIN_TEXT_UTF_8.toString() );
-      response.getWriter().println( "SQL query not specified" );
+
+      String sqlParamMissing = "SQL not specified";
+      logError( sqlParamMissing );
+      request.respond( 400 ).withMessage( sqlParamMissing );
       return;
     }
     String
-        maxRowsValue =
-        !Strings.isNullOrEmpty( request.getParameter( MAX_ROWS ) ) ? request.getParameter( MAX_ROWS )
-            : request.getHeader( MAX_ROWS );
+      maxRowsValue =
+      !Strings.isNullOrEmpty( request.getParameter( MAX_ROWS ) ) ? request.getParameter( MAX_ROWS )
+        : request.getHeader( MAX_ROWS );
     final int maxRows = Const.toInt( maxRowsValue, -1 );
 
     final String debugTransFile = request.getParameter( "debugtrans" );
 
     // Parse the variables in the request header...
     //
-    Map<String, String> parameters = getParametersFromRequestHeader( request );
+    Map<String, String> parameters = Maps.newHashMap();
+    collectParameters( parameters, request.getParameters() );
 
     try {
-      Query query = client.prepareQuery( sqlQuery, maxRows, parameters );
+      final Query query = client.prepareQuery( sqlQuery, maxRows, parameters );
 
       // For logging and tracking purposes, let's expose both the service transformation as well
       // as the generated transformation on this very carte instance
-      //
       List<Trans> transList = query.getTransList();
       for ( Trans trans : transList ) {
         monitorTransformation( trans );
       }
 
-      // Log the generated transformation if needed
-      //
       if ( !Strings.isNullOrEmpty( debugTransFile ) && !transList.isEmpty() ) {
         saveGeneratedTransformation( Iterables.getLast( transList ).getTransMeta(), debugTransFile );
       }
 
-      response.setStatus( HttpServletResponse.SC_OK );
-      response.setContentType( "binary/jdbc" );
-      query.writeTo( response.getOutputStream() );
+      request.respond( 200 )
+        .with( "binary/jdbc", new OutputStreamResponse() {
+          @Override public void write( OutputStream outputStream ) throws IOException {
+            query.writeTo( outputStream );
+          }
+        } );
+
 
     } catch ( Exception e ) {
-      log.logError( "Error executing SQL query: " + sqlQuery, e );
-      response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
-      response.getWriter().println( Strings.nullToEmpty( e.getMessage() ).trim() );
+      logError( "Error executing SQL query: " + sqlQuery, e );
+      request
+        .respond( 400 )
+        .withMessage( Strings.nullToEmpty( e.getMessage() ).trim() );
     }
   }
 
@@ -155,37 +142,21 @@ public class TransDataServlet extends BaseHttpServlet implements CartePluginInte
     }
   }
 
-  public static Map<String, String> getParametersFromRequestHeader( HttpServletRequest request ) {
-    Map<String, String> parameters = new HashMap<String, String>();
-    Enumeration<?> parameterNames = request.getParameterNames();
-    while ( parameterNames.hasMoreElements() ) {
-      String fullName = (String) parameterNames.nextElement();
-      if ( fullName.startsWith( "PARAMETER_" ) ) {
-        String parameterName = fullName.substring( "PARAMETER_".length() );
-        String value = request.getParameter( fullName );
-        if ( !Const.isEmpty( parameterName ) ) {
-          parameters.put( parameterName, Const.NVL( value, "" ) );
-        }
-      }
-    }
-
-    return parameters;
-  }
-
-  public String toString() {
-    return "Transformation data service";
-  }
-
-  public String getService() {
-    return CONTEXT_PATH + " (" + toString() + ")";
-  }
-
   public String getContextPath() {
     return CONTEXT_PATH;
   }
 
-  public void setLog( LogChannelInterface log ) {
-    this.log = log;
+  private Map<String, String> collectParameters( Map<String, String> parameters,
+                                                 Map<String, Collection<String>> map ) {
+    for ( Map.Entry<String, Collection<String>> parameterEntry : map.entrySet() ) {
+      String name = parameterEntry.getKey();
+      Iterator<String> value = parameterEntry.getValue().iterator();
+      if ( name.startsWith( PARAMETER_PREFIX ) && value.hasNext() ) {
+        parameters.put( name.substring( PARAMETER_PREFIX.length() ), value.next() );
+      }
+    }
+    return parameters;
   }
+
 
 }
