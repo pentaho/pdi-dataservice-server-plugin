@@ -22,21 +22,29 @@
 
 package org.pentaho.di.trans.dataservice.optimization;
 
+import com.google.common.base.Function;
+import com.google.common.base.Strings;
+import com.google.common.collect.FluentIterable;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaBase;
 import org.pentaho.di.core.row.value.ValueMetaTimestamp;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
-import static org.pentaho.di.core.row.ValueMetaInterface.*;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_BIGNUMBER;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_BOOLEAN;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_DATE;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_INTEGER;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NUMBER;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_STRING;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_TIMESTAMP;
 
 /**
  * Class to support retrieval of typed values and ValueMeta.
@@ -49,16 +57,39 @@ public class ValueMetaResolver {
   private final Map<String, ValueMetaInterface> fieldNameValueMetaMap;
   private static final String ANSI_DATE_LITERAL = "yyyy-MM-dd";
   private static final String ANSI_TIMESTAMP_LITERAL = "yyyy-MM-dd HH:mm:ss.SSS";
-
+  private static final String NUMERIC_LITERAL = "###0.###";
   public ValueMetaResolver( RowMetaInterface rowMeta ) {
-    Map<String, ValueMetaInterface> tempFieldNameValueMetaMap =
-      new HashMap<String, ValueMetaInterface>();
-    for ( int i = 0; i < rowMeta.size(); i++ ) {
-      tempFieldNameValueMetaMap.put( rowMeta.getFieldNames()[i],
-        rowMeta.getValueMeta( i ) );
-    }
-    fieldNameValueMetaMap = Collections.unmodifiableMap( tempFieldNameValueMetaMap );
+    fieldNameValueMetaMap = FluentIterable.from( rowMeta.getValueMetaList() )
+      .transform( setDefaultConversionMask )
+      .uniqueIndex( new Function<ValueMetaInterface, String>() {
+        @Override public String apply( ValueMetaInterface valueMetaInterface ) {
+          return valueMetaInterface.getName();
+        }
+      } );
   }
+
+  private static final Function<ValueMetaInterface, ValueMetaInterface> setDefaultConversionMask =
+    new Function<ValueMetaInterface, ValueMetaInterface>() {
+      @Override public ValueMetaInterface apply( ValueMetaInterface valueMetaInterface ) {
+        valueMetaInterface = valueMetaInterface.clone();
+
+        if ( Strings.isNullOrEmpty( valueMetaInterface.getConversionMask() ) ) {
+          switch ( valueMetaInterface.getType() ) {
+            case TYPE_DATE:
+              valueMetaInterface.setConversionMask( ANSI_DATE_LITERAL );
+              break;
+            case TYPE_TIMESTAMP:
+              valueMetaInterface.setConversionMask( ANSI_TIMESTAMP_LITERAL );
+              break;
+            case TYPE_INTEGER:
+            case TYPE_NUMBER:
+            case TYPE_BIGNUMBER:
+              valueMetaInterface.setConversionMask( NUMERIC_LITERAL );
+          }
+        }
+        return valueMetaInterface;
+      }
+    };
 
   public ValueMetaInterface getValueMeta( String fieldName ) throws PushDownOptimizationException {
     ValueMetaInterface valueMeta = fieldNameValueMetaMap.get( fieldName );
