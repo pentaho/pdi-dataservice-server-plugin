@@ -78,13 +78,18 @@ public class ResetCacheServlet extends BaseCartePlugin {
       cache.clear();
     }
 
-    request.respond( 200 ).with( MediaType.PLAIN_TEXT_UTF_8.toString(), new WriterResponse() {
-      @Override public void write( PrintWriter writer ) throws IOException {
-        for ( Cache cache : cacheSet ) {
-          writer.println( "Cleared cache: " + cache.getName() );
+    request
+      .respond( 200 )
+      .with( MediaType.PLAIN_TEXT_UTF_8.toString(), new WriterResponse() {
+        @Override public void write( PrintWriter writer ) throws IOException {
+          if ( cacheSet.isEmpty() ) {
+            writer.println( "No matching caches to flush." );
+          }
+          for ( Cache cache : cacheSet ) {
+            writer.println( "Cleared cache: " + cache.getName() );
+          }
+          writer.println( "Done" );
         }
-        writer.println( "Done" );
-      }
-    } );
+      } );
   }
 }

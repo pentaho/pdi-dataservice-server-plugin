@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.www;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import org.pentaho.di.core.Const;
@@ -89,11 +90,7 @@ public class TransDataServlet extends BaseCartePlugin {
 
     final String debugTransFile = request.getParameter( "debugtrans" );
 
-    // Parse the variables in the request header...
-    //
-    Map<String, String> parameters = Maps.newHashMap();
-    collectParameters( parameters, request.getParameters() );
-
+    Map<String, String> parameters = collectParameters( request.getParameters() );
     try {
       final Query query = client.prepareQuery( sqlQuery, maxRows, parameters );
 
@@ -146,16 +143,23 @@ public class TransDataServlet extends BaseCartePlugin {
     return CONTEXT_PATH;
   }
 
-  private Map<String, String> collectParameters( Map<String, String> parameters,
-                                                 Map<String, Collection<String>> map ) {
+  private Map<String, String> collectParameters( Map<String, Collection<String>> map ) {
+    Map<String, String> parameters = Maps.newHashMap();
     for ( Map.Entry<String, Collection<String>> parameterEntry : map.entrySet() ) {
       String name = parameterEntry.getKey();
       Iterator<String> value = parameterEntry.getValue().iterator();
       if ( name.startsWith( PARAMETER_PREFIX ) && value.hasNext() ) {
-        parameters.put( name.substring( PARAMETER_PREFIX.length() ), value.next() );
+        String firstVal = value.next();
+        parameters.put( name.substring( PARAMETER_PREFIX.length() ), firstVal );
+        if ( value.hasNext() ) {
+          logDetailed(
+            String.format(
+              "More than one value associated with param %s.  Setting to first found (%s)",
+              name, firstVal ) );
+        }
       }
     }
-    return parameters;
+    return ImmutableMap.copyOf( parameters );
   }
 
 

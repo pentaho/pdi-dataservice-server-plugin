@@ -64,8 +64,9 @@ public class ListDataServicesServlet extends BaseCartePlugin {
     try {
       serviceInformation = client.getServiceInformation();
     } catch ( SQLException e ) {
-      logError( "Failed to retrieve service info", e );
-      request.respond( 500 );
+      String msg = "Failed to retrieve service info";
+      logError( msg, e );
+      request.respond( 500 ).withMessage( msg );
       return;
     }
 
