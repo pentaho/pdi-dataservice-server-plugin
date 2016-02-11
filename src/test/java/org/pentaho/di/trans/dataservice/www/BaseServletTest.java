@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -31,10 +31,12 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
+import org.pentaho.di.www.CarteRequestHandler;
 import org.pentaho.di.www.SlaveServerConfig;
 import org.pentaho.di.www.TransformationMap;
 import org.pentaho.metastore.api.IMetaStore;
@@ -61,6 +63,9 @@ import static org.mockito.Mockito.when;
 public abstract class BaseServletTest extends BaseTest {
   @Mock HttpServletRequest request;
   @Mock HttpServletResponse response;
+  @Mock CarteRequestHandler.CarteRequest carteRequest;
+  @Mock CarteRequestHandler.CarteResponse carteResponse;
+  @Mock LogChannelInterface log;
   @Mock TransformationMap transformationMap;
   @Mock Repository repository;
   @Mock ServletOutputStream outputStream;
@@ -75,6 +80,7 @@ public abstract class BaseServletTest extends BaseTest {
   public void setupRequest() throws Exception {
     context = mock( DataServiceContext.class );
     when( context.createClient( any( ServletRepositoryAdapter.class ) ) ).thenReturn( client );
+    when( context.getLogChannel() ).thenReturn( log );
 
     headers = HashMultimap.create();
     when( request.getHeaderNames() ).then( new Answer<Enumeration>() {
@@ -127,6 +133,7 @@ public abstract class BaseServletTest extends BaseTest {
   }
 
   @After
+  @SuppressWarnings( "deprecation" )
   public void tearDown() throws Exception {
     verify( client, never() ).setRepository( (Repository) any() );
     verify( client, never() ).setMetaStore( (IMetaStore) any() );

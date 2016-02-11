@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -32,6 +32,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
@@ -40,13 +41,17 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 import java.util.UUID;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
@@ -74,7 +79,7 @@ public class TransDataServletTest extends BaseServletTest {
   private static final String DEBUG_TRANS_FILE = "debugtransfile";
   private static final String TEST_MAX_ROWS = "100";
   private static final String PARAM_DEBUG_TRANS = "debugtrans";
-  private static final String SERVLET_STRING = "Transformation data service";
+  private static final String SERVLET_STRING = "Get data from a data service";
   private static final String serviceTransUUID = UUID.randomUUID().toString();
   private static final String genTransUUID = UUID.randomUUID().toString();
   private static final String GEN_TRANS_XML = "<trans name=genTrans mock/>";
@@ -93,6 +98,7 @@ public class TransDataServletTest extends BaseServletTest {
 
   @Before
   public void setUp() throws Exception {
+    when( context.getLogChannel() ).thenReturn( log );
     serviceTrans = new Trans( transMeta );
     serviceTrans.setContainerObjectId( serviceTransUUID );
     genTransMeta = createTransMeta( TEST_SQL_QUERY );
@@ -103,7 +109,6 @@ public class TransDataServletTest extends BaseServletTest {
 
     servlet = new TransDataServlet( context );
     servlet.setJettyMode( true );
-    servlet.setLog( logChannel );
     servlet.setup( transformationMap, null, null, null );
 
     verify( context ).createClient( argThat( new ValidRepositorySupplier() ) );
@@ -168,6 +173,17 @@ public class TransDataServletTest extends BaseServletTest {
 
     verify( request, never() ).getHeader( HEADER_SQL );
     verify( request, never() ).getHeader( HEADER_MAX_ROWS );
+  }
+
+  @Test
+  public void testMultipleParamValues() throws IOException, ServletException {
+    parameters.put( "PARAMETER_foo", "bar" );
+    parameters.put( "PARAMETER_foo", "baz" );
+    parameters.put( "SQL", "select * from dual" );
+    servlet.service( request, response );
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass( String.class );
+    verify( log ).logDetailed( captor.capture() );
+    assertThat( captor.getValue(), containsString( "PARAMETER_foo" ) );
   }
 
   @Test

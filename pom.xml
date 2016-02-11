@@ -106,7 +106,7 @@
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>
       <version>${servlet-api.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>pentaho-kettle</groupId>
@@ -130,7 +130,7 @@
       <groupId>org.eclipse.swt</groupId>
       <artifactId>swt-linux-x86_64</artifactId>
       <version>${swt.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -142,7 +142,7 @@
       <groupId>org.eclipse</groupId>
       <artifactId>jface</artifactId>
       <version>${jface.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
@@ -154,6 +154,7 @@
       <groupId>pentaho</groupId>
       <artifactId>pentaho-mongodb-plugin</artifactId>
       <version>${dependency.pentaho-mongodb-plugin.revision}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>

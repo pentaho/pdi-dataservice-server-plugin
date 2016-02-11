@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -33,13 +33,16 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,8 +56,8 @@ public class ListDataServicesServletTest extends BaseServletTest {
   private static final String SERVLET_STRING = "List data services";
   private static final String CONTEXT_PATH = "/listServices";
 
-  @Mock
-  private RowMetaInterface rowMetaInterface;
+  @Mock private RowMetaInterface rowMetaInterface;
+  @Mock private SQLException sqlException;
 
   private ListDataServicesServlet servlet;
   private StringBuffer outputBuffer;
@@ -63,8 +66,8 @@ public class ListDataServicesServletTest extends BaseServletTest {
   public void setUp() throws Exception {
     servlet = new ListDataServicesServlet( context );
     servlet.setJettyMode( true );
-    servlet.setLog( logChannel );
     servlet.setup( transformationMap, null, null, null );
+
 
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
 
@@ -104,6 +107,16 @@ public class ListDataServicesServletTest extends BaseServletTest {
       "</service>",
       "</services>"
     ) ) );
+  }
+
+  @Test
+  public void testFailure() throws SQLException, IOException {
+    when( client.getServiceInformation() ).thenThrow( sqlException );
+    when( carteRequest.respond( 500 ) ).thenReturn( carteResponse );
+
+    servlet.handleRequest( carteRequest );
+    verify( log ).logError( any( String.class ), any( SQLException.class ) );
+    verify( carteResponse ).withMessage( any( String.class ) );
   }
 
   @Test
