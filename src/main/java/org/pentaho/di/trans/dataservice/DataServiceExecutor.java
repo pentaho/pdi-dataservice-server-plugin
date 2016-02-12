@@ -175,11 +175,17 @@ public class DataServiceExecutor {
       } else {
         serviceFields = new RowMeta();
       }
+      ValueMetaResolver resolver = new ValueMetaResolver( serviceFields );
 
-      sql.parse( serviceFields );
+      sql.parse( resolver.getRowMeta() );
 
       if ( normalizeConditions ) {
-        DataServiceExecutor.normalizeConditions( sql, serviceFields );
+        if ( sql.getWhereCondition() != null && sql.getWhereCondition().getCondition() != null ) {
+          convertCondition( sql.getWhereCondition().getCondition(), resolver );
+        }
+        if ( sql.getHavingCondition() != null && sql.getHavingCondition().getCondition() != null ) {
+          convertCondition( sql.getHavingCondition().getCondition(), resolver );
+        }
       }
 
       if ( sqlTransGenerator == null ) {
@@ -222,16 +228,6 @@ public class DataServiceExecutor {
     if ( genTrans != null ) {
       genTrans.setLogLevel( logLevel );
       getGenTransMeta().setLogLevel( logLevel );
-    }
-  }
-
-  protected static void normalizeConditions( SQL sql, RowMetaInterface fields ) {
-    ValueMetaResolver resolver = new ValueMetaResolver( fields );
-    if ( sql.getWhereCondition() != null && sql.getWhereCondition().getCondition() != null ) {
-      convertCondition( sql.getWhereCondition().getCondition(), resolver );
-    }
-    if ( sql.getHavingCondition() != null && sql.getHavingCondition().getCondition() != null ) {
-      convertCondition( sql.getHavingCondition().getCondition(), resolver );
     }
   }
 
@@ -284,7 +280,7 @@ public class DataServiceExecutor {
       // Encode list values
       String[] typedValueStrings = new String[typedValues.length];
       for ( int i = 0; i < typedValues.length; i++ ) {
-        typedValueStrings[i] = resolvedValueMeta.getString( typedValues[i] );
+        typedValueStrings[i] = resolvedValueMeta.getCompatibleString( typedValues[i] );
       }
 
       // Set new condition in-list (leave meta as string)
