@@ -43,8 +43,8 @@ import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMeta;
-import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaInteger;
+import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
@@ -101,11 +101,11 @@ public class CachedServiceTest {
   public static final String OUTPUT = "OUTPUT";
   private static final String SERVICE_NAME = "MOCK_SERVICE";
   private static final String BASE_QUERY = "SELECT * from " + SERVICE_NAME;
+  public static final String SERVICE_STEP = "service step";
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
   @Mock StepInterface serviceStep;
   @Mock SqlTransGenerator sqlTransGenerator;
-  @Mock DataServiceMeta dataServiceMeta;
   @Mock StepMetaDataCombi stepMetaDataCombi;
   @Mock StepInterface inputStep;
   @Mock StepMetaInterface inputStepMetaInterface;
@@ -113,30 +113,33 @@ public class CachedServiceTest {
   @Mock DataServiceContext context;
 
   private List<RowMetaAndData> testData;
+  private DataServiceMeta dataServiceMeta;
   private RowMeta rowMeta;
   private TransMeta transMeta;
 
   @Before
   public void setUp() throws Exception {
     rowMeta = new RowMeta();
-    rowMeta.addValueMeta( new ValueMeta( "ID", ValueMetaInterface.TYPE_STRING ) );
-    rowMeta.addValueMeta( new ValueMeta( "A", ValueMetaInterface.TYPE_INTEGER ) );
-    rowMeta.addValueMeta( new ValueMeta( "B", ValueMetaInterface.TYPE_INTEGER ) );
+    rowMeta.addValueMeta( new ValueMetaString( "ID" ) );
+    rowMeta.addValueMeta( new ValueMetaInteger( "A" ) );
+    rowMeta.addValueMeta( new ValueMetaInteger( "B" ) );
 
     testData = Lists.newArrayListWithExpectedSize( 100 );
     for ( long i = 0; i < 100; i++ ) {
       testData.add( new RowMetaAndData( rowMeta, String.valueOf( i ), i % 13, i % 17 ) );
     }
 
-    when( dataServiceMeta.getName() ).thenReturn( SERVICE_NAME );
-    when( dataServiceMeta.getStepname() ).thenReturn( "service step" );
-    when( serviceTrans.findRunThread( "service step" ) ).thenReturn( serviceStep );
+    when( serviceTrans.findRunThread( SERVICE_STEP ) ).thenReturn( serviceStep );
     when( serviceStep.getTrans() ).thenReturn( serviceTrans );
     when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP );
 
     transMeta = serviceTrans.getTransMeta();
-    when( dataServiceMeta.getServiceTrans() ).thenReturn( transMeta );
     when( transMeta.getXML() ).thenReturn( "<transformation mock version=1/>" );
+
+    dataServiceMeta = new DataServiceMeta( transMeta );
+    dataServiceMeta.setName( SERVICE_NAME );
+    dataServiceMeta.setStepname( SERVICE_STEP );
+    when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( rowMeta );
   }
 
   @Test
@@ -472,9 +475,7 @@ public class CachedServiceTest {
   }
 
   private DataServiceExecutor dataServiceExecutor( String query ) throws KettleException {
-    SQL sql = new SQL( query );
-    sql.parse( rowMeta );
-    return new DataServiceExecutor.Builder( sql, dataServiceMeta, context )
+    return new DataServiceExecutor.Builder( new SQL( query ), dataServiceMeta, context )
       .sqlTransGenerator( sqlTransGenerator )
       .serviceTrans( serviceTrans )
       .genTrans( genTrans )

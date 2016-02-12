@@ -23,10 +23,10 @@
 package org.pentaho.di.trans.dataservice.optimization;
 
 import com.google.common.base.Function;
-import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleValueException;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
@@ -64,23 +64,29 @@ public class ValueMetaResolver {
       @Override public ValueMetaInterface apply( ValueMetaInterface valueMetaInterface ) {
         valueMetaInterface = valueMetaInterface.clone();
 
-        if ( Strings.isNullOrEmpty( valueMetaInterface.getConversionMask() ) ) {
-          switch ( valueMetaInterface.getType() ) {
-            case ValueMetaInterface.TYPE_DATE:
-              valueMetaInterface.setConversionMask( ANSI_DATE_LITERAL );
-              break;
-            case ValueMetaInterface.TYPE_TIMESTAMP:
-              valueMetaInterface.setConversionMask( ANSI_TIMESTAMP_LITERAL );
-              break;
-            case ValueMetaInterface.TYPE_INTEGER:
-            case ValueMetaInterface.TYPE_NUMBER:
-            case ValueMetaInterface.TYPE_BIGNUMBER:
-              valueMetaInterface.setConversionMask( NUMERIC_LITERAL );
-          }
+        switch ( valueMetaInterface.getType() ) {
+          case ValueMetaInterface.TYPE_DATE:
+            valueMetaInterface.setConversionMask( ANSI_DATE_LITERAL );
+            break;
+          case ValueMetaInterface.TYPE_TIMESTAMP:
+            valueMetaInterface.setConversionMask( ANSI_TIMESTAMP_LITERAL );
+            break;
+          case ValueMetaInterface.TYPE_INTEGER:
+          case ValueMetaInterface.TYPE_NUMBER:
+          case ValueMetaInterface.TYPE_BIGNUMBER:
+            valueMetaInterface.setConversionMask( NUMERIC_LITERAL );
         }
         return valueMetaInterface;
       }
     };
+
+  public RowMetaInterface getRowMeta() {
+    RowMeta rowMeta = new RowMeta();
+    for ( ValueMetaInterface valueMetaInterface : fieldNameValueMetaMap.values() ) {
+      rowMeta.addValueMeta( valueMetaInterface );
+    }
+    return rowMeta;
+  }
 
   public ValueMetaInterface getValueMeta( String fieldName ) throws PushDownOptimizationException {
     ValueMetaInterface valueMeta = fieldNameValueMetaMap.get( fieldName );

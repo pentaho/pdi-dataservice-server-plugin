@@ -44,6 +44,7 @@ import org.pentaho.di.trans.steps.filterrows.FilterRowsMeta;
 import org.pentaho.di.trans.steps.injector.InjectorMeta;
 import org.pentaho.di.trans.steps.memgroupby.MemoryGroupByMeta;
 import org.pentaho.di.trans.steps.samplerows.SampleRowsMeta;
+import org.pentaho.di.trans.steps.selectvalues.SelectMetadataChange;
 import org.pentaho.di.trans.steps.selectvalues.SelectValuesMeta;
 import org.pentaho.di.trans.steps.sort.SortRowsMeta;
 
@@ -92,6 +93,9 @@ public class SqlTransGenerator {
     transMeta.addStep( firstStep );
     injectorStepName = firstStep.getName();
     StepMeta lastStep = firstStep;
+
+    // Set conversion masks
+    lastStep = addToTrans( generateConversionMaskStep(), transMeta, lastStep );
 
     // Add possible constants to the rows...
     //
@@ -191,6 +195,23 @@ public class SqlTransGenerator {
     lastStep = addToTrans( resultStep, transMeta, lastStep );
 
     return transMeta;
+  }
+
+  private StepMeta generateConversionMaskStep() {
+    // Set conversion masks for each column
+    SelectValuesMeta meta = new SelectValuesMeta();
+    meta.allocate( 0, 0, serviceFields.size() );
+    for ( int i = 0; i < serviceFields.size(); i++ ) {
+      ValueMetaInterface valueMeta = serviceFields.getValueMeta( i );
+      SelectMetadataChange metadataChanges = meta.getMeta()[i] = new SelectMetadataChange( meta );
+      metadataChanges.setName( valueMeta.getName() );
+      metadataChanges.setConversionMask( valueMeta.getConversionMask() );
+    }
+    StepMeta stepMeta = new StepMeta( "Set Conversion Masks", meta );
+    stepMeta.setLocation( xLocation, 50 );
+    xLocation += 100;
+    stepMeta.setDraw( true );
+    return stepMeta;
   }
 
   private StepMeta addToTrans( StepMeta sortStep, TransMeta transMeta, StepMeta lastStep ) {

@@ -26,18 +26,23 @@ import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaDate;
 import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.trans.steps.selectvalues.SelectValuesMeta;
 
 import java.util.Arrays;
+import java.util.Calendar;
 
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
 
 public class SqlTransGeneratorTest {
 
@@ -197,6 +202,32 @@ public class SqlTransGeneratorTest {
     SelectValuesMeta selectValuesMeta = getSelectStepValuesMeta( generator.generateTransMeta() );
     assertThat( selectValuesMeta.getSelectName(), equalTo( new String[] { "foo" } ) );
     assertThat( selectValuesMeta.getSelectRename(), equalTo( new String[] { null } ) );
+  }
+
+  @Test
+  public void testDataFormatting() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM table" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaString( "str" ) );
+    rowMeta.addValueMeta( new ValueMetaDate( "time" ) );
+    rowMeta.addValueMeta( new ValueMetaInteger( "long" ) );
+    sql.parse( new ValueMetaResolver( rowMeta ).getRowMeta() );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, -1 );
+
+    TransMeta transMeta = generator.generateTransMeta();
+    RowMetaInterface outputFields = transMeta.getStepFields( generator.getResultStepName() );
+
+    Calendar calendar = Calendar.getInstance();
+    calendar.clear();
+    calendar.set( 2016, Calendar.FEBRUARY, 12, 13, 20 );
+
+    Object[] row = { "value", calendar.getTime(), 42L };
+
+    assertThat( outputFields.getFieldNames(), arrayContaining( "str", "time", "long" ) );
+    assertThat( outputFields.getString( row, 0 ), is( "value" ) );
+    assertThat( outputFields.getString( row, 1 ), is( "2016-02-12" ) );
+    assertThat( outputFields.getString( row, 2 ), is( "42" ) );
   }
 
   @Test

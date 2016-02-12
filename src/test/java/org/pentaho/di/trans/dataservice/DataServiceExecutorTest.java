@@ -47,22 +47,22 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepListener;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -113,7 +113,7 @@ public class DataServiceExecutorTest extends BaseTest {
     TransMeta genTransMeta = mock( TransMeta.class );
     when( genTrans.getTransMeta() ).thenReturn( genTransMeta );
 
-    new DataServiceExecutor.Builder( new SQL( "SELECT foo FROM " + DATA_SERVICE_NAME ), dataService, context ).
+    new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context ).
       serviceTrans( serviceTrans ).
       genTrans( genTrans ).
       prepareExecution( false ).
@@ -144,12 +144,12 @@ public class DataServiceExecutorTest extends BaseTest {
 
     Condition condition = executor.getSql().getWhereCondition().getCondition();
 
-    assertEquals( condition.getCondition( 0 ).getRightExact().getValueMeta().getType(),
-      ValueMetaInterface.TYPE_INTEGER );
-    String dateList = condition.getCondition( 1 ).getRightExactString();
-    for ( Object date : new ValueMetaResolver( rowMeta ).inListToTypedObjectArray( "aDate", dateList ) ) {
-      assertThat( date, instanceOf( Date.class ) );
-    }
+    Calendar calendar = Calendar.getInstance();
+    calendar.clear();
+    calendar.set( 2014, Calendar.DECEMBER, 5 );
+
+    assertThat( condition.evaluate( rowMeta, new Object[] { "value", 2L, calendar.getTime() } ), is( true ) );
+    assertThat( condition.evaluate( rowMeta, new Object[] { "value", 2L, new Date() } ), is( false ) );
   }
 
   @Test

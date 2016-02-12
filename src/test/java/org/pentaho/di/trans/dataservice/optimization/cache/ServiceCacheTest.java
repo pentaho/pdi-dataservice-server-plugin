@@ -37,8 +37,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.ValueMeta;
-import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaInteger;
+import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -83,7 +83,6 @@ public class ServiceCacheTest {
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
   @Mock SqlTransGenerator sqlTransGenerator;
-  @Mock DataServiceMeta dataServiceMeta;
   @Mock Cache<CachedService.CacheKey, CachedService> cache;
   @Mock CompleteConfiguration config;
   @Mock Factory expiryFactory;
@@ -92,28 +91,31 @@ public class ServiceCacheTest {
   @Mock DataServiceContext context;
 
   @InjectMocks ServiceCache serviceCache;
+  DataServiceMeta dataServiceMeta;
   RowMeta rowMeta;
   PushDownOptimizationMeta serviceCacheOpt;
   PushDownOptimizationMeta otherOpt;
-  StepInterface serviceStep;
 
+  StepInterface serviceStep;
   private static final long DEFAULT_TTL = 3600l;
 
   @Before
   public void setUp() throws Exception {
     rowMeta = new RowMeta();
-    rowMeta.addValueMeta( new ValueMeta( "ID", ValueMetaInterface.TYPE_STRING ) );
-    rowMeta.addValueMeta( new ValueMeta( "A", ValueMetaInterface.TYPE_INTEGER ) );
-    rowMeta.addValueMeta( new ValueMeta( "B", ValueMetaInterface.TYPE_INTEGER ) );
+    rowMeta.addValueMeta( new ValueMetaString( "ID" ) );
+    rowMeta.addValueMeta( new ValueMetaInteger( "A" ) );
+    rowMeta.addValueMeta( new ValueMetaInteger( "B" ) );
 
     when( factory.getCache( "MOCK_SERVICE" ) ).thenReturn( Optional.of( cache ) );
     when( factory.getCache( serviceCache, "MOCK_SERVICE" ) ).thenReturn( cache );
-    when( dataServiceMeta.getStepname() ).thenReturn( SERVICE_STEP );
-    when( dataServiceMeta.getName() ).thenReturn( "MOCK_SERVICE" );
     serviceStep = serviceTrans.findRunThread( SERVICE_STEP );
+
     TransMeta transMeta = serviceTrans.getTransMeta();
-    when( dataServiceMeta.getServiceTrans() ).thenReturn( transMeta );
+    dataServiceMeta = new DataServiceMeta( transMeta );
+    dataServiceMeta.setName( "MOCK_SERVICE" );
+    dataServiceMeta.setStepname( SERVICE_STEP );
     when( transMeta.getXML() ).thenReturn( "<transformation/>" );
+    when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( rowMeta );
 
     when( factory.getExecutorService() ).thenReturn( MoreExecutors.sameThreadExecutor() );
 
@@ -121,6 +123,8 @@ public class ServiceCacheTest {
       when( mock( PushDownOptimizationMeta.class ).getType() ).thenReturn( mock( ServiceCache.class ) ).getMock();
     otherOpt =
       when( mock( PushDownOptimizationMeta.class ).getType() ).thenReturn( mock( PushDownType.class ) ).getMock();
+
+    dataServiceMeta.setPushDownOptimizationMeta( ImmutableList.of( serviceCacheOpt, otherOpt ) );
 
     when( cache.getConfiguration( CompleteConfiguration.class ) ).thenReturn( config );
     when( config.getExpiryPolicyFactory() ).thenReturn( expiryFactory );
@@ -132,8 +136,6 @@ public class ServiceCacheTest {
 
   @Test
   public void testActivateObserve() throws Exception {
-    when( dataServiceMeta.getPushDownOptimizationMeta() ).thenReturn( ImmutableList.of( serviceCacheOpt, otherOpt ) );
-
     DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE ORDER BY ID" );
     CachedService.CacheKey key = CachedService.CacheKey.create( executor );
     CachedService cachedService = CachedService.complete( ImmutableList.<RowMetaAndData>of() );
@@ -163,7 +165,7 @@ public class ServiceCacheTest {
         .put( selectWithCondition, ImmutableList.of( serviceCacheOpt ) )
         .put( selectWithCondition, ImmutableList.<PushDownOptimizationMeta>of() )
         .build().entries() ) {
-      when( dataServiceMeta.getPushDownOptimizationMeta() ).thenReturn( testEntry.getValue() );
+      dataServiceMeta.setPushDownOptimizationMeta( testEntry.getValue() );
 
       DataServiceExecutor executor = dataServiceExecutor( testEntry.getKey() );
       CachedService cachedService = CachedService.complete( ImmutableList.<RowMetaAndData>of() );
@@ -190,8 +192,6 @@ public class ServiceCacheTest {
 
   @Test
   public void testObserveUpdateExisting() throws Exception {
-    when( dataServiceMeta.getPushDownOptimizationMeta() ).thenReturn( ImmutableList.of( serviceCacheOpt, otherOpt ) );
-
     DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE WHERE A = 2" );
     CachedService.CacheKey key = CachedService.CacheKey.create( executor );
 
@@ -215,8 +215,6 @@ public class ServiceCacheTest {
 
   @Test
   public void testReplay() throws Exception {
-    when( dataServiceMeta.getPushDownOptimizationMeta() ).thenReturn( ImmutableList.of( serviceCacheOpt, otherOpt ) );
-
     DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE WHERE A = 2" );
     CachedService.CacheKey key = CachedService.CacheKey.create( executor );
     CachedService cachedService = mock( CachedService.class );
@@ -233,7 +231,6 @@ public class ServiceCacheTest {
 
   @Test
   public void testReplayComplete() throws Exception {
-    when( dataServiceMeta.getPushDownOptimizationMeta() ).thenReturn( ImmutableList.of( serviceCacheOpt, otherOpt ) );
 
     DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE WHERE A = 2" );
     CachedService.CacheKey key = CachedService.CacheKey.create( executor );
@@ -283,9 +280,7 @@ public class ServiceCacheTest {
   }
 
   private DataServiceExecutor dataServiceExecutor( String query ) throws KettleException {
-    SQL sql = new SQL( query );
-    sql.parse( rowMeta );
-    return new DataServiceExecutor.Builder( sql, dataServiceMeta, context )
+    return new DataServiceExecutor.Builder( new SQL( query ), dataServiceMeta, context )
       .sqlTransGenerator( sqlTransGenerator )
       .serviceTrans( serviceTrans )
       .genTrans( genTrans )
