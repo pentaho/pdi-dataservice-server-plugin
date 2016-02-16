@@ -14,12 +14,17 @@
     <vbox>
       <label value="${DriverDetailsDialog.RequirementsListLine1.Label}"/>
       <label value="${DriverDetailsDialog.RequirementsListLine2.Label}"/>
-    </vbox>
-    <vbox>
-      <label value="${DriverDetailsDialog.JdbcUrl.Label}"/>
+      <hbox height="7"/>
       <label value="${DriverDetailsDialog.JdbcClassName.Label}"/>
+      <label value="${DriverDetailsDialog.JdbcClassName.Text}"/>
+      <hbox height="7"/>
+      <label value="${DriverDetailsDialog.JdbcUrl.Label}"/>
+      <label value="${DriverDetailsDialog.JdbcUrl.Text}"/>
+      <hbox height="7"/>
       <label value="${DriverDetailsDialog.UserName.Label}"/>
+      <hbox height="7"/>
       <label value="${DriverDetailsDialog.Password.Label}"/>
+      <hbox height="7"/>
       <hbox height="30">
         <button label="${DriverDetailsDialog.GetDriver.Button}" onclick="driverDetailsDialogController.saveDriver()"/>
       </hbox>
