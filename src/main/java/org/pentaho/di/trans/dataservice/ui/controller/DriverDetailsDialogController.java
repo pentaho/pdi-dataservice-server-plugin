@@ -106,8 +106,9 @@ public class DriverDetailsDialogController extends AbstractController {
 
   File getDriverSaveLocation() throws NotDirectoryException, AccessDeniedException, FileNotFoundException {
     FileDialog dialog = new FileDialog( getDialog().getShell(), SWT.SAVE );
-    dialog.setFilterNames( new String[] { getString( PKG, "DriverDetailsDialog.SaveDialog.AllFilesFilter.Label" ) } );
-    dialog.setFilterExtensions( new String[] { "*.*" } );
+    dialog.setFilterNames( new String[] { getString( PKG, "DriverDetailsDialog.SaveDialog.ZipFilesFilter.Label" ),
+        getString( PKG, "DriverDetailsDialog.SaveDialog.AllFilesFilter.Label" ) } );
+    dialog.setFilterExtensions( new String[] { "*.zip", "*.*" } );
     dialog.setFileName( getString( PKG, "DriverDetailsDialog.SaveDialog.DefaultFileName.Label" ) );
     String savePath = dialog.open();
 
