@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -35,7 +36,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.parameters.NamedParams;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMeta;
+import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.core.sql.SQLFields;
@@ -60,21 +61,14 @@ import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class DataServiceTestControllerTest  {
 
@@ -114,7 +108,12 @@ public class DataServiceTestControllerTest  {
   @Mock
   private DataServiceContext context;
 
+  @Captor
+  private ArgumentCaptor<String> queryCaptor;
+
   private DataServiceTestControllerTester dataServiceTestController;
+
+  private static final String TEST_TABLE_NAME = "Test Table";
 
   @Before
   public void initMocks() throws Exception {
@@ -139,14 +138,15 @@ public class DataServiceTestControllerTest  {
 
     when( bindingFactory.createBinding( anyObject(), anyString(), anyObject(), anyString() ) ).thenReturn( binding );
 
-        // mocks to deal with Xul multithreading.
-        when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
+    // mocks to deal with Xul multithreading.
+    when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
     doAnswer( new Answer() {
-          @Override public Object answer( InvocationOnMock invocationOnMock ) throws Throwable {
-            ( (Runnable) invocationOnMock.getArguments()[0] ).run();
-            return null;
-          }
-        } ).when( document ).invokeLater( any( Runnable.class ) );
+      @Override public Object answer( InvocationOnMock invocationOnMock ) throws Throwable {
+        ( (Runnable) invocationOnMock.getArguments()[ 0 ] ).run();
+        return null;
+      }
+    } ).when( document ).invokeLater( any( Runnable.class ) );
+    when( dataService.getName() ).thenReturn( TEST_TABLE_NAME );
 
     dataServiceTestController = new DataServiceTestControllerTester();
     dataServiceTestController.setXulDomContainer( xulDomContainer );
@@ -162,6 +162,13 @@ public class DataServiceTestControllerTest  {
 
     verify( bindingFactory ).setDocument( document );
     verify( document, times( 9 ) ).getElementById( anyString() );
+  }
+
+  @Test
+  public void defaultSqlUsesQuotedTableName() throws KettleException {
+    verify( model ).setSql( queryCaptor.capture() );
+    assertThat(
+      queryCaptor.getValue(), containsString( "\"" +  TEST_TABLE_NAME + "\"" ) );
   }
 
   @Test
@@ -226,13 +233,13 @@ public class DataServiceTestControllerTest  {
   @Test
   public void resultRowMetaIsUpdated() throws Exception {
     SQLField field = mock( SQLField.class );
-    List<SQLField> fields = new ArrayList<SQLField>();
+    List<SQLField> fields = new ArrayList<>();
     fields.add( field );
     when( field.getField() ).thenReturn( "testFieldName" );
     when( dataServiceExecutor.getSql().getSelectFields().getFields() )
       .thenReturn( fields );
     RowMeta rowMeta = new RowMeta();
-    rowMeta.addValueMeta( new ValueMeta( "testFieldName" ) );
+    rowMeta.addValueMeta( new ValueMetaString( "testFieldName" ) );
     when( dataServiceExecutor.getSql().getRowMeta() ).thenReturn( rowMeta );
     ArgumentCaptor<RowMetaInterface> argument = ArgumentCaptor.forClass( RowMetaInterface.class );
     dataServiceTestController.executeSql();
