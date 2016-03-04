@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -52,6 +52,7 @@ import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -98,6 +99,7 @@ public class DataServiceExecutor {
     private boolean normalizeConditions = true;
     private boolean prepareExecution = true;
     private boolean enableMetrics = false;
+    private IMetaStore metastore;
 
     public Builder( SQL sql, DataServiceMeta service, DataServiceContext context ) {
       this.sql = Preconditions.checkNotNull( sql, "SQL must not be null." );
@@ -117,6 +119,11 @@ public class DataServiceExecutor {
 
     public Builder logLevel( LogLevel logLevel ) {
       this.logLevel = logLevel;
+      return this;
+    }
+
+    public Builder metastore( final IMetaStore metastore ) {
+      this.metastore = metastore;
       return this;
     }
 
@@ -197,6 +204,8 @@ public class DataServiceExecutor {
 
       serviceTrans.setContainerObjectId( UUID.randomUUID().toString() );
       genTrans.setContainerObjectId( UUID.randomUUID().toString() );
+      serviceTrans.setMetaStore( metastore );
+      genTrans.setMetaStore( metastore );
 
       DataServiceExecutor dataServiceExecutor = new DataServiceExecutor( this );
 
@@ -217,7 +226,6 @@ public class DataServiceExecutor {
 
       return dataServiceExecutor;
     }
-
   }
 
   private void setLogLevel( LogLevel logLevel ) {

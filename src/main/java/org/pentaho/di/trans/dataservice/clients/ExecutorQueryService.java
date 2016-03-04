@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -53,6 +53,7 @@ class ExecutorQueryService implements Query.Service {
       DataServiceExecutor executor = factory.createBuilder( sql )
         .rowLimit( maxRows )
         .parameters( parameters )
+        .metastore( factory.getMetaStore() )
         .build();
       query = new ExecutorQuery( executor );
     } catch ( Exception e ) {

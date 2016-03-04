@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -32,6 +32,7 @@ import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogLevel;
@@ -50,6 +51,7 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepListener;
+import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -164,10 +166,12 @@ public class DataServiceExecutorTest extends BaseTest {
     when( optimization.isEnabled() ).thenReturn( true );
     dataService.getPushDownOptimizationMeta().add( optimization );
 
+    IMetaStore metastore = Mockito.mock( IMetaStore.class );
     DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
       serviceTrans( serviceTrans ).
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
+      metastore( metastore ).
       build();
 
     ArgumentCaptor<String> objectIds = ArgumentCaptor.forClass( String.class );
@@ -175,6 +179,8 @@ public class DataServiceExecutorTest extends BaseTest {
     when( serviceTrans.getContainerObjectId() ).thenReturn( objectIds.getValue() );
     verify( genTrans ).setContainerObjectId( objectIds.capture() );
     when( genTrans.getContainerObjectId() ).thenReturn( objectIds.getValue() );
+    verify( serviceTrans ).setMetaStore( metastore );
+    verify( genTrans ).setMetaStore( metastore );
 
     RowProducer sqlTransRowProducer = mock( RowProducer.class );
     when( genTrans.addRowProducer( INJECTOR_STEP_NAME, 0 ) ).thenReturn( sqlTransRowProducer );
