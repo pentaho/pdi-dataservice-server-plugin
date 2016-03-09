@@ -114,6 +114,8 @@ public class DataServiceTestControllerTest  {
   private DataServiceTestControllerTester dataServiceTestController;
 
   private static final String TEST_TABLE_NAME = "Test Table";
+  private static final int VERIFY_TIMEOUT_MILLIS = 2000;
+
 
   @Before
   public void initMocks() throws Exception {
@@ -199,7 +201,8 @@ public class DataServiceTestControllerTest  {
       .thenReturn( true );
     dataServiceTestController.executeSql();
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass( String.class );
-    verify( model, timeout( 500 ).atLeast( 2 ) ).setAlertMessage( argument.capture() );
+
+    verify( model, timeout( VERIFY_TIMEOUT_MILLIS ).atLeast( 2 ) ).setAlertMessage( argument.capture() );
     assertTrue( argument.getValue().length() > 0 );
     assertEquals( "There were errors, review logs.", argument.getValue() );
   }
@@ -214,7 +217,7 @@ public class DataServiceTestControllerTest  {
       .thenReturn( true );
     dataServiceTestController.executeSql();
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass( String.class );
-    verify( model, timeout( 500 ).atLeast( 2 ) ).setAlertMessage( argument.capture() );
+    verify( model, timeout( VERIFY_TIMEOUT_MILLIS ).atLeast( 2 ) ).setAlertMessage( argument.capture() );
     assertTrue( argument.getValue().length() > 0 );
     assertEquals( "There were errors, review logs.", argument.getValue() );
   }
@@ -227,7 +230,7 @@ public class DataServiceTestControllerTest  {
       .thenReturn( true );
     when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
       .thenReturn( true );
-    verify( callback, timeout( 500 ).times( 1 ) ).onExecuteComplete();
+    verify( callback, timeout( VERIFY_TIMEOUT_MILLIS ).times( 1 ) ).onExecuteComplete();
   }
 
   @Test
