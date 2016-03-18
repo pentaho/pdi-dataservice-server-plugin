@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -560,16 +560,20 @@ public class SqlTransGenerator {
 
     SelectValuesMeta meta = new SelectValuesMeta();
     meta.allocate( fields.size(), 0, 0 );
+    String[] selectNames = new String[ fields.size() ];
+    String[] selectRename = new String[ fields.size() ];
     for ( int i = 0; i < fields.size(); i++ ) {
       SQLField sqlField = fields.get( i );
       if ( sqlField.getAggregation() == null ) {
-        meta.getSelectName()[i] = sqlField.getField();
-        meta.getSelectRename()[i] = sqlField.getAlias();
+        selectNames[ i ] = sqlField.getField();
+        selectRename[ i ] = sqlField.getAlias();
       } else {
         // agg field names are assigned in the group by
-        meta.getSelectName()[i] = Const.NVL( sqlField.getAlias(), sqlField.getField() );
+        selectNames[ i ] = Const.NVL( sqlField.getAlias(), sqlField.getField() );
       }
     }
+    meta.setSelectName( selectNames );
+    meta.setSelectRename( selectRename );
 
     StepMeta stepMeta = new StepMeta( "Select values", meta );
     stepMeta.setLocation( xLocation, 50 );
