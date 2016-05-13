@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -32,12 +32,12 @@ import org.pentaho.di.core.row.ValueMetaInterface;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 
-import static com.mongodb.util.MyAsserts.assertTrue;
 import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
 public class ValueMetaResolverTest  {
 

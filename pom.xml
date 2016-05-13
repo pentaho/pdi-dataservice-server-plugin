@@ -85,7 +85,7 @@
     <guava.version>17.0</guava.version>
     <jface.version>3.3.0-I20070606-0010</jface.version>
     <swt.version>4.3.2</swt.version>
-    <mongo-driver.version>2.11.1</mongo-driver.version>
+    <mongo-driver.version>3.2.2</mongo-driver.version>
   </properties>
   <dependencies>
     <dependency>
@@ -147,6 +147,12 @@
       <artifactId>pentaho-mongodb-plugin</artifactId>
       <version>${dependency.pentaho-mongodb-plugin.revision}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.googlecode.json-simple</groupId>
+      <artifactId>json-simple</artifactId>
+      <version>1.1</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
