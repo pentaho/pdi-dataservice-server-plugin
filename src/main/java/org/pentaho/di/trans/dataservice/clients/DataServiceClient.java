@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -54,6 +54,7 @@ public class DataServiceClient implements DataServiceClientService, Query.Servic
     //TODO Query.Service list would be a good candidate for OSGi dependency injection
     queryServices = ImmutableList.of(
         new CommandQueryService( dataServiceFactory.getContext() ),
+      new AnnotationsQueryService( factory ),
       new DualQueryService(),
       new ExecutorQueryService( factory )
     );
