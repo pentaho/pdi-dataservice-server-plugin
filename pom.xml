@@ -119,6 +119,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-modeler</artifactId>
+      <version>${dependency.pentaho-kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.swt</groupId>
       <artifactId>swt-linux-x86_64</artifactId>
       <version>${swt.version}</version>

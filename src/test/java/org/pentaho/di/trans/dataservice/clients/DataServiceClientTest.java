@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -53,6 +53,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
@@ -123,6 +124,12 @@ public class DataServiceClientTest extends BaseTest {
     byte[] data = byteArrayOutputStream.toByteArray();
     assertThat( ByteStreams.newDataInput( data ).readUTF(), equalTo( DUAL_TABLE_NAME ) );
     assertThat( data, equalTo( DualQueryService.DATA ) );
+  }
+
+  @Test
+  public void testResolvesShowAnnotations() throws Exception {
+    Query query = client.prepareQuery( "show annotations from something", 0 );
+    assertTrue( query instanceof AnnotationsQueryService.AnnotationsQuery );
   }
 
   @Test
