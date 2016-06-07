@@ -95,9 +95,14 @@ of refactoring (we may gain efficiencies across the board or we can break things
 may be best to create a new object to use.  We will have to discuss.
 
 ### Refactor Row Listener
-Instead of storing data in one large blob in the cache let's cache each row as it is listened too.  To do
-this we may have to store the cache different.  We will have to have 2 caches.  One that stores the query
-and cache prefix and another one that stores the prefix-key and the row data.  See below:
+This section talks about some options we have for storing data in the cache.  The goal is to break up
+the data stored so it is not one massive list as the value.  To do this we can cache each row as it is
+listened to in the row listener.  In both these options we would have to worry about the eviction
+policy.
+
+#### Option #1
+We can have to have 2 caches.  One that stores the query and cache prefix and another one that stores
+the prefix-key and the row data.  See below:
 
 **Cache Definition**
 
@@ -116,3 +121,11 @@ and cache prefix and another one that stores the prefix-key and the row data.  S
 | 'abcd-5' | {firstName: 'first5', lastName: 'last5'} |
 > Note: JSON Format used to represent the serialized data.
 
+#### Option #2
+In this option we push everything up a level.  Instead of creating on cache per service we create a cache
+per query.
+
+```
+  Cache cache = cacheManager.getCache('queryAbc');
+  cache.put(rowKey, rowData);
+```
