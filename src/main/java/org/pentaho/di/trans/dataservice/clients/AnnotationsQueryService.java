@@ -44,6 +44,7 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -106,6 +107,7 @@ public class AnnotationsQueryService implements Query.Service {
       TransMeta serviceTrans = dataService.getServiceTrans();
       disableHopsFrom( dataService, serviceTrans );
       final Trans trans = getTrans( serviceTrans );
+      trans.setMetaStore( factory.getMetaStore() );
       if ( serviceTrans.getTransHopSteps( false ).size() > 0 ) {
         trans.prepareExecution( new String[]{} );
         stopOnFirstRowWritten( dataService, trans );
@@ -137,7 +139,7 @@ public class AnnotationsQueryService implements Query.Service {
     }
 
     @Override public List<Trans> getTransList() {
-      return null;
+      return Collections.emptyList();
     }
   }
 
