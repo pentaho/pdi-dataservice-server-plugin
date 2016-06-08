@@ -126,6 +126,8 @@ public class AnnotationsQueryServiceTest {
     thinResultSet.next();
     String output = thinResultSet.getString( 1 );
     assertEquals( new ModelAnnotationGroupXmlWriter( mag ).getXML(), output );
+    verify( dataServiceFactory ).getMetaStore();
+    assertEquals( 0, query.getTransList().size() );
     thinResultSet.close();
   }
 
