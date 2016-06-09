@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -21,6 +21,8 @@
  ******************************************************************************/
 
 package org.pentaho.di.trans.dataservice.optimization;
+
+import com.google.common.base.Objects;
 
 public class OptimizationImpactInfo {
   private String queryBeforeOptimization = "";
@@ -66,6 +68,14 @@ public class OptimizationImpactInfo {
     return errorMsg;
   }
 
+  public void setErrorMsg( Exception ex ) {
+    this.errorMsg = Objects.firstNonNull( ex.getMessage(), ex.toString() );
+  }
+
+  /**
+   * @deprecated the detail message string may be null. See {@link Throwable#getMessage()}
+   */
+  @Deprecated
   public void setErrorMsg( String errorMsg ) {
     this.errorMsg = errorMsg;
   }
@@ -76,7 +86,7 @@ public class OptimizationImpactInfo {
       .append( "Step:  " )
       .append( getStepName() )
       .append( "\n" );
-    if ( getErrorMsg().length() > 0 ) {
+    if ( getErrorMsg() == null || getErrorMsg().length() > 0 ) {
       builder
         .append( "[ERROR]  " )
         .append( getErrorMsg() )
