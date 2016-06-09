@@ -72,10 +72,6 @@ public class OptimizationImpactInfo {
     this.errorMsg = Objects.firstNonNull( ex.getMessage(), ex.toString() );
   }
 
-  /**
-   * @deprecated the detail message string may be null. See {@link Throwable#getMessage()}
-   */
-  @Deprecated
   public void setErrorMsg( String errorMsg ) {
     this.errorMsg = errorMsg;
   }

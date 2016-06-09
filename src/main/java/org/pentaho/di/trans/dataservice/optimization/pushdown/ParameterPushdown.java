@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -184,7 +184,7 @@ public class ParameterPushdown implements PushDownType {
       impactInfo.setQueryAfterOptimization( mapJoiner.join( parameterValues ) );
       impactInfo.setModified( !parameterValues.equals( defaults ) );
     } catch ( Exception e ) {
-      impactInfo.setErrorMsg( Objects.firstNonNull( e.getMessage(), e.toString() ) );
+      impactInfo.setErrorMsg( e );
     }
 
     return impactInfo;
