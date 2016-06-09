@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,6 +96,7 @@ public class TransPainterStepExtesionPointPluginTest {
     extension.areaOwners = new ArrayList<>();
     when( stepMeta.getName() ).thenReturn( STEP_NAME );
     when( metaStoreUtil.getDataServiceByStepName( transMeta, STEP_NAME ) ).thenReturn( dataServiceMeta );
+    when( dataServiceMeta.isUserDefined() ).thenReturn( true );
 
     plugin.callExtensionPoint( log, extension );
 
@@ -102,5 +104,24 @@ public class TransPainterStepExtesionPointPluginTest {
     verify( gc ).drawImage( anyString(), any( ClassLoader.class ), anyInt(), anyInt() );
   }
 
+  @Test
+  public void testCallExtensionPointTransient() throws Exception {
+    extension.transMeta = transMeta;
+    extension.stepMeta = stepMeta;
+    extension.gc = gc;
+    extension.x1 = 0;
+    extension.y1 = 0;
+    extension.iconsize = 32;
+    extension.offset = new Point( 0, 0 );
+    extension.areaOwners = new ArrayList<>();
+    when( stepMeta.getName() ).thenReturn( STEP_NAME );
+    when( metaStoreUtil.getDataServiceByStepName( transMeta, STEP_NAME ) ).thenReturn( dataServiceMeta );
+    when( dataServiceMeta.isUserDefined() ).thenReturn( false );
+
+    plugin.callExtensionPoint( log, extension );
+
+    verify( metaStoreUtil ).getDataServiceByStepName( transMeta, STEP_NAME );
+    verify( gc, never() ).drawImage( anyString(), any( ClassLoader.class ), anyInt(), anyInt() );
+  }
 
 }

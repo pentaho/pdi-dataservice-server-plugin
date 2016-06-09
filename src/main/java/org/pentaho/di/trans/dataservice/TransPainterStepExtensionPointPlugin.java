@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -37,7 +37,7 @@ import org.pentaho.di.trans.step.StepMeta;
   id = "TransPainterStepExtensionPointPlugin",
   extensionPointId = "TransPainterStep",
   description = "Paint a database icon over a step in case a data service is defined"
-)
+  )
 public class TransPainterStepExtensionPointPlugin implements ExtensionPointInterface {
   // private static Class<?> PKG = TransPainterStepExtensionPointPlugin.class; // for i18n purposes, needed by
   // Translator2!!
@@ -58,7 +58,7 @@ public class TransPainterStepExtensionPointPlugin implements ExtensionPointInter
     StepMeta stepMeta = extension.stepMeta;
 
     DataServiceMeta dataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() );
-    if ( dataService != null ) {
+    if ( dataService != null && dataService.isUserDefined() ) {
       // Is this step a data service provider?
       //
       extension.gc
