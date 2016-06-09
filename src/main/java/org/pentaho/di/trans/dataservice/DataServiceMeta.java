@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -46,6 +46,7 @@ public class DataServiceMeta implements MetaStoreElement {
 
   public static final String DATA_SERVICE_TRANSFORMATION_STEP_NAME = "step_name";
   public static final String PUSH_DOWN_OPT_META = "push_down_opt_meta";
+  public static final String IS_USER_DEFINED = "is_user_defined";
 
   protected String name;
 
@@ -56,6 +57,9 @@ public class DataServiceMeta implements MetaStoreElement {
   protected List<PushDownOptimizationMeta> pushDownOptimizationMeta = Lists.newArrayList();
 
   private TransMeta serviceTrans;
+
+  @MetaStoreAttribute( key = IS_USER_DEFINED )
+  protected boolean userDefined = true;
 
   public DataServiceMeta( TransMeta serviceTrans ) {
     this.serviceTrans = serviceTrans;
@@ -111,11 +115,20 @@ public class DataServiceMeta implements MetaStoreElement {
     this.pushDownOptimizationMeta = pushDownOptimizationMeta;
   }
 
+  public boolean isUserDefined() {
+    return userDefined;
+  }
+
+  public void setUserDefined( final boolean userDefined ) {
+    this.userDefined = userDefined;
+  }
+
   @Override public String toString() {
     return Objects.toStringHelper( this )
       .add( "name", name )
       .add( "serviceTrans", serviceTrans )
       .add( "stepname", stepname )
+      .add( "userDefined", userDefined )
       .add( "pushDownOptimizationMeta", pushDownOptimizationMeta )
       .toString();
   }
