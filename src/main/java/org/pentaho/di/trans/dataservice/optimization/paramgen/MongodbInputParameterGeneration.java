@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -99,7 +99,7 @@ public class MongodbInputParameterGeneration implements ParameterGenerationServi
     } catch ( KettleException e ) {
       log.logDetailed( String.format( "Unable to optimize step '%s'", stepInterface.getStepname() ) );
       impactInfo.setModified( false );
-      impactInfo.setErrorMsg( e.getMessage() );
+      impactInfo.setErrorMsg( e );
     }
     return impactInfo;
   }

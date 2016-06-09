@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -144,6 +144,13 @@ public class MongodbInputParameterGenerationTest extends MongodbInputParameterGe
     assertThat( impact.getErrorMsg(), containsString( "FAILURE" )  );
   }
 
+  @Test
+  public void testQueryBeforeOptimizationWithConversionFailure() throws KettleException {
+    when( mongodbPredicate.asFilterCriteria() ).thenThrow( new PushDownOptimizationException( "FAILURE" ) );
+    OptimizationImpactInfo impact = preview( condition, parameterGeneration, stepInterface );
+    assertThat( impact.getQueryBeforeOptimization(),
+      equalTo( TEST_JSON_QUERY ) );
+  }
 
   @Override
   protected MongodbPredicate getMongodbPredicate( Condition condition, Map<String, String> fieldMappings ) {
