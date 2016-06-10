@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -47,6 +47,11 @@ public class DataServiceStepHandler extends AbstractXulEventHandler {
   }
 
   public void newDataService() {
+    DataServiceMeta dataServiceByStepName =
+      delegate.getDataServiceByStepName( getActiveTrans(), getCurrentStep().getName() );
+    if ( dataServiceByStepName != null && !dataServiceByStepName.isUserDefined() ) {
+      delegate.removeDataService( dataServiceByStepName );
+    }
     delegate.createNewDataService( getCurrentStep().getName() );
   }
 

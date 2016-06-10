@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -36,6 +36,7 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.trans.TransGraph;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -82,9 +83,18 @@ public class DataServiceStepHandlerTest {
   }
 
   @Test
-  public void testNewDataService() {
+  public void testNewDataServiceNoTransientDS() {
+    when( dataServiceMeta .isUserDefined() ).thenReturn( true );
     stepHandler.newDataService();
+    verify( delegate, never() ).removeDataService( dataServiceMeta );
+    verify( delegate ).createNewDataService( stepMeta.getName() );
+  }
 
+  @Test
+  public void testNewDataServiceTransientDS() {
+    when( dataServiceMeta .isUserDefined() ).thenReturn( false );
+    stepHandler.newDataService();
+    verify( delegate ).removeDataService( dataServiceMeta );
     verify( delegate ).createNewDataService( stepMeta.getName() );
   }
 
