@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -91,6 +91,7 @@ public class DataServiceStepMenuExtensionTest {
     when( transGraph.getCurrentStep() ).thenReturn( stepMeta );
     when( stepMenuExtension.getMenu() ).thenReturn( menupopup );
     when( stepMeta.getName() ).thenReturn( STEP_NAME );
+    when( dataServiceMeta.isUserDefined() ).thenReturn( true );
     when( metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() ) ).thenReturn( dataServiceMeta );
     when( menupopup.getElementById( anyString() ) ).thenReturn( component );
 
@@ -102,6 +103,32 @@ public class DataServiceStepMenuExtensionTest {
     verify( stepMenuExtension ).getMenu();
     verify( metaStoreUtil ).getDataServiceByStepName( transMeta, stepMeta.getName() );
     verify( menupopup, times( 4 ) ).getElementById( anyString() );
+    verify( component, times( 3 ) ).setDisabled( false );
+    verify( component, times( 1 ) ).setDisabled( true );
   }
+
+  @Test
+  public void testCallExtensionPointWithTransient() throws Exception {
+    when( stepMenuExtension.getTransGraph() ).thenReturn( transGraph );
+    when( transGraph.getTransMeta() ).thenReturn( transMeta );
+    when( transGraph.getCurrentStep() ).thenReturn( stepMeta );
+    when( stepMenuExtension.getMenu() ).thenReturn( menupopup );
+    when( stepMeta.getName() ).thenReturn( STEP_NAME );
+    when( dataServiceMeta.isUserDefined() ).thenReturn( false );
+    when( metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() ) ).thenReturn( dataServiceMeta );
+    when( menupopup.getElementById( anyString() ) ).thenReturn( component );
+
+    dataServiceStepMenuExtension.callExtensionPoint( log, stepMenuExtension );
+
+    verify( stepMenuExtension, times( 2 ) ).getTransGraph();
+    verify( transGraph ).getTransMeta();
+    verify( transGraph ).getCurrentStep();
+    verify( stepMenuExtension ).getMenu();
+    verify( metaStoreUtil ).getDataServiceByStepName( transMeta, stepMeta.getName() );
+    verify( menupopup, times( 4 ) ).getElementById( anyString() );
+    verify( component, times( 1 ) ).setDisabled( false );
+    verify( component, times( 3 ) ).setDisabled( true );
+  }
+
 
 }

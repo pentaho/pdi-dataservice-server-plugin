@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,6 +28,7 @@ import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.trans.StepMenuExtension;
@@ -48,7 +49,8 @@ public class DataServiceStepMenuExtension implements ExtensionPointInterface {
     StepMeta stepMeta = extension.getTransGraph().getCurrentStep();
     XulMenupopup menu = extension.getMenu();
 
-    Boolean hasDataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() ) != null;
+    DataServiceMeta dataService = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() );
+    Boolean hasDataService = dataService != null && dataService.isUserDefined();
 
     menu.getElementById( "dataservices-new" ).setDisabled( hasDataService );
     menu.getElementById( "dataservices-edit" ).setDisabled( !hasDataService );
