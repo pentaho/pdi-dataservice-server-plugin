@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -125,7 +125,7 @@ public class SqlTransGenerator {
     List<SQLField> aggFields = sql.getSelectFields().getAggregateFields();
     if ( sql.getHavingCondition() != null ) {
       List<SQLField> havingFields =
-          sql.getHavingCondition().extractHavingFields(
+        sql.getHavingCondition().extractHavingFields(
           sql.getSelectFields().getFields(), aggFields, transMeta.getStepFields( lastStep ) );
       aggFields.addAll( havingFields );
     }
@@ -203,7 +203,7 @@ public class SqlTransGenerator {
     meta.allocate( 0, 0, serviceFields.size() );
     for ( int i = 0; i < serviceFields.size(); i++ ) {
       ValueMetaInterface valueMeta = serviceFields.getValueMeta( i );
-      SelectMetadataChange metadataChanges = meta.getMeta()[i] = new SelectMetadataChange( meta );
+      SelectMetadataChange metadataChanges = meta.getMeta()[ i ] = new SelectMetadataChange( meta );
       metadataChanges.setName( valueMeta.getName() );
       metadataChanges.setConversionMask( valueMeta.getConversionMask() );
     }
@@ -260,16 +260,16 @@ public class SqlTransGenerator {
       function.setFieldA( iif.getTrueValueString() );
       function.setConversionMask( valueMeta.getConversionMask() );
       //CHECKSTYLE:Indentation:OFF
-      trueMeta.getCalculation()[0] = function;
+      trueMeta.getCalculation()[ 0 ] = function;
     } else {
       ConstantMeta trueMeta = new ConstantMeta();
       trueMetaInterface = trueMeta;
       trueMeta.allocate( 1 );
       //CHECKSTYLE:Indentation:OFF
-      trueMeta.getFieldName()[0] = Const.NVL( iifField.getAlias(), iifField.getField() );
-      trueMeta.getFieldType()[0] = iif.getTrueValue().getValueMeta().getTypeDesc();
-      trueMeta.getValue()[0] = iif.getTrueValue().toString();
-      trueMeta.getFieldFormat()[0] = valueMeta.getConversionMask();
+      trueMeta.getFieldName()[ 0 ] = Const.NVL( iifField.getAlias(), iifField.getField() );
+      trueMeta.getFieldType()[ 0 ] = iif.getTrueValue().getValueMeta().getTypeDesc();
+      trueMeta.getValue()[ 0 ] = iif.getTrueValue().toString();
+      trueMeta.getFieldFormat()[ 0 ] = valueMeta.getConversionMask();
     }
     StepMeta trueStep = new StepMeta( "TRUE: " + iifField.getExpression(), trueMetaInterface );
     trueStep.setLocation( xLocation, 50 );
@@ -290,16 +290,16 @@ public class SqlTransGenerator {
       function.setValuePrecision( valueMeta.getPrecision() );
       function.setFieldA( iif.getFalseValueString() );
       function.setConversionMask( valueMeta.getConversionMask() );
-      falseMeta.getCalculation()[0] = function;
+      falseMeta.getCalculation()[ 0 ] = function;
     } else {
 
       ConstantMeta falseMeta = new ConstantMeta();
       falseMetaInterface = falseMeta;
       falseMeta.allocate( 1 );
-      falseMeta.getFieldName()[0] = Const.NVL( iifField.getAlias(), iifField.getField() );
-      falseMeta.getFieldType()[0] = iif.getFalseValue().getValueMeta().getTypeDesc();
-      falseMeta.getFieldFormat()[0] = valueMeta.getConversionMask();
-      falseMeta.getValue()[0] = iif.getFalseValue().toString();
+      falseMeta.getFieldName()[ 0 ] = Const.NVL( iifField.getAlias(), iifField.getField() );
+      falseMeta.getFieldType()[ 0 ] = iif.getFalseValue().getValueMeta().getTypeDesc();
+      falseMeta.getFieldFormat()[ 0 ] = valueMeta.getConversionMask();
+      falseMeta.getValue()[ 0 ] = iif.getFalseValue().toString();
     }
     StepMeta falseStep = new StepMeta( "FALSE: " + iifField.getExpression(), falseMetaInterface );
     falseStep.setLocation( xLocation, 150 );
@@ -329,10 +329,10 @@ public class SqlTransGenerator {
     meta.allocate( serviceFields.size() );
     for ( int i = 0; i < serviceFields.size(); i++ ) {
       ValueMetaInterface valueMeta = serviceFields.getValueMeta( i );
-      meta.getFieldname()[i] = valueMeta.getName();
-      meta.getType()[i] = valueMeta.getType();
-      meta.getLength()[i] = valueMeta.getLength();
-      meta.getPrecision()[i] = valueMeta.getPrecision();
+      meta.getFieldname()[ i ] = valueMeta.getName();
+      meta.getType()[ i ] = valueMeta.getType();
+      meta.getLength()[ i ] = valueMeta.getLength();
+      meta.getPrecision()[ i ] = valueMeta.getPrecision();
     }
     StepMeta stepMeta = new StepMeta( "Injector", meta );
     stepMeta.setLocation( xLocation, 50 );
@@ -358,9 +358,9 @@ public class SqlTransGenerator {
     for ( int i = 0; i < fields.getFields().size(); i++ ) {
       SQLField field = fields.getFields().get( i );
       if ( !Const.isEmpty( field.getAlias() ) && rowMeta.searchValueMeta( field.getAlias() ) != null ) {
-        meta.getGroupField()[i] = field.getAlias();
+        meta.getGroupField()[ i ] = field.getAlias();
       } else {
-        meta.getGroupField()[i] = field.getField();
+        meta.getGroupField()[ i ] = field.getField();
       }
     }
 
@@ -410,14 +410,14 @@ public class SqlTransGenerator {
     for ( int i = 0; i < fields.size(); i++ ) {
       SQLField field = fields.get( i );
       ValueMetaInterface valueMeta = field.getValueMeta();
-      meta.getFieldName()[i] = "Constant_" + field.getFieldIndex() + "_" + field.getField();
-      meta.getFieldFormat()[i] = valueMeta.getConversionMask();
-      meta.getFieldType()[i] = valueMeta.getTypeDesc();
-      meta.getFieldLength()[i] = valueMeta.getLength();
-      meta.getFieldPrecision()[i] = valueMeta.getPrecision();
-      meta.getDecimal()[i] = valueMeta.getDecimalSymbol();
-      meta.getGroup()[i] = valueMeta.getGroupingSymbol();
-      meta.getValue()[i] = valueMeta.getString( field.getValueData() );
+      meta.getFieldName()[ i ] = "Constant_" + field.getFieldIndex() + "_" + field.getField();
+      meta.getFieldFormat()[ i ] = valueMeta.getConversionMask();
+      meta.getFieldType()[ i ] = valueMeta.getTypeDesc();
+      meta.getFieldLength()[ i ] = valueMeta.getLength();
+      meta.getFieldPrecision()[ i ] = valueMeta.getPrecision();
+      meta.getDecimal()[ i ] = valueMeta.getDecimalSymbol();
+      meta.getGroup()[ i ] = valueMeta.getGroupingSymbol();
+      meta.getValue()[ i ] = valueMeta.getString( field.getValueData() );
     }
 
     StepMeta stepMeta = new StepMeta( "Constants", meta );
@@ -428,7 +428,7 @@ public class SqlTransGenerator {
   }
 
   private StepMeta generateGroupByStep( List<SQLField> aggFields, List<SQLField> groupFields,
-    RowMetaInterface inputFields ) throws KettleException {
+                                        RowMetaInterface inputFields ) throws KettleException {
     MemoryGroupByMeta meta = new MemoryGroupByMeta();
     meta.allocate( groupFields.size(), aggFields.size() );
 
@@ -440,7 +440,7 @@ public class SqlTransGenerator {
     //
     for ( int i = 0; i < groupFields.size(); i++ ) {
       SQLField field = groupFields.get( i );
-      meta.getGroupField()[i] = field.getField();
+      meta.getGroupField()[ i ] = field.getField();
     }
 
     // The aggregates
@@ -448,7 +448,7 @@ public class SqlTransGenerator {
     for ( int i = 0; i < aggFields.size(); i++ ) {
       SQLField field = aggFields.get( i );
       ValueMetaInterface valueMeta = field.getValueMeta();
-      meta.getAggregateField()[i] = Const.NVL( field.getAlias(), field.getField() );
+      meta.getAggregateField()[ i ] = Const.NVL( field.getAlias(), field.getField() );
 
       String subjectField;
       if ( field.getValueData() == null ) {
@@ -471,7 +471,7 @@ public class SqlTransGenerator {
         subjectField = "Constant_" + field.getFieldIndex() + "_" + field.getField();
       }
 
-      meta.getSubjectField()[i] = subjectField;
+      meta.getSubjectField()[ i ] = subjectField;
       int agg = 0;
       switch ( field.getAggregation() ) {
         case SUM:
@@ -560,16 +560,20 @@ public class SqlTransGenerator {
 
     SelectValuesMeta meta = new SelectValuesMeta();
     meta.allocate( fields.size(), 0, 0 );
+    String[] selectNames = new String[ fields.size() ];
+    String[] selectRename = new String[ fields.size() ];
     for ( int i = 0; i < fields.size(); i++ ) {
       SQLField sqlField = fields.get( i );
       if ( sqlField.getAggregation() == null ) {
-        meta.getSelectName()[i] = sqlField.getField();
-        meta.getSelectRename()[i] = sqlField.getAlias();
+        selectNames[ i ] = sqlField.getField();
+        selectRename[ i ] = sqlField.getAlias();
       } else {
         // agg field names are assigned in the group by
-        meta.getSelectName()[i] = Const.NVL( sqlField.getAlias(), sqlField.getField() );
+        selectNames[ i ] = Const.NVL( sqlField.getAlias(), sqlField.getField() );
       }
     }
+    meta.setSelectName( selectNames );
+    meta.setSelectRename( selectRename );
 
     StepMeta stepMeta = new StepMeta( "Select values", meta );
     stepMeta.setLocation( xLocation, 50 );
