@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -39,6 +39,7 @@ import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.ui.xul.XulException;
 
@@ -47,14 +48,11 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceDelegateTest extends BaseTest {
@@ -83,10 +81,6 @@ public class DataServiceDelegateTest extends BaseTest {
   @Mock
   private MessageDialog messageDialog;
 
-  @Test
-  public void testDefaultSpoonFactoryMethod() throws Exception {
-    assertThat( DataServiceDelegate.withDefaultSpoonInstance( context ), notNullValue() );
-  }
 
   @Before
   public void setUp() throws Exception {
@@ -95,11 +89,12 @@ public class DataServiceDelegateTest extends BaseTest {
     when( uiFactory.getMessageBox( any( Shell.class ), anyInt() ) ).thenReturn( messageBox );
     when( uiFactory.getShell( shell ) ).thenReturn( shell );
     when( uiFactory.getDataServiceTestDialog( any( Shell.class ), any( DataServiceMeta.class ), any(
-        DataServiceContext.class ) ) )
-        .thenReturn( dataServiceTestDialog );
+      DataServiceContext.class ) ) )
+      .thenReturn( dataServiceTestDialog );
     when( uiFactory
-        .getMessageDialog( any( Shell.class ), anyString(), any( Image.class ), anyString(), anyInt(), any( String[].class ),
-            anyInt() ) ).thenReturn( messageDialog );
+      .getMessageDialog( any( Shell.class ), anyString(), any( Image.class ), anyString(), anyInt(),
+        any( String[].class ),
+        anyInt() ) ).thenReturn( messageDialog );
     when( messageDialog.open() ).thenReturn( 0 );
 
     delegate = new DataServiceDelegate( context, spoon );
@@ -111,11 +106,29 @@ public class DataServiceDelegateTest extends BaseTest {
   }
 
   @Test
+  public void testDefaultSpoonFactoryMethod() throws Exception {
+    assertThat( DataServiceDelegate.withDefaultSpoonInstance( context ), notNullValue() );
+  }
+
+
+  @Test
   public void testCreateNewDataService() throws Exception {
     delegate.createNewDataService( STEP_NAME );
 
     verify( dialogBuilder ).serviceStep( STEP_NAME );
     verify( dataServiceDialog ).open();
+  }
+
+  @Test
+  public void testCreateNewDataServiceNoServiceStepProvided() throws KettleException {
+    delegate = spy( delegate );
+
+    when( dialogBuilder.serviceStep( anyString() ) ).thenReturn( dialogBuilder );
+    when( dialogBuilder.build( delegate ) ).thenReturn( dataServiceDialog );
+
+    delegate.createNewDataService( null );
+
+    verify( delegate ).getLastStepOfActiveTrans();
   }
 
   @Test
@@ -209,5 +222,12 @@ public class DataServiceDelegateTest extends BaseTest {
     delegate.showDriverDetailsDialog();
 
     verify( dialog ).open();
+  }
+
+  @Test
+  public void testTransStepIsReturnedNoCurrentStepExists() {
+    StepMeta step = delegate.getLastStepOfActiveTrans();
+
+    assertEquals( DATA_SERVICE_STEP, step.getName() );
   }
 }
