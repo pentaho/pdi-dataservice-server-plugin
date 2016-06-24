@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window orient="vertical" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        id="dataservice-remap-no-steps-window"
+        width="385"
+        height="118">
+  <dialog id="dataservice-remap-no-steps-dialog"
+          title="${RemapNoStepsDialog.Title}"
+          appicon="images/data-services.svg"
+          width="385"
+          height="118"
+          padding="15"
+          buttons=""
+          resizable="false"
+          ondialogcancel="remapNoStepsDialogController.cancel()">
+    <hbox>
+      <image src="ui/images/warning:48#48.svg"/>
+      <vbox width="10"/>
+      <vbox>
+        <label id="label1" value="${RemapNoStepsDialog.Label1}"/>
+        <spacer/>
+      </vbox>
+    </hbox>
+    <hbox>
+      <spacer flex="1"/>
+      <button label="${RemapNoStepsDialog.Close.Button}" onclick="remapNoStepsDialogController.close()" width="80"/>
+    </hbox>
+  </dialog>
+</window>

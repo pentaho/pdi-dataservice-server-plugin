@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
+import java.util.List;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Menu;
@@ -33,6 +34,10 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.ui.controller.DataServiceRemapConfirmationDialogController;
+import org.pentaho.di.trans.dataservice.ui.controller.DataServiceRemapNoStepsDialogController;
+import org.pentaho.di.trans.dataservice.ui.controller.DataServiceRemapStepChooserDialogController;
+import org.pentaho.di.trans.dataservice.ui.model.DataServiceRemapStepChooserModel;
 import org.pentaho.ui.xul.XulException;
 
 public class UIFactory {
@@ -66,6 +71,29 @@ public class UIFactory {
   public DriverDetailsDialog getDriverDetailsDialog( Shell shell ) throws
       KettleException, XulException {
     return new DriverDetailsDialog( shell );
+  }
+
+  public DataServiceRemapConfirmationDialog getRemapConfirmationDialog( Shell shell, DataServiceMeta dataService,
+      List<String> remainingStepsNames, DataServiceDelegate dataServiceDelegate ) throws KettleException {
+    DataServiceRemapConfirmationDialogController
+        controller =
+        new DataServiceRemapConfirmationDialogController( dataService, remainingStepsNames, dataServiceDelegate );
+    return new DataServiceRemapConfirmationDialog( shell, controller );
+  }
+
+  public DataServiceRemapStepChooserDialog getRemapStepChooserDialog( Shell shell, DataServiceMeta dataService,
+      List<String> remainingStepsNames, DataServiceDelegate dataServiceDelegate )
+      throws KettleException {
+    DataServiceRemapStepChooserModel model = new DataServiceRemapStepChooserModel();
+    DataServiceRemapStepChooserDialogController
+        controller =
+        new DataServiceRemapStepChooserDialogController( model, dataService, remainingStepsNames, dataServiceDelegate );
+    return new DataServiceRemapStepChooserDialog( shell, controller );
+  }
+
+  public DataServiceRemapNoStepsDialog getRemapNoStepsDialog( Shell shell ) throws KettleException {
+    DataServiceRemapNoStepsDialogController controller = new DataServiceRemapNoStepsDialogController();
+    return new DataServiceRemapNoStepsDialog( shell, controller );
   }
 
   public Shell getShell( Shell shell ) {

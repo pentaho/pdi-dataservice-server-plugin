@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window orient="vertical" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        onload="remapConfirmationDialogController.init()"
+        id="dataservice-remap-confirmation-window"
+        width="385"
+        height="118">
+  <dialog id="dataservice-remap-confirmation-dialog"
+          title="${RemapConfirmationDialog.Title}"
+          appicon="images/data-services.svg"
+          width="385"
+          height="118"
+          padding="15"
+          buttons=""
+          resizable="false"
+          ondialogcancel="remapConfirmationDialogController.cancel()">
+    <hbox>
+      <image src="ui/images/warning:48#48.svg"/>
+      <vbox width="10"/>
+      <vbox>
+        <label id="label1"/>
+        <label id="label2" value="${RemapConfirmationDialog.Label2}"/>
+        <spacer/>
+      </vbox>
+    </hbox>
+    <hbox>
+      <spacer flex="1"/>
+      <button id="remap" label="${RemapConfirmationDialog.Remap.Button}"
+              onclick="remapConfirmationDialogController.remap()"/>
+      <button id="delete" label="${RemapConfirmationDialog.Delete.Button}"
+              onclick="remapConfirmationDialogController.delete()"/>
+      <button label="${RemapConfirmationDialog.Cancel.Button}" onclick="remapConfirmationDialogController.cancel()"
+              width="80"/>
+    </hbox>
+  </dialog>
+</window>

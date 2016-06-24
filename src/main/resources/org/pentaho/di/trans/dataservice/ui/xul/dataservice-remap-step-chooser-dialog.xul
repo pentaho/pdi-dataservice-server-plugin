@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window orient="vertical" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        onload="remapStepChooserController.init()"
+        id="dataservice-remap-step-shooser-window"
+        width="385"
+        height="118">
+  <dialog id="dataservice-remap-step-chooser-dialog"
+          title="${RemapStepChooserDialog.Title}"
+          appicon="images/data-services.svg"
+          width="385"
+          height="118"
+          padding="15"
+          buttons=""
+          resizable="false"
+          ondialogcancel="remapStepChooserController.cancel()">
+    <label id="label1"/>
+    <spacer/>
+    <label value="${RemapStepChooserDialog.Steps.Label}"/>
+    <hbox>
+      <listbox id="trans-steps" width="206" height="150"/>
+    </hbox>
+    <spacer/>
+    <hbox>
+      <spacer flex="1"/>
+      <button label="${RemapStepChooserDialog.Ok.Button}" onclick="remapStepChooserController.remap()" width="80"/>
+      <button label="${RemapStepChooserDialog.Cancel.Button}" onclick="remapStepChooserController.cancel()" width="80"/>
+    </hbox>
+  </dialog>
+</window>

@@ -63,4 +63,10 @@
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
+    <bean id="dataServiceStepDelete" scope="singleton"
+          class="org.pentaho.di.trans.dataservice.ui.DataServiceStepDeleteExtensionPointPlugin">
+        <argument ref="context"/>
+        <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
+    </bean>
+
 </blueprint>
