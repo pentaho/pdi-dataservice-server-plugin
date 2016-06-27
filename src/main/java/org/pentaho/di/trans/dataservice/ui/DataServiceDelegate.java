@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice.ui;
 import com.google.common.base.Objects;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import java.util.List;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -41,8 +42,6 @@ import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
-
-import java.util.List;
 
 public class DataServiceDelegate extends DataServiceFactory {
   private static final Class<?> PKG = DataServiceDelegate.class;
@@ -208,7 +207,6 @@ public class DataServiceDelegate extends DataServiceFactory {
     return getSpoon().getRepository();
   }
 
-  // TODO use it from context menu
   public void showDriverDetailsDialog() {
     showDriverDetailsDialog( getShell() );
   }
@@ -218,6 +216,42 @@ public class DataServiceDelegate extends DataServiceFactory {
       getUiFactory().getDriverDetailsDialog( shell ).open();
     } catch ( Exception e ) {
       getLogChannel().logError( "Unable to create driver details dialog", e );
+    }
+  }
+
+  public DataServiceRemapConfirmationDialog.Action showRemapConfirmationDialog( DataServiceMeta dataService,
+      List<String> remainingStepNames ) {
+    try {
+      DataServiceRemapConfirmationDialog
+          dialog = getUiFactory().getRemapConfirmationDialog( getShell(), dataService, remainingStepNames, this );
+      dialog.open();
+      return dialog.getAction();
+    } catch ( KettleException e ) {
+      getLogChannel().logError( "Unable to create remap data service dialog", e );
+    }
+
+    return DataServiceRemapConfirmationDialog.Action.CANCEL;
+  }
+
+  public DataServiceRemapStepChooserDialog.Action showRemapStepChooserDialog( DataServiceMeta dataService,
+      List<String> remainingStepNames, TransMeta trans ) {
+    try {
+      DataServiceRemapStepChooserDialog
+          dialog = getUiFactory().getRemapStepChooserDialog( getShell(), dataService, remainingStepNames, this );
+      dialog.open();
+      return dialog.getAction();
+    } catch ( KettleException e ) {
+      getLogChannel().logError( "Unable to create remap data service dialog", e );
+    }
+
+    return DataServiceRemapStepChooserDialog.Action.CANCEL;
+  }
+
+  public void showRemapNoStepsDialog( Shell shell ) {
+    try {
+      getUiFactory().getRemapNoStepsDialog( shell ).open();
+    } catch ( KettleException e ) {
+      getLogChannel().logError( "Unable to create no steps for remap dialog", e );
     }
   }
 

@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
+import java.util.List;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -52,7 +53,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.same;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceDelegateTest extends BaseTest {
@@ -222,6 +230,13 @@ public class DataServiceDelegateTest extends BaseTest {
     delegate.showDriverDetailsDialog();
 
     verify( dialog ).open();
+
+    Exception e = new RuntimeException();
+    doThrow( e ).when( dialog ).open();
+
+    delegate.showDriverDetailsDialog();
+
+    verify( logChannel ).logError( anyString(), same( e ) );
   }
 
   @Test
@@ -229,5 +244,63 @@ public class DataServiceDelegateTest extends BaseTest {
     StepMeta step = delegate.getLastStepOfActiveTrans();
 
     assertEquals( DATA_SERVICE_STEP, step.getName() );
+  }
+
+  @Test
+  public void testShowRemapConfirmationDialog() throws KettleException {
+    DataServiceRemapConfirmationDialog dialog = mock( DataServiceRemapConfirmationDialog.class );
+
+    when( dialog.getAction() ).thenReturn( DataServiceRemapConfirmationDialog.Action.REMAP );
+    when( uiFactory
+        .getRemapConfirmationDialog( any( Shell.class ), any( DataServiceMeta.class ), any( List.class ),
+            any( DataServiceDelegate.class ) ) ).thenReturn( dialog );
+
+    assertThat( delegate.showRemapConfirmationDialog( null, null ),
+        is( DataServiceRemapConfirmationDialog.Action.REMAP ) );
+    verify( dialog ).open();
+
+    KettleException e = new KettleException();
+    doThrow( e ).when( dialog ).open();
+
+    assertThat( delegate.showRemapConfirmationDialog( null, null ),
+        is( DataServiceRemapConfirmationDialog.Action.CANCEL ) );
+    verify( logChannel ).logError( anyString(), same( e ) );
+  }
+
+  @Test
+  public void testShowRemapStepChooserDialog() throws KettleException {
+    DataServiceRemapStepChooserDialog dialog = mock( DataServiceRemapStepChooserDialog.class );
+
+    when( dialog.getAction() ).thenReturn( DataServiceRemapStepChooserDialog.Action.REMAP );
+    when( uiFactory
+        .getRemapStepChooserDialog( any( Shell.class ), any( DataServiceMeta.class ), any( List.class ),
+            any( DataServiceDelegate.class ) ) ).thenReturn( dialog );
+
+    assertThat( delegate.showRemapStepChooserDialog( null, null, null ),
+        is( DataServiceRemapStepChooserDialog.Action.REMAP ) );
+    verify( dialog ).open();
+
+    KettleException e = new KettleException();
+    doThrow( e ).when( dialog ).open();
+
+    assertThat( delegate.showRemapStepChooserDialog( null, null, null ),
+        is( DataServiceRemapStepChooserDialog.Action.CANCEL ) );
+    verify( logChannel ).logError( anyString(), same( e ) );
+  }
+
+  @Test
+  public void testShowRemapNoStepsDialog() throws KettleException {
+    DataServiceRemapNoStepsDialog dialog = mock( DataServiceRemapNoStepsDialog.class );
+
+    when( uiFactory.getRemapNoStepsDialog( any( Shell.class ) ) ).thenReturn( dialog );
+
+    delegate.showRemapNoStepsDialog( null );
+    verify( dialog ).open();
+
+    KettleException e = new KettleException();
+    doThrow( e ).when( dialog ).open();
+
+    delegate.showRemapNoStepsDialog( null );
+    verify( logChannel ).logError( anyString(), same( e ) );
   }
 }
