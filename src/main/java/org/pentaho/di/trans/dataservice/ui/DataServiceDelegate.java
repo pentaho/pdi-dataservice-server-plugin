@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -31,16 +31,18 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
-import static org.pentaho.di.i18n.BaseMessages.getString;
+import java.util.List;
 
 public class DataServiceDelegate extends DataServiceFactory {
   private static final Class<?> PKG = DataServiceDelegate.class;
@@ -65,11 +67,27 @@ public class DataServiceDelegate extends DataServiceFactory {
     this.spoonSupplier = spoonSupplier;
   }
 
+  /**
+   * Creates a new data service, where step with {@code stepName}
+   * is a service step.
+   *
+   * @param stepName
+   *    name of the step, that will be a service step.
+   *    {@code null} is acceptable value.
+   *
+   */
   public void createNewDataService( String stepName ) {
+    if ( stepName == null ) {
+      StepMeta stepMeta = getLastStepOfActiveTrans();
+      if ( stepMeta != null ) {
+        stepName = stepMeta.getName();
+      }
+    }
+
     TransMeta transMeta = getSpoon().getActiveTransformation();
     if ( transMeta.hasChanged() ) {
-      showSavePrompt( getString( PKG, "DataServiceDelegate.NewTransChanged.Title" ),
-          getString( PKG, "DataServiceDelegate.NewTransChanged.Message" ) );
+      showSavePrompt( BaseMessages.getString( PKG, "DataServiceDelegate.NewTransChanged.Title" ),
+        BaseMessages.getString( PKG, "DataServiceDelegate.NewTransChanged.Message" ) );
       if ( transMeta.hasChanged() ) {
         return;
       }
@@ -84,8 +102,8 @@ public class DataServiceDelegate extends DataServiceFactory {
   public void editDataService( DataServiceMeta dataService ) {
     TransMeta transMeta = dataService.getServiceTrans();
     if ( transMeta.hasChanged() ) {
-      showSavePrompt( getString( PKG, "DataServiceDelegate.EditTransChanged.Title" ),
-        getString( PKG, "DataServiceDelegate.EditTransChanged.Message" ) );
+      showSavePrompt( BaseMessages.getString( PKG, "DataServiceDelegate.EditTransChanged.Title" ),
+        BaseMessages.getString( PKG, "DataServiceDelegate.EditTransChanged.Message" ) );
       if ( transMeta.hasChanged() ) {
         return;
       }
@@ -108,10 +126,10 @@ public class DataServiceDelegate extends DataServiceFactory {
   }
 
   private void showSavePrompt( String title, String message ) {
-    MessageDialog dialog = getUiFactory().getMessageDialog( getShell(), title,  null, message, MessageDialog.QUESTION,
-            new String[] {
-                getString( PKG, "DataServiceDelegate.Yes.Button" ),
-                getString( PKG, "DataServiceDelegate.No.Button" ) }, 0 );
+    MessageDialog dialog = getUiFactory().getMessageDialog( getShell(), title, null, message, MessageDialog.QUESTION,
+      new String[] {
+        BaseMessages.getString( PKG, "DataServiceDelegate.Yes.Button" ),
+        BaseMessages.getString( PKG, "DataServiceDelegate.No.Button" ) }, 0 );
     if ( dialog.open() == 0 ) {
       try {
         getSpoon().saveToFile( getSpoon().getActiveTransformation() );
@@ -119,7 +137,7 @@ public class DataServiceDelegate extends DataServiceFactory {
         getLogChannel().logError( "Failed to save transformation", e );
       }
     } else {
-      showError( title, getString( PKG, "DataServiceDelegate.PleaseSave.Message" ) );
+      showError( title, BaseMessages.getString( PKG, "DataServiceDelegate.PleaseSave.Message" ) );
     }
   }
 
@@ -156,8 +174,8 @@ public class DataServiceDelegate extends DataServiceFactory {
   public void removeDataService( DataServiceMeta dataService, boolean prompt ) {
     if ( prompt ) {
       MessageBox messageBox = getUiFactory().getMessageBox( getShell(), SWT.YES | SWT.NO | SWT.ICON_QUESTION );
-      messageBox.setText( getString( PKG, "DataServiceDelegate.DeleteDataService.Title" ) );
-      messageBox.setMessage( getString( PKG, "DataServiceDelegate.DeleteDataService.Message", dataService.getName() ) );
+      messageBox.setText( BaseMessages.getString( PKG, "DataServiceDelegate.DeleteDataService.Title" ) );
+      messageBox.setMessage( BaseMessages.getString( PKG, "DataServiceDelegate.DeleteDataService.Message", dataService.getName() ) );
       int answerIndex = messageBox.open();
       if ( answerIndex != SWT.YES ) {
         return;
@@ -219,4 +237,19 @@ public class DataServiceDelegate extends DataServiceFactory {
     getDisplay().syncExec( runnable );
   }
 
+
+  StepMeta getLastStepOfActiveTrans() {
+    StepMeta step = null;
+
+    TransMeta activeTrans = getSpoon().getActiveTransformation();
+
+    if ( activeTrans != null ) {
+      List<StepMeta> steps = activeTrans.getSteps();
+      if ( steps != null && !steps.isEmpty() ) {
+        step = steps.get( steps.size() - 1 );
+      }
+    }
+
+    return step;
+  }
 }
