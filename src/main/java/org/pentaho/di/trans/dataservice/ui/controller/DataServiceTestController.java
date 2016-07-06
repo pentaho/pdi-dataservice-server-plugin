@@ -22,11 +22,18 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
+
+import com.google.common.collect.ImmutableMap;
 
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
@@ -40,6 +47,8 @@ import org.pentaho.di.core.parameters.NamedParams;
 import org.pentaho.di.core.parameters.NamedParamsDefault;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.i18n.BaseMessages;
@@ -48,10 +57,13 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
+import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
+
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
@@ -65,6 +77,8 @@ import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
+import org.apache.commons.io.IOUtils;
+
 
 public class DataServiceTestController extends AbstractXulEventHandler {
 
@@ -92,6 +106,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   private BindingFactory bindingFactory;
 
   private XulMenuList<String> maxRows;
+
+  private AnnotationsQueryService annotationsQueryService;
 
   public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService, DataServiceContext context ) throws KettleException {
     this( model, dataService, new DefaultBindingFactory(), context );
@@ -254,9 +270,18 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
     updateOptimizationImpact( dataServiceExec );
     updateModel( dataServiceExec );
-    callback.onLogChannelUpdate();
-    dataServiceExec.executeQuery( getDataServiceRowListener() );
-    pollForCompletion( dataServiceExec );
+
+    AnnotationsQueryService annotationsQuery = getAnnotationsQueryService();
+    Query query = annotationsQuery.prepareQuery( model.getSql(), model.getMaxRows(), ImmutableMap.<String, String>of() );
+    if ( null != query ) {
+      writeAnnotations( query );
+      handleCompletion( dataServiceExec );
+    } else {
+
+      callback.onLogChannelUpdate();
+      dataServiceExec.executeQuery( getDataServiceRowListener() );
+      pollForCompletion( dataServiceExec );
+    }
   }
 
   private void pollForCompletion( final DataServiceExecutor dataServiceExec ) {
@@ -483,5 +508,53 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   public void setCallback( DataServiceTestCallback callback ) {
     this.callback = callback;
+  }
+
+  public void setAnnotationsQueryService( AnnotationsQueryService annotationsQueryService ) {
+    this.annotationsQueryService = annotationsQueryService;
+  }
+
+  public AnnotationsQueryService getAnnotationsQueryService() {
+    if ( null == annotationsQueryService ) {
+      annotationsQueryService = new AnnotationsQueryService( this.context.getDataServiceDelegate() );
+    }
+    return annotationsQueryService;
+  }
+
+  private void writeAnnotations( Query query ) throws KettleException {
+    model.clearResultRows();
+    ByteArrayOutputStream annoStream = new ByteArrayOutputStream();
+    String annoString = null;
+    try {
+      query.writeTo( annoStream );
+      List<String> annoList = IOUtils.readLines( new ByteArrayInputStream( annoStream.toByteArray() ) );
+      int startIndex = annoList.indexOf( "<annotations> " );
+      annoString = annoList.subList( startIndex, annoList.size() ).stream().collect( Collectors.joining( "\n" ) );
+    } catch ( IOException e ) {
+      model.setAlertMessage( BaseMessages.getString( PKG, "DataServiceTest.UnableToRetrieveAnnotations.Message" ) );
+      throw new KettleException( BaseMessages.getString( PKG, "DataServiceTest.UnableToRetrieveAnnotations.Message" ) );
+    }
+
+    ValueMetaString valueMeta = new ValueMetaString( "annotations" );
+    valueMeta.setStorageType( ValueMetaInterface.STORAGE_TYPE_BINARY_STRING );
+    valueMeta.setStorageMetadata( new ValueMetaString( "annotations" ) );
+    RowMeta rowMeta = new RowMeta();
+    rowMeta.addValueMeta( valueMeta );
+    model.setResultRowMeta( rowMeta );
+
+    if ( null != annoString ) {
+      Object[] row = null;
+      try {
+        row = new Object[] { annoString.getBytes( Charset.forName( "UTF-8" ) ) };
+      } catch ( NullPointerException e ) {
+        model.setAlertMessage( BaseMessages.getString( PKG, "DataServiceTest.UnableToRetrieveAnnotations.Message" ) );
+        throw new KettleException( BaseMessages.getString( PKG,
+          "DataServiceTest.UnableToRetrieveAnnotations.Message" ) );
+      }
+
+      if ( null != row ) {
+        model.addResultRow( row );
+      }
+    }
   }
 }

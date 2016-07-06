@@ -45,6 +45,9 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
+import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
+import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.trans.step.RowListener;
@@ -55,9 +58,14 @@ import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.dom.Document;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -66,6 +74,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
@@ -108,6 +117,12 @@ public class DataServiceTestControllerTest  {
   @Mock
   private DataServiceContext context;
 
+  @Mock
+  private AnnotationsQueryService annotationsQueryService;
+
+  @Mock
+  private Query annotationsQuery;
+
   @Captor
   private ArgumentCaptor<String> queryCaptor;
 
@@ -115,6 +130,7 @@ public class DataServiceTestControllerTest  {
 
   private static final String TEST_TABLE_NAME = "Test Table";
   private static final int VERIFY_TIMEOUT_MILLIS = 2000;
+  private static final String TEST_ANNOTATIONS = "<annotations> \n</annotations>";
 
 
   @Before
@@ -122,6 +138,25 @@ public class DataServiceTestControllerTest  {
     MockitoAnnotations.initMocks( this );
 
     when( dataService.getServiceTrans() ).thenReturn( transMeta );
+
+    doAnswer( new Answer<Void>() {
+      @Override
+      public Void answer( InvocationOnMock invocation ) throws Throwable {
+        ( ( OutputStream )invocation.getArguments()[0] ).write( TEST_ANNOTATIONS.getBytes() );
+        return null;
+      }
+    } ).when( annotationsQuery ).writeTo( any( OutputStream.class ) );
+
+    doAnswer( new Answer<Query>() {
+      @Override
+      public Query answer( InvocationOnMock invocation ) {
+        String sql = (String)invocation.getArguments()[ 0 ];
+        if ( null != sql && sql.startsWith( "show annotations from " ) ) {
+          return annotationsQuery;
+        }
+        return null;
+      }
+    } ).when( annotationsQueryService ).prepareQuery( any( String.class ), anyInt(), any( Map.class ) );
 
     when( dataServiceExecutor.getServiceTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getGenTrans() ).thenReturn( mock( Trans.class ) );
@@ -152,6 +187,7 @@ public class DataServiceTestControllerTest  {
 
     dataServiceTestController = new DataServiceTestControllerTester();
     dataServiceTestController.setXulDomContainer( xulDomContainer );
+    dataServiceTestController.setAnnotationsQueryService( annotationsQueryService );
   }
 
   @Test
@@ -271,6 +307,35 @@ public class DataServiceTestControllerTest  {
     assertThat( Arrays.asList( params.listParameters() ), containsInAnyOrder( "foo", "bar" ) );
     assertThat( params.getParameterDefault( "foo" ), is( "fooVal" ) );
     assertThat( params.getParameterDefault( "bar" ), is( "barVal" ) );
+  }
+
+  @Test
+  public void queryForAnnontations() throws KettleException, IOException {
+    when( model.getSql() ).thenReturn( "show annotations from inAnnotations" );
+    dataServiceTestController.executeSql();
+
+    ArgumentCaptor<RowMetaInterface> rowMetaCaptor = ArgumentCaptor.forClass( RowMetaInterface.class );
+    verify( model, times( 2 ) ).setResultRowMeta( rowMetaCaptor.capture() );
+    List<RowMetaInterface> capturedRowMeta = rowMetaCaptor.getAllValues();
+    assertEquals( "annotations", capturedRowMeta.get( 1 ).getValueMeta( 0 ).getName() );
+
+    ArgumentCaptor<Object[]> rowCaptor = ArgumentCaptor.forClass( Object[].class );
+    verify( model, times( 1 ) ).addResultRow( rowCaptor.capture() );
+    assertEquals( TEST_ANNOTATIONS, new String( ( byte[] )rowCaptor.getValue()[0] ) );
+
+    verify( callback, never() ).onLogChannelUpdate();
+    verify( dataServiceExecutor, never() ).executeQuery();
+
+    doThrow( new IOException() ).when( annotationsQuery ).writeTo( any( OutputStream.class ) );
+
+    try {
+      dataServiceTestController.executeSql();
+      fail();
+    } catch ( KettleException e ) {
+      // Pass test
+    } catch ( Exception e ) {
+      fail();
+    }
   }
 
   /**
