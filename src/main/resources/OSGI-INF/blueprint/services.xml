@@ -26,6 +26,8 @@
         </argument>
     </bean>
 
+    <service id="dataServiceContext" ref="context" interface="org.pentaho.di.trans.dataservice.Context"></service>
+
     <reference id="lineageClient" interface="org.pentaho.metaverse.api.ILineageClient"/>
     <reference id="cacheManager" interface="org.pentaho.caching.api.PentahoCacheManager"/>
 
