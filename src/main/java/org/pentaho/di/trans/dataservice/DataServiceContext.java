@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class DataServiceContext {
+public class DataServiceContext implements Context {
   private final DataServiceMetaStoreUtil metaStoreUtil;
   private final List<AutoOptimizationService> autoOptimizationServices;
   private final PentahoCacheManager cacheManager;
@@ -72,34 +72,42 @@ public class DataServiceContext {
     this.uiFactory = uiFactory;
   }
 
+  @Override
   public PentahoCacheManager getCacheManager() {
     return cacheManager;
   }
 
+  @Override
   public DataServiceMetaStoreUtil getMetaStoreUtil() {
     return metaStoreUtil;
   }
 
+  @Override
   public List<AutoOptimizationService> getAutoOptimizationServices() {
     return autoOptimizationServices;
   }
 
+  @Override
   public List<PushDownFactory> getPushDownFactories() {
     return pushDownFactories;
   }
 
+  @Override
   public LogChannelInterface getLogChannel() {
     return logChannel;
   }
 
+  @Override
   public UIFactory getUIFactory() {
     return this.uiFactory;
   }
 
+  @Override
   public DataServiceDelegate getDataServiceDelegate() {
     return DataServiceDelegate.withDefaultSpoonInstance( this );
   }
 
+  @Override
   public DataServiceClient createClient( final Supplier<Repository> supplier ) {
     return new DataServiceClient( new DataServiceFactory( this ) {
       @Override public Repository getRepository() {
@@ -108,18 +116,22 @@ public class DataServiceContext {
     } );
   }
 
+  @Override
   public DataServiceClient createLocalClient() {
     return new DataServiceClient( getDataServiceDelegate() );
   }
 
+  @Override
   public void addExecutor( DataServiceExecutor executor ) {
     executors.putIfAbsent( executor.getId(), executor );
   }
 
+  @Override
   public DataServiceExecutor getExecutor( String id ) {
     return executors.get( id );
   }
 
+  @Override
   public void removeExecutor( String id ) {
     executors.remove( id );
   }
