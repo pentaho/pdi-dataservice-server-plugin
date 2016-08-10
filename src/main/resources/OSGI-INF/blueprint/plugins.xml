@@ -69,4 +69,9 @@
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 
+    <bean id="transImportExtensionPoint" scope="singleton"
+          class="org.pentaho.di.trans.dataservice.serialization.TransImportExtensionPointPlugin">
+        <argument ref="context"/>
+        <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
+    </bean>
 </blueprint>
