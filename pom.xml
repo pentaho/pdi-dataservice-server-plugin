@@ -264,7 +264,6 @@
                             org.pentaho.metaverse.api,
                             org.pentaho.metaverse.api.*,
                             *</Import-Package>
-            <DynamicImport-Package>*</DynamicImport-Package>
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Bundle-Version>${project.version}</Bundle-Version>
           </instructions>
