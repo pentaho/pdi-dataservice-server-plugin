@@ -1,23 +1,23 @@
 package org.pentaho.di.trans.dataservice.clients;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroup;
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroupXmlWriter;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleFileException;
-import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
-import org.pentaho.di.trans.step.RowAdapter;
-import org.pentaho.di.trans.step.RowListener;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
 /*! ******************************************************************************
  *
  * Pentaho Data Integration
@@ -40,13 +40,6 @@ import org.pentaho.di.trans.step.StepMeta;
  *
  ******************************************************************************/
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
-
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 
 public class AnnotationsQueryService implements Query.Service {
@@ -75,7 +68,7 @@ public class AnnotationsQueryService implements Query.Service {
     @Override public void writeTo( final OutputStream outputStream ) throws IOException {
       try {
         ModelAnnotationGroup modelAnnotations =
-          (ModelAnnotationGroup) executeOneRow().getExtensionDataMap().get( "KEY_MODEL_ANNOTATIONS" );
+          (ModelAnnotationGroup) prepareExecution().getExtensionDataMap().get( "KEY_MODEL_ANNOTATIONS" );
         writeAnnotations( outputStream, modelAnnotations );
       } catch ( MetaStoreException | KettleException e ) {
         String msg = "Error while executing 'show annotations from " + serviceName + "'";
@@ -102,17 +95,13 @@ public class AnnotationsQueryService implements Query.Service {
       rowMeta.writeData( dos, row );
     }
 
-    private Trans executeOneRow() throws MetaStoreException, KettleException {
+    private Trans prepareExecution() throws MetaStoreException, KettleException {
       DataServiceMeta dataService = factory.getDataService( serviceName );
       TransMeta serviceTrans = dataService.getServiceTrans();
-      disableHopsFrom( dataService, serviceTrans );
       final Trans trans = getTrans( serviceTrans );
       trans.setMetaStore( factory.getMetaStore() );
       if ( serviceTrans.getTransHopSteps( false ).size() > 0 ) {
         trans.prepareExecution( new String[]{} );
-        stopOnFirstRowWritten( dataService, trans );
-        trans.startThreads();
-        trans.waitUntilFinished();
       }
       return trans;
     }
@@ -121,34 +110,9 @@ public class AnnotationsQueryService implements Query.Service {
       return new Trans( serviceTrans );
     }
 
-    private void stopOnFirstRowWritten( final DataServiceMeta dataService, final Trans trans ) {
-      RowListener stoppingRowListener = getStoppingRowListener( trans );
-      for ( StepInterface stepInterface : trans.findBaseSteps( dataService.getStepname() ) ) {
-        stepInterface.addRowListener( stoppingRowListener );
-      }
-    }
-
-    private RowListener getStoppingRowListener( final Trans trans ) {
-      return new RowAdapter() {
-        @Override public void rowWrittenEvent( final RowMetaInterface rowMeta, final Object[] row )
-          throws KettleStepException {
-          //can stop the trans as soon as our data service step has written one row.
-          trans.stopAll();
-        }
-      };
-    }
-
     @Override public List<Trans> getTransList() {
       return Collections.emptyList();
     }
   }
 
-  private void disableHopsFrom( final DataServiceMeta dataService, final TransMeta serviceTrans ) {
-    String stepname = dataService.getStepname();
-    StepMeta step = serviceTrans.findStep( stepname );
-    List<TransHopMeta> transHop = serviceTrans.findAllTransHopFrom( step );
-    for ( TransHopMeta transHopMeta : transHop ) {
-      transHopMeta.setEnabled( false );
-    }
-  }
 }
