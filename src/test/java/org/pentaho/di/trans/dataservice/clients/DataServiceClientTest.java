@@ -35,6 +35,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
@@ -144,5 +145,16 @@ public class DataServiceClientTest extends BaseTest {
 
     when( transMeta.getStepFields( DATA_SERVICE_STEP ) ).thenThrow( new KettleStepException() );
     assertThat( client.getServiceInformation(), is( empty() ) );
+  }
+
+  @Test
+  public void testGetServiceInformationByName() throws Exception {
+    when( transMeta.getStepFields( dataService.getStepname() ) ).thenReturn( rowMetaInterface );
+
+    ThinServiceInformation serviceInformation = client.getServiceInformation( DATA_SERVICE_NAME );
+    verify( transMeta ).activateParameters();
+
+    assertThat( serviceInformation.getName(), equalTo( DATA_SERVICE_NAME ) );
+    assertThat( serviceInformation.getServiceFields(), equalTo( rowMetaInterface ) );
   }
 }

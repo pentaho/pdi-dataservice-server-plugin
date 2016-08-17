@@ -42,6 +42,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.sql.SQLException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -117,6 +118,34 @@ public class DataServiceClient implements DataServiceClientService, Query.Servic
     }
 
     return services;
+  }
+
+  @Override public List<String> getServiceNames() throws SQLException {
+    List<String> serviceNames = new ArrayList<>();
+    for ( DataServiceMeta service : factory.getDataServices( logErrors() ) ) {
+      serviceNames.add( service.getName() );
+    }
+    return serviceNames;
+  }
+
+  @Override public ThinServiceInformation getServiceInformation( String name ) throws SQLException {
+
+    for ( DataServiceMeta service : factory.getDataServices( logErrors() ) ) {
+      if ( service.getName().equals( name ) ) {
+        TransMeta transMeta = service.getServiceTrans();
+        try {
+          transMeta.activateParameters();
+          RowMetaInterface serviceFields = transMeta.getStepFields( service.getStepname() );
+          return new ThinServiceInformation( service.getName(), serviceFields );
+        } catch ( Exception e ) {
+          String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
+            service.getName(), transMeta.getName() );
+          factory.getLogChannel().logError( message, e );
+        }
+      }
+    }
+
+    return null;
   }
 
   private Function<Exception, Void> logErrors() {
