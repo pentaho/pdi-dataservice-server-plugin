@@ -36,13 +36,13 @@ import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.sql.SQLException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -121,11 +121,11 @@ public class DataServiceClient implements DataServiceClientService, Query.Servic
   }
 
   @Override public List<String> getServiceNames() throws SQLException {
-    List<String> serviceNames = new ArrayList<>();
-    for ( DataServiceMeta service : factory.getDataServices( logErrors() ) ) {
-      serviceNames.add( service.getName() );
+    try {
+      return factory.getDataServiceNames();
+    } catch ( MetaStoreException e ) {
+      throw new SQLException();
     }
-    return serviceNames;
   }
 
   @Override public ThinServiceInformation getServiceInformation( String name ) throws SQLException {
