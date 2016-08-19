@@ -120,7 +120,7 @@
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
-      <artifactId>pentaho-modeler</artifactId>
+      <artifactId>pentaho-modeler-xul</artifactId>
       <version>${dependency.pentaho-kettle.version}</version>
       <scope>provided</scope>
     </dependency>
