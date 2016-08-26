@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.pentaho.agilebi.modeler.models.annotations.CreateAttribute;
 import org.pentaho.agilebi.modeler.models.annotations.CreateMeasure;
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotation;
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroup;
@@ -37,11 +38,18 @@ import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.jdbc.ThinResultFactory;
 import org.pentaho.di.trans.dataservice.jdbc.ThinResultSet;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
+import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.steps.dummytrans.DummyTrans;
+import org.pentaho.di.trans.steps.dummytrans.DummyTransMeta;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.w3c.dom.Document;
 
@@ -50,9 +58,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -149,12 +160,156 @@ public class AnnotationsQueryServiceTest {
       queryService.prepareQuery( "show annotations from gridService", 0, Collections.<String, String>emptyMap() );
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     query.writeTo( outputStream );
+    String output = getResultString( outputStream );
+    assertEquals( "<annotations></annotations>", output.trim() );
+
+  }
+
+  private String getResultString( final ByteArrayOutputStream outputStream ) throws SQLException {
     ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( outputStream.toByteArray() );
     DataInputStream dataInputStream = new DataInputStream( byteArrayInputStream );
     ThinResultSet thinResultSet = new ThinResultFactory().loadResultSet( dataInputStream, null );
     thinResultSet.next();
     String output = thinResultSet.getString( 1 );
-    assertEquals( "<annotations></annotations>", output.trim() );
     thinResultSet.close();
+    return output;
+  }
+
+  @Test
+  public void testAnnotationsOnCurrentStep() throws Exception {
+    TransMeta transMeta = new TransMeta();
+
+    DummyTransMeta src1Meta = new DummyTransMeta();
+    StepMeta src1 = new StepMeta( "src", src1Meta );
+    transMeta.addStep( src1 );
+
+    final ModelAnnotationGroup mag1 =
+        new ModelAnnotationGroup( new ModelAnnotation<CreateAttribute>( new CreateAttribute() ) );
+    final String name1 = mag1.get( 0 ).getName();
+    DummyTransMeta annot1Meta = createPseudoAnnotate( mag1 );
+    StepMeta annot1 = Mockito.spy( new StepMeta( "annot", annot1Meta ) );
+    transMeta.addStep( annot1 );
+
+    TransHopMeta src1ToAnnot1 = new TransHopMeta( src1, annot1 );
+    transMeta.addTransHop( src1ToAnnot1 );
+
+    final DataServiceMeta dsA = new DataServiceMeta( transMeta );
+    dsA.setName( "dsa" );
+    dsA.setStepname( "annot" );
+    final DataServiceMeta ds1 = new DataServiceMeta( transMeta );
+    ds1.setName( "ds" );
+    ds1.setStepname( "src" );
+
+    final DataServiceFactory dataServiceFactory = mock( DataServiceFactory.class );
+    when( dataServiceFactory.getDataService( "ds" ) ).thenReturn( ds1 );
+    when( dataServiceFactory.getDataService( "dsa" ) ).thenReturn( dsA );
+
+    final AnnotationsQueryService queryService = new AnnotationsQueryService( dataServiceFactory );
+    Query query =
+        queryService.prepareQuery( "show annotations from dsa", 0, Collections.<String, String>emptyMap() );
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    query.writeTo( outputStream );
+    String result = getResultString( outputStream );
+    assertTrue( result.contains( name1 ) );
+
+    query =
+        queryService.prepareQuery( "show annotations from ds", 0, Collections.<String, String>emptyMap() );
+    outputStream = new ByteArrayOutputStream();
+    query.writeTo( outputStream );
+    result = getResultString( outputStream );
+    String output = getResultString( outputStream );
+    assertEquals( "<annotations></annotations>", output.trim() );
+  }
+
+  @Test
+  public void testAnnotationsOnCurrentStep2Paths() throws Exception {
+    TransMeta transMeta = new TransMeta();
+
+    DummyTransMeta src1Meta = new DummyTransMeta();
+    StepMeta src1 = new StepMeta( "src1", src1Meta );
+    transMeta.addStep( src1 );
+
+    final ModelAnnotationGroup mag1 =
+        new ModelAnnotationGroup( new ModelAnnotation<CreateAttribute>( new CreateAttribute() ) );
+    final String name1 = mag1.get( 0 ).getName();
+    DummyTransMeta annot1Meta = createPseudoAnnotate( mag1 );
+    StepMeta annot1 = new StepMeta( "annot1", annot1Meta );
+    transMeta.addStep( annot1 );
+
+    TransHopMeta src1ToAnnot1 = new TransHopMeta( src1, annot1 );
+    transMeta.addTransHop( src1ToAnnot1 );
+
+    DummyTransMeta src2Meta = new DummyTransMeta();
+    StepMeta src2 = new StepMeta( "src2", src2Meta );
+    transMeta.addStep( src2 );
+
+    final ModelAnnotationGroup mag2 =
+        new ModelAnnotationGroup( new ModelAnnotation<CreateAttribute>( new CreateAttribute() ) );
+    final String name2 = mag2.get( 0 ).getName();
+    DummyTransMeta annot2Meta = createPseudoAnnotate( mag2 );
+    StepMeta annot2 = new StepMeta( "annot2", annot2Meta );
+    transMeta.addStep( annot2 );
+
+    TransHopMeta src2ToAnnot2 = new TransHopMeta( src2, annot2 );
+    transMeta.addTransHop( src2ToAnnot2 );
+
+    DummyTransMeta mergedMeta = new DummyTransMeta();
+    StepMeta mergedStepMeta = new StepMeta( "merged", mergedMeta );
+    transMeta.addStep( mergedStepMeta );
+
+    transMeta.addTransHop( new TransHopMeta( annot1, mergedStepMeta ) );
+    transMeta.addTransHop( new TransHopMeta( annot2, mergedStepMeta ) );
+
+    final DataServiceMeta ds1 = new DataServiceMeta( (TransMeta) transMeta.clone() );
+    ds1.setName( "dsa" );
+    ds1.setStepname( "annot1" );
+    final DataServiceMeta dsAll = new DataServiceMeta( (TransMeta) transMeta.clone() );
+    dsAll.setName( "ds" );
+    dsAll.setStepname( "merged" );
+
+    final DataServiceFactory dataServiceFactory = mock( DataServiceFactory.class );
+    when( dataServiceFactory.getDataService( "dsAll" ) ).thenReturn( dsAll );
+    when( dataServiceFactory.getDataService( "ds1" ) ).thenReturn( ds1 );
+
+    AnnotationsQueryService queryService = new AnnotationsQueryService( dataServiceFactory );
+    Query query =
+        queryService.prepareQuery( "show annotations from ds1", 0, Collections.<String, String>emptyMap() );
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    query.writeTo( outputStream );
+    String result = getResultString( outputStream );
+    assertTrue( result.contains( name1 ) );
+    assertFalse( result.contains( name2 ) );
+
+    queryService = new AnnotationsQueryService( dataServiceFactory );
+    query =
+        queryService.prepareQuery( "show annotations from dsAll", 0, Collections.<String, String>emptyMap() );
+    outputStream = new ByteArrayOutputStream();
+    query.writeTo( outputStream );
+    String result2 = getResultString( outputStream );
+    assertTrue( result2.contains( name1 ) );
+    assertTrue( result2.contains( name2 ) );
+  }
+
+  private DummyTransMeta createPseudoAnnotate( final ModelAnnotationGroup mag ) {
+    final String magicKey = "KEY_MODEL_ANNOTATIONS";
+    DummyTransMeta annot1Meta = new DummyTransMeta() {
+      @Override
+      public StepInterface getStep( StepMeta stepMeta, StepDataInterface stepDataInterface, int cnr,
+          TransMeta tr, final Trans trans ) {
+        return new DummyTrans( stepMeta, stepDataInterface, cnr, tr, trans ) {
+          @Override
+          public boolean init( StepMetaInterface smi, StepDataInterface sdi ) {
+            ModelAnnotationGroup existing = (ModelAnnotationGroup) trans.getExtensionDataMap().get( magicKey );
+            if ( existing == null ) {
+              trans.getExtensionDataMap().put( magicKey, mag );
+            } else {
+              existing.addAll( mag );
+            }
+            return true;
+          }
+        };
+      }
+    };
+    return annot1Meta;
   }
 }
