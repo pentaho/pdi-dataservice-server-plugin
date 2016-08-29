@@ -32,7 +32,9 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 
+import java.text.MessageFormat;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -40,6 +42,7 @@ import static org.pentaho.di.i18n.BaseMessages.getString;
 
 public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
   private static final Class<?> PKG = DataServiceFactory.class;
+  private static IMetaStore memoryMetaStore = new MemoryMetaStore();
   protected static IMetaStore localPentahoMetaStore = openLocalPentahoMetaStore();
 
   private static IMetaStore openLocalPentahoMetaStore() {
@@ -64,16 +67,53 @@ public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
     );
   }
 
+  public void saveTransient( DataServiceMeta dataService ) throws MetaStoreException {
+    getDataServiceFactory( memoryMetaStore ).saveElement( dataService );
+    try {
+      getServiceTransFactory( memoryMetaStore ).saveElement( ServiceTrans.create( checkDefined( dataService ) ) );
+    } catch ( Exception e ) {
+      throw new MetaStoreException( MessageFormat.format( "Unable to save data service {0}.", dataService.getName() ) );
+    }
+  }
+
   public DataServiceMeta getDataService( String serviceName ) throws MetaStoreException {
-    return getDataService( serviceName, getRepository(), getMetaStore() );
+    try {
+      DataServiceMeta dataServiceMeta = getTransientDataSerivce( serviceName );
+      if ( dataServiceMeta != null ) {
+        return dataServiceMeta;
+      }
+    } catch ( MetaStoreException e ) {
+      return getDataService( serviceName, getRepository(), getMetaStore() );
+    }
+
+    return null;
   }
 
   public Iterable<DataServiceMeta> getDataServices( Function<Exception, Void> exceptionHandler ) {
-    return getDataServices( getRepository(), getMetaStore(), exceptionHandler );
+    List<DataServiceMeta> dataServiceMetas = (List<DataServiceMeta>) getTransientDataServices( exceptionHandler );
+    dataServiceMetas
+      .addAll( (List<DataServiceMeta>) getDataServices( getRepository(), getMetaStore(), exceptionHandler ) );
+
+    return dataServiceMetas;
   }
 
   public List<String> getDataServiceNames() throws MetaStoreException {
-    return getDataServiceNames( getMetaStore() );
+    List<String> dataServiceNames = getTransientDataServiceNames();
+    dataServiceNames.addAll( getDataServiceNames( getMetaStore() ) );
+
+    return dataServiceNames;
+  }
+
+  public DataServiceMeta getTransientDataSerivce( String serviceName ) throws MetaStoreException {
+    return getDataService( serviceName, getRepository(), memoryMetaStore, memoryMetaStore );
+  }
+
+  public List<String> getTransientDataServiceNames() throws MetaStoreException {
+    return getDataServiceNames( memoryMetaStore );
+  }
+
+  public Iterable<DataServiceMeta> getTransientDataServices( Function<Exception, Void> exceptionHandler ) {
+    return getDataServices( getRepository(), memoryMetaStore, memoryMetaStore, exceptionHandler );
   }
 
   public DataServiceExecutor.Builder createBuilder( SQL sql ) throws MetaStoreException {
