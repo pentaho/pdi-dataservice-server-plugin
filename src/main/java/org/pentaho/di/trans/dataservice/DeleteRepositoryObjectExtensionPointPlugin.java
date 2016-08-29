@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -39,8 +39,7 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
 @ExtensionPoint(
   id = "DeleteRepositoryObjectExtensionPointPlugin",
   extensionPointId = "AfterDeleteRepositoryObject",
-  description = "Remove a data service associated with a deleted repository object"
-)
+  description = "Remove a data service associated with a deleted repository object" )
 public class DeleteRepositoryObjectExtensionPointPlugin implements ExtensionPointInterface {
   private final DataServiceMetaStoreUtil metaStoreUtil;
 
