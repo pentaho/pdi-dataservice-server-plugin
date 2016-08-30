@@ -100,6 +100,9 @@
     </bean>
     <service id="serviceCacheOptimization" ref="serviceCacheFactory"
              interface="org.pentaho.di.trans.dataservice.optimization.PushDownFactory">
+        <service-properties>
+            <entry key="type" value="cache"/>
+        </service-properties>
     </service>
 
     <bean id="clearCacheServlet" class="org.pentaho.di.trans.dataservice.optimization.cache.ResetCacheServlet"
