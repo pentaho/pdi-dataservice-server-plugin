@@ -98,6 +98,12 @@ public class DataServiceMetaStoreUtil {
 
   public DataServiceMeta getDataService( String serviceName, Repository repository, IMetaStore metaStore )
     throws MetaStoreException {
+    return getDataService( serviceName, repository, metaStore, null );
+  }
+
+  public DataServiceMeta getDataService( String serviceName, Repository repository, IMetaStore metaStore,
+                                         IMetaStore transMetaStore )
+    throws MetaStoreException {
     ServiceTrans transReference = getServiceTransFactory( metaStore ).loadElement( serviceName );
     if ( transReference == null ) {
       throw new MetaStoreException( MessageFormat.format( "Data Service {0} not found", serviceName ) );
@@ -115,7 +121,8 @@ public class DataServiceMetaStoreUtil {
       firstMatch( Predicates.notNull() );
 
     if ( transMeta.isPresent() ) {
-      return getDataService( serviceName, transMeta.get() );
+      return getDataService( serviceName, transMeta.get(),
+        transMetaStore != null ? transMetaStore : transMeta.get().getEmbeddedMetaStore() );
     } else {
       throw new MetaStoreException( MessageFormat.format( "Failed to load Data Service {0}", serviceName ),
         loadException.get() );
@@ -123,7 +130,12 @@ public class DataServiceMetaStoreUtil {
   }
 
   public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) throws MetaStoreException {
-    DataServiceMeta dataServiceMeta = getDataServiceFactory( serviceTrans ).loadElement( serviceName );
+    return getDataService( serviceName, serviceTrans, serviceTrans.getEmbeddedMetaStore() );
+  }
+
+  public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans, IMetaStore metaStore )
+    throws MetaStoreException {
+    DataServiceMeta dataServiceMeta = getDataServiceFactory( serviceTrans, metaStore ).loadElement( serviceName );
     if ( dataServiceMeta == null ) {
       throw new MetaStoreException( MessageFormat.format( "Data Service {0} not found in transformation {1}",
         serviceName, serviceTrans.getName() ) );
@@ -132,6 +144,13 @@ public class DataServiceMetaStoreUtil {
   }
 
   public Iterable<DataServiceMeta> getDataServices( final Repository repository, IMetaStore metaStore,
+                                                    final Function<Exception, Void> exceptionHandler ) {
+    return getDataServices( repository, metaStore, null, exceptionHandler );
+  }
+
+
+  public Iterable<DataServiceMeta> getDataServices( final Repository repository, IMetaStore metaStore,
+                                                    IMetaStore transMetaStore,
                                                     final Function<Exception, Void> exceptionHandler ) {
     MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( metaStore );
 
@@ -159,7 +178,8 @@ public class DataServiceMetaStoreUtil {
         firstMatch( Predicates.notNull() );
       if ( transMeta.isPresent() ) {
         try {
-          dataServices.add( getDataService( serviceTrans.getName(), transMeta.get() ) );
+          dataServices.add( getDataService( serviceTrans.getName(), transMeta.get(),
+            transMetaStore != null ? transMetaStore : transMeta.get().getEmbeddedMetaStore() ) );
         } catch ( Exception e ) {
           exceptionHandler.apply( e );
         }
@@ -169,7 +189,9 @@ public class DataServiceMetaStoreUtil {
   }
 
   private Function<ServiceTrans.Reference, Supplier<TransMeta>> createTransMetaLoader( final Repository repository,
-                                                                                       final Function<? super Exception, ?> exceptionHandler ) {
+                                                                                       final Function<? super
+                                                                                         Exception, ?>
+                                                                                         exceptionHandler ) {
     return new Function<ServiceTrans.Reference, Supplier<TransMeta>>() {
       @Override public Supplier<TransMeta> apply( final ServiceTrans.Reference reference ) {
         return Suppliers.memoize( new Supplier<TransMeta>() {
@@ -188,7 +210,7 @@ public class DataServiceMetaStoreUtil {
 
   public Iterable<DataServiceMeta> getDataServices( TransMeta transMeta ) {
     try {
-      return getDataServiceFactory( transMeta ).getElements();
+      return getDataServiceFactory( transMeta, transMeta.getEmbeddedMetaStore() ).getElements();
     } catch ( MetaStoreException e ) {
       getLogChannel().logError( "Unable to list data services for " + transMeta.getName(), e );
       return ImmutableList.of();
@@ -196,7 +218,7 @@ public class DataServiceMetaStoreUtil {
   }
 
   public List<String> getDataServiceNames( TransMeta transMeta ) throws MetaStoreException {
-    return getDataServiceFactory( transMeta ).getElementNames();
+    return getDataServiceFactory( transMeta, transMeta.getEmbeddedMetaStore() ).getElementNames();
   }
 
   public List<String> getDataServiceNames( IMetaStore metaStore ) throws MetaStoreException {
@@ -214,7 +236,7 @@ public class DataServiceMetaStoreUtil {
       // Check if Data Service is still valid
       DataServiceMeta dataServiceMeta;
       try {
-        dataServiceMeta = getDataService( serviceName, transMeta );
+        dataServiceMeta = getDataService( serviceName, transMeta, transMeta.getEmbeddedMetaStore() );
       } catch ( MetaStoreException e ) {
         dataServiceMeta = null;
       }
@@ -288,14 +310,14 @@ public class DataServiceMetaStoreUtil {
       dataService.getName(), transMeta.getName() ) );
 
     // Save to embedded MetaStore
-    getDataServiceFactory( transMeta ).saveElement( dataService );
+    getDataServiceFactory( transMeta, transMeta.getEmbeddedMetaStore() ).saveElement( dataService );
     transMeta.setChanged();
   }
 
   public void removeDataService( DataServiceMeta dataService ) {
     TransMeta transMeta = dataService.getServiceTrans();
     try {
-      getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
+      getDataServiceFactory( transMeta, transMeta.getEmbeddedMetaStore() ).deleteElement( dataService.getName() );
       for ( Integer key : createCacheKeys( transMeta, dataService.getStepname() ) ) {
         stepCache.replace( key, dataService.getName(), "" );
       }
@@ -381,8 +403,17 @@ public class DataServiceMetaStoreUtil {
     return new MetaStoreFactory<>( ServiceTrans.class, metaStore, NAMESPACE );
   }
 
+  protected MetaStoreFactory<DataServiceMeta> getDataServiceFactory( IMetaStore metaStore ) {
+    return new MetaStoreFactory<>( DataServiceMeta.class, metaStore, NAMESPACE );
+  }
+
   protected MetaStoreFactory<DataServiceMeta> getDataServiceFactory( final TransMeta transMeta ) {
-    return new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, transMeta.getEmbeddedMetaStore(), NAMESPACE ) {
+    return getDataServiceFactory( transMeta, transMeta.getEmbeddedMetaStore() );
+  }
+
+  protected MetaStoreFactory<DataServiceMeta> getDataServiceFactory( final TransMeta transMeta,
+                                                                     final IMetaStore metaStore ) {
+    return new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, metaStore, NAMESPACE ) {
 
       {
         setObjectFactory( new DataServiceMetaObjectFactory() );

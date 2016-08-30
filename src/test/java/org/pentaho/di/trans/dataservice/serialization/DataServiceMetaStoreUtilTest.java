@@ -386,7 +386,8 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
 
   @Test public void testStepCacheHit() throws Exception {
     metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ) {
-      @Override public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) {
+      @Override
+      public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans, IMetaStore metaStore ) {
         assertThat( serviceName, is( DATA_SERVICE_NAME ) );
         assertThat( serviceTrans, is( transMeta ) );
         return dataService;
