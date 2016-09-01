@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,18 +30,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceAlreadyExistsException;
-import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
+import org.pentaho.di.trans.dataservice.serialization.SynchronizationListener;
 import org.pentaho.di.trans.dataservice.serialization.UndefinedDataServiceException;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
@@ -58,21 +57,10 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceDialogControllerTest {
@@ -85,7 +73,7 @@ public class DataServiceDialogControllerTest {
 
   @Mock DataServiceDelegate delegate;
 
-  @Mock SynchronizationService synchronizationService;
+  @Mock SynchronizationListener synchronizationListener;
 
   @Mock XulDomContainer xulDomContainer;
 
@@ -113,7 +101,7 @@ public class DataServiceDialogControllerTest {
     when( document.getElementById( DataServiceDialogController.XUL_DIALOG_ID ) ).thenReturn( dialog );
     when( document.createElement( "messagebox" ) ).thenReturn( messageBox );
 
-    controller = new DataServiceDialogController( model, delegate ){
+    controller = new DataServiceDialogController( model, delegate ) {
       @Override protected LogChannelInterface getLogChannel() {
         return logChannel;
       }
@@ -134,7 +122,7 @@ public class DataServiceDialogControllerTest {
 
     when( dialog.getShell() ).thenReturn( shell );
 
-    when( delegate.createSyncService() ).thenReturn( synchronizationService );
+    when( delegate.createSyncService() ).thenReturn( synchronizationListener );
   }
 
   @Test
@@ -150,15 +138,12 @@ public class DataServiceDialogControllerTest {
     controller.setBindingFactory( bindingFactory );
 
     final List<Binding> bindings = Lists.newArrayList();
-    when( bindingFactory.createBinding( same( model ), anyString(), anyObject(), anyString() ) ).thenAnswer(
-      new Answer<Binding>() {
-        @Override public Binding answer( InvocationOnMock invocation ) throws Throwable {
-          Binding binding = mock( Binding.class );
-          bindings.add( binding );
-          return binding;
-        }
+    when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString() ) ).thenAnswer(
+      invocationOnMock ->  {
+        Binding binding = mock( Binding.class );
+        bindings.add( binding );
+        return binding;
       } );
-
     controller.init();
 
     verify( steps ).setElements( eq( ImmutableList.of( STEP_ONE_NAME, STEP_TWO_NAME ) ) );
@@ -220,7 +205,7 @@ public class DataServiceDialogControllerTest {
     controller.saveAndClose();
     verify( delegate ).save( dataServiceMeta );
     verify( delegate ).removeDataService( editingDataService );
-    verify( synchronizationService ).install( transMeta );
+    verify( synchronizationListener ).install( transMeta );
     verify( dialog ).dispose();
   }
 
@@ -237,7 +222,7 @@ public class DataServiceDialogControllerTest {
 
   @Test
   public void testShowsErrorOnTestWithNameEmpty() throws XulException {
-    DataServiceDialogController controller = spy( new DataServiceDialogController( model,delegate ) );
+    DataServiceDialogController controller = spy( new DataServiceDialogController( model, delegate ) );
     doNothing().when( controller ).error( anyString(), anyString() );
     when( model.getServiceName() ).thenReturn( null );
     controller.showTestDialog();
@@ -247,7 +232,7 @@ public class DataServiceDialogControllerTest {
   @Test
   public void testShowDriverDetails() {
     DataServiceDelegate delegate = mock( DataServiceDelegate.class );
-    controller = spy ( new DataServiceDialogController( null, delegate ) );
+    controller = spy( new DataServiceDialogController( null, delegate ) );
     SwtDialog dialog = mock( SwtDialog.class );
     doReturn( dialog ).when( controller ).getDialog();
     Shell shell = mock( Shell.class );

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -36,16 +36,16 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
   id = "TransOpenedExtensionPointPlugin",
   extensionPointId = "TransAfterOpen",
   description = "Registers a ContentChangedListener and StepMetaChangeListener on each TransMeta to synchronize Data Services with the MetaStore"
-)
+  )
 public class TransOpenedExtensionPointPlugin implements ExtensionPointInterface {
-  private final SynchronizationService synchronizationService;
+  private final SynchronizationListener synchronizationListener;
 
   public TransOpenedExtensionPointPlugin( DataServiceContext context ) {
-    this.synchronizationService = context.getDataServiceDelegate().createSyncService();
+    this.synchronizationListener = context.getDataServiceDelegate().createSyncService();
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
     final TransMeta transMeta = (TransMeta) object;
-    synchronizationService.install( transMeta );
+    synchronizationListener.install( transMeta );
   }
 }

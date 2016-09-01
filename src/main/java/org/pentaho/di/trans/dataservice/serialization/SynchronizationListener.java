@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.FluentIterable;
 import org.pentaho.di.core.listeners.ContentChangedListener;
@@ -36,19 +35,35 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.util.List;
 
-public class SynchronizationService implements ContentChangedListener, StepMetaChangeListenerInterface {
-  static Class<TransOpenedExtensionPointPlugin> PKG = TransOpenedExtensionPointPlugin.class;
-  final DataServiceDelegate delegate;
+public class SynchronizationListener implements ContentChangedListener, StepMetaChangeListenerInterface {
+  private static Class<TransOpenedExtensionPointPlugin> PKG = TransOpenedExtensionPointPlugin.class;
+  private final DataServiceDelegate delegate;
+  private final DataServiceReferenceSynchronizer synchronizer;
 
-  public SynchronizationService( DataServiceDelegate delegate ) {
+  public SynchronizationListener( DataServiceDelegate delegate,
+                                  DataServiceReferenceSynchronizer synchronizer ) {
     this.delegate = delegate;
+    this.synchronizer = synchronizer;
   }
 
   @Override public void contentChanged( Object parentObject ) {
   }
 
   @Override public void contentSafe( Object parentObject ) {
-    delegate.sync( (TransMeta) parentObject, syncErrors() );
+    synchronizer.sync( (TransMeta) parentObject, ( e ) -> {
+      String message = e.getMessage();
+      if ( e instanceof DataServiceAlreadyExistsException ) {
+        DataServiceMeta dataService = ( (DataServiceAlreadyExistsException) e ).getDataServiceMeta();
+        delegate.syncExec( suggestEdit( dataService, message ) );
+      }
+      if ( e instanceof UndefinedDataServiceException ) {
+        DataServiceMeta dataService = ( (UndefinedDataServiceException) e ).getDataServiceMeta();
+        delegate.syncExec( suggestRemove( dataService, message ) );
+      }
+
+      delegate.getLogChannel().logError( message, e );
+      return null;
+    } );
   }
 
   @Override public void onStepChange( TransMeta transMeta, StepMeta oldMeta, StepMeta newMeta ) {
@@ -67,26 +82,7 @@ public class SynchronizationService implements ContentChangedListener, StepMetaC
     }
   }
 
-  Function<Exception, Void> syncErrors() {
-    return new Function<Exception, Void>() {
-      @Override public Void apply( Exception e ) {
-        String message = e.getMessage();
-        if ( e instanceof DataServiceAlreadyExistsException ) {
-          DataServiceMeta dataService = ( (DataServiceAlreadyExistsException) e ).getDataServiceMeta();
-          delegate.syncExec( suggestEdit( dataService, message ) );
-        }
-        if ( e instanceof UndefinedDataServiceException ) {
-          DataServiceMeta dataService = ( (UndefinedDataServiceException) e ).getDataServiceMeta();
-          delegate.syncExec( suggestRemove( dataService, message ) );
-        }
-
-        delegate.getLogChannel().logError( message, e );
-        return null;
-      }
-    };
-  }
-
-  public Runnable suggestEdit( final DataServiceMeta dataService, final String message ) {
+  private Runnable suggestEdit( final DataServiceMeta dataService, final String message ) {
     return new Runnable() {
       @Override public void run() {
         delegate.suggestEdit( dataService, BaseMessages.getString( PKG, "Messages.SaveError.Title" ),
@@ -110,7 +106,7 @@ public class SynchronizationService implements ContentChangedListener, StepMetaC
 
   public void install( TransMeta transMeta ) {
     List<ContentChangedListener> listeners = transMeta.getContentChangedListeners();
-    if ( FluentIterable.from( listeners ).filter( SynchronizationService.class ).isEmpty() ) {
+    if ( FluentIterable.from( listeners ).filter( SynchronizationListener.class ).isEmpty() ) {
       transMeta.addContentChangedListener( this );
       transMeta.addStepChangeListener( this );
     }

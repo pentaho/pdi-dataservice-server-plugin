@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,6 +41,8 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
+import java.util.function.Function;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.same;
@@ -58,13 +59,14 @@ import static org.mockito.Mockito.when;
  * @author nhudak
  */
 @RunWith( MockitoJUnitRunner.class )
-public class SynchronizationServiceTest {
+public class SynchronizationListenerTest {
 
   @Mock TransMeta transMeta;
   @Mock DataServiceDelegate delegate;
   @Mock LogChannel logChannel;
   @Mock DataServiceMeta dataServiceMeta;
-  @InjectMocks SynchronizationService service;
+  @Mock DataServiceReferenceSynchronizer synchronizer;
+  @InjectMocks SynchronizationListener service;
 
   @Captor ArgumentCaptor<Function<? super Exception, ?>> errorHandler;
 
@@ -97,7 +99,7 @@ public class SynchronizationServiceTest {
   public void testContentSafe() throws Exception {
     service.contentSafe( transMeta );
 
-    verify( delegate ).sync( same( transMeta ), errorHandler.capture() );
+    verify( synchronizer ).sync( same( transMeta ), errorHandler.capture() );
 
     UndefinedDataServiceException undefinedException = new UndefinedDataServiceException( dataServiceMeta );
     when( delegate.showPrompt( anyString(), anyString() ) ).thenReturn( false, true );

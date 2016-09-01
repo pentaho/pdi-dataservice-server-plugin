@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,7 +30,6 @@ import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -52,7 +51,6 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
-import org.pentaho.metastore.persist.IMetaStoreObjectFactory;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 
 import javax.cache.Cache;
@@ -65,9 +63,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.and;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
 import static org.pentaho.di.i18n.BaseMessages.getString;
 import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
@@ -169,7 +164,9 @@ public class DataServiceMetaStoreUtil {
   }
 
   private Function<ServiceTrans.Reference, Supplier<TransMeta>> createTransMetaLoader( final Repository repository,
-                                                                                       final Function<? super Exception, ?> exceptionHandler ) {
+                                                                                       final Function<? super
+                                                                                         Exception, ?>
+                                                                                         exceptionHandler ) {
     return new Function<ServiceTrans.Reference, Supplier<TransMeta>>() {
       @Override public Supplier<TransMeta> apply( final ServiceTrans.Reference reference ) {
         return Suppliers.memoize( new Supplier<TransMeta>() {
@@ -305,49 +302,16 @@ public class DataServiceMetaStoreUtil {
     }
   }
 
+  /**
+   * @deprecated in favor of DataServiceReferenceSynchronizer.
+   */
+  @Deprecated( )
   public void sync( TransMeta transMeta, Function<? super Exception, ?> exceptionHandler ) {
-    final MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( transMeta.getMetaStore() );
-
-    final Map<String, DataServiceMeta> dataServices;
-    final Map<String, ServiceTrans> defined;
-    final Map<String, ServiceTrans> published;
-
-    try {
-      dataServices = Maps.uniqueIndex( getDataServices( transMeta ), DataServiceMeta.getName );
-      defined = getServiceTransMap( transMeta );
-      published = Maps.filterValues( defined, ServiceTrans.isReferenceTo( transMeta ) );
-    } catch ( MetaStoreException e ) {
-      exceptionHandler.apply( e );
-      return;
-    }
-
-    Map<String, ServiceTrans> toDelete = Maps.filterKeys( published, not( in( dataServices.keySet() ) ) );
-    Map<String, DataServiceMeta> nameConflicts = Maps.filterKeys( dataServices, and(
-      in( defined.keySet() ),
-      not( in( published.keySet() ) )
-    ) );
-    Map<String, DataServiceMeta> toSave = Maps.filterKeys( dataServices, not( in( nameConflicts.keySet() ) ) );
-
-    for ( DataServiceMeta dataServiceMeta : toSave.values() ) {
-      try {
-        serviceTransFactory.saveElement( ServiceTrans.create( checkDefined( dataServiceMeta ) ) );
-      } catch ( Exception e ) {
-        exceptionHandler.apply( e );
-      }
-    }
-    for ( String name : toDelete.keySet() ) {
-      try {
-        serviceTransFactory.deleteElement( name );
-      } catch ( MetaStoreException e ) {
-        exceptionHandler.apply( e );
-      }
-    }
-    for ( DataServiceMeta dataServiceMeta : nameConflicts.values() ) {
-      exceptionHandler.apply( new DataServiceAlreadyExistsException( dataServiceMeta ) );
-    }
+    DataServiceReferenceSynchronizer syncronizer = new DataServiceReferenceSynchronizer( getContext() );
+    syncronizer.sync( transMeta, ( e ) -> exceptionHandler.apply( e ) );
   }
 
-  private ImmutableMap<String, ServiceTrans> getServiceTransMap( TransMeta transMeta ) throws MetaStoreException {
+  public ImmutableMap<String, ServiceTrans> getServiceTransMap( TransMeta transMeta ) throws MetaStoreException {
     return getServiceTransMap( transMeta.getRepository(), transMeta.getMetaStore() );
   }
 
@@ -360,6 +324,7 @@ public class DataServiceMetaStoreUtil {
 
   /**
    * Remove all data services from the metastore provided by a transformation
+   *
    * @param transMeta The transformation which will be un-published
    */
   public void clearReferences( TransMeta transMeta ) {
@@ -382,35 +347,7 @@ public class DataServiceMetaStoreUtil {
   }
 
   protected MetaStoreFactory<DataServiceMeta> getDataServiceFactory( final TransMeta transMeta ) {
-    return new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, transMeta.getEmbeddedMetaStore(), NAMESPACE ) {
-
-      {
-        setObjectFactory( new DataServiceMetaObjectFactory() );
-      }
-
-      @Override public DataServiceMeta loadElement( String name ) throws MetaStoreException {
-        DataServiceMeta dataServiceMeta = super.loadElement( name );
-        if ( dataServiceMeta != null ) {
-          dataServiceMeta.setServiceTrans( transMeta );
-          stepCache.putAll( createCacheEntries( dataServiceMeta ) );
-        }
-        return dataServiceMeta;
-      }
-
-      @Override public List<DataServiceMeta> getElements() throws MetaStoreException {
-        List<DataServiceMeta> elements = super.getElements();
-        for ( DataServiceMeta dataServiceMeta : elements ) {
-          dataServiceMeta.setServiceTrans( transMeta );
-          stepCache.putAll( createCacheEntries( dataServiceMeta ) );
-        }
-        return elements;
-      }
-
-      @Override public void saveElement( DataServiceMeta dataServiceMeta ) throws MetaStoreException {
-        super.saveElement( dataServiceMeta );
-        stepCache.putAll( createCacheEntries( dataServiceMeta ) );
-      }
-    };
+    return new EmbeddedMetaStoreFactory( transMeta, getPushDownFactories(), getStepCache() );
   }
 
   static Set<Integer> createCacheKeys( TransMeta transMeta, final String stepName ) {
@@ -435,11 +372,9 @@ public class DataServiceMetaStoreUtil {
   }
 
   public Function<Exception, Void> logErrors( final String message ) {
-    return new Function<Exception, Void>() {
-      @Override public Void apply( Exception e ) {
-        getLogChannel().logError( message, e );
-        return null;
-      }
+    return e -> {
+      getLogChannel().logError( message, e );
+      return null;
     };
   }
 
@@ -451,25 +386,4 @@ public class DataServiceMetaStoreUtil {
     return stepCache;
   }
 
-  private class DataServiceMetaObjectFactory implements IMetaStoreObjectFactory {
-    @Override public Object instantiateClass( final String className, Map<String, String> objectContext ) throws
-      MetaStoreException {
-      for ( PushDownFactory factory : getPushDownFactories() ) {
-        if ( factory.getType().getName().equals( className ) ) {
-          return factory.createPushDown();
-        }
-      }
-      try {
-        return Class.forName( className ).newInstance();
-      } catch ( Throwable t ) {
-        Throwables.propagateIfPossible( t, MetaStoreException.class );
-        throw new MetaStoreException( t );
-      }
-    }
-
-    @Override public Map<String, String> getContext( Object pluginObject ) throws MetaStoreException {
-      return Collections.emptyMap();
-    }
-
-  }
 }
