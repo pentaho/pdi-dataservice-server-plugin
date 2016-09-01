@@ -38,7 +38,8 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
-import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
+import org.pentaho.di.trans.dataservice.serialization.DataServiceReferenceSynchronizer;
+import org.pentaho.di.trans.dataservice.serialization.SynchronizationListener;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
@@ -144,8 +145,8 @@ public class DataServiceDelegate extends DataServiceFactory {
     return getContext().getUIFactory();
   }
 
-  public SynchronizationService createSyncService() {
-    return new SynchronizationService( this );
+  public SynchronizationListener createSyncService() {
+    return new SynchronizationListener( this, new DataServiceReferenceSynchronizer( getContext() ) );
   }
 
   public void showError( String title, String text ) {

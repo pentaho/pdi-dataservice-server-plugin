@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
 @RunWith( MockitoJUnitRunner.class )
 public class TransOpenedExtensionPointPluginTest {
 
-  @Mock SynchronizationService service;
+  @Mock SynchronizationListener service;
   @Mock TransMeta transMeta;
 
   TransOpenedExtensionPointPlugin extensionPointPlugin;

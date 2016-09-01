@@ -22,9 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -33,6 +30,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.DataServiceRemapStepChooserDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceRemapStepChooserModel;
+import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
@@ -40,17 +38,14 @@ import org.pentaho.ui.xul.swt.tags.SwtDialog;
 import org.pentaho.ui.xul.swt.tags.SwtLabel;
 import org.pentaho.ui.xul.swt.tags.SwtListbox;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.List;
+
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class DataServiceRemapStepChooserDialogControllerTest {
   @Test
@@ -62,7 +57,7 @@ public class DataServiceRemapStepChooserDialogControllerTest {
     final SwtLabel label = mock( SwtLabel.class );
     final SwtListbox listbox = mock( SwtListbox.class );
     BindingFactory bindingFactory = mock( BindingFactory.class );
-    when( bindingFactory.createBinding( anyObject(), anyString(), anyObject(), anyString() ) )
+    when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString() ) )
         .thenReturn( mock( Binding.class ) );
 
     DataServiceRemapStepChooserDialogController

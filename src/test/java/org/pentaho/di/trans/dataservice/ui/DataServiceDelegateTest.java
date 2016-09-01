@@ -39,7 +39,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.serialization.SynchronizationService;
+import org.pentaho.di.trans.dataservice.serialization.SynchronizationListener;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.ui.xul.XulException;
@@ -212,7 +212,7 @@ public class DataServiceDelegateTest extends BaseTest {
 
   @Test
   public void testSyncService() throws Exception {
-    assertThat( delegate.createSyncService(), instanceOf( SynchronizationService.class ) );
+    assertThat( delegate.createSyncService(), instanceOf( SynchronizationListener.class ) );
   }
 
   @Test

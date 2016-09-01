@@ -46,11 +46,11 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
-import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.trans.step.RowListener;
+import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
@@ -58,10 +58,8 @@ import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.dom.Document;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -75,7 +73,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -142,7 +139,7 @@ public class DataServiceTestControllerTest  {
     doAnswer( new Answer<Void>() {
       @Override
       public Void answer( InvocationOnMock invocation ) throws Throwable {
-        ( ( OutputStream )invocation.getArguments()[0] ).write( TEST_ANNOTATIONS.getBytes() );
+        ( (OutputStream) invocation.getArguments()[0] ).write( TEST_ANNOTATIONS.getBytes() );
         return null;
       }
     } ).when( annotationsQuery ).writeTo( any( OutputStream.class ) );
@@ -150,7 +147,7 @@ public class DataServiceTestControllerTest  {
     doAnswer( new Answer<Query>() {
       @Override
       public Query answer( InvocationOnMock invocation ) {
-        String sql = (String)invocation.getArguments()[ 0 ];
+        String sql = (String) invocation.getArguments()[ 0 ];
         if ( null != sql && sql.startsWith( "show annotations from " ) ) {
           return annotationsQuery;
         }
@@ -173,7 +170,7 @@ public class DataServiceTestControllerTest  {
     when( transMeta.getParameterDefault( "foo" ) ).thenReturn( "fooVal" );
     when( transMeta.getParameterDefault( "bar" ) ).thenReturn( "barVal" );
 
-    when( bindingFactory.createBinding( anyObject(), anyString(), anyObject(), anyString() ) ).thenReturn( binding );
+    when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString() ) ).thenReturn( binding );
 
     // mocks to deal with Xul multithreading.
     when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
@@ -321,7 +318,7 @@ public class DataServiceTestControllerTest  {
 
     ArgumentCaptor<Object[]> rowCaptor = ArgumentCaptor.forClass( Object[].class );
     verify( model, times( 1 ) ).addResultRow( rowCaptor.capture() );
-    assertEquals( TEST_ANNOTATIONS, new String( ( byte[] )rowCaptor.getValue()[0] ) );
+    assertEquals( TEST_ANNOTATIONS, new String( (byte[]) rowCaptor.getValue()[0] ) );
 
     verify( callback, never() ).onLogChannelUpdate();
     verify( dataServiceExecutor, never() ).executeQuery();
