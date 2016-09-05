@@ -71,7 +71,7 @@
 
     <bean id="transImportExtensionPoint" scope="singleton"
           class="org.pentaho.di.trans.dataservice.serialization.TransImportExtensionPointPlugin">
-        <argument ref="context"/>
+        <argument ref="referenceSynchronizer"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
 </blueprint>

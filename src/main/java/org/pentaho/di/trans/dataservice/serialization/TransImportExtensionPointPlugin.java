@@ -21,7 +21,7 @@
  ******************************************************************************/
 package org.pentaho.di.trans.dataservice.serialization;
 
-import com.google.common.base.Function;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
@@ -29,7 +29,6 @@ import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
 
 @ExtensionPoint(
     id = "TransImportExtensionPointPlugin",
@@ -38,10 +37,10 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
   )
 public class TransImportExtensionPointPlugin implements ExtensionPointInterface {
   private Class<TransImportExtensionPointPlugin> PKG = TransImportExtensionPointPlugin.class;
-  private DataServiceMetaStoreUtil metaStoreUtil;
+  private DataServiceReferenceSynchronizer referenceSynchronizer;
 
-  public TransImportExtensionPointPlugin( DataServiceContext context ) {
-    metaStoreUtil = context.getMetaStoreUtil();
+  public TransImportExtensionPointPlugin( DataServiceReferenceSynchronizer referenceSynchronizer ) {
+    this.referenceSynchronizer = referenceSynchronizer;
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object o ) throws KettleException {
@@ -50,13 +49,19 @@ public class TransImportExtensionPointPlugin implements ExtensionPointInterface 
     }
 
     TransMeta transMeta = (TransMeta) o;
-    metaStoreUtil.sync( transMeta, getExceptionHandler( log ) );
+    referenceSynchronizer.sync( transMeta, getExceptionHandler( log ), true );
   }
 
   Function<Exception, Void> getExceptionHandler( final LogChannelInterface log ) {
     return new Function<Exception, Void>() {
       @Nullable @Override public Void apply( @Nullable Exception e ) {
-        log.logError( BaseMessages.getString( PKG, "Messages.ImportError" ), e );
+        if ( e instanceof DataServiceAlreadyExistsException ) {
+          DataServiceAlreadyExistsException dsaee = (DataServiceAlreadyExistsException) e;
+          log.logDebug( BaseMessages.getString( PKG, "Messages.Import.Overwrite",
+              dsaee.getDataServiceMeta().getName() ) );
+        } else {
+          log.logError( BaseMessages.getString( PKG, "Messages.Import.Error" ), e );
+        }
         return null;
       }
     };
