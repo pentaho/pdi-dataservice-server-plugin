@@ -22,17 +22,18 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
-import com.google.common.base.Function;
+import java.util.function.Function;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.metastore.api.IMetaStore;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -42,9 +43,7 @@ import static org.mockito.Mockito.when;
 public class TransImportExtensionPointPluginTest {
   @Test
   public void callExtensionPoint() throws Exception {
-    DataServiceMetaStoreUtil metaStoreUtil = mock( DataServiceMetaStoreUtil.class );
-    DataServiceContext context = mock( DataServiceContext.class );
-    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
+    DataServiceReferenceSynchronizer referenceSynchronizer = mock( DataServiceReferenceSynchronizer.class );
 
     TransMeta transMeta = mock( TransMeta.class );
     Repository transRepository = mock( Repository.class );
@@ -53,22 +52,26 @@ public class TransImportExtensionPointPluginTest {
     when( transMeta.getRepository() ).thenReturn( transRepository );
     when( transMeta.getMetaStore() ).thenReturn( transMetaStore );
 
-    TransImportExtensionPointPlugin plugin = new TransImportExtensionPointPlugin( context );
+    TransImportExtensionPointPlugin plugin = new TransImportExtensionPointPlugin( referenceSynchronizer );
     LogChannelInterface log = mock( LogChannelInterface.class );
 
     plugin.callExtensionPoint( log, null );
-    verify( metaStoreUtil, times( 0 ) ).sync( same( transMeta ), any( Function.class ) );
+    verify( referenceSynchronizer, times( 0 ) ).sync( same( transMeta ), any( Function.class ), eq( true ) );
     plugin.callExtensionPoint( log, "Not TransMeta" );
-    verify( metaStoreUtil, times( 0 ) ).sync( same( transMeta ), any( Function.class ) );
+    verify( referenceSynchronizer, times( 0 ) ).sync( same( transMeta ), any( Function.class ), eq( true ) );
 
     plugin.callExtensionPoint( log, transMeta );
 
     ArgumentCaptor<Function> exceptionHandlerCaptor = ArgumentCaptor.forClass( Function.class );
 
-    verify( metaStoreUtil ).sync( same( transMeta ), exceptionHandlerCaptor.capture() );
+    verify( referenceSynchronizer ).sync( same( transMeta ), exceptionHandlerCaptor.capture(), eq( true ) );
 
     Exception e = new Exception();
     exceptionHandlerCaptor.getValue().apply( e );
     verify( log ).logError( anyString(), same( e ) );
+    DataServiceMeta dsMeta = mock( DataServiceMeta.class );
+    DataServiceAlreadyExistsException dsaee = new DataServiceAlreadyExistsException( dsMeta );
+    exceptionHandlerCaptor.getValue().apply( dsaee );
+    verify( log ).logDebug( anyString() );
   }
 }

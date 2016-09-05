@@ -117,4 +117,7 @@
         <bean class="org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdownFactory"/>
     </service>
     <!-- /Parameter Push down Optimization -->
+    <bean id="referenceSynchronizer" class="org.pentaho.di.trans.dataservice.serialization.DataServiceReferenceSynchronizer">
+        <argument ref="context"/>
+    </bean>
 </blueprint>
