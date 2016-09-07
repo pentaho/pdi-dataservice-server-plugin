@@ -57,7 +57,7 @@ public class TransImportExtensionPointPlugin implements ExtensionPointInterface 
       @Nullable @Override public Void apply( @Nullable Exception e ) {
         if ( e instanceof DataServiceAlreadyExistsException ) {
           DataServiceAlreadyExistsException dsaee = (DataServiceAlreadyExistsException) e;
-          log.logDebug( BaseMessages.getString( PKG, "Messages.Import.Overwrite",
+          log.logMinimal( BaseMessages.getString( PKG, "Messages.Import.Overwrite",
               dsaee.getDataServiceMeta().getName() ) );
         } else {
           log.logError( BaseMessages.getString( PKG, "Messages.Import.Error" ), e );
