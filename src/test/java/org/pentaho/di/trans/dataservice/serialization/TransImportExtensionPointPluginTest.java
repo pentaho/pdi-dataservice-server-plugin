@@ -72,6 +72,6 @@ public class TransImportExtensionPointPluginTest {
     DataServiceMeta dsMeta = mock( DataServiceMeta.class );
     DataServiceAlreadyExistsException dsaee = new DataServiceAlreadyExistsException( dsMeta );
     exceptionHandlerCaptor.getValue().apply( dsaee );
-    verify( log ).logDebug( anyString() );
+    verify( log ).logBasic( anyString() );
   }
 }
