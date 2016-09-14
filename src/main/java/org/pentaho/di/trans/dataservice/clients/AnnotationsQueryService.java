@@ -1,15 +1,5 @@
 package org.pentaho.di.trans.dataservice.clients;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroup;
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroupXmlWriter;
 import org.pentaho.di.core.exception.KettleException;
@@ -21,8 +11,21 @@ import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
+import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /*! ******************************************************************************
  *
  * Pentaho Data Integration
@@ -44,20 +47,21 @@ import org.pentaho.di.trans.step.StepMeta;
  * limitations under the License.
  *
  ******************************************************************************/
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 
 public class AnnotationsQueryService implements Query.Service {
-  private DataServiceFactory factory;
+  private MetastoreLocator metastoreLocator;
+  private DataServiceResolver resolver;
 
-  public AnnotationsQueryService( final DataServiceFactory factory ) {
-    this.factory = factory;
+  public AnnotationsQueryService( final MetastoreLocator metastoreLocator, final DataServiceResolver resolver ) {
+    this.metastoreLocator = metastoreLocator;
+    this.resolver = resolver;
   }
 
   @Override public Query prepareQuery( final String sql, final int maxRows, final Map<String, String> parameters )
     throws KettleException {
     String prefix = "show annotations from ";
-    if ( sql.startsWith( prefix ) ) {
+    if ( sql.startsWith( prefix.toLowerCase() ) ) {
       return new AnnotationsQuery( sql.substring( prefix.length() ) );
     }
     return null;
@@ -77,7 +81,6 @@ public class AnnotationsQueryService implements Query.Service {
         writeAnnotations( outputStream, modelAnnotations );
       } catch ( MetaStoreException | KettleException e ) {
         String msg = "Error while executing 'show annotations from " + serviceName + "'";
-        factory.getLogChannel().logError( msg, e );
 
         //not including original execption here because we don't want that info going back to the jdbc client
         throw new IOException( msg );
@@ -101,11 +104,14 @@ public class AnnotationsQueryService implements Query.Service {
     }
 
     private Trans prepareExecution() throws MetaStoreException, KettleException {
-      DataServiceMeta dataService = factory.getDataService( serviceName );
+      DataServiceMeta dataService = resolver.getDataService( serviceName );
+      if ( dataService == null ) {
+        throw new MetaStoreException( "Unable to load dataservice " + serviceName );
+      }
       TransMeta serviceTrans = dataService.getServiceTrans();
       disableAllUnrelatedHops( dataService, serviceTrans );
       final Trans trans = getTrans( serviceTrans );
-      trans.setMetaStore( factory.getMetaStore() );
+      trans.setMetaStore( metastoreLocator.getMetastore() );
       if ( serviceTrans.getTransHopSteps( false ).size() > 0 ) {
         trans.prepareExecution( new String[]{} );
       }

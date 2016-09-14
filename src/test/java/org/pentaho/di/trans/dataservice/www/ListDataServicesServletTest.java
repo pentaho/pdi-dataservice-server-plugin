@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 
 import javax.servlet.http.HttpServletResponse;
@@ -64,14 +65,11 @@ public class ListDataServicesServletTest extends BaseServletTest {
 
   @Before
   public void setUp() throws Exception {
-    servlet = new ListDataServicesServlet( context );
+    servlet = new ListDataServicesServlet( client );
     servlet.setJettyMode( true );
     servlet.setup( transformationMap, null, null, null );
 
-
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
-
-    verify( context ).createClient( argThat( new ValidRepositorySupplier() ) );
 
     StringWriter out = new StringWriter();
     ThinServiceInformation thinServiceInformation = new ThinServiceInformation( DATA_SERVICE_NAME, rowMetaInterface );

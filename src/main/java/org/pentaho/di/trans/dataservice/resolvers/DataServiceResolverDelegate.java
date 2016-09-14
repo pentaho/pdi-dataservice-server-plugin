@@ -1,0 +1,93 @@
+/*! ******************************************************************************
+ *
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
+package org.pentaho.di.trans.dataservice.resolvers;
+
+import com.google.common.base.Function;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class DataServiceResolverDelegate implements DataServiceResolver {
+
+  private List<DataServiceResolver> resolvers;
+
+  public DataServiceResolverDelegate( List<DataServiceResolver> resolvers ) {
+    this.resolvers = resolvers;
+  }
+
+  @Override public List<DataServiceMeta> getDataServices( Function<Exception, Void> logger ) {
+    List<DataServiceMeta> dataServiceMetas = new ArrayList<>();
+    for ( DataServiceResolver resolver : resolvers ) {
+      dataServiceMetas.addAll( resolver.getDataServices( logger ) );
+    }
+    return dataServiceMetas;
+  }
+
+  @Override public List<DataServiceMeta> getDataServices( String dataServiceName, Function<Exception, Void> logger ) {
+    List<DataServiceMeta> dataServiceMetas = new ArrayList<>();
+    for ( DataServiceResolver resolver : resolvers ) {
+      dataServiceMetas.addAll( resolver.getDataServices( dataServiceName, logger ) );
+    }
+    return dataServiceMetas;
+  }
+
+  @Override public DataServiceMeta getDataService( String dataServiceName ) {
+    for ( DataServiceResolver resolver : resolvers ) {
+      DataServiceMeta dataServiceMeta = resolver.getDataService( dataServiceName );
+      if ( dataServiceMeta != null ) {
+        return dataServiceMeta;
+      }
+    }
+    return null;
+  }
+
+  @Override public List<String> getDataServiceNames( String dataServiceName ) {
+    List<String> dataServiceNames = new ArrayList<>();
+    for ( DataServiceResolver resolver : resolvers ) {
+      dataServiceNames.addAll( resolver.getDataServiceNames( dataServiceName ) );
+    }
+    return dataServiceNames;
+  }
+
+  @Override public DataServiceExecutor.Builder createBuilder( SQL sql ) throws KettleException {
+    for ( DataServiceResolver resolver : resolvers ) {
+      DataServiceExecutor.Builder builder = resolver.createBuilder( sql );
+      if ( builder != null ) {
+        return builder;
+      }
+    }
+    throw new KettleException( "Error when creating builder for sql query" );
+  }
+
+  @Override public List<String> getDataServiceNames() {
+    List<String> dataServiceNames = new ArrayList<>();
+    for ( DataServiceResolver resolver : resolvers ) {
+      dataServiceNames.addAll( resolver.getDataServiceNames() );
+    }
+    return dataServiceNames;
+  }
+}

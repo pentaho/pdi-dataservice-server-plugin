@@ -33,7 +33,6 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.www.BaseCartePlugin;
@@ -66,9 +65,9 @@ public class TransDataServlet extends BaseCartePlugin {
 
   public static final String CONTEXT_PATH = "/sql";
 
-  public TransDataServlet( DataServiceContext context ) {
-    this.client = context.createClient( new ServletRepositoryAdapter( this ) );
-    log = context.getLogChannel();
+  public TransDataServlet( DataServiceClient client ) {
+    this.client = client;
+    this.log = client.getLogChannel();
   }
 
   public void handleRequest( CarteRequest request ) throws IOException {

@@ -35,6 +35,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.www.CarteRequestHandler;
 import org.pentaho.di.www.SlaveServerConfig;
@@ -79,7 +80,6 @@ public abstract class BaseServletTest extends BaseTest {
   @Before
   public void setupRequest() throws Exception {
     context = mock( DataServiceContext.class );
-    when( context.createClient( any( ServletRepositoryAdapter.class ) ) ).thenReturn( client );
     when( context.getLogChannel() ).thenReturn( log );
 
     headers = HashMultimap.create();
@@ -126,10 +126,10 @@ public abstract class BaseServletTest extends BaseTest {
     when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
     when( slaveServerConfig.getRepository() ).thenReturn( repository );
 
-    when( client.getFactory() ).thenReturn( factory );
     when( factory.getContext() ).thenReturn( context );
     when( factory.getStepCache() ).thenReturn( cache );
     when( factory.getLogChannel() ).thenReturn( logChannel );
+    when( client.getLogChannel() ).thenReturn( log );
   }
 
   @After

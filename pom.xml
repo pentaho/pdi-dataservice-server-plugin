@@ -150,6 +150,16 @@
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
+      <artifactId>pentaho-kettle-repository-locator-api</artifactId>
+      <version>${dependency.pentaho-kettle.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-metastore-locator-api</artifactId>
+      <version>${dependency.pentaho-kettle.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
       <artifactId>pentaho-mongodb-plugin</artifactId>
       <version>${dependency.pentaho-mongodb-plugin.revision}</version>
       <scope>provided</scope>

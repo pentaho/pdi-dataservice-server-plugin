@@ -24,19 +24,18 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
+import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -46,23 +45,15 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 
-public class DataServiceClient implements DataServiceClientService, Query.Service {
-  private final DataServiceFactory factory;
-  private final ImmutableList<Query.Service> queryServices;
+public class DataServiceClient implements DataServiceClientService {
+  private final Query.Service queryService;
+  private final DataServiceResolver resolver;
+  private LogChannelInterface log;
 
-  public DataServiceClient( DataServiceFactory dataServiceFactory ) {
-    this.factory = dataServiceFactory;
-    //TODO Query.Service list would be a good candidate for OSGi dependency injection
-    queryServices = ImmutableList.of(
-        new CommandQueryService( dataServiceFactory.getContext() ),
-      new AnnotationsQueryService( factory ),
-      new DualQueryService(),
-      new ExecutorQueryService( factory )
-    );
-  }
-
-  public DataServiceFactory getFactory() {
-    return factory;
+  public DataServiceClient( Query.Service queryService,
+                            DataServiceResolver resolver ) {
+    this.queryService = queryService;
+    this.resolver = resolver;
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
@@ -91,11 +82,9 @@ public class DataServiceClient implements DataServiceClientService, Query.Servic
 
   public Query prepareQuery( String sql, int maxRows, Map<String, String> parameters )
     throws KettleException {
-    for ( Query.Service queryService : queryServices ) {
-      Query query = queryService.prepareQuery( sql, maxRows, parameters );
-      if ( query != null ) {
-        return query;
-      }
+    Query query = queryService.prepareQuery( sql, maxRows, parameters );
+    if ( query != null ) {
+      return query;
     }
     throw new KettleException( "Unable to resolve query: " + sql );
   }
@@ -103,7 +92,7 @@ public class DataServiceClient implements DataServiceClientService, Query.Servic
   @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
     List<ThinServiceInformation> services = Lists.newArrayList();
 
-    for ( DataServiceMeta service : factory.getDataServices( logErrors() ) ) {
+    for ( DataServiceMeta service : resolver.getDataServices( logErrors() ) ) {
       TransMeta transMeta = service.getServiceTrans();
       try {
         transMeta.activateParameters();
@@ -113,24 +102,16 @@ public class DataServiceClient implements DataServiceClientService, Query.Servic
       } catch ( Exception e ) {
         String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
           service.getName(), transMeta.getName() );
-        factory.getLogChannel().logError( message, e );
+        log.logError( message, e );
       }
     }
 
     return services;
   }
 
-  @Override public List<String> getServiceNames() throws SQLException {
-    try {
-      return factory.getDataServiceNames();
-    } catch ( MetaStoreException e ) {
-      throw new SQLException();
-    }
-  }
-
   @Override public ThinServiceInformation getServiceInformation( String name ) throws SQLException {
 
-    for ( DataServiceMeta service : factory.getDataServices( logErrors() ) ) {
+    for ( DataServiceMeta service : resolver.getDataServices( name, logErrors() ) ) {
       if ( service.getName().equals( name ) ) {
         TransMeta transMeta = service.getServiceTrans();
         try {
@@ -140,7 +121,7 @@ public class DataServiceClient implements DataServiceClientService, Query.Servic
         } catch ( Exception e ) {
           String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
             service.getName(), transMeta.getName() );
-          factory.getLogChannel().logError( message, e );
+          log.logError( message, e );
         }
       }
     }
@@ -148,8 +129,32 @@ public class DataServiceClient implements DataServiceClientService, Query.Servic
     return null;
   }
 
+  @Override public List<String> getServiceNames( String serviceName ) throws SQLException {
+    return resolver.getDataServiceNames( serviceName );
+  }
+
+  @Override public List<String> getServiceNames() throws SQLException {
+    return resolver.getDataServiceNames();
+  }
+
+
   private Function<Exception, Void> logErrors() {
-    return factory.logErrors( "Unable to retrieve data service" );
+    return logErrors( "Unable to retrieve data service" );
+  }
+
+  public Function<Exception, Void> logErrors( String message ) {
+    return e -> {
+      getLogChannel().logError( message, e );
+      return null;
+    };
+  }
+
+  public void setLogChannel( LogChannelInterface log ) {
+    this.log = log;
+  }
+
+  public LogChannelInterface getLogChannel() {
+    return log;
   }
 
   /**
@@ -165,5 +170,4 @@ public class DataServiceClient implements DataServiceClientService, Query.Servic
   @Deprecated
   public void setMetaStore( IMetaStore metaStore ) {
   }
-
 }

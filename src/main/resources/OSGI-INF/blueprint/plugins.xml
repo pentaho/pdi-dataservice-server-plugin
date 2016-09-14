@@ -19,12 +19,17 @@
     </bean>
 
     <bean id="listDataServlet" class="org.pentaho.di.trans.dataservice.www.ListDataServicesServlet" scope="singleton">
-        <argument ref="context"/>
+        <argument ref="dataServiceClient"/>
+        <pen:di-plugin type="org.pentaho.di.core.plugins.CartePluginType"/>
+    </bean>
+
+    <bean id="publishRepoServlet" class="org.pentaho.di.trans.dataservice.www.RepositoryPublishServlet" scope="singleton">
+        <argument ref="blueprintBundleContext" />
         <pen:di-plugin type="org.pentaho.di.core.plugins.CartePluginType"/>
     </bean>
 
     <bean id="dataServlet" class="org.pentaho.di.trans.dataservice.www.TransDataServlet" scope="singleton">
-        <argument ref="context"/>
+        <argument ref="dataServiceClient"/>
         <pen:di-plugin type="org.pentaho.di.core.plugins.CartePluginType"/>
     </bean>
 

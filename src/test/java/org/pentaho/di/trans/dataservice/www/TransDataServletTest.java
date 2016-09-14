@@ -107,11 +107,9 @@ public class TransDataServletTest extends BaseServletTest {
 
     doReturn( GEN_TRANS_XML ).when( genTransMeta ).getXML();
 
-    servlet = new TransDataServlet( context );
+    servlet = new TransDataServlet( client );
     servlet.setJettyMode( true );
     servlet.setup( transformationMap, null, null, null );
-
-    verify( context ).createClient( argThat( new ValidRepositorySupplier() ) );
 
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
     debugTrans = fs.newFile( DEBUG_TRANS_FILE );
@@ -202,7 +200,7 @@ public class TransDataServletTest extends BaseServletTest {
     servlet.service( request, response );
 
     verify( response ).setStatus( HttpServletResponse.SC_BAD_REQUEST );
-    verifyZeroInteractions( client );
+    verify( client, times( 1 ) ).getLogChannel();
   }
 
   @Test

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -42,7 +42,7 @@ import java.util.Map;
 /**
  * @author nhudak
  */
-class DualQueryService implements Query.Service {
+public class DualQueryService implements Query.Service {
   public static final String DUMMY_TABLE_NAME = "dual";
   @VisibleForTesting protected static final byte[] DATA;
 
@@ -66,6 +66,9 @@ class DualQueryService implements Query.Service {
       // Should never happen, since we're writing to an byte array
       throw Throwables.propagate( e );
     }
+  }
+
+  public DualQueryService() {
   }
 
   @Override public Query prepareQuery( String sqlString, int maxRows, Map<String, String> parameters ) {

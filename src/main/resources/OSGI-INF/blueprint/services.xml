@@ -14,16 +14,16 @@
 
     <bean id="uiFactory" class="org.pentaho.di.trans.dataservice.ui.UIFactory" scope="singleton"/>
 
+    <bean id="logChannel" class="org.pentaho.di.core.logging.LogChannel">
+        <argument value="Data Services"/>
+    </bean>
+
     <bean id="context" class="org.pentaho.di.trans.dataservice.DataServiceContext" scope="singleton">
         <argument ref="pushDownFactories"/>
         <argument ref="autoOptimizationServices"/>
         <argument ref="cacheManager"/>
         <argument ref="uiFactory"/>
-        <argument>
-            <bean class="org.pentaho.di.core.logging.LogChannel">
-                <argument value="Data Services"/>
-            </bean>
-        </argument>
+        <argument ref="logChannel"/>
     </bean>
 
     <service id="dataServiceContext" ref="context" interface="org.pentaho.di.trans.dataservice.Context"></service>
@@ -41,11 +41,60 @@
                     interface="org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService"
                     availability="optional"/>
 
+    <reference id="repositoryLocator"
+               interface="org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator"
+               availability="optional"/>
+
+    <reference id="metastoreLocator"
+               interface="org.pentaho.osgi.metastore.locator.api.MetastoreLocator"
+               availability="optional"/>
+
+
+    <bean id="dataServiceClient" class="org.pentaho.di.trans.dataservice.clients.DataServiceClient">
+        <argument ref="queryServiceDelegate"/>
+        <argument ref="dataServiceResolverDelegate"/>
+        <property name="logChannel" ref="logChannel"/>
+    </bean>
+
     <!-- Local Client Service -->
-    <service id="dataServiceClientService" interface="org.pentaho.di.trans.dataservice.client.DataServiceClientService">
-        <bean factory-ref="context" factory-method="createLocalClient"/>
-    </service>
+    <service ref="dataServiceClient" id="dataServiceClientService"
+             interface="org.pentaho.di.trans.dataservice.client.DataServiceClientService"/>
     <!-- /Local Client Service -->
+
+    <bean id="dataServiceResolverDelegate" class="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolverDelegate">
+        <argument>
+            <list>
+                <bean class="org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver">
+                    <argument ref="repositoryLocator"/>
+                    <argument ref="context"/>
+                </bean>
+                <bean class="org.pentaho.di.trans.dataservice.resolvers.TransientResolver">
+                    <argument ref="repositoryLocator"/>
+                    <argument ref="context"/>
+                    <argument ref="serviceCacheFactory"/>
+                </bean>
+            </list>
+        </argument>
+    </bean>
+
+    <bean id="queryServiceDelegate" class="org.pentaho.di.trans.dataservice.clients.QueryServiceDelegate">
+        <argument>
+            <list>
+                <bean class="org.pentaho.di.trans.dataservice.clients.CommandQueryService">
+                    <argument ref="context"/>
+                </bean>
+                <bean class="org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService">
+                    <argument ref="metastoreLocator"/>
+                    <argument ref="dataServiceResolverDelegate"/>
+                </bean>
+                <bean class="org.pentaho.di.trans.dataservice.clients.DualQueryService" />
+                <bean class="org.pentaho.di.trans.dataservice.clients.ExecutorQueryService">
+                    <argument ref="metastoreLocator"/>
+                    <argument ref="dataServiceResolverDelegate"/>
+                </bean>
+            </list>
+        </argument>
+    </bean>
 
     <!-- Parameter Generation Optimization -->
     <bean id="paramGenFactory" scope="singleton"

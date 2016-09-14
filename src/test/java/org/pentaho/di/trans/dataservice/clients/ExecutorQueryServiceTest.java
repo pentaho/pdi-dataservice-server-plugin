@@ -27,11 +27,20 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.Test;
 import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
+import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolverDelegate;
+import org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryProvider;
+import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
+import org.pentaho.osgi.metastore.locator.api.MetastoreProvider;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.mockito.Mockito.*;
 
@@ -39,15 +48,21 @@ public class ExecutorQueryServiceTest {
   @Test
   public void testQueryBuildsWithMetastore() throws Exception {
     final DataServiceFactory factory = mock( DataServiceFactory.class );
+    final DataServiceContext context = mock( DataServiceContext.class );
+    final DataServiceResolver dataServiceResolver = mock( DataServiceResolver.class );
+    when( context.getMetaStoreUtil() ).thenReturn( factory );
     DataServiceExecutor.Builder builder = mock( DataServiceExecutor.Builder.class );
+
     final IMetaStore metastore = mock( IMetaStore.class );
+    final MetastoreLocator metastoreLocator = mock( MetastoreLocator.class );
+    when( metastoreLocator.getMetastore() ).thenReturn( metastore );
 
     SQL sql = new SQL( "select field from table" );
     HashMap<String, String> parameters = new HashMap<>();
     int rowLimit = 5432;
 
-    ExecutorQueryService executorQueryService = new ExecutorQueryService( factory );
-    when( factory.createBuilder( argThat( matchesSql( sql ) ) ) ).thenReturn( builder );
+    ExecutorQueryService executorQueryService = new ExecutorQueryService( dataServiceResolver, metastoreLocator );
+    when( dataServiceResolver.createBuilder( argThat( matchesSql( sql ) ) ) ).thenReturn( builder );
     when( factory.getMetaStore() ).thenReturn( metastore );
 
     when( builder.rowLimit( rowLimit ) ).thenReturn( builder );

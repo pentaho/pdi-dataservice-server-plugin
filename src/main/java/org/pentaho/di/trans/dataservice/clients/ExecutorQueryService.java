@@ -28,7 +28,9 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
+import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
+import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -39,25 +41,28 @@ import java.util.Map;
 /**
  * @author nhudak
  */
-class ExecutorQueryService implements Query.Service {
-  private DataServiceFactory factory;
+public class ExecutorQueryService implements Query.Service {
 
-  public ExecutorQueryService( DataServiceFactory factory ) {
-    this.factory = factory;
+  private DataServiceResolver resolver;
+  private MetastoreLocator metastoreLocator;
+
+  public ExecutorQueryService( DataServiceResolver resolver, MetastoreLocator metastoreLocator ) {
+    this.resolver = resolver;
+    this.metastoreLocator = metastoreLocator;
   }
 
   @Override public Query prepareQuery( String sqlString, int maxRows, Map<String, String> parameters ) throws KettleException {
     SQL sql = new SQL( sqlString );
     Query query;
     try {
-      DataServiceExecutor executor = factory.createBuilder( sql )
+      IMetaStore metaStore = metastoreLocator != null ? metastoreLocator.getMetastore() : null;
+      DataServiceExecutor executor = resolver.createBuilder( sql )
         .rowLimit( maxRows )
         .parameters( parameters )
-        .metastore( factory.getMetaStore() )
+        .metastore( metaStore )
         .build();
       query = new ExecutorQuery( executor );
     } catch ( Exception e ) {
-      factory.getLogChannel().logError( "Failed to execute data service " + sql.getServiceName(), e );
       Throwables.propagateIfInstanceOf( e, KettleException.class );
       throw new KettleException( e );
     }
