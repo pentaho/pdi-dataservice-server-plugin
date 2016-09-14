@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -139,6 +139,7 @@ public abstract class BaseTest {
     when( metaStoreUtil.getContext() ).thenReturn( context );
     when( metaStoreUtil.getStepCache() ).thenReturn( cache );
     when( metaStoreUtil.getLogChannel() ).thenReturn( logChannel );
+    when( client.getLogChannel() ).thenReturn( logChannel );
   }
 
   protected Matcher<SQL> sql( String sqlString ) {

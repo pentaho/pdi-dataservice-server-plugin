@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -27,9 +27,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
+import org.pentaho.di.trans.dataservice.clients.Query;
+import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
+import org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
+import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
+import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryProvider;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -52,12 +58,17 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
   DataServiceFactory factory;
 
   @Mock Supplier<Repository> supplier;
+  @Mock Supplier<IMetaStore> metaStoreSupplier;
+  @Mock Query.Service queryService;
+  @Mock KettleRepositoryLocator repositoryLocator;
+  @Mock DataServiceContext context;
 
   public void setUp() throws Exception {
     super.setUp();
 
     when( supplier.get() ).thenReturn( repository );
-    metaStoreUtil = factory = new DataServiceFactory( context ) {
+    when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
+    factory = new DataServiceFactory( context ) {
       @Override public Repository getRepository() {
         return supplier.get();
       }
@@ -79,7 +90,11 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
 
   @Test
   public void testCreateClient() throws Exception {
-    DataServiceClient client = new DataServiceClient( factory );
+
+    when( repositoryLocator.getRepository() ).thenReturn( repository );
+    DataServiceResolver dataServiceResolver = new MetaStoreResolver( repositoryLocator, context );
+
+    DataServiceClient client = new DataServiceClient( queryService, dataServiceResolver );
     metaStoreUtil.save( dataService );
     metaStoreUtil.sync( transMeta, exceptionHandler );
 

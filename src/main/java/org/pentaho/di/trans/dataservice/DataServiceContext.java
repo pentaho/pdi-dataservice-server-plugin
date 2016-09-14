@@ -23,14 +23,10 @@
 package org.pentaho.di.trans.dataservice;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Supplier;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.repository.Repository;
-import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
@@ -105,20 +101,6 @@ public class DataServiceContext implements Context {
   @Override
   public DataServiceDelegate getDataServiceDelegate() {
     return DataServiceDelegate.withDefaultSpoonInstance( this );
-  }
-
-  @Override
-  public DataServiceClient createClient( final Supplier<Repository> supplier ) {
-    return new DataServiceClient( new DataServiceFactory( this ) {
-      @Override public Repository getRepository() {
-        return supplier.get();
-      }
-    } );
-  }
-
-  @Override
-  public DataServiceClient createLocalClient() {
-    return new DataServiceClient( getDataServiceDelegate() );
   }
 
   @Override

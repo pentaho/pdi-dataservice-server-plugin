@@ -20,11 +20,8 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import com.google.common.base.Supplier;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.repository.Repository;
-import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
@@ -50,10 +47,6 @@ public interface Context {
   UIFactory getUIFactory();
 
   DataServiceDelegate getDataServiceDelegate();
-
-  DataServiceClient createClient( Supplier<Repository> supplier );
-
-  DataServiceClient createLocalClient();
 
   void addExecutor( DataServiceExecutor executor );
 

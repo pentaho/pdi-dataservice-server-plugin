@@ -33,6 +33,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -60,6 +61,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
@@ -516,7 +518,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   public AnnotationsQueryService getAnnotationsQueryService() {
     if ( null == annotationsQueryService ) {
-      annotationsQueryService = new AnnotationsQueryService( this.context.getDataServiceDelegate() );
+      annotationsQueryService = new AnnotationsQueryService( () -> null, new TestResolver() );
     }
     return annotationsQueryService;
   }
@@ -555,6 +557,32 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       if ( null != row ) {
         model.addResultRow( row );
       }
+    }
+  }
+
+  class TestResolver implements DataServiceResolver {
+    @Override public DataServiceMeta getDataService( String dataServiceName ) {
+      return dataService;
+    }
+
+    @Override public List<DataServiceMeta> getDataServices( Function<Exception, Void> logger ) {
+      return null;
+    }
+
+    @Override public List<DataServiceMeta> getDataServices( String dataServiceName, Function<Exception, Void> logger ) {
+      return null;
+    }
+
+    @Override public List<String> getDataServiceNames() {
+      return null;
+    }
+
+    @Override public List<String> getDataServiceNames( String dataServiceName ) {
+      return null;
+    }
+
+    @Override public DataServiceExecutor.Builder createBuilder( SQL sql ) throws KettleException {
+      return null;
     }
   }
 }

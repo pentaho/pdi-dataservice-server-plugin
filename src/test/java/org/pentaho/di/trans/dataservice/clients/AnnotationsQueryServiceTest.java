@@ -40,10 +40,13 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.jdbc.ThinResultFactory;
 import org.pentaho.di.trans.dataservice.jdbc.ThinResultSet;
+import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
@@ -51,6 +54,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.steps.dummytrans.DummyTrans;
 import org.pentaho.di.trans.steps.dummytrans.DummyTransMeta;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
 import org.w3c.dom.Document;
 
 import java.io.ByteArrayInputStream;
@@ -84,29 +88,38 @@ public class AnnotationsQueryServiceTest {
 
   @Test
   public void testLogsExceptionOnWriteEror() throws Exception {
-    final DataServiceFactory dataServiceFactory = mock( DataServiceFactory.class );
-    final AnnotationsQueryService queryService = new AnnotationsQueryService( dataServiceFactory );
+    final DataServiceDelegate dataServiceFactory = mock( DataServiceDelegate.class );
+    final DataServiceContext dataServiceContext = mock( DataServiceContext.class );
+    final DataServiceResolver dataServiceResolver = mock( DataServiceResolver.class );
+    final MetastoreLocator metastoreLocator = mock( MetastoreLocator.class );
+
+    when( dataServiceContext.getDataServiceDelegate() ).thenReturn( dataServiceFactory );
+    when( metastoreLocator.getMetastore() ).thenReturn( null );
+
+    final AnnotationsQueryService queryService = new AnnotationsQueryService( metastoreLocator, dataServiceResolver );
     Query query =
       queryService.prepareQuery( "show annotations from annotatedService", 0, Collections.<String, String>emptyMap() );
-    MetaStoreException metaStoreException = new MetaStoreException( "something happened" );
-    when( dataServiceFactory.getDataService( "annotatedService" ) )
-      .thenThrow( metaStoreException );
-    final LogChannelInterface logChannel = mock( LogChannelInterface.class );
-    when( dataServiceFactory.getLogChannel() ).thenReturn( logChannel );
+    MetaStoreException metaStoreException = new MetaStoreException( "Unable to load dataservice annotatedService" );
+    when( dataServiceResolver.getDataService( "annotatedService" ) ).thenReturn( null );
+
     try {
       query.writeTo( new ByteArrayOutputStream(  ) );
       fail( "should have got exception" );
     } catch ( IOException e ) {
       assertEquals( "Error while executing 'show annotations from annotatedService'", e.getMessage() );
     }
-    verify( logChannel )
-      .logError( "Error while executing 'show annotations from annotatedService'", metaStoreException );
   }
 
   @Test
   public void testGetsAnnotationsDefinedByStream() throws Exception {
-    final DataServiceFactory dataServiceFactory = mock( DataServiceFactory.class );
-    final AnnotationsQueryService queryService = new AnnotationsQueryService( dataServiceFactory );
+    final DataServiceDelegate dataServiceFactory = mock( DataServiceDelegate.class );
+    final DataServiceContext dataServiceContext = mock( DataServiceContext.class );
+    final DataServiceResolver dataServiceResolver = mock( DataServiceResolver.class );
+    final MetastoreLocator metastoreLocator = mock( MetastoreLocator.class );
+
+    when( dataServiceContext.getDataServiceDelegate() ).thenReturn( dataServiceFactory );
+    when( metastoreLocator.getMetastore() ).thenReturn( null );
+    final AnnotationsQueryService queryService = new AnnotationsQueryService( metastoreLocator, dataServiceResolver );
 
     URL resource = getClass().getClassLoader().getResource( "showAnnotations.ktr" );
     @SuppressWarnings( "ConstantConditions" )
@@ -116,7 +129,7 @@ public class AnnotationsQueryServiceTest {
     final DataServiceMeta dataServiceMeta = new DataServiceMeta( transMeta );
     dataServiceMeta.setName( "annotatedService" );
     dataServiceMeta.setStepname( "Annotate Stream" );
-    when( dataServiceFactory.getDataService( "annotatedService" ) ).thenReturn( dataServiceMeta );
+    when( dataServiceResolver.getDataService( "annotatedService" ) ).thenReturn( dataServiceMeta );
     Query query =
       queryService.prepareQuery( "show annotations from annotatedService", 0, Collections.<String, String>emptyMap() );
     AnnotationsQueryService.AnnotationsQuery spy = (AnnotationsQueryService.AnnotationsQuery) Mockito.spy( query );
@@ -137,15 +150,22 @@ public class AnnotationsQueryServiceTest {
     thinResultSet.next();
     String output = thinResultSet.getString( 1 );
     assertEquals( new ModelAnnotationGroupXmlWriter( mag ).getXML(), output );
-    verify( dataServiceFactory ).getMetaStore();
+    verify( metastoreLocator ).getMetastore();
     assertEquals( 0, query.getTransList().size() );
     thinResultSet.close();
   }
 
   @Test
   public void testNoAnnotationsReturnsEmpty() throws Exception {
-    final DataServiceFactory dataServiceFactory = mock( DataServiceFactory.class );
-    final AnnotationsQueryService queryService = new AnnotationsQueryService( dataServiceFactory );
+    final DataServiceDelegate dataServiceFactory = mock( DataServiceDelegate.class );
+    final DataServiceContext dataServiceContext = mock( DataServiceContext.class );
+    final DataServiceResolver dataServiceResolver = mock( DataServiceResolver.class );
+    final MetastoreLocator metastoreLocator = mock( MetastoreLocator.class );
+
+    when( dataServiceContext.getDataServiceDelegate() ).thenReturn( dataServiceFactory );
+    when( metastoreLocator.getMetastore() ).thenReturn( null );
+    final AnnotationsQueryService queryService = new AnnotationsQueryService( metastoreLocator, dataServiceResolver );
+
 
     URL resource = getClass().getClassLoader().getResource( "showAnnotations.ktr" );
     @SuppressWarnings( "ConstantConditions" )
@@ -155,7 +175,7 @@ public class AnnotationsQueryServiceTest {
     final DataServiceMeta dataServiceMeta = new DataServiceMeta( transMeta );
     dataServiceMeta.setName( "gridService" );
     dataServiceMeta.setStepname( "Data Grid" );
-    when( dataServiceFactory.getDataService( "gridService" ) ).thenReturn( dataServiceMeta );
+    when( dataServiceResolver.getDataService( "gridService" ) ).thenReturn( dataServiceMeta );
     Query query =
       queryService.prepareQuery( "show annotations from gridService", 0, Collections.<String, String>emptyMap() );
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -200,11 +220,19 @@ public class AnnotationsQueryServiceTest {
     ds1.setName( "ds" );
     ds1.setStepname( "src" );
 
-    final DataServiceFactory dataServiceFactory = mock( DataServiceFactory.class );
-    when( dataServiceFactory.getDataService( "ds" ) ).thenReturn( ds1 );
-    when( dataServiceFactory.getDataService( "dsa" ) ).thenReturn( dsA );
+    final DataServiceDelegate dataServiceFactory = mock( DataServiceDelegate.class );
+    final DataServiceContext dataServiceContext = mock( DataServiceContext.class );
+    when( dataServiceContext.getDataServiceDelegate() ).thenReturn( dataServiceFactory );
+    final DataServiceResolver dataServiceResolver = mock( DataServiceResolver.class );
 
-    final AnnotationsQueryService queryService = new AnnotationsQueryService( dataServiceFactory );
+    when( dataServiceResolver.getDataService( "ds" ) ).thenReturn( ds1 );
+    when( dataServiceResolver.getDataService( "dsa" ) ).thenReturn( dsA );
+
+    final MetastoreLocator metastoreLocator = mock( MetastoreLocator.class );
+
+    when( metastoreLocator.getMetastore() ).thenReturn( null );
+    final AnnotationsQueryService queryService = new AnnotationsQueryService( metastoreLocator, dataServiceResolver );
+
     Query query =
         queryService.prepareQuery( "show annotations from dsa", 0, Collections.<String, String>emptyMap() );
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -267,11 +295,18 @@ public class AnnotationsQueryServiceTest {
     dsAll.setName( "ds" );
     dsAll.setStepname( "merged" );
 
-    final DataServiceFactory dataServiceFactory = mock( DataServiceFactory.class );
-    when( dataServiceFactory.getDataService( "dsAll" ) ).thenReturn( dsAll );
-    when( dataServiceFactory.getDataService( "ds1" ) ).thenReturn( ds1 );
+    final DataServiceDelegate dataServiceFactory = mock( DataServiceDelegate.class );
+    final DataServiceResolver dataServiceResolver = mock( DataServiceResolver.class );
+    when( dataServiceResolver.getDataService( "dsAll" ) ).thenReturn( dsAll );
+    when( dataServiceResolver.getDataService( "ds1" ) ).thenReturn( ds1 );
 
-    AnnotationsQueryService queryService = new AnnotationsQueryService( dataServiceFactory );
+    final DataServiceContext dataServiceContext = mock( DataServiceContext.class );
+    when( dataServiceContext.getDataServiceDelegate() ).thenReturn( dataServiceFactory );
+    final MetastoreLocator metastoreLocator = mock( MetastoreLocator.class );
+
+    when( metastoreLocator.getMetastore() ).thenReturn( null );
+    AnnotationsQueryService queryService = new AnnotationsQueryService( metastoreLocator, dataServiceResolver );
+
     Query query =
         queryService.prepareQuery( "show annotations from ds1", 0, Collections.<String, String>emptyMap() );
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -280,7 +315,7 @@ public class AnnotationsQueryServiceTest {
     assertTrue( result.contains( name1 ) );
     assertFalse( result.contains( name2 ) );
 
-    queryService = new AnnotationsQueryService( dataServiceFactory );
+    queryService = new AnnotationsQueryService( metastoreLocator, dataServiceResolver );
     query =
         queryService.prepareQuery( "show annotations from dsAll", 0, Collections.<String, String>emptyMap() );
     outputStream = new ByteArrayOutputStream();

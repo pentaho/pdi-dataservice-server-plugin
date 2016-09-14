@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -65,21 +65,6 @@ public class DataServiceContextTest extends BaseTest {
   @Test
   public void testGetMetaStoreUtil() throws Exception {
     assertThat( context.getMetaStoreUtil(), validMetaStoreUtil() );
-  }
-
-  @Test
-  public void testGetDataServiceClient() throws Exception {
-    assertThat( context.createLocalClient(), hasProperty( "factory", allOf(
-      instanceOf( DataServiceDelegate.class ),
-      validMetaStoreUtil()
-    ) ) );
-
-    Repository repository = mock( Repository.class );
-    when( repository.getMetaStore() ).thenReturn( mock( IMetaStore.class ) );
-
-    assertThat( context.createClient( Suppliers.ofInstance( repository ) ),
-      hasProperty( "factory", hasProperty( "metaStore", is( repository.getMetaStore() ) ) )
-    );
   }
 
   @Test

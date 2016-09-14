@@ -58,6 +58,11 @@ public class DataServiceDelegate extends DataServiceFactory {
     return new DataServiceDelegate( context, defaultSpoonSupplier );
   }
 
+  public DataServiceDelegate( DataServiceContext context ) {
+    super( context );
+    this.spoonSupplier = null;
+  }
+
   public DataServiceDelegate( DataServiceContext context, Spoon spoon ) {
     this( context, Suppliers.ofInstance( spoon ) );
   }

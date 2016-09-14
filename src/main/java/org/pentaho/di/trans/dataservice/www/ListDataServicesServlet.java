@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,7 +24,6 @@ package org.pentaho.di.trans.dataservice.www;
 
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.xml.XMLHandler;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.www.BaseCartePlugin;
@@ -53,9 +52,9 @@ public class ListDataServicesServlet extends BaseCartePlugin {
   public static final String XML_TAG_SERVICE = "service";
   private final DataServiceClient client;
 
-  public ListDataServicesServlet( DataServiceContext context ) {
-    this.client = context.createClient( new ServletRepositoryAdapter( this ) );
-    log = context.getLogChannel();
+  public ListDataServicesServlet( DataServiceClient client ) {
+    this.client = client;
+    this.log = client.getLogChannel();
   }
 
   @Override
