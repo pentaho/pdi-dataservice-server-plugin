@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -44,6 +44,9 @@ import static com.google.common.base.Preconditions.checkState;
  * @author nhudak
  */
 public class ServiceCacheFactory implements PushDownFactory {
+
+  public static final String CACHE_PREFIX = "SERVICE_CACHE.";
+
   private final PentahoCacheManager cacheManager;
 
   private final ListeningExecutorService executorService;
@@ -121,7 +124,7 @@ public class ServiceCacheFactory implements PushDownFactory {
   }
 
   public String cacheName( String dataServiceName ) {
-    return "SERVICE_CACHE." + dataServiceName;
+    return CACHE_PREFIX + dataServiceName;
   }
 
   public ServiceObserver createObserver( DataServiceExecutor executor ) {
