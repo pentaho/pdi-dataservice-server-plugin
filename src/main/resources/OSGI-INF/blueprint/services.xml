@@ -159,6 +159,12 @@
         <argument ref="serviceCacheFactory"/>
         <pen:di-plugin type="org.pentaho.di.core.plugins.CartePluginType"/>
     </bean>
+    <service id="serviceCacheService"
+             interface="org.pentaho.di.trans.dataservice.optimization.cache.CacheService">
+        <bean class="org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheService">
+            <argument ref="cacheManager"/>
+        </bean>
+    </service>
     <!-- /Service Cache Optimization -->
 
     <!-- Parameter Push down Optimization -->
