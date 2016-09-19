@@ -35,7 +35,9 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
 import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,7 +46,7 @@ import java.util.List;
  */
 public class TransientResolver implements DataServiceResolver {
 
-  public static final String DELIMITER = "~";
+  public static final String DELIMITER = ":";
   public static final String PREFIX = "transient:";
   private KettleRepositoryLocator repositoryLocator;
   private DataServiceContext context;
@@ -93,7 +95,7 @@ public class TransientResolver implements DataServiceResolver {
   private DataServiceMeta createDataServiceMeta( String dataServiceName ) {
     String[] parts = splitTransient( dataServiceName );
     try {
-      String fileAndPath = parts[ 0 ].trim();
+      String fileAndPath = decode( parts[ 0 ].trim() );
       TransMeta transMeta;
       Repository repository = repositoryLocator != null ? repositoryLocator.getRepository() : null;
       if ( repository == null ) {
@@ -101,7 +103,7 @@ public class TransientResolver implements DataServiceResolver {
       } else {
         transMeta = loadFromRepository( repository, fileAndPath );
       }
-      String stepName = String.valueOf( parts[ 1 ].trim() );
+      String stepName = decode( String.valueOf( parts[ 1 ].trim() ) );
       DataServiceMeta dataServiceMeta = new DataServiceMeta( transMeta );
       dataServiceMeta.setStepname( stepName );
       dataServiceMeta.setName( dataServiceName );
@@ -129,11 +131,23 @@ public class TransientResolver implements DataServiceResolver {
   }
 
   public static boolean isTransient( String dataServiceName ) {
-    return dataServiceName.startsWith( PREFIX ) && dataServiceName.contains( DELIMITER );
+    return dataServiceName.startsWith( PREFIX );
   }
 
   public static String buildTransient( String filePath, String stepName ) {
-    return PREFIX + filePath + DELIMITER + stepName;
+    try {
+      return PREFIX + encode( filePath ) + DELIMITER + encode( stepName );
+    } catch ( UnsupportedEncodingException e ) {
+      return null;
+    }
+  }
+
+  private static String encode( String value ) throws UnsupportedEncodingException {
+    return Base64.getEncoder().encodeToString( value.getBytes( "utf-8" ) );
+  }
+
+  private static String decode( String value ) throws UnsupportedEncodingException {
+    return new String( Base64.getDecoder().decode( value ), "utf-8" );
   }
 
   public String[] splitTransient( String dataServiceName ) {

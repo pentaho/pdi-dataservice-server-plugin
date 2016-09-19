@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
 @RunWith( MockitoJUnitRunner.class )
 public class TransientResolverTest {
 
-  private final String DATA_SERVICE_NAME = "transient:/path/to/file~name.ktr";
+  private final String DATA_SERVICE_NAME = "transient:L3BhdGgvdG8vZmlsZQ==:U3RlcCBOYW1l";
 
   private TransientResolver transientResolver;
 
