@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -77,7 +77,9 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.Matchers.any;
@@ -468,6 +470,30 @@ public class CachedServiceTest {
     String aggregateQuery = "SELECT count(*) FROM " + SERVICE_NAME;
     assertThat( partial.answersQuery( dataServiceExecutor( aggregateQuery ) ), is( false ) );
     assertThat( complete.answersQuery( dataServiceExecutor( aggregateQuery ) ), is( true ) );
+  }
+
+  @Test
+  public void testPartialServiceRows() throws Exception {
+    when( sqlTransGenerator.getServiceRowLimit() ).thenReturn( 0 );
+    when( sqlTransGenerator.getRowLimit() ).thenReturn( 0 );
+    CachedService noLimit = partial( dataServiceExecutor( BASE_QUERY ) );
+
+    when( sqlTransGenerator.getRowLimit() ).thenReturn( 2 );
+    CachedService rowLimit = partial( dataServiceExecutor( BASE_QUERY ) );
+
+    when( sqlTransGenerator.getRowLimit() ).thenReturn( 0 );
+    when( sqlTransGenerator.getServiceRowLimit() ).thenReturn( 2 );
+    CachedService dynLimit = partial( dataServiceExecutor( BASE_QUERY ) );
+    assertTrue( noLimit.answersQuery( dataServiceExecutor( BASE_QUERY ) ) );
+    assertTrue( dynLimit.answersQuery( dataServiceExecutor( BASE_QUERY ) ) );
+    assertFalse( rowLimit.answersQuery( dataServiceExecutor( BASE_QUERY ) ) );
+
+    when( sqlTransGenerator.getRowLimit() ).thenReturn( 2 );
+    assertTrue( rowLimit.answersQuery( dataServiceExecutor( BASE_QUERY ) ) );
+
+    when( sqlTransGenerator.getServiceRowLimit() ).thenReturn( 0 );
+    assertFalse( dynLimit.answersQuery( dataServiceExecutor( BASE_QUERY ) ) );
+    assertTrue( rowLimit.answersQuery( dataServiceExecutor( BASE_QUERY ) ) );
   }
 
   private CachedService partial( DataServiceExecutor executor ) {
