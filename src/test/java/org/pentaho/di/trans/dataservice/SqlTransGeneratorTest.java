@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -32,6 +32,8 @@ import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.steps.samplerows.SampleRowsMeta;
 import org.pentaho.di.trans.steps.selectvalues.SelectValuesMeta;
 
 import java.util.Arrays;
@@ -43,6 +45,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SqlTransGeneratorTest {
 
@@ -126,11 +130,15 @@ public class SqlTransGeneratorTest {
   }
 
   private SelectValuesMeta getSelectStepValuesMeta( TransMeta transMeta ) {
-    int selectValuesIndex = Arrays.asList( transMeta.getStepNames() ).indexOf( "Select values" );
+    return (SelectValuesMeta) getStepByName( transMeta, "Select values" );
+  }
+
+  private StepMetaInterface getStepByName( TransMeta transMeta, String stepName ) {
+    int selectValuesIndex = Arrays.asList( transMeta.getStepNames() ).indexOf( stepName );
     if ( selectValuesIndex < 0 ) {
-      fail( "Expected a step named 'Select values'" );
+      fail( "Expected a step named '" + stepName + "'" );
     }
-    return (SelectValuesMeta) transMeta.getStep( selectValuesIndex ).getStepMetaInterface();
+    return  transMeta.getStep( selectValuesIndex ).getStepMetaInterface();
   }
 
   @Test
@@ -242,6 +250,27 @@ public class SqlTransGeneratorTest {
     SelectValuesMeta selectValuesMeta = getSelectStepValuesMeta( generator.generateTransMeta() );
     assertThat( selectValuesMeta.getSelectName(), equalTo( new String[] { "foo" } ) );
     assertThat( selectValuesMeta.getSelectRename(), equalTo( new String[] { null } ) );
+  }
+
+  @Test
+  public void testServiceLimit() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM table" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaString( "foo" ) );
+    sql.parse( rowMeta );
+
+    final String genLimitStep = "Limit input rows";
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 0, 2 );
+
+    TransMeta transMeta = generator.generateTransMeta();
+    SampleRowsMeta limitInput = (SampleRowsMeta) getStepByName( transMeta, genLimitStep );
+    assertEquals( "limit not generated", "1..2", limitInput.getLinesRange() );
+
+    // bad value
+    generator = new SqlTransGenerator( sql, 0, -3 );
+    transMeta = generator.generateTransMeta();
+    assertTrue( "limit<=0 not ignored", Arrays.asList( transMeta.getStepNames() ).indexOf( genLimitStep ) < 0 );
   }
 }
 

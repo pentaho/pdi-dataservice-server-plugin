@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -46,18 +46,23 @@ import java.util.List;
  * @author nhudak
  */
 class CachedService implements Serializable {
+
+  private static final long serialVersionUID = 1L;
   private final ImmutableList<RowMetaAndData> rowMetaAndData;
   private final Optional<Integer> ranking;
+  private final Optional<Integer> rankingServiceRows;
 
-  private CachedService( List<RowMetaAndData> rowMetaAndData, Optional<Integer> ranking ) {
+  private CachedService( List<RowMetaAndData> rowMetaAndData, Optional<Integer> ranking,  Optional<Integer> ranking2 ) {
     this.rowMetaAndData = ImmutableList.copyOf( rowMetaAndData );
     this.ranking = ranking;
+    this.rankingServiceRows = ranking2;
   }
 
   public static CachedService complete( List<RowMetaAndData> rowMetaAndData ) {
     // Key based on service name and where clause only. Ordering here does not matter
     return new CachedService(
       rowMetaAndData,
+      Optional.<Integer>absent(),
       Optional.<Integer>absent()
     );
   }
@@ -65,7 +70,8 @@ class CachedService implements Serializable {
   public static CachedService partial( List<RowMetaAndData> rowMetaAndData, DataServiceExecutor executor ) {
     return new CachedService(
       rowMetaAndData,
-      Optional.of( calculateRank( executor ) )
+      Optional.of( calculateRank( executor ) ),
+      Optional.of( calculateServiceRowRank( executor ) )
     );
   }
 
@@ -85,7 +91,7 @@ class CachedService implements Serializable {
   }
 
   public boolean isComplete() {
-    return !ranking.isPresent();
+    return !ranking.isPresent() && !rankingServiceRows.isPresent();
   }
 
   /**
@@ -106,6 +112,13 @@ class CachedService implements Serializable {
     return Integer.MAX_VALUE;
   }
 
+  private static int calculateServiceRowRank( DataServiceExecutor executor ) {
+    if ( executor.getServiceRowLimit() > 0 ) {
+      return executor.getServiceRowLimit();
+    }
+    return Integer.MAX_VALUE;
+  }
+
   public boolean answersQuery( DataServiceExecutor executor ) {
     SQL sql = executor.getSql();
     // If this loader is complete, it always answers the query
@@ -118,11 +131,21 @@ class CachedService implements Serializable {
     if ( selectFields.hasAggregates() || selectFields.isDistinct() || !groupFields.getFields().isEmpty() ) {
       return false;
     }
-    // Compare ranking
-    return this.ranking.get() >= calculateRank( executor );
+    boolean outRanks = true;
+    if ( this.ranking.isPresent() ) {
+      outRanks &= this.ranking.get() >= calculateRank( executor );
+    }
+    // the two row limits my or may not be related, treating as independent
+    if ( this.rankingServiceRows.isPresent() ) {
+      outRanks &= this.rankingServiceRows.get() >= calculateServiceRowRank( executor );
+    }
+    return outRanks;
   }
 
   public static final class CacheKey implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     /**
      * Required
      */

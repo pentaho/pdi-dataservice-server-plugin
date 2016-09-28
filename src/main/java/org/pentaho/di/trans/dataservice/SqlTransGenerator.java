@@ -31,6 +31,7 @@ import org.pentaho.di.core.sql.IifFunction;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.core.sql.SQLFields;
+import org.pentaho.di.core.util.Utils;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
@@ -61,10 +62,17 @@ public class SqlTransGenerator {
   private int xLocation;
   private int rowLimit;
 
+  private int serviceLimit;
+
   public SqlTransGenerator( SQL sql, int rowLimit ) {
     this.sql = sql;
     this.rowLimit = rowLimit;
     this.serviceFields = sql.getRowMeta();
+  }
+
+  public SqlTransGenerator( SQL sql, int rowLimit, int serviceLimit ) {
+    this( sql, rowLimit );
+    this.serviceLimit = serviceLimit;
   }
 
   /**
@@ -93,6 +101,11 @@ public class SqlTransGenerator {
     transMeta.addStep( firstStep );
     injectorStepName = firstStep.getName();
     StepMeta lastStep = firstStep;
+
+    if ( serviceLimit > 0 ) {
+      StepMeta serviceLimitStep = generateLimitStep( "Limit input rows", 0, serviceLimit );
+      lastStep = addToTrans( serviceLimitStep, transMeta, lastStep );
+    }
 
     // Set conversion masks
     lastStep = addToTrans( generateConversionMaskStep(), transMeta, lastStep );
@@ -177,7 +190,7 @@ public class SqlTransGenerator {
     if ( sql.getLimitClause() != null ) {
       int limit = sql.getLimitValues().getLimit();
       int offset = sql.getLimitValues().getOffset();
-      StepMeta limitStep = generateLimitStep( offset, limit );
+      StepMeta limitStep = generateLimitStep( "Limit rows", offset, limit );
       lastStep = addToTrans( limitStep, transMeta, lastStep );
     }
 
@@ -357,7 +370,7 @@ public class SqlTransGenerator {
     meta.allocate( fields.getFields().size(), 0 );
     for ( int i = 0; i < fields.getFields().size(); i++ ) {
       SQLField field = fields.getFields().get( i );
-      if ( !Const.isEmpty( field.getAlias() ) && rowMeta.searchValueMeta( field.getAlias() ) != null ) {
+      if ( !Utils.isEmpty( field.getAlias() ) && rowMeta.searchValueMeta( field.getAlias() ) != null ) {
         meta.getGroupField()[i] = field.getAlias();
       } else {
         meta.getGroupField()[i] = field.getField();
@@ -382,11 +395,11 @@ public class SqlTransGenerator {
     return stepMeta;
   }
 
-  private StepMeta generateLimitStep( int offset, int limit ) {
+  private StepMeta generateLimitStep( final String name, int offset, int limit ) {
     SampleRowsMeta meta = new SampleRowsMeta();
     meta.setLinesRange( ( offset + 1 ) + ".." + ( offset + limit ) );
 
-    StepMeta stepMeta = new StepMeta( "Limit rows", meta );
+    StepMeta stepMeta = new StepMeta( name, meta );
     stepMeta.setLocation( xLocation, 50 );
     xLocation += 100;
     stepMeta.setDraw( true );
@@ -621,5 +634,9 @@ public class SqlTransGenerator {
    */
   public int getRowLimit() {
     return rowLimit;
+  }
+
+  public int getServiceRowLimit() {
+    return serviceLimit;
   }
 }

@@ -425,4 +425,62 @@ public class DataServiceExecutorTest extends BaseTest {
       eq( stage ), eq( ImmutableList.of( task ) ), eq( ImmutableList.of() )
     );
   }
+
+  @Test
+  public void testDynamicLimit() throws Exception {
+    final String limitProp = "det.dataservice.dynamic.limit";
+    boolean userDef = dataService.isUserDefined();
+    try {
+      System.setProperty( limitProp, "2" );
+
+      dataService.setUserDefined( false );
+      DataServiceExecutor executor =
+        new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
+          .serviceTrans( serviceTrans )
+          .genTrans( genTrans )
+          .build();
+      assertEquals( 2, executor.getServiceRowLimit() );
+      dataService.setUserDefined( true );
+      System.setProperty( limitProp, "2" );
+      executor =
+        new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
+          .serviceTrans( serviceTrans )
+          .genTrans( genTrans )
+          .build();
+      assertEquals( 0, executor.getServiceRowLimit() );
+    } finally {
+      dataService.setUserDefined( userDef );
+      System.getProperties().remove( limitProp );
+    }
+  }
+
+  @Test
+  public void testDynamicLimitDefault() throws Exception {
+    final String limitProp = "det.dataservice.dynamic.limit";
+    final int defaultLimit = 10000;
+    boolean userDef = dataService.isUserDefined();
+    try {
+      System.getProperties().remove( limitProp );
+      dataService.setUserDefined( false );
+      DataServiceExecutor executor =
+        new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
+          .serviceTrans( serviceTrans )
+          .genTrans( genTrans )
+          .build();
+      assertEquals( defaultLimit, executor.getServiceRowLimit() );
+
+      System.setProperty( limitProp, "baah" );
+      executor =
+          new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
+            .serviceTrans( serviceTrans )
+            .genTrans( genTrans )
+            .build();
+      assertEquals( defaultLimit, executor.getServiceRowLimit() );
+      verify( logChannel ).logError( anyString() );
+    } finally {
+      dataService.setUserDefined( userDef );
+      System.getProperties().remove( limitProp );
+    }
+  }
+
 }

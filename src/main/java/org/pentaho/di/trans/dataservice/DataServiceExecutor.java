@@ -38,6 +38,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.core.util.Utils;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
@@ -64,6 +65,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DataServiceExecutor {
   private static final Class<?> PKG = DataServiceExecutor.class;
+
+  private static final String ROW_LIMIT_PROPERTY = "det.dataservice.dynamic.limit";
+  private static final int ROW_LIMIT_DEFAULT = 10000;
+
   private final Trans serviceTrans;
   private final Trans genTrans;
 
@@ -195,8 +200,9 @@ public class DataServiceExecutor {
         }
       }
 
+      int serviceRowLimit = getServiceRowLimit( service );
       if ( sqlTransGenerator == null ) {
-        sqlTransGenerator = new SqlTransGenerator( sql, rowLimit );
+        sqlTransGenerator = new SqlTransGenerator( sql, rowLimit, serviceRowLimit );
       }
       if ( genTrans == null ) {
         genTrans = new Trans( sqlTransGenerator.generateTransMeta() );
@@ -225,6 +231,29 @@ public class DataServiceExecutor {
       }
 
       return dataServiceExecutor;
+    }
+
+    private int getServiceRowLimit( DataServiceMeta service ) throws KettleException {
+      if ( !service.isUserDefined() ) {
+        String limit = getKettleProperty( ROW_LIMIT_PROPERTY );
+        if ( !Utils.isEmpty( limit ) ) {
+          try {
+            return Integer.parseInt( limit );
+          } catch ( NumberFormatException e ) {
+            if ( context != null && context.getLogChannel() != null ) {
+              context.getLogChannel().logError(
+                  String.format( "%s: %s ", ROW_LIMIT_PROPERTY, e ) );
+            }
+          }
+        }
+        return ROW_LIMIT_DEFAULT;
+      }
+      return 0;
+    }
+
+    private String getKettleProperty( String propertyName ) throws KettleException {
+      // loaded in system properties at startup
+      return System.getProperty( propertyName );
     }
   }
 
@@ -562,6 +591,10 @@ public class DataServiceExecutor {
 
   public int getRowLimit() {
     return sqlTransGenerator.getRowLimit();
+  }
+
+  public int getServiceRowLimit() {
+    return sqlTransGenerator.getServiceRowLimit();
   }
 
   public ListMultimap<ExecutionPoint, Runnable> getListenerMap() {
