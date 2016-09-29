@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.internal.stubbing.answers.DoesNothing;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
@@ -72,6 +73,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
@@ -341,6 +343,35 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
 
     assertThat( metaStoreUtil.getDataServiceNames( transMeta ), containsInAnyOrder( DATA_SERVICE_NAME, otherName ) );
     assertThat( metaStoreUtil.getDataServiceNames( metaStore ), containsInAnyOrder( DATA_SERVICE_NAME, otherName ) );
+
+    metaStoreUtil.clearReferences( transMeta );
+
+    // Local unchanged
+    assertThat( metaStoreUtil.getDataServiceNames( transMeta ), containsInAnyOrder( DATA_SERVICE_NAME, otherName ) );
+
+    // Published data service should be removed from the metaStore
+    assertThat( metaStoreUtil.getDataServiceNames( metaStore ), contains( otherName ) );
+  }
+
+  @Test
+  public void testGetDataServiceNames() throws Exception {
+    MetaStoreFactory<DataServiceMeta> dataServiceFactory = metaStoreUtil.getDataServiceFactory( transMeta );
+    MetaStoreFactory<ServiceTrans> serviceTransFactory = metaStoreUtil.getServiceTransFactory( metaStore );
+
+    String otherName = "OTHER";
+    DataServiceMeta other = createDataService( otherName, transMeta );
+    other.setUserDefined( false );
+
+    dataServiceFactory.saveElement( dataService );
+    dataServiceFactory.saveElement( other );
+
+    serviceTransFactory.saveElement( ServiceTrans.create( dataService ) );
+    serviceTransFactory.saveElement( ServiceTrans.create( other.getName(), mock( TransMeta.class ) ) );
+
+    assertThat( metaStoreUtil.getDataServiceNames( transMeta, true ), containsInAnyOrder( DATA_SERVICE_NAME ) );
+    assertThat( metaStoreUtil.getDataServiceNames( transMeta, true ), not( containsInAnyOrder( otherName ) ) );
+    assertThat( metaStoreUtil.getDataServiceNames( transMeta, false ), containsInAnyOrder( otherName ) );
+    assertThat( metaStoreUtil.getDataServiceNames( transMeta ), containsInAnyOrder( DATA_SERVICE_NAME, otherName ) );
 
     metaStoreUtil.clearReferences( transMeta );
 

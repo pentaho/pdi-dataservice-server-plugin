@@ -56,6 +56,7 @@ import org.pentaho.metastore.persist.MetaStoreFactory;
 import javax.cache.Cache;
 import java.text.MessageFormat;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -194,6 +195,19 @@ public class DataServiceMetaStoreUtil {
 
   public List<String> getDataServiceNames( TransMeta transMeta ) throws MetaStoreException {
     return getDataServiceFactory( transMeta ).getElementNames();
+  }
+
+  public List<String> getDataServiceNames( TransMeta transMeta, boolean userDefined ) throws MetaStoreException {
+    List<DataServiceMeta> elements =  getDataServiceFactory( transMeta ).getElements();
+    List <String> names = new LinkedList<String>();
+    if ( elements != null ) {
+      for ( DataServiceMeta dsm : elements ) {
+        if ( dsm.isUserDefined() == userDefined ) {
+          names.add( dsm.getName() );
+        }
+      }
+    }
+    return names;
   }
 
   public List<String> getDataServiceNames( IMetaStore metaStore ) throws MetaStoreException {
