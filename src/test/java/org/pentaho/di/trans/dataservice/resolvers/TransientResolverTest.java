@@ -36,6 +36,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
 import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,7 +65,7 @@ public class TransientResolverTest {
     when( repository.loadRepositoryDirectoryTree() ).thenReturn( repositoryDirectoryInterface );
     when( repositoryDirectoryInterface.findDirectory( "/path/to/" ) ).thenReturn( null );
     when( repository.getTransformationID( "name.ktr", repositoryDirectoryInterface ) ).thenReturn( objectId );
-    when( repository.loadTransformation( objectId, null ) ). thenReturn( transMeta );
+    when( repository.loadTransformation( objectId, null ) ).thenReturn( transMeta );
     when( serviceCacheFactory.createPushDown() ).thenReturn( null );
 
     transientResolver = new TransientResolver( kettleRepositoryLocator, context, serviceCacheFactory );
@@ -75,6 +76,7 @@ public class TransientResolverTest {
     DataServiceMeta dataServiceMeta = transientResolver.getDataService( DATA_SERVICE_NAME );
 
     assertNotNull( dataServiceMeta );
+    assertFalse( dataServiceMeta.isUserDefined() );
 
     verify( kettleRepositoryLocator ).getRepository();
     verify( serviceCacheFactory ).createPushDown();

@@ -111,6 +111,7 @@ public class TransientResolver implements DataServiceResolver {
       pushDownMeta.setStepName( stepName );
       pushDownMeta.setType( cacheFactory.createPushDown() );
       dataServiceMeta.setPushDownOptimizationMeta( Collections.singletonList( pushDownMeta ) );
+      dataServiceMeta.setUserDefined( false );
 
       return dataServiceMeta;
     } catch ( Exception e ) {
