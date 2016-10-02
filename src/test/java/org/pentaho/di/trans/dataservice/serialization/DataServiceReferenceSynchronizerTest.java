@@ -22,6 +22,12 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,9 +36,14 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.attributes.metastore.EmbeddedMetaStore;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryCapabilities;
+import org.pentaho.di.repository.RepositoryDirectory;
+import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryMeta;
+import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.Context;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
@@ -40,21 +51,21 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
-public class DataServiceReferenceSynchronizerTest extends DataServiceReferenceSynchronizer {
+public class DataServiceReferenceSynchronizerTest {
 
   @Mock TransMeta transMeta;
   @Mock Context context;
@@ -73,12 +84,27 @@ public class DataServiceReferenceSynchronizerTest extends DataServiceReferenceSy
   DataServiceReferenceSynchronizer synchronizer;
 
   @Before
-  public void before() throws MetaStoreException {
+  public void before() {
+    ObjectId transId = new StringObjectId( "transId" );
     when( transMeta.getMetaStore() ).thenReturn( externalMetastore );
     when( transMeta.getEmbeddedMetaStore() ).thenReturn( embeddedMetastore );
+    when( transMeta.getObjectId() ).thenReturn( transId );
+    when( transMeta.getRepository() ).thenReturn( repository );
+
     when( repository.getRepositoryMeta() ).thenReturn( repositoryMeta );
     when( repositoryMeta.getRepositoryCapabilities() ).thenReturn( mock( RepositoryCapabilities.class ) );
-    when( transMeta.getRepository() ).thenReturn( repository );
+    RepositoryDirectoryInterface root = mock( RepositoryDirectoryInterface.class );
+    RepositoryDirectoryInterface dir = new RepositoryDirectory( root, "location" );
+
+    when( root.findDirectory( eq( "/" ) ) ).thenReturn( dir );
+    try {
+      when( repository.getTransformationID( eq( "location" ), eq( dir ) ) ).thenReturn( transId );
+      when( repository.loadRepositoryDirectoryTree() ).thenReturn( root );
+    } catch ( KettleException ke ) {
+      // Noop
+    }
+
+
     when( context.getPushDownFactories() ).thenReturn( Collections.emptyList() );
     synchronizer = new DataServiceReferenceSynchronizer( context ) {
       protected <T> MetaStoreFactory<T> getMetastoreFactory( IMetaStore metaStore, Class<T> clazz ) {
