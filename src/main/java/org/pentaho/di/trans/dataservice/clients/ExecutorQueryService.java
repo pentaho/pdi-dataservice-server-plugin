@@ -26,6 +26,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.metastore.MetaStoreConst;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
@@ -56,6 +57,9 @@ public class ExecutorQueryService implements Query.Service {
     Query query;
     try {
       IMetaStore metaStore = metastoreLocator != null ? metastoreLocator.getMetastore() : null;
+      if ( metaStore == null ) {
+        metaStore = MetaStoreConst.openLocalPentahoMetaStore();
+      }
       DataServiceExecutor executor = resolver.createBuilder( sql )
         .rowLimit( maxRows )
         .parameters( parameters )
