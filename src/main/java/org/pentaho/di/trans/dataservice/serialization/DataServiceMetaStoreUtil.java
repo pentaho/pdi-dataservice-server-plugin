@@ -39,6 +39,14 @@ import com.google.common.collect.Maps;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import java.text.MessageFormat;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.cache.Cache;
 import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
@@ -52,15 +60,8 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
-
-import javax.cache.Cache;
-import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.security.SecurityHelper;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.pentaho.di.i18n.BaseMessages.getString;
@@ -155,6 +156,15 @@ public class DataServiceMetaStoreUtil {
       if ( transMeta.isPresent() ) {
         try {
           dataServices.add( getDataService( serviceTrans.getName(), transMeta.get() ) );
+        } catch ( Exception e ) {
+          exceptionHandler.apply( e );
+        }
+      } else {
+        try {
+          if ( PentahoSessionHolder.getSession() != null && SecurityHelper.getInstance().runAsSystem(
+            () -> !ServiceTrans.isValid( repository ).apply( serviceTrans ) ) ) {
+            serviceTransFactory.deleteElement( serviceTrans.getName() );
+          }
         } catch ( Exception e ) {
           exceptionHandler.apply( e );
         }

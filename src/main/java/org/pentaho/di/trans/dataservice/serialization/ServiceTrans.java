@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -29,19 +29,22 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import java.io.File;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
+import org.pentaho.di.repository.RepositoryElementMetaInterface;
+import org.pentaho.di.repository.RepositoryObject;
+import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.metastore.persist.MetaStoreAttribute;
 import org.pentaho.metastore.persist.MetaStoreElementType;
-
-import java.io.File;
-import java.util.List;
-import java.util.Set;
 
 @MetaStoreElementType(
   name = "Data Service Transformation",
@@ -203,7 +206,27 @@ public class ServiceTrans implements MetaStoreElement {
       }
     },
     REPO_PATH {
+      @Override public boolean exists( Repository repository, String location ) {
+        try {
+          return getTransId( repository, location ) != null;
+        } catch ( KettleException ke ) {
+          return false;
+        }
+      }
+
       @Override public TransMeta load( Repository repository, String location ) throws KettleException {
+        TransMeta trans = null;
+        ObjectId transId = getTransId( repository, location );
+        if ( transId != null ) {
+          RepositoryObject transInfo = repository.getObjectInformation( transId, RepositoryObjectType.TRANSFORMATION );
+          if ( transInfo != null && !transInfo.isDeleted() ) {
+            trans = repository.loadTransformation( transId, null );
+          }
+        }
+        return trans;
+      }
+
+      private ObjectId getTransId( Repository repository, String location ) throws KettleException {
         String path;
         String name;
 
@@ -221,12 +244,38 @@ public class ServiceTrans implements MetaStoreElement {
         if ( rd == null ) {
           rd = root; // root
         }
-        return repository.loadTransformation( repository.getTransformationID( name, rd ), null );
+
+        ObjectId transId = repository.getTransformationID( name, rd );
+
+        if ( transId == null ) {
+          Optional<RepositoryElementMetaInterface> transInfo = repository
+              .getTransformationObjects( rd.getObjectId(), true ).stream()
+              .filter( m -> name.equals( m.getName() ) ).findFirst();
+          if ( transInfo.isPresent() ) {
+            transId = transInfo.get().getObjectId();
+          }
+        }
+
+        return transId;
       }
     },
     REPO_ID {
+      @Override public boolean exists( Repository repository, String location ) {
+        try {
+          return repository.getObjectInformation( new StringObjectId( location ), RepositoryObjectType.TRANSFORMATION ) != null;
+        } catch ( KettleException ke ) {
+          return false;
+        }
+      }
+
       @Override public TransMeta load( Repository repository, String location ) throws KettleException {
-        return repository.loadTransformation( new StringObjectId( location ), null );
+        TransMeta trans = null;
+        ObjectId transId = new StringObjectId( location );
+        RepositoryObject transInfo = repository.getObjectInformation( transId, RepositoryObjectType.TRANSFORMATION );
+        if ( transInfo != null && !transInfo.isDeleted() ) {
+          trans = repository.loadTransformation( transId, null );
+        }
+        return trans;
       }
     };
 
