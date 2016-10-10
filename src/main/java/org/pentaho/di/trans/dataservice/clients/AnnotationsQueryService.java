@@ -13,6 +13,8 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.di.metastore.MetaStoreConst;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
 
@@ -111,7 +113,11 @@ public class AnnotationsQueryService implements Query.Service {
       TransMeta serviceTrans = dataService.getServiceTrans();
       disableAllUnrelatedHops( dataService, serviceTrans );
       final Trans trans = getTrans( serviceTrans );
-      trans.setMetaStore( metastoreLocator.getMetastore() );
+      IMetaStore ms = metastoreLocator.getMetastore();
+      if ( ms == null ) {
+        ms = MetaStoreConst.openLocalPentahoMetaStore();
+      }
+      trans.setMetaStore( ms );
       if ( serviceTrans.getTransHopSteps( false ).size() > 0 ) {
         trans.prepareExecution( new String[]{} );
       }
