@@ -67,7 +67,7 @@ public class DataServiceExecutor {
   private static final Class<?> PKG = DataServiceExecutor.class;
 
   private static final String ROW_LIMIT_PROPERTY = "det.dataservice.dynamic.limit";
-  private static final int ROW_LIMIT_DEFAULT = 10000;
+  private static final int ROW_LIMIT_DEFAULT = 50000;
 
   private final Trans serviceTrans;
   private final Trans genTrans;
