@@ -457,7 +457,7 @@ public class DataServiceExecutorTest extends BaseTest {
   @Test
   public void testDynamicLimitDefault() throws Exception {
     final String limitProp = "det.dataservice.dynamic.limit";
-    final int defaultLimit = 10000;
+    final int defaultLimit = 50000;
     boolean userDef = dataService.isUserDefined();
     try {
       System.getProperties().remove( limitProp );
