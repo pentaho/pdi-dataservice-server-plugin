@@ -28,6 +28,7 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,13 +75,17 @@ public class DataServiceResolverDelegate implements DataServiceResolver {
   }
 
   @Override public DataServiceExecutor.Builder createBuilder( SQL sql ) throws KettleException {
+    boolean foundDataService = false;
     for ( DataServiceResolver resolver : resolvers ) {
       DataServiceExecutor.Builder builder = resolver.createBuilder( sql );
       if ( builder != null ) {
         return builder;
+      } else {
+        foundDataService = foundDataService || ( resolver.getDataService( sql.getServiceName() ) != null );
       }
     }
-    throw new KettleException( "Error when creating builder for sql query" );
+    throw new KettleException( foundDataService ? "Error when creating builder for sql query"
+        : MessageFormat.format( "Data Service {0} was not found", sql.getServiceName() ) );
   }
 
   @Override public List<String> getDataServiceNames() {
