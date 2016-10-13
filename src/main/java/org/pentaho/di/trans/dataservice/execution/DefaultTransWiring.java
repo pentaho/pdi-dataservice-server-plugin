@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -57,6 +57,9 @@ public class DefaultTransWiring implements Runnable {
     // Now connect the 2 transformations with listeners and injector
     //
     StepInterface serviceStep = serviceTrans.findRunThread( dataServiceExecutor.getService().getStepname() );
+    if ( serviceStep == null ) {
+      throw Throwables.propagate( new KettleException( "Service step is not accessible" ) );
+    }
     serviceStep.addRowListener( new DefaultTransWiringRowAdapter( serviceTrans, genTrans, rowProducer ) );
 
     // Let the other transformation know when there are no more rows
