@@ -473,6 +473,17 @@ public class CachedServiceTest {
   }
 
   @Test
+  public void testAnswersOverflowDETQuery() throws Exception {
+    String query = "SELECT * FROM " + SERVICE_NAME;
+
+    DataServiceExecutor executor = dataServiceExecutor( query );
+    when( sqlTransGenerator.getServiceRowLimit() ).thenReturn( 10000 );
+    CachedService partial = partial( executor );
+    String aggregateQuery = "SELECT count(*) FROM " + SERVICE_NAME;
+    assertThat( partial.answersQuery( dataServiceExecutor( aggregateQuery ) ), is( true ) );
+  }
+
+  @Test
   public void testPartialServiceRows() throws Exception {
     when( sqlTransGenerator.getServiceRowLimit() ).thenReturn( 0 );
     when( sqlTransGenerator.getRowLimit() ).thenReturn( 0 );

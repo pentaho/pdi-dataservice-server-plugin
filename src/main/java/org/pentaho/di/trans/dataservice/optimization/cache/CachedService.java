@@ -129,7 +129,9 @@ class CachedService implements Serializable {
     SQLFields selectFields = sql.getSelectFields();
     SQLFields groupFields = sql.getGroupFields();
     if ( selectFields.hasAggregates() || selectFields.isDistinct() || !groupFields.getFields().isEmpty() ) {
-      return false;
+      if ( ranking.or( Integer.MAX_VALUE ) < Integer.MAX_VALUE ) {
+        return false;
+      }
     }
     boolean outRanks = true;
     if ( this.ranking.isPresent() ) {
