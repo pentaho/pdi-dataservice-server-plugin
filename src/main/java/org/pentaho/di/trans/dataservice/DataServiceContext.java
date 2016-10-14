@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.CacheBuilder;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
@@ -32,8 +33,8 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 public class DataServiceContext implements Context {
   private final DataServiceMetaStoreUtil metaStoreUtil;
@@ -42,7 +43,12 @@ public class DataServiceContext implements Context {
   private final List<PushDownFactory> pushDownFactories;
   private final LogChannelInterface logChannel;
   private final UIFactory uiFactory;
-  private final ConcurrentMap<String, DataServiceExecutor> executors = new ConcurrentHashMap<>();
+
+  // Use an in-memory cache with timed expiration and soft value references to prevent heap memory leaks
+  private final ConcurrentMap<String, DataServiceExecutor> executors = CacheBuilder.newBuilder()
+    .expireAfterAccess( 30, TimeUnit.SECONDS )
+    .softValues()
+    .<String, DataServiceExecutor>build().asMap();
 
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
