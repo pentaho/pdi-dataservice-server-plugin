@@ -35,7 +35,8 @@ import org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
-import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryProvider;
+
+import java.util.concurrent.Executors;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -94,7 +95,7 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
     when( repositoryLocator.getRepository() ).thenReturn( repository );
     DataServiceResolver dataServiceResolver = new MetaStoreResolver( repositoryLocator, context );
 
-    DataServiceClient client = new DataServiceClient( queryService, dataServiceResolver );
+    DataServiceClient client = new DataServiceClient( queryService, dataServiceResolver, Executors.newCachedThreadPool() );
     metaStoreUtil.save( dataService );
     metaStoreUtil.sync( transMeta, exceptionHandler );
 
