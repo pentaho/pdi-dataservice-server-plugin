@@ -39,6 +39,7 @@ public class SynchronizationListener implements ContentChangedListener, StepMeta
   private static Class<TransOpenedExtensionPointPlugin> PKG = TransOpenedExtensionPointPlugin.class;
   private final DataServiceDelegate delegate;
   private final DataServiceReferenceSynchronizer synchronizer;
+  private boolean prompt = true;
 
   public SynchronizationListener( DataServiceDelegate delegate,
                                   DataServiceReferenceSynchronizer synchronizer ) {
@@ -52,13 +53,15 @@ public class SynchronizationListener implements ContentChangedListener, StepMeta
   @Override public void contentSafe( Object parentObject ) {
     synchronizer.sync( (TransMeta) parentObject, ( e ) -> {
       String message = e.getMessage();
-      if ( e instanceof DataServiceAlreadyExistsException ) {
-        DataServiceMeta dataService = ( (DataServiceAlreadyExistsException) e ).getDataServiceMeta();
-        delegate.syncExec( suggestEdit( dataService, message ) );
-      }
-      if ( e instanceof UndefinedDataServiceException ) {
-        DataServiceMeta dataService = ( (UndefinedDataServiceException) e ).getDataServiceMeta();
-        delegate.syncExec( suggestRemove( dataService, message ) );
+      if ( prompt ) {
+        if ( e instanceof DataServiceAlreadyExistsException ) {
+          DataServiceMeta dataService = ( (DataServiceAlreadyExistsException) e ).getDataServiceMeta();
+          delegate.syncExec( suggestEdit( dataService, message ) );
+        }
+        if ( e instanceof UndefinedDataServiceException ) {
+          DataServiceMeta dataService = ( (UndefinedDataServiceException) e ).getDataServiceMeta();
+          delegate.syncExec( suggestRemove( dataService, message ) );
+        }
       }
 
       delegate.getLogChannel().logError( message, e );
@@ -110,5 +113,13 @@ public class SynchronizationListener implements ContentChangedListener, StepMeta
       transMeta.addContentChangedListener( this );
       transMeta.addStepChangeListener( this );
     }
+  }
+
+  public boolean isPrompt() {
+    return prompt;
+  }
+
+  public void setPrompt( boolean prompt ) {
+    this.prompt = prompt;
   }
 }
