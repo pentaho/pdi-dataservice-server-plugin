@@ -120,6 +120,23 @@ public class SynchronizationListenerTest {
   }
 
   @Test
+  public void testNoPrompt() throws Exception {
+    service.contentSafe( transMeta );
+    service.setPrompt( false );
+
+    verify( synchronizer ).sync( same( transMeta ), errorHandler.capture() );
+
+    verify( delegate, never() ).showPrompt( anyString(), anyString() );
+    verify( delegate, never() ).removeDataService( dataServiceMeta );
+
+    verify( delegate, never() ).suggestEdit( same( dataServiceMeta ), anyString(), anyString() );
+
+    MetaStoreException metaStoreException = new MetaStoreException();
+    errorHandler.getValue().apply( metaStoreException );
+    verify( logChannel ).logError( anyString(), same( metaStoreException ) );
+  }
+
+  @Test
   public void testOnStepChange() throws Exception {
     StepMeta oldMeta = mock( StepMeta.class );
     StepMeta newMeta = mock( StepMeta.class );
