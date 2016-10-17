@@ -37,47 +37,54 @@ import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.IMetaStore;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 public class DataServiceClient implements DataServiceClientService {
   private final Query.Service queryService;
   private final DataServiceResolver resolver;
+  private final ExecutorService executorService;
   private LogChannelInterface log;
 
-  public DataServiceClient( Query.Service queryService,
-                            DataServiceResolver resolver ) {
+  public DataServiceClient( Query.Service queryService, DataServiceResolver resolver,
+                            ExecutorService executorService ) {
     this.queryService = queryService;
     this.resolver = resolver;
+    this.executorService = executorService;
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
-    DataInputStream dataInputStream;
-
     try {
+      // Create a pipe to for results
+      PipedInputStream pipeIn = new PipedInputStream();
+      PipedOutputStream pipeOut = new PipedOutputStream( pipeIn );
 
-      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+      // Prepare query, exception will be thrown if query is invalid
+      Query query = prepareQuery( sqlQuery, maxRows, ImmutableMap.of() );
 
-      prepareQuery( sqlQuery, maxRows ).writeTo( byteArrayOutputStream );
+      // Write query results to pipe on a separate thread
+      executorService.execute( () -> {
+        try ( DataOutputStream dos = new DataOutputStream( pipeOut ) ) {
+          // Write out results
+          query.writeTo( dos );
+          // Pipe will automatically close on this end
+        } catch ( Exception e ) {
+          log.logError( e.getMessage(), e );
+        }
+      } );
 
-      ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( byteArrayOutputStream.toByteArray() );
-      dataInputStream = new DataInputStream( byteArrayInputStream );
-
+      return new DataInputStream( pipeIn );
     } catch ( Exception e ) {
       Throwables.propagateIfPossible( e, SQLException.class );
       throw new SQLException( e );
     }
-
-    return dataInputStream;
-  }
-
-  public Query prepareQuery( String sql, int maxRows ) throws KettleException {
-    return prepareQuery( sql, maxRows, ImmutableMap.<String, String>of() );
   }
 
   public Query prepareQuery( String sql, int maxRows, Map<String, String> parameters )

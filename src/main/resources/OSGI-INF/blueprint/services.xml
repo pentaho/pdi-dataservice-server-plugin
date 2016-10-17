@@ -53,6 +53,7 @@
     <bean id="dataServiceClient" class="org.pentaho.di.trans.dataservice.clients.DataServiceClient">
         <argument ref="queryServiceDelegate"/>
         <argument ref="dataServiceResolverDelegate"/>
+        <argument ref="executor"/>
         <property name="logChannel" ref="logChannel"/>
     </bean>
 

@@ -22,11 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
-import com.google.common.base.Function;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,46 +33,29 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
-import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolverDelegate;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
-import org.pentaho.osgi.metastore.locator.api.MetastoreProvider;
 
-import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
-import static org.hamcrest.Matchers.anything;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.AllOf.allOf;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.ignoreStubs;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static org.pentaho.di.trans.dataservice.testing.answers.ReturnsSelf.RETURNS_SELF;
+import static org.mockito.Mockito.*;
 
 /**
  * @author bmorrise
@@ -84,8 +64,8 @@ import static org.pentaho.di.trans.dataservice.testing.answers.ReturnsSelf.RETUR
 public class DataServiceClientTest extends BaseTest {
 
   private static final String TEST_SQL_QUERY = "SELECT * FROM " + DATA_SERVICE_NAME;
+  private static final String QUERY_RESULT = "...query result...";
   private static final int MAX_ROWS = 100;
-  private DataServiceExecutor.Builder builder;
 
   @Mock DataServiceExecutor executor;
   @Mock RowMetaInterface rowMetaInterface;
@@ -98,29 +78,52 @@ public class DataServiceClientTest extends BaseTest {
   @Before
   public void setUp() throws Exception {
     when( dataServiceResolver.getDataService( DATA_SERVICE_NAME ) ).thenReturn( dataService );
-    when( dataServiceResolver.getDataServices( anyString(), any( Function.class ) ) )
-      .thenReturn( ImmutableList.of( dataService ) );
-    when( dataServiceResolver.getDataServices( any( Function.class ) ) )
-      .thenReturn( ImmutableList.of( dataService ) );
+    when( dataServiceResolver.getDataServices( anyString(), any() ) ).thenReturn( ImmutableList.of( dataService ) );
+    when( dataServiceResolver.getDataServices( any() ) ).thenReturn( ImmutableList.of( dataService ) );
 
-    builder = mock( DataServiceExecutor.Builder.class, RETURNS_SELF );
-    when( dataServiceResolver.createBuilder( argThat( sql( TEST_SQL_QUERY ) ) ) ).thenReturn( builder );
-    doReturn( executor ).when( builder ).build();
-    when( executor.executeQuery( any( DataOutputStream.class ) ) ).thenReturn( executor );
-
-    when( dataServiceResolver.createBuilder( argThat( sql( TEST_SQL_QUERY ) ) ) ).thenReturn( builder );
-    client = new DataServiceClient( queryServiceDelegate, dataServiceResolver );
+    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.of() ) ).thenReturn( query );
+    when( query.getTransList() ).thenReturn( ImmutableList.of() );
+    
+    client = new DataServiceClient( queryServiceDelegate, dataServiceResolver, Executors.newCachedThreadPool() );
     client.setLogChannel( log );
   }
 
   @Test
   public void testQuery() throws Exception {
-    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.<String, String>of() ) )
-      .thenReturn( query );
+    doAnswer( invocation -> {
+      new DataOutputStream( (OutputStream) invocation.getArguments()[ 0 ] ).writeUTF( QUERY_RESULT );
+      return null;
+    } ).when( query ).writeTo( any( OutputStream.class ) );
 
-    assertNotNull( client.query( TEST_SQL_QUERY, MAX_ROWS ) );
+    try ( DataInputStream dataInputStream = client.query( TEST_SQL_QUERY, MAX_ROWS ) ) {
+      assertThat( dataInputStream.readUTF(), equalTo( QUERY_RESULT ) );
+      assertThat( dataInputStream.read(), equalTo( -1 ) ); // End of stream
+    }
 
-    verify( queryServiceDelegate ).prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.<String, String>of() );
+    verify( queryServiceDelegate ).prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.of() );
+  }
+
+  @Test
+  public void testQueryFailure() throws Exception {
+    KettleException expected = new KettleException();
+    when( queryServiceDelegate.prepareQuery( eq( TEST_SQL_QUERY ), eq( MAX_ROWS ), any() ) ).thenThrow( expected );
+
+    try ( DataInputStream ignored = client.query( TEST_SQL_QUERY, MAX_ROWS ) ) {
+      fail( "Query should have failed" );
+    } catch ( SQLException e ) {
+      assertThat( e.getCause(), is( expected ) );
+    }
+  }
+
+  @Test
+  public void testWriteFailure() throws Exception {
+    IOException expected = new IOException();
+    doThrow( expected ).when( query ).writeTo( any() );
+
+    try ( DataInputStream stream = client.query( TEST_SQL_QUERY, MAX_ROWS ) ) {
+      assertThat( stream.read(), is( -1 ) );
+    }
+    verify( log ).logError( anyString(), eq( expected ) );
   }
 
   @Test
