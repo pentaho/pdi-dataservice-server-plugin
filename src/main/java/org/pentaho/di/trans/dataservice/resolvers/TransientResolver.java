@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.resolvers;
 
-import com.google.common.base.Function;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
@@ -35,11 +34,15 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
 import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * Created by bmorrise on 8/30/16.
@@ -75,7 +78,8 @@ public class TransientResolver implements DataServiceResolver {
     return dataServiceNames;
   }
 
-  @Override public List<DataServiceMeta> getDataServices( String dataServiceName, Function<Exception, Void> logger ) {
+  @Override public List<DataServiceMeta> getDataServices( String dataServiceName,
+                                                          com.google.common.base.Function<Exception, Void> logger ) {
     List<DataServiceMeta> dataServiceMetas = new ArrayList<>();
     if ( isTransient( dataServiceName ) ) {
       dataServiceMetas.add( createDataServiceMeta( dataServiceName ) );
@@ -93,33 +97,51 @@ public class TransientResolver implements DataServiceResolver {
 
 
   private DataServiceMeta createDataServiceMeta( String dataServiceName ) {
-    String[] parts = splitTransient( dataServiceName );
+    final String fileAndPath, stepName;
     try {
-      String fileAndPath = decode( parts[ 0 ].trim() );
-      TransMeta transMeta;
-      Repository repository = repositoryLocator != null ? repositoryLocator.getRepository() : null;
-      if ( repository == null ) {
-        transMeta = new TransMeta( fileAndPath );
-      } else {
-        transMeta = loadFromRepository( repository, fileAndPath );
-      }
-      String stepName = decode( String.valueOf( parts[ 1 ].trim() ) );
-      DataServiceMeta dataServiceMeta = new DataServiceMeta( transMeta );
-      dataServiceMeta.setStepname( stepName );
-      dataServiceMeta.setName( dataServiceName );
+      String[] parts = splitTransient( dataServiceName );
+      fileAndPath = decode( parts[ 0 ].trim() );
+      stepName = decode( parts[ 1 ].trim() );
+    } catch ( Exception ignored ) {
+      return null;
+    }
+
+    // Try to locate the transformation, repository first
+    Optional<TransMeta> transMeta = Stream.of( loadFromRepository(), TransMeta::new )
+      .map( loader -> loader.tryLoad( fileAndPath ).orElse( null ) )
+      .filter( Objects::nonNull )
+      .findFirst();
+
+    // Create a temporary Data Service
+    Optional<DataServiceMeta> dataServiceMeta = transMeta.map( DataServiceMeta::new );
+    dataServiceMeta.ifPresent( configure( dataServiceName, stepName ) );
+
+    return dataServiceMeta.orElse( null );
+  }
+
+  private Consumer<DataServiceMeta> configure( String name, String step ) {
+    return dataServiceMeta -> {
+      dataServiceMeta.setStepname( step );
+      dataServiceMeta.setName( name );
       PushDownOptimizationMeta pushDownMeta = new PushDownOptimizationMeta();
-      pushDownMeta.setStepName( stepName );
+      pushDownMeta.setStepName( step );
       pushDownMeta.setType( cacheFactory.createPushDown() );
       dataServiceMeta.setPushDownOptimizationMeta( Collections.singletonList( pushDownMeta ) );
       dataServiceMeta.setUserDefined( false );
-
-      return dataServiceMeta;
-    } catch ( Exception e ) {
-      return null;
-    }
+    };
   }
 
-  private TransMeta loadFromRepository( Repository repository, String filePath ) throws KettleException {
+  private TransMetaLoader loadFromRepository() {
+    return Optional.ofNullable( repositoryLocator )
+      // Try to load repository
+      .map( KettleRepositoryLocator::getRepository ).flatMap( Optional::ofNullable )
+      // If available, attempt to load transformation
+      .map( repository -> (TransMetaLoader) fileAndPath -> loadFromRepository( repository, fileAndPath ) )
+      // Otherwise defer
+      .orElse( fileAndPath -> null );
+  }
+
+  private static TransMeta loadFromRepository( Repository repository, String filePath ) throws KettleException {
     String name = filePath.substring( filePath.lastIndexOf( "/" ) + 1, filePath.length() );
     String path = filePath.substring( 0, filePath.lastIndexOf( "/" ) );
 
@@ -136,19 +158,15 @@ public class TransientResolver implements DataServiceResolver {
   }
 
   public static String buildTransient( String filePath, String stepName ) {
-    try {
-      return PREFIX + encode( filePath ) + DELIMITER + encode( stepName );
-    } catch ( UnsupportedEncodingException e ) {
-      return null;
-    }
+    return PREFIX + encode( filePath ) + DELIMITER + encode( stepName );
   }
 
-  private static String encode( String value ) throws UnsupportedEncodingException {
-    return Base64.getEncoder().encodeToString( value.getBytes( "utf-8" ) );
+  private static String encode( String value ) {
+    return Base64.getEncoder().encodeToString( value.getBytes( StandardCharsets.UTF_8 ) );
   }
 
-  private static String decode( String value ) throws UnsupportedEncodingException {
-    return new String( Base64.getDecoder().decode( value ), "utf-8" );
+  private static String decode( String value ) {
+    return new String( Base64.getDecoder().decode( value ), StandardCharsets.UTF_8 );
   }
 
   public String[] splitTransient( String dataServiceName ) {
@@ -159,7 +177,19 @@ public class TransientResolver implements DataServiceResolver {
     return new ArrayList<>();
   }
 
-  @Override public List<DataServiceMeta> getDataServices( Function<Exception, Void> logger ) {
+  @Override public List<DataServiceMeta> getDataServices( com.google.common.base.Function<Exception, Void> logger ) {
     return new ArrayList<>();
+  }
+
+  private interface TransMetaLoader {
+    TransMeta load( String pathAndName ) throws KettleException;
+
+    default Optional<TransMeta> tryLoad( String pathAndName ) {
+      try {
+        return Optional.ofNullable( load( pathAndName ) );
+      } catch ( KettleException e ) {
+        return Optional.empty();
+      }
+    }
   }
 }
