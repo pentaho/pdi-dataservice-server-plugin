@@ -22,8 +22,11 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.SettableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +49,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.Matchers.contains;
@@ -72,7 +77,6 @@ public class DataServiceClientTest extends BaseTest {
   @Mock MetastoreLocator metastoreLocator;
   @Mock DataServiceResolver dataServiceResolver;
   @Mock Query.Service queryServiceDelegate;
-  @Mock Query query;
   @Mock LogChannelInterface log;
 
   @Before
@@ -81,19 +85,14 @@ public class DataServiceClientTest extends BaseTest {
     when( dataServiceResolver.getDataServices( anyString(), any() ) ).thenReturn( ImmutableList.of( dataService ) );
     when( dataServiceResolver.getDataServices( any() ) ).thenReturn( ImmutableList.of( dataService ) );
 
-    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.of() ) ).thenReturn( query );
-    when( query.getTransList() ).thenReturn( ImmutableList.of() );
-    
     client = new DataServiceClient( queryServiceDelegate, dataServiceResolver, Executors.newCachedThreadPool() );
     client.setLogChannel( log );
   }
 
   @Test
   public void testQuery() throws Exception {
-    doAnswer( invocation -> {
-      new DataOutputStream( (OutputStream) invocation.getArguments()[ 0 ] ).writeUTF( QUERY_RESULT );
-      return null;
-    } ).when( query ).writeTo( any( OutputStream.class ) );
+    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.of() ) )
+      .thenReturn( (MockQuery) outputStream -> new DataOutputStream( outputStream ).writeUTF( QUERY_RESULT ) );
 
     try ( DataInputStream dataInputStream = client.query( TEST_SQL_QUERY, MAX_ROWS ) ) {
       assertThat( dataInputStream.readUTF(), equalTo( QUERY_RESULT ) );
@@ -118,12 +117,44 @@ public class DataServiceClientTest extends BaseTest {
   @Test
   public void testWriteFailure() throws Exception {
     IOException expected = new IOException();
-    doThrow( expected ).when( query ).writeTo( any() );
+    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.of() ) )
+      .thenReturn( (MockQuery) outputStream -> {
+        throw expected;
+      } );
 
     try ( DataInputStream stream = client.query( TEST_SQL_QUERY, MAX_ROWS ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
     verify( log ).logError( anyString(), eq( expected ) );
+  }
+
+  @Test
+  public void testInputStreamClosed() throws Exception {
+    CountDownLatch startQuery = new CountDownLatch( 1 );
+    SettableFuture<Boolean> queryFinished = SettableFuture.create();
+
+    // Create a query that blocks on the countdown latch
+    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.of() ) )
+      .thenReturn( (MockQuery) outputStream -> {
+        Random random = new Random();
+        try {
+          outputStream.write( random.nextInt() );
+          startQuery.await();
+          outputStream.write( random.nextInt() );
+          queryFinished.set( true );
+        } catch ( Exception e ) {
+          queryFinished.setException( e );
+        }
+      } );
+
+    // Start query and close immediately
+    client.query( TEST_SQL_QUERY, MAX_ROWS ).close();
+    // Unleash query stream
+    startQuery.countDown();
+
+    // Assert no errors thrown or logged
+    assertThat( Futures.get( queryFinished, IOException.class ), is( true ) );
+    verify( log, never() ).logError( anyString(), any( Throwable.class ) );
   }
 
   @Test
@@ -149,5 +180,20 @@ public class DataServiceClientTest extends BaseTest {
 
     assertThat( serviceInformation.getName(), equalTo( DATA_SERVICE_NAME ) );
     assertThat( serviceInformation.getServiceFields(), equalTo( rowMetaInterface ) );
+  }
+
+  @Test
+  public void testServiceNameResolution() throws Exception {
+    when( dataServiceResolver.getDataServiceNames() ).thenReturn( ImmutableList.of( "A", "B" ) );
+    when( dataServiceResolver.getDataServiceNames( "A" ) ).thenReturn( ImmutableList.of( "A" ) );
+
+    assertThat( client.getServiceNames(), contains( "A", "B" ) );
+    assertThat( client.getServiceNames( "A" ), contains( "A" ) );
+  }
+
+  private interface MockQuery extends Query {
+    default List<Trans> getTransList() {
+      return ImmutableList.of();
+    }
   }
 }
