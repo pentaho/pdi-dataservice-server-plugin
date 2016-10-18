@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
-import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -38,7 +37,8 @@ import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.sql.SQLException;
@@ -46,6 +46,7 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 
 public class DataServiceClient implements DataServiceClientService {
   private final Query.Service queryService;
@@ -63,24 +64,23 @@ public class DataServiceClient implements DataServiceClientService {
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
     try {
       // Create a pipe to for results
-      PipedInputStream pipeIn = new PipedInputStream();
-      PipedOutputStream pipeOut = new PipedOutputStream( pipeIn );
+      SafePipedStreams pipe = new SafePipedStreams();
 
       // Prepare query, exception will be thrown if query is invalid
       Query query = prepareQuery( sqlQuery, maxRows, ImmutableMap.of() );
 
       // Write query results to pipe on a separate thread
       executorService.execute( () -> {
-        try ( DataOutputStream dos = new DataOutputStream( pipeOut ) ) {
+        try ( OutputStream out = pipe.out ) {
           // Write out results
-          query.writeTo( dos );
+          query.writeTo( out );
           // Pipe will automatically close on this end
         } catch ( Exception e ) {
           log.logError( e.getMessage(), e );
         }
       } );
 
-      return new DataInputStream( pipeIn );
+      return new DataInputStream( pipe.in );
     } catch ( Exception e ) {
       Throwables.propagateIfPossible( e, SQLException.class );
       throw new SQLException( e );
@@ -99,7 +99,7 @@ public class DataServiceClient implements DataServiceClientService {
   @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
     List<ThinServiceInformation> services = Lists.newArrayList();
 
-    for ( DataServiceMeta service : resolver.getDataServices( logErrors() ) ) {
+    for ( DataServiceMeta service : resolver.getDataServices( logErrors()::apply ) ) {
       TransMeta transMeta = service.getServiceTrans();
       try {
         transMeta.activateParameters();
@@ -118,7 +118,7 @@ public class DataServiceClient implements DataServiceClientService {
 
   @Override public ThinServiceInformation getServiceInformation( String name ) throws SQLException {
 
-    for ( DataServiceMeta service : resolver.getDataServices( name, logErrors() ) ) {
+    for ( DataServiceMeta service : resolver.getDataServices( name, logErrors()::apply ) ) {
       if ( service.getName().equals( name ) ) {
         TransMeta transMeta = service.getServiceTrans();
         try {
@@ -146,12 +146,8 @@ public class DataServiceClient implements DataServiceClientService {
 
 
   private Function<Exception, Void> logErrors() {
-    return logErrors( "Unable to retrieve data service" );
-  }
-
-  public Function<Exception, Void> logErrors( String message ) {
     return e -> {
-      getLogChannel().logError( message, e );
+      getLogChannel().logError( "Unable to retrieve data service", e );
       return null;
     };
   }
@@ -176,5 +172,47 @@ public class DataServiceClient implements DataServiceClientService {
    */
   @Deprecated
   public void setMetaStore( IMetaStore metaStore ) {
+  }
+
+  /**
+   * Holds a pair of piped input and output streams.
+   * <p>
+   * The streams are "safe" in that writing into the pipe after the reading end has closed will not result in an
+   * exception. Data written while the read end is closed will be ignored.
+   *
+   * @author hudak
+   */
+  private static class SafePipedStreams {
+    final PipedOutputStream out;
+    final PipedInputStream in;
+    private volatile boolean open = true;
+
+    private SafePipedStreams() throws IOException {
+      in = new PipedInputStream() {
+        @Override public void close() throws IOException {
+          ifOpen( () -> open = false );
+          super.close();
+        }
+      };
+      out = new PipedOutputStream( in ) {
+        @Override public void write( int b ) throws IOException {
+          ifOpen( () -> super.write( b ) );
+        }
+
+        @Override public void write( byte[] b, int off, int len ) throws IOException {
+          ifOpen( () -> super.write( b, off, len ) );
+        }
+      };
+    }
+
+    private synchronized void ifOpen( IOExceptionAction action ) throws IOException {
+      if ( open ) {
+        action.call();
+      }
+    }
+
+    private interface IOExceptionAction {
+      void call() throws IOException;
+    }
   }
 }
