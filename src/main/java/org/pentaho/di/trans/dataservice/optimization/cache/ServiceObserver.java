@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,6 +26,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
@@ -65,7 +66,14 @@ public class ServiceObserver extends AbstractFuture<CachedService> implements Ru
     StepInterface serviceStep = executor.getServiceTrans().findRunThread( executor.getService().getStepname() );
     serviceStep.addRowListener( new RowAdapter() {
       @Override public synchronized void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) {
-        rowMetaAndData.add( new RowMetaAndData( rowMeta, row ) );
+        Object[] clonedRow;
+        try {
+          clonedRow = rowMeta.cloneRow( row );
+        } catch ( KettleValueException e ) {
+          setException( e );
+          return;
+        }
+        rowMetaAndData.add( new RowMetaAndData( rowMeta, clonedRow ) );
       }
     } );
     serviceStep.addStepListener( new StepAdapter() {
