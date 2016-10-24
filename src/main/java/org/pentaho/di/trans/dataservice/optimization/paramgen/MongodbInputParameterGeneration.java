@@ -35,6 +35,7 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInput;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.mongo.wrapper.field.MongoField;
+import org.pentaho.di.core.xml.XMLParserFactoryProducer;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -109,7 +110,8 @@ public class MongodbInputParameterGeneration implements ParameterGenerationServi
     DocumentBuilder builder;
     String jsonQuery = "";
     try {
-      builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+      DocumentBuilderFactory factory = XMLParserFactoryProducer.createSecureDocBuilderFactory();
+      builder = factory.newDocumentBuilder();
       Document doc = builder.parse( new InputSource( new StringReader( xml ) ) );
       NodeList nodes = doc.getElementsByTagName( "json_query" );
       if ( nodes.getLength() > 0 ) {
