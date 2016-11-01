@@ -29,6 +29,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.IifFunction;
 import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.core.sql.SQLAggregation;
 import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.core.sql.SQLFields;
 import org.pentaho.di.core.util.Utils;
@@ -50,6 +51,11 @@ import org.pentaho.di.trans.steps.selectvalues.SelectValuesMeta;
 import org.pentaho.di.trans.steps.sort.SortRowsMeta;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_INTEGER;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NONE;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NUMBER;
 
 public class SqlTransGenerator {
 
@@ -108,7 +114,7 @@ public class SqlTransGenerator {
     }
 
     // Set conversion masks
-    lastStep = addToTrans( generateConversionMaskStep(), transMeta, lastStep );
+    lastStep = addToTrans( generateConversionStep(), transMeta, lastStep );
 
     // Add possible constants to the rows...
     //
@@ -210,21 +216,47 @@ public class SqlTransGenerator {
     return transMeta;
   }
 
-  private StepMeta generateConversionMaskStep() {
-    // Set conversion masks for each column
+  private StepMeta generateConversionStep() {
+    // Set conversion masks for each column, modify type where required.
     SelectValuesMeta meta = new SelectValuesMeta();
     meta.allocate( 0, 0, serviceFields.size() );
-    for ( int i = 0; i < serviceFields.size(); i++ ) {
-      ValueMetaInterface valueMeta = serviceFields.getValueMeta( i );
-      SelectMetadataChange metadataChanges = meta.getMeta()[i] = new SelectMetadataChange( meta );
-      metadataChanges.setName( valueMeta.getName() );
-      metadataChanges.setConversionMask( valueMeta.getConversionMask() );
-    }
-    StepMeta stepMeta = new StepMeta( "Set Conversion Masks", meta );
+    meta.setMeta(
+      serviceFields.getValueMetaList().stream()
+        .map( valueMeta -> getSelectMetadataChange( meta, valueMeta ) )
+        .collect( Collectors.toList() )
+        .toArray( new SelectMetadataChange[ serviceFields.size() ] ) );
+
+    StepMeta stepMeta = new StepMeta( "Set Conversion", meta );
     stepMeta.setLocation( xLocation, 50 );
     xLocation += 100;
     stepMeta.setDraw( true );
     return stepMeta;
+  }
+
+  private SelectMetadataChange getSelectMetadataChange( SelectValuesMeta meta, ValueMetaInterface valueMeta ) {
+    SelectMetadataChange metadataChange = new SelectMetadataChange( meta );
+    metadataChange.setName( valueMeta.getName() );
+    metadataChange.setConversionMask( valueMeta.getConversionMask() );
+    metadataChange.setType( getType( valueMeta ) );
+    return metadataChange;
+  }
+
+  /**
+   * Get the modified type for valueMeta.  If the valueMeta is of TYPE_INTEGER and
+   * associated with an AVG aggregation, the type will be expanded to TYPE_NUMBER, to
+   * assure that the avg value is not truncated.
+   * Otherwise we set TYPE_NONE, which will preserve the original type.
+   */
+  private int getType( ValueMetaInterface valueMeta ) {
+    return sql.getSelectFields().getAggregateFields().stream()
+      .filter(
+        aggField ->
+          valueMeta == aggField.getValueMeta()
+            && valueMeta.getType() == TYPE_INTEGER
+            && aggField.getAggregation().equals( SQLAggregation.AVG ) )
+      .findFirst()
+      .map( avgSqlField -> TYPE_NUMBER )
+      .orElse( TYPE_NONE );
   }
 
   private StepMeta addToTrans( StepMeta sortStep, TransMeta transMeta, StepMeta lastStep ) {
