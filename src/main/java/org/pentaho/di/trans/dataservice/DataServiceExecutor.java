@@ -44,6 +44,7 @@ import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.clients.TransMutators;
 import org.pentaho.di.trans.dataservice.execution.CopyParameters;
 import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
@@ -62,6 +63,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 public class DataServiceExecutor {
   private static final Class<?> PKG = DataServiceExecutor.class;
@@ -105,6 +107,8 @@ public class DataServiceExecutor {
     private boolean prepareExecution = true;
     private boolean enableMetrics = false;
     private IMetaStore metastore;
+    private BiConsumer<String, TransMeta> transMutator =
+      ( stepName, trans ) -> TransMutators.removeDownstreamSteps( stepName, trans, true );
 
     public Builder( SQL sql, DataServiceMeta service, DataServiceContext context ) {
       this.sql = Preconditions.checkNotNull( sql, "SQL must not be null." );
@@ -137,11 +141,17 @@ public class DataServiceExecutor {
       return this;
     }
 
+    Builder serviceTransMutator( BiConsumer<String, TransMeta> transMutator ) {
+      this.transMutator = transMutator;
+      return this;
+    }
+
     public Builder serviceTrans( TransMeta serviceTransMeta ) {
       // Copy TransMeta, we don't want to persist any changes to the meta during execution
       serviceTransMeta = (TransMeta) serviceTransMeta.realClone( false );
       serviceTransMeta.setName( calculateTransname( sql, true ) );
       serviceTransMeta.activateParameters();
+      transMutator.accept( service.getStepname(), serviceTransMeta );
       return serviceTrans( new Trans( serviceTransMeta ) );
     }
 
