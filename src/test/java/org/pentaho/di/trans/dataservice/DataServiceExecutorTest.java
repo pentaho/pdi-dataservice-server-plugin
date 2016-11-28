@@ -60,6 +60,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
@@ -98,6 +99,8 @@ public class DataServiceExecutorTest extends BaseTest {
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
   @Mock SqlTransGenerator sqlTransGenerator;
+  @Mock BiConsumer<String, TransMeta> mutator;
+  @Mock TransMeta serviceTransMeta;
 
   @Before
   public void setUp() throws Exception {
@@ -166,7 +169,7 @@ public class DataServiceExecutorTest extends BaseTest {
     when( optimization.isEnabled() ).thenReturn( true );
     dataService.getPushDownOptimizationMeta().add( optimization );
 
-    IMetaStore metastore = Mockito.mock( IMetaStore.class );
+    IMetaStore metastore = mock( IMetaStore.class );
     DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
       serviceTrans( serviceTrans ).
       sqlTransGenerator( sqlTransGenerator ).
@@ -483,4 +486,14 @@ public class DataServiceExecutorTest extends BaseTest {
     }
   }
 
+  @Test
+  public void testMutatorGetsCalled() throws Exception {
+    when( serviceTransMeta.realClone( false ) ).thenReturn( serviceTransMeta );
+    when( serviceTransMeta.listVariables() ).thenReturn( new String[]{} );
+    when( serviceTransMeta.listParameters() ).thenReturn( new String[]{} );
+      new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
+        .serviceTransMutator( mutator )
+        .serviceTrans( serviceTransMeta );
+    Mockito.verify( mutator ).accept( dataService.getStepname(), serviceTransMeta );
+  }
 }

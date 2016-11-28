@@ -1,33 +1,3 @@
-package org.pentaho.di.trans.dataservice.clients;
-
-import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroup;
-import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroupXmlWriter;
-import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleFileException;
-import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.value.ValueMetaString;
-import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.TransHopMeta;
-import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.di.metastore.MetaStoreConst;
-import org.pentaho.metastore.api.exceptions.MetaStoreException;
-import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
-
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 /*! ******************************************************************************
  *
  * Pentaho Data Integration
@@ -49,6 +19,32 @@ import java.util.Set;
  * limitations under the License.
  *
  ******************************************************************************/
+package org.pentaho.di.trans.dataservice.clients;
+
+import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroup;
+import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroupXmlWriter;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleFileException;
+import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.value.ValueMetaString;
+import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
+import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.di.metastore.MetaStoreConst;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
+import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static org.pentaho.di.trans.dataservice.clients.TransMutators.disableAllUnrelatedHops;
 
 
 public class AnnotationsQueryService implements Query.Service {
@@ -111,7 +107,8 @@ public class AnnotationsQueryService implements Query.Service {
         throw new MetaStoreException( "Unable to load dataservice " + serviceName );
       }
       TransMeta serviceTrans = dataService.getServiceTrans();
-      disableAllUnrelatedHops( dataService, serviceTrans );
+
+      disableAllUnrelatedHops( dataService.getStepname(), serviceTrans );
       final Trans trans = getTrans( serviceTrans );
       IMetaStore ms = metastoreLocator.getMetastore();
       if ( ms == null ) {
@@ -122,33 +119,6 @@ public class AnnotationsQueryService implements Query.Service {
         trans.prepareExecution( new String[]{} );
       }
       return trans;
-    }
-
-    private void disableAllUnrelatedHops( final DataServiceMeta dataService, final TransMeta serviceTrans ) {
-      String stepname = dataService.getStepname();
-      StepMeta step = serviceTrans.findStep( stepname );
-      List<TransHopMeta> transHops = new ArrayList<TransHopMeta>( serviceTrans.nrTransHops() );
-
-      for ( int i = 0; i < serviceTrans.nrTransHops(); i++ ) {
-        transHops.add( serviceTrans.getTransHop( i ) );
-      }
-      HashSet<TransHopMeta> hops = new HashSet<>();
-      findUpstreamHops( hops, transHops, serviceTrans, step );
-
-      for ( TransHopMeta transHopMeta : transHops ) {
-        if ( !hops.contains( transHopMeta ) ) {
-          transHopMeta.setEnabled( false );
-        }
-      }
-    }
-
-    private void findUpstreamHops( Set<TransHopMeta> hops, List<TransHopMeta> all, TransMeta trans, StepMeta step ) {
-      for ( TransHopMeta hop : all ) {
-        if ( hop.getToStep().equals( step ) && !hops.contains( hop ) ) {
-          hops.add( hop );
-          findUpstreamHops( hops, all, trans, hop.getFromStep() );
-        }
-      }
     }
 
     Trans getTrans( final TransMeta serviceTrans ) {
