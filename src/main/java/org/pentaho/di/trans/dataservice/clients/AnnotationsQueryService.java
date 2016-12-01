@@ -108,7 +108,7 @@ public class AnnotationsQueryService implements Query.Service {
       }
       TransMeta serviceTrans = dataService.getServiceTrans();
 
-      disableAllUnrelatedHops( dataService.getStepname(), serviceTrans );
+      disableAllUnrelatedHops( dataService.getStepname(), serviceTrans, false );
       final Trans trans = getTrans( serviceTrans );
       IMetaStore ms = metastoreLocator.getMetastore();
       if ( ms == null ) {

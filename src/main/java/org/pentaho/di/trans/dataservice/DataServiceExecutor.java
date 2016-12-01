@@ -108,7 +108,7 @@ public class DataServiceExecutor {
     private boolean enableMetrics = false;
     private IMetaStore metastore;
     private BiConsumer<String, TransMeta> transMutator =
-      ( stepName, trans ) -> TransMutators.removeDownstreamSteps( stepName, trans, true );
+      ( stepName, transMeta ) -> TransMutators.disableAllUnrelatedHops( stepName, transMeta, true );
 
     public Builder( SQL sql, DataServiceMeta service, DataServiceContext context ) {
       this.sql = Preconditions.checkNotNull( sql, "SQL must not be null." );

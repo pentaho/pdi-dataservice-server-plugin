@@ -26,14 +26,14 @@ import org.junit.Test;
 import org.pentaho.di.core.KettleClientEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.errorhandling.StreamInterface;
 
 import java.util.function.BiConsumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class TransMutatorsTest {
@@ -45,84 +45,80 @@ public class TransMutatorsTest {
   }
 
   @Test
-  public void testDisableUnrelatedMultipleDownStream() throws Exception {
-    TransMeta transMeta = prepareTrans( "Filter Rows", TransMutators::disableAllUnrelatedHops );
-    assertTrue( transMeta.getTransHop( 0 ).isEnabled() );
-    assertTrue( transMeta.getTransHop( 1 ).isEnabled() );
-    assertFalse( transMeta.getTransHop( 2 ).isEnabled() );
-    assertFalse( transMeta.getTransHop( 3 ).isEnabled() );
-    assertFalse( transMeta.getTransHop( 4 ).isEnabled() );
+  public void testDisableAllButFirst() throws Exception {
+    TransMeta transMeta = prepareTrans( "Tasty Dishes",
+      ( stepName, serviceTrans ) -> TransMutators.disableAllUnrelatedHops( stepName, serviceTrans, true ) );
+    assertEquals( 1, transMeta.nrSteps() );
+    assertEquals( 0, transMeta.nrTransHops() );
   }
 
   @Test
-  public void testDisableUnrelatedSideBranch() throws Exception {
-    TransMeta transMeta = prepareTrans( "Write Success", TransMutators::disableAllUnrelatedHops );
-    assertTrue( transMeta.getTransHop( 0 ).isEnabled() );
-    assertTrue( transMeta.getTransHop( 1 ).isEnabled() );
-    assertTrue( transMeta.getTransHop( 2 ).isEnabled() );
-    assertFalse( transMeta.getTransHop( 3 ).isEnabled() );
-    assertFalse( transMeta.getTransHop( 4 ).isEnabled() );
-  }
-
-  @Test
-  public void testRemoveDownStreamWalksPassedStepsThatChooseTarget() throws Exception {
-    TransMeta transMeta = prepareTrans( "Filter Rows",
-      ( stepName, serviceTrans ) -> TransMutators.removeDownstreamSteps( stepName, serviceTrans, true ) );
-    assertEquals( 5, transMeta.getTransHopSteps( true ).size() );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Data Grid", null ) ) );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Write Unfiltered", null ) ) );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Filter Rows", null ) ) );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Write Success", null ) ) );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Write Failure", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Write Again", null ) ) );
-  }
-
-  @Test
-  public void testRemoveDownstreamFromFirstStep() throws Exception {
-    TransMeta transMeta = prepareTrans( "Data Grid",
-      ( stepName, serviceTrans ) -> TransMutators.removeDownstreamSteps( stepName, serviceTrans, true ) );
-    assertEquals( 1, transMeta.getTransHopSteps( true ).size() );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Data Grid", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Write Unfiltered", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Filter Rows", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Write Success", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Write Failure", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Write Again", null ) ) );
-  }
-
-  @Test
-  public void testRemoveDownStreamSideBranchUntouched() throws Exception {
-    TransMeta transMeta = prepareTrans( "Write Success",
-      ( stepName, serviceTrans ) -> TransMutators.removeDownstreamSteps( stepName, serviceTrans, true ) );
-    assertEquals( 5, transMeta.getTransHopSteps( true ).size() );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Data Grid", null ) ) );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Write Unfiltered", null ) ) );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Filter Rows", null ) ) );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Write Success", null ) ) );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Write Failure", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Write Again", null ) ) );
-  }
-
-  @Test
-  public void testRemovesAllTheWayDownstream() throws Exception {
+  public void testDisablesAllTheWayDownStream() throws Exception {
     TransMeta transMeta = prepareTrans( "Write Unfiltered",
-      ( stepName, serviceTrans ) -> TransMutators.removeDownstreamSteps( stepName, serviceTrans, true ) );
-    assertEquals( 2, transMeta.getTransHopSteps( true ).size() );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Data Grid", null ) ) );
-    assertTrue( transMeta.getSteps().contains( new StepMeta( "Write Unfiltered", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Filter Rows", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Write Success", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Write Failure", null ) ) );
-    assertFalse( transMeta.getSteps().contains( new StepMeta( "Write Again", null ) ) );
+      ( stepName, serviceTrans ) -> TransMutators.disableAllUnrelatedHops( stepName, serviceTrans, true ) );
+    assertHopsEnabled( transMeta, false, false, false, false, false, false );
   }
+
+  @Test
+  public void testDisableKeepsRequiredDownstreamSteps() throws Exception {
+    TransMeta transMeta = prepareTrans( "Filter Rows",
+      ( stepName, serviceTrans ) -> TransMutators.disableAllUnrelatedHops( stepName, serviceTrans, true ) );
+    assertHopsEnabled( transMeta, true, true, true, false, true,  true );
+  }
+
+  @Test
+  public void testDisableKeepsIndirectRequiredDownstreamSteps() throws Exception {
+    TransMeta transMeta = prepareTrans( "Write Success",
+      ( stepName, serviceTrans ) -> TransMutators.disableAllUnrelatedHops( stepName, serviceTrans, true ) );
+    assertHopsEnabled( transMeta, true, true, true, false, true, true );
+  }
+
+  @Test
+  public void testDisableKeepsCycledStep() throws Exception {
+    TransMeta transMeta = prepareTrans( "Map Failures",
+      ( stepName, serviceTrans ) -> TransMutators.disableAllUnrelatedHops( stepName, serviceTrans, true ) );
+    assertHopsEnabled( transMeta, true, true, true, false, true, true );
+  }
+
+  @Test
+  public void testDisableFromFinalStep() throws Exception {
+    TransMeta transMeta = prepareTrans( "Write Again",
+      ( stepName, serviceTrans ) -> TransMutators.disableAllUnrelatedHops( stepName, serviceTrans, true ) );
+    assertHopsEnabled( transMeta, true, true, true, true, true, true );
+  }
+
+  @Test
+  public void testDisableWithoutIncludingTargets() throws Exception {
+    TransMeta transMeta = prepareTrans( "Filter Rows",
+      ( stepName, serviceTrans ) -> TransMutators.disableAllUnrelatedHops( stepName, serviceTrans, false ) );
+    assertHopsEnabled( transMeta, true, false, false, false, true, false );
+  }
+
   private TransMeta prepareTrans( String stepname, BiConsumer<String, TransMeta> mutator ) throws KettleException {
     String transPath = this.getClass().getResource( "/TransMutatorsTest.ktr" ).getPath();
     TransMeta transMeta = new TransMeta( transPath );
-    TransMeta transSpy = spy( transMeta );
-    StepMeta stepSpy = spy( transMeta.findStep( "Filter Rows" ) );
-    when( transSpy.findStep( "Filter Rows" ) ).thenReturn( stepSpy );
-    when( stepSpy.chosesTargetSteps() ).thenReturn( false );
-    mutator.accept( stepname, transSpy );
+    StreamInterface mockStream = mock( StreamInterface.class );
+    when( mockStream.getStreamType() ).thenReturn( StreamInterface.StreamType.TARGET );
+    transMeta.findStep( "Filter Rows" ).getStepMetaInterface().getStepIOMeta().addStream( mockStream );
+    mutator.accept( stepname, transMeta );
     return transMeta;
+  }
+
+  private void assertHopsEnabled(
+    final TransMeta transMeta,
+    boolean unfilteredFilter,
+    boolean filterSuccess,
+    boolean filterFailure,
+    boolean successAgain,
+    boolean grossFilter,
+    boolean failureSuccess )
+  {
+    assertEquals( "Hop from Tasty to Unfiltered incorrect", true, transMeta.getTransHop( 0 ).isEnabled() );
+    assertEquals( "Hop from Unfiltered to Filter incorrect", unfilteredFilter, transMeta.getTransHop( 1 ).isEnabled() );
+    assertEquals( "Hop from Filter to Success incorrect", filterSuccess, transMeta.getTransHop( 2 ).isEnabled() );
+    assertEquals( "Hop from Filter to Failure incorrect", filterFailure, transMeta.getTransHop( 3 ).isEnabled() );
+    assertEquals( "Hop from Success to Again incorrect", successAgain, transMeta.getTransHop( 4 ).isEnabled() );
+    assertEquals( "Hop from Gross to Filter incorrect", grossFilter, transMeta.getTransHop( 5 ).isEnabled() );
+    assertEquals( "Hop from Failure to Success incorrect", failureSuccess, transMeta.getTransHop( 6 ).isEnabled() );
   }
 }
