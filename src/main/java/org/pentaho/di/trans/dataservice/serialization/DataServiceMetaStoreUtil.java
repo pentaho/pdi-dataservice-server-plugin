@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,6 +26,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
@@ -45,6 +46,7 @@ import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -54,6 +56,7 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.IMetaStoreObjectFactory;
 import org.pentaho.metastore.persist.MetaStoreFactory;
+import org.pentaho.metastore.util.PentahoDefaults;
 
 import javax.cache.Cache;
 import java.text.MessageFormat;
@@ -63,13 +66,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.and;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
-import static org.pentaho.di.i18n.BaseMessages.getString;
-import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
 public class DataServiceMetaStoreUtil {
   private static final Class<DataServiceMetaStoreUtil> PKG = DataServiceMetaStoreUtil.class;
@@ -237,16 +233,16 @@ public class DataServiceMetaStoreUtil {
 
   public DataServiceMeta checkDefined( DataServiceMeta dataServiceMeta ) throws UndefinedDataServiceException {
     if ( Strings.isNullOrEmpty( dataServiceMeta.getName() ) ) {
-      throw new UndefinedDataServiceException( dataServiceMeta, getString( PKG, "Messages.SaveError.NameMissing" ) );
+      throw new UndefinedDataServiceException( dataServiceMeta, BaseMessages.getString( PKG, "Messages.SaveError.NameMissing" ) );
     }
 
     if ( Strings.isNullOrEmpty( dataServiceMeta.getStepname() ) ) {
-      throw new UndefinedDataServiceException( dataServiceMeta, getString( PKG, "Messages.SaveError.StepMissing" ) );
+      throw new UndefinedDataServiceException( dataServiceMeta, BaseMessages.getString( PKG, "Messages.SaveError.StepMissing" ) );
     }
 
     if ( dataServiceMeta.getServiceTrans().findStep( dataServiceMeta.getStepname() ) == null ) {
       throw new UndefinedDataServiceException( dataServiceMeta,
-        getString( PKG, "Messages.SaveError.StepNotFound", dataServiceMeta.getStepname() ) );
+              BaseMessages.getString( PKG, "Messages.SaveError.StepNotFound", dataServiceMeta.getStepname() ) );
     }
 
     return dataServiceMeta;
@@ -260,7 +256,7 @@ public class DataServiceMetaStoreUtil {
     DataServiceMeta stepConflict = getDataServiceByStepName( serviceTrans, dataServiceMeta.getStepname() );
     if ( stepConflict != null && !stepConflict.getName().equals( ignored ) ) {
       throw new DataServiceAlreadyExistsException( dataServiceMeta,
-        getString( PKG, "Messages.SaveError.StepConflict", stepConflict.getStepname(), stepConflict.getName() ) );
+              BaseMessages.getString( PKG, "Messages.SaveError.StepConflict", stepConflict.getStepname(), stepConflict.getName() ) );
     }
 
     String name = dataServiceMeta.getName();
@@ -282,7 +278,7 @@ public class DataServiceMetaStoreUtil {
   }
 
   public void save( DataServiceMeta dataService ) throws MetaStoreException {
-    TransMeta transMeta = checkNotNull( dataService.getServiceTrans(), "Service trans not defined for data service" );
+    TransMeta transMeta = Preconditions.checkNotNull( dataService.getServiceTrans(), "Service trans not defined for data service" );
 
     getLogChannel().logBasic( MessageFormat.format( "Saving ''{0}'' to ''{1}''",
       dataService.getName(), transMeta.getName() ) );
@@ -295,16 +291,24 @@ public class DataServiceMetaStoreUtil {
   public void removeDataService( DataServiceMeta dataService ) {
     TransMeta transMeta = dataService.getServiceTrans();
     try {
-      getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
-      for ( Integer key : createCacheKeys( transMeta, dataService.getStepname() ) ) {
-        stepCache.replace( key, dataService.getName(), "" );
-      }
+      deleteDataServiceElementAndCleanCache( dataService, transMeta );
       transMeta.setChanged();
     } catch ( MetaStoreException e ) {
       getLogChannel().logBasic( e.getMessage() );
     }
   }
 
+  public void deleteDataServiceElementAndCleanCache( DataServiceMeta dataService, TransMeta transMeta ) throws MetaStoreException {
+    getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
+    for ( Integer key : createCacheKeys( transMeta, dataService.getStepname() ) ) {
+      stepCache.replace( key, dataService.getName(), "" );
+    }
+  }
+
+  /**
+   * @deprecated in favor of DataServiceReferenceSynchronizer.
+   */
+  @Deprecated( )
   public void sync( TransMeta transMeta, Function<? super Exception, ?> exceptionHandler ) {
     final MetaStoreFactory<ServiceTrans> serviceTransFactory = getServiceTransFactory( transMeta.getMetaStore() );
 
@@ -321,12 +325,12 @@ public class DataServiceMetaStoreUtil {
       return;
     }
 
-    Map<String, ServiceTrans> toDelete = Maps.filterKeys( published, not( in( dataServices.keySet() ) ) );
-    Map<String, DataServiceMeta> nameConflicts = Maps.filterKeys( dataServices, and(
-      in( defined.keySet() ),
-      not( in( published.keySet() ) )
+    Map<String, ServiceTrans> toDelete = Maps.filterKeys( published, Predicates.not( Predicates.in( dataServices.keySet() ) ) );
+    Map<String, DataServiceMeta> nameConflicts = Maps.filterKeys( dataServices, Predicates.and(
+            Predicates.in( defined.keySet() ),
+            Predicates.not( Predicates.in( published.keySet() ) )
     ) );
-    Map<String, DataServiceMeta> toSave = Maps.filterKeys( dataServices, not( in( nameConflicts.keySet() ) ) );
+    Map<String, DataServiceMeta> toSave = Maps.filterKeys( dataServices, Predicates.not( Predicates.in( nameConflicts.keySet() ) ) );
 
     for ( DataServiceMeta dataServiceMeta : toSave.values() ) {
       try {
@@ -378,11 +382,11 @@ public class DataServiceMetaStoreUtil {
   }
 
   protected MetaStoreFactory<ServiceTrans> getServiceTransFactory( IMetaStore metaStore ) {
-    return new MetaStoreFactory<>( ServiceTrans.class, metaStore, NAMESPACE );
+    return new MetaStoreFactory<>( ServiceTrans.class, metaStore, PentahoDefaults.NAMESPACE );
   }
 
   protected MetaStoreFactory<DataServiceMeta> getDataServiceFactory( final TransMeta transMeta ) {
-    return new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, transMeta.getEmbeddedMetaStore(), NAMESPACE ) {
+    return new MetaStoreFactory<DataServiceMeta>( DataServiceMeta.class, transMeta.getEmbeddedMetaStore(), PentahoDefaults.NAMESPACE ) {
 
       {
         setObjectFactory( new DataServiceMetaObjectFactory() );
