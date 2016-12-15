@@ -32,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
@@ -154,6 +155,15 @@ public class DataServiceDelegateTest extends BaseTest {
     delegate.suggestEdit( dataService, TITLE, TEXT );
 
     assertThat( transMeta.hasChanged(), is( true ) );
+  }
+
+  @Test
+  public void testSuggestEditNo() throws Exception {
+    delegate = spy( delegate );
+    when( messageBox.open() ).thenReturn( SWT.NO );
+    delegate.suggestEdit( dataService, TITLE, TEXT );
+
+    Mockito.verify( delegate, Mockito.times(1) ).deleteDataServiceElementAndCleanCache(dataService, transMeta);
   }
 
   @Test
