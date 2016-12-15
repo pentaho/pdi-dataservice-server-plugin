@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.resolvers;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
@@ -54,12 +55,14 @@ public class TransientResolver implements DataServiceResolver {
   private KettleRepositoryLocator repositoryLocator;
   private DataServiceContext context;
   private ServiceCacheFactory cacheFactory;
+  private LogLevel logLevel;
 
   public TransientResolver( KettleRepositoryLocator repositoryLocator, DataServiceContext context,
-                            ServiceCacheFactory cacheFactory ) {
+                            ServiceCacheFactory cacheFactory, final LogLevel logLevel ) {
     this.repositoryLocator = repositoryLocator;
     this.context = context;
     this.cacheFactory = cacheFactory;
+    this.logLevel = logLevel;
   }
 
   @Override
@@ -90,7 +93,7 @@ public class TransientResolver implements DataServiceResolver {
   @Override public DataServiceExecutor.Builder createBuilder( SQL sql ) {
     DataServiceMeta dataServiceMeta = getDataService( sql.getServiceName() );
     if ( dataServiceMeta != null ) {
-      return new DataServiceExecutor.Builder( sql, dataServiceMeta, context );
+      return new DataServiceExecutor.Builder( sql, dataServiceMeta, context ).logLevel( logLevel );
     }
     return null;
   }

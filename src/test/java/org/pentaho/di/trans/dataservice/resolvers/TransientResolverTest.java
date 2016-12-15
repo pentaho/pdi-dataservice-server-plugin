@@ -27,18 +27,23 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.pentaho.di.core.KettleClientEnvironment;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogLevel;
+import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
@@ -51,15 +56,14 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Predicate;
 
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -82,6 +86,13 @@ public class TransientResolverTest {
 
   private TransMeta transMeta;
 
+  @BeforeClass
+  public static void setUpClass() throws Exception {
+   if( !KettleClientEnvironment.isInitialized() )  {
+     KettleClientEnvironment.init();
+   }
+  }
+
   @Before
   public void setup() throws Exception {
     when( kettleRepositoryLocator.getRepository() ).thenReturn( repository );
@@ -94,7 +105,7 @@ public class TransientResolverTest {
     output.setStepMetaInterface( new DummyTransMeta() );
     transMeta.addStep( output );
 
-    transientResolver = new TransientResolver( kettleRepositoryLocator, context, serviceCacheFactory );
+    transientResolver = new TransientResolver( kettleRepositoryLocator, context, serviceCacheFactory, LogLevel.DEBUG );
   }
 
   @Test
@@ -144,6 +155,21 @@ public class TransientResolverTest {
     assertThat( dataServiceMeta.getStepname(), is( "data_service" ) );
     assertFalse( dataServiceMeta.isUserDefined() );
     assertThat( dataServiceMeta, hasServiceCacheOptimization() );
+  }
+
+  @Test
+  public void testBuilderPassesLogLevel() throws Exception {
+    File localFolder = temporaryFolder.newFolder( "local" );
+    File localFile = new File( localFolder, "name.ktr" );
+    Files.write( transMeta.getXML().getBytes( StandardCharsets.UTF_8 ), localFile );
+    String transientId = TransientResolver.buildTransient( localFile.getPath(), "OUTPUT" );
+
+    when( repository.getTransformationID( any(), eq( root ) ) ).thenThrow( new KettleException() );
+
+    DataServiceExecutor.Builder builder =
+      transientResolver.createBuilder( new SQL( "select * from " + transientId ) );
+    DataServiceExecutor build = builder.build();
+    assertEquals( LogLevel.DEBUG, build.getServiceTransMeta().getLogLevel() );
   }
 
   private Matcher<DataServiceMeta> hasServiceCacheOptimization() {
