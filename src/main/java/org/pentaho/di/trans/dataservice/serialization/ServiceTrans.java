@@ -202,7 +202,10 @@ public class ServiceTrans implements MetaStoreElement {
       }
 
       @Override public TransMeta load( Repository repository, String location ) throws KettleException {
-        return new TransMeta( location );
+        if ( new File( location ).exists() ) {
+          return new TransMeta( location );
+        }
+        return null;
       }
     },
     REPO_PATH {
