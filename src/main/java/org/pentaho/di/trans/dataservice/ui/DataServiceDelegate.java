@@ -124,9 +124,18 @@ public class DataServiceDelegate extends DataServiceFactory {
 
   public void suggestEdit( DataServiceMeta dataServiceMeta, String title, String text ) {
     TransMeta serviceTrans = dataServiceMeta.getServiceTrans();
-    if ( !serviceTrans.hasChanged() && showPrompt( title, text ) ) {
-      editDataService( dataServiceMeta );
-      serviceTrans.setChanged();
+    if ( !serviceTrans.hasChanged() ) {
+      if ( showPrompt( title, text ) ) {
+        editDataService( dataServiceMeta );
+        serviceTrans.setChanged();
+      } else {
+        //can not exist duplicate, delete dataService and save transformation (PDI-15584)
+        try {
+          deleteDataServiceElementAndCleanCache( dataServiceMeta, serviceTrans );
+        } catch ( MetaStoreException e ) {
+          getLogChannel().logBasic( e.getMessage() );
+        }
+      }
     }
   }
 
