@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
+import java.net.URL;
 import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,6 +39,7 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
@@ -102,5 +104,20 @@ public class ServiceTransTest {
     assertThat( method.load( repository, "/existing/Trans" ), is( transMeta ) );
     assertThat( method.load( repository, "/existing/Trans" ), is( nullValue() ) );
 
+  }
+
+  @Test
+  public void testLoadDeletedTransFileStorageMethod() throws Exception {
+    ServiceTrans.StorageMethod method = ServiceTrans.StorageMethod.FILE;
+    TransMeta nonExistingTrans = method.load( null, "fakePath" );
+    assertThat( nonExistingTrans, is( nullValue() ) );
+  }
+
+  @Test
+  public void testLoadFileStorageMethod() throws Exception {
+    ServiceTrans.StorageMethod method = ServiceTrans.StorageMethod.FILE;
+    URL resource = getClass().getClassLoader().getResource( "showAnnotations.ktr" );
+    TransMeta transMeta = method.load( null, resource.getPath() );
+    assertThat( transMeta, is( notNullValue() ) );
   }
 }
