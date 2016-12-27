@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -43,6 +43,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -66,7 +67,7 @@ public class DefaultTransWiringRowAdapterTest {
     rowProducer = mock( RowProducer.class );
     logChannelInterface = mock( LogChannelInterface.class );
     when( serviceTrans.getLogChannel() ).thenReturn( logChannelInterface );
-    defaultTransWiringRowAdapter = new DefaultTransWiringRowAdapter( serviceTrans, genTrans, rowProducer );
+    defaultTransWiringRowAdapter = new DefaultTransWiringRowAdapter( serviceTrans, genTrans, rowProducer, 10 );
 
     rowMetaInterface = mock( RowMetaInterface.class );
     this.testString = "testString";
@@ -116,5 +117,15 @@ public class DefaultTransWiringRowAdapterTest {
       assertEquals( kettleValueException, e.getCause() );
       throw e;
     }
+  }
+
+  @Test
+  public void testRowWrittenAbortsWhenGenTransIsNotRunning() throws KettleStepException {
+    when( genTrans.isRunning() ).thenReturn( false );
+    for( int i = 0; i < 11; i++) {
+      defaultTransWiringRowAdapter.rowWrittenEvent( rowMetaInterface, row );
+    }
+    verify( serviceTrans ).stopAll();
+    verifyNoMoreInteractions( rowProducer );
   }
 }
