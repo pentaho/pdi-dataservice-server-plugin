@@ -46,6 +46,7 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.cache.BackgroundCache;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
 import org.pentaho.di.trans.step.StepMeta;
@@ -177,6 +178,7 @@ public class TransientResolverTest {
       @Override protected boolean matchesSafely( DataServiceMeta item ) {
         return item.getPushDownOptimizationMeta().stream()
           .map( PushDownOptimizationMeta::getType )
+          .map( t -> ( (BackgroundCache) t).getServiceCache() )
           .filter( Predicate.isEqual( serviceCache ) )
           .findAny().isPresent();
       }

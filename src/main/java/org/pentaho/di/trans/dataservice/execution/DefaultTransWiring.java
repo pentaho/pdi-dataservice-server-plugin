@@ -23,10 +23,10 @@
 package org.pentaho.di.trans.dataservice.execution;
 
 import com.google.common.base.Throwables;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.step.StepAdapter;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
@@ -60,7 +60,7 @@ public class DefaultTransWiring implements Runnable {
     if ( serviceStep == null ) {
       throw Throwables.propagate( new KettleException( "Service step is not accessible" ) );
     }
-    serviceStep.addRowListener( new DefaultTransWiringRowAdapter( serviceTrans, genTrans, rowProducer ) );
+    serviceStep.addRowListener( new DefaultTransWiringRowAdapter( serviceTrans, genTrans, rowProducer, dataServiceExecutor.getServiceRowLimit() ) );
 
     // Let the other transformation know when there are no more rows
     //
@@ -74,9 +74,12 @@ public class DefaultTransWiring implements Runnable {
       .findRunThread( dataServiceExecutor.getResultStepName() )
       .addStepListener( new StepAdapter() {
         @Override public void stepFinished( Trans trans, StepMeta stepMeta, StepInterface step ) {
-          if ( serviceTrans.isRunning() ) {
+          if ( serviceTrans.isRunning() && dataServiceExecutor.getService().isUserDefined() ) {
             trans.getLogChannel().logBasic( "Query finished, stopping service transformation" );
             serviceTrans.stopAll();
+          } else {
+            trans.getLogChannel().logBasic( "Query finished, letting service transformation continue" );
+            dataServiceExecutor.getGenTrans().stopAll();
           }
         }
       } );

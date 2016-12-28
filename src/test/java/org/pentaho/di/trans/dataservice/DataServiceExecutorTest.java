@@ -33,6 +33,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogLevel;
@@ -164,6 +166,13 @@ public class DataServiceExecutorTest extends BaseTest {
     StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
 
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+    when( genTrans.isRunning() ).thenAnswer( new Answer<Boolean>() {
+      private int count;
+      @Override public Boolean answer( final InvocationOnMock invocationOnMock ) throws Throwable {
+        count++;
+        return count % 2 != 0;
+      }
+    } );
 
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
     when( optimization.isEnabled() ).thenReturn( true );

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -104,7 +104,7 @@ public class ServiceCache extends StepOptimization {
     // Allow service transformation to run, observe rows
     Futures.addCallback( factory.createObserver( executor ).install(), new FutureCallback<CachedService>() {
       @Override public void onSuccess( CachedService result ) {
-        if ( executor.isStopped() || executor.hasErrors() ) {
+        if ( executor.hasErrors() ) {
           return;
         }
 
