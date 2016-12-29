@@ -22,9 +22,10 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import org.junit.Test;
+
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.junit.Test;
 
 public class DataServiceMetaTest extends BaseTest {
 
@@ -35,7 +36,7 @@ public class DataServiceMetaTest extends BaseTest {
           ( dataService.isUserDefined() ? "Y" : "N" ) );
       String xml = transMeta.getXML();
       assertTrue( xml.indexOf( "<key>is_user_defined</key>" + System.getProperty("line.separator")
-          + "<value>Y</value>" ) > 0 );
+          + "        <value>Y</value>" ) > 0 );
     } catch( Exception ex ){
       fail();
     }
@@ -49,7 +50,7 @@ public class DataServiceMetaTest extends BaseTest {
           ( dataService.isUserDefined() ? "Y" : "N" ) );
       String xml = transMeta.getXML();
       assertTrue( xml.indexOf( "<key>is_user_defined</key>" + System.getProperty("line.separator")
-          + "<value>N</value>" ) > 0 );
+          + "        <value>N</value>" ) > 0 );
     } catch( Exception ex ){
       fail();
     }
