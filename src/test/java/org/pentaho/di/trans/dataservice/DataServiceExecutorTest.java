@@ -160,6 +160,18 @@ public class DataServiceExecutorTest extends BaseTest {
   }
 
   @Test
+  public void testWaitDoesNotWaitForServiceWhenNotUserDefined() throws Exception {
+    DataServiceMeta serviceMeta = createDataService( "aname", transMeta );
+    serviceMeta.setUserDefined( false );
+    DataServiceExecutor serviceExecutor =
+      new DataServiceExecutor.Builder( new SQL( "" ), serviceMeta, context ).serviceTrans( serviceTrans )
+        .genTrans( genTrans ).build();
+    serviceExecutor.waitUntilFinished();
+    verify( genTrans ).waitUntilFinished();
+    verify( serviceTrans, never() ).waitUntilFinished();
+  }
+
+  @Test
   public void testExecuteQuery() throws Exception {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
     StepInterface serviceStep = serviceTrans.findRunThread( DATA_SERVICE_STEP );
