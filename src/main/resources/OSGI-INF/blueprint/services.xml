@@ -178,6 +178,11 @@
     </service>
     <!-- /Service Cache Optimization -->
 
+    <bean id="dataServiceMetaFactoryBean" class="org.pentaho.di.trans.dataservice.DataServiceMetaFactory" scope="singleton">
+        <property name="cacheFactory" ref="serviceCacheFactory"/>
+    </bean>
+    <service id="dataServiceMetaFactory" interface="org.pentaho.di.trans.dataservice.IDataServiceMetaFactory" ref="dataServiceMetaFactoryBean"/>
+
     <!-- Parameter Push down Optimization -->
     <service id="paramPushDownOptimization" interface="org.pentaho.di.trans.dataservice.optimization.PushDownFactory">
         <bean class="org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdownFactory"/>
