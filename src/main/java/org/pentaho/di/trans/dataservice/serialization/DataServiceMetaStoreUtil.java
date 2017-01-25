@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -302,13 +302,17 @@ public class DataServiceMetaStoreUtil {
   public void removeDataService( DataServiceMeta dataService ) {
     TransMeta transMeta = dataService.getServiceTrans();
     try {
-      getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
-      for ( Integer key : createCacheKeys( transMeta, dataService.getStepname() ) ) {
-        stepCache.replace( key, dataService.getName(), "" );
-      }
+      deleteDataServiceElementAndCleanCache( dataService, transMeta );
       transMeta.setChanged();
     } catch ( MetaStoreException e ) {
       getLogChannel().logBasic( e.getMessage() );
+    }
+  }
+
+  public void deleteDataServiceElementAndCleanCache( DataServiceMeta dataService, TransMeta transMeta ) throws MetaStoreException {
+    getDataServiceFactory( transMeta ).deleteElement( dataService.getName() );
+    for ( Integer key : createCacheKeys( transMeta, dataService.getStepname() ) ) {
+      stepCache.replace( key, dataService.getName(), "" );
     }
   }
 
