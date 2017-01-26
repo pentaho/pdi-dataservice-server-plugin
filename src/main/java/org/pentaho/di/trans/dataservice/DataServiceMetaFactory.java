@@ -50,12 +50,18 @@ public class DataServiceMetaFactory implements IDataServiceMetaFactory {
   }
 
   @Override public DataServiceMeta createDataService( StepMeta step ) throws KettleException {
+    return createDataService( step, null );
+  }
+
+  @Override public DataServiceMeta createDataService( StepMeta step, Integer rowLimit ) throws KettleException {
     TransMeta transformation = step.getParentTransMeta();
 
     DataServiceMeta dataServiceMeta = new DataServiceMeta( transformation );
 
-    dataServiceMeta.setName( createDataServiceName( step ) );
+    dataServiceMeta.setName( createDataServiceName( step, rowLimit ) );
     dataServiceMeta.setStepname( step.getName() );
+    dataServiceMeta.setRowLimit( rowLimit );
+
     PushDownOptimizationMeta pushDownMeta = new PushDownOptimizationMeta();
     pushDownMeta.setStepName( step.getName() );
     pushDownMeta.setType( getCacheFactory().createPushDown() );
@@ -64,7 +70,7 @@ public class DataServiceMetaFactory implements IDataServiceMetaFactory {
     return dataServiceMeta;
   }
 
-  private String createDataServiceName( StepMeta step ) throws KettleException {
+  private String createDataServiceName( StepMeta step, Integer rowLimit ) throws KettleException {
     TransMeta transMeta = step.getParentTransMeta();
     String fullFileName;
     if ( !Utils.isEmpty( transMeta.getFilename() ) && transMeta.getObjectId() == null ) {
@@ -82,6 +88,6 @@ public class DataServiceMetaFactory implements IDataServiceMetaFactory {
       }
     }
 
-    return TransientResolver.buildTransient( fullFileName, step.getName() );
+    return TransientResolver.buildTransient( fullFileName, step.getName(), rowLimit );
   }
 }

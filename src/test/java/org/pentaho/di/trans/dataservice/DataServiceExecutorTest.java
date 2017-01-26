@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -472,8 +472,27 @@ public class DataServiceExecutorTest extends BaseTest {
           .genTrans( genTrans )
           .build();
       assertEquals( 0, executor.getServiceRowLimit() );
+
+      int serviceRowLimit = 1000;
+      dataService.setRowLimit( serviceRowLimit);
+      executor =
+        new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
+          .serviceTrans( serviceTrans )
+          .genTrans( genTrans )
+          .build();
+      assertEquals( serviceRowLimit, executor.getServiceRowLimit() );
+
+      serviceRowLimit = -3;
+      dataService.setRowLimit( serviceRowLimit);
+      executor =
+        new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
+          .serviceTrans( serviceTrans )
+          .genTrans( genTrans )
+          .build();
+      assertEquals( 0, executor.getServiceRowLimit() );
     } finally {
       dataService.setUserDefined( userDef );
+      dataService.setRowLimit( null );
       System.getProperties().remove( limitProp );
     }
   }

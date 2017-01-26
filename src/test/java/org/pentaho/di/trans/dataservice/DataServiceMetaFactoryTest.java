@@ -40,43 +40,30 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.trans.TransGraph;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceMetaFactoryTest {
   DataServiceMetaFactory factory;
 
-  @Mock
-  Context dataServiceContext;
-  @Mock
-  DataServiceDelegate dataServiceDelegate;
-  @Mock
-  Spoon mockSpoon;
-  @Mock
-  TransMeta transMeta;
-  @Mock
-  Repository repository;
-  @Mock
-  DataServiceMeta mockDs;
-  @Mock
-  TransGraph transGraph;
-  @Mock
-  StepMeta stepMeta;
-  @Mock
-  SynchronizationListener synchronizationListener;
-  @Mock
-  ServiceCacheFactory cacheFactory;
+  @Mock Context dataServiceContext;
+  @Mock DataServiceDelegate dataServiceDelegate;
+  @Mock Spoon mockSpoon;
+  @Mock TransMeta transMeta;
+  @Mock Repository repository;
+  @Mock DataServiceMeta mockDs;
+  @Mock TransGraph transGraph;
+  @Mock StepMeta stepMeta;
+  @Mock SynchronizationListener synchronizationListener;
+  @Mock ServiceCacheFactory cacheFactory;
 
   String transName = "Test Trans Name";
   String stepName = "Test Step Name";
 
   @Before
   public void setup() {
-    factory = new DataServiceMetaFactory();
+    factory = spy( new DataServiceMetaFactory() );
     factory.setCacheFactory( cacheFactory );
 
     when( dataServiceContext.getDataServiceDelegate() ).thenReturn( dataServiceDelegate );
@@ -102,6 +89,12 @@ public class DataServiceMetaFactoryTest {
     assertEquals( 1, ds.getPushDownOptimizationMeta().size() );
     assertTrue( ds.getPushDownOptimizationMeta().get( 0 ).getType() instanceof ServiceCache );
     assertEquals( stepName, ds.getPushDownOptimizationMeta().get( 0 ).getStepName() );
+    assertNull( ds.getRowLimit() );
+    verify( factory, times( 1 ) ).createDataService( eq( stepMeta ), eq( null ) );
+
+    Integer rowLimit = 1000;
+    ds = factory.createDataService( stepMeta, rowLimit );
+    assertEquals( rowLimit, ds.getRowLimit() );
   }
 
   @Test

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -244,7 +244,9 @@ public class DataServiceExecutor {
     }
 
     private int getServiceRowLimit( DataServiceMeta service ) throws KettleException {
-      if ( !service.isUserDefined() ) {
+      if ( service.getRowLimit() != null && service.getRowLimit() > 0 ) {
+        return service.getRowLimit();
+      } else if ( !service.isUserDefined() ) {
         String limit = getKettleProperty( ROW_LIMIT_PROPERTY );
         if ( !Utils.isEmpty( limit ) ) {
           try {

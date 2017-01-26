@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -47,8 +47,12 @@ public class DataServiceMeta implements MetaStoreElement {
   public static final String DATA_SERVICE_TRANSFORMATION_STEP_NAME = "step_name";
   public static final String PUSH_DOWN_OPT_META = "push_down_opt_meta";
   public static final String IS_USER_DEFINED = "is_user_defined";
+  public static final String ROW_LIMIT = "row_limit";
 
   protected String name;
+
+  @MetaStoreAttribute( key = ROW_LIMIT )
+  protected Integer rowLimit;
 
   @MetaStoreAttribute( key = DATA_SERVICE_TRANSFORMATION_STEP_NAME )
   protected String stepname;
@@ -121,6 +125,14 @@ public class DataServiceMeta implements MetaStoreElement {
 
   public void setUserDefined( final boolean userDefined ) {
     this.userDefined = userDefined;
+  }
+
+  public Integer getRowLimit() {
+    return this.rowLimit;
+  }
+
+  public void setRowLimit( Integer rowLimit ) {
+    this.rowLimit = rowLimit;
   }
 
   @Override public String toString() {
