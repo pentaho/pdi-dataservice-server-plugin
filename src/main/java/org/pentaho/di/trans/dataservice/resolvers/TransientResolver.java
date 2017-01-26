@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -101,11 +101,12 @@ public class TransientResolver implements DataServiceResolver {
 
 
   private DataServiceMeta createDataServiceMeta( String dataServiceName ) {
-    final String fileAndPath, stepName;
+    final String fileAndPath, stepName, rowLimit;
     try {
       String[] parts = splitTransient( dataServiceName );
       fileAndPath = decode( parts[ 0 ].trim() );
       stepName = decode( parts[ 1 ].trim() );
+      rowLimit = parts.length >= 3 ? decode( parts[ 2 ].trim() ) : null;
     } catch ( Exception ignored ) {
       return null;
     }
@@ -118,6 +119,9 @@ public class TransientResolver implements DataServiceResolver {
 
     // Create a temporary Data Service
     Optional<DataServiceMeta> dataServiceMeta = transMeta.map( DataServiceMeta::new );
+    if ( rowLimit != null ) {
+      dataServiceMeta.get().setRowLimit( Integer.parseInt( rowLimit ) );
+    }
     dataServiceMeta.ifPresent( configure( dataServiceName, stepName ) );
 
     return dataServiceMeta.orElse( null );
@@ -162,7 +166,12 @@ public class TransientResolver implements DataServiceResolver {
   }
 
   public static String buildTransient( String filePath, String stepName ) {
-    return PREFIX + encode( filePath ) + DELIMITER + encode( stepName );
+    return buildTransient( filePath, stepName, null );
+  }
+
+  public static String buildTransient( String filePath, String stepName, Integer rowLimit ) {
+    return PREFIX + encode( filePath ) + DELIMITER + encode( stepName ) + ( rowLimit == null ? ""
+      : DELIMITER + encode( rowLimit.toString() ) );
   }
 
   private static String encode( String value ) {

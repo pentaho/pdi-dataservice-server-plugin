@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -123,6 +123,11 @@ public class TransientResolverTest {
     assertThat( dataServiceMeta.getStepname(), is( "data_service" ) );
     assertFalse( dataServiceMeta.isUserDefined() );
     assertThat( dataServiceMeta, hasServiceCacheOptimization() );
+
+    Integer rowLimit = 1000;
+    transientId = TransientResolver.buildTransient( "/path/to/name", "data_service", rowLimit );
+    dataServiceMeta = transientResolver.getDataService( transientId );
+    assertEquals( rowLimit, dataServiceMeta.getRowLimit() );
   }
 
   @Test

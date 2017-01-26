@@ -28,6 +28,7 @@ import org.pentaho.di.trans.step.StepMeta;
 
 public interface IDataServiceMetaFactory {
   public DataServiceMeta createDataService( StepMeta step ) throws KettleException;
+  public DataServiceMeta createDataService( StepMeta step, Integer rowLimit ) throws KettleException;
   public PushDownFactory getCacheFactory();
   public void setCacheFactory( PushDownFactory cacheFactory );
 }
