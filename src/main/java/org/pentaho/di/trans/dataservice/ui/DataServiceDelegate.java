@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -132,6 +132,7 @@ public class DataServiceDelegate extends DataServiceFactory {
         //can not exist duplicate, delete dataService and save transformation (PDI-15584)
         try {
           deleteDataServiceElementAndCleanCache( dataServiceMeta, serviceTrans );
+          serviceTrans.setChanged();
         } catch ( MetaStoreException e ) {
           getLogChannel().logBasic( e.getMessage() );
         }
