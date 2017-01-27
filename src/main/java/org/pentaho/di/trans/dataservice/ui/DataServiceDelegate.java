@@ -127,6 +127,7 @@ public class DataServiceDelegate extends DataServiceFactory {
         //can not exist duplicate, delete dataService and save transformation (PDI-15584)
         try {
           deleteDataServiceElementAndCleanCache( dataServiceMeta, serviceTrans );
+          serviceTrans.setChanged();
         } catch ( MetaStoreException e ) {
           getLogChannel().logBasic( e.getMessage() );
         }
