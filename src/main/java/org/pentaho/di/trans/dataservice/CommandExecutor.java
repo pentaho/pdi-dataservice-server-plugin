@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -116,7 +116,7 @@ public class CommandExecutor {
 
     @Override public String execute( String[] args ) {
       DataServiceExecutor executor = context.getExecutor( args[0] );
-      if ( executor != null && executor.getService().isUserDefined() ) {
+      if ( executor != null ) {
         executor.stop();
         context.removeExecutor( args[0] );
         return "true";
