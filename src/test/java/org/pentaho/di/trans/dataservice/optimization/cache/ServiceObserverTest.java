@@ -31,6 +31,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -39,11 +40,14 @@ import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.StepAdapter;
 import org.pentaho.di.trans.step.StepInterface;
 
+import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -82,6 +86,35 @@ public class ServiceObserverTest {
 
     CachedService cachedService = observer.get();
     assertThat( cachedService.getRowMetaAndData().get( 0 ).getData(), is( clonedRow ) );
+  }
+
+  @Test
+  public void testRowIterator() throws Exception {
+    CountDownLatch testLatch = new CountDownLatch( 1 );
+    ServiceObserver serviceObserver = new ServiceObserver( executor ) {
+      @Override public void run() {
+        rowMetaAndData.add( new RowMetaAndData() );
+        try {
+          testLatch.await();
+          rowMetaAndData.add( new RowMetaAndData() );
+          rowMetaAndData.add( new RowMetaAndData() );
+        } catch ( InterruptedException e ) {
+          throw new RuntimeException( e );
+        }
+        isRunning = false;
+      }
+    };
+    Executors.newSingleThreadExecutor().submit( serviceObserver );
+    Iterator<RowMetaAndData> rows = serviceObserver.rows();
+    assertTrue( rows.hasNext() );
+    rows.next();
+    Executors.newSingleThreadScheduledExecutor().schedule( testLatch::countDown, 10, TimeUnit.MILLISECONDS );
+    assertTrue( rows.hasNext() );
+    rows.next();
+    assertTrue( rows.hasNext() );
+    rows.next();
+    assertFalse( rows.hasNext() );
+    testLatch.countDown();
   }
 
   @Test

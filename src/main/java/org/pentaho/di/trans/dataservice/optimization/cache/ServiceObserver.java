@@ -37,7 +37,10 @@ import org.pentaho.di.trans.step.StepAdapter;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Predicates.instanceOf;
 
@@ -47,8 +50,38 @@ import static com.google.common.base.Predicates.instanceOf;
 public class ServiceObserver extends AbstractFuture<CachedService> implements Runnable {
   private final DataServiceExecutor executor;
 
+  List<RowMetaAndData> rowMetaAndData = Lists.newArrayList();
+  boolean isRunning = true;
+  CountDownLatch latch = new CountDownLatch( 1 );
+
   public ServiceObserver( DataServiceExecutor executor ) {
     this.executor = executor;
+  }
+
+  public Iterator<RowMetaAndData> rows() {
+    return new Iterator<RowMetaAndData>() {
+      int index = 0;
+      @Override public boolean hasNext() {
+        if ( rowMetaAndData.size() > index ) {
+          return true;
+        }
+        if ( isRunning ) {
+          latch = new CountDownLatch( 1 );
+          try {
+            latch.await( 1, TimeUnit.SECONDS );
+            return rowMetaAndData.size() > index;
+          } catch ( InterruptedException e ) {
+            return rowMetaAndData.size() > index;
+          }
+        } else {
+          return rowMetaAndData.size() > index;
+        }
+      }
+
+      @Override public RowMetaAndData next() {
+        return rowMetaAndData.get( index++ );
+      }
+    };
   }
 
   public ListenableFuture<CachedService> install() {
@@ -62,7 +95,6 @@ public class ServiceObserver extends AbstractFuture<CachedService> implements Ru
   }
 
   @Override public void run() {
-    final List<RowMetaAndData> rowMetaAndData = Lists.newLinkedList();
     StepInterface serviceStep = executor.getServiceTrans().findRunThread( executor.getService().getStepname() );
     serviceStep.addRowListener( new RowAdapter() {
       @Override public synchronized void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) {
@@ -74,10 +106,12 @@ public class ServiceObserver extends AbstractFuture<CachedService> implements Ru
           return;
         }
         rowMetaAndData.add( new RowMetaAndData( rowMeta, clonedRow ) );
+        latch.countDown();
       }
     } );
     serviceStep.addStepListener( new StepAdapter() {
       @Override public void stepFinished( Trans trans, StepMeta stepMeta, StepInterface step ) {
+        isRunning = false;
         if ( executor.getGenTrans().getErrors() > 0 ) {
           setException(
             new KettleException( "Dynamic transformation finished with errors, could not cache results" ) );

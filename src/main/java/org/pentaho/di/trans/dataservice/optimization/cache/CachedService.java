@@ -101,7 +101,7 @@ class CachedService implements Serializable {
    * @param executor Executor to be ranked
    * @return Value denoting completeness of a query's result set
    */
-  private static int calculateRank( DataServiceExecutor executor ) {
+  static int calculateRank( DataServiceExecutor executor ) {
     SQLLimit limitValues = executor.getSql().getLimitValues();
     if ( limitValues != null ) {
       return limitValues.getLimit() + limitValues.getOffset();

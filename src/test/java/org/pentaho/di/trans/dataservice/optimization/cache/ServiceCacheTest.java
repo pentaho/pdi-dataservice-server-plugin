@@ -55,6 +55,7 @@ import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -64,12 +65,7 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.ignoreStubs;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 
 /**
@@ -85,7 +81,7 @@ public class ServiceCacheTest {
   @Mock SqlTransGenerator sqlTransGenerator;
   @Mock Cache<CachedService.CacheKey, CachedService> cache;
   @Mock CompleteConfiguration config;
-  @Mock Factory expiryFactory;
+  @Mock Factory<ExpiryPolicy> expiryFactory;
   @Mock ExpiryPolicy expiryPolicy;
   @Mock Duration duration;
   @Mock DataServiceContext context;
@@ -186,7 +182,7 @@ public class ServiceCacheTest {
       } catch ( AssertionError e ) {
         throw new AssertionError( testEntry.toString(), e );
       }
-      reset( (Cache) cache );
+      reset( (Cache<CachedService.CacheKey, CachedService>) cache );
     }
   }
 
@@ -241,6 +237,27 @@ public class ServiceCacheTest {
     when( cache.get( key.withoutCondition() ) ).thenReturn( cachedService );
     when( cachedService.isComplete() ).thenReturn( true );
     when( factory.createCachedServiceLoader( cachedService ) ).thenReturn( cachedServiceLoader );
+    when( cachedServiceLoader.replay( executor ) ).thenReturn( Futures.immediateFuture( 2000 ) );
+
+    assertThat( serviceCache.activate( executor, serviceStep ), is( true ) );
+    verify( cachedServiceLoader ).replay( executor );
+  }
+
+  @Test
+  public void testReplayFromRunning() throws Exception {
+
+    DataServiceExecutor executor = dataServiceExecutor( "SELECT * FROM MOCK_SERVICE WHERE A = 2" );
+    CachedService.CacheKey key = CachedService.CacheKey.create( executor );
+    final CachedServiceLoader cachedServiceLoader = mock( CachedServiceLoader.class );
+
+    when( cache.get( key ) ).thenReturn( null );
+    when( cache.get( key.withoutCondition() ) ).thenReturn( null );
+    HashMap<CachedService.CacheKey, ServiceObserver> runningServices = new HashMap<>();
+    ServiceObserver serviceObserver = new ServiceObserver( executor );
+    runningServices.put( key, serviceObserver );
+    when( factory.getRunningServices() ).thenReturn( runningServices );
+    //noinspection unchecked
+    when( factory.createCachedServiceLoader( any( java.util.function.Supplier.class ) ) ).thenReturn( cachedServiceLoader );
     when( cachedServiceLoader.replay( executor ) ).thenReturn( Futures.immediateFuture( 2000 ) );
 
     assertThat( serviceCache.activate( executor, serviceStep ), is( true ) );
