@@ -493,9 +493,7 @@ public class DataServiceExecutor {
   }
 
   public void waitUntilFinished() {
-    if ( service.isUserDefined() ) {
-      serviceTrans.waitUntilFinished();
-    }
+    serviceTrans.waitUntilFinished();
     genTrans.waitUntilFinished();
   }
 

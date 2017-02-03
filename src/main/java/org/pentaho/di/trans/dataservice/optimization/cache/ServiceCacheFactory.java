@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,6 +28,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
+import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.cache.ui.ServiceCacheController;
@@ -35,8 +36,11 @@ import org.pentaho.di.trans.dataservice.optimization.cache.ui.ServiceCacheOverla
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -50,6 +54,8 @@ public class ServiceCacheFactory implements PushDownFactory {
   private final PentahoCacheManager cacheManager;
 
   private final ListeningExecutorService executorService;
+
+  private final Map<CachedService.CacheKey, ServiceObserver> runningServices = new ConcurrentHashMap<>();
 
   public ServiceCacheFactory( PentahoCacheManager cacheManager, ExecutorService executorService ) {
     this.cacheManager = cacheManager;
@@ -132,7 +138,11 @@ public class ServiceCacheFactory implements PushDownFactory {
   }
 
   public CachedServiceLoader createCachedServiceLoader( CachedService cachedService ) {
-    return new CachedServiceLoader( cachedService, executorService );
+    return new CachedServiceLoader( executorService, () -> cachedService.getRowMetaAndData().iterator() );
+  }
+
+  public CachedServiceLoader createCachedServiceLoader( Supplier<Iterator<RowMetaAndData>> supplier ) {
+    return new CachedServiceLoader( executorService, supplier );
   }
 
   public Iterable<String> getTemplateNames() {
@@ -144,5 +154,9 @@ public class ServiceCacheFactory implements PushDownFactory {
   public Map<String, String> getPropertiesByTemplateName( String templateName ) {
 
     return cacheManager.getTemplates().get( templateName ).getProperties();
+  }
+
+  public Map<CachedService.CacheKey, ServiceObserver> getRunningServices() {
+    return runningServices;
   }
 }

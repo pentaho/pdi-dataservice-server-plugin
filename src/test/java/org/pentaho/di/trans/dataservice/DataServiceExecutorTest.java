@@ -33,8 +33,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogLevel;
@@ -160,31 +158,12 @@ public class DataServiceExecutorTest extends BaseTest {
   }
 
   @Test
-  public void testWaitDoesNotWaitForServiceWhenNotUserDefined() throws Exception {
-    DataServiceMeta serviceMeta = createDataService( "aname", transMeta );
-    serviceMeta.setUserDefined( false );
-    DataServiceExecutor serviceExecutor =
-      new DataServiceExecutor.Builder( new SQL( "" ), serviceMeta, context ).serviceTrans( serviceTrans )
-        .genTrans( genTrans ).build();
-    serviceExecutor.waitUntilFinished();
-    verify( genTrans ).waitUntilFinished();
-    verify( serviceTrans, never() ).waitUntilFinished();
-  }
-
-  @Test
   public void testExecuteQuery() throws Exception {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
     StepInterface serviceStep = serviceTrans.findRunThread( DATA_SERVICE_STEP );
     StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
 
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
-    when( genTrans.isRunning() ).thenAnswer( new Answer<Boolean>() {
-      private int count;
-      @Override public Boolean answer( final InvocationOnMock invocationOnMock ) throws Throwable {
-        count++;
-        return count % 2 != 0;
-      }
-    } );
 
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
     when( optimization.isEnabled() ).thenReturn( true );

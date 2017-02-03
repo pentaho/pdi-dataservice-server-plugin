@@ -32,7 +32,6 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.cache.BackgroundCache;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
 import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 
@@ -133,7 +132,7 @@ public class TransientResolver implements DataServiceResolver {
       dataServiceMeta.setName( name );
       PushDownOptimizationMeta pushDownMeta = new PushDownOptimizationMeta();
       pushDownMeta.setStepName( step );
-      pushDownMeta.setType( new BackgroundCache( cacheFactory.createPushDown() ) );
+      pushDownMeta.setType( cacheFactory.createPushDown() );
       dataServiceMeta.setPushDownOptimizationMeta( Collections.singletonList( pushDownMeta ) );
       dataServiceMeta.setUserDefined( false );
     };

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
@@ -50,9 +51,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.base.Predicates.notNull;
+import static com.google.common.base.Predicates.*;
 import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 import static org.pentaho.caching.api.Constants.DEFAULT_TEMPLATE;
 
@@ -82,29 +81,38 @@ public class ServiceCache extends StepOptimization {
   @Override public boolean activate( final DataServiceExecutor executor, StepInterface stepInterface ) {
     final LogChannelInterface logChannel = executor.getGenTrans().getLogChannel();
 
-    // Check for any cache entries that may answer this query
     for ( CachedService availableCache : getAvailableCache( executor ).values() ) {
       try {
         ListenableFuture<Integer> replay = factory.createCachedServiceLoader( availableCache ).replay( executor );
-        Futures.addCallback( replay, new FutureCallback<Integer>() {
-          @Override public void onSuccess( Integer rowCount ) {
-            logChannel.logBasic( "Service Transformation successfully replayed " + rowCount + " rows from cache" );
-          }
-
-          @Override public void onFailure( Throwable t ) {
-            logChannel.logError( "Cache failed to replay service transformation", t );
-          }
-        }, factory.getExecutorService() );
+        addReplayCallback( logChannel, replay );
         return true;
       } catch ( Throwable e ) {
         logChannel.logError( "Unable to replay from cache", e );
       }
     }
 
+    CachedService.CacheKey rootKey = createRootKey( executor );
+    final Map<CachedService.CacheKey, ServiceObserver> runningServices = factory.getRunningServices();
+    if ( runningServices.containsKey( rootKey ) ) {
+      try {
+        ListenableFuture<Integer> replay =
+          factory.createCachedServiceLoader( () -> runningServices.get( rootKey ).rows() ).replay( executor );
+        addReplayCallback( logChannel, replay );
+        return true;
+      } catch ( KettleException e ) {
+        logChannel.logError( "Unable to replay from running service" );
+      }
+    }
+
+    ServiceObserver serviceObserver = factory.createObserver( executor );
+    //only allow replay from this running trans if it's going to return all the rows
+    if ( CachedService.calculateRank( executor ) == Integer.MAX_VALUE ) {
+      runningServices.put( rootKey, serviceObserver );
+    }
     // Allow service transformation to run, observe rows
-    Futures.addCallback( factory.createObserver( executor ).install(), new FutureCallback<CachedService>() {
+    Futures.addCallback( serviceObserver.install(), new FutureCallback<CachedService>() {
       @Override public void onSuccess( CachedService result ) {
-        if ( executor.hasErrors() ) {
+        if ( executor.isStopped() || executor.hasErrors() ) {
           return;
         }
 
@@ -131,13 +139,27 @@ public class ServiceCache extends StepOptimization {
             onFailure( t );
           }
         }
+        runningServices.remove( createRootKey( executor ) );
       }
 
       @Override public void onFailure( Throwable t ) {
+        runningServices.remove( createRootKey( executor ) );
         logChannel.logError( "Cache failed to observe service transformation", t );
       }
     }, factory.getExecutorService() );
     return false;
+  }
+
+  private void addReplayCallback( final LogChannelInterface logChannel, ListenableFuture<Integer> replay ) {
+    Futures.addCallback( replay, new FutureCallback<Integer>() {
+      @Override public void onSuccess( Integer rowCount ) {
+        logChannel.logBasic( "Service Transformation successfully replayed " + rowCount + " rows from cache" );
+      }
+
+      @Override public void onFailure( Throwable t ) {
+        logChannel.logError( "Cache failed to replay service transformation", t );
+      }
+    }, factory.getExecutorService() );
   }
 
   @Override public OptimizationImpactInfo preview( DataServiceExecutor executor, StepInterface stepInterface ) {

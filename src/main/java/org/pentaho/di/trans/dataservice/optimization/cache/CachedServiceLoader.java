@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2015 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -44,20 +44,25 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * @author nhudak
  */
 class CachedServiceLoader {
   private final Executor executor;
-  private final CachedService cachedService;
+  private final Supplier<Iterator<RowMetaAndData>> rowSupplier;
 
-  CachedServiceLoader( CachedService cachedService, Executor executor ) {
-    this.cachedService = cachedService;
+  CachedServiceLoader( Executor executor, Supplier<Iterator<RowMetaAndData>> rowSupplier ) {
     this.executor = executor;
+    this.rowSupplier = rowSupplier;
   }
 
-  public ListenableFuture<Integer> replay( DataServiceExecutor dataServiceExecutor ) throws KettleException {
+  CachedServiceLoader( CachedService cachedService, Executor executor ) {
+    this( executor, () -> cachedService.getRowMetaAndData().iterator() );
+  }
+
+  ListenableFuture<Integer> replay( DataServiceExecutor dataServiceExecutor ) throws KettleException {
     final Trans serviceTrans = dataServiceExecutor.getServiceTrans(), genTrans = dataServiceExecutor.getGenTrans();
     final CountDownLatch startReplay = new CountDownLatch( 1 );
     final RowProducer rowProducer = dataServiceExecutor.addRowProducer();
@@ -95,7 +100,7 @@ class CachedServiceLoader {
       @Override public Integer call() throws Exception {
         Preconditions.checkState( startReplay.await( 30, TimeUnit.SECONDS ), "Cache replay did not start" );
         int rowCount = 0;
-        for ( Iterator<RowMetaAndData> iterator = cachedService.getRowMetaAndData().iterator();
+        for ( Iterator<RowMetaAndData> iterator = rowSupplier.get();
               iterator.hasNext() && genTrans.isRunning(); ) {
           RowMetaAndData metaAndData = iterator.next();
           boolean rowAdded = false;

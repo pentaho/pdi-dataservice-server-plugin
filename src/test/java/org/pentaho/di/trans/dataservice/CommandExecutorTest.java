@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,8 +26,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.internal.verification.VerificationModeFactory;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.ByteArrayInputStream;
@@ -38,9 +36,7 @@ import java.io.IOException;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -60,11 +56,8 @@ import static org.mockito.Mockito.when;
 
   @Mock DataServiceExecutor executor;
 
-  @Mock DataServiceMeta dataServiceMeta;
-
   @Before public void setUp() {
     when( context.getExecutor( EXECUTOR_ID ) ).thenReturn( executor );
-    when( executor.getService() ).thenReturn( dataServiceMeta );
   }
 
   @Test public void testBuildCommand() {
@@ -73,24 +66,12 @@ import static org.mockito.Mockito.when;
 
   @Test public void testExecuteStop() throws Exception {
     CommandExecutor commandExecutor = new CommandExecutor.Builder( STOP_COMMAND, context ).build();
-    when( dataServiceMeta.isUserDefined() ).thenReturn( true );
 
     DataInputStream dataInputStream = executeCommand( commandExecutor );
 
     verify( executor ).stop();
 
     assertThat( dataInputStream.readUTF(), equalTo( "true" ) );
-  }
-
-  @Test public void testExecuteStopOnTransient() throws Exception {
-    CommandExecutor commandExecutor = new CommandExecutor.Builder( STOP_COMMAND, context ).build();
-    when( dataServiceMeta.isUserDefined() ).thenReturn( false );
-
-    DataInputStream dataInputStream = executeCommand( commandExecutor );
-
-    verify( executor, never() ).stop();
-
-    assertThat( dataInputStream.readUTF(), equalTo( "false" ) );
   }
 
   @Test public void testExecuteErrors() throws Exception {
