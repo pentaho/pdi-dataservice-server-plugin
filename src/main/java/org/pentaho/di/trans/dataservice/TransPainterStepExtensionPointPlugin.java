@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -62,10 +62,10 @@ public class TransPainterStepExtensionPointPlugin implements ExtensionPointInter
       // Is this step a data service provider?
       //
       extension.gc
-        .drawImage( "images/data-services.svg", getClass().getClassLoader(), extension.x1 - 11,
-          extension.y1 - 9 + extension.iconsize );
+        .drawImage( "images/data-services.svg", getClass().getClassLoader(), extension.x1 - 13,
+          extension.y1 - 8 + extension.iconsize );
       extension.areaOwners.add(
-        new AreaOwner( AreaType.CUSTOM, extension.x1 - 11, extension.y1 - 9 + extension.iconsize, 16, 16,
+        new AreaOwner( AreaType.CUSTOM, extension.x1 - 13, extension.y1 - 8 + extension.iconsize, 16, 16,
           extension.offset, transMeta, stepMeta ) );
     }
 
