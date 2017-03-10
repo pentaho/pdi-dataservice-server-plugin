@@ -231,7 +231,13 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>guava-cache-provider</artifactId>
-      <version>7.1-SNAPSHOT</version>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.pentaho</groupId>
+      <artifactId>pdi-engine-api</artifactId>
+      <version>${dependency.pentaho-kettle.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
