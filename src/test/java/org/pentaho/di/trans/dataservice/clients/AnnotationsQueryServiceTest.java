@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -21,6 +21,13 @@
  ******************************************************************************/
 package org.pentaho.di.trans.dataservice.clients;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.sql.SQLException;
+import java.util.Collections;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -33,7 +40,6 @@ import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroup;
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroupXmlWriter;
 import org.pentaho.di.core.KettleClientEnvironment;
 import org.pentaho.di.core.Props;
-import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.core.xml.XMLHandler;
@@ -45,7 +51,6 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.jdbc.ThinResultFactory;
 import org.pentaho.di.trans.dataservice.jdbc.ThinResultSet;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
-import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
@@ -57,17 +62,9 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
 import org.w3c.dom.Document;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.net.URL;
-import java.sql.SQLException;
-import java.util.Collections;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -149,7 +146,7 @@ public class AnnotationsQueryServiceTest {
     ThinResultSet thinResultSet = new ThinResultFactory().loadResultSet( dataInputStream, null );
     thinResultSet.next();
     String output = thinResultSet.getString( 1 );
-    assertEquals( new ModelAnnotationGroupXmlWriter( mag ).getXML(), output );
+    assertEquals( new ModelAnnotationGroupXmlWriter( mag ).getXML().trim(), output );
     verify( metastoreLocator ).getMetastore();
     assertEquals( 0, query.getTransList().size() );
     thinResultSet.close();
