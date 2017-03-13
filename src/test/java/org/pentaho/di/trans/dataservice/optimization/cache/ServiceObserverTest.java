@@ -90,14 +90,18 @@ public class ServiceObserverTest {
 
   @Test
   public void testRowIterator() throws Exception {
-    CountDownLatch testLatch = new CountDownLatch( 1 );
+    CountDownLatch delayRowsLatch = new CountDownLatch( 1 );
+    CountDownLatch firstRowLatch = new CountDownLatch( 1 );
     ServiceObserver serviceObserver = new ServiceObserver( executor ) {
       @Override public void run() {
         rowMetaAndData.add( new RowMetaAndData() );
+        firstRowLatch.countDown();
         try {
-          testLatch.await();
+          delayRowsLatch.await();
           rowMetaAndData.add( new RowMetaAndData() );
+          latch.countDown();
           rowMetaAndData.add( new RowMetaAndData() );
+          latch.countDown();
         } catch ( InterruptedException e ) {
           throw new RuntimeException( e );
         }
@@ -105,16 +109,17 @@ public class ServiceObserverTest {
       }
     };
     Executors.newSingleThreadExecutor().submit( serviceObserver );
+    firstRowLatch.await();
     Iterator<RowMetaAndData> rows = serviceObserver.rows();
     assertTrue( rows.hasNext() );
     rows.next();
-    Executors.newSingleThreadScheduledExecutor().schedule( testLatch::countDown, 10, TimeUnit.MILLISECONDS );
+    Executors.newSingleThreadScheduledExecutor().schedule( delayRowsLatch::countDown, 1100, TimeUnit.MILLISECONDS );
     assertTrue( rows.hasNext() );
     rows.next();
     assertTrue( rows.hasNext() );
     rows.next();
     assertFalse( rows.hasNext() );
-    testLatch.countDown();
+    delayRowsLatch.countDown();
   }
 
   @Test
