@@ -68,7 +68,11 @@ public class ServiceObserver extends AbstractFuture<CachedService> implements Ru
         if ( isRunning ) {
           latch = new CountDownLatch( 1 );
           try {
-            latch.await( 1, TimeUnit.SECONDS );
+            while ( !latch.await( 1, TimeUnit.SECONDS ) ) {
+              if ( !isRunning ) {
+                return rowMetaAndData.size() > index;
+              }
+            }
             return rowMetaAndData.size() > index;
           } catch ( InterruptedException e ) {
             return rowMetaAndData.size() > index;
