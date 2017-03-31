@@ -64,6 +64,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 import static org.pentaho.caching.api.Constants.CONFIG_TTL;
@@ -146,6 +147,23 @@ public class ServiceCacheTest {
 
     verify( cache ).putIfAbsent( key.withoutOrder(), cachedService );
     verifyNoMoreInteractions( ignoreStubs( cache ) );
+  }
+
+  @Test
+  public void testRunningServiceIsRemovedOnError() throws Exception {
+    DataServiceExecutor executor = spy( dataServiceExecutor( "SELECT * FROM MOCK_SERVICE ORDER BY ID" ) );
+    CachedService cachedService = CachedService.complete( ImmutableList.<RowMetaAndData>of() );
+    doReturn( true ).when( executor ).hasErrors();
+
+    ServiceObserver observer = mock( ServiceObserver.class );
+    when( factory.createObserver( executor ) ).thenReturn( observer );
+
+    Map<CachedService.CacheKey, ServiceObserver> runningServices = new HashMap<>();
+    when( factory.getRunningServices() ).thenReturn( runningServices );
+    when( observer.install() ).thenReturn( Futures.immediateFuture( cachedService ) );
+
+    assertThat( serviceCache.activate( executor, serviceStep ), is( false ) );
+    assertTrue( runningServices.isEmpty() );
   }
 
   @Test

@@ -113,6 +113,7 @@ public class ServiceCache extends StepOptimization {
     Futures.addCallback( serviceObserver.install(), new FutureCallback<CachedService>() {
       @Override public void onSuccess( CachedService result ) {
         if ( executor.isStopped() || executor.hasErrors() ) {
+          runningServices.remove( rootKey );
           return;
         }
 
@@ -139,11 +140,11 @@ public class ServiceCache extends StepOptimization {
             onFailure( t );
           }
         }
-        runningServices.remove( createRootKey( executor ) );
+        runningServices.remove( rootKey );
       }
 
       @Override public void onFailure( Throwable t ) {
-        runningServices.remove( createRootKey( executor ) );
+        runningServices.remove( rootKey );
         logChannel.logError( "Cache failed to observe service transformation", t );
       }
     }, factory.getExecutorService() );
