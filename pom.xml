@@ -9,7 +9,7 @@
   </parent>
   <groupId>pentaho</groupId>
   <artifactId>pdi-dataservice-server-plugin</artifactId>
-  <version>7.0-SNAPSHOT</version>
+  <version>7.0.0.5-89</version>
   <packaging>bundle</packaging>
   <name>Pentaho Community Edition Project: ${project.artifactId}</name>
   <description>A server for PDI Data Services</description>
@@ -79,12 +79,12 @@
   </distributionManagement>
   <properties>
     <servlet-api.version>2.3</servlet-api.version>
+    <dependency.pentaho-kettle.version>7.0.0.5-89</dependency.pentaho-kettle.version>
     <mockito.version>1.9.5</mockito.version>
-    <dependency.pentaho-kettle.version>7.0-SNAPSHOT</dependency.pentaho-kettle.version>
-    <dependency.pentaho-mongodb-plugin.revision>7.0-SNAPSHOT</dependency.pentaho-mongodb-plugin.revision>
+    <dependency.pentaho-mongodb-plugin.revision>7.0.0.5-89</dependency.pentaho-mongodb-plugin.revision>
     <guava.version>17.0</guava.version>
-    <jface.version>3.3.0-I20070606-0010</jface.version>
     <swt.version>4.6</swt.version>
+    <jface.version>3.3.0-I20070606-0010</jface.version>
     <mongo-driver.version>3.2.2</mongo-driver.version>
   </properties>
   <dependencies>
