@@ -74,15 +74,15 @@
     <bean id="dataServiceResolverDelegate" class="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolverDelegate">
         <argument>
             <list>
-                <bean class="org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver">
-                    <argument ref="repositoryLocator"/>
-                    <argument ref="context"/>
-                </bean>
                 <bean class="org.pentaho.di.trans.dataservice.resolvers.TransientResolver">
                     <argument ref="repositoryLocator"/>
                     <argument ref="context"/>
                     <argument ref="serviceCacheFactory"/>
                     <argument value="${transient.service.loglevel}"/>
+                </bean>
+                <bean class="org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver">
+                    <argument ref="repositoryLocator"/>
+                    <argument ref="context"/>
                 </bean>
             </list>
         </argument>

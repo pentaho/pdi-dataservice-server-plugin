@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,6 +30,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DataServiceResolverDelegate implements DataServiceResolver {
@@ -67,11 +68,13 @@ public class DataServiceResolverDelegate implements DataServiceResolver {
   }
 
   @Override public List<String> getDataServiceNames( String dataServiceName ) {
-    List<String> dataServiceNames = new ArrayList<>();
     for ( DataServiceResolver resolver : resolvers ) {
-      dataServiceNames.addAll( resolver.getDataServiceNames( dataServiceName ) );
+      List<String> dataServiceNames = resolver.getDataServiceNames( dataServiceName );
+      if ( dataServiceNames != null && dataServiceNames.size() > 0 ) {
+        return dataServiceNames;
+      }
     }
-    return dataServiceNames;
+    return Collections.emptyList();
   }
 
   @Override public DataServiceExecutor.Builder createBuilder( SQL sql ) throws KettleException {
