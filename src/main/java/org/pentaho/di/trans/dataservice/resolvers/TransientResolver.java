@@ -33,6 +33,7 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
+import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 
 import java.nio.charset.StandardCharsets;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -56,6 +58,7 @@ public class TransientResolver implements DataServiceResolver {
   private DataServiceContext context;
   private ServiceCacheFactory cacheFactory;
   private LogLevel logLevel;
+  private Supplier<Spoon> spoonSupplier = Spoon::getInstance;
 
   public TransientResolver( KettleRepositoryLocator repositoryLocator, DataServiceContext context,
                             ServiceCacheFactory cacheFactory, final LogLevel logLevel ) {
@@ -110,11 +113,16 @@ public class TransientResolver implements DataServiceResolver {
       return null;
     }
 
-    // Try to locate the transformation, repository first
-    Optional<TransMeta> transMeta = Stream.of( loadFromRepository(), TransMeta::new )
-      .map( loader -> loader.tryLoad( fileAndPath ).orElse( null ) )
-      .filter( Objects::nonNull )
-      .findFirst();
+    Optional<TransMeta> transMeta;
+    if ( spoonSupplier.get() != null && spoonSupplier.get().getActiveTransformation() != null ) {
+      transMeta = Optional.of( spoonSupplier.get().getActiveTransformation() );
+    } else {
+      // Try to locate the transformation, repository first
+      transMeta = Stream.of( loadFromRepository(), TransMeta::new )
+        .map( loader -> loader.tryLoad( fileAndPath ).orElse( null ) )
+        .filter( Objects::nonNull )
+        .findFirst();
+    }
 
     // Create a temporary Data Service
     Optional<DataServiceMeta> dataServiceMeta = transMeta.map( DataServiceMeta::new );
