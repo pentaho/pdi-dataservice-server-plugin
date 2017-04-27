@@ -149,6 +149,7 @@ public class DataServiceExecutor {
     public Builder serviceTrans( TransMeta serviceTransMeta ) {
       // Copy TransMeta, we don't want to persist any changes to the meta during execution
       serviceTransMeta = (TransMeta) serviceTransMeta.realClone( false );
+      serviceTransMeta.clearNameChangedListeners();
       serviceTransMeta.setName( calculateTransname( sql, true ) );
       serviceTransMeta.activateParameters();
       transMutator.accept( service.getStepname(), serviceTransMeta );
