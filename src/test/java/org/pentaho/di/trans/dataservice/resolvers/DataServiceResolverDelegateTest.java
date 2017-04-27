@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -37,6 +37,7 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -121,6 +122,15 @@ import static org.mockito.Mockito.when;
     DataServiceMeta returnDataServiceMeta = nullDataServiceResolverDelegate.getDataService( DATA_SERVICE_NAME );
 
     assertNull( returnDataServiceMeta );
+  }
+
+  @Test public void testGetDataServiceNamesNoResolvers() {
+    DataServiceResolverDelegate
+        nullDataServiceResolverDelegate =
+        new DataServiceResolverDelegate( Collections.emptyList() );
+    List<String> names = nullDataServiceResolverDelegate.getDataServiceNames();
+
+    assertEquals( names, Collections.emptyList() );
   }
 
   @Test public void testGetDataServiceNamesWName() {

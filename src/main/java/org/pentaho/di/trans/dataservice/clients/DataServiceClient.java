@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -118,18 +118,18 @@ public class DataServiceClient implements DataServiceClientService {
 
   @Override public ThinServiceInformation getServiceInformation( String name ) throws SQLException {
 
-    for ( DataServiceMeta service : resolver.getDataServices( name, logErrors()::apply ) ) {
-      if ( service.getName().equals( name ) ) {
-        TransMeta transMeta = service.getServiceTrans();
-        try {
-          transMeta.activateParameters();
-          RowMetaInterface serviceFields = transMeta.getStepFields( service.getStepname() );
-          return new ThinServiceInformation( service.getName(), serviceFields );
-        } catch ( Exception e ) {
-          String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
-            service.getName(), transMeta.getName() );
-          log.logError( message, e );
-        }
+    DataServiceMeta dataServiceMeta = resolver.getDataService( name );
+
+    if ( dataServiceMeta != null ) {
+      TransMeta transMeta = dataServiceMeta.getServiceTrans();
+      try {
+        transMeta.activateParameters();
+        RowMetaInterface serviceFields = transMeta.getStepFields( dataServiceMeta.getStepname() );
+        return new ThinServiceInformation( dataServiceMeta.getName(), serviceFields );
+      } catch ( Exception e ) {
+        String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
+          dataServiceMeta.getName(), transMeta.getName() );
+        log.logError( message, e );
       }
     }
 
