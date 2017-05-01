@@ -115,7 +115,7 @@ public class TransientResolver implements DataServiceResolver {
 
     Optional<TransMeta> transMeta;
     if ( spoonSupplier.get() != null && spoonSupplier.get().getActiveTransformation() != null ) {
-      transMeta = Optional.of( spoonSupplier.get().getActiveTransformation() );
+      transMeta = Optional.of( (TransMeta) spoonSupplier.get().getActiveTransformation().realClone( false ) );
     } else {
       // Try to locate the transformation, repository first
       transMeta = Stream.of( loadFromRepository(), TransMeta::new )
