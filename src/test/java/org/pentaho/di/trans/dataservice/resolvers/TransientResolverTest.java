@@ -50,11 +50,13 @@ import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.dummytrans.DummyTransMeta;
+import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
@@ -83,6 +85,8 @@ public class TransientResolverTest {
   @Mock private Repository repository;
   @Mock private RepositoryDirectoryInterface root;
   @Mock private ObjectId objectId;
+  @Mock private Spoon spoon;
+  @Mock private TransMeta activeTransMeta;
 
   private TransMeta transMeta;
 
@@ -98,6 +102,8 @@ public class TransientResolverTest {
     when( kettleRepositoryLocator.getRepository() ).thenReturn( repository );
     when( repository.loadRepositoryDirectoryTree() ).thenReturn( root );
     when( serviceCacheFactory.createPushDown() ).thenReturn( serviceCache );
+    when( spoon.getActiveTransformation() ).thenReturn( activeTransMeta );
+    when( activeTransMeta.realClone( false ) ).thenReturn( activeTransMeta );
 
     transMeta = new TransMeta();
     StepMeta output = new StepMeta();
@@ -105,7 +111,8 @@ public class TransientResolverTest {
     output.setStepMetaInterface( new DummyTransMeta() );
     transMeta.addStep( output );
 
-    transientResolver = new TransientResolver( kettleRepositoryLocator, context, serviceCacheFactory, LogLevel.DEBUG );
+    transientResolver = new TransientResolver( kettleRepositoryLocator, context, serviceCacheFactory, LogLevel.DEBUG,
+            () -> spoon );
   }
 
   @Test
@@ -175,6 +182,16 @@ public class TransientResolverTest {
       transientResolver.createBuilder( new SQL( "select * from " + transientId ) );
     DataServiceExecutor build = builder.build();
     assertEquals( LogLevel.DEBUG, build.getServiceTransMeta().getLogLevel() );
+  }
+
+  @Test
+  public void testBuildLocalTransient() throws Exception {
+    String transientId = TransientResolver.buildTransient( "/path/to/file.ktr", "local:OUTPUT" );
+    String[] parts = transientResolver.splitTransient( transientId );
+    assertEquals( parts.length, 2 );
+
+    DataServiceMeta dataServiceMeta = transientResolver.getDataService(transientId);
+    assertEquals( dataServiceMeta.getStepname(), "OUTPUT" );
   }
 
   private Matcher<DataServiceMeta> hasServiceCacheOptimization() {
