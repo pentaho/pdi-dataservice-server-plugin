@@ -54,19 +54,27 @@ public class TransientResolver implements DataServiceResolver {
 
   public static final String DELIMITER = ":";
   public static final String PREFIX = "transient:";
+  public static final String LOCAL = "local:";
   private KettleRepositoryLocator repositoryLocator;
   private DataServiceContext context;
   private ServiceCacheFactory cacheFactory;
   private LogLevel logLevel;
-  private Supplier<Spoon> spoonSupplier = Spoon::getInstance;
+  private Supplier<Spoon> spoonSupplier;
 
   public TransientResolver( KettleRepositoryLocator repositoryLocator, DataServiceContext context,
                             ServiceCacheFactory cacheFactory, final LogLevel logLevel ) {
+    this( repositoryLocator, context, cacheFactory, logLevel, Spoon::getInstance );
+  }
+
+  public TransientResolver( KettleRepositoryLocator repositoryLocator, DataServiceContext context,
+                            ServiceCacheFactory cacheFactory, final LogLevel logLevel, Supplier<Spoon> spoonSupplier ) {
     this.repositoryLocator = repositoryLocator;
     this.context = context;
     this.cacheFactory = cacheFactory;
     this.logLevel = logLevel;
+    this.spoonSupplier = spoonSupplier;
   }
+
 
   @Override
   public DataServiceMeta getDataService( String dataServiceName ) {
@@ -103,18 +111,24 @@ public class TransientResolver implements DataServiceResolver {
 
 
   private DataServiceMeta createDataServiceMeta( String dataServiceName ) {
-    final String fileAndPath, stepName, rowLimit;
+    final String fileAndPath, rowLimit;
+    String stepName;
+    boolean local = false;
     try {
       String[] parts = splitTransient( dataServiceName );
       fileAndPath = decode( parts[ 0 ].trim() );
       stepName = decode( parts[ 1 ].trim() );
+      if ( stepName.startsWith( LOCAL ) ) {
+        local = true;
+        stepName = stepName.replace( LOCAL, "" );
+      }
       rowLimit = parts.length >= 3 ? decode( parts[ 2 ].trim() ) : null;
     } catch ( Exception ignored ) {
       return null;
     }
 
     Optional<TransMeta> transMeta;
-    if ( spoonSupplier.get() != null && spoonSupplier.get().getActiveTransformation() != null ) {
+    if ( local && spoonSupplier.get() != null && spoonSupplier.get().getActiveTransformation() != null ) {
       transMeta = Optional.of( (TransMeta) spoonSupplier.get().getActiveTransformation().realClone( false ) );
     } else {
       // Try to locate the transformation, repository first
@@ -126,7 +140,7 @@ public class TransientResolver implements DataServiceResolver {
 
     // Create a temporary Data Service
     Optional<DataServiceMeta> dataServiceMeta = transMeta.map( DataServiceMeta::new );
-    if ( rowLimit != null ) {
+    if ( rowLimit != null && dataServiceMeta.isPresent() ) {
       dataServiceMeta.get().setRowLimit( Integer.parseInt( rowLimit ) );
     }
     dataServiceMeta.ifPresent( configure( dataServiceName, stepName ) );
