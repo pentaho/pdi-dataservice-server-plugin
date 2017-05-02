@@ -40,6 +40,8 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.trans.TransGraph;
 
+import java.util.function.Supplier;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -57,13 +59,15 @@ public class DataServiceMetaFactoryTest {
   @Mock StepMeta stepMeta;
   @Mock SynchronizationListener synchronizationListener;
   @Mock ServiceCacheFactory cacheFactory;
+  @Mock private Spoon spoon;
+  @Mock private TransMeta activeTransMeta;
 
   String transName = "Test Trans Name";
   String stepName = "Test Step Name";
 
   @Before
   public void setup() {
-    factory = spy( new DataServiceMetaFactory() );
+    factory = spy( new DataServiceMetaFactory( () -> spoon ) );
     factory.setCacheFactory( cacheFactory );
 
     when( dataServiceContext.getDataServiceDelegate() ).thenReturn( dataServiceDelegate );
@@ -75,6 +79,7 @@ public class DataServiceMetaFactoryTest {
 
     when( stepMeta.getName() ).thenReturn( stepName );
     when( stepMeta.getParentTransMeta() ).thenReturn( transMeta );
+    when( spoon.getActiveTransformation() ).thenReturn( activeTransMeta );
   }
 
   @Test
@@ -132,6 +137,28 @@ public class DataServiceMetaFactoryTest {
     when( transMeta.getRepositoryDirectory() ).thenReturn( null );
     DataServiceMeta ds5 = factory.createDataService( stepMeta );
     assertTrue( TransientResolver.isTransient( ds5.getName() ) );
+  }
+
+  @Test
+  public void testLocalDataService() throws Exception {
+    when( mockSpoon.getRepository() ).thenReturn( repository );
+    when( activeTransMeta.getName() ).thenReturn( "ActiveTrans" );
+    when( stepMeta.getParentTransMeta() ).thenReturn( activeTransMeta );
+
+    DataServiceMeta ds = factory.createDataService( stepMeta );
+    assertNotNull( ds );
+    assertTrue( TransientResolver.isTransient( ds.getName() ) );
+    assertEquals( activeTransMeta, ds.getServiceTrans() );
+    assertEquals( stepName, ds.getStepname() );
+    assertEquals( 1, ds.getPushDownOptimizationMeta().size() );
+    assertTrue( ds.getPushDownOptimizationMeta().get( 0 ).getType() instanceof ServiceCache );
+    assertEquals( stepName, ds.getPushDownOptimizationMeta().get( 0 ).getStepName() );
+    assertNull( ds.getRowLimit() );
+    verify( factory, times( 1 ) ).createDataService( eq( stepMeta ), eq( null ) );
+
+    Integer rowLimit = 1000;
+    ds = factory.createDataService( stepMeta, rowLimit );
+    assertEquals( rowLimit, ds.getRowLimit() );
   }
 
 }

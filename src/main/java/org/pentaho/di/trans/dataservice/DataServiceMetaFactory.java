@@ -30,15 +30,23 @@ import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.resolvers.TransientResolver;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.ui.spoon.Spoon;
 
 import java.util.Collections;
+import java.util.function.Supplier;
 
 public class DataServiceMetaFactory implements IDataServiceMetaFactory {
   private static final Class<?> PKG = DataServiceMetaFactory.class;
+  private Supplier<Spoon> spoonSupplier;
 
   private PushDownFactory cacheFactory;
 
   public DataServiceMetaFactory() {
+    this.spoonSupplier = Spoon::getInstance;
+  }
+
+  public DataServiceMetaFactory( Supplier<Spoon> spoonSupplier ) {
+    this.spoonSupplier = spoonSupplier;
   }
 
   @Override public PushDownFactory getCacheFactory() {
@@ -88,6 +96,12 @@ public class DataServiceMetaFactory implements IDataServiceMetaFactory {
       }
     }
 
-    return TransientResolver.buildTransient( fullFileName, step.getName(), rowLimit );
+    return TransientResolver
+      .buildTransient( fullFileName, isLocal( transMeta ) ? TransientResolver.LOCAL + step.getName() : step.getName(),
+        rowLimit );
+  }
+
+  private boolean isLocal( TransMeta transMeta ) {
+    return spoonSupplier.get() != null && spoonSupplier.get().getActiveTransformation().equals( transMeta );
   }
 }
