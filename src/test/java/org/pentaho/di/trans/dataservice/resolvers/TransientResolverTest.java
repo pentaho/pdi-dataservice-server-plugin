@@ -118,10 +118,11 @@ public class TransientResolverTest {
   @Test
   public void testGetDataService() throws Exception {
     RepositoryDirectoryInterface directory = mock( RepositoryDirectoryInterface.class );
-    when( root.findDirectory( "/path/to" ) ).thenReturn( directory );
+
+    when( root.findDirectory( File.separator + "path" + File.separator + "to" ) ).thenReturn( directory );
     when( repository.getTransformationID( "name", directory ) ).thenReturn( objectId );
     when( repository.loadTransformation( objectId, null ) ).thenReturn( transMeta );
-    String transientId = TransientResolver.buildTransient( "/path/to/name", "data_service" );
+    String transientId = TransientResolver.buildTransient( File.separator + "path" + File.separator + "to" + File.separator + "name", "data_service" );
 
     DataServiceMeta dataServiceMeta = transientResolver.getDataService( transientId );
 
@@ -131,7 +132,7 @@ public class TransientResolverTest {
     assertThat( dataServiceMeta, hasServiceCacheOptimization() );
 
     Integer rowLimit = 1000;
-    transientId = TransientResolver.buildTransient( "/path/to/name", "data_service", rowLimit );
+    transientId = TransientResolver.buildTransient( File.separator + "path" + File.separator + "to" + File.separator + "name", "data_service", rowLimit );
     dataServiceMeta = transientResolver.getDataService( transientId );
     assertEquals( rowLimit, dataServiceMeta.getRowLimit() );
   }
