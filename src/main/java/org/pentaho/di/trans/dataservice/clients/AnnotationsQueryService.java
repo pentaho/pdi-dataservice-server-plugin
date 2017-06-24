@@ -21,13 +21,6 @@
  ******************************************************************************/
 package org.pentaho.di.trans.dataservice.clients;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroup;
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroupXmlWriter;
 import org.pentaho.di.core.exception.KettleException;
@@ -39,8 +32,17 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
+import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.di.metastore.MetaStoreConst;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.pentaho.di.trans.dataservice.clients.TransMutators.disableAllUnrelatedHops;
 
@@ -108,7 +110,11 @@ public class AnnotationsQueryService implements Query.Service {
 
       disableAllUnrelatedHops( dataService.getStepname(), serviceTrans, false );
       final Trans trans = getTrans( serviceTrans );
-      trans.setMetaStore( metastoreLocator.getMetastore( ) );
+      IMetaStore ms = metastoreLocator.getMetastore();
+      if ( ms == null ) {
+        ms = MetaStoreConst.openLocalPentahoMetaStore();
+      }
+      trans.setMetaStore( ms );
       if ( serviceTrans.getTransHopSteps( false ).size() > 0 ) {
         trans.prepareExecution( new String[]{} );
       }
