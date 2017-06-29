@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,22 +22,22 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.metastore.MetaStoreConst;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author nhudak
@@ -57,6 +57,9 @@ public class ExecutorQueryService implements Query.Service {
     Query query;
     try {
       IMetaStore metaStore = metastoreLocator != null ? metastoreLocator.getMetastore() : null;
+      if ( metaStore == null ) {
+        metaStore = MetaStoreConst.openLocalPentahoMetaStore();
+      }
       DataServiceExecutor executor = resolver.createBuilder( sql )
         .rowLimit( maxRows )
         .parameters( parameters )
@@ -84,7 +87,6 @@ public class ExecutorQueryService implements Query.Service {
       this.executor = executor;
     }
 
-    @Override
     public void writeTo( OutputStream outputStream ) throws IOException {
       executor.executeQuery( asDataOutputStream( outputStream ) ).waitUntilFinished();
     }
