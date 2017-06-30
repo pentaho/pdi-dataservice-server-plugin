@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -33,9 +33,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableMap;
-
+import org.apache.commons.io.IOUtils;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -65,10 +63,11 @@ import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
-
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
+import org.pentaho.metastore.api.IMetaStore;
+import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -79,7 +78,9 @@ import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
-import org.apache.commons.io.IOUtils;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
 
 
 public class DataServiceTestController extends AbstractXulEventHandler {
@@ -518,7 +519,16 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   public AnnotationsQueryService getAnnotationsQueryService() {
     if ( null == annotationsQueryService ) {
-      annotationsQueryService = new AnnotationsQueryService( () -> null, new TestResolver() );
+      annotationsQueryService = new AnnotationsQueryService( new MetastoreLocator() {
+        @Override
+        public IMetaStore getMetastore( String providerKey ) {
+          return null;
+        }
+        @Override
+        public IMetaStore getMetastore() {
+          return null;
+        }
+      }, new TestResolver() );
     }
     return annotationsQueryService;
   }
