@@ -90,12 +90,13 @@ public class DataServiceMetaFactoryTest {
     testCreateDataServiceCommon();
   }
 
-  @Test
-  public void testCreateDataServiceNonSpoon() throws Exception {
-    factory = spy( new DataServiceMetaFactory() );
-    factory.setCacheFactory( cacheFactory );
-    testCreateDataServiceCommon();
-  }
+  // TODO jar for webSpoon is only used on (web)Spoon
+//  @Test
+//  public void testCreateDataServiceNonSpoon() throws Exception {
+//    factory = spy( new DataServiceMetaFactory() );
+//    factory.setCacheFactory( cacheFactory );
+//    testCreateDataServiceCommon();
+//  }
 
   @Test
   public void testCreateDataServiceLocal() throws Exception {

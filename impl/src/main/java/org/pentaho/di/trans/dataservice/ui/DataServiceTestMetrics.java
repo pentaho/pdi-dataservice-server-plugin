@@ -53,7 +53,6 @@ import java.util.List;
  */
 public class DataServiceTestMetrics {
   private final Canvas canvas;
-  private volatile Image image;
 
   private final ScrolledComposite metricsComposite;
   private List<MetricsDuration> durations = Collections.emptyList();
@@ -75,17 +74,9 @@ public class DataServiceTestMetrics {
     metricsComposite.setContent( canvas );
     metricsComposite.setMinSize( 100, 100 );
 
-    metricsComposite.addDisposeListener( new DisposeListener() {
-      public void widgetDisposed( DisposeEvent event ) {
-        if ( image != null ) {
-          image.dispose();
-        }
-      }
-    } );
-
     canvas.addPaintListener( new PaintListener() {
       public void paintControl( final PaintEvent event ) {
-        event.gc.drawImage( refreshImage(), 0, 0 );
+        refreshImage( event.gc );
       }
     } );
   }
@@ -99,53 +90,30 @@ public class DataServiceTestMetrics {
       Collections.sort( durations, METRICS_COMPARATOR );
     }
 
-    if ( image != null ) {
-      image.dispose();
-      image = null; // Clear image cache
-    }
-
     this.durations = durations;
     canvas.redraw();
   }
 
-  private synchronized Image refreshImage() {
-    Display device = metricsComposite.getDisplay();
+  private synchronized void refreshImage( GC gc2 ) {
     Rectangle bounds = metricsComposite.getBounds();
-
-    if ( image != null ) {
-      Rectangle imageBounds = image.getBounds();
-      // Check if image in cache fits
-      if ( imageBounds.width == bounds.width && imageBounds.height >= bounds.height ) {
-        return image;
-      } else {
-        // Need to regenerate
-        image.dispose();
-        image = null;
-      }
-    }
 
     String metricsMessage = BaseMessages.getString( DataServiceTestController.PKG, "DataServiceTest.MetricsPlaceholder" );
     org.eclipse.swt.graphics.Point textExtent = new GC( canvas ).textExtent( metricsMessage );
     if ( durations.isEmpty() ) {
       bounds.height =  textExtent.y * 2;
-      image = new Image( device, bounds.width, bounds.height );
-      GC gc = new GC( image );
-      gc.drawText( metricsMessage, ( bounds.width - textExtent.x ) / 2, textExtent.y / 2 );
+      gc2.drawText( metricsMessage, ( bounds.width - textExtent.x ) / 2, textExtent.y / 2 );
     } else {
       // Adjust height to fit all bars
       int barHeight = textExtent.y + 5;
       bounds.height = Math.max( 20 + durations.size() * ( barHeight + 5 ), bounds.height );
-      SWTGC gc = new SWTGC( device, new Point( bounds.width, bounds.height ), PropsUI.getInstance().getIconSize() );
+      SWTGC gc = new SWTGC( gc2, new Point( bounds.width, bounds.height ), PropsUI.getInstance().getIconSize() );
       MetricsPainter painter = new MetricsPainter( gc, barHeight );
       painter.paint( durations );
-      image = (Image) gc.getImage();
       gc.dispose();
     }
 
     metricsComposite.setMinHeight( bounds.height );
     metricsComposite.layout();
-
-    return image;
   }
 
   public void dispose() {

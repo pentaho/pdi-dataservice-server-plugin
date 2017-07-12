@@ -29,7 +29,9 @@
       <label value="${DriverDetailsDialog.Password.Label}"/>
       <hbox height="7"/>
       <hbox height="30">
-        <button label="${DriverDetailsDialog.GetDriver.Button}" onclick="driverDetailsDialogController.saveDriver()"/>
+        <!--<button label="${DriverDetailsDialog.GetDriver.Button}" onclick="driverDetailsDialogController.saveDriver()"/>-->
+      <label value="Download the driver from "/>
+      <textbox value="http://nexus.pentaho.org/content/groups/omni/pentaho/pdi-dataservice-driver-bundle/9.0.0.0-423/pdi-dataservice-driver-bundle-9.0.0.0-423.zip" readonly="true"/>
       </hbox>
     </vbox>
     <separator height="21"/>
