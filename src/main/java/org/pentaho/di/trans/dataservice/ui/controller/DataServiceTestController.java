@@ -528,6 +528,14 @@ public class DataServiceTestController extends AbstractXulEventHandler {
         public IMetaStore getMetastore() {
           return null;
         }
+        @Override public String setEmbeddedMetastore( IMetaStore metastore ) {
+          return null;
+        }
+        @Override public void disposeMetastoreProvider( String providerKey ) {
+        }
+        @Override public IMetaStore getExplicitMetastore( String providerKey ) {
+          return null;
+        }
       }, new TestResolver() );
     }
     return annotationsQueryService;
