@@ -24,10 +24,15 @@ package org.pentaho.di.trans.dataservice;
 
 import org.junit.Test;
 
+import java.util.regex.Pattern;
+
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DataServiceMetaTest extends BaseTest {
+
+  private Pattern patternSaveUserDefined = Pattern.compile("<key>is_user_defined<\\/key>\\s*<value>Y<\\/value>");
+  private Pattern patternSaveTransient   = Pattern.compile("<key>is_user_defined<\\/key>\\s*<value>N<\\/value>");
 
   @Test
   public void testSaveUserDefined() {
@@ -35,8 +40,7 @@ public class DataServiceMetaTest extends BaseTest {
       transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.IS_USER_DEFINED,
           ( dataService.isUserDefined() ? "Y" : "N" ) );
       String xml = transMeta.getXML();
-      assertTrue( xml.indexOf( "<key>is_user_defined</key>" + System.getProperty("line.separator")
-          + "        <value>Y</value>" ) > 0 );
+      assertTrue( patternSaveUserDefined.matcher(xml).find() );
     } catch( Exception ex ){
       fail();
     }
@@ -49,8 +53,7 @@ public class DataServiceMetaTest extends BaseTest {
       transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.IS_USER_DEFINED,
           ( dataService.isUserDefined() ? "Y" : "N" ) );
       String xml = transMeta.getXML();
-      assertTrue( xml.indexOf( "<key>is_user_defined</key>" + System.getProperty("line.separator")
-          + "        <value>N</value>" ) > 0 );
+      assertTrue( patternSaveTransient.matcher(xml).find() );
     } catch( Exception ex ){
       fail();
     }

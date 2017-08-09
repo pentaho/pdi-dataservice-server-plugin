@@ -37,7 +37,12 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
