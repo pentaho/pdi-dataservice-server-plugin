@@ -37,7 +37,6 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 
 import java.nio.charset.StandardCharsets;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -172,8 +171,10 @@ public class TransientResolver implements DataServiceResolver {
   }
 
   private static TransMeta loadFromRepository( Repository repository, String filePath ) throws KettleException {
-    String name = filePath.substring( filePath.lastIndexOf( File.separator ) + 1, filePath.length() );
-    String path = filePath.substring( 0, filePath.lastIndexOf( File.separator ) );
+    // this code assumes that filePath always begins with '/' or '\', and we use this as a file separator
+    char fileSeparator = filePath.charAt(0);
+    String name = filePath.substring( filePath.lastIndexOf( fileSeparator ) + 1, filePath.length() );
+    String path = filePath.substring( 0, filePath.lastIndexOf( fileSeparator) );
 
     RepositoryDirectoryInterface root = repository.loadRepositoryDirectoryTree();
     RepositoryDirectoryInterface rd = root.findDirectory( path );

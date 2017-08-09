@@ -56,7 +56,6 @@ import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
@@ -116,13 +115,27 @@ public class TransientResolverTest {
   }
 
   @Test
-  public void testGetDataService() throws Exception {
+  public void testGetDataServiceWithFileSeparator() throws Exception {
+    testGetDataService(File.separator);
+  }
+
+  @Test
+  public void testGetDataServiceWithForwardSlash() throws Exception {
+    testGetDataService("/");
+  }
+
+  @Test
+  public void testGetDataServiceWithBackSlash() throws Exception {
+    testGetDataService("\\");
+  }
+  
+  private void testGetDataService(String fileSeparator) throws Exception {
     RepositoryDirectoryInterface directory = mock( RepositoryDirectoryInterface.class );
 
-    when( root.findDirectory( File.separator + "path" + File.separator + "to" ) ).thenReturn( directory );
+    when( root.findDirectory( fileSeparator + "path" + fileSeparator + "to" ) ).thenReturn( directory );
     when( repository.getTransformationID( "name", directory ) ).thenReturn( objectId );
     when( repository.loadTransformation( objectId, null ) ).thenReturn( transMeta );
-    String transientId = TransientResolver.buildTransient( File.separator + "path" + File.separator + "to" + File.separator + "name", "data_service" );
+    String transientId = TransientResolver.buildTransient( fileSeparator + "path" + fileSeparator + "to" + fileSeparator + "name", "data_service" );
 
     DataServiceMeta dataServiceMeta = transientResolver.getDataService( transientId );
 
@@ -132,7 +145,7 @@ public class TransientResolverTest {
     assertThat( dataServiceMeta, hasServiceCacheOptimization() );
 
     Integer rowLimit = 1000;
-    transientId = TransientResolver.buildTransient( File.separator + "path" + File.separator + "to" + File.separator + "name", "data_service", rowLimit );
+    transientId = TransientResolver.buildTransient( fileSeparator + "path" + fileSeparator + "to" + fileSeparator + "name", "data_service", rowLimit );
     dataServiceMeta = transientResolver.getDataService( transientId );
     assertEquals( rowLimit, dataServiceMeta.getRowLimit() );
   }

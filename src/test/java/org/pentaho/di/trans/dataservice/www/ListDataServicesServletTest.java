@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +29,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 
 import javax.servlet.http.HttpServletResponse;
@@ -38,13 +36,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.regex.Pattern;
 
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,16 +91,8 @@ public class ListDataServicesServletTest extends BaseServletTest {
   private void verifyRun() throws Exception {
     verify( response ).setStatus( HttpServletResponse.SC_OK );
     verify( response ).setContentType( "text/xml" );
-    List<String> outputLines = Splitter.on( '\n' ).omitEmptyStrings().splitToList( outputBuffer );
-    assertThat( outputLines, equalTo( (List<String>) ImmutableList.of(
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-      "<services>",
-      "<service>",
-      "<name>" + DATA_SERVICE_NAME + "</name>",
-      "<rowMeta mock/>",
-      "</service>",
-      "</services>"
-    ) ) );
+    Pattern pattern = Pattern.compile( "<\\?xml version=\"1.0\" encoding=\"UTF-8\"\\?>\\s*<services>\\s*<service>\\s*<name>" + DATA_SERVICE_NAME + "<\\/name>\\s*<rowMeta mock\\/>\\s*<\\/service>\\s*<\\/services>\\s*" );
+    assertTrue( pattern.matcher( outputBuffer ).matches() );
   }
 
   @Test
