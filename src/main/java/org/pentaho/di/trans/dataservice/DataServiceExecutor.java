@@ -305,6 +305,11 @@ public class DataServiceExecutor {
     try {
       // Determine meta and resolve value
       ValueMetaInterface resolvedValueMeta = resolver.getValueMeta( fieldName );
+      if ( ValueMetaInterface.TYPE_INTEGER == resolvedValueMeta.getType() && ValueMetaInterface.TYPE_NUMBER == rhs.getValueMeta().getType() ) {
+        // BACKLOG-18738
+        // Do not round Double parameter value
+        return;
+      }
       Object resolvedValue = resolver.getTypedValue( fieldName, rhs.getValueMeta().getType(), rhs.getValueData() );
 
       // We have normally stored object here, adjust value meta accordingly
