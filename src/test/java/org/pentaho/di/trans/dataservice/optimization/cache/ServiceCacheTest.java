@@ -111,7 +111,8 @@ public class ServiceCacheTest {
     dataServiceMeta = new DataServiceMeta( transMeta );
     dataServiceMeta.setName( "MOCK_SERVICE" );
     dataServiceMeta.setStepname( SERVICE_STEP );
-    when( transMeta.getXML() ).thenReturn( "<transformation/>" );
+    when( transMeta.getXML( anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(),
+            anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean() ) ).thenReturn( "<transformation/>" );
     when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( rowMeta );
 
     when( factory.getExecutorService() ).thenReturn( MoreExecutors.sameThreadExecutor() );
