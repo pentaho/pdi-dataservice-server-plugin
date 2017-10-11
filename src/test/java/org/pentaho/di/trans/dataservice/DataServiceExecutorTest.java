@@ -453,7 +453,7 @@ public class DataServiceExecutorTest extends BaseTest {
       assertEquals( 0, executor.getServiceRowLimit() );
 
       int serviceRowLimit = 1000;
-      dataService.setRowLimit( serviceRowLimit);
+      dataService.setRowLimit( serviceRowLimit );
       executor =
         new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
           .serviceTrans( serviceTrans )
@@ -462,7 +462,7 @@ public class DataServiceExecutorTest extends BaseTest {
       assertEquals( serviceRowLimit, executor.getServiceRowLimit() );
 
       serviceRowLimit = -3;
-      dataService.setRowLimit( serviceRowLimit);
+      dataService.setRowLimit( serviceRowLimit );
       executor =
         new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
           .serviceTrans( serviceTrans )
@@ -510,9 +510,9 @@ public class DataServiceExecutorTest extends BaseTest {
     when( serviceTransMeta.realClone( false ) ).thenReturn( serviceTransMeta );
     when( serviceTransMeta.listVariables() ).thenReturn( new String[]{} );
     when( serviceTransMeta.listParameters() ).thenReturn( new String[]{} );
-      new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
-        .serviceTransMutator( mutator )
-        .serviceTrans( serviceTransMeta );
+    new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
+      .serviceTransMutator( mutator )
+      .serviceTrans( serviceTransMeta );
     Mockito.verify( mutator ).accept( dataService.getStepname(), serviceTransMeta );
   }
 }

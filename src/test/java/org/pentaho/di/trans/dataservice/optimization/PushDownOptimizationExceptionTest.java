@@ -27,8 +27,8 @@ import org.pentaho.di.core.exception.KettleException;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.matchers.JUnitMatchers.*;
-import static org.junit.Assert.*;
+import static org.junit.matchers.JUnitMatchers.containsString;
+import static org.junit.Assert.assertThat;
 
 public class PushDownOptimizationExceptionTest {
 

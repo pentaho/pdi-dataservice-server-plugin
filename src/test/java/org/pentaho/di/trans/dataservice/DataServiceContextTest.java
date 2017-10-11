@@ -22,24 +22,16 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import com.google.common.base.Suppliers;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
-import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
-import org.pentaho.metastore.api.IMetaStore;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author nhudak

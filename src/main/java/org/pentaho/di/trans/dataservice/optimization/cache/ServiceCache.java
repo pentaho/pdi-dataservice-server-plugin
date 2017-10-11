@@ -51,7 +51,9 @@ import java.util.Collections;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.*;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.notNull;
 import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 import static org.pentaho.caching.api.Constants.DEFAULT_TEMPLATE;
 

@@ -27,7 +27,12 @@ import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class TableInputValidationTest extends BaseStepValidationTest {
 

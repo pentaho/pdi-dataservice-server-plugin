@@ -111,7 +111,7 @@ public class TableInputParameterGenerationTest {
 
     service.dbMeta = databaseMeta;
 
-    when( databaseMeta.quoteField( anyString() ) ).thenAnswer(new Answer<String>() {
+    when( databaseMeta.quoteField( anyString() ) ).thenAnswer( new Answer<String>() {
       @Override public String answer( InvocationOnMock invocation ) throws Throwable {
         return (String) invocation.getArguments()[ 0 ];
       }
@@ -235,7 +235,8 @@ public class TableInputParameterGenerationTest {
 
     testInListCondition( "value1;value2;value3", new String[] { "value1", "value2", "value3" },
       "field_name  IN  (?,?,?)" );
-    testInListCondition("value1;value2;value3;val ue4" , new String[]{ "value1", "value2", "value3", "val ue4" }, "field_name  IN  (?,?,?,?)" );
+    testInListCondition( "value1;value2;value3;val ue4",
+      new String[]{ "value1", "value2", "value3", "val ue4" }, "field_name  IN  (?,?,?,?)" );
     testFunctionType( Condition.FUNC_LARGER_EQUAL, "field_name >= ?", 123 );
 
     try {

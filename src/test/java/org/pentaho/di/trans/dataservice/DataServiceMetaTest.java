@@ -31,8 +31,8 @@ import static org.junit.Assert.fail;
 
 public class DataServiceMetaTest extends BaseTest {
 
-  private Pattern patternSaveUserDefined = Pattern.compile("<key>is_user_defined<\\/key>\\s*<value>Y<\\/value>");
-  private Pattern patternSaveTransient   = Pattern.compile("<key>is_user_defined<\\/key>\\s*<value>N<\\/value>");
+  private Pattern patternSaveUserDefined = Pattern.compile( "<key>is_user_defined<\\/key>\\s*<value>Y<\\/value>" );
+  private Pattern patternSaveTransient   = Pattern.compile( "<key>is_user_defined<\\/key>\\s*<value>N<\\/value>" );
 
   @Test
   public void testSaveUserDefined() {
@@ -40,8 +40,8 @@ public class DataServiceMetaTest extends BaseTest {
       transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.IS_USER_DEFINED,
           ( dataService.isUserDefined() ? "Y" : "N" ) );
       String xml = transMeta.getXML();
-      assertTrue( patternSaveUserDefined.matcher(xml).find() );
-    } catch( Exception ex ){
+      assertTrue( patternSaveUserDefined.matcher( xml ).find() );
+    } catch ( Exception ex ) {
       fail();
     }
   }
@@ -53,8 +53,8 @@ public class DataServiceMetaTest extends BaseTest {
       transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.IS_USER_DEFINED,
           ( dataService.isUserDefined() ? "Y" : "N" ) );
       String xml = transMeta.getXML();
-      assertTrue( patternSaveTransient.matcher(xml).find() );
-    } catch( Exception ex ){
+      assertTrue( patternSaveTransient.matcher( xml ).find() );
+    } catch ( Exception ex ) {
       fail();
     }
   }

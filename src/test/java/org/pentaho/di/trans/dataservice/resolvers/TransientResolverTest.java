@@ -91,9 +91,9 @@ public class TransientResolverTest {
 
   @BeforeClass
   public static void setUpClass() throws Exception {
-   if( !KettleClientEnvironment.isInitialized() )  {
-     KettleClientEnvironment.init();
-   }
+    if ( !KettleClientEnvironment.isInitialized() ) {
+      KettleClientEnvironment.init();
+    }
   }
 
   @Before
@@ -111,25 +111,25 @@ public class TransientResolverTest {
     transMeta.addStep( output );
 
     transientResolver = new TransientResolver( kettleRepositoryLocator, context, serviceCacheFactory, LogLevel.DEBUG,
-            () -> spoon );
+      () -> spoon );
   }
 
   @Test
   public void testGetDataServiceWithFileSeparator() throws Exception {
-    testGetDataService(File.separator);
+    testGetDataService( File.separator );
   }
 
   @Test
   public void testGetDataServiceWithForwardSlash() throws Exception {
-    testGetDataService("/");
+    testGetDataService( "/" );
   }
 
   @Test
   public void testGetDataServiceWithBackSlash() throws Exception {
-    testGetDataService("\\");
+    testGetDataService( "\\" );
   }
-  
-  private void testGetDataService(String fileSeparator) throws Exception {
+
+  private void testGetDataService( String fileSeparator ) throws Exception {
     RepositoryDirectoryInterface directory = mock( RepositoryDirectoryInterface.class );
 
     when( root.findDirectory( fileSeparator + "path" + fileSeparator + "to" ) ).thenReturn( directory );
@@ -204,7 +204,7 @@ public class TransientResolverTest {
     String[] parts = transientResolver.splitTransient( transientId );
     assertEquals( parts.length, 2 );
 
-    DataServiceMeta dataServiceMeta = transientResolver.getDataService(transientId);
+    DataServiceMeta dataServiceMeta = transientResolver.getDataService( transientId );
     assertEquals( dataServiceMeta.getStepname(), "OUTPUT" );
   }
 

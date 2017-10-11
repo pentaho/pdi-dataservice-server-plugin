@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.ui.menu;
 
-import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.TreeItem;
 import org.junit.Before;
@@ -40,10 +39,14 @@ import org.pentaho.di.ui.spoon.SelectionTreeExtension;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.eclipse.swt.graphics.Image;
 
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceViewTreeExtensionTest {

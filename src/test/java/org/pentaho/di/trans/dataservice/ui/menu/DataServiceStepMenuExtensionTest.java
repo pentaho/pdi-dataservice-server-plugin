@@ -38,8 +38,10 @@ import org.pentaho.di.ui.spoon.trans.TransGraph;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.containers.XulMenupopup;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceStepMenuExtensionTest {
