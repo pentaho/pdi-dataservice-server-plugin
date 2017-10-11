@@ -186,15 +186,15 @@ public class ParameterPushdownTest {
     assertThat( preview.getErrorMsg(), emptyOrNullString() );
     assertThat( preview.isModified(), is( true ) );
     assertThat( preview.getQueryBeforeOptimization(), equalTo(
-      "ARTIST_FIELD = <default>\n" +
-        "ALBUM_FIELD = <default>\n" +
-        "LIVE_FIELD = <default>"
+      "ARTIST_FIELD = <default>\n"
+        + "ALBUM_FIELD = <default>\n"
+        + "LIVE_FIELD = <default>"
     ) );
 
     assertThat( preview.getQueryAfterOptimization(), equalTo(
-      "ARTIST_FIELD = artist: \"The Rolling Stones\",\n" +
-        "ALBUM_FIELD = album: \"Let it Bleed\",\n" +
-        "LIVE_FIELD = <default>"
+      "ARTIST_FIELD = artist: \"The Rolling Stones\",\n"
+        + "ALBUM_FIELD = album: \"Let it Bleed\",\n"
+        + "LIVE_FIELD = <default>"
     ) );
   }
 

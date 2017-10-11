@@ -31,17 +31,15 @@ import org.pentaho.di.trans.step.errorhandling.StreamInterface;
 import java.util.function.BiConsumer;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class TransMutatorsTest {
   @BeforeClass
   public static void setUp() throws Exception {
-   if( !KettleClientEnvironment.isInitialized() ) {
-     KettleClientEnvironment.init();
-   }
+    if ( !KettleClientEnvironment.isInitialized() ) {
+      KettleClientEnvironment.init();
+    }
   }
 
   @Test
@@ -111,8 +109,7 @@ public class TransMutatorsTest {
     boolean filterFailure,
     boolean successAgain,
     boolean grossFilter,
-    boolean failureSuccess )
-  {
+    boolean failureSuccess ) {
     assertEquals( "Hop from Tasty to Unfiltered incorrect", true, transMeta.getTransHop( 0 ).isEnabled() );
     assertEquals( "Hop from Unfiltered to Filter incorrect", unfilteredFilter, transMeta.getTransHop( 1 ).isEnabled() );
     assertEquals( "Hop from Filter to Success incorrect", filterSuccess, transMeta.getTransHop( 2 ).isEnabled() );

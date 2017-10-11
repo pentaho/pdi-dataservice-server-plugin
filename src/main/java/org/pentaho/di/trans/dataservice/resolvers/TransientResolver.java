@@ -172,9 +172,9 @@ public class TransientResolver implements DataServiceResolver {
 
   private static TransMeta loadFromRepository( Repository repository, String filePath ) throws KettleException {
     // this code assumes that filePath always begins with '/' or '\', and we use this as a file separator
-    char fileSeparator = filePath.charAt(0);
+    char fileSeparator = filePath.charAt( 0 );
     String name = filePath.substring( filePath.lastIndexOf( fileSeparator ) + 1, filePath.length() );
-    String path = filePath.substring( 0, filePath.lastIndexOf( fileSeparator) );
+    String path = filePath.substring( 0, filePath.lastIndexOf( fileSeparator ) );
 
     RepositoryDirectoryInterface root = repository.loadRepositoryDirectoryTree();
     RepositoryDirectoryInterface rd = root.findDirectory( path );

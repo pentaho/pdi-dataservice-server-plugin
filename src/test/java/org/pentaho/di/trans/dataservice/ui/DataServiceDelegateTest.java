@@ -163,7 +163,8 @@ public class DataServiceDelegateTest extends BaseTest {
     when( messageBox.open() ).thenReturn( SWT.NO );
     delegate.suggestEdit( dataService, TITLE, TEXT );
 
-    Mockito.verify( delegate, Mockito.times(1) ).deleteDataServiceElementAndCleanCache(dataService, transMeta);
+    Mockito.verify( delegate, Mockito.times( 1 ) ).
+      deleteDataServiceElementAndCleanCache( dataService, transMeta );
   }
 
   @Test

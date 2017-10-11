@@ -38,7 +38,7 @@ class MockOperations extends Operations {
     return put( type, mock( IOperation.class ) );
   }
 
-  MockOperations put( ChangeType type, IOperation operation ){
+  MockOperations put( ChangeType type, IOperation operation ) {
     put( type, Collections.singletonList( operation ) );
     return this;
   }

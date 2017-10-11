@@ -76,7 +76,7 @@ public class DriverDetailsDialogTest {
     verify( xulRunner ).initialize();
   }
 
-  @Test(expected = KettleException.class )
+  @Test( expected = KettleException.class )
   public void testInitXulThrowsKettleExceptionOnError() throws KettleException {
     DriverDetailsDialog dialog = mock( DriverDetailsDialog.class );
     AbstractXulLoader xulLoader = mock( AbstractXulLoader.class );

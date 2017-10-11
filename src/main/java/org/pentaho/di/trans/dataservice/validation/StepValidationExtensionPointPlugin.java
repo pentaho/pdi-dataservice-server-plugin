@@ -60,7 +60,7 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
     TransMeta transMeta = checkStepExtension.getTransMeta();
     for ( StepValidation stepValidation : getStepValidations() ) {
       StepMeta stepMeta = checkStepExtension.getStepMetas()[0];
-      if ( stepValidation.supportsStep( stepMeta , log ) ) {
+      if ( stepValidation.supportsStep( stepMeta, log ) ) {
         DataServiceMeta dataServiceMeta = metaStoreUtil.getDataServiceByStepName( transMeta, stepMeta.getName() );
 
         if ( dataServiceMeta == null ) {

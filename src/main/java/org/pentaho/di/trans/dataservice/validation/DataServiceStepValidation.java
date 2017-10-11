@@ -90,8 +90,7 @@ public class DataServiceStepValidation implements StepValidation {
   }
 
   private void warnAbout(
-      StepMeta stepMeta, Map<String, Set<StepField>> unsupportedFields, List<CheckResultInterface> remarks )
-  {
+      StepMeta stepMeta, Map<String, Set<StepField>> unsupportedFields, List<CheckResultInterface> remarks ) {
     if ( unsupportedFields.size() == 0 ) {
       return;
     }

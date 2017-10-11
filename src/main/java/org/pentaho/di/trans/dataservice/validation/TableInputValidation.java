@@ -31,7 +31,9 @@ import org.pentaho.di.trans.CheckStepsExtension;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 
-import static org.pentaho.di.trans.dataservice.validation.ValidationUtil.*;
+import static org.pentaho.di.trans.dataservice.validation.ValidationUtil.getParameterGenerationsForStep;
+import static org.pentaho.di.trans.dataservice.validation.ValidationUtil.paramSubstitutionModifiesString;
+import static org.pentaho.di.trans.dataservice.validation.ValidationUtil.warn;
 
 public class TableInputValidation implements StepValidation {
   private static Class<?> PKG = TableInputValidation.class;
@@ -43,8 +45,7 @@ public class TableInputValidation implements StepValidation {
 
   @Override
   public void checkStep(
-      CheckStepsExtension checkStepExtension, DataServiceMeta dataServiceMeta, LogChannelInterface log )
-  {
+      CheckStepsExtension checkStepExtension, DataServiceMeta dataServiceMeta, LogChannelInterface log ) {
     checkMissingDefinedParam( checkStepExtension, dataServiceMeta );
     checkPushdownParameter( checkStepExtension );
   }

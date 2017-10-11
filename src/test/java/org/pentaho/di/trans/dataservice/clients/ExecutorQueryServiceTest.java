@@ -30,19 +30,16 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
-import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolverDelegate;
-import org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryProvider;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
-import org.pentaho.osgi.metastore.locator.api.MetastoreProvider;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ExecutorQueryServiceTest {
   @Test

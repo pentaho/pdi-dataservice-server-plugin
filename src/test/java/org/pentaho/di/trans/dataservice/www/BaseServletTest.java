@@ -35,7 +35,6 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
-import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.www.CarteRequestHandler;
 import org.pentaho.di.www.SlaveServerConfig;

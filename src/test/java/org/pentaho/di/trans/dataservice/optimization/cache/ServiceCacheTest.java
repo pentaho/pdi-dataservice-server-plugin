@@ -66,7 +66,15 @@ import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 
 /**
@@ -111,7 +119,8 @@ public class ServiceCacheTest {
     dataServiceMeta = new DataServiceMeta( transMeta );
     dataServiceMeta.setName( "MOCK_SERVICE" );
     dataServiceMeta.setStepname( SERVICE_STEP );
-    when( transMeta.getXML() ).thenReturn( "<transformation/>" );
+    when( transMeta.getXML( anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(),
+            anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean() ) ).thenReturn( "<transformation/>" );
     when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( rowMeta );
 
     when( factory.getExecutorService() ).thenReturn( MoreExecutors.sameThreadExecutor() );

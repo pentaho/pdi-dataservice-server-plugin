@@ -161,7 +161,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     try {
       dataService.setName( "" );
       metaStoreUtil.checkDefined( dataService );
-      fail( "Expected failure for empty name");
+      fail( "Expected failure for empty name" );
     } catch ( UndefinedDataServiceException e ) {
       assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
     }
@@ -170,7 +170,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     try {
       dataService.setStepname( "" );
       metaStoreUtil.checkDefined( dataService );
-      fail( "Expected failure for empty step name");
+      fail( "Expected failure for empty step name" );
     } catch ( UndefinedDataServiceException e ) {
       assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
     }
@@ -179,7 +179,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     try {
       dataService.setStepname( "Not in Trans" );
       metaStoreUtil.checkDefined( dataService );
-      fail( "Expected failure for non-existant step name");
+      fail( "Expected failure for non-existant step name" );
     } catch ( UndefinedDataServiceException e ) {
       assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
     }
@@ -190,9 +190,9 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     final ServiceTrans published = mock( ServiceTrans.class );
     when( published.getName() ).thenReturn( "PUBLISHED_SERVICE" );
 
-    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ){
+    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ) {
       @Override protected MetaStoreFactory<ServiceTrans> getServiceTransFactory( IMetaStore metaStore ) {
-        return new MetaStoreFactory<ServiceTrans>( ServiceTrans.class, metaStore, NAMESPACE ){
+        return new MetaStoreFactory<ServiceTrans>( ServiceTrans.class, metaStore, NAMESPACE ) {
           @Override public List<ServiceTrans> getElements() throws MetaStoreException {
             return ImmutableList.of( published );
           }
@@ -213,7 +213,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
       // New data service with the same name as an local data service
       dataService.setName( local.getName() );
       metaStoreUtil.checkConflict( dataService, null );
-      fail( "Expected DataServiceAlreadyExistsException");
+      fail( "Expected DataServiceAlreadyExistsException" );
     } catch ( DataServiceAlreadyExistsException e ) {
       assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
     }
@@ -226,7 +226,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
       // New data service with conflicting output step
       dataService.setStepname( local.getStepname() );
       metaStoreUtil.checkConflict( dataService, null );
-      fail( "Expected DataServiceAlreadyExistsException");
+      fail( "Expected DataServiceAlreadyExistsException" );
     } catch ( DataServiceAlreadyExistsException e ) {
       assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
     }
@@ -248,14 +248,14 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     try {
       // New Data service with conflicting name in metastore
       metaStoreUtil.checkConflict( dataService, null );
-      fail( "Expected DataServiceAlreadyExistsException");
+      fail( "Expected DataServiceAlreadyExistsException" );
     } catch ( DataServiceAlreadyExistsException e ) {
       assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
     }
     try {
       // Editing Data service with conflicting name in metastore
       metaStoreUtil.checkConflict( dataService, local.getName() );
-      fail( "Expected DataServiceAlreadyExistsException");
+      fail( "Expected DataServiceAlreadyExistsException" );
     } catch ( DataServiceAlreadyExistsException e ) {
       assertThat( e.getDataServiceMeta(), sameInstance( dataService ) );
     }
