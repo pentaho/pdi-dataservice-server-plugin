@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.FileDialog;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.trans.dataservice.ui.DriverDetailsDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.util.HelpUtils;
@@ -72,8 +73,11 @@ public class DriverDetailsDialogController extends AbstractController {
 
   @SuppressWarnings( "unused" ) // Bound via XUL
   public void showHelp() {
-    HelpUtils.openHelpDialog( getDialog().getShell(), getString( PKG, "DriverDetailsDialog.ConnectionSetupLink.Label" ),
-        getString( PKG, "DriverDetailsDialog.ConnectionSetupLink.Url" ), "" );
+    String label = getString( PKG, "DriverDetailsDialog.ConnectionSetupLink.Label" );
+    String docUrl = Const.getDocUrl( getString( PKG, "DriverDetailsDialog.ConnectionSetupLink.Url" ) );
+    String header = "";
+
+    HelpUtils.openHelpDialog( getDialog().getShell(), label, docUrl, header );
   }
 
   @SuppressWarnings( "unused" ) // Bound via XUL
