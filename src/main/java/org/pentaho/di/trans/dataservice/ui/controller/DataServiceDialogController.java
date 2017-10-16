@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceValidationException;
@@ -118,9 +119,11 @@ public class DataServiceDialogController extends AbstractController {
 
   @SuppressWarnings( "unused" ) // Bound via XUL
   public void showHelp() {
-    HelpUtils.openHelpDialog( getDialog().getShell(),
-        BaseMessages.getString( PKG, "DataServiceDialog.Help.Title" ),
-        BaseMessages.getString( PKG, "DataServiceDialog.Help.Url" ), "" );
+    String title = BaseMessages.getString( PKG, "DataServiceDialog.Help.Title" );
+    String docUrl = Const.getDocUrl( BaseMessages.getString( PKG, "DataServiceDialog.Help.Url" ) );
+    String header = "";
+
+    HelpUtils.openHelpDialog( getDialog().getShell(), title, docUrl, header );
   }
 
   @SuppressWarnings( "unused" ) // Bound via XUL

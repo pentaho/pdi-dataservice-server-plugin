@@ -7,13 +7,16 @@
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
     <version>8.0-SNAPSHOT</version>
   </parent>
+
   <groupId>pentaho</groupId>
   <artifactId>pdi-dataservice-server-plugin</artifactId>
   <version>8.0-SNAPSHOT</version>
   <packaging>bundle</packaging>
+
   <name>Pentaho Community Edition Project: ${project.artifactId}</name>
   <description>A server for PDI Data Services</description>
   <url>http://www.pentaho.com</url>
+
   <licenses>
     <license>
       <name>Pentaho Proprietary License</name>
@@ -21,6 +24,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
   <developers>
     <developer>
       <name>Matt Casters</name>
@@ -65,11 +69,13 @@
       </roles>
     </developer>
   </developers>
+
   <scm>
     <connection>scm:git:git@github.com:pentaho/${project.artifactId}.git</connection>
     <developerConnection>scm:git:git@github.com:pentaho/${project.artifactId}.git</developerConnection>
     <url>scm:git:git@github.com:pentaho/${project.artifactId}.git</url>
   </scm>
+
   <distributionManagement>
     <site>
       <id>pentaho.public.snapshot.repo</id>
@@ -77,6 +83,7 @@
       <url>dav:${site.publish.url}/${project.groupId}/pdi-dataservice-server-plugin-${project.version}</url>
     </site>
   </distributionManagement>
+
   <properties>
     <servlet-api.version>2.3</servlet-api.version>
     <mockito.version>1.9.5</mockito.version>
@@ -87,6 +94,7 @@
     <swt.version>4.6</swt.version>
     <mongo-driver.version>3.2.2</mongo-driver.version>
   </properties>
+
   <dependencies>
     <dependency>
       <groupId>pentaho-kettle</groupId>
@@ -241,6 +249,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <finalName>${project.artifactId}-${project.version}</finalName>
     <plugins>
