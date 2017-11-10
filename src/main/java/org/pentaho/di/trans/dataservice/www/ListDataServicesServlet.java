@@ -70,7 +70,7 @@ public class ListDataServicesServlet extends BaseCartePlugin {
     }
 
     request.respond( 200 )
-      .with( "text/xml", new WriterResponse() {
+      .with( "text/xml; charset=utf-8", new WriterResponse() {
         @Override
         public void write( PrintWriter writer ) throws IOException {
           writer.println( XMLHandler.getXMLHeader() );
