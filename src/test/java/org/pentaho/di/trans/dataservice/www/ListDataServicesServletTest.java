@@ -90,7 +90,7 @@ public class ListDataServicesServletTest extends BaseServletTest {
 
   private void verifyRun() throws Exception {
     verify( response ).setStatus( HttpServletResponse.SC_OK );
-    verify( response ).setContentType( "text/xml" );
+    verify( response ).setContentType( "text/xml; charset=utf-8" );
     Pattern pattern = Pattern.compile( "<\\?xml version=\"1.0\" encoding=\"UTF-8\"\\?>\\s*<services>\\s*<service>\\s*<name>" + DATA_SERVICE_NAME + "<\\/name>\\s*<rowMeta mock\\/>\\s*<\\/service>\\s*<\\/services>\\s*" );
     assertTrue( pattern.matcher( outputBuffer ).matches() );
   }
