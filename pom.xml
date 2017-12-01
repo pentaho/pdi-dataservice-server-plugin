@@ -87,8 +87,8 @@
   <properties>
     <servlet-api.version>2.3</servlet-api.version>
     <mockito.version>1.9.5</mockito.version>
-    <dependency.pentaho-kettle.version>8.1-SNAPSHOT</dependency.pentaho-kettle.version>
-    <dependency.pentaho-mongodb-plugin.revision>8.1-SNAPSHOT</dependency.pentaho-mongodb-plugin.revision>
+    <pdi.version>8.1-SNAPSHOT</pdi.version>
+    <pentaho-mongodb-plugin.version>8.1-SNAPSHOT</pentaho-mongodb-plugin.version>
     <guava.version>17.0</guava.version>
     <jface.version>3.3.0-I20070606-0010</jface.version>
     <swt.version>4.6</swt.version>
@@ -99,7 +99,7 @@
     <dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-core</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
+      <version>${pdi.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -111,25 +111,25 @@
     <dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-engine</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
+      <version>${pdi.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-ui-swt</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
+      <version>${pdi.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>metastore</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
+      <version>${pdi.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-modeler</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
+      <version>${pdi.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -153,23 +153,23 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-metaverse-api</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
+      <version>${pdi.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-kettle-repository-locator-api</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
+      <version>${pdi.version}</version>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-metastore-locator-api</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
+      <version>${pdi.version}</version>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-mongodb-plugin</artifactId>
-      <version>${dependency.pentaho-mongodb-plugin.revision}</version>
+      <version>${pentaho-mongodb-plugin.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -245,7 +245,7 @@
     <dependency>
       <groupId>org.pentaho</groupId>
       <artifactId>pdi-engine-api</artifactId>
-      <version>${dependency.pentaho-kettle.version}</version>
+      <version>${pdi.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
