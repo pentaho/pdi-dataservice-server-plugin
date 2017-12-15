@@ -86,7 +86,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -137,8 +136,7 @@ public class CachedServiceTest {
     when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP );
 
     transMeta = serviceTrans.getTransMeta();
-    when( transMeta.getXML( anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(),
-            anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean() ) ).thenReturn( "<transformation mock version=1/>" );
+    when( transMeta.getCacheVersion() ).thenReturn( 1 );
 
     dataServiceMeta = new DataServiceMeta( transMeta );
     dataServiceMeta.setName( SERVICE_NAME );
@@ -155,8 +153,7 @@ public class CachedServiceTest {
     withConditionOrdered = cacheKey( BASE_QUERY + " WHERE A=42 ORDER BY B" );
     withLimit = cacheKey( BASE_QUERY + " LIMIT 20" );
 
-    when( transMeta.getXML( anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(),
-            anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean() ) ).thenReturn( "<transformation mock version=2/>" );
+    when( transMeta.getCacheVersion() ).thenReturn( 2 );
     otherVersion = cacheKey( BASE_QUERY );
 
     // Verifies order from most specific to general
