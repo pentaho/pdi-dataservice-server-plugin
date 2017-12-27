@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2016 by Pentaho : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Pentaho : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 
 import javax.servlet.http.HttpServletResponse;
@@ -44,7 +43,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -94,7 +92,7 @@ public class ListDataServicesServletTest extends BaseServletTest {
 
   private void verifyRun() throws Exception {
     verify( response ).setStatus( HttpServletResponse.SC_OK );
-    verify( response ).setContentType( "text/xml" );
+    verify( response ).setContentType( "text/xml; charset=utf-8" );
     List<String> outputLines = Splitter.on( '\n' ).omitEmptyStrings().splitToList( outputBuffer );
     assertThat( outputLines, equalTo( (List<String>) ImmutableList.of(
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
