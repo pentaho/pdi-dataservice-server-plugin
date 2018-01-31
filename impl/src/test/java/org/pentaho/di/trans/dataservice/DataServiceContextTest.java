@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,12 +26,17 @@ import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
+import org.mockito.Mock;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.when;
 
 /**
  * @author nhudak
@@ -39,6 +44,10 @@ import static org.junit.Assert.assertThat;
 
 @RunWith( org.mockito.runners.MockitoJUnitRunner.class )
 public class DataServiceContextTest extends BaseTest {
+  public static final String EXECUTOR_ID = "Executor ID";
+  public static final String STREAMING_EXECUTOR_ID = "Streaming Executor ID";
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) DataServiceExecutor dataServiceExecutor;
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingServiceTransExecutor streamingExecutor;
 
   @Before
   public void setUp() throws Exception {
@@ -46,6 +55,9 @@ public class DataServiceContextTest extends BaseTest {
       pushDownFactories, autoOptimizationServices,
       cacheManager, uiFactory, logChannel
     );
+
+    when( dataServiceExecutor.getId() ).thenReturn( EXECUTOR_ID );
+    when( streamingExecutor.getId() ).thenReturn( STREAMING_EXECUTOR_ID );
 
     assertThat( context.getCacheManager(), sameInstance( cacheManager ) );
     assertThat( context.getUIFactory(), sameInstance( uiFactory ) );
@@ -62,6 +74,24 @@ public class DataServiceContextTest extends BaseTest {
   @Test
   public void testGetDataServiceDelegate() throws Exception {
     assertThat( context.getDataServiceDelegate(), validMetaStoreUtil() );
+  }
+
+  @Test
+  public void testExecutor() throws Exception {
+    assertNull( context.getExecutor( EXECUTOR_ID ) );
+    context.addExecutor( dataServiceExecutor );
+    assertThat( context.getExecutor( EXECUTOR_ID ), sameInstance( dataServiceExecutor ) );
+    context.removeExecutor( EXECUTOR_ID );
+    assertNull( context.getExecutor( EXECUTOR_ID ) );
+  }
+
+  @Test
+  public void testServiceTransExecutor() throws Exception {
+    assertNull( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ) );
+    context.addServiceTransExecutor( streamingExecutor );
+    assertThat( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ), sameInstance( streamingExecutor ) );
+    context.removeServiceTransExecutor( STREAMING_EXECUTOR_ID );
+    assertNull( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ) );
   }
 
   protected Matcher<DataServiceMetaStoreUtil> validMetaStoreUtil() {

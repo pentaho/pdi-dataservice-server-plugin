@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.function.Supplier;
 
 public class DataServiceMetaFactory implements IDataServiceMetaFactory {
-  private static final Class<?> PKG = DataServiceMetaFactory.class;
   private Supplier<Spoon> spoonSupplier;
 
   private PushDownFactory cacheFactory;
@@ -66,7 +65,7 @@ public class DataServiceMetaFactory implements IDataServiceMetaFactory {
 
     DataServiceMeta dataServiceMeta = new DataServiceMeta( transformation );
 
-    dataServiceMeta.setName( createDataServiceName( step, rowLimit ) );
+    dataServiceMeta.setName( createDataServiceName( step, rowLimit, false ) );
     dataServiceMeta.setStepname( step.getName() );
     dataServiceMeta.setRowLimit( rowLimit );
 
@@ -78,7 +77,19 @@ public class DataServiceMetaFactory implements IDataServiceMetaFactory {
     return dataServiceMeta;
   }
 
-  private String createDataServiceName( StepMeta step, Integer rowLimit ) throws KettleException {
+  @Override public DataServiceMeta createStreamingDataService( StepMeta step ) throws KettleException {
+    TransMeta transformation = step.getParentTransMeta();
+
+    DataServiceMeta dataServiceMeta = new DataServiceMeta( transformation, true );
+
+    dataServiceMeta.setName( createDataServiceName( step, 0, true ) );
+    dataServiceMeta.setStepname( step.getName() );
+    dataServiceMeta.setRowLimit( 0 );
+
+    return dataServiceMeta;
+  }
+
+  private String createDataServiceName( StepMeta step, Integer rowLimit, boolean streaming ) throws KettleException {
     TransMeta transMeta = step.getParentTransMeta();
     String fullFileName;
     if ( !Utils.isEmpty( transMeta.getFilename() ) && transMeta.getObjectId() == null ) {
@@ -96,8 +107,10 @@ public class DataServiceMetaFactory implements IDataServiceMetaFactory {
       }
     }
 
+    String local = isLocal( transMeta ) ? TransientResolver.LOCAL : "";
+    String stream = streaming ? TransientResolver.STREAMING : "";
     return TransientResolver
-      .buildTransient( fullFileName, isLocal( transMeta ) ? TransientResolver.LOCAL + step.getName() : step.getName(),
+      .buildTransient( fullFileName, local + stream + step.getName(),
         rowLimit );
   }
 

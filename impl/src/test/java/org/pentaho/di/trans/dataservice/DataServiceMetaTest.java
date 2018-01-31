@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -23,16 +23,62 @@
 package org.pentaho.di.trans.dataservice;
 
 import org.junit.Test;
+import org.mockito.Mock;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class DataServiceMetaTest extends BaseTest {
 
   private Pattern patternSaveUserDefined = Pattern.compile( "<key>is_user_defined<\\/key>\\s*<value>Y<\\/value>" );
   private Pattern patternSaveTransient   = Pattern.compile( "<key>is_user_defined<\\/key>\\s*<value>N<\\/value>" );
+  private Pattern patternSaveStreaming   = Pattern.compile( "<key>streaming<\\/key>\\s*<value>Y<\\/value>" );
+  private Pattern patternStepName        = Pattern.compile( "<key>step_name<\\/key>\\s*<value>MockStepName<\\/value>" );
+  private Pattern patternRowLimit        = Pattern.compile( "<key>row_limit<\\/key>\\s*<value>-1<\\/value>" );
+
+  private String MOCK_NAME = "MockName";
+  private String MOCK_STEP_NAME = "MockStepName";
+  private Integer MOCK_ROW_LIMIT = -1;
+
+  @Mock TransMeta serviceTransMeta;
+  @Mock List<PushDownOptimizationMeta> pushDownOptimizations;
+
+  @Test
+  public void testName() {
+    assertNotEquals( MOCK_NAME, dataService.getName() );
+    dataService.setName( MOCK_NAME );
+    assertEquals( MOCK_NAME, dataService.getName() );
+  }
+
+  @Test
+  public void testStepName() {
+    try {
+      dataService.setStepname( MOCK_STEP_NAME );
+      transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.DATA_SERVICE_TRANSFORMATION_STEP_NAME,
+        ( dataService.getStepname() ) );
+      String xml = transMeta.getXML();
+      assertTrue( patternStepName.matcher( xml ).find() );
+    } catch ( Exception ex ) {
+      fail();
+    }
+  }
+
+  @Test
+  public void testRowLimit() {
+    try {
+      dataService.setRowLimit( MOCK_ROW_LIMIT );
+      transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.ROW_LIMIT,
+        ( dataService.getRowLimit().toString() ) );
+      String xml = transMeta.getXML();
+      assertTrue( patternRowLimit.matcher( xml ).find() );
+    } catch ( Exception ex ) {
+      fail();
+    }
+  }
 
   @Test
   public void testSaveUserDefined() {
@@ -57,5 +103,32 @@ public class DataServiceMetaTest extends BaseTest {
     } catch ( Exception ex ) {
       fail();
     }
+  }
+
+  @Test
+  public void testSaveStreaming() {
+    try {
+      dataService.setStreaming( true );
+      transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.IS_STREAMING,
+        ( dataService.isStreaming() ? "Y" : "N" ) );
+      String xml = transMeta.getXML();
+      assertTrue( patternSaveStreaming.matcher( xml ).find() );
+    } catch ( Exception ex ) {
+      fail();
+    }
+  }
+
+  @Test
+  public void testServiceTrans() {
+    assertNotEquals( serviceTransMeta, dataService.getServiceTrans() );
+    dataService.setServiceTrans( serviceTransMeta );
+    assertEquals( serviceTransMeta, dataService.getServiceTrans() );
+  }
+
+  @Test
+  public void testPushDownOptimizations() {
+    assertNotEquals( pushDownOptimizations, dataService.getPushDownOptimizationMeta() );
+    dataService.setPushDownOptimizationMeta( pushDownOptimizations );
+    assertEquals( pushDownOptimizations, dataService.getPushDownOptimizationMeta() );
   }
 }

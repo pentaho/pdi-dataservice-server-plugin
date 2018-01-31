@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -49,7 +49,7 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   private LogChannelInterface genTransLogChannel;
 
   private int maxRows = 0;
-  public static final List<Integer> MAXROWS_CHOICES = Arrays.asList( 100, 500, 1000 );
+  public static final List<Integer> MAXROWS_CHOICES = Arrays.asList( 0, 100, 500, 1000 );
 
   private boolean executing = false;
 

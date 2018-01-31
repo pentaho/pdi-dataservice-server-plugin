@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,6 +28,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
 
 import java.util.concurrent.TimeUnit;
@@ -36,8 +37,6 @@ import java.util.concurrent.TimeUnit;
  * Created by bryan on 12/10/15.
  */
 class DefaultTransWiringRowAdapter extends RowAdapter {
-  public static final String PASSING_ALONG_ROW = "Passing along row: ";
-  public static final String ROW_BUFFER_IS_FULL_TRYING_AGAIN = "Row buffer is full, trying again";
   private final Trans serviceTrans;
   private final Trans genTrans;
   private final RowProducer rowProducer;
@@ -55,7 +54,7 @@ class DefaultTransWiringRowAdapter extends RowAdapter {
     LogChannelInterface log = serviceTrans.getLogChannel();
     try {
       if ( log.isRowLevel() ) {
-        log.logRowlevel( PASSING_ALONG_ROW + rowMeta.getString( row ) );
+        log.logRowlevel( DataServiceConstants.PASSING_ALONG_ROW + rowMeta.getString( row ) );
       }
     } catch ( KettleValueException e ) {
       // Ignore errors
@@ -66,7 +65,7 @@ class DefaultTransWiringRowAdapter extends RowAdapter {
       while ( !rowProducer.putRowWait( rowMeta, rowData, 1, TimeUnit.SECONDS ) && genTrans.isRunning() ) {
         // Row queue was full, try again
         if ( log.isRowLevel() ) {
-          log.logRowlevel( ROW_BUFFER_IS_FULL_TRYING_AGAIN );
+          log.logRowlevel( DataServiceConstants.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
         }
       }
     } catch ( KettleValueException e ) {

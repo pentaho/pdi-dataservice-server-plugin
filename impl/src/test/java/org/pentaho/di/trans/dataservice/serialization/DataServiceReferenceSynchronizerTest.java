@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -239,7 +239,7 @@ public class DataServiceReferenceSynchronizerTest {
   }
 
 
-  private List<DataServiceMeta> mockDataServiceMetas( String ...names ) {
+  private List<DataServiceMeta> mockDataServiceMetas( String... names ) {
     List<DataServiceMeta> metas = new ArrayList<>();
     for ( String name : names ) {
       DataServiceMeta meta = mock( DataServiceMeta.class );

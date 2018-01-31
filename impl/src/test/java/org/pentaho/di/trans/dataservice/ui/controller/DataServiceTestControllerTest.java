@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -273,6 +273,16 @@ public class DataServiceTestControllerTest  {
     when( dataServiceExecutor.getServiceTrans().isFinishedOrStopped() )
       .thenReturn( true );
     when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
+      .thenReturn( true );
+    verify( callback, timeout( VERIFY_TIMEOUT_MILLIS ).times( 1 ) ).onExecuteComplete();
+  }
+
+  @Test
+  public void callbackNotifiedOnExecutionCompleteStreaming() throws Exception {
+    when( model.isExecuting() ).thenReturn( true );
+    dataServiceTestController.executeSql();
+    when( dataService.isStreaming() ).thenReturn( true );
+    when( dataServiceExecutor.getGenTrans().isFinished() )
       .thenReturn( true );
     verify( callback, timeout( VERIFY_TIMEOUT_MILLIS ).times( 1 ) ).onExecuteComplete();
   }

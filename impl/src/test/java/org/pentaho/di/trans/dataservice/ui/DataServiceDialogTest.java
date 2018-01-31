@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -31,6 +31,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
@@ -61,6 +62,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 
 /**
  * @author nhudak
@@ -71,6 +73,7 @@ public class DataServiceDialogTest {
   @Mock XulDomContainer xulDomContainer;
   @Mock DataServiceModel model;
   @Mock DataServiceDialogController controller;
+  @Mock TransMeta transMeta;
 
   DataServiceDialog dialog;
 
@@ -114,6 +117,17 @@ public class DataServiceDialogTest {
     inOrder.verify( overlay0 ).apply( dialog );
     inOrder.verify( overlay1 ).apply( dialog );
     inOrder.verifyNoMoreInteractions();
+
+    verify( tabBox ).setSelectedIndex( 0 );
+  }
+
+  @Test
+  public void testInitStreaming() throws Exception {
+    XulTabbox tabBox = mock( XulTabbox.class, RETURNS_DEEP_STUBS );
+    when( controller.getElementById( "optimizationTabs" ) ).thenReturn( tabBox );
+    when( tabBox.getTabs().getTabCount() ).thenReturn( 1 );
+
+    dialog.initStreaming();
 
     verify( tabBox ).setSelectedIndex( 0 );
   }
@@ -177,6 +191,26 @@ public class DataServiceDialogTest {
     verify( xulDomContainer ).loadOverlay( xulOverlay, resourceBundle );
   }
 
+  @Test( expected = KettleException.class )
+  public void testApplyOverlayException() throws Exception {
+    final DataServiceDialog.OptimizationOverlay overlay = mock( DataServiceDialog.OptimizationOverlay.class );
+    final ResourceBundle resourceBundle = mock( ResourceBundle.class );
+    String xulOverlay = "/path/to/overlay.xul";
+
+    dialog = new DataServiceDialog( controller, model ) {
+      // Intercept resource bundle creation
+      @Override protected ResourceBundle createResourceBundle( Class<?> packageClass ) {
+        assertThat( packageClass, equalTo( (Class) overlay.getClass() ) );
+        assertThat( super.createResourceBundle( packageClass ), isA( ResourceBundle.class ) );
+        return resourceBundle;
+      }
+    };
+
+    doThrow(  new XulException() ).when( xulDomContainer ).loadOverlay( xulOverlay, resourceBundle );
+
+    dialog.applyOverlay( overlay, xulOverlay );
+  }
+
   @Test
   public void testBuilder() throws Exception {
     final DataServiceDelegate mockDelegate = mock( DataServiceDelegate.class );
@@ -210,6 +244,57 @@ public class DataServiceDialogTest {
     verify( model ).setServiceName( "Service" );
     verify( model ).setServiceStep( "OUTPUT" );
     verify( model ).setPushDownOptimizations( optimizations );
+
+    Shell shell = mock( Shell.class );
+    ArrayList<PushDownFactory> factories = Lists.newArrayList( mock( PushDownFactory.class ) );
+    when( mockDelegate.getShell() ).thenReturn( shell );
+    when( mockDelegate.getPushDownFactories() ).thenReturn( factories );
+
+    assertThat( builder.build( mockDelegate ), sameInstance( dialog ) );
+    verify( controller ).setDataService( dataService );
+    verify( dialog ).loadXul( same( shell ), any( KettleXulLoader.class ), any( SwtXulRunner.class ) );
+    verify( dialog ).initOptimizations( factories );
+    verify( dialog ).initStreaming();
+
+    Throwable xulException = new XulException();
+    when( dialog.loadXul( same( shell ), any( KettleXulLoader.class ), any( SwtXulRunner.class ) ) )
+      .thenThrow( xulException );
+
+    try {
+      builder.build( mockDelegate );
+      fail( "Expected exception was not thrown" );
+    } catch ( KettleException e ) {
+      assertThat( e.getCause(), equalTo( xulException ) );
+    }
+  }
+
+  @Test
+  public void testBuilderTransMeta() throws Exception {
+    final DataServiceDelegate mockDelegate = mock( DataServiceDelegate.class );
+    final DataServiceDialog dialog = mock( DataServiceDialog.class );
+    when( dialog.getController() ).thenReturn( controller );
+
+    // Intercept actual creation so we can inject our mock
+    DataServiceDialog.Builder builder = new DataServiceDialog.Builder( transMeta ) {
+      @Override protected DataServiceDialog createDialog( DataServiceDelegate delegate ) {
+        assertThat( delegate, sameInstance( mockDelegate ) );
+        assertThat( super.createDialog( delegate ), isA( DataServiceDialog.class ) );
+        return dialog;
+      }
+    };
+
+    builder.serviceStep( "step" );
+
+    builder.serviceStep( "" );
+    builder.serviceStep( null );
+
+    DataServiceMeta dataService = mock( DataServiceMeta.class );
+    when( dataService.getName() ).thenReturn( "Service" );
+    when( dataService.getStepname() ).thenReturn( "OUTPUT" );
+    ArrayList<PushDownOptimizationMeta> optimizations = Lists.newArrayList( mock( PushDownOptimizationMeta.class ) );
+    when( dataService.getPushDownOptimizationMeta() ).thenReturn( optimizations );
+
+    builder.edit( dataService );
 
     Shell shell = mock( Shell.class );
     ArrayList<PushDownFactory> factories = Lists.newArrayList( mock( PushDownFactory.class ) );

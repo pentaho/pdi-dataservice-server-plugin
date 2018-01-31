@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -20,16 +20,24 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.streaming.ui;
 
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 
-public interface IDataServiceMetaFactory {
-  public DataServiceMeta createDataService( StepMeta step ) throws KettleException;
-  public DataServiceMeta createDataService( StepMeta step, Integer rowLimit ) throws KettleException;
-  public DataServiceMeta createStreamingDataService( StepMeta step ) throws KettleException;
-  public PushDownFactory getCacheFactory();
-  public void setCacheFactory( PushDownFactory cacheFactory );
+public class StreamingOverlay implements DataServiceDialog.OptimizationOverlay {
+  private static final String XUL_OVERLAY =
+          "/org/pentaho/di/trans/dataservice/streaming/ui/xul/overlay.xul";
+
+  @Override public double getPriority() {
+    return 3;
+  }
+
+  @Override public void apply( DataServiceDialog dialog ) throws KettleException {
+    StreamingController controller = new StreamingController();
+
+    dialog.applyOverlay( this, XUL_OVERLAY ).addEventHandler( controller );
+
+    controller.initBindings( dialog.getModel() );
+  }
 }

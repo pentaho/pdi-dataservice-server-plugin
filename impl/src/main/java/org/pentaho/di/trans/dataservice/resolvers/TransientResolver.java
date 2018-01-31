@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -55,6 +55,7 @@ public class TransientResolver implements DataServiceResolver {
   public static final String DELIMITER = ":";
   public static final String PREFIX = "transient:";
   public static final String LOCAL = "local:";
+  public static final String STREAMING = "streaming:";
   private KettleRepositoryLocator repositoryLocator;
   private DataServiceContext context;
   private ServiceCacheFactory cacheFactory;
@@ -109,18 +110,26 @@ public class TransientResolver implements DataServiceResolver {
     return null;
   }
 
-
   private DataServiceMeta createDataServiceMeta( String dataServiceName ) {
     final String fileAndPath, rowLimit;
     String stepName;
     boolean local = false;
+    boolean streaming = false;
     try {
       String[] parts = splitTransient( dataServiceName );
       fileAndPath = decode( parts[ 0 ].trim() );
       stepName = decode( parts[ 1 ].trim() );
-      if ( stepName.startsWith( LOCAL ) ) {
+      if ( stepName.startsWith( LOCAL + STREAMING ) || stepName.startsWith( STREAMING + LOCAL ) ) {
+        local = true;
+        streaming = true;
+        stepName = stepName.replace( LOCAL, "" );
+        stepName = stepName.replace( STREAMING, "" );
+      } else if ( stepName.startsWith( LOCAL ) ) {
         local = true;
         stepName = stepName.replace( LOCAL, "" );
+      } else if ( stepName.startsWith( STREAMING ) ) {
+        streaming = true;
+        stepName = stepName.replace( STREAMING, "" );
       }
       rowLimit = parts.length >= 3 ? decode( parts[ 2 ].trim() ) : null;
     } catch ( Exception ignored ) {
@@ -143,19 +152,26 @@ public class TransientResolver implements DataServiceResolver {
     if ( rowLimit != null && dataServiceMeta.isPresent() ) {
       dataServiceMeta.get().setRowLimit( Integer.parseInt( rowLimit ) );
     }
-    dataServiceMeta.ifPresent( configure( dataServiceName, stepName ) );
+    if ( streaming && dataServiceMeta.isPresent() ) {
+      dataServiceMeta.get().setStreaming( streaming );
+    }
+    dataServiceMeta.ifPresent( configure( dataServiceName, stepName, streaming ) );
 
     return dataServiceMeta.orElse( null );
   }
 
-  private Consumer<DataServiceMeta> configure( String name, String step ) {
+  private Consumer<DataServiceMeta> configure( String name, String step, boolean streaming ) {
     return dataServiceMeta -> {
       dataServiceMeta.setStepname( step );
       dataServiceMeta.setName( name );
-      PushDownOptimizationMeta pushDownMeta = new PushDownOptimizationMeta();
-      pushDownMeta.setStepName( step );
-      pushDownMeta.setType( cacheFactory.createPushDown() );
-      dataServiceMeta.setPushDownOptimizationMeta( Collections.singletonList( pushDownMeta ) );
+
+      // In streaming there's no push down optimizations
+      if ( !streaming ) {
+        PushDownOptimizationMeta pushDownMeta = new PushDownOptimizationMeta();
+        pushDownMeta.setStepName( step );
+        pushDownMeta.setType( cacheFactory.createPushDown() );
+        dataServiceMeta.setPushDownOptimizationMeta( Collections.singletonList( pushDownMeta ) );
+      }
       dataServiceMeta.setUserDefined( false );
     };
   }

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -38,7 +38,6 @@ import org.pentaho.di.trans.dataservice.serialization.SynchronizationListener;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.di.ui.spoon.trans.TransGraph;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -60,8 +59,6 @@ public class DataServiceMetaFactoryTest {
   @Mock Spoon mockSpoon;
   @Mock TransMeta transMeta;
   @Mock Repository repository;
-  @Mock DataServiceMeta mockDs;
-  @Mock TransGraph transGraph;
   @Mock StepMeta stepMeta;
   @Mock SynchronizationListener synchronizationListener;
   @Mock ServiceCacheFactory cacheFactory;
@@ -89,7 +86,26 @@ public class DataServiceMetaFactoryTest {
   }
 
   @Test
-  public void testCreateDataService() throws Exception {
+  public void testCreateDataServiceSpoon() throws Exception {
+    when( mockSpoon.getRepository() ).thenReturn( repository );
+    testCreateDataServiceCommon();
+  }
+
+  @Test
+  public void testCreateDataServiceNonSpoon() throws Exception {
+    factory = spy( new DataServiceMetaFactory() );
+    factory.setCacheFactory( cacheFactory );
+    testCreateDataServiceCommon();
+  }
+
+  @Test
+  public void testCreateDataServiceLocal() throws Exception {
+    when( mockSpoon.getRepository() ).thenReturn( repository );
+    when( spoon.getActiveTransformation() ).thenReturn( transMeta );
+    testCreateDataServiceCommon();
+  }
+
+  private void testCreateDataServiceCommon() throws Exception {
     when( mockSpoon.getRepository() ).thenReturn( repository );
 
     DataServiceMeta ds = factory.createDataService( stepMeta );
@@ -146,25 +162,12 @@ public class DataServiceMetaFactoryTest {
   }
 
   @Test
-  public void testLocalDataService() throws Exception {
-    when( mockSpoon.getRepository() ).thenReturn( repository );
-    when( activeTransMeta.getName() ).thenReturn( "ActiveTrans" );
-    when( stepMeta.getParentTransMeta() ).thenReturn( activeTransMeta );
-
-    DataServiceMeta ds = factory.createDataService( stepMeta );
+  public void testCreateStreamingDataService() throws Exception {
+    DataServiceMeta ds = factory.createStreamingDataService( stepMeta );
     assertNotNull( ds );
-    assertTrue( TransientResolver.isTransient( ds.getName() ) );
-    assertEquals( activeTransMeta, ds.getServiceTrans() );
+    assertEquals( transMeta, ds.getServiceTrans() );
     assertEquals( stepName, ds.getStepname() );
-    assertEquals( 1, ds.getPushDownOptimizationMeta().size() );
-    assertTrue( ds.getPushDownOptimizationMeta().get( 0 ).getType() instanceof ServiceCache );
-    assertEquals( stepName, ds.getPushDownOptimizationMeta().get( 0 ).getStepName() );
-    assertNull( ds.getRowLimit() );
-    verify( factory, times( 1 ) ).createDataService( eq( stepMeta ), eq( null ) );
-
-    Integer rowLimit = 1000;
-    ds = factory.createDataService( stepMeta, rowLimit );
-    assertEquals( rowLimit, ds.getRowLimit() );
+    assertEquals( new Integer( 0 ), ds.getRowLimit() );
+    verify( factory, times( 1 ) ).createStreamingDataService( eq( stepMeta ) );
   }
-
 }

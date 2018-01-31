@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -44,10 +44,16 @@ public class DataServiceModel extends XulEventSourceAdapter {
   private List<PushDownOptimizationMeta> pushDownOptimizations = Lists.newArrayList();
   private String serviceName;
   private String serviceStep;
+  private boolean streaming;
   private final TransMeta transMeta;
 
   public DataServiceModel( TransMeta transMeta ) {
+    this( transMeta, false );
+  }
+
+  public DataServiceModel( TransMeta transMeta, boolean streaming ) {
     this.transMeta = transMeta;
+    this.streaming = streaming;
   }
 
   public TransMeta getTransMeta() {
@@ -62,6 +68,14 @@ public class DataServiceModel extends XulEventSourceAdapter {
     String previous = this.serviceName;
     this.serviceName = serviceName;
     firePropertyChange( "serviceName", previous, serviceName );
+  }
+
+  public void setStreaming( boolean streaming ) {
+    this.streaming = streaming;
+  }
+
+  public boolean isStreaming() {
+    return this.streaming;
   }
 
   public String getServiceStep() {
@@ -145,6 +159,7 @@ public class DataServiceModel extends XulEventSourceAdapter {
     dataService.setName( getServiceName() );
     dataService.setPushDownOptimizationMeta( getPushDownOptimizations() );
     dataService.setStepname( getServiceStep() );
+    dataService.setStreaming( isStreaming() );
 
     for ( PushDownOptimizationMeta pushDownOptimization : pushDownOptimizations ) {
       pushDownOptimization.getType().init( transMeta, dataService, pushDownOptimization );

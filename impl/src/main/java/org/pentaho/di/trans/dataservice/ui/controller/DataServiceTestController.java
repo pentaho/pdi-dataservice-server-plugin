@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -280,7 +280,6 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       writeAnnotations( query );
       handleCompletion( dataServiceExec );
     } else {
-
       callback.onLogChannelUpdate();
       dataServiceExec.executeQuery( getDataServiceRowListener() );
       pollForCompletion( dataServiceExec );
@@ -318,7 +317,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   private boolean transDone( Trans svcTrans, Trans genTrans ) {
-    return svcTrans.isFinishedOrStopped() && genTrans.isFinishedOrStopped();
+    return dataService.isStreaming() ? genTrans.isFinished()
+      : ( svcTrans.isFinishedOrStopped() && genTrans.isFinishedOrStopped() );
   }
 
   private boolean anyTransErrors( DataServiceExecutor dataServiceExec ) {

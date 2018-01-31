@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -46,11 +46,14 @@ import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.clients.TransMutators;
 import org.pentaho.di.trans.dataservice.execution.CopyParameters;
-import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
+import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
+import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
@@ -68,9 +71,6 @@ import java.util.function.BiConsumer;
 public class DataServiceExecutor {
   private static final Class<?> PKG = DataServiceExecutor.class;
 
-  private static final String ROW_LIMIT_PROPERTY = "det.dataservice.dynamic.limit";
-  private static final int ROW_LIMIT_DEFAULT = 50000;
-
   private final Trans serviceTrans;
   private final Trans genTrans;
 
@@ -79,6 +79,7 @@ public class DataServiceExecutor {
   private final Map<String, String> parameters;
   private final SqlTransGenerator sqlTransGenerator;
   private final ListMultimap<ExecutionPoint, Runnable> listenerMap;
+  private final DataServiceContext context;
 
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
@@ -88,6 +89,7 @@ public class DataServiceExecutor {
     serviceTrans = builder.serviceTrans;
     sqlTransGenerator = builder.sqlTransGenerator;
     genTrans = builder.genTrans;
+    context = builder.context;
 
     listenerMap = MultimapBuilder.enumKeys( ExecutionPoint.class ).linkedListValues().build();
   }
@@ -183,6 +185,7 @@ public class DataServiceExecutor {
 
     public DataServiceExecutor build() throws KettleException {
       RowMetaInterface serviceFields;
+      int serviceRowLimit = getServiceRowLimit( service );
 
       if ( sql.getServiceName() != null && !sql.getServiceName().equals( service.getName() ) ) {
         throw new KettleException(
@@ -190,6 +193,27 @@ public class DataServiceExecutor {
             sql.getServiceName(), service.getName() ) );
       }
 
+      // Check if theres already a serviceTransformation in the context
+      if ( service.isStreaming() ) {
+        StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( service.getName() );
+
+        // Gets service execution from context
+        if ( serviceTransExecutor == null ) {
+          if ( serviceTrans == null && service.getServiceTrans() != null ) {
+            serviceTrans( service.getServiceTrans() );
+          }
+
+          if ( serviceTrans != null ) {
+            serviceTransExecutor =
+              new StreamingServiceTransExecutor( service.getName(), serviceTrans, service.getStepname() );
+            context.addServiceTransExecutor( serviceTransExecutor );
+          }
+        } else {
+          serviceTrans = serviceTransExecutor.getServiceTrans();
+        }
+      }
+
+      // Sets the service transformation fields
       if ( serviceTrans != null ) {
         serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
       } else if ( service.getServiceTrans() != null ) {
@@ -198,6 +222,7 @@ public class DataServiceExecutor {
       } else {
         serviceFields = new RowMeta();
       }
+
       ValueMetaResolver resolver = new ValueMetaResolver( serviceFields );
 
       sql.parse( resolver.getRowMeta() );
@@ -211,7 +236,6 @@ public class DataServiceExecutor {
         }
       }
 
-      int serviceRowLimit = getServiceRowLimit( service );
       if ( sqlTransGenerator == null ) {
         sqlTransGenerator = new SqlTransGenerator( sql, rowLimit, serviceRowLimit );
       }
@@ -219,10 +243,15 @@ public class DataServiceExecutor {
         genTrans = new Trans( sqlTransGenerator.generateTransMeta() );
       }
 
-      serviceTrans.setContainerObjectId( UUID.randomUUID().toString() );
+      if ( serviceTrans != null ) {
+        serviceTrans.setContainerObjectId( UUID.randomUUID().toString() );
+        serviceTrans.setMetaStore( metastore );
+        genTrans.setGatheringMetrics( enableMetrics );
+      }
+
       genTrans.setContainerObjectId( UUID.randomUUID().toString() );
-      serviceTrans.setMetaStore( metastore );
       genTrans.setMetaStore( metastore );
+      genTrans.setGatheringMetrics( enableMetrics );
 
       DataServiceExecutor dataServiceExecutor = new DataServiceExecutor( this );
 
@@ -230,11 +259,6 @@ public class DataServiceExecutor {
 
       if ( logLevel != null ) {
         dataServiceExecutor.setLogLevel( logLevel );
-      }
-
-      genTrans.setGatheringMetrics( enableMetrics );
-      if ( serviceTrans != null ) {
-        serviceTrans.setGatheringMetrics( enableMetrics );
       }
 
       if ( prepareExecution ) {
@@ -245,21 +269,22 @@ public class DataServiceExecutor {
     }
 
     private int getServiceRowLimit( DataServiceMeta service ) throws KettleException {
-      if ( service.getRowLimit() != null && service.getRowLimit() > 0 ) {
-        return service.getRowLimit();
-      } else if ( !service.isUserDefined() ) {
-        String limit = getKettleProperty( ROW_LIMIT_PROPERTY );
-        if ( !Utils.isEmpty( limit ) ) {
-          try {
-            return Integer.parseInt( limit );
-          } catch ( NumberFormatException e ) {
-            if ( context != null && context.getLogChannel() != null ) {
-              context.getLogChannel().logError(
-                  String.format( "%s: %s ", ROW_LIMIT_PROPERTY, e ) );
+      if ( !service.isStreaming() ) {
+        if ( service.getRowLimit() != null && service.getRowLimit() > 0 ) {
+          return service.getRowLimit();
+        } else if ( !service.isUserDefined() ) {
+          String limit = getKettleProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
+          if ( !Utils.isEmpty( limit ) ) {
+            try {
+              return Integer.parseInt( limit );
+            } catch ( NumberFormatException e ) {
+              if ( context != null && context.getLogChannel() != null ) {
+                context.getLogChannel().logError( String.format( "%s: %s ", DataServiceConstants.ROW_LIMIT_PROPERTY, e ) );
+              }
             }
           }
+          return DataServiceConstants.ROW_LIMIT_DEFAULT;
         }
-        return ROW_LIMIT_DEFAULT;
       }
       return 0;
     }
@@ -375,23 +400,26 @@ public class DataServiceExecutor {
   }
 
   protected void prepareExecution() throws KettleException {
-    // Setup executor with default execution plan
+    // Setup executor with streaming execution plan
     ImmutableMultimap.Builder<ExecutionPoint, Runnable> builder = ImmutableMultimap.builder();
+
     builder.putAll( ExecutionPoint.PREPARE,
       new CopyParameters( parameters, serviceTrans ),
-      new PrepareExecution( genTrans ),
       new PrepareExecution( serviceTrans )
     );
 
-    builder.putAll( ExecutionPoint.READY,
-      new DefaultTransWiring( this )
-    );
+    if ( !service.isStreaming() ) {
+      builder.put( ExecutionPoint.PREPARE, new PrepareExecution( genTrans ) );
 
-    builder.putAll( ExecutionPoint.START,
-      new TransStarter( genTrans ),
-      new TransStarter( serviceTrans )
-    );
+      builder.putAll( ExecutionPoint.READY,
+        new DefaultTransWiring( this )
+      );
 
+      builder.putAll( ExecutionPoint.START,
+        new TransStarter( genTrans ),
+        new TransStarter( serviceTrans )
+      );
+    }
     listenerMap.putAll( builder.build() );
   }
 
@@ -412,24 +440,26 @@ public class DataServiceExecutor {
   }
 
   public DataServiceExecutor executeQuery( final DataOutputStream dos ) throws IOException {
-
     writeMetadata( dos, getServiceName(), calculateTransname( getSql(), true ),
         getServiceTrans().getContainerObjectId(), calculateTransname( getSql(), false ),
         getGenTrans().getContainerObjectId() );
 
     final AtomicBoolean rowMetaWritten = new AtomicBoolean( false );
 
-    // When done, check if no row metadata was written.  The client is still going to expect it...
-    // Since we know it, we'll pass it.
-    //
-    getGenTrans().addTransListener( new TransAdapter() {
-      @Override public void transFinished( Trans trans ) throws KettleException {
-        if ( rowMetaWritten.compareAndSet( false, true ) ) {
-          RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
-          stepFields.writeMeta( dos );
+    if ( !service.isStreaming() ) {
+      // When done, check if no row metadata was written.  The client is still going to expect it...
+      // Since we know it, we'll pass it.
+      //
+      getGenTrans().addTransListener( new TransAdapter() {
+        @Override
+        public void transFinished( Trans trans ) throws KettleException {
+          if ( rowMetaWritten.compareAndSet( false, true ) ) {
+            RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
+            stepFields.writeMeta( dos );
+          }
         }
-      }
-    } );
+      } );
+    }
 
     // Now execute the query transformation(s) and pass the data to the output stream...
     return executeQuery( new RowAdapter() {
@@ -453,22 +483,46 @@ public class DataServiceExecutor {
   }
 
   public DataServiceExecutor executeQuery( final RowListener resultRowListener ) {
+    if ( service.isStreaming() ) {
+      return executeStreamingQuery( resultRowListener );
+    } else {
+      return executeDefaultQuery( resultRowListener );
+    }
+  }
+
+  public DataServiceExecutor executeStreamingQuery( final RowListener resultRowListener ) {
+    StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( service.getName() ),
+      genTrans, resultRowListener, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+      sqlTransGenerator.getSql().getSqlString(), DataServiceConstants.STREAMING_DEFAULT_WINDOW_SIZE,
+      DataServiceConstants.STREAMING_DEFAULT_WINDOW_RATE_MILLIS );
+
+    listenerMap.get( ExecutionPoint.READY ).add( streamWiring );
+
+    return executeQuery();
+  }
+
+  public DataServiceExecutor executeDefaultQuery( final RowListener resultRowListener ) {
     listenerMap.get( ExecutionPoint.READY ).add( new Runnable() {
       @Override public void run() {
         // Give back the eventual result rows...
         //
         StepInterface resultStep = genTrans.findRunThread( getResultStepName() );
-        resultStep.addRowListener( resultRowListener );
+
+        if ( resultStep != null ) {
+          resultStep.addRowListener( resultRowListener );
+        }
       }
     } );
     return executeQuery();
   }
 
   public DataServiceExecutor executeQuery() {
-    // Apply Push Down Optimizations
-    for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
-      if ( optimizationMeta.isEnabled() ) {
-        optimizationMeta.activate( this );
+    if ( !service.isStreaming() ) {
+      // Apply Push Down Optimizations
+      for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
+        if ( optimizationMeta.isEnabled() ) {
+          optimizationMeta.activate( this );
+        }
       }
     }
 
@@ -499,7 +553,9 @@ public class DataServiceExecutor {
   }
 
   public void waitUntilFinished() {
-    serviceTrans.waitUntilFinished();
+    if ( !service.isStreaming() ) {
+      serviceTrans.waitUntilFinished();
+    }
     genTrans.waitUntilFinished();
   }
 

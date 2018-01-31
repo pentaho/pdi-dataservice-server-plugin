@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,6 +30,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 
 import java.util.concurrent.TimeUnit;
 
@@ -82,8 +83,8 @@ public class DefaultTransWiringRowAdapterTest {
     when( rowProducer.putRowWait( rowMetaInterface, row, 1, TimeUnit.SECONDS ) ).thenReturn( false, true );
     defaultTransWiringRowAdapter.rowWrittenEvent( rowMetaInterface, row );
     verify( rowProducer, times( 2 ) ).putRowWait( same( rowMetaInterface ), eq( row ), eq( 1L ), eq( TimeUnit.SECONDS ) );
-    verify( logChannelInterface ).logRowlevel( startsWith( DefaultTransWiringRowAdapter.PASSING_ALONG_ROW ) );
-    verify( logChannelInterface ).logRowlevel( DefaultTransWiringRowAdapter.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
+    verify( logChannelInterface ).logRowlevel( startsWith( DataServiceConstants.PASSING_ALONG_ROW ) );
+    verify( logChannelInterface ).logRowlevel( DataServiceConstants.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
   }
 
   @Test
@@ -93,7 +94,7 @@ public class DefaultTransWiringRowAdapterTest {
     when( rowProducer.putRowWait( rowMetaInterface, row, 1, TimeUnit.SECONDS ) ).thenReturn( false, true );
     defaultTransWiringRowAdapter.rowWrittenEvent( rowMetaInterface, row );
     verify( rowProducer, times( 2 ) ).putRowWait( same( rowMetaInterface ), eq( row ), eq( 1L ), eq( TimeUnit.SECONDS ) );
-    verify( logChannelInterface ).logRowlevel( DefaultTransWiringRowAdapter.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
+    verify( logChannelInterface ).logRowlevel( DataServiceConstants.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
   }
 
   @Test
