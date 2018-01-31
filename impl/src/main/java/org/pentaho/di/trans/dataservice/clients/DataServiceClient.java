@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -31,8 +31,9 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.client.DataServiceClientService;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
+import org.pentaho.di.trans.dataservice.jdbc.api.IThinServiceInformation;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.IMetaStore;
 
@@ -48,7 +49,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
-public class DataServiceClient implements DataServiceClientService {
+public class DataServiceClient implements IDataServiceClientService {
   private final Query.Service queryService;
   private final DataServiceResolver resolver;
   private final ExecutorService executorService;
@@ -96,15 +97,15 @@ public class DataServiceClient implements DataServiceClientService {
     throw new KettleException( "Unable to resolve query: " + sql );
   }
 
-  @Override public List<ThinServiceInformation> getServiceInformation() throws SQLException {
-    List<ThinServiceInformation> services = Lists.newArrayList();
+  @Override public List<IThinServiceInformation> getServiceInformation() throws SQLException {
+    List<IThinServiceInformation> services = Lists.newArrayList();
 
     for ( DataServiceMeta service : resolver.getDataServices( logErrors()::apply ) ) {
       TransMeta transMeta = service.getServiceTrans();
       try {
         transMeta.activateParameters();
         RowMetaInterface serviceFields = transMeta.getStepFields( service.getStepname() );
-        ThinServiceInformation serviceInformation = new ThinServiceInformation( service.getName(), serviceFields );
+        IThinServiceInformation serviceInformation = new ThinServiceInformation( service.getName(), serviceFields );
         services.add( serviceInformation );
       } catch ( Exception e ) {
         String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
@@ -161,14 +162,14 @@ public class DataServiceClient implements DataServiceClientService {
   }
 
   /**
-   * @deprecated Property is unused. See {@link DataServiceClientService#setRepository(Repository)}
+   * @deprecated Property is unused. See {@link IDataServiceClientService#setRepository(Repository)}
    */
   @Deprecated
   public void setRepository( Repository repository ) {
   }
 
   /**
-   * @deprecated Property is unused. See {@link DataServiceClientService#setMetaStore(IMetaStore)}
+   * @deprecated Property is unused. See {@link IDataServiceClientService#setMetaStore(IMetaStore)}
    */
   @Deprecated
   public void setMetaStore( IMetaStore metaStore ) {

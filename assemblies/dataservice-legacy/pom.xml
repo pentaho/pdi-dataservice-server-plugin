@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pentaho</groupId>
+    <artifactId>pdi-dataservice-server-plugin-assemblies</artifactId>
+    <version>8.1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <!--
+        This bundles is needed because we must inject the API on the the server's karaf custom.properties, to then
+        be able to fetch the data service client from legacy plugins. Once the legacy plugins are OSGfied this is no
+        longer needed
+    -->
+  <artifactId>pentaho-dataservice-legacy</artifactId>
+  <packaging>feature</packaging>
+  <name>Pentaho Community Edition Project: ${project.artifactId}</name>
+  <description>Pentaho Data Services Client and Server bundled - Legacy Plugins Compatibility</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pdi-dataservice-client-plugin</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pdi-dataservice-server-plugin</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>${commons.collections.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongo-java-driver</artifactId>
+      <version>${mongo.java.driver.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-modeler</artifactId>
+      <version>${pentaho-modeler.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>${commons.collections.version}</version>
+    </dependency>
+  </dependencies>
+
+</project>
