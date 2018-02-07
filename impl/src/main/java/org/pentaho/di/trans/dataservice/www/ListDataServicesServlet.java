@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -25,7 +25,7 @@ package org.pentaho.di.trans.dataservice.www;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
-import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
+import org.pentaho.di.trans.dataservice.jdbc.api.IThinServiceInformation;
 import org.pentaho.di.www.BaseCartePlugin;
 
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class ListDataServicesServlet extends BaseCartePlugin {
 
   @Override
   public void handleRequest( CarteRequest request ) throws IOException {
-    final List<ThinServiceInformation> serviceInformation;
+    final List<IThinServiceInformation> serviceInformation;
     try {
       serviceInformation = client.getServiceInformation();
     } catch ( SQLException e ) {
@@ -76,7 +76,7 @@ public class ListDataServicesServlet extends BaseCartePlugin {
           writer.println( XMLHandler.getXMLHeader() );
           writer.println( XMLHandler.openTag( XML_TAG_SERVICES ) );
 
-          for ( ThinServiceInformation thinServiceInformation : serviceInformation ) {
+          for ( IThinServiceInformation thinServiceInformation : serviceInformation ) {
             writer.println( XMLHandler.openTag( XML_TAG_SERVICE ) );
 
             writer.println( XMLHandler.addTagValue( "name", thinServiceInformation.getName() ) );

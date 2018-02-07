@@ -68,7 +68,7 @@
 
     <!-- Local Client Service -->
     <service ref="dataServiceClient" id="dataServiceClientService"
-             interface="org.pentaho.di.trans.dataservice.client.DataServiceClientService"/>
+             interface="org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService"/>
     <!-- /Local Client Service -->
 
     <bean id="dataServiceResolverDelegate" class="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolverDelegate">
