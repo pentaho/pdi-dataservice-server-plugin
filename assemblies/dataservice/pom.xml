@@ -32,6 +32,7 @@
           <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>commons-collections</groupId>
@@ -43,6 +44,7 @@
           <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.mongodb</groupId>
@@ -54,6 +56,7 @@
           <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
@@ -65,6 +68,7 @@
           <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 
