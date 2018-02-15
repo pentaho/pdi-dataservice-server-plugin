@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -20,16 +20,38 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.streaming;
 
-import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.step.StepMeta;
+import io.reactivex.subjects.PublishSubject;
 
-public interface IDataServiceMetaFactory {
-  public DataServiceMeta createDataService( StepMeta step ) throws KettleException;
-  public DataServiceMeta createDataService( StepMeta step, Integer rowLimit ) throws KettleException;
-  public DataServiceMeta createStreamingDataService( StepMeta step ) throws KettleException;
-  public PushDownFactory getCacheFactory();
-  public void setCacheFactory( PushDownFactory cacheFactory );
+/**
+ * Generic stream.
+ * @param <T>
+ */
+public class StreamList<T> {
+  protected final PublishSubject<T> onAdd;
+
+  /**
+   * Constructor.
+   */
+  public StreamList() {
+    this.onAdd = PublishSubject.create();
+  }
+
+  /**
+   * Adds an item to the stream.
+   * @param item The item to be added.
+   */
+  public void add( T item ) {
+    onAdd.onNext( item );
+  }
+
+  /**
+   * Retreives the stream subject where the client can register as a listener to the stream.
+   *
+   * @return {@link io.reactivex.subjects.PublishSubject} the stream subject.
+   */
+  public PublishSubject<T> getStream() {
+    return onAdd;
+  }
 }

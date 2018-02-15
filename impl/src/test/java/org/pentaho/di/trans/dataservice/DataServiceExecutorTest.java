@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -48,6 +48,7 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepListener;
@@ -66,12 +67,7 @@ import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.Matchers.any;
@@ -101,6 +97,7 @@ public class DataServiceExecutorTest extends BaseTest {
   @Mock SqlTransGenerator sqlTransGenerator;
   @Mock BiConsumer<String, TransMeta> mutator;
   @Mock TransMeta serviceTransMeta;
+  @Mock StreamingServiceTransExecutor serviceTransExecutor;
 
   @Before
   public void setUp() throws Exception {
@@ -155,6 +152,97 @@ public class DataServiceExecutorTest extends BaseTest {
 
     assertThat( condition.evaluate( rowMeta, new Object[] { "value", 2L, calendar.getTime() } ), is( true ) );
     assertThat( condition.evaluate( rowMeta, new Object[] { "value", 2L, new Date() } ), is( false ) );
+  }
+
+
+  @Test( expected =  KettleException.class )
+  public void testBuilderBuildWrongServiceName() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME2 );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      build();
+  }
+
+  @Test( expected =  KettleException.class )
+  public void testBuilderBuildNullQueryServiceName() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    dataService.setName( null );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      build();
+  }
+
+  @Test
+  public void testBuilderBuildStreamingServiceContext() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
+    when( serviceTransExecutor.getId() ).thenReturn( DATA_SERVICE_NAME );
+
+    context.addServiceTransExecutor( serviceTransExecutor );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      build();
+
+    verify( serviceTransExecutor ).getServiceTrans();
+    assertSame( executor.getServiceTrans(), serviceTrans );
+  }
+
+  @Test
+  public void testBuilderBuildServiceServiceTransNotNull() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    RowMeta rowMeta = new RowMeta();
+    ValueMetaInterface vm = new ValueMetaString( "aBinaryStoredString" );
+    vm.setStorageType( ValueMetaInterface.STORAGE_TYPE_BINARY_STRING );
+    vm.setStorageMetadata( new ValueMetaString() );
+    rowMeta.addValueMeta( vm );
+
+    when( serviceTrans.getTransMeta() ).thenReturn( serviceTransMeta );
+    when( serviceTransMeta.realClone( false ) ).thenReturn( serviceTransMeta );
+    when( serviceTransMeta.listVariables() ).thenReturn( new String[]{} );
+    when( serviceTransMeta.listParameters() ).thenReturn( new String[]{} );
+    when( serviceTransMeta.getStepFields( DATA_SERVICE_STEP ) ).thenReturn( rowMeta );
+
+    dataService.setServiceTrans( serviceTrans.getTransMeta() );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      build();
+
+    assertSame( dataService.getServiceTrans(), serviceTrans.getTransMeta() );
   }
 
   @Test
@@ -258,6 +346,54 @@ public class DataServiceExecutorTest extends BaseTest {
 
     executor.waitUntilFinished();
     verify( serviceTrans ).waitUntilFinished();
+    verify( genTrans ).waitUntilFinished();
+  }
+
+  @Test
+  public void testExecuteStreamQuery() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+    StepInterface serviceStep = serviceTrans.findRunThread( DATA_SERVICE_STEP );
+    StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
+    when( optimization.isEnabled() ).thenReturn( true );
+    dataService.getPushDownOptimizationMeta().add( optimization );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      build();
+
+    ArgumentCaptor<String> objectIds = ArgumentCaptor.forClass( String.class );
+    verify( serviceTrans ).setContainerObjectId( objectIds.capture() );
+    when( serviceTrans.getContainerObjectId() ).thenReturn( objectIds.getValue() );
+    verify( genTrans ).setContainerObjectId( objectIds.capture() );
+    when( genTrans.getContainerObjectId() ).thenReturn( objectIds.getValue() );
+    verify( serviceTrans ).setMetaStore( metastore );
+    verify( genTrans ).setMetaStore( metastore );
+
+    RowProducer sqlTransRowProducer = mock( RowProducer.class );
+    when( genTrans.addRowProducer( INJECTOR_STEP_NAME, 0 ) ).thenReturn( sqlTransRowProducer );
+
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+    // Start Execution
+    executor.executeQuery( new DataOutputStream( outputStream ) );
+
+    // Check header was written
+    assertThat( outputStream.size(), greaterThan( 0 ) );
+    outputStream.reset();
+
+    executor.waitUntilFinished();
+    verify( serviceTrans, times( 0 ) ).waitUntilFinished();
     verify( genTrans ).waitUntilFinished();
   }
 

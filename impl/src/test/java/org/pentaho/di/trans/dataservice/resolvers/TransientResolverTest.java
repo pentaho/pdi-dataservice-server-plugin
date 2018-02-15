@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -55,6 +55,7 @@ import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.function.Predicate;
 
 import static org.hamcrest.Matchers.is;
@@ -86,6 +87,7 @@ public class TransientResolverTest {
   @Mock private ObjectId objectId;
   @Mock private Spoon spoon;
   @Mock private TransMeta activeTransMeta;
+  @Mock private com.google.common.base.Function<Exception, Void> logger;
 
   private TransMeta transMeta;
 
@@ -206,6 +208,54 @@ public class TransientResolverTest {
 
     DataServiceMeta dataServiceMeta = transientResolver.getDataService( transientId );
     assertEquals( dataServiceMeta.getStepname(), "OUTPUT" );
+  }
+
+  @Test
+  public void testBuildStreamingTransient() throws Exception {
+    RepositoryDirectoryInterface directory = mock( RepositoryDirectoryInterface.class );
+
+    when( root.findDirectory( "\\path\\to" ) ).thenReturn( directory );
+    when( repository.getTransformationID( "name", directory ) ).thenReturn( objectId );
+    when( repository.loadTransformation( objectId, null ) ).thenReturn( transMeta );
+
+    String transientId = TransientResolver.buildTransient( "\\path\\to\\name", "streaming:data_service" );
+    String[] parts = transientResolver.splitTransient( transientId );
+    assertEquals( parts.length, 2 );
+
+    DataServiceMeta dataServiceMeta = transientResolver.getDataService( transientId );
+    assertEquals( dataServiceMeta.getStepname(), "data_service" );
+  }
+
+  @Test
+  public void testBuildLocalStreamingTransient() throws Exception {
+    String transientId = TransientResolver.buildTransient( "/path/to/file.ktr",
+      "local:streaming:OUTPUT" );
+    String[] parts = transientResolver.splitTransient( transientId );
+    assertEquals( parts.length, 2 );
+
+    DataServiceMeta dataServiceMeta = transientResolver.getDataService( transientId );
+    assertEquals( dataServiceMeta.getStepname(), "OUTPUT" );
+  }
+
+  @Test
+  public void testBuildStreamingLocalTransient() throws Exception {
+    String transientId = TransientResolver.buildTransient( "/path/to/file.ktr",
+      "streaming:local:OUTPUT" );
+    String[] parts = transientResolver.splitTransient( transientId );
+    assertEquals( parts.length, 2 );
+
+    DataServiceMeta dataServiceMeta = transientResolver.getDataService( transientId );
+    assertEquals( dataServiceMeta.getStepname(), "OUTPUT" );
+  }
+
+  @Test
+  public void testGetDataServicesNames() {
+    assertEquals( transientResolver.getDataServiceNames(), new ArrayList<>() );
+  }
+
+  @Test
+  public void testGetDataServices() {
+    assertEquals( transientResolver.getDataServices( logger ), new ArrayList<>() );
   }
 
   private Matcher<DataServiceMeta> hasServiceCacheOptimization() {

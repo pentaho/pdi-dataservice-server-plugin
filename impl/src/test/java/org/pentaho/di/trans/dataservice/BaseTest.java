@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -70,6 +70,7 @@ import static org.mockito.Mockito.when;
 @RunWith( MockitoJUnitRunner.class )
 public abstract class BaseTest {
   public static final String DATA_SERVICE_NAME = "DataService";
+  public static final String DATA_SERVICE_NAME2 = "DataService2";
   public static final String DATA_SERVICE_STEP = "Data Service Step";
   protected TransMeta transMeta;
   protected DataServiceMeta dataService;

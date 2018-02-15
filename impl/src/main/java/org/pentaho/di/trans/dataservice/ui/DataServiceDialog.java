@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -34,6 +34,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import org.pentaho.di.trans.dataservice.streaming.ui.StreamingOverlay;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceDialogController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.xul.KettleXulLoader;
@@ -114,6 +115,18 @@ public class DataServiceDialog {
     return this;
   }
 
+  protected DataServiceDialog initStreaming( )
+          throws KettleException {
+    StreamingOverlay overlay = new StreamingOverlay();
+    overlay.apply( this );
+
+    XulTabbox optimizationTabs = controller.getElementById( "optimizationTabs" );
+    optimizationTabs.setSelectedIndex( 0 );
+
+    return this;
+  }
+
+
   public XulDomContainer getXulDomContainer() {
     return controller.getXulDomContainer();
   }
@@ -190,6 +203,7 @@ public class DataServiceDialog {
         throw new KettleException( "Failed to open the Data Service Dialog ", xulException );
       }
       dialog.initOptimizations( delegate.getPushDownFactories() );
+      dialog.initStreaming( );
 
       return dialog;
     }

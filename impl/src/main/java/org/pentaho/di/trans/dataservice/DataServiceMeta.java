@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -47,6 +47,7 @@ public class DataServiceMeta implements MetaStoreElement {
   public static final String DATA_SERVICE_TRANSFORMATION_STEP_NAME = "step_name";
   public static final String PUSH_DOWN_OPT_META = "push_down_opt_meta";
   public static final String IS_USER_DEFINED = "is_user_defined";
+  public static final String IS_STREAMING = "streaming";
   public static final String ROW_LIMIT = "row_limit";
 
   protected String name;
@@ -65,8 +66,27 @@ public class DataServiceMeta implements MetaStoreElement {
   @MetaStoreAttribute( key = IS_USER_DEFINED )
   protected boolean userDefined = true;
 
+  @MetaStoreAttribute( key = IS_STREAMING )
+  protected boolean streaming = true;
+
+  /**
+   * Constructor.
+   *
+   * @param serviceTrans The service step subject of the data service.
+   */
   public DataServiceMeta( TransMeta serviceTrans ) {
+    this( serviceTrans, false );
+  }
+
+  /**
+   * Constructor.
+   *
+   * @param serviceTrans The service step subject of the data service.
+   * @param streaming True if it's a streaming data service, false otherwise.
+   */
+  public DataServiceMeta( TransMeta serviceTrans, boolean streaming ) {
     this.serviceTrans = serviceTrans;
+    this.streaming = streaming;
   }
 
   // Constructor for MetaStore
@@ -76,61 +96,131 @@ public class DataServiceMeta implements MetaStoreElement {
   }
 
   /**
-   * @return the name
+   * Getter for the data service name.
+   *
+   * @return The data service name.
    */
   @Override public String getName() {
     return name;
   }
 
   /**
-   * @param name the name to set
+   * Setter for the data service name.
+   *
+   * @param name The data service name.
    */
   @Override public void setName( String name ) {
     this.name = name;
   }
 
+  /**
+   * Getter for the {@link org.pentaho.di.trans.TransMeta} data service trans meta.
+   *
+   * @return The data service trans meta.
+   */
   public TransMeta getServiceTrans() {
     return serviceTrans;
   }
 
+  /**
+   * Setter for the {@link org.pentaho.di.trans.TransMeta} data service trans meta.
+   *
+   * @param serviceTrans The {@link org.pentaho.di.trans.TransMeta} data service trans meta to be set.
+   */
   public void setServiceTrans( TransMeta serviceTrans ) {
     this.serviceTrans = serviceTrans;
   }
 
   /**
-   * @return the stepname
+   * Getter for the data service step name.
+   *
+   * @return The data service step name.
    */
   public String getStepname() {
     return stepname;
   }
 
   /**
-   * @param stepname the stepname to set
+   * Setter for the data service step name.
+   *
+   * @param stepname The data service step name.
    */
   public void setStepname( String stepname ) {
     this.stepname = stepname;
   }
 
+  /**
+   * Getter for the {@link org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta}
+   * data service push down optimizations list.
+   *
+   * @return The {@link org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta}
+   *         data service push down optimizations list.
+   */
   public List<PushDownOptimizationMeta> getPushDownOptimizationMeta() {
     return pushDownOptimizationMeta;
   }
 
+  /**
+   * Setter for the data service {@link org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta}
+   * push down optimizations list.
+   *
+   * @param pushDownOptimizationMeta The {@link org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta}
+   *                 data service push down optimizations list.
+   */
   public void setPushDownOptimizationMeta( List<PushDownOptimizationMeta> pushDownOptimizationMeta ) {
     this.pushDownOptimizationMeta = pushDownOptimizationMeta;
   }
 
+  /**
+   * Getter for the data service user defined property.
+   *
+   * @return True if userDefined is set to true, false otherwise.
+   */
   public boolean isUserDefined() {
     return userDefined;
   }
 
+  /**
+   * Setter for the data service user defined property.
+   *
+   * @param userDefined True if userDefined is set to true, false otherwise.
+   */
   public void setUserDefined( final boolean userDefined ) {
     this.userDefined = userDefined;
   }
 
+  /**
+   * Getter for the data service streaming property.
+   *
+   * @return True if streaming is set to true, false otherwise.
+   */
+  public boolean isStreaming() {
+    return streaming;
+  }
+
+  /**
+   * Setter for the data service user defined property.
+   *
+   * @param streaming True if streaming is set to true, false otherwise.
+   */
+  public void setStreaming( final boolean streaming ) {
+    this.streaming = streaming;
+  }
+
+  /**
+   * Getter for the data service row limit.
+   *
+   * @return The data service row limit.
+   */
   public Integer getRowLimit() {
     return this.rowLimit;
   }
 
+  /**
+   * Setter for the data service row limit.
+   *
+   * @param rowLimit The new data service row limit.
+   */
   public void setRowLimit( Integer rowLimit ) {
     this.rowLimit = rowLimit;
   }
@@ -141,6 +231,7 @@ public class DataServiceMeta implements MetaStoreElement {
       .add( "serviceTrans", serviceTrans )
       .add( "stepname", stepname )
       .add( "userDefined", userDefined )
+      .add( "streaming", streaming )
       .add( "pushDownOptimizationMeta", pushDownOptimizationMeta )
       .toString();
   }

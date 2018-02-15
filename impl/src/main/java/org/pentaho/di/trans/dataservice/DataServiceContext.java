@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -29,6 +29,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
 
@@ -49,6 +50,12 @@ public class DataServiceContext implements Context {
     .expireAfterAccess( 30, TimeUnit.SECONDS )
     .softValues()
     .<String, DataServiceExecutor>build().asMap();
+
+  // Use an in-memory cache with timed expiration and soft value references to prevent heap memory leaks
+  private final ConcurrentMap<String, StreamingServiceTransExecutor> serviceExecutors = CacheBuilder.newBuilder()
+    .expireAfterAccess( 30, TimeUnit.SECONDS )
+    .softValues()
+    .<String, StreamingServiceTransExecutor>build().asMap();
 
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
@@ -122,5 +129,20 @@ public class DataServiceContext implements Context {
   @Override
   public void removeExecutor( String id ) {
     executors.remove( id );
+  }
+
+  @Override
+  public void addServiceTransExecutor( final StreamingServiceTransExecutor serviceExecutor ) {
+    serviceExecutors.putIfAbsent( serviceExecutor.getId(), serviceExecutor );
+  }
+
+  @Override
+  public final StreamingServiceTransExecutor getServiceTransExecutor( String id ) {
+    return serviceExecutors.get( id );
+  }
+
+  @Override
+  public void removeServiceTransExecutor( String id ) {
+    serviceExecutors.remove( id );
   }
 }

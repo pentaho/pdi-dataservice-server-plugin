@@ -102,6 +102,7 @@
     <mongo.java.driver.version>3.2.2</mongo.java.driver.version>
     <commons.collections.version>3.2.2</commons.collections.version>
     <pentaho-modeler.version>${project.version}</pentaho-modeler.version>
+    <rxjava.version>2.0.4</rxjava.version>
   </properties>
 
   <dependencyManagement>
@@ -237,6 +238,11 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
+        <groupId>io.reactivex.rxjava2</groupId>
+        <artifactId>rxjava</artifactId>
+        <version>${rxjava.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>jsr305</artifactId>
         <version>2.0.3</version>
@@ -266,7 +272,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
   <build>
     <finalName>${project.artifactId}-${project.version}</finalName>
     <plugins>

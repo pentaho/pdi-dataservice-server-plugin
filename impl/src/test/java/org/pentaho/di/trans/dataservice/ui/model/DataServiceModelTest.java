@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -181,4 +181,11 @@ public class DataServiceModelTest {
     assertThat( stepFields.size(), equalTo( 0 ) );
   }
 
+  @Test
+  public void testStreaming() throws Exception {
+    model.setStreaming( false );
+    assertFalse( model.isStreaming() );
+    model.setStreaming( true );
+    assertTrue( model.isStreaming() );
+  }
 }

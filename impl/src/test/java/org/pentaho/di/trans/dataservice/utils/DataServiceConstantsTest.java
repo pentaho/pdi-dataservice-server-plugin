@@ -20,16 +20,29 @@
  *
  ******************************************************************************/
 
-package org.pentaho.di.trans.dataservice;
+package org.pentaho.di.trans.dataservice.utils;
 
-import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
-import org.pentaho.di.trans.step.StepMeta;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
-public interface IDataServiceMetaFactory {
-  public DataServiceMeta createDataService( StepMeta step ) throws KettleException;
-  public DataServiceMeta createDataService( StepMeta step, Integer rowLimit ) throws KettleException;
-  public DataServiceMeta createStreamingDataService( StepMeta step ) throws KettleException;
-  public PushDownFactory getCacheFactory();
-  public void setCacheFactory( PushDownFactory cacheFactory );
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+
+import static org.junit.Assert.assertTrue;
+
+/**
+ * {@link DataServiceConstants} test class
+ */
+@RunWith( MockitoJUnitRunner.class )
+public class DataServiceConstantsTest {
+  @Test( expected = InvocationTargetException.class )
+  public void testPrivateConstructor() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
+    InstantiationException {
+    Constructor<DataServiceConstants> constructor = DataServiceConstants.class.getDeclaredConstructor();
+    assertTrue( Modifier.isPrivate( constructor.getModifiers() ) );
+    constructor.setAccessible( true );
+    constructor.newInstance();
+  }
 }
