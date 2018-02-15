@@ -370,6 +370,9 @@ public class DataServiceExecutorTest extends BaseTest {
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
       metastore( metastore ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
       build();
 
     ArgumentCaptor<String> objectIds = ArgumentCaptor.forClass( String.class );

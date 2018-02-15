@@ -76,10 +76,15 @@ public class DataServiceExecutor {
 
   private final DataServiceMeta service;
   private final SQL sql;
+
   private final Map<String, String> parameters;
   private final SqlTransGenerator sqlTransGenerator;
   private final ListMultimap<ExecutionPoint, Runnable> listenerMap;
   private final DataServiceContext context;
+
+  private int windowRowSize;
+  private long windowMillisSize;
+  private long windowRate;
 
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
@@ -90,6 +95,9 @@ public class DataServiceExecutor {
     sqlTransGenerator = builder.sqlTransGenerator;
     genTrans = builder.genTrans;
     context = builder.context;
+    windowRowSize = builder.windowRowSize;
+    windowMillisSize = builder.windowMillisSize;
+    windowRate = builder.windowRate;
 
     listenerMap = MultimapBuilder.enumKeys( ExecutionPoint.class ).linkedListValues().build();
   }
@@ -101,6 +109,9 @@ public class DataServiceExecutor {
     private Trans serviceTrans;
     private Trans genTrans;
     private int rowLimit = 0;
+    private int windowRowSize = 0;
+    private long windowMillisSize = 0;
+    private long windowRate = 0;
     private Map<String, String> parameters = Collections.emptyMap();
     private LogLevel logLevel;
     private SqlTransGenerator sqlTransGenerator;
@@ -125,6 +136,21 @@ public class DataServiceExecutor {
 
     public Builder rowLimit( int rowLimit ) {
       this.rowLimit = rowLimit;
+      return this;
+    }
+
+    public Builder windowRowSize( int windowRowSize ) {
+      this.windowRowSize = windowRowSize;
+      return this;
+    }
+
+    public Builder windowMillisSize( long windowMillisSize ) {
+      this.windowMillisSize = windowMillisSize;
+      return this;
+    }
+
+    public Builder windowRate( long windowRate ) {
+      this.windowRate = windowRate;
       return this;
     }
 
@@ -493,8 +519,7 @@ public class DataServiceExecutor {
   public DataServiceExecutor executeStreamingQuery( final RowListener resultRowListener ) {
     StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( service.getName() ),
       genTrans, resultRowListener, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-      sqlTransGenerator.getSql().getSqlString(), DataServiceConstants.STREAMING_DEFAULT_WINDOW_SIZE,
-      DataServiceConstants.STREAMING_DEFAULT_WINDOW_RATE_MILLIS );
+      sqlTransGenerator.getSql().getSqlString(), windowRowSize, windowMillisSize, windowRate );
 
     listenerMap.get( ExecutionPoint.READY ).add( streamWiring );
 

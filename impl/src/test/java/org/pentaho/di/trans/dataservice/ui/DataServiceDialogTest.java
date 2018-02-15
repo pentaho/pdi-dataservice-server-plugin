@@ -122,17 +122,6 @@ public class DataServiceDialogTest {
   }
 
   @Test
-  public void testInitStreaming() throws Exception {
-    XulTabbox tabBox = mock( XulTabbox.class, RETURNS_DEEP_STUBS );
-    when( controller.getElementById( "optimizationTabs" ) ).thenReturn( tabBox );
-    when( tabBox.getTabs().getTabCount() ).thenReturn( 1 );
-
-    dialog.initStreaming();
-
-    verify( tabBox ).setSelectedIndex( 0 );
-  }
-
-  @Test
   public void testDelegates() throws Exception {
     assertThat( dialog.getController(), equalTo( controller ) );
     assertThat( dialog.getModel(), equalTo( model ) );
@@ -254,7 +243,6 @@ public class DataServiceDialogTest {
     verify( controller ).setDataService( dataService );
     verify( dialog ).loadXul( same( shell ), any( KettleXulLoader.class ), any( SwtXulRunner.class ) );
     verify( dialog ).initOptimizations( factories );
-    verify( dialog ).initStreaming();
 
     Throwable xulException = new XulException();
     when( dialog.loadXul( same( shell ), any( KettleXulLoader.class ), any( SwtXulRunner.class ) ) )

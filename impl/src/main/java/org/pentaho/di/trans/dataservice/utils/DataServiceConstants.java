@@ -35,11 +35,8 @@ public final class DataServiceConstants {
   public static final String PASSING_ALONG_ROW = "Passing along row: ";
   public static final String ROW_BUFFER_IS_FULL_TRYING_AGAIN = "Row buffer is full, trying again";
   public static final String STREAMING_TRANSFORMATION_STOPPED = "Streaming transformation stopped";
+  public static final String STREAMING_GENERATED_TRANSFORMATION_STOPPED = "Generated transformation stopped";
   public static final String STREAMING_CACHE_REMOVED = "Streaming cache listener removed: ";
-
-  // Default streaming management
-  public static final int STREAMING_DEFAULT_WINDOW_SIZE = 50;
-  public static final long STREAMING_DEFAULT_WINDOW_RATE_MILLIS = 0;
 
   // Streaming cache management
   public static final long STREAMING_CACHE_DURATION = 120;

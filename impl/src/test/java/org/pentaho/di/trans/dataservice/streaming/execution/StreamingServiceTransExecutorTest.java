@@ -42,6 +42,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
+import static org.pentaho.di.core.util.Assert.assertNull;
 
 /**
  * {@link StreamExecutionListener} test class
@@ -84,37 +85,61 @@ public class StreamingServiceTransExecutorTest {
   @Test ( expected = RuntimeException.class )
   public void testServiceStepNotFound() {
     when( serviceTrans.findRunThread( MOCK_SERVICE_STEP_NAME ) ).thenReturn( null );
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
   }
 
   @Test ( expected = RuntimeException.class )
   public void testServiceStartThreadException() throws KettleException {
     doThrow( new KettleException() ).when( serviceTrans ).startThreads();
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
   }
 
   @Test
-  public void testGetBufferWindowSize() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0 );
+  public void testGetBufferWindowNullInvalidValues() throws Exception {
+    StreamExecutionListener buffer = serviceExecutor.getBuffer( MOCK_QUERY, 0, 0, 0 );
+    assertNull( buffer );
+
+    buffer = serviceExecutor.getBuffer( MOCK_QUERY, -1, 0, 0 );
+    assertNull( buffer );
+
+    buffer = serviceExecutor.getBuffer( MOCK_QUERY, 0, -1, 0 );
+    assertNull( buffer );
+  }
+
+  @Test
+  public void testGetBufferWindowRowSize() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
+    testBufferAux();
+  }
+
+  @Test
+  public void testGetBufferWindowRowSizeRate() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 1 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferWindowSizeTime() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 0 );
+    testBufferAux();
+  }
+
+  @Test
+  public void testGetBufferWindowSizeTimeRate() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 1 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferWindowTime() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
     testBufferAux();
   }
 
   @Test
   public void testGetBuffer2Calls() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000 );
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
     testBufferAux();
   }
 
@@ -141,7 +166,7 @@ public class StreamingServiceTransExecutorTest {
 
   @Test
   public void testGetBufferCleanup() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
 
     ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );
 
@@ -163,6 +188,6 @@ public class StreamingServiceTransExecutorTest {
     verify( log ).logRowlevel( DataServiceConstants.PASSING_ALONG_ROW + rowMeta.getString( data ) );
     verify( serviceTrans ).stopAll( );
     verify( serviceTrans ).waitUntilFinished( );
-    verify( log ).logDebug( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
+    verify( log ).logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
   }
 }

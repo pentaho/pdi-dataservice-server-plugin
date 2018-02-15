@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -55,6 +55,12 @@ public class AnnotationsQueryService implements Query.Service {
   }
 
   @Override public Query prepareQuery( final String sql, final int maxRows, final Map<String, String> parameters )
+    throws KettleException {
+    return prepareQuery( sql, maxRows, 0, 0, 0, parameters );
+  }
+
+  @Override public Query prepareQuery( final String sql, final int maxRows, int windowRowSize, long windowMillisSize,
+                                       long windowRate, final Map<String, String> parameters )
     throws KettleException {
     String prefix = "show annotations from ";
     if ( sql.startsWith( prefix.toLowerCase() ) ) {

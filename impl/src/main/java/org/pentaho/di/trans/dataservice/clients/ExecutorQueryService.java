@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -52,13 +52,22 @@ public class ExecutorQueryService implements Query.Service {
     this.metastoreLocator = metastoreLocator;
   }
 
-  @Override public Query prepareQuery( String sqlString, int maxRows, Map<String, String> parameters ) throws KettleException {
+  @Override public Query prepareQuery( String sqlString, int maxRows, Map<String, String> parameters )
+    throws KettleException {
+    return prepareQuery( sqlString, maxRows, 0, 0, 0, parameters );
+  }
+
+  @Override public Query prepareQuery( String sqlString, int maxRows, int windowRowSize, long windowMillisSize,
+                                       long windowRate, final Map<String, String> parameters ) throws KettleException {
     SQL sql = new SQL( sqlString );
     Query query;
     try {
       IMetaStore metaStore = metastoreLocator != null ? metastoreLocator.getMetastore() : null;
       DataServiceExecutor executor = resolver.createBuilder( sql )
         .rowLimit( maxRows )
+        .windowRowSize( windowRowSize )
+        .windowMillisSize( windowMillisSize )
+        .windowRate( windowRate )
         .parameters( parameters )
         .metastore( metaStore )
         .build();

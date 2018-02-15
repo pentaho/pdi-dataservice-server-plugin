@@ -88,9 +88,46 @@ public class DataServiceClient implements IDataServiceClientService {
     }
   }
 
+  @Override public DataInputStream query( String sqlQuery, int maxRows, int windowRowSize, long windowMillisSize,
+                                          long windowRate ) throws SQLException {
+    try {
+      // Create a pipe to for results
+      SafePipedStreams pipe = new SafePipedStreams();
+
+      // Prepare query, exception will be thrown if query is invalid
+      Query query = prepareQuery( sqlQuery, maxRows, windowRowSize, windowMillisSize, windowRate, ImmutableMap.of() );
+
+      // Write query results to pipe on a separate thread
+      executorService.execute( () -> {
+        try ( OutputStream out = pipe.out ) {
+          // Write out results
+          query.writeTo( out );
+          // Pipe will automatically close on this end
+        } catch ( Exception e ) {
+          log.logError( e.getMessage(), e );
+        }
+      } );
+
+      return new DataInputStream( pipe.in );
+    } catch ( Exception e ) {
+      Throwables.propagateIfPossible( e, SQLException.class );
+      throw new SQLException( e );
+    }
+  }
+
   public Query prepareQuery( String sql, int maxRows, Map<String, String> parameters )
     throws KettleException {
     Query query = queryService.prepareQuery( sql, maxRows, parameters );
+    if ( query != null ) {
+      return query;
+    }
+    throw new KettleException( "Unable to resolve query: " + sql );
+  }
+
+  public Query prepareQuery( String sql, int maxRows, int windowRowSize, long windowMillisSize, long windowRate,
+                             Map<String, String> parameters )
+    throws KettleException {
+    Query query = queryService.prepareQuery( sql, maxRows, windowRowSize, windowMillisSize, windowRate, parameters );
     if ( query != null ) {
       return query;
     }

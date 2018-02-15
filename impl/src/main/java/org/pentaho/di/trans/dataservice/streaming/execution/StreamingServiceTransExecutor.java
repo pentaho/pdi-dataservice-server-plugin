@@ -113,12 +113,21 @@ public class StreamingServiceTransExecutor {
    * started, otherwise it returns the cached listener.
    *
    * @param query The requested query.
-   * @param windowSize The requested query window size.
-   * @param windowMillis The requested query window size time based.
-   * @return The {@link StreamExecutionListener} for the given query.
+   * @param windowRowSize The requested query window size. ( >= 0 )
+   * @param windowMillisSize The requested query window size time based. ( >= 0 )
+   * @param windowRate The requested query window update rate - Number of rows for size based windows and milliseconds
+   *                   for time based windows. ( >= 0 )
+   * @return The {@link StreamExecutionListener} for the given query or null if parameters invalid.
    */
-  public StreamExecutionListener getBuffer( String query, int windowSize, long windowMillis ) {
-    String cacheId = getCacheKey( query, windowSize, windowMillis );
+  public StreamExecutionListener getBuffer( String query, int windowRowSize, long windowMillisSize, long windowRate ) {
+    windowRowSize = windowRowSize < 0 ? 0 : windowRowSize;
+    windowMillisSize = windowMillisSize < 0 ? 0 : windowMillisSize;
+
+    if ( windowRowSize == 0 && windowMillisSize == 0 ) {
+      return null;
+    }
+
+    String cacheId = getCacheKey( query, windowRowSize, windowMillisSize, windowRate );
 
     StreamExecutionListener streamListener = serviceListeners.getIfPresent( cacheId );
 
@@ -127,10 +136,19 @@ public class StreamingServiceTransExecutor {
         stepStream = new StreamList<>();
       }
 
-      Observable<List<RowMetaAndData>> buffer = windowMillis > 0
-        ? windowSize > 0 ? stepStream.getStream().buffer( windowMillis, TimeUnit.MILLISECONDS, windowSize )
-        : stepStream.getStream().buffer( windowMillis, TimeUnit.MILLISECONDS )
-        : stepStream.getStream().buffer( windowSize );
+      Observable<List<RowMetaAndData>> buffer;
+
+      if ( windowRate > 0 ) {
+        buffer = windowMillisSize > 0
+          ? windowRowSize > 0 ? stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS, windowRowSize )
+          : stepStream.getStream().buffer( windowMillisSize, windowRate, TimeUnit.MILLISECONDS )
+          : stepStream.getStream().buffer( windowRowSize, (int) windowRate );
+      } else {
+        buffer = windowMillisSize > 0
+          ? windowRowSize > 0 ? stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS, windowRowSize )
+          : stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS )
+          : stepStream.getStream().buffer( windowRowSize );
+      }
 
       streamListener = new StreamExecutionListener( buffer );
 
@@ -149,11 +167,12 @@ public class StreamingServiceTransExecutor {
    *
    * @param query The query.
    * @param size The query window size.
-   * @param millis The query window rate.
+   * @param millis The query window time.
+   * @param rate The query window rate.
    * @return The cache key for the query.
    */
-  private String getCacheKey( String query, int size, long millis ) {
-    return query.concat( String.valueOf( size ) ).concat( String.valueOf( millis ) );
+  private String getCacheKey( String query, int size, long millis, long rate ) {
+    return query.concat( String.valueOf( size ) ).concat( String.valueOf( millis ) ).concat( String.valueOf( rate ) );
   }
 
   /**
@@ -203,7 +222,7 @@ public class StreamingServiceTransExecutor {
             serviceTrans.stopAll();
             serviceTrans.waitUntilFinished();
             stepStream = null;
-            log.logDebug( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
+            log.logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
           }
         }
       } );
