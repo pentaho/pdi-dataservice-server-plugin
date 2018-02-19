@@ -80,6 +80,7 @@ public class ListDataServicesServlet extends BaseCartePlugin {
             writer.println( XMLHandler.openTag( XML_TAG_SERVICE ) );
 
             writer.println( XMLHandler.addTagValue( "name", thinServiceInformation.getName() ) );
+            writer.println( XMLHandler.addTagValue( "streaming", thinServiceInformation.isStreaming() ) );
             writer.println( thinServiceInformation.getServiceFields().getMetaXML() );
 
             writer.println( XMLHandler.closeTag( XML_TAG_SERVICE ) );

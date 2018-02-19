@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -68,7 +68,7 @@ public class ListDataServicesServletTest extends BaseServletTest {
     when( request.getContextPath() ).thenReturn( CONTEXT_PATH );
 
     StringWriter out = new StringWriter();
-    ThinServiceInformation thinServiceInformation = new ThinServiceInformation( DATA_SERVICE_NAME, rowMetaInterface );
+    ThinServiceInformation thinServiceInformation = new ThinServiceInformation( DATA_SERVICE_NAME, false, rowMetaInterface );
     when( response.getWriter() ).thenReturn( new PrintWriter( out ) );
     when( rowMetaInterface.getMetaXML() ).thenReturn( "<rowMeta mock/>" );
     when( client.getServiceInformation() ).thenReturn( ImmutableList.of( thinServiceInformation ) );
@@ -91,7 +91,7 @@ public class ListDataServicesServletTest extends BaseServletTest {
   private void verifyRun() throws Exception {
     verify( response ).setStatus( HttpServletResponse.SC_OK );
     verify( response ).setContentType( "text/xml; charset=utf-8" );
-    Pattern pattern = Pattern.compile( "<\\?xml version=\"1.0\" encoding=\"UTF-8\"\\?>\\s*<services>\\s*<service>\\s*<name>" + DATA_SERVICE_NAME + "<\\/name>\\s*<rowMeta mock\\/>\\s*<\\/service>\\s*<\\/services>\\s*" );
+    Pattern pattern = Pattern.compile( "<\\?xml version=\"1.0\" encoding=\"UTF-8\"\\?>\\s*<services>\\s*<service>\\s*<name>" + DATA_SERVICE_NAME + "<\\/name>\\s*<streaming>N</streaming>\\s*<rowMeta mock\\/>\\s*<\\/service>\\s*<\\/services>\\s*" );
     assertTrue( pattern.matcher( outputBuffer ).matches() );
   }
 

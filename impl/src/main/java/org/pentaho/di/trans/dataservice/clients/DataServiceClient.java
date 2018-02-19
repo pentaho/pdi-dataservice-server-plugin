@@ -105,7 +105,7 @@ public class DataServiceClient implements IDataServiceClientService {
       try {
         transMeta.activateParameters();
         RowMetaInterface serviceFields = transMeta.getStepFields( service.getStepname() );
-        IThinServiceInformation serviceInformation = new ThinServiceInformation( service.getName(), serviceFields );
+        IThinServiceInformation serviceInformation = new ThinServiceInformation( service.getName(), service.isStreaming(), serviceFields );
         services.add( serviceInformation );
       } catch ( Exception e ) {
         String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
@@ -126,7 +126,7 @@ public class DataServiceClient implements IDataServiceClientService {
       try {
         transMeta.activateParameters();
         RowMetaInterface serviceFields = transMeta.getStepFields( dataServiceMeta.getStepname() );
-        return new ThinServiceInformation( dataServiceMeta.getName(), serviceFields );
+        return new ThinServiceInformation( dataServiceMeta.getName(), dataServiceMeta.isStreaming(), serviceFields );
       } catch ( Exception e ) {
         String message = MessageFormat.format( "Unable to get fields for service {0}, transformation: {1}",
           dataServiceMeta.getName(), transMeta.getName() );
