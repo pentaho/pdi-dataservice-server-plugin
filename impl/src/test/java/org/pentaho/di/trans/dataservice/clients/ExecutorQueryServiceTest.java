@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,11 +22,16 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
+import com.google.common.collect.ImmutableList;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.sql.SQL;
+import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
@@ -34,19 +39,34 @@ import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * {@link ExecutorQueryService} test class
+ */
+@RunWith( MockitoJUnitRunner.class )
 public class ExecutorQueryServiceTest {
+  @Mock DataOutputStream dataOutputStream;
+  @Mock OutputStream outputStream;
+
   @Test
   public void testQueryBuildsWithMetastore() throws Exception {
     final DataServiceFactory factory = mock( DataServiceFactory.class );
     final DataServiceContext context = mock( DataServiceContext.class );
     final DataServiceResolver dataServiceResolver = mock( DataServiceResolver.class );
+    final DataServiceExecutor dataServiceExecutor = mock( DataServiceExecutor.class );
+    final Trans serviceTrans = mock( Trans.class );
+    final Trans genTrans = mock( Trans.class );
     when( context.getMetaStoreUtil() ).thenReturn( factory );
     DataServiceExecutor.Builder builder = mock( DataServiceExecutor.Builder.class );
 
@@ -65,12 +85,28 @@ public class ExecutorQueryServiceTest {
     when( builder.rowLimit( rowLimit ) ).thenReturn( builder );
     when( builder.parameters( parameters ) ).thenReturn( builder );
     when( builder.metastore( metastore ) ).thenReturn( builder );
+    when( builder.windowRowSize( 0 ) ).thenReturn( builder );
+    when( builder.windowMillisSize( 0 ) ).thenReturn( builder );
+    when( builder.windowRate( 0 ) ).thenReturn( builder );
+    when( builder.build() ).thenReturn( dataServiceExecutor );
+    when( dataServiceExecutor.getServiceTrans() ).thenReturn( serviceTrans );
+    when( dataServiceExecutor.getGenTrans() ).thenReturn( genTrans );
 
-    executorQueryService.prepareQuery( sql.getSqlString(), rowLimit, parameters );
+    Query result = executorQueryService.prepareQuery( sql.getSqlString(), rowLimit, parameters );
+    assertEquals( ImmutableList.of( serviceTrans, genTrans ), result.getTransList() );
 
     verify( builder ).rowLimit( rowLimit );
     verify( builder ).parameters( parameters );
     verify( builder ).metastore( metastore );
+  }
+
+  @Test
+  public void testAsDataOutputStream() throws IOException {
+    assertSame( dataOutputStream, ExecutorQueryService.asDataOutputStream( dataOutputStream ) );
+    DataOutputStream out = ExecutorQueryService.asDataOutputStream( outputStream );
+
+    out.write( 1 );
+    verify( outputStream ).write( 1 );
   }
 
   private Matcher<SQL> matchesSql( final SQL sql ) {

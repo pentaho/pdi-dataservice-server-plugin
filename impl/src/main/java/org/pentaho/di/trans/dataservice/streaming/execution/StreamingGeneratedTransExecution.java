@@ -34,6 +34,7 @@ import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -50,8 +51,9 @@ public class StreamingGeneratedTransExecution implements Runnable {
 
   private Disposable buffer;
 
-  private int windowSize;
-  private long windowMillis;
+  private int windowRowSize;
+  private long windowMillisSize;
+  private long windowRate;
 
   /**
    * Constructor.
@@ -63,21 +65,24 @@ public class StreamingGeneratedTransExecution implements Runnable {
    * @param injectorStepName The name of the step in the generated transformation where rows are injected.
    * @param resultStepName The name of the step in the generated transformation where the results are retreived.
    * @param query The query to be executed.
-   * @param windowSize The streaming query window size.
-   * @param windowMillis The streaming query rate.
+   * @param windowRowSize The streaming query window size.
+   * @param windowMillisSize The requested query window size time based.
+   * @param windowRate The requested query window update rate - Number of rows for size based windows and milliseconds
+   *                   for time based windows.
    */
   public StreamingGeneratedTransExecution( final StreamingServiceTransExecutor serviceExecutor, final Trans genTrans,
                                            final RowListener resultRowListener, final String injectorStepName,
-                                           final String resultStepName, final String query, int windowSize,
-                                           long windowMillis ) {
+                                           final String resultStepName, final String query, int windowRowSize,
+                                           long windowMillisSize, long windowRate ) {
     this.serviceExecutor = serviceExecutor;
     this.genTrans = genTrans;
     this.resultRowListener = resultRowListener;
     this.injectorStepName = injectorStepName;
     this.resultStepName = resultStepName;
     this.query = query;
-    this.windowSize = windowSize;
-    this.windowMillis = windowMillis;
+    this.windowRowSize = windowRowSize;
+    this.windowMillisSize = windowMillisSize;
+    this.windowRate = windowRate;
   }
 
   /**
@@ -85,9 +90,11 @@ public class StreamingGeneratedTransExecution implements Runnable {
    */
   @Override public void run() {
     // This is where we will inject the rows from the service transformation step
-    StreamExecutionListener stream = serviceExecutor.getBuffer( query, windowSize, windowMillis );
+    StreamExecutionListener stream = serviceExecutor.getBuffer( query, windowRowSize, windowMillisSize, windowRate );
     try {
-      if ( stream.hasCachedWindow() ) {
+      if ( stream == null ) {
+        this.runGenTrans( Collections.emptyList() );
+      } else if ( stream.hasCachedWindow() ) {
         this.runGenTrans( stream.getCachedWindow() );
       } else {
         buffer = stream.getBuffer().subscribe( list -> this.runGenTrans( list ) );
@@ -133,6 +140,8 @@ public class StreamingGeneratedTransExecution implements Runnable {
       rowProducer.finished();
       genTrans.waitUntilFinished();
       genTrans.stopAll();
+
+      log.logDetailed( DataServiceConstants.STREAMING_GENERATED_TRANSFORMATION_STOPPED );
 
       if ( buffer != null ) {
         buffer.dispose();

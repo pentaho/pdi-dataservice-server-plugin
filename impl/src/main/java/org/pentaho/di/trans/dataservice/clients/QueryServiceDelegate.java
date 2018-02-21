@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -40,8 +40,13 @@ public class QueryServiceDelegate implements Query.Service {
 
   @Override public Query prepareQuery( String sql, int maxRows, Map<String, String> parameters )
     throws KettleException {
+    return  prepareQuery( sql, maxRows, 0, 0, 0, parameters );
+  }
+
+  @Override public Query prepareQuery( String sql, int maxRows, int windowRowSize, long windowMillisSize,
+                                       long windowRate, final Map<String, String> parameters ) throws KettleException {
     for ( Query.Service queryService : queryServices ) {
-      Query query = queryService.prepareQuery( sql, maxRows, parameters );
+      Query query = queryService.prepareQuery( sql, maxRows, windowRowSize, windowMillisSize, windowRate, parameters );
       if ( query != null ) {
         return query;
       }

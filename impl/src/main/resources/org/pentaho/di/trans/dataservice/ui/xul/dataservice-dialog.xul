@@ -28,6 +28,10 @@
       </menulist>
     </hbox>
     <spacer/>
+    <hbox>
+      <checkbox id="streaming-checkbox" label="${DataServiceDialog.EnableStreaming.Label}"/>
+    </hbox>
+    <spacer/>
     <tabbox id="optimizationTabs" flex="2" selectedIndex="2">
       <tabs id="opt_tabs">
       </tabs>

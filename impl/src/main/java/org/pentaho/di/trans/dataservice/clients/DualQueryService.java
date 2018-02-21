@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -72,6 +72,11 @@ public class DualQueryService implements Query.Service {
   }
 
   @Override public Query prepareQuery( String sqlString, int maxRows, Map<String, String> parameters ) {
+    return prepareQuery( sqlString, maxRows, 0, 0, 0, parameters );
+  }
+
+  @Override public Query prepareQuery( String sqlString, int maxRows, int windowRowSize, long windowMillisSize,
+                                          long windowRate, final Map<String, String> parameters ) {
     SQL sql;
     try {
       sql = new SQL( sqlString );
@@ -86,7 +91,6 @@ public class DualQueryService implements Query.Service {
       return null;
     }
   }
-
   private class DualQuery implements Query {
     public DualQuery() {
     }

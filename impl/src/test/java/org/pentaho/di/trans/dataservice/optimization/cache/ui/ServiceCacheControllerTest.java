@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -72,6 +72,7 @@ public class ServiceCacheControllerTest {
 
     when( document.getElementById( "service-cache-checkbox" ) ).thenReturn( checkbox );
     when( document.getElementById( "service-cache-ttl" ) ).thenReturn( ttl );
+    when( model.isStreaming() ).thenReturn( false );
   }
 
   @Test

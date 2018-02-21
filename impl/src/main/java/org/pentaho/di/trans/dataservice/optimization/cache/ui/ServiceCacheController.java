@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -49,30 +49,33 @@ public class ServiceCacheController extends AbstractController {
   }
 
   public void initBindings( DataServiceModel model ) {
-    initBindings( locateServiceCacheMeta( model ) );
-  }
-
-  public void initBindings( PushDownOptimizationMeta meta ) {
+    PushDownOptimizationMeta meta = locateServiceCacheMeta( model );
     ServiceCache serviceCache = (ServiceCache) meta.getType();
     BindingFactory bindingFactory = getBindingFactory();
 
-    XulCheckbox checkbox = getElementById( "service-cache-checkbox" );
-    XulTextbox ttl = getElementById( "service-cache-ttl" );
+    XulCheckbox streamingCheckbox = getElementById( "streaming-checkbox" );
+    XulCheckbox serviceCacheCheckBox = getElementById( "service-cache-checkbox" );
+    XulTextbox serviceCacheTextBox = getElementById( "service-cache-ttl" );
 
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
 
-    checkbox.setChecked( meta.isEnabled() );
-    bindingFactory.createBinding( checkbox, "checked", meta, "enabled" );
+    serviceCacheCheckBox.setChecked( meta.isEnabled() );
+    serviceCacheCheckBox.setDisabled( model.isStreaming() );
+    serviceCacheTextBox.setDisabled( model.isStreaming() );
+    bindingFactory.createBinding( serviceCacheCheckBox, "checked", meta, "enabled" );
 
     try {
-      ttl.setValue( serviceCache.getConfiguredTimeToLive() );
+      serviceCacheTextBox.setValue( serviceCache.getConfiguredTimeToLive() );
     } catch ( Exception e ) {
       getLogChannel().logError( "Unable to set default TTL", e );
     }
-    bindingFactory.createBinding( ttl, "value", serviceCache, "timeToLive" );
+    bindingFactory.createBinding( serviceCacheTextBox, "value", serviceCache, "timeToLive" );
 
-    ttl.setDisabled( !meta.isEnabled() );
-    bindingFactory.createBinding( checkbox, "checked", ttl, "disabled", not() );
+    bindingFactory.createBinding( serviceCacheCheckBox, "checked", serviceCacheTextBox, "disabled", not() );
+
+    bindingFactory.createBinding( streamingCheckbox, "checked", serviceCacheCheckBox, "disabled" );
+    bindingFactory.createBinding( streamingCheckbox, "checked", serviceCacheTextBox, "disabled" );
+
   }
 
   /**

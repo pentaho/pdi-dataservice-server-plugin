@@ -20,7 +20,27 @@
             <button id="preview-opt-btn" label="${DataServiceTest.PreviewOptimization.Button}" onclick="dataServiceTestController.previewQueries()" />
             <button id="exec-sql-btn" label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()"/>
         </hbox>
-        <separator height="10"/>
+        <separator height="10" />
+        <hbox id="streaming-title" align="right">
+            <label value="${DataServiceTest.StreamingParameters.Title}" />
+        </hbox>
+        <hbox id="streaming-parameters" align="right" >
+            <vbox>
+                <label control="window-size" value="${DataServiceTest.StreamingParameters.Size.Title}" />
+                <textbox id="window-size" width="50"
+                         tooltiptext="${DataServiceTest.StreamingParameters.Size.Tooltip}" />
+            </vbox>
+            <vbox>
+                <label control="window-millis" value="${DataServiceTest.StreamingParameters.Time.Title}" />
+                <textbox id="window-millis" width="50"
+                         tooltiptext="${DataServiceTest.StreamingParameters.Time.Tooltip}" />
+            </vbox>
+            <vbox>
+                <label control="window-rate" value="${DataServiceTest.StreamingParameters.Rate.Title}" />
+                <textbox id="window-rate" width="50"
+                         tooltiptext="${DataServiceTest.StreamingParameters.Rate.Tooltip}" />
+            </vbox>
+        </hbox>
         <hbox align="right" >
             <vbox>
                 <label value="${DataServiceTest.LogLevel.Label}"/>

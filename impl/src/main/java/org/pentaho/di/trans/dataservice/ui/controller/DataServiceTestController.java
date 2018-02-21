@@ -22,17 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.stream.Collectors;
-
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.io.IOUtils;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
@@ -77,10 +68,19 @@ import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
+import org.pentaho.ui.xul.containers.XulHbox;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableMap;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 
 public class DataServiceTestController extends AbstractXulEventHandler {
@@ -143,10 +143,15 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
     bindLogLevelsCombo( bindingFactory );
     bindSqlText( bindingFactory );
+    bindStreamingWindowParameters( bindingFactory );
     bindButtons( bindingFactory );
     bindMaxRowsCombo( bindingFactory );
     bindErrorAlert( bindingFactory );
     bindOptImpactInfo( bindingFactory );
+  }
+
+  public boolean hideStreaming() {
+    return !dataService.isStreaming();
   }
 
   private void bindButtons( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
@@ -191,8 +196,14 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     assert document.getElementById( "maxrows-combo" ) instanceof XulMenuList;
     maxRows = (XulMenuList<String>) document.getElementById( "maxrows-combo" );
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
-    bindingFactory.createBinding( model, "allMaxRows", maxRows, "elements" )
-      .fireSourceChanged();
+
+    if ( dataService.isStreaming() ) {
+      bindingFactory.createBinding( model, "allStreamingMaxRows", maxRows, "elements" )
+        .fireSourceChanged();
+    } else {
+      bindingFactory.createBinding( model, "allMaxRows", maxRows, "elements" )
+        .fireSourceChanged();
+    }
   }
 
   private void bindSelectedMaxRows( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
@@ -263,6 +274,25 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     bindingFactory.createBinding( model, "sql", sqlTextBox, "value" );
   }
 
+  private void bindStreamingWindowParameters( BindingFactory bindingFactory ) {
+    XulHbox streamingTitleBox = (XulHbox) document.getElementById( "streaming-title" );
+    XulHbox streamingParametersBox = (XulHbox) document.getElementById( "streaming-parameters" );
+    streamingTitleBox.setVisible( dataService.isStreaming() );
+    streamingParametersBox.setVisible( dataService.isStreaming() );
+
+    XulTextbox sizeTextBox = (XulTextbox) document.getElementById( "window-size" );
+    XulTextbox millisTextBox = (XulTextbox) document.getElementById( "window-millis" );
+    XulTextbox rateTextBox = (XulTextbox) document.getElementById( "window-rate" );
+    sizeTextBox.setValue( String.valueOf( model.getWindowRowSize() ) );
+    millisTextBox.setValue( String.valueOf( model.getWindowMillisSize() ) );
+    rateTextBox.setValue( String.valueOf( model.getWindowRate() ) );
+
+    bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
+    bindingFactory.createBinding( model, "windowRowSize", sizeTextBox, "value" );
+    bindingFactory.createBinding( model, "windowMillisSize", millisTextBox, "value" );
+    bindingFactory.createBinding( model, "windowRate", rateTextBox, "value" );
+  }
+
   private String getDefaultSql() {
     return "SELECT * FROM \"" + dataService.getName() + "\"";
   }
@@ -270,12 +300,20 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   public void executeSql() throws KettleException {
     resetMetrics();
     dataServiceExec = getNewDataServiceExecutor( true );
-
     updateOptimizationImpact( dataServiceExec );
     updateModel( dataServiceExec );
 
     AnnotationsQueryService annotationsQuery = getAnnotationsQueryService();
-    Query query = annotationsQuery.prepareQuery( model.getSql(), model.getMaxRows(), ImmutableMap.<String, String>of() );
+    Query query;
+
+    if ( dataService.isStreaming() ) {
+      query = annotationsQuery.prepareQuery( model.getSql(), 0,
+        Integer.valueOf( model.getWindowRowSize() ), Long.valueOf( model.getWindowMillisSize() ),
+        Long.valueOf( model.getWindowRate() ), ImmutableMap.<String, String>of() );
+    } else {
+      query = annotationsQuery.prepareQuery( model.getSql(), model.getMaxRows(), ImmutableMap.<String, String>of() );
+    }
+
     if ( null != query ) {
       writeAnnotations( query );
       handleCompletion( dataServiceExec );
@@ -334,10 +372,12 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   private void checkMaxRows( DataServiceExecutor dataServiceExec ) {
-    if ( model.getMaxRows() > 0
-      && model.getMaxRows() <= model.getResultRows().size() ) {
-      //Exceeded max rows, no need to continue
-      stopDataService( dataServiceExec );
+    if ( !dataService.isStreaming() ) {
+      if ( model.getMaxRows() > 0
+        && model.getMaxRows() <= model.getResultRows().size() ) {
+        //Exceeded max rows, no need to continue
+        stopDataService( dataServiceExec );
+      }
     }
   }
 
@@ -408,11 +448,25 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   protected DataServiceExecutor getNewDataServiceExecutor( boolean enableMetrics ) throws KettleException {
     try {
       resetVariablesAndParameters();
-      return new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService, context ).
-        rowLimit( model.getMaxRows() ).
-        logLevel( model.getLogLevel() ).
-        enableMetrics( enableMetrics ).
-        build();
+
+      DataServiceExecutor.Builder builder;
+
+      if ( dataService.isStreaming() ) {
+        builder = new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService, context ).
+          rowLimit( 0 ).
+          logLevel( model.getLogLevel() ).
+          enableMetrics( enableMetrics ).
+          windowRowSize( Integer.valueOf( model.getWindowRowSize() ) ).
+          windowMillisSize( Long.valueOf( model.getWindowMillisSize() ) ).
+          windowRate( Long.valueOf( model.getWindowRate() ) );
+      } else {
+        builder = new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService, context ).
+          rowLimit( model.getMaxRows() ).
+          logLevel( model.getLogLevel() ).
+          enableMetrics( enableMetrics );
+      }
+
+      return builder.build();
     } catch ( KettleException e ) {
       model.setAlertMessage( e.getMessage() );
       throw e;

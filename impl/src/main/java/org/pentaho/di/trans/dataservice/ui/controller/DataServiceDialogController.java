@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -35,6 +35,7 @@ import org.pentaho.di.ui.util.HelpUtils;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
+import org.pentaho.ui.xul.components.XulCheckbox;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
@@ -66,6 +67,8 @@ public class DataServiceDialogController extends AbstractController {
 
     XulTextbox serviceName = getElementById( "service-name" );
     XulMenuList<String> steps = getElementById( "trans-steps" );
+    XulCheckbox checkbox = getElementById( "streaming-checkbox" );
+
     steps.setElements( ImmutableList.copyOf( model.getTransMeta().getStepNames() ) );
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
@@ -73,6 +76,8 @@ public class DataServiceDialogController extends AbstractController {
     bindingFactory.createBinding( model, "serviceStep", steps, "selectedItem" ).fireSourceChanged();
 
     bindingFactory.createBinding( model, "serviceName", serviceName, "value" ).fireSourceChanged();
+
+    bindingFactory.createBinding( model, "streaming", checkbox, "checked" ).fireSourceChanged();
   }
 
   public void showTestDialog() throws XulException {

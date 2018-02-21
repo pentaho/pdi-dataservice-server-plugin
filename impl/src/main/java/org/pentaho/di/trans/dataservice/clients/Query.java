@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -41,5 +41,7 @@ public interface Query {
 
   interface Service {
     Query prepareQuery( String sql, int maxRows, Map<String, String> parameters ) throws KettleException;
+    Query prepareQuery( String sql, int maxRows, int windowRowSize, long windowMillisSize, long windowRate,
+                        Map<String, String> parameters ) throws KettleException;
   }
 }

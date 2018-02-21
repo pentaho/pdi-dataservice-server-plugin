@@ -70,10 +70,13 @@ import static org.mockito.Mockito.when;
 @RunWith( MockitoJUnitRunner.class )
 public abstract class BaseTest {
   public static final String DATA_SERVICE_NAME = "DataService";
+  public static final String STREAMING_DATA_SERVICE_NAME = "StreamingDataService";
   public static final String DATA_SERVICE_NAME2 = "DataService2";
   public static final String DATA_SERVICE_STEP = "Data Service Step";
   protected TransMeta transMeta;
+  protected TransMeta streamingTransMeta;
   protected DataServiceMeta dataService;
+  protected DataServiceMeta streamingDataService;
 
   protected DataServiceContext context;
   protected List<PushDownFactory> pushDownFactories;
@@ -91,6 +94,13 @@ public abstract class BaseTest {
 
   protected DataServiceMeta createDataService( String dataServiceName, TransMeta transMeta ) {
     DataServiceMeta dataService = new DataServiceMeta( transMeta );
+    dataService.setName( dataServiceName );
+    dataService.setStepname( DATA_SERVICE_STEP );
+    return dataService;
+  }
+
+  protected DataServiceMeta createStreamingDataService( String dataServiceName, TransMeta transMeta ) {
+    DataServiceMeta dataService = new DataServiceMeta( transMeta, true );
     dataService.setName( dataServiceName );
     dataService.setStepname( DATA_SERVICE_STEP );
     return dataService;
@@ -117,13 +127,20 @@ public abstract class BaseTest {
   @Before
   public void setUpBase() throws Exception {
     transMeta = createTransMeta( DATA_SERVICE_NAME );
+    streamingTransMeta = createTransMeta( STREAMING_DATA_SERVICE_NAME );
 
     StepMeta stepMeta = mock( StepMeta.class );
     when( stepMeta.getName() ).thenReturn( DATA_SERVICE_STEP );
     transMeta.addStep( stepMeta );
     transMeta.clearChanged();
 
+    StepMeta streamingStepMeta = mock( StepMeta.class );
+    when( streamingStepMeta.getName() ).thenReturn( STREAMING_DATA_SERVICE_NAME );
+    streamingTransMeta.addStep( streamingStepMeta );
+    streamingTransMeta.clearChanged();
+
     dataService = createDataService( DATA_SERVICE_NAME, transMeta );
+    streamingDataService = createStreamingDataService( STREAMING_DATA_SERVICE_NAME, streamingTransMeta );
 
     PentahoCacheTemplateConfiguration template = mock( PentahoCacheTemplateConfiguration.class );
     when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( Constants.DEFAULT_TEMPLATE, template ) );

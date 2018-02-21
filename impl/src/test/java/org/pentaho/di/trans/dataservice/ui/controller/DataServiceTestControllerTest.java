@@ -56,6 +56,7 @@ import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulTextbox;
+import org.pentaho.ui.xul.containers.XulHbox;
 import org.pentaho.ui.xul.dom.Document;
 
 import java.io.IOException;
@@ -121,6 +122,9 @@ public class DataServiceTestControllerTest  {
 
   @Mock
   private XulTextbox xulTextBox;
+
+  @Mock
+  private XulHbox xulHbox;
 
   @Mock
   private DataServiceContext context;
@@ -192,6 +196,11 @@ public class DataServiceTestControllerTest  {
       }
     } ).when( document ).invokeLater( any( Runnable.class ) );
     when( dataService.getName() ).thenReturn( TEST_TABLE_NAME );
+    when( dataService.isStreaming() ).thenReturn( false );
+
+    when( model.getWindowRowSize() ).thenReturn( "0" );
+    when( model.getWindowMillisSize() ).thenReturn( "0" );
+    when( model.getWindowRate() ).thenReturn( "0" );
 
     dataServiceTestController = new DataServiceTestControllerTester();
     dataServiceTestController.setXulDomContainer( xulDomContainer );
@@ -203,11 +212,16 @@ public class DataServiceTestControllerTest  {
     when( document.getElementById( "log-levels" ) ).thenReturn( xulMenuList );
     when( document.getElementById( "sql-textbox" ) ).thenReturn( xulTextBox );
     when( document.getElementById( "maxrows-combo" ) ).thenReturn( xulMenuList );
+    when( document.getElementById( "streaming-title" ) ).thenReturn( xulHbox );
+    when( document.getElementById( "streaming-parameters" ) ).thenReturn( xulHbox );
+    when( document.getElementById( "window-size" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-millis" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-rate" ) ).thenReturn( xulTextBox );
 
     dataServiceTestController.init();
 
     verify( bindingFactory ).setDocument( document );
-    verify( document, times( 9 ) ).getElementById( anyString() );
+    verify( document, times( 14 ) ).getElementById( anyString() );
   }
 
   @Test
@@ -264,6 +278,11 @@ public class DataServiceTestControllerTest  {
     verify( model, timeout( VERIFY_TIMEOUT_MILLIS ).atLeast( 2 ) ).setAlertMessage( argument.capture() );
     assertTrue( argument.getValue().length() > 0 );
     assertEquals( "There were errors, review logs.", argument.getValue() );
+  }
+
+  @Test
+  public void hideStreamingTest() throws KettleException {
+    assertTrue( dataServiceTestController.hideStreaming() );
   }
 
   @Test

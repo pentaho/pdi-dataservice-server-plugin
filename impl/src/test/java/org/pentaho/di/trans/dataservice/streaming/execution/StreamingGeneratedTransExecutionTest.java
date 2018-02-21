@@ -61,6 +61,7 @@ public class StreamingGeneratedTransExecutionTest {
   private String MOCK_QUERY = "Mock Query";
   private int MOCK_WINDOW_SIZE = 1;
   private long MOCK_WINDOW_MILLIS = 0;
+  private long MOCK_WINDOW_RATE = 0;
   private List<RowMetaAndData> rowIterator;
   private StreamList<RowMetaAndData> streamList;
   private Observable<List<RowMetaAndData>> mockObservable;
@@ -83,7 +84,7 @@ public class StreamingGeneratedTransExecutionTest {
     mockObservable = streamList.getStream().buffer( 1 );
 
     when( streamExecutionListener.getBuffer( ) ).thenReturn( mockObservable );
-    when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_SIZE, MOCK_WINDOW_MILLIS ) )
+    when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_SIZE, MOCK_WINDOW_MILLIS, MOCK_WINDOW_RATE ) )
       .thenReturn( streamExecutionListener );
     when( log.isRowLevel() ).thenReturn( true );
     when( genTrans.getLogChannel() ).thenReturn( log );
@@ -91,7 +92,8 @@ public class StreamingGeneratedTransExecutionTest {
     when( genTrans.addRowProducer( MOCK_INJECTOR_STEP_NAME, 0 ) ).thenReturn( rowProducer );
 
     gentransExecutor = new StreamingGeneratedTransExecution( serviceExecutor, genTrans, resultRowListener,
-      MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_SIZE, MOCK_WINDOW_MILLIS );
+      MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_SIZE, MOCK_WINDOW_MILLIS,
+      MOCK_WINDOW_RATE );
   }
 
   @Test

@@ -49,7 +49,13 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   private LogChannelInterface genTransLogChannel;
 
   private int maxRows = 0;
-  public static final List<Integer> MAXROWS_CHOICES = Arrays.asList( 0, 100, 500, 1000 );
+
+  public static final List<Integer> MAXROWS_CHOICES = Arrays.asList( 100, 500, 1000 );
+  public static final List<Integer> MAXROWS_STREAMING_CHOICES = Arrays.asList( 0 );
+
+  private String windowRowSize = "0";
+  private String windowMillisSize = "0";
+  private String windowRate = "0";
 
   private boolean executing = false;
 
@@ -102,7 +108,7 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   }
 
   public int getMaxRows() {
-    return MAXROWS_CHOICES.get( maxRows );
+    return MAXROWS_CHOICES.get( this.maxRows );
   }
 
   public void setMaxRows( int maxRows ) {
@@ -111,6 +117,34 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
 
   public List<Integer> getAllMaxRows() {
     return MAXROWS_CHOICES;
+  }
+
+  public List<Integer> getAllStreamingMaxRows() {
+    return MAXROWS_STREAMING_CHOICES;
+  }
+
+  public String getWindowRowSize() {
+    return windowRowSize;
+  }
+
+  public void setWindowRowSize( String windowRowSize ) {
+    this.windowRowSize = windowRowSize;
+  }
+
+  public String getWindowMillisSize() {
+    return windowMillisSize;
+  }
+
+  public void setWindowMillisSize( String windowMillisSize ) {
+    this.windowMillisSize = windowMillisSize;
+  }
+
+  public String getWindowRate() {
+    return windowRate;
+  }
+
+  public void setWindowRate( String windowRate ) {
+    this.windowRate = windowRate;
   }
 
   public String getAlertMessage() {
