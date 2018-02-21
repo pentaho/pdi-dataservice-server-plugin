@@ -47,7 +47,6 @@
     <dependency>
       <groupId>commons-collections</groupId>
       <artifactId>commons-collections</artifactId>
-      <version>${commons.collections.version}</version>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -59,7 +58,6 @@
     <dependency>
       <groupId>org.mongodb</groupId>
       <artifactId>mongo-java-driver</artifactId>
-      <version>${mongo.java.driver.version}</version>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -71,7 +69,17 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-modeler</artifactId>
-      <version>${pentaho-modeler.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.reactivex.rxjava2</groupId>
+      <artifactId>rxjava</artifactId>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
