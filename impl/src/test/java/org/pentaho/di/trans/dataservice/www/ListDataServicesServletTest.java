@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
@@ -41,6 +42,7 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -77,6 +79,13 @@ public class ListDataServicesServletTest extends BaseServletTest {
 
   @Test
   public void testDoGet() throws Exception {
+    servlet.service( request, response );
+    verifyRun();
+  }
+
+  @Test
+  public void testDoGetWithRequestParameter() throws Exception {
+    when( request.getParameter( anyString() ) ).thenReturn( "false" );
     servlet.service( request, response );
     verifyRun();
   }
