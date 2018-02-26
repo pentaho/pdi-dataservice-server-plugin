@@ -472,20 +472,18 @@ public class DataServiceExecutor {
 
     final AtomicBoolean rowMetaWritten = new AtomicBoolean( false );
 
-    if ( !service.isStreaming() ) {
-      // When done, check if no row metadata was written.  The client is still going to expect it...
-      // Since we know it, we'll pass it.
-      //
-      getGenTrans().addTransListener( new TransAdapter() {
-        @Override
-        public void transFinished( Trans trans ) throws KettleException {
-          if ( rowMetaWritten.compareAndSet( false, true ) ) {
-            RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
-            stepFields.writeMeta( dos );
-          }
+    // When done, check if no row metadata was written.  The client is still going to expect it...
+    // Since we know it, we'll pass it.
+    //
+    getGenTrans().addTransListener( new TransAdapter() {
+      @Override
+      public void transFinished( Trans trans ) throws KettleException {
+        if ( rowMetaWritten.compareAndSet( false, true ) ) {
+          RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
+          stepFields.writeMeta( dos );
         }
-      } );
-    }
+      }
+    } );
 
     // Now execute the query transformation(s) and pass the data to the output stream...
     return executeQuery( new RowAdapter() {

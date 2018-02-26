@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,7 +68,13 @@ import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.Matchers.any;
@@ -401,6 +408,95 @@ public class DataServiceExecutorTest extends BaseTest {
   }
 
   @Test
+  public void testExecuteQueryNoResults() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+    StepInterface serviceStep = serviceTrans.findRunThread( DATA_SERVICE_STEP );
+    StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
+    when( optimization.isEnabled() ).thenReturn( true );
+    dataService.getPushDownOptimizationMeta().add( optimization );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      build();
+
+    ArgumentCaptor<String> objectIds = ArgumentCaptor.forClass( String.class );
+    verify( serviceTrans ).setContainerObjectId( objectIds.capture() );
+    when( serviceTrans.getContainerObjectId() ).thenReturn( objectIds.getValue() );
+    verify( genTrans ).setContainerObjectId( objectIds.capture() );
+    when( genTrans.getContainerObjectId() ).thenReturn( objectIds.getValue() );
+    verify( serviceTrans ).setMetaStore( metastore );
+    verify( genTrans ).setMetaStore( metastore );
+
+    RowProducer sqlTransRowProducer = mock( RowProducer.class );
+    when( genTrans.addRowProducer( INJECTOR_STEP_NAME, 0 ) ).thenReturn( sqlTransRowProducer );
+
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+    // Start Execution
+    executor.executeQuery( new DataOutputStream( outputStream ) );
+
+    // Check header was written
+    assertThat( outputStream.size(), greaterThan( 0 ) );
+    outputStream.reset();
+
+    InOrder genTransStartup = inOrder( genTrans, resultStep );
+    InOrder serviceTransStartup = inOrder( optimization, serviceTrans, serviceStep );
+    ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );
+    ArgumentCaptor<StepListener> resultStepListener = ArgumentCaptor.forClass( StepListener.class );
+    ArgumentCaptor<TransListener> transListenerCaptor = ArgumentCaptor.forClass( TransListener.class );
+
+    genTransStartup.verify( genTrans ).addTransListener( transListenerCaptor.capture() );
+    genTransStartup.verify( genTrans ).addRowProducer( INJECTOR_STEP_NAME, 0 );
+    genTransStartup.verify( resultStep ).addStepListener( resultStepListener.capture() );
+    genTransStartup.verify( resultStep ).addRowListener( listenerArgumentCaptor.capture() );
+    RowListener clientRowListener = listenerArgumentCaptor.getValue();
+    genTransStartup.verify( genTrans ).startThreads();
+
+    serviceTransStartup.verify( optimization ).activate( executor );
+    serviceTransStartup.verify( serviceStep ).addRowListener( listenerArgumentCaptor.capture() );
+    serviceTransStartup.verify( serviceTrans ).startThreads();
+
+    // Verify linkage
+    RowListener serviceRowListener = listenerArgumentCaptor.getValue();
+    assertNotNull( serviceRowListener );
+
+    // Push row from service to sql Trans
+    RowMetaInterface rowMeta = genTrans.getTransMeta().getStepFields( RESULT_STEP_NAME );
+
+    doReturn( true ).when( serviceTrans ).isRunning();
+    resultStepListener.getValue().stepFinished( genTrans, resultStep.getStepMeta(), resultStep );
+    verify( serviceTrans ).stopAll();
+
+    // Verify Service Trans finished
+    ArgumentCaptor<StepListener> serviceStepListener = ArgumentCaptor.forClass( StepListener.class );
+    verify( serviceStep ).addStepListener( serviceStepListener.capture() );
+    serviceStepListener.getValue().stepFinished( serviceTrans, serviceStep.getStepMeta(), serviceStep );
+    verify( sqlTransRowProducer ).finished();
+
+    // finish transformation, so that the listener runs
+    transListenerCaptor.getValue().transFinished( genTrans );
+
+    InOrder writeRows = inOrder( rowMeta );
+    ArgumentCaptor<DataOutputStream> streamCaptor = ArgumentCaptor.forClass( DataOutputStream.class );
+    writeRows.verify( rowMeta ).writeMeta( streamCaptor.capture() );
+    DataOutputStream dataOutputStream = streamCaptor.getValue();
+    writeRows.verify( rowMeta, times( 0 ) ).writeData( same( dataOutputStream ), argThat( arrayWithSize( 1 ) ) );
+    writeRows.verifyNoMoreInteractions();
+
+    executor.waitUntilFinished();
+    verify( serviceTrans ).waitUntilFinished();
+    verify( genTrans ).waitUntilFinished();
+  }
+
+  @Test
   public void testQueryWithParams() throws Exception {
     String sql = "SELECT * FROM " + DATA_SERVICE_NAME + " WHERE PARAMETER('foo') = 'bar' AND PARAMETER('baz') = 'bop'";
 
@@ -522,6 +618,46 @@ public class DataServiceExecutorTest extends BaseTest {
 
     verify( serviceTrans ).stopAll();
     verify( genTrans ).stopAll();
+  }
+
+  @Test
+  public void testStopWhenAlreadyStopped() throws KettleException {
+    String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
+
+    when( serviceTrans.isRunning() ).thenReturn( false );
+    when( genTrans.isRunning() ).thenReturn( false );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      build();
+
+    executor.stop();
+
+    verify( serviceTrans, times( 0 ) ).stopAll();
+    verify( genTrans, times( 0 ) ).stopAll();
+  }
+
+  @Test
+  public void testCalculateTransNameWithNewlines() throws KettleException {
+    String serviceName = "name\nnewline";
+    SQL sql = new SQL( "select * from \""+serviceName+"\"" );
+    sql.setServiceName( serviceName );
+
+    Assert.assertEquals( "name newline - SQL - "+sql.getSqlString().hashCode(), DataServiceExecutor.calculateTransname( sql, false ) );
+
+    serviceName = "name\rnewline";
+    sql = new SQL( "select * from \""+serviceName+"\"" );
+    sql.setServiceName( serviceName );
+
+    Assert.assertEquals( "name newline - SQL - "+sql.getSqlString().hashCode(), DataServiceExecutor.calculateTransname( sql, false ) );
+
+    serviceName = "name\r\nnewline";
+    sql = new SQL( "select * from \""+serviceName+"\"" );
+    sql.setServiceName( serviceName );
+
+    Assert.assertEquals( "name  newline - SQL - "+sql.getSqlString().hashCode(), DataServiceExecutor.calculateTransname( sql, false ) );
   }
 
   @Test
