@@ -71,19 +71,34 @@ public class ListDataServicesServlet extends BaseCartePlugin {
 
     request.respond( 200 )
       .with( "text/xml; charset=utf-8", new WriterResponse() {
+        private void writeServiceXml( PrintWriter writer, IThinServiceInformation thinServiceInformation ) throws IOException {
+          writer.println( XMLHandler.openTag( XML_TAG_SERVICE ) );
+
+          writer.println( XMLHandler.addTagValue( "name", thinServiceInformation.getName() ) );
+          writer.println( XMLHandler.addTagValue( "streaming", thinServiceInformation.isStreaming() ) );
+          writer.println( thinServiceInformation.getServiceFields().getMetaXML() );
+
+          writer.println( XMLHandler.closeTag( XML_TAG_SERVICE ) );
+        }
+
         @Override
         public void write( PrintWriter writer ) throws IOException {
           writer.println( XMLHandler.getXMLHeader() );
           writer.println( XMLHandler.openTag( XML_TAG_SERVICES ) );
 
           for ( IThinServiceInformation thinServiceInformation : serviceInformation ) {
-            writer.println( XMLHandler.openTag( XML_TAG_SERVICE ) );
 
-            writer.println( XMLHandler.addTagValue( "name", thinServiceInformation.getName() ) );
-            writer.println( XMLHandler.addTagValue( "streaming", thinServiceInformation.isStreaming() ) );
-            writer.println( thinServiceInformation.getServiceFields().getMetaXML() );
+            String streamingParam = request.getParameter( "streaming" );
 
-            writer.println( XMLHandler.closeTag( XML_TAG_SERVICE ) );
+            if ( streamingParam == null ) {
+              writeServiceXml( writer, thinServiceInformation );
+            } else {
+              boolean streaming = Boolean.parseBoolean( request.getParameter( "streaming" ) );
+
+              if ( streaming == thinServiceInformation.isStreaming() ) {
+                writeServiceXml( writer, thinServiceInformation );
+              }
+            }
           }
           writer.println( XMLHandler.closeTag( XML_TAG_SERVICES ) );
         }
