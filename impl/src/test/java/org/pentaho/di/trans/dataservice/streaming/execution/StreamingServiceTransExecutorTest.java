@@ -38,6 +38,7 @@ import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
@@ -54,6 +55,8 @@ public class StreamingServiceTransExecutorTest {
   private String MOCK_SERVICE_STEP_NAME = "Mock Step Name";
   private String MOCK_QUERY = "Mock Query";
   private String MOCK_ROW_META_STRING = "Mock Row Meta String";
+  private int MOCK_ROW_LIMIT = 10;
+  private long MOCK_TIME_LIMIT = 1000;
 
   @Mock Trans serviceTrans;
   @Mock TransMeta serviceTransMeta;
@@ -63,7 +66,8 @@ public class StreamingServiceTransExecutorTest {
 
   @Before
   public void setup() throws Exception {
-    serviceExecutor = new StreamingServiceTransExecutor( MOCK_ID, serviceTrans, MOCK_SERVICE_STEP_NAME );
+    serviceExecutor = new StreamingServiceTransExecutor( MOCK_ID, serviceTrans, MOCK_SERVICE_STEP_NAME,
+      MOCK_ROW_LIMIT, MOCK_TIME_LIMIT );
     when( serviceTrans.findRunThread( MOCK_SERVICE_STEP_NAME ) ).thenReturn( serviceStep );
     when( serviceTrans.getLogChannel( ) ).thenReturn( log );
     when( serviceTrans.getTransMeta( ) ).thenReturn( serviceTransMeta );
@@ -75,6 +79,16 @@ public class StreamingServiceTransExecutorTest {
   @Test
   public void testGetServiceTrans() {
     assertSame( serviceTrans, serviceExecutor.getServiceTrans() );
+  }
+
+  @Test
+  public void testGetWindowMaxRowLimit() {
+    assertEquals( MOCK_ROW_LIMIT, serviceExecutor.getWindowMaxRowLimit() );
+  }
+
+  @Test
+  public void testGetWindowMaxTimeLimit() {
+    assertEquals( MOCK_TIME_LIMIT, serviceExecutor.getWindowMaxTimeLimit() );
   }
 
   @Test
@@ -104,6 +118,9 @@ public class StreamingServiceTransExecutorTest {
 
     buffer = serviceExecutor.getBuffer( MOCK_QUERY, 0, -1, 0 );
     assertNull( buffer );
+
+    buffer = serviceExecutor.getBuffer( MOCK_QUERY, -1, -1, -1 );
+    assertNull( buffer );
   }
 
   @Test
@@ -120,26 +137,67 @@ public class StreamingServiceTransExecutorTest {
 
   @Test
   public void testGetBufferWindowSizeTime() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferWindowSizeTimeRate() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 1 );
+    testBufferAux();
+  }
+
+  @Test
+  public void testGetBufferWindowRowSizeTime() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 0 );
+    testBufferAux();
+  }
+
+  @Test
+  public void testGetBufferWindowRowSizeTimeRate() throws Exception {
     serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 1 );
     testBufferAux();
   }
 
   @Test
-  public void testGetBufferWindowTime() throws Exception {
+  public void testGetBufferTime2Calls() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
     serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
     testBufferAux();
   }
 
   @Test
-  public void testGetBuffer2Calls() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
+  public void testGetBufferRowsTime2Calls() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 0 );
+    testBufferAux();
+  }
+
+  @Test
+  public void testGetBufferRows2Calls() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
+    testBufferAux();
+  }
+
+  @Test
+  public void testGetBufferTimeRate2Calls() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 1 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 1 );
+    testBufferAux();
+  }
+
+  @Test
+  public void testGetBufferRowsTimeRate2Calls() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 1 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 1 );
+    testBufferAux();
+  }
+
+  @Test
+  public void testGetBufferRowsRate2Calls() throws Exception {
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 1 );
+    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 1 );
     testBufferAux();
   }
 

@@ -457,7 +457,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
       if ( dataService.isStreaming() ) {
         builder = new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService, context ).
-          rowLimit( 0 ).
+          rowLimit( dataService.getRowLimit() ).
+          timeLimit( dataService.getTimeLimit() ).
           logLevel( model.getLogLevel() ).
           enableMetrics( enableMetrics ).
           windowRowSize( model.getWindowRowSize() ).

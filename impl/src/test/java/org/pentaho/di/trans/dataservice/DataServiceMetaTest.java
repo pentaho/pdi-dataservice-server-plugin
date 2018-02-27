@@ -39,10 +39,12 @@ public class DataServiceMetaTest extends BaseTest {
   private Pattern patternSaveStreaming   = Pattern.compile( "<key>streaming<\\/key>\\s*<value>Y<\\/value>" );
   private Pattern patternStepName        = Pattern.compile( "<key>step_name<\\/key>\\s*<value>MockStepName<\\/value>" );
   private Pattern patternRowLimit        = Pattern.compile( "<key>row_limit<\\/key>\\s*<value>-1<\\/value>" );
+  private Pattern patternTimeLimit        = Pattern.compile( "<key>time_limit<\\/key>\\s*<value>999<\\/value>" );
 
   private String MOCK_NAME = "MockName";
   private String MOCK_STEP_NAME = "MockStepName";
   private Integer MOCK_ROW_LIMIT = -1;
+  private long MOCK_TIME_LIMIT = 999;
 
   @Mock TransMeta serviceTransMeta;
   @Mock List<PushDownOptimizationMeta> pushDownOptimizations;
@@ -75,6 +77,19 @@ public class DataServiceMetaTest extends BaseTest {
         ( dataService.getRowLimit().toString() ) );
       String xml = transMeta.getXML();
       assertTrue( patternRowLimit.matcher( xml ).find() );
+    } catch ( Exception ex ) {
+      fail();
+    }
+  }
+
+  @Test
+  public void testTimeLimit() {
+    try {
+      dataService.setTimeLimit( MOCK_TIME_LIMIT );
+      transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.TIME_LIMIT,
+        ( dataService.getTimeLimit().toString() ) );
+      String xml = transMeta.getXML();
+      assertTrue( patternTimeLimit.matcher( xml ).find() );
     } catch ( Exception ex ) {
       fail();
     }
@@ -130,5 +145,19 @@ public class DataServiceMetaTest extends BaseTest {
     assertNotEquals( pushDownOptimizations, dataService.getPushDownOptimizationMeta() );
     dataService.setPushDownOptimizationMeta( pushDownOptimizations );
     assertEquals( pushDownOptimizations, dataService.getPushDownOptimizationMeta() );
+  }
+
+  @Test
+  public void testToString() {
+    String result = "DataServiceMeta{name=DataService, serviceTrans=/DataService, stepname=Data Service Step,"
+      + " userDefined=true, streaming=true, row_limit=100, time_limit=200,"
+      + " pushDownOptimizationMeta=pushDownOptimizations}";
+
+    dataService.setStreaming( true );
+    dataService.setRowLimit( 100 );
+    dataService.setTimeLimit( 200L );
+    dataService.setPushDownOptimizationMeta( pushDownOptimizations );
+
+    assertEquals( result, dataService.toString() );
   }
 }

@@ -36,6 +36,7 @@ import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.dataservice.streaming.StreamList;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
@@ -58,6 +59,8 @@ public class StreamingServiceTransExecutor {
 
   private StreamList<RowMetaAndData> stepStream;
   private long lastCacheCleanupMillis = 0;
+  private int windowMaxRowLimit;
+  private long windowMaxTimeLimit;
 
   /**
    * Service listener cache.
@@ -82,11 +85,24 @@ public class StreamingServiceTransExecutor {
    * @param id The instance id.
    * @param serviceTrans The {@link org.pentaho.di.trans.Trans} Service Transformation.
    * @param serviceStepName The Service Transformation Step Name.
+   * @param windowMaxRowLimit The streaming window max row limit.
+   * @param windowMaxTimeLimit The streaming window max time limit.
    */
-  public StreamingServiceTransExecutor( final String id, final Trans serviceTrans, final String serviceStepName ) {
+  public StreamingServiceTransExecutor( final String id, final Trans serviceTrans, final String serviceStepName,
+                                        final int windowMaxRowLimit, final long windowMaxTimeLimit ) {
     this.serviceTrans = serviceTrans;
     this.id = id;
     this.serviceStepName = serviceStepName;
+    this.windowMaxRowLimit = windowMaxRowLimit;
+    this.windowMaxTimeLimit = windowMaxTimeLimit;
+
+    // Add trans finished listener to reset the isRunning control boolean
+    this.serviceTrans.addTransListener( new TransAdapter() {
+      @Override
+      public void transFinished( Trans trans ) {
+        isRunning.set( false );
+      }
+    } );
   }
 
   /**
@@ -108,6 +124,24 @@ public class StreamingServiceTransExecutor {
   }
 
   /**
+   * Getter for the window max row limit.
+   *
+   * @return the window max row limit of this object instance.
+   */
+  public long getWindowMaxRowLimit() {
+    return windowMaxRowLimit;
+  }
+
+  /**
+   * Getter for the window max time limit.
+   *
+   * @return the window max time limit of this object instance.
+   */
+  public long getWindowMaxTimeLimit() {
+    return windowMaxTimeLimit;
+  }
+
+  /**
    * This method is used by the client to get the stream listener fot the given query and window parameters.
    * If no cached listener exists it creates a new one, and spans the Service Transformation execution thread if not
    * started, otherwise it returns the cached listener.
@@ -120,14 +154,17 @@ public class StreamingServiceTransExecutor {
    * @return The {@link StreamExecutionListener} for the given query or null if parameters invalid.
    */
   public StreamExecutionListener getBuffer( String query, int windowRowSize, long windowMillisSize, long windowRate ) {
-    windowRowSize = windowRowSize < 0 ? 0 : windowRowSize;
-    windowMillisSize = windowMillisSize < 0 ? 0 : windowMillisSize;
+    windowRowSize = windowRowSize < 0 ? 0 : Math.min( windowRowSize, windowMaxRowLimit );
+    windowMillisSize = windowMillisSize < 0 ? 0 : Math.min( windowMillisSize, windowMaxTimeLimit );
+    windowRate = windowRate < 0 ? 0
+      : ( windowMillisSize > 0 ? Math.min( windowRate, windowMaxRowLimit ) : Math.min( windowRate, windowMaxRowLimit ) );
 
     if ( windowRowSize == 0 && windowMillisSize == 0 ) {
       return null;
     }
 
-    String cacheId = getCacheKey( query, windowRowSize, windowMillisSize, windowRate );
+    String cacheId = getCacheKey( query, windowRowSize, windowMillisSize, windowRate, windowMaxRowLimit,
+      windowMaxTimeLimit );
 
     StreamExecutionListener streamListener = serviceListeners.getIfPresent( cacheId );
 
@@ -136,21 +173,28 @@ public class StreamingServiceTransExecutor {
         stepStream = new StreamList<>();
       }
 
-      Observable<List<RowMetaAndData>> buffer;
+      Observable<List<RowMetaAndData>> buffer = null;
+      Observable<List<RowMetaAndData>> fallbackBuffer = null;
 
       if ( windowRate > 0 ) {
-        buffer = windowMillisSize > 0
-          ? windowRowSize > 0 ? stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS, windowRowSize )
-          : stepStream.getStream().buffer( windowMillisSize, windowRate, TimeUnit.MILLISECONDS )
-          : stepStream.getStream().buffer( windowRowSize, (int) windowRate );
+        if ( windowMillisSize > 0 && windowRowSize > 0 ) {
+          buffer = stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS, windowRowSize );
+        } else if ( windowMillisSize > 0 ) {
+          buffer = stepStream.getStream().buffer( windowMillisSize, windowRate, TimeUnit.MILLISECONDS );
+          fallbackBuffer = stepStream.getStream().buffer( windowMaxRowLimit );
+        } else if ( windowRowSize > 0 ) {
+          buffer = stepStream.getStream().buffer( windowRowSize, (int) windowRate );
+          fallbackBuffer = stepStream.getStream()
+            .buffer( windowMaxTimeLimit, TimeUnit.MILLISECONDS );
+        }
       } else {
-        buffer = windowMillisSize > 0
-          ? windowRowSize > 0 ? stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS, windowRowSize )
-          : stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS )
-          : stepStream.getStream().buffer( windowRowSize );
+        windowRowSize = windowRowSize > 0 ? windowRowSize : windowMaxRowLimit;
+        windowMillisSize = windowMillisSize > 0 ? windowMillisSize : windowMaxTimeLimit;
+
+        buffer = stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS, windowRowSize );
       }
 
-      streamListener = new StreamExecutionListener( buffer );
+      streamListener = new StreamExecutionListener( buffer, fallbackBuffer );
 
       serviceListeners.put( cacheId, streamListener );
     }
@@ -169,10 +213,13 @@ public class StreamingServiceTransExecutor {
    * @param size The query window size.
    * @param millis The query window time.
    * @param rate The query window rate.
+   * @param maxRows The query window max rows.
+   * @param maxTime The query window max time.
    * @return The cache key for the query.
    */
-  private String getCacheKey( String query, int size, long millis, long rate ) {
-    return query.concat( String.valueOf( size ) ).concat( String.valueOf( millis ) ).concat( String.valueOf( rate ) );
+  private String getCacheKey( String query, int size, long millis, long rate, int maxRows, long maxTime ) {
+    return query.concat( String.valueOf( size ) ).concat( String.valueOf( millis ) ).concat( String.valueOf( rate ) )
+      .concat( String.valueOf( maxRows ) ).concat( String.valueOf( maxTime ) );
   }
 
   /**

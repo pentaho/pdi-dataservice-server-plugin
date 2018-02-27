@@ -31,6 +31,14 @@
     <hbox>
       <checkbox id="streaming-checkbox" label="${DataServiceDialog.EnableStreaming.Label}"/>
     </hbox>
+    <hbox>
+      <label control="streaming-max-rows" value="${DataServiceDialog.StreamingMaxRows.Label}"/>
+      <textbox id="streaming-max-rows" width="50"/>
+    </hbox>
+    <hbox>
+      <label control="streaming-max-time" value="${DataServiceDialog.StreamingMaxTime.Label}"/>
+      <textbox id="streaming-max-time" width="50"/>
+    </hbox>
     <spacer/>
     <tabbox id="optimizationTabs" flex="2" selectedIndex="2">
       <tabs id="opt_tabs">

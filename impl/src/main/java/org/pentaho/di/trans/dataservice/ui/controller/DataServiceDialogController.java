@@ -34,6 +34,7 @@ import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.util.HelpUtils;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
+import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulCheckbox;
 import org.pentaho.ui.xul.components.XulMenuList;
@@ -67,17 +68,31 @@ public class DataServiceDialogController extends AbstractController {
 
     XulTextbox serviceName = getElementById( "service-name" );
     XulMenuList<String> steps = getElementById( "trans-steps" );
-    XulCheckbox checkbox = getElementById( "streaming-checkbox" );
+    XulCheckbox streamingCheckbox = getElementById( "streaming-checkbox" );
+    XulTextbox serviceMaxRows = getElementById( "streaming-max-rows" );
+    XulTextbox serviceMaxTime = getElementById( "streaming-max-time" );
 
     steps.setElements( ImmutableList.copyOf( model.getTransMeta().getStepNames() ) );
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
 
+    serviceMaxRows.setDisabled( !model.isStreaming() );
+    serviceMaxTime.setDisabled( !model.isStreaming() );
+
     bindingFactory.createBinding( model, "serviceStep", steps, "selectedItem" ).fireSourceChanged();
 
     bindingFactory.createBinding( model, "serviceName", serviceName, "value" ).fireSourceChanged();
 
-    bindingFactory.createBinding( model, "streaming", checkbox, "checked" ).fireSourceChanged();
+    bindingFactory.createBinding( model, "streaming", streamingCheckbox, "checked" ).fireSourceChanged();
+
+    bindingFactory.createBinding( model, "serviceMaxRows", serviceMaxRows, "value",
+      BindingConvertor.integer2String() ).fireSourceChanged();
+
+    bindingFactory.createBinding( model, "serviceMaxTime", serviceMaxTime, "value",
+      BindingConvertor.long2String() ).fireSourceChanged();
+
+    bindingFactory.createBinding( streamingCheckbox, "!checked", serviceMaxRows, "disabled" );
+    bindingFactory.createBinding( streamingCheckbox, "!checked", serviceMaxTime, "disabled" );
   }
 
   public void showTestDialog() throws XulException {

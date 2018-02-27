@@ -22,30 +22,49 @@
 
 package org.pentaho.di.trans.dataservice.streaming.execution;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import org.pentaho.di.core.RowMetaAndData;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class to represents a listener for a service transformation stream.
  */
 public class StreamExecutionListener {
   private Disposable subject;
+  private Disposable fallbackSubject;
   private Observable<List<RowMetaAndData>> buffer;
-  private List<RowMetaAndData> cachedWindow = new ArrayList<RowMetaAndData>();
+  private Observable<List<RowMetaAndData>> fallbackBuffer;
+  private List<RowMetaAndData> cachedWindow = Collections.synchronizedList( new ArrayList<RowMetaAndData>() );
+  private final AtomicBoolean isProcessing = new AtomicBoolean( false );
 
   /**
    * Constructor.
    * Subscribes a listener to the given window buffer.
    *
    * @param buffer The {@link io.reactivex.Observable} stream window buffer.
+   * @param fallbackBuffer The {@link io.reactivex.Observable} stream window fallback buffer.
    */
-  public StreamExecutionListener( final Observable<List<RowMetaAndData>> buffer ) {
+  public StreamExecutionListener( final Observable<List<RowMetaAndData>> buffer,
+                                  final Observable<List<RowMetaAndData>> fallbackBuffer ) {
     this.buffer = buffer;
-    this.subject = this.buffer.subscribe( list -> this.cachedWindow = list );
+
+    this.subject = this.buffer.subscribe( list -> {
+      processBufferWindow( list );
+    } );
+
+    if ( fallbackBuffer != null ) {
+      this.fallbackBuffer = fallbackBuffer;
+
+      this.fallbackSubject = this.fallbackBuffer.subscribe( list -> {
+        processFallbackWindow( list );
+      } );
+    }
   }
 
   /**
@@ -76,12 +95,87 @@ public class StreamExecutionListener {
   }
 
   /**
-   * Un-subscribes the streaming buffer.
+   * Getter for the window fallback buffer.
+   *
+   * @return The {@link io.reactivex.Observable} window fallback buffer.
+   */
+  public Observable<List<RowMetaAndData>> getFallbackBuffer() {
+    return this.fallbackBuffer;
+  }
+
+  /**
+   * Un-subscribes the streaming buffers.
    */
   public void unSubscribe() {
+    unSubscribeBuffer();
+    unSubscribeFallbackBuffer();
+  }
+
+  /**
+   * Un-subscribes the streaming buffer.
+   */
+  @VisibleForTesting
+  protected void unSubscribeBuffer() {
     if ( this.subject != null ) {
       this.subject.dispose();
       this.subject = null;
     }
+  }
+
+  /**
+   * Un-subscribes the streaming fallback buffer.
+   */
+  @VisibleForTesting
+  protected void unSubscribeFallbackBuffer() {
+    if ( this.fallbackSubject != null ) {
+      this.fallbackSubject.dispose();
+      this.fallbackSubject = null;
+    }
+  }
+
+  /**
+   * Processes a buffer data window.
+   *
+   * @return The {@link io.reactivex.Observable} window buffer to process.
+   */
+  private void processBufferWindow( List<RowMetaAndData> list ) {
+    if ( isProcessing.compareAndSet( false, true ) ) {
+      if ( this.fallbackSubject != null ) {
+        this.fallbackSubject.dispose();
+        this.fallbackSubject = this.fallbackBuffer.subscribe( bufferList -> {
+          processFallbackWindow( bufferList );
+        } );
+      }
+      setCacheWindow( list );
+      isProcessing.compareAndSet( true, false );
+    }
+  }
+
+  /**
+   * Processes a fallback buffer data window.
+   *
+   * @return The {@link io.reactivex.Observable} fallback window buffer to process.
+   */
+  private void processFallbackWindow( List<RowMetaAndData> list ) {
+    if ( isProcessing.compareAndSet( false, true ) ) {
+      if ( this.subject != null ) {
+        this.subject.dispose();
+        this.subject = this.buffer.subscribe( bufferList -> {
+          processBufferWindow( bufferList );
+        } );
+      }
+      setCacheWindow( list );
+      isProcessing.compareAndSet( true, false );
+    }
+  }
+
+  /**
+   * Sets the cache window data with the given list.
+   *
+   * @param list - The {@link List} to set to cache.
+   */
+  private void setCacheWindow( List<RowMetaAndData> list ) {
+    this.cachedWindow.clear();
+    this.cachedWindow.addAll( list );
   }
 }

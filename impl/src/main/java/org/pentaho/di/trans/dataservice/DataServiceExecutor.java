@@ -33,7 +33,6 @@ import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogLevel;
-import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.row.ValueMetaInterface;
@@ -109,6 +108,7 @@ public class DataServiceExecutor {
     private Trans serviceTrans;
     private Trans genTrans;
     private int rowLimit = 0;
+    private long timeLimit = 0;
     private int windowRowSize = 0;
     private long windowMillisSize = 0;
     private long windowRate = 0;
@@ -136,6 +136,11 @@ public class DataServiceExecutor {
 
     public Builder rowLimit( int rowLimit ) {
       this.rowLimit = rowLimit;
+      return this;
+    }
+
+    public Builder timeLimit( long timeLimit ) {
+      this.timeLimit = timeLimit;
       return this;
     }
 
@@ -212,11 +217,16 @@ public class DataServiceExecutor {
     public DataServiceExecutor build() throws KettleException {
       RowMetaInterface serviceFields;
       int serviceRowLimit = getServiceRowLimit( service );
+      long serviceTimeLimit = getServiceTimeLimit( service );
 
       if ( sql.getServiceName() != null && !sql.getServiceName().equals( service.getName() ) ) {
         throw new KettleException(
           BaseMessages.getString( PKG, "DataServiceExecutor.Error.TableNameAndDataServiceNameDifferent",
             sql.getServiceName(), service.getName() ) );
+      }
+
+      if ( serviceTrans == null && service.getServiceTrans() != null ) {
+        serviceTrans( service.getServiceTrans() );
       }
 
       // Check if theres already a serviceTransformation in the context
@@ -225,28 +235,32 @@ public class DataServiceExecutor {
 
         // Gets service execution from context
         if ( serviceTransExecutor == null ) {
-          if ( serviceTrans == null && service.getServiceTrans() != null ) {
-            serviceTrans( service.getServiceTrans() );
-          }
-
           if ( serviceTrans != null ) {
+            int windowMaxRowLimit = rowLimit > 0
+              ? ( serviceRowLimit > 0 ? Math.min( rowLimit, serviceRowLimit ) : rowLimit ) : serviceRowLimit;
+            long windowMaxTimeLimit = timeLimit > 0
+              ? ( serviceTimeLimit > 0 ? Math.min( timeLimit, serviceTimeLimit ) : timeLimit ) : serviceTimeLimit;
+
+            windowMaxRowLimit = Math.min( windowMaxRowLimit, getKettleRowLimit() );
+            windowMaxTimeLimit = Math.min( windowMaxTimeLimit, getKettleTimeLimit() );
+
             serviceTransExecutor =
-              new StreamingServiceTransExecutor( service.getName(), serviceTrans, service.getStepname() );
+              new StreamingServiceTransExecutor( service.getName(), serviceTrans, service.getStepname(),
+                windowMaxRowLimit, windowMaxTimeLimit );
             context.addServiceTransExecutor( serviceTransExecutor );
           }
         } else {
-          serviceTrans = serviceTransExecutor.getServiceTrans();
+          serviceTrans( serviceTransExecutor.getServiceTrans() );
         }
       }
 
       // Sets the service transformation fields
       if ( serviceTrans != null ) {
         serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
-      } else if ( service.getServiceTrans() != null ) {
-        serviceTrans( service.getServiceTrans() );
-        serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
       } else {
-        serviceFields = new RowMeta();
+        throw new KettleException(
+          BaseMessages.getString( PKG, "DataServiceExecutor.Error.NoServiceTransformation",
+            sql.getServiceName(), service.getName() ) );
       }
 
       ValueMetaResolver resolver = new ValueMetaResolver( serviceFields );
@@ -263,17 +277,16 @@ public class DataServiceExecutor {
       }
 
       if ( sqlTransGenerator == null ) {
-        sqlTransGenerator = new SqlTransGenerator( sql, rowLimit, serviceRowLimit );
+        sqlTransGenerator = new SqlTransGenerator( sql, service.isStreaming() ? 0 : rowLimit,
+          service.isStreaming() ? 0 : serviceRowLimit );
       }
       if ( genTrans == null ) {
         genTrans = new Trans( sqlTransGenerator.generateTransMeta() );
       }
 
-      if ( serviceTrans != null ) {
-        serviceTrans.setContainerObjectId( UUID.randomUUID().toString() );
-        serviceTrans.setMetaStore( metastore );
-        genTrans.setGatheringMetrics( enableMetrics );
-      }
+      serviceTrans.setContainerObjectId( UUID.randomUUID().toString() );
+      serviceTrans.setMetaStore( metastore );
+      serviceTrans.setGatheringMetrics( enableMetrics );
 
       genTrans.setContainerObjectId( UUID.randomUUID().toString() );
       genTrans.setMetaStore( metastore );
@@ -295,24 +308,53 @@ public class DataServiceExecutor {
     }
 
     private int getServiceRowLimit( DataServiceMeta service ) throws KettleException {
-      if ( !service.isStreaming() ) {
-        if ( service.getRowLimit() != null && service.getRowLimit() > 0 ) {
-          return service.getRowLimit();
-        } else if ( !service.isUserDefined() ) {
-          String limit = getKettleProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
-          if ( !Utils.isEmpty( limit ) ) {
-            try {
-              return Integer.parseInt( limit );
-            } catch ( NumberFormatException e ) {
-              if ( context != null && context.getLogChannel() != null ) {
-                context.getLogChannel().logError( String.format( "%s: %s ", DataServiceConstants.ROW_LIMIT_PROPERTY, e ) );
-              }
-            }
-          }
-          return DataServiceConstants.ROW_LIMIT_DEFAULT;
-        }
+      if ( service.getRowLimit() != null && service.getRowLimit() > 0 ) {
+        return service.getRowLimit();
+      } else if ( !service.isUserDefined() || service.isStreaming() ) {
+        return getKettleRowLimit();
       }
       return 0;
+    }
+
+    private int getKettleRowLimit() throws KettleException {
+      String limit = getKettleProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
+
+      if ( limit == null || limit.isEmpty() ) {
+        limit = getKettleProperty( DataServiceConstants.LEGACY_LIMIT_PROPERTY );
+      }
+
+      if ( !Utils.isEmpty( limit ) ) {
+        try {
+          return Integer.parseInt( limit );
+        } catch ( NumberFormatException e ) {
+          if ( context != null && context.getLogChannel() != null ) {
+            context.getLogChannel().logError( String.format( "%s: %s ", DataServiceConstants.ROW_LIMIT_PROPERTY, e ) );
+          }
+        }
+      }
+
+      return DataServiceConstants.ROW_LIMIT_DEFAULT;
+    }
+
+    private long getServiceTimeLimit( DataServiceMeta service ) throws KettleException {
+      if ( service.getTimeLimit() != null && service.getTimeLimit() > 0 ) {
+        return service.getTimeLimit();
+      }
+      return getKettleTimeLimit();
+    }
+
+    private long getKettleTimeLimit() throws KettleException {
+      String limit = getKettleProperty( DataServiceConstants.TIME_LIMIT_PROPERTY );
+      if ( !Utils.isEmpty( limit ) ) {
+        try {
+          return Long.parseLong( limit );
+        } catch ( NumberFormatException e ) {
+          if ( context != null && context.getLogChannel() != null ) {
+            context.getLogChannel().logError( String.format( "%s: %s ", DataServiceConstants.TIME_LIMIT_PROPERTY, e ) );
+          }
+        }
+      }
+      return DataServiceConstants.TIME_LIMIT_DEFAULT;
     }
 
     private String getKettleProperty( String propertyName ) throws KettleException {

@@ -46,6 +46,7 @@ public class StreamExecutionListenerTest {
   private StreamExecutionListener streamExecutionListener;
   private StreamList<RowMetaAndData> streamList;
   private Observable<List<RowMetaAndData>> buffer;
+  private Observable<List<RowMetaAndData>> fallbackBuffer;
 
   @Mock RowMetaAndData mockRowMetaAndData;
   @Mock RowMetaAndData mockRowMetaAndData2;
@@ -54,7 +55,8 @@ public class StreamExecutionListenerTest {
   public void setup() throws Exception {
     streamList = new StreamList();
     buffer = streamList.getStream().buffer( 1 );
-    streamExecutionListener = new StreamExecutionListener( buffer );
+    fallbackBuffer = streamList.getStream().buffer( 1000 );
+    streamExecutionListener = new StreamExecutionListener( buffer, fallbackBuffer );
   }
 
   @Test
@@ -78,8 +80,72 @@ public class StreamExecutionListenerTest {
   }
 
   @Test
+  public void testGetCachedWindowFallback() {
+    buffer = streamList.getStream().buffer( 1000 );
+    fallbackBuffer = streamList.getStream().buffer( 1 );
+    streamExecutionListener = new StreamExecutionListener( buffer, fallbackBuffer );
+
+    assertTrue( streamExecutionListener.getCachedWindow().isEmpty() );
+    streamList.add( mockRowMetaAndData  );
+    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
+    assertEquals( 1, streamExecutionListener.getCachedWindow().size() );
+    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
+    streamList.add( mockRowMetaAndData2  );
+    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
+    assertEquals( 1, streamExecutionListener.getCachedWindow().size() );
+    assertSame( mockRowMetaAndData2, streamExecutionListener.getCachedWindow().get( 0 ) );
+  }
+
+  @Test
+  public void testGetCachedWindowBufferSwitchFallback() {
+    buffer = streamList.getStream().buffer( 1 );
+    fallbackBuffer = streamList.getStream().buffer( 2 );
+    streamExecutionListener = new StreamExecutionListener( buffer, fallbackBuffer );
+
+    assertTrue( streamExecutionListener.getCachedWindow().isEmpty() );
+    streamList.add( mockRowMetaAndData  );
+    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
+    assertEquals( 1, streamExecutionListener.getCachedWindow().size() );
+    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
+
+    streamExecutionListener.unSubscribeBuffer();
+    streamList.add( mockRowMetaAndData  );
+    streamList.add( mockRowMetaAndData2  );
+    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
+    assertEquals( 2, streamExecutionListener.getCachedWindow().size() );
+    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
+    assertSame( mockRowMetaAndData2, streamExecutionListener.getCachedWindow().get( 1 ) );
+  }
+
+  @Test
+  public void testGetCachedWindowFallbackSwitchBuffer() {
+    buffer = streamList.getStream().buffer( 2 );
+    fallbackBuffer = streamList.getStream().buffer( 1 );
+    streamExecutionListener = new StreamExecutionListener( buffer, fallbackBuffer );
+
+    assertTrue( streamExecutionListener.getCachedWindow().isEmpty() );
+    streamList.add( mockRowMetaAndData  );
+    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
+    assertEquals( 1, streamExecutionListener.getCachedWindow().size() );
+    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
+
+    streamExecutionListener.unSubscribeFallbackBuffer();
+    streamList.add( mockRowMetaAndData  );
+    streamList.add( mockRowMetaAndData2  );
+    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
+    assertEquals( 2, streamExecutionListener.getCachedWindow().size() );
+    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
+    assertSame( mockRowMetaAndData2, streamExecutionListener.getCachedWindow().get( 1 ) );
+  }
+
+  @Test
   public void testGetBuffer() {
     assertSame( buffer, streamExecutionListener.getBuffer() );
+  }
+
+  @Test
+  public void testGetFallbackBuffer() {
+    assertSame( fallbackBuffer, streamExecutionListener.getFallbackBuffer() );
   }
 
   @Test

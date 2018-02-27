@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -44,6 +44,7 @@ import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
+import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulMessageBox;
@@ -136,20 +137,39 @@ public class DataServiceDialogControllerTest {
   }
 
   @Test
-  @SuppressWarnings( "unchecked" )
   public void testBindings() throws Exception {
+    testBindingsAux();
+  }
+
+  @Test
+  public void testBindingsStreaming() throws Exception {
+    when( model.isStreaming() ).thenReturn( true );
+    testBindingsAux();
+  }
+
+  private void testBindingsAux() throws Exception {
     final BindingFactory bindingFactory = mock( BindingFactory.class );
     final XulTextbox serviceName = mock( XulTextbox.class );
     final XulMenuList<String> steps = mock( XulMenuList.class );
+    final XulTextbox maxRows = mock( XulTextbox.class );
+    final XulTextbox maxTime = mock( XulTextbox.class );
 
     when( document.getElementById( "service-name" ) ).thenReturn( serviceName );
     when( document.getElementById( "trans-steps" ) ).thenReturn( steps );
+    when( document.getElementById( "streaming-max-rows" ) ).thenReturn( maxRows );
+    when( document.getElementById( "streaming-max-time" ) ).thenReturn( maxTime );
 
     controller.setBindingFactory( bindingFactory );
 
     final List<Binding> bindings = Lists.newArrayList();
-    when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString() ) ).thenAnswer(
-      invocationOnMock ->  {
+    when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString() ) )
+      .thenAnswer( invocationOnMock -> {
+        Binding binding = mock( Binding.class );
+        bindings.add( binding );
+        return binding;
+      } );
+    when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString(),
+      any( BindingConvertor.class ) ) ).thenAnswer( invocationOnMock -> {
         Binding binding = mock( Binding.class );
         bindings.add( binding );
         return binding;
@@ -217,6 +237,18 @@ public class DataServiceDialogControllerTest {
     verify( delegate ).removeDataService( editingDataService );
     verify( synchronizationListener ).install( transMeta );
     verify( dialog ).dispose();
+  }
+
+  @Test
+  public void testSaveAndCloseNoName() throws Exception {
+    DataServiceMeta editingDataService = mock( DataServiceMeta.class );
+    when( model.getServiceName() ).thenReturn( null );
+
+    controller.saveAndClose();
+    verify( delegate, times( 0 ) ).save( dataServiceMeta );
+    verify( delegate, times( 0 ) ).removeDataService( editingDataService );
+    verify( synchronizationListener, times( 0 ) ).install( transMeta );
+    verify( dialog, times( 0 ) ).dispose();
   }
 
   @Test
