@@ -162,9 +162,9 @@ public class StreamingDataServiceTestControllerTest {
     when( streamingDataService.getName() ).thenReturn( TEST_TABLE_NAME );
     when( streamingDataService.isStreaming() ).thenReturn( true );
 
-    when( model.getWindowRowSize() ).thenReturn( "0" );
-    when( model.getWindowMillisSize() ).thenReturn( "0" );
-    when( model.getWindowRate() ).thenReturn( "0" );
+    when( model.getWindowRowSize() ).thenReturn( 0 );
+    when( model.getWindowMillisSize() ).thenReturn( 0L );
+    when( model.getWindowRate() ).thenReturn( 0L );
 
     dataServiceTestController = new DataServiceTestControllerTester();
     dataServiceTestController.setXulDomContainer( xulDomContainer );
