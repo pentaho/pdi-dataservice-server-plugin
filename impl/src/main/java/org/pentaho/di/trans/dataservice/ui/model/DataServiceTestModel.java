@@ -53,9 +53,9 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   public static final List<Integer> MAXROWS_CHOICES = Arrays.asList( 100, 500, 1000 );
   public static final List<Integer> MAXROWS_STREAMING_CHOICES = Arrays.asList( 0 );
 
-  private String windowRowSize = "0";
-  private String windowMillisSize = "0";
-  private String windowRate = "0";
+  private int windowRowSize = 0;
+  private long windowMillisSize = 0;
+  private long windowRate = 0;
 
   private boolean executing = false;
 
@@ -123,27 +123,27 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
     return MAXROWS_STREAMING_CHOICES;
   }
 
-  public String getWindowRowSize() {
+  public int getWindowRowSize() {
     return windowRowSize;
   }
 
-  public void setWindowRowSize( String windowRowSize ) {
+  public void setWindowRowSize( int windowRowSize ) {
     this.windowRowSize = windowRowSize;
   }
 
-  public String getWindowMillisSize() {
+  public long getWindowMillisSize() {
     return windowMillisSize;
   }
 
-  public void setWindowMillisSize( String windowMillisSize ) {
+  public void setWindowMillisSize( long windowMillisSize ) {
     this.windowMillisSize = windowMillisSize;
   }
 
-  public String getWindowRate() {
+  public long getWindowRate() {
     return windowRate;
   }
 
-  public void setWindowRate( String windowRate ) {
+  public void setWindowRate( long windowRate ) {
     this.windowRate = windowRate;
   }
 

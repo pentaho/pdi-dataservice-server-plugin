@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -190,7 +190,7 @@ public class TransDataServletTest extends BaseServletTest {
     headers.put( HEADER_SQL, TEST_SQL_QUERY );
     servlet.service( request, response );
 
-    verify( response ).setStatus( HttpServletResponse.SC_BAD_REQUEST );
+    verify( response ).sendError( HttpServletResponse.SC_BAD_REQUEST );
   }
 
   @Test
@@ -198,7 +198,7 @@ public class TransDataServletTest extends BaseServletTest {
     headers.removeAll( HEADER_SQL );
     servlet.service( request, response );
 
-    verify( response ).setStatus( HttpServletResponse.SC_BAD_REQUEST );
+    verify( response ).sendError( HttpServletResponse.SC_BAD_REQUEST );
     verify( client, times( 1 ) ).getLogChannel();
   }
 

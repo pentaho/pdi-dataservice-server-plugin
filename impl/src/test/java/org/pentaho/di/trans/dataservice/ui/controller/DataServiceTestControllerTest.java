@@ -198,9 +198,9 @@ public class DataServiceTestControllerTest  {
     when( dataService.getName() ).thenReturn( TEST_TABLE_NAME );
     when( dataService.isStreaming() ).thenReturn( false );
 
-    when( model.getWindowRowSize() ).thenReturn( "0" );
-    when( model.getWindowMillisSize() ).thenReturn( "0" );
-    when( model.getWindowRate() ).thenReturn( "0" );
+    when( model.getWindowRowSize() ).thenReturn( 0 );
+    when( model.getWindowMillisSize() ).thenReturn( 0L );
+    when( model.getWindowRate() ).thenReturn( 0L );
 
     dataServiceTestController = new DataServiceTestControllerTester();
     dataServiceTestController.setXulDomContainer( xulDomContainer );

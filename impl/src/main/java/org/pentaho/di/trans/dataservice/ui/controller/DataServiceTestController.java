@@ -288,9 +288,37 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     rateTextBox.setValue( String.valueOf( model.getWindowRate() ) );
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
-    bindingFactory.createBinding( model, "windowRowSize", sizeTextBox, "value" );
-    bindingFactory.createBinding( model, "windowMillisSize", millisTextBox, "value" );
-    bindingFactory.createBinding( model, "windowRate", rateTextBox, "value" );
+
+    BindingConvertor<Integer, String> intConverter = new BindingConvertor<Integer, String>() {
+      @Override
+      public String sourceToTarget( Integer value ) {
+        return value.toString();
+      }
+
+      @Override
+      public Integer targetToSource( String value ) {
+        return Integer.parseInt( value );
+      }
+    };
+
+    BindingConvertor<Long, String> longConverter = new BindingConvertor<Long, String>() {
+      @Override
+      public String sourceToTarget( Long value ) {
+        return String.valueOf( value );
+      }
+
+      @Override
+      public Long targetToSource( String value ) {
+        return Long.parseLong( value );
+      }
+    };
+
+    bindingFactory.createBinding( model, "windowRowSize", sizeTextBox, "value",
+      intConverter );
+    bindingFactory.createBinding( model, "windowMillisSize", millisTextBox, "value",
+      longConverter );
+    bindingFactory.createBinding( model, "windowRate", rateTextBox, "value",
+      longConverter );
   }
 
   private String getDefaultSql() {
@@ -308,8 +336,8 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
     if ( dataService.isStreaming() ) {
       query = annotationsQuery.prepareQuery( model.getSql(), 0,
-        Integer.valueOf( model.getWindowRowSize() ), Long.valueOf( model.getWindowMillisSize() ),
-        Long.valueOf( model.getWindowRate() ), ImmutableMap.<String, String>of() );
+        model.getWindowRowSize(), model.getWindowMillisSize(),
+        model.getWindowRate(), ImmutableMap.<String, String>of() );
     } else {
       query = annotationsQuery.prepareQuery( model.getSql(), model.getMaxRows(), ImmutableMap.<String, String>of() );
     }
@@ -456,9 +484,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
           rowLimit( 0 ).
           logLevel( model.getLogLevel() ).
           enableMetrics( enableMetrics ).
-          windowRowSize( Integer.valueOf( model.getWindowRowSize() ) ).
-          windowMillisSize( Long.valueOf( model.getWindowMillisSize() ) ).
-          windowRate( Long.valueOf( model.getWindowRate() ) );
+          windowRowSize( model.getWindowRowSize() ).
+          windowMillisSize( model.getWindowMillisSize() ).
+          windowRate( model.getWindowRate() );
       } else {
         builder = new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService, context ).
           rowLimit( model.getMaxRows() ).
