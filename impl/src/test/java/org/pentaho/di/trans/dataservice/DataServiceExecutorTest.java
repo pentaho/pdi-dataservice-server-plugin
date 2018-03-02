@@ -34,6 +34,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogLevel;
@@ -69,6 +71,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -85,6 +88,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -357,7 +361,98 @@ public class DataServiceExecutorTest extends BaseTest {
   }
 
   @Test
+  public void testWaitUntilFinishedStreaming() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[ 0 ] );
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
+    when( optimization.isEnabled() ).thenReturn( true );
+    dataService.getPushDownOptimizationMeta().add( optimization );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+
+    when( genTrans.isFinishedOrStopped() ).thenAnswer( new Answer<Boolean>() {
+      int numberThreadSleeps = 3;
+
+      @Override public Boolean answer( InvocationOnMock invocationOnMock ) throws Throwable {
+        return numberThreadSleeps-- <= 0;
+      }
+    } );
+
+    executor.waitUntilFinished();
+    verify( genTrans, times( 4 ) ).isFinishedOrStopped();
+    verify( genTrans, times( 1 ) ).waitUntilFinished();
+
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
+    executor.waitUntilFinished();
+    verify( genTrans, times( 5 ) ).isFinishedOrStopped();
+    verify( genTrans, times( 2 ) ).waitUntilFinished();
+  }
+
+  @Test( expected = RuntimeException.class )
+  public void testWaitInterruptedException() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[ 0 ] );
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
+    when( optimization.isEnabled() ).thenReturn( true );
+    dataService.getPushDownOptimizationMeta().add( optimization );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    doThrow( InterruptedException.class ).when( genTrans ).isFinishedOrStopped();
+    executor.waitUntilFinished();
+  }
+
+  @Test
+  public void testWaitUntilFinished() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[ 0 ] );
+
+    PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
+    when( optimization.isEnabled() ).thenReturn( true );
+    dataService.getPushDownOptimizationMeta().add( optimization );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      build();
+
+    executor.waitUntilFinished();
+    verify( genTrans, times( 0 ) ).isFinishedOrStopped();
+    verify( serviceTrans, times( 1 ) ).waitUntilFinished();
+  }
+
+  @Test
   public void testExecuteStreamQuery() throws Exception {
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
     StepInterface serviceStep = serviceTrans.findRunThread( DATA_SERVICE_STEP );
     StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
@@ -609,15 +704,105 @@ public class DataServiceExecutorTest extends BaseTest {
     when( genTrans.isRunning() ).thenReturn( true );
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
-        serviceTrans( serviceTrans ).
-        sqlTransGenerator( sqlTransGenerator ).
-        genTrans( genTrans ).
-        build();
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      build();
 
     executor.stop();
 
     verify( serviceTrans ).stopAll();
     verify( genTrans ).stopAll();
+  }
+
+  @Test
+  public void testStopMixedconditions() throws KettleException {
+    String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
+
+    when( serviceTrans.isRunning() ).thenReturn( true );
+    when( genTrans.isRunning() ).thenReturn( true );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      build();
+
+    when( serviceTrans.isRunning() ).thenReturn( false );
+    when( genTrans.isRunning() ).thenReturn( true );
+    executor.stop();
+    verify( serviceTrans, times( 0 ) ).stopAll();
+    verify( genTrans, times( 1 ) ).stopAll();
+
+    when( serviceTrans.isRunning() ).thenReturn( true );
+    when( genTrans.isRunning() ).thenReturn( false );
+    executor.stop();
+    verify( serviceTrans, times( 1 ) ).stopAll();
+    verify( genTrans, times( 1 ) ).stopAll();
+  }
+
+  @Test
+  public void testStopStreaming() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[ 0 ] );
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
+    when( optimization.isEnabled() ).thenReturn( true );
+    dataService.getPushDownOptimizationMeta().add( optimization );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    executor.stop();
+
+    verify( serviceTrans, times( 0 ) ).stopAll();
+    verify( genTrans, times( 0 ) ).stopAll();
+  }
+
+  @Test
+  public void testGetRowLimit() throws KettleException {
+    String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
+
+    when( serviceTrans.isRunning() ).thenReturn( true );
+    when( genTrans.isRunning() ).thenReturn( true );
+    when( sqlTransGenerator.getRowLimit() ).thenReturn( 999 );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      build();
+
+    assertEquals( 999, executor.getRowLimit() );
+  }
+
+  @Test
+  public void testHasErrors() throws KettleException {
+    String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
+
+    when( serviceTrans.isRunning() ).thenReturn( true );
+    when( genTrans.isRunning() ).thenReturn( true );
+    when( sqlTransGenerator.getRowLimit() ).thenReturn( 999 );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      build();
+
+    assertFalse( executor.hasErrors() );
+    when( serviceTrans.getErrors() ).thenReturn( 1 );
+    assertTrue( executor.hasErrors() );
   }
 
   @Test

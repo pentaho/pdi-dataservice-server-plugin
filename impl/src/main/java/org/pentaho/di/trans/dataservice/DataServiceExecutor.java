@@ -46,13 +46,13 @@ import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.clients.TransMutators;
 import org.pentaho.di.trans.dataservice.execution.CopyParameters;
+import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
-import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
-import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
@@ -578,6 +578,16 @@ public class DataServiceExecutor {
   public void waitUntilFinished() {
     if ( !service.isStreaming() ) {
       serviceTrans.waitUntilFinished();
+    } else {
+      try {
+        // we need to actively wait for the genTrans to finish, because otherwise it will return on the
+        // waitUntilFinished since it didn't had time to start
+        while ( !genTrans.isFinishedOrStopped() ) {
+          Thread.sleep( 50 );
+        }
+      } catch ( InterruptedException e ) {
+        throw new RuntimeException( e );
+      }
     }
     genTrans.waitUntilFinished();
   }
@@ -660,11 +670,13 @@ public class DataServiceExecutor {
   }
 
   public void stop() {
-    if ( serviceTrans.isRunning() ) {
-      serviceTrans.stopAll();
-    }
-    if ( genTrans.isRunning() ) {
-      genTrans.stopAll();
+    if ( !service.isStreaming() ) {
+      if ( serviceTrans.isRunning() ) {
+        serviceTrans.stopAll();
+      }
+      if ( genTrans.isRunning() ) {
+        genTrans.stopAll();
+      }
     }
   }
 
