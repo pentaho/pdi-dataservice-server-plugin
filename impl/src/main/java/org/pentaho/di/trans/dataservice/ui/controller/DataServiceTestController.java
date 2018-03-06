@@ -289,36 +289,12 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
 
-    BindingConvertor<Integer, String> intConverter = new BindingConvertor<Integer, String>() {
-      @Override
-      public String sourceToTarget( Integer value ) {
-        return value.toString();
-      }
-
-      @Override
-      public Integer targetToSource( String value ) {
-        return Integer.parseInt( value );
-      }
-    };
-
-    BindingConvertor<Long, String> longConverter = new BindingConvertor<Long, String>() {
-      @Override
-      public String sourceToTarget( Long value ) {
-        return String.valueOf( value );
-      }
-
-      @Override
-      public Long targetToSource( String value ) {
-        return Long.parseLong( value );
-      }
-    };
-
     bindingFactory.createBinding( model, "windowRowSize", sizeTextBox, "value",
-      intConverter );
+      BindingConvertor.integer2String() );
     bindingFactory.createBinding( model, "windowMillisSize", millisTextBox, "value",
-      longConverter );
+      BindingConvertor.long2String() );
     bindingFactory.createBinding( model, "windowRate", rateTextBox, "value",
-      longConverter );
+      BindingConvertor.long2String() );
   }
 
   private String getDefaultSql() {
