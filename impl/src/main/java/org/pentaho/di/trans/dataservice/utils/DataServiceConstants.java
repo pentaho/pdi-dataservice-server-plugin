@@ -28,8 +28,12 @@ import java.util.concurrent.TimeUnit;
  * General constants.
  */
 public final class DataServiceConstants {
-  public static final String ROW_LIMIT_PROPERTY = "det.dataservice.dynamic.limit";
+  @Deprecated
+  public static final String LEGACY_LIMIT_PROPERTY = "det.dataservice.dynamic.limit";
+  public static final String ROW_LIMIT_PROPERTY = "dataservice.dynamic.limit";
+  public static final String TIME_LIMIT_PROPERTY = "dataservice.dynamic.timelimitmilli";
   public static final int ROW_LIMIT_DEFAULT = 50000;
+  public static final long TIME_LIMIT_DEFAULT = 100000;
 
   // Logging constants
   public static final String PASSING_ALONG_ROW = "Passing along row: ";

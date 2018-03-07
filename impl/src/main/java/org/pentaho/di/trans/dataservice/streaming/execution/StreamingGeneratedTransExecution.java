@@ -37,6 +37,7 @@ import org.pentaho.di.trans.step.StepInterface;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class to represent the Streaming execution of a Generated Transformation (SQL query over dataservices)
@@ -48,8 +49,10 @@ public class StreamingGeneratedTransExecution implements Runnable {
   private final String injectorStepName;
   private final String resultStepName;
   private final String query;
+  private final AtomicBoolean isRunning = new AtomicBoolean( false );
 
   private Disposable buffer;
+  private Disposable fallbackBuffer;
 
   private int windowRowSize;
   private long windowMillisSize;
@@ -97,9 +100,25 @@ public class StreamingGeneratedTransExecution implements Runnable {
       } else if ( stream.hasCachedWindow() ) {
         this.runGenTrans( stream.getCachedWindow() );
       } else {
-        buffer = stream.getBuffer().subscribe( list -> this.runGenTrans( list ) );
+        if ( stream.getBuffer() != null ) {
+          buffer = stream.getBuffer().subscribe( list -> {
+            if ( fallbackBuffer != null ) {
+              fallbackBuffer.dispose();
+            }
+            this.runGenTrans( list );
+
+          } );
+        }
+        if ( stream.getFallbackBuffer() != null ) {
+          fallbackBuffer = stream.getFallbackBuffer().subscribe( list -> {
+            if ( buffer != null ) {
+              buffer.dispose();
+            }
+            this.runGenTrans( list );
+          } );
+        }
       }
-    } catch ( KettleException e ) {
+    } catch ( KettleStepException e ) {
       throw Throwables.propagate( e );
     }
   }
@@ -111,44 +130,48 @@ public class StreamingGeneratedTransExecution implements Runnable {
    * @throws KettleStepException
    */
   private void runGenTrans( final List<RowMetaAndData> rowIterator ) throws KettleStepException {
-    try {
-      LogChannelInterface log = genTrans.getLogChannel();
-      RowProducer rowProducer;
-      StepInterface resultStep;
+    if  ( isRunning.compareAndSet( false, true ) ) {
+      try {
+        LogChannelInterface log = genTrans.getLogChannel();
+        RowProducer rowProducer;
+        StepInterface resultStep;
 
-      genTrans.cleanup();
-      genTrans.prepareExecution( null );
+        genTrans.cleanup();
+        genTrans.prepareExecution( null );
 
-      rowProducer = genTrans.addRowProducer( injectorStepName, 0 );
+        rowProducer = genTrans.addRowProducer( injectorStepName, 0 );
 
-      genTrans.startThreads();
+        genTrans.startThreads();
 
-      resultStep = genTrans.findRunThread( resultStepName );
+        resultStep = genTrans.findRunThread( resultStepName );
 
-      resultStep.cleanup();
-      resultStep.addRowListener( resultRowListener );
+        resultStep.cleanup();
+        resultStep.addRowListener( resultRowListener );
 
-      for ( RowMetaAndData injectRows : rowIterator ) {
-        while ( !rowProducer.putRowWait( injectRows.getRowMeta(), injectRows.getData(), 1, TimeUnit.SECONDS )
-          && genTrans.isRunning() ) {
-          // Row queue was full, try again
-          if ( log.isRowLevel() ) {
+        for ( RowMetaAndData injectRows : rowIterator ) {
+          while ( !rowProducer.putRowWait( injectRows.getRowMeta(), injectRows.getData(), 1, TimeUnit.SECONDS )
+            && genTrans.isRunning() ) {
+            // Row queue was full, try again
             log.logRowlevel( DataServiceConstants.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
           }
         }
-      }
-      rowProducer.finished();
-      genTrans.waitUntilFinished();
-      genTrans.stopAll();
+        rowProducer.finished();
+        genTrans.waitUntilFinished();
+        genTrans.stopAll();
 
-      log.logDetailed( DataServiceConstants.STREAMING_GENERATED_TRANSFORMATION_STOPPED );
+        log.logDetailed( DataServiceConstants.STREAMING_GENERATED_TRANSFORMATION_STOPPED );
 
-      if ( buffer != null ) {
-        buffer.dispose();
-        buffer = null;
+        if ( buffer != null ) {
+          buffer.dispose();
+          buffer = null;
+        }
+        if ( fallbackBuffer != null ) {
+          fallbackBuffer.dispose();
+          fallbackBuffer = null;
+        }
+      } catch ( KettleException e ) {
+        throw new KettleStepException( e );
       }
-    } catch ( KettleException e ) {
-      throw new KettleStepException( e );
     }
   }
 }

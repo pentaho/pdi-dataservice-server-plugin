@@ -32,6 +32,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
@@ -44,6 +45,8 @@ public class DataServiceModel extends XulEventSourceAdapter {
   private List<PushDownOptimizationMeta> pushDownOptimizations = Lists.newArrayList();
   private String serviceName;
   private String serviceStep;
+  private int serviceMaxRows;
+  private long serviceMaxTime;
   private boolean streaming;
   private final TransMeta transMeta;
 
@@ -68,6 +71,26 @@ public class DataServiceModel extends XulEventSourceAdapter {
     String previous = this.serviceName;
     this.serviceName = serviceName;
     firePropertyChange( "serviceName", previous, serviceName );
+  }
+
+  public int getServiceMaxRows() {
+    return serviceMaxRows;
+  }
+
+  public void setServiceMaxRows( int serviceMaxRows ) {
+    int previous = this.serviceMaxRows;
+    this.serviceMaxRows = serviceMaxRows;
+    firePropertyChange( "serviceMaxRows", previous, serviceMaxRows );
+  }
+
+  public long getServiceMaxTime() {
+    return serviceMaxTime;
+  }
+
+  public void setServiceMaxTime( long serviceMaxTime ) {
+    long previous = this.serviceMaxTime;
+    this.serviceMaxTime = serviceMaxTime;
+    firePropertyChange( "serviceMaxTime", previous, serviceMaxTime );
   }
 
   public void setStreaming( boolean streaming ) {
@@ -160,6 +183,14 @@ public class DataServiceModel extends XulEventSourceAdapter {
     dataService.setPushDownOptimizationMeta( getPushDownOptimizations() );
     dataService.setStepname( getServiceStep() );
     dataService.setStreaming( isStreaming() );
+
+    int maxRows = serviceMaxRows > 0 ? Math.min( serviceMaxRows, DataServiceConstants.ROW_LIMIT_DEFAULT )
+      : DataServiceConstants.ROW_LIMIT_DEFAULT;
+    long maxTime = serviceMaxTime > 0 ? Math.min( serviceMaxTime, DataServiceConstants.TIME_LIMIT_DEFAULT )
+      : DataServiceConstants.TIME_LIMIT_DEFAULT;
+
+    dataService.setRowLimit( maxRows );
+    dataService.setTimeLimit( maxTime );
 
     for ( PushDownOptimizationMeta pushDownOptimization : pushDownOptimizations ) {
       pushDownOptimization.getType().init( transMeta, dataService, pushDownOptimization );

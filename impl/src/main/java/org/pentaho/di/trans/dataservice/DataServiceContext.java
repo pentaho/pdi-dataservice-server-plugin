@@ -137,7 +137,7 @@ public class DataServiceContext implements Context {
   }
 
   @Override
-  public final StreamingServiceTransExecutor getServiceTransExecutor( String id ) {
+  public StreamingServiceTransExecutor getServiceTransExecutor( String id ) {
     return serviceExecutors.get( id );
   }
 

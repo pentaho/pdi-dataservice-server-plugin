@@ -36,6 +36,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
+import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.StepMeta;
 
 import java.beans.PropertyChangeSupport;
@@ -47,9 +48,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -123,6 +122,9 @@ public class DataServiceModelTest {
     assertTrue( model.remove( optimizationMeta ) );
     verify( propertyChangeSupport ).firePropertyChange( "pushDownOptimizations", optimizations, init );
 
+    assertFalse( model.remove( optimizationMeta ) );
+    verifyNoMoreInteractions( propertyChangeSupport );
+
     assertTrue( model.removeAll( optimizations ) );
     verify( propertyChangeSupport ).firePropertyChange( "pushDownOptimizations", init, emptyList );
 
@@ -150,6 +152,28 @@ public class DataServiceModelTest {
   }
 
   @Test
+  public void testGetDataServiceServiceLimits() {
+    int MAX_SERVICE_ROWS = 100;
+    long MAX_SERVICE_TIME = 200;
+
+    model.setServiceName( "service" );
+    model.setServiceStep( "step" );
+    model.setServiceMaxRows( MAX_SERVICE_ROWS );
+    model.setServiceMaxTime( MAX_SERVICE_TIME );
+
+    DataServiceMeta dataService = model.getDataService();
+    assertThat( dataService.getRowLimit(), equalTo( MAX_SERVICE_ROWS ) );
+    assertThat( dataService.getTimeLimit(), equalTo( MAX_SERVICE_TIME ) );
+
+    model.setServiceMaxRows( DataServiceConstants.ROW_LIMIT_DEFAULT + 1 );
+    model.setServiceMaxTime( DataServiceConstants.TIME_LIMIT_DEFAULT + 1L );
+
+    dataService = model.getDataService();
+    assertThat( dataService.getRowLimit(), equalTo( DataServiceConstants.ROW_LIMIT_DEFAULT ) );
+    assertThat( dataService.getTimeLimit(), equalTo( DataServiceConstants.TIME_LIMIT_DEFAULT ) );
+  }
+
+  @Test
   public void testGetStepFields() throws Exception {
     model.setServiceStep( "step" );
     when( transMeta.findStep( model.getServiceStep() ) ).thenReturn( stepMeta );
@@ -168,6 +192,25 @@ public class DataServiceModelTest {
   }
 
   @Test
+  public void testGetStepFieldsNullTransMeta() {
+    model = new DataServiceModel( null );
+    model.setServiceStep( "step" );
+
+    ImmutableList<String> stepFields = model.getStepFields();
+
+    assertThat( stepFields, equalTo( ImmutableList.of() ) );
+  }
+
+  @Test
+  public void testGetStepFieldsNullServiceStep() {
+    model.setServiceStep( null );
+
+    ImmutableList<String> stepFields = model.getStepFields();
+
+    assertThat( stepFields, equalTo( ImmutableList.of() ) );
+  }
+
+  @Test
   public void testGetStepFieldsException() throws Exception {
     model.setServiceStep( "step" );
     when( transMeta.findStep( model.getServiceStep() ) ).thenReturn( stepMeta );
@@ -182,10 +225,26 @@ public class DataServiceModelTest {
   }
 
   @Test
-  public void testStreaming() throws Exception {
+  public void testStreaming() {
     model.setStreaming( false );
     assertFalse( model.isStreaming() );
     model.setStreaming( true );
     assertTrue( model.isStreaming() );
+  }
+
+  @Test
+  public void testServiceMaxRows() {
+    int MAX_ROWS = 9999;
+    assertEquals( 0,  model.getServiceMaxRows() );
+    model.setServiceMaxRows( MAX_ROWS );
+    assertEquals( MAX_ROWS, model.getServiceMaxRows() );
+  }
+
+  @Test
+  public void testServiceMaxTime() {
+    long MAX_TIME = 9999;
+    assertEquals( 0, model.getServiceMaxTime() );
+    model.setServiceMaxTime( MAX_TIME );
+    assertEquals( MAX_TIME, model.getServiceMaxTime() );
   }
 }

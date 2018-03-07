@@ -45,9 +45,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * {@link StreamingGeneratedTransExecution} test class
@@ -64,7 +62,7 @@ public class StreamingGeneratedTransExecutionTest {
   private long MOCK_WINDOW_RATE = 0;
   private List<RowMetaAndData> rowIterator;
   private StreamList<RowMetaAndData> streamList;
-  private Observable<List<RowMetaAndData>> mockObservable;
+  private Observable<List<RowMetaAndData>> mockObservable, mockFallbackObservable;
 
   @Mock StreamingServiceTransExecutor serviceExecutor;
   @Mock Trans genTrans;
@@ -82,8 +80,10 @@ public class StreamingGeneratedTransExecutionTest {
     rowIterator.add( rowMetaAndData );
     streamList = new StreamList();
     mockObservable = streamList.getStream().buffer( 1 );
+    mockFallbackObservable = streamList.getStream().buffer( 1000 );
 
     when( streamExecutionListener.getBuffer( ) ).thenReturn( mockObservable );
+    when( streamExecutionListener.getFallbackBuffer() ).thenReturn( mockFallbackObservable );
     when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_SIZE, MOCK_WINDOW_MILLIS, MOCK_WINDOW_RATE ) )
       .thenReturn( streamExecutionListener );
     when( log.isRowLevel() ).thenReturn( true );
@@ -106,9 +106,43 @@ public class StreamingGeneratedTransExecutionTest {
     verifyExecution( 1 );
   }
 
+  @Test
+  public void testRunCachedWindowNoFallback() throws Exception {
+    when( streamExecutionListener.hasCachedWindow() ).thenReturn( true );
+    when( streamExecutionListener.getCachedWindow() ).thenReturn( rowIterator );
+    when( streamExecutionListener.getFallbackBuffer() ).thenReturn( null );
+
+    gentransExecutor.run();
+
+    verifyExecution( 1 );
+  }
+
+  @Test
+  public void testRunCachedWindowNoBuffer() throws Exception {
+    when( streamExecutionListener.hasCachedWindow() ).thenReturn( true );
+    when( streamExecutionListener.getCachedWindow() ).thenReturn( rowIterator );
+    when( streamExecutionListener.getBuffer() ).thenReturn( null );
+
+    gentransExecutor.run();
+
+    verifyExecution( 1 );
+  }
+
+  @Test
+  public void testRunEmptyStream() throws Exception {
+    when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_SIZE, MOCK_WINDOW_MILLIS, MOCK_WINDOW_RATE ) )
+      .thenReturn( null );
+
+    gentransExecutor.run();
+
+    verifyExecution( 1 );
+  }
+
   @Test( expected = RuntimeException.class )
-  public void testRunException() {
-    when( streamExecutionListener.hasCachedWindow() ).thenThrow( new KettleException( ) );
+  public void testRunException() throws KettleException {
+    when( streamExecutionListener.hasCachedWindow() ).thenReturn( true );
+    when( streamExecutionListener.getCachedWindow() ).thenReturn( rowIterator );
+    doThrow( new KettleException() ).when( genTrans ).startThreads();
 
     gentransExecutor.run();
   }
@@ -126,7 +160,7 @@ public class StreamingGeneratedTransExecutionTest {
   }
 
   @Test
-  public void testRunNoCachedWindow() throws Exception {
+  public void testRunNoCachedWindowBuffer() throws Exception {
     when( streamExecutionListener.hasCachedWindow() ).thenReturn( false );
 
     gentransExecutor.run();
@@ -137,6 +171,96 @@ public class StreamingGeneratedTransExecutionTest {
     streamList.add( mockRowMetaAndData );
 
     verifyExecution( 1 );
+  }
+
+  @Test
+  public void testRunNoCachedWindowFallbackBuffer() throws Exception {
+    mockObservable = streamList.getStream().buffer( 1000 );
+    mockFallbackObservable = streamList.getStream().buffer( 1 );
+
+    when( streamExecutionListener.getBuffer( ) ).thenReturn( mockObservable );
+    when( streamExecutionListener.getFallbackBuffer() ).thenReturn( mockFallbackObservable );
+    when( streamExecutionListener.hasCachedWindow() ).thenReturn( false );
+
+    gentransExecutor.run();
+
+    verify( streamExecutionListener, times( 0 ) ).getCachedWindow();
+    verifyExecution( 0 );
+
+    streamList.add( mockRowMetaAndData );
+
+    verifyExecution( 1 );
+  }
+
+  @Test
+  public void testRunNoCachedWindowSameBuffers() throws Exception {
+    mockObservable = streamList.getStream().buffer( 1 );
+
+    when( streamExecutionListener.getBuffer( ) ).thenReturn( mockObservable );
+    when( streamExecutionListener.getFallbackBuffer() ).thenReturn( mockObservable );
+    when( streamExecutionListener.hasCachedWindow() ).thenReturn( false );
+
+    gentransExecutor.run();
+
+    verify( streamExecutionListener, times( 0 ) ).getCachedWindow();
+    verifyExecution( 0 );
+
+    streamList.add( mockRowMetaAndData );
+    streamList.add( mockRowMetaAndData );
+
+    verifyExecution( 1 );
+  }
+
+  @Test
+  public void testRunNoCachedWindowNoFallbackBuffer() throws Exception {
+    mockObservable = streamList.getStream().buffer( 1 );
+
+    when( streamExecutionListener.getBuffer( ) ).thenReturn( mockObservable );
+    when( streamExecutionListener.getFallbackBuffer() ).thenReturn( null );
+    when( streamExecutionListener.hasCachedWindow() ).thenReturn( false );
+
+    gentransExecutor.run();
+
+    verify( streamExecutionListener, times( 0 ) ).getCachedWindow();
+    verifyExecution( 0 );
+
+    streamList.add( mockRowMetaAndData );
+
+    verifyExecution( 1 );
+  }
+
+  @Test
+  public void testRunNoCachedWindowNoMainBuffer() throws Exception {
+    mockObservable = streamList.getStream().buffer( 1 );
+
+    when( streamExecutionListener.getBuffer( ) ).thenReturn( null );
+    when( streamExecutionListener.getFallbackBuffer() ).thenReturn( mockObservable );
+    when( streamExecutionListener.hasCachedWindow() ).thenReturn( false );
+
+    gentransExecutor.run();
+
+    verify( streamExecutionListener, times( 0 ) ).getCachedWindow();
+    verifyExecution( 0 );
+
+    streamList.add( mockRowMetaAndData );
+
+    verifyExecution( 1 );
+  }
+
+  @Test
+  public void testRunNoCachedWindowNoBuffer() throws Exception {
+    when( streamExecutionListener.getBuffer( ) ).thenReturn( null );
+    when( streamExecutionListener.getFallbackBuffer() ).thenReturn( null );
+    when( streamExecutionListener.hasCachedWindow() ).thenReturn( false );
+
+    gentransExecutor.run();
+
+    verify( streamExecutionListener, times( 0 ) ).getCachedWindow();
+    verifyExecution( 0 );
+
+    streamList.add( mockRowMetaAndData );
+
+    verifyExecution( 0 );
   }
 
   private void verifyExecution( int numExecs ) throws Exception {

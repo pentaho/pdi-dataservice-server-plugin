@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -47,6 +48,7 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
 import org.pentaho.di.trans.dataservice.clients.Query;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
 import org.pentaho.di.trans.step.RowListener;
@@ -63,6 +65,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -74,9 +77,9 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -101,6 +104,9 @@ public class DataServiceTestControllerTest  {
 
   @Mock
   private TransMeta transMeta;
+
+  @Mock
+  private RowMeta rowMeta;
 
   @Mock
   private DataServiceTestCallback callback;
@@ -135,21 +141,31 @@ public class DataServiceTestControllerTest  {
   @Mock
   private Query annotationsQuery;
 
+  @Mock
+  private Query annotationsStreamingQuery;
+
+  @Mock
+  private StreamingServiceTransExecutor streamingExecution;
+
   @Captor
   private ArgumentCaptor<String> queryCaptor;
 
   private DataServiceTestControllerTester dataServiceTestController;
 
-  private static final String TEST_TABLE_NAME = "Test Table";
+  private static final String TEST_TABLE_NAME = "TestTable";
   private static final int VERIFY_TIMEOUT_MILLIS = 2000;
   private static final String TEST_ANNOTATIONS = "<annotations> \n</annotations>";
-
+  private static final String MOCK_SQL = "show annotations from TestTable";
+  private static final int MOCK_WINDOW_ROW_SIZE = 1;
+  private static final long MOCK_WINDOW_MILLIS_SIZE = 2L;
+  private static final long MOCK_WINDOW_RATE = 3L;
 
   @Before
   public void initMocks() throws Exception {
     MockitoAnnotations.initMocks( this );
 
     when( dataService.getServiceTrans() ).thenReturn( transMeta );
+    when( transMeta.realClone( false ) ).thenReturn( transMeta );
 
     doAnswer( new Answer<Void>() {
       @Override
@@ -170,6 +186,9 @@ public class DataServiceTestControllerTest  {
       }
     } ).when( annotationsQueryService ).prepareQuery( any( String.class ), anyInt(), any( Map.class ) );
 
+    when( streamingExecution.getId() ).thenReturn( TEST_TABLE_NAME );
+    when( context.getServiceTransExecutor( TEST_TABLE_NAME ) ).thenReturn( streamingExecution );
+
     when( dataServiceExecutor.getServiceTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getGenTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getServiceTransMeta() ).thenReturn( transMeta );
@@ -181,7 +200,14 @@ public class DataServiceTestControllerTest  {
     when( dataServiceExecutor.getSql().getSelectFields().getFields() )
       .thenReturn( new ArrayList<SQLField>() );
 
+    when( rowMeta.getValueMetaList() ).thenReturn( Collections.EMPTY_LIST );
+
     when( transMeta.listParameters() ).thenReturn( new String[] { "foo", "bar" } );
+    when( transMeta.listVariables() ).thenReturn( new String[] { "varFoo", "varBar" } );
+    when( transMeta.getStepFields( anyString() ) ).thenReturn( rowMeta );
+
+    when( transMeta.getVariable( "varFoo" ) ).thenReturn( "varFooVal" );
+    when( transMeta.getVariable( "varBar" ) ).thenReturn( "varBarVal" );
     when( transMeta.getParameterDefault( "foo" ) ).thenReturn( "fooVal" );
     when( transMeta.getParameterDefault( "bar" ) ).thenReturn( "barVal" );
 
@@ -348,7 +374,7 @@ public class DataServiceTestControllerTest  {
 
   @Test
   public void queryForAnnontations() throws KettleException, IOException {
-    when( model.getSql() ).thenReturn( "show annotations from inAnnotations" );
+    when( model.getSql() ).thenReturn( MOCK_SQL );
     dataServiceTestController.executeSql();
 
     ArgumentCaptor<RowMetaInterface> rowMetaCaptor = ArgumentCaptor.forClass( RowMetaInterface.class );
@@ -364,6 +390,31 @@ public class DataServiceTestControllerTest  {
     verify( dataServiceExecutor, never() ).executeQuery();
 
     doThrow( new IOException() ).when( annotationsQuery ).writeTo( any( OutputStream.class ) );
+
+    try {
+      dataServiceTestController.executeSql();
+      fail();
+    } catch ( KettleException e ) {
+      // Pass test
+    } catch ( Exception e ) {
+      fail();
+    }
+  }
+
+  @Test
+  public void streamingQueryForAnnontations() throws KettleException, IOException {
+    when( model.getSql() ).thenReturn( MOCK_SQL );
+    when( model.getWindowRowSize() ).thenReturn( MOCK_WINDOW_ROW_SIZE );
+    when( model.getWindowMillisSize() ).thenReturn( MOCK_WINDOW_MILLIS_SIZE );
+    when( model.getWindowRate() ).thenReturn( MOCK_WINDOW_RATE );
+
+    when( dataService.isStreaming() ).thenReturn( true );
+
+    when( annotationsQueryService.prepareQuery( MOCK_SQL, 0,
+      MOCK_WINDOW_ROW_SIZE, MOCK_WINDOW_MILLIS_SIZE,
+      MOCK_WINDOW_RATE, ImmutableMap.<String, String>of() ) ).thenReturn( annotationsStreamingQuery );
+
+    doThrow( new IOException() ).when( annotationsStreamingQuery ).writeTo( any( OutputStream.class ) );
 
     try {
       dataServiceTestController.executeSql();

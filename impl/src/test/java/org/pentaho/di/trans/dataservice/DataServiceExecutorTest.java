@@ -52,6 +52,7 @@ import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
+import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepListener;
@@ -86,15 +87,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.pentaho.di.trans.dataservice.testing.answers.ReturnsSelf.RETURNS_SELF;
 
 @RunWith( org.mockito.runners.MockitoJUnitRunner.class )
@@ -103,6 +96,7 @@ public class DataServiceExecutorTest extends BaseTest {
   public static final String INJECTOR_STEP_NAME = "Injector Step";
   public static final String RESULT_STEP_NAME = "Result Step";
   public static final String CONTAINER_ID = "12345";
+  private long SYSTEM_TIME_LIMIT = 99999;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
   @Mock SqlTransGenerator sqlTransGenerator;
@@ -118,6 +112,8 @@ public class DataServiceExecutorTest extends BaseTest {
     when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
     when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP_NAME );
     when( sqlTransGenerator.getResultStepName() ).thenReturn( RESULT_STEP_NAME );
+
+    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( SYSTEM_TIME_LIMIT ) );
   }
 
   @Test
@@ -146,7 +142,9 @@ public class DataServiceExecutorTest extends BaseTest {
     rowMeta.addValueMeta( new ValueMetaInteger( "anInt" ) );
     rowMeta.addValueMeta( new ValueMetaDate( "aDate" ) );
 
-    String query = "SELECT * FROM " + DATA_SERVICE_NAME + " WHERE anInt = 2 AND aDate IN ('2014-12-05','2008-01-01')";
+    String query = "SELECT COUNT(aString), aString FROM " + DATA_SERVICE_NAME
+      + " WHERE anInt = 2 AND aDate IN ('2014-12-05','2008-01-01')"
+      + " GROUP BY aString HAVING COUNT(aString) > 2";
 
     when( transMeta.getStepFields( DATA_SERVICE_STEP ) ).thenReturn( rowMeta );
 
@@ -171,7 +169,7 @@ public class DataServiceExecutorTest extends BaseTest {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME2 );
 
     IMetaStore metastore = mock( IMetaStore.class );
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+    new DataServiceExecutor.Builder( sql, dataService, context ).
       serviceTrans( serviceTrans ).
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
@@ -189,8 +187,26 @@ public class DataServiceExecutorTest extends BaseTest {
     dataService.setName( null );
 
     IMetaStore metastore = mock( IMetaStore.class );
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+    new DataServiceExecutor.Builder( sql, dataService, context ).
       serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      build();
+  }
+
+  @Test( expected =  KettleException.class )
+  public void testBuilderBuildNullServiceTransformation() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    dataService.setName( DATA_SERVICE_NAME );
+    dataService.setServiceTrans( null );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    new DataServiceExecutor.Builder( sql, dataService, context ).
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
       metastore( metastore ).
@@ -377,6 +393,8 @@ public class DataServiceExecutorTest extends BaseTest {
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
       metastore( metastore ).
+      rowLimit( 1 ).
+      timeLimit( 10000 ).
       windowRowSize( 1 ).
       windowMillisSize( 0 ).
       windowRate( 0 ).
@@ -454,8 +472,6 @@ public class DataServiceExecutorTest extends BaseTest {
   public void testExecuteStreamQuery() throws Exception {
     when( genTrans.isFinishedOrStopped() ).thenReturn( true );
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
-    StepInterface serviceStep = serviceTrans.findRunThread( DATA_SERVICE_STEP );
-    StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
 
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
 
@@ -500,6 +516,211 @@ public class DataServiceExecutorTest extends BaseTest {
     executor.waitUntilFinished();
     verify( serviceTrans, times( 0 ) ).waitUntilFinished();
     verify( genTrans ).waitUntilFinished();
+  }
+
+  @Test
+  public void testExecuteStreamQueryKettleTimeLimit() throws Exception {
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+  }
+
+  @Test
+  public void testExecuteStreamQuerySystemTimeLimit() throws Exception {
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      timeLimit( SYSTEM_TIME_LIMIT + 1 ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+  }
+
+  @Test
+  public void testExecuteStreamQueryUserTimeLimit() throws Exception {
+    long TIME_LIMIT = 12345;
+
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( SYSTEM_TIME_LIMIT ) );
+
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      timeLimit( TIME_LIMIT ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), TIME_LIMIT );
+  }
+
+  @Test
+  public void testExecuteStreamQueryMetadataTimeLimit() throws Exception {
+    long SERVICE_TIME_LIMIT = 1234567;
+    long KETTLE_TIME_LIMIT = 10000000;
+
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( KETTLE_TIME_LIMIT ) );
+
+    dataService.setTimeLimit( SERVICE_TIME_LIMIT );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SERVICE_TIME_LIMIT );
+  }
+
+  @Test
+  public void testExecuteStreamQueryMetadataKettleTimeLimit() throws Exception {
+    long KETTLE_TIME_LIMIT = 1234567;
+    long SERVICE_TIME_LIMIT = 10000000;
+
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( KETTLE_TIME_LIMIT ) );
+
+    dataService.setTimeLimit( SERVICE_TIME_LIMIT );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+
+    assertEquals( exec.getWindowMaxTimeLimit(), KETTLE_TIME_LIMIT );
+  }
+
+  @Test
+  public void testExecuteStreamQueryDefaultTimeLimitNullModelTimeLimit() throws Exception {
+    dataService.setTimeLimit( null );
+    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "" );
+    testExecuteStreamQueryDefaultTimeLimitAux();
+  }
+
+  @Test
+  public void testExecuteStreamQueryDefaultTimeLimitZeroModelTimeLimit() throws Exception {
+    dataService.setTimeLimit( 0L );
+    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "" );
+    testExecuteStreamQueryDefaultTimeLimitAux();
+  }
+
+  @Test
+  public void testExecuteStreamQueryDefaultTimeLimitException() throws Exception {
+    dataService.setTimeLimit( 0L );
+    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "NOT_NUMBER" );
+    testExecuteStreamQueryDefaultTimeLimitAux();
+  }
+
+  private void testExecuteStreamQueryDefaultTimeLimitAux() throws Exception {
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), DataServiceConstants.TIME_LIMIT_DEFAULT );
   }
 
   @Test
@@ -802,6 +1023,13 @@ public class DataServiceExecutorTest extends BaseTest {
 
     assertFalse( executor.hasErrors() );
     when( serviceTrans.getErrors() ).thenReturn( 1 );
+    when( genTrans.getErrors() ).thenReturn( 1 );
+    assertTrue( executor.hasErrors() );
+    when( serviceTrans.getErrors() ).thenReturn( 0 );
+    when( genTrans.getErrors() ).thenReturn( 1 );
+    assertTrue( executor.hasErrors() );
+    when( serviceTrans.getErrors() ).thenReturn( 1 );
+    when( genTrans.getErrors() ).thenReturn( 0 );
     assertTrue( executor.hasErrors() );
   }
 
@@ -827,22 +1055,25 @@ public class DataServiceExecutorTest extends BaseTest {
   @Test
   public void testCalculateTransNameWithNewlines() throws KettleException {
     String serviceName = "name\nnewline";
-    SQL sql = new SQL( "select * from \""+serviceName+"\"" );
+    SQL sql = new SQL( "select * from \"" + serviceName + "\"" );
     sql.setServiceName( serviceName );
 
-    Assert.assertEquals( "name newline - SQL - "+sql.getSqlString().hashCode(), DataServiceExecutor.calculateTransname( sql, false ) );
+    Assert.assertEquals( "name newline - SQL - " + sql.getSqlString().hashCode(),
+      DataServiceExecutor.calculateTransname( sql, false ) );
 
     serviceName = "name\rnewline";
-    sql = new SQL( "select * from \""+serviceName+"\"" );
+    sql = new SQL( "select * from \"" + serviceName + "\"" );
     sql.setServiceName( serviceName );
 
-    Assert.assertEquals( "name newline - SQL - "+sql.getSqlString().hashCode(), DataServiceExecutor.calculateTransname( sql, false ) );
+    Assert.assertEquals( "name newline - SQL - " + sql.getSqlString().hashCode(),
+      DataServiceExecutor.calculateTransname( sql, false ) );
 
     serviceName = "name\r\nnewline";
-    sql = new SQL( "select * from \""+serviceName+"\"" );
+    sql = new SQL( "select * from \"" + serviceName + "\"" );
     sql.setServiceName( serviceName );
 
-    Assert.assertEquals( "name  newline - SQL - "+sql.getSqlString().hashCode(), DataServiceExecutor.calculateTransname( sql, false ) );
+    Assert.assertEquals( "name  newline - SQL - " + sql.getSqlString().hashCode(),
+      DataServiceExecutor.calculateTransname( sql, false ) );
   }
 
   @Test
