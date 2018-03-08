@@ -165,8 +165,8 @@ public class DataServiceModelTest {
     assertThat( dataService.getRowLimit(), equalTo( MAX_SERVICE_ROWS ) );
     assertThat( dataService.getTimeLimit(), equalTo( MAX_SERVICE_TIME ) );
 
-    model.setServiceMaxRows( DataServiceConstants.ROW_LIMIT_DEFAULT + 1 );
-    model.setServiceMaxTime( DataServiceConstants.TIME_LIMIT_DEFAULT + 1L );
+    model.setServiceMaxRows( 0 );
+    model.setServiceMaxTime( 0 );
 
     dataService = model.getDataService();
     assertThat( dataService.getRowLimit(), equalTo( DataServiceConstants.ROW_LIMIT_DEFAULT ) );

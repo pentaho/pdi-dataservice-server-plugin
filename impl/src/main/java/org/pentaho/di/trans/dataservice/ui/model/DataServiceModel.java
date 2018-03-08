@@ -184,9 +184,9 @@ public class DataServiceModel extends XulEventSourceAdapter {
     dataService.setStepname( getServiceStep() );
     dataService.setStreaming( isStreaming() );
 
-    int maxRows = serviceMaxRows > 0 ? Math.min( serviceMaxRows, DataServiceConstants.ROW_LIMIT_DEFAULT )
+    int maxRows = serviceMaxRows > 0 ? serviceMaxRows
       : DataServiceConstants.ROW_LIMIT_DEFAULT;
-    long maxTime = serviceMaxTime > 0 ? Math.min( serviceMaxTime, DataServiceConstants.TIME_LIMIT_DEFAULT )
+    long maxTime = serviceMaxTime > 0 ? serviceMaxTime
       : DataServiceConstants.TIME_LIMIT_DEFAULT;
 
     dataService.setRowLimit( maxRows );

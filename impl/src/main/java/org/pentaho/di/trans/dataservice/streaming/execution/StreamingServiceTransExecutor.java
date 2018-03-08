@@ -157,7 +157,7 @@ public class StreamingServiceTransExecutor {
     windowRowSize = windowRowSize < 0 ? 0 : Math.min( windowRowSize, windowMaxRowLimit );
     windowMillisSize = windowMillisSize < 0 ? 0 : Math.min( windowMillisSize, windowMaxTimeLimit );
     windowRate = windowRate < 0 ? 0
-      : ( windowMillisSize > 0 ? Math.min( windowRate, windowMaxRowLimit ) : Math.min( windowRate, windowMaxRowLimit ) );
+      : ( windowMillisSize > 0 ? Math.min( windowRate, windowMaxTimeLimit ) : Math.min( windowRate, windowMaxRowLimit ) );
 
     if ( windowRowSize == 0 && windowMillisSize == 0 ) {
       return null;

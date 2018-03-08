@@ -318,6 +318,7 @@ public class DataServiceExecutor {
 
     private int getKettleRowLimit() throws KettleException {
       String limit = getKettleProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
+      int result = 0;
 
       if ( limit == null || limit.isEmpty() ) {
         limit = getKettleProperty( DataServiceConstants.LEGACY_LIMIT_PROPERTY );
@@ -325,7 +326,7 @@ public class DataServiceExecutor {
 
       if ( !Utils.isEmpty( limit ) ) {
         try {
-          return Integer.parseInt( limit );
+          result = Integer.parseInt( limit );
         } catch ( NumberFormatException e ) {
           if ( context != null && context.getLogChannel() != null ) {
             context.getLogChannel().logError( String.format( "%s: %s ", DataServiceConstants.ROW_LIMIT_PROPERTY, e ) );
@@ -333,7 +334,7 @@ public class DataServiceExecutor {
         }
       }
 
-      return DataServiceConstants.ROW_LIMIT_DEFAULT;
+      return result > 0 ? result : DataServiceConstants.ROW_LIMIT_DEFAULT;
     }
 
     private long getServiceTimeLimit( DataServiceMeta service ) throws KettleException {
@@ -345,16 +346,17 @@ public class DataServiceExecutor {
 
     private long getKettleTimeLimit() throws KettleException {
       String limit = getKettleProperty( DataServiceConstants.TIME_LIMIT_PROPERTY );
+      long result = 0;
       if ( !Utils.isEmpty( limit ) ) {
         try {
-          return Long.parseLong( limit );
+          result = Long.parseLong( limit );
         } catch ( NumberFormatException e ) {
           if ( context != null && context.getLogChannel() != null ) {
             context.getLogChannel().logError( String.format( "%s: %s ", DataServiceConstants.TIME_LIMIT_PROPERTY, e ) );
           }
         }
       }
-      return DataServiceConstants.TIME_LIMIT_DEFAULT;
+      return result > 0 ? result : DataServiceConstants.TIME_LIMIT_DEFAULT;
     }
 
     private String getKettleProperty( String propertyName ) throws KettleException {

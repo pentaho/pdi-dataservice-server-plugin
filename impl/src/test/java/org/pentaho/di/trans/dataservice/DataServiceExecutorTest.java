@@ -1122,7 +1122,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Test
   public void testDynamicLimit() throws Exception {
-    final String limitProp = "det.dataservice.dynamic.limit";
+    final String limitProp = "dataservice.dynamic.limit";
     boolean userDef = dataService.isUserDefined();
     try {
       System.setProperty( limitProp, "2" );
@@ -1169,11 +1169,11 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Test
   public void testDynamicLimitDefault() throws Exception {
-    final String limitProp = "det.dataservice.dynamic.limit";
     final int defaultLimit = 50000;
     boolean userDef = dataService.isUserDefined();
     try {
-      System.getProperties().remove( limitProp );
+      System.getProperties().remove( DataServiceConstants.ROW_LIMIT_PROPERTY );
+      System.getProperties().remove( DataServiceConstants.LEGACY_LIMIT_PROPERTY );
       dataService.setUserDefined( false );
       DataServiceExecutor executor =
         new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
@@ -1182,7 +1182,7 @@ public class DataServiceExecutorTest extends BaseTest {
           .build();
       assertEquals( defaultLimit, executor.getServiceRowLimit() );
 
-      System.setProperty( limitProp, "baah" );
+      System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, "baah" );
       executor =
           new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
             .serviceTrans( serviceTrans )
@@ -1192,7 +1192,7 @@ public class DataServiceExecutorTest extends BaseTest {
       verify( logChannel ).logError( anyString() );
     } finally {
       dataService.setUserDefined( userDef );
-      System.getProperties().remove( limitProp );
+      System.getProperties().remove( DataServiceConstants.ROW_LIMIT_PROPERTY );
     }
   }
 
