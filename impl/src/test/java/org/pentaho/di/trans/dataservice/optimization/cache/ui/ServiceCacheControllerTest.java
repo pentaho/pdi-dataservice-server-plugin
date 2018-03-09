@@ -29,6 +29,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
+import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCache;
@@ -37,15 +39,18 @@ import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulCheckbox;
+import org.pentaho.ui.xul.components.XulRadio;
+import org.pentaho.ui.xul.components.XulTab;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.dom.Document;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author nhudak
@@ -60,7 +65,10 @@ public class ServiceCacheControllerTest {
   @Mock BindingFactory bindingFactory;
   @Mock XulCheckbox checkbox;
   @Mock XulTextbox ttl;
+  @Mock XulTab serviceCacheTab;
+  @Mock XulRadio regularTypeRadio;
   @Mock PentahoCacheTemplateConfiguration cacheConfig;
+  @Mock LogChannel log;
 
   PushDownOptimizationMeta meta;
   ServiceCache serviceCache;
@@ -72,16 +80,61 @@ public class ServiceCacheControllerTest {
 
     when( document.getElementById( "service-cache-checkbox" ) ).thenReturn( checkbox );
     when( document.getElementById( "service-cache-ttl" ) ).thenReturn( ttl );
+    when( document.getElementById( "service-cache-tab" ) ).thenReturn( serviceCacheTab );
+    when( document.getElementById( "regular-type-radio" ) ).thenReturn( regularTypeRadio );
     when( model.isStreaming() ).thenReturn( false );
   }
 
   @Test
-  public void testBindings() throws Exception {
+  public void testBindingsNonStreaming() throws Exception {
+    testBindingsAux();
+
+    controller.initBindings( model );
+
+    verify( checkbox ).setChecked( true );
+    verify( ttl ).setValue( "1200" );
+    verify( bindingFactory ).createBinding( checkbox, "checked", meta, "enabled" );
+    verify( bindingFactory ).createBinding( ttl, "value", serviceCache, "timeToLive" );
+    verify( serviceCacheTab ).setVisible( true );
+  }
+
+  @Test
+  public void testBindingsStreaming() throws Exception {
+    testBindingsAux();
+    RuntimeException e = new RuntimeException();
+    when( model.isStreaming() ).thenReturn( true );
+
+    controller.initBindings( model );
+
+    verify( checkbox ).setChecked( true );
+    verify( ttl ).setValue( "1200" );
+    verify( bindingFactory ).createBinding( checkbox, "checked", meta, "enabled" );
+    verify( bindingFactory ).createBinding( ttl, "value", serviceCache, "timeToLive" );
+    verify( serviceCacheTab ).setVisible( false );
+  }
+
+  @Test
+  public void testBindingsTtlException() throws Exception {
+    testBindingsAux();
+    RuntimeException e = new RuntimeException();
+    doThrow( e ).when( serviceCache ).getConfiguredTimeToLive();
+    when( model.isStreaming() ).thenReturn( true );
+
+    controller.initBindings( model );
+
+    verify( log ).logError( "Unable to set default TTL", e  );
+  }
+
+  private void testBindingsAux() throws Exception {
     // Override Controller to inject our mocks
     controller = new ServiceCacheController( factory ) {
       @Override protected PushDownOptimizationMeta locateServiceCacheMeta( DataServiceModel model ) {
         assertThat( model, sameInstance( ServiceCacheControllerTest.this.model ) );
         return meta;
+      }
+
+      @Override protected LogChannelInterface getLogChannel() {
+        return log;
       }
     };
     controller.setXulDomContainer( xulDomContainer );
@@ -92,13 +145,6 @@ public class ServiceCacheControllerTest {
 
     meta.setEnabled( true );
     when( serviceCache.getConfiguredTimeToLive() ).thenReturn( "1200" );
-
-    controller.initBindings( model );
-
-    verify( checkbox ).setChecked( true );
-    verify( ttl ).setValue( "1200" );
-    verify( bindingFactory ).createBinding( checkbox, "checked", meta, "enabled" );
-    verify( bindingFactory ).createBinding( ttl, "value", serviceCache, "timeToLive" );
   }
 
   @Test

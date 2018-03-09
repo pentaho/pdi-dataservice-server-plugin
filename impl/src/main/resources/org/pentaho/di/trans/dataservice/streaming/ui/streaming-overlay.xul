@@ -1,0 +1,20 @@
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    <tabs id="opt_tabs">
+        <tab id="streaming-tab" label="${Streaming.Title}" position="1"/>
+    </tabs>
+    <tabpanels id="opt_panels">
+        <tabpanel position="1">
+            <vbox padding="10">
+                <label control="streaming-max-rows" value="${Streaming.MaxRows.Label}"/>
+                <hbox>
+                    <textbox id="streaming-max-rows" width="120"/>
+                </hbox>
+                <label control="streaming-max-time" value="${Streaming.MaxTime.Label}"/>
+                <hbox>
+                    <textbox id="streaming-max-time" width="120"/>
+                </hbox>
+            </vbox>
+        </tabpanel>
+    </tabpanels>
+</overlay>
+

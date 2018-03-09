@@ -30,6 +30,8 @@ import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulCheckbox;
+import org.pentaho.ui.xul.components.XulRadio;
+import org.pentaho.ui.xul.components.XulTab;
 import org.pentaho.ui.xul.components.XulTextbox;
 
 import java.util.List;
@@ -53,16 +55,17 @@ public class ServiceCacheController extends AbstractController {
     ServiceCache serviceCache = (ServiceCache) meta.getType();
     BindingFactory bindingFactory = getBindingFactory();
 
-    XulCheckbox streamingCheckbox = getElementById( "streaming-checkbox" );
+    XulRadio normalModeRadio = getElementById( "regular-type-radio" );
+    XulTab serviceCacheTab = getElementById( "service-cache-tab" );
+
     XulCheckbox serviceCacheCheckBox = getElementById( "service-cache-checkbox" );
     XulTextbox serviceCacheTextBox = getElementById( "service-cache-ttl" );
 
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
 
     serviceCacheCheckBox.setChecked( meta.isEnabled() );
-    serviceCacheCheckBox.setDisabled( model.isStreaming() );
-    serviceCacheTextBox.setDisabled( model.isStreaming() );
-    bindingFactory.createBinding( serviceCacheCheckBox, "checked", meta, "enabled" );
+
+    serviceCacheTab.setVisible( !model.isStreaming() );
 
     try {
       serviceCacheTextBox.setValue( serviceCache.getConfiguredTimeToLive() );
@@ -71,11 +74,11 @@ public class ServiceCacheController extends AbstractController {
     }
     bindingFactory.createBinding( serviceCacheTextBox, "value", serviceCache, "timeToLive" );
 
+    bindingFactory.createBinding( serviceCacheCheckBox, "checked", meta, "enabled" );
+
     bindingFactory.createBinding( serviceCacheCheckBox, "checked", serviceCacheTextBox, "disabled", not() );
 
-    bindingFactory.createBinding( streamingCheckbox, "checked", serviceCacheCheckBox, "disabled" );
-    bindingFactory.createBinding( streamingCheckbox, "checked", serviceCacheTextBox, "disabled" );
-
+    bindingFactory.createBinding( normalModeRadio, "selected", serviceCacheTab, "visible" );
   }
 
   /**

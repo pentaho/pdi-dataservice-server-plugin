@@ -191,7 +191,8 @@ public class StreamingServiceTransExecutor {
         windowRowSize = windowRowSize > 0 ? windowRowSize : windowMaxRowLimit;
         windowMillisSize = windowMillisSize > 0 ? windowMillisSize : windowMaxTimeLimit;
 
-        buffer = stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS, windowRowSize );
+        buffer = stepStream.getStream().buffer( windowRowSize );
+        fallbackBuffer = stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS );
       }
 
       streamListener = new StreamExecutionListener( buffer, fallbackBuffer );
@@ -218,8 +219,10 @@ public class StreamingServiceTransExecutor {
    * @return The cache key for the query.
    */
   private String getCacheKey( String query, int size, long millis, long rate, int maxRows, long maxTime ) {
-    return query.concat( String.valueOf( size ) ).concat( String.valueOf( millis ) ).concat( String.valueOf( rate ) )
-      .concat( String.valueOf( maxRows ) ).concat( String.valueOf( maxTime ) );
+    return query.concat( String.valueOf( size ) ).concat( "-" ).concat( String.valueOf( millis ) )
+      .concat( "-" ).concat( String.valueOf( rate ) )
+      .concat( "-" ).concat( String.valueOf( maxRows ) )
+      .concat( "-" ).concat( String.valueOf( maxTime ) );
   }
 
   /**
