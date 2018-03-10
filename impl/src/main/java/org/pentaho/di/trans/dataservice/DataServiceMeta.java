@@ -54,10 +54,10 @@ public class DataServiceMeta implements MetaStoreElement {
   protected String name;
 
   @MetaStoreAttribute( key = ROW_LIMIT )
-  protected Integer rowLimit;
+  protected int rowLimit;
 
   @MetaStoreAttribute( key = TIME_LIMIT )
-  protected Long timeLimit;
+  protected long timeLimit;
 
   @MetaStoreAttribute( key = DATA_SERVICE_TRANSFORMATION_STEP_NAME )
   protected String stepname;
@@ -216,7 +216,7 @@ public class DataServiceMeta implements MetaStoreElement {
    *
    * @return The data service row limit.
    */
-  public Integer getRowLimit() {
+  public int getRowLimit() {
     return this.rowLimit;
   }
 
@@ -225,7 +225,7 @@ public class DataServiceMeta implements MetaStoreElement {
    *
    * @param rowLimit The new data service row limit.
    */
-  public void setRowLimit( Integer rowLimit ) {
+  public void setRowLimit( int rowLimit ) {
     this.rowLimit = rowLimit;
   }
 
@@ -234,7 +234,7 @@ public class DataServiceMeta implements MetaStoreElement {
    *
    * @return The data service time limit for streaming windows in milliseconds.
    */
-  public Long getTimeLimit() {
+  public long getTimeLimit() {
     return this.timeLimit;
   }
 
@@ -243,7 +243,7 @@ public class DataServiceMeta implements MetaStoreElement {
    *
    * @param timeLimit The new data service time limit.
    */
-  public void setTimeLimit( Long timeLimit ) {
+  public void setTimeLimit( long timeLimit ) {
     this.timeLimit = timeLimit;
   }
 
@@ -254,8 +254,8 @@ public class DataServiceMeta implements MetaStoreElement {
       .add( "stepname", stepname )
       .add( "userDefined", userDefined )
       .add( "streaming", streaming )
-      .add( "row_limit", rowLimit )
-      .add( "time_limit", timeLimit )
+      .add( "rowLimit", rowLimit )
+      .add( "timeLimit", timeLimit )
       .add( "pushDownOptimizationMeta", pushDownOptimizationMeta )
       .toString();
   }

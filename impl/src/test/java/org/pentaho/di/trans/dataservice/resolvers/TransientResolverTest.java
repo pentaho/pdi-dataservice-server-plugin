@@ -146,7 +146,7 @@ public class TransientResolverTest {
     assertFalse( dataServiceMeta.isUserDefined() );
     assertThat( dataServiceMeta, hasServiceCacheOptimization() );
 
-    Integer rowLimit = 1000;
+    int rowLimit = 1000;
     transientId = TransientResolver.buildTransient( fileSeparator + "path" + fileSeparator + "to" + fileSeparator + "name", "data_service", rowLimit );
     dataServiceMeta = transientResolver.getDataService( transientId );
     assertEquals( rowLimit, dataServiceMeta.getRowLimit() );

@@ -67,7 +67,7 @@ public class DataServiceMetaFactory implements IDataServiceMetaFactory {
 
     dataServiceMeta.setName( createDataServiceName( step, rowLimit, false ) );
     dataServiceMeta.setStepname( step.getName() );
-    dataServiceMeta.setRowLimit( rowLimit );
+    dataServiceMeta.setRowLimit( rowLimit != null ?  rowLimit : 0 );
 
     PushDownOptimizationMeta pushDownMeta = new PushDownOptimizationMeta();
     pushDownMeta.setStepName( step.getName() );

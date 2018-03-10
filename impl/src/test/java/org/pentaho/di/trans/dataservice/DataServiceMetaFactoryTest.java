@@ -41,7 +41,6 @@ import org.pentaho.di.ui.spoon.Spoon;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -116,10 +115,10 @@ public class DataServiceMetaFactoryTest {
     assertEquals( 1, ds.getPushDownOptimizationMeta().size() );
     assertTrue( ds.getPushDownOptimizationMeta().get( 0 ).getType() instanceof ServiceCache );
     assertEquals( stepName, ds.getPushDownOptimizationMeta().get( 0 ).getStepName() );
-    assertNull( ds.getRowLimit() );
+    assertEquals( 0, ds.getRowLimit() );
     verify( factory, times( 1 ) ).createDataService( eq( stepMeta ), eq( null ) );
 
-    Integer rowLimit = 1000;
+    int rowLimit = 1000;
     ds = factory.createDataService( stepMeta, rowLimit );
     assertEquals( rowLimit, ds.getRowLimit() );
   }
@@ -167,7 +166,7 @@ public class DataServiceMetaFactoryTest {
     assertNotNull( ds );
     assertEquals( transMeta, ds.getServiceTrans() );
     assertEquals( stepName, ds.getStepname() );
-    assertEquals( new Integer( 0 ), ds.getRowLimit() );
+    assertEquals( 0, ds.getRowLimit() );
     verify( factory, times( 1 ) ).createStreamingDataService( eq( stepMeta ) );
   }
 }
