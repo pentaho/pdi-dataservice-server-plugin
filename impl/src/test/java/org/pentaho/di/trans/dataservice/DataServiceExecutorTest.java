@@ -677,7 +677,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Test
   public void testExecuteStreamQueryDefaultTimeLimitNullModelTimeLimit() throws Exception {
-    dataService.setTimeLimit( null );
+    dataService.setTimeLimit( 0 );
     System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "" );
     testExecuteStreamQueryDefaultTimeLimitAux();
   }
@@ -1162,7 +1162,7 @@ public class DataServiceExecutorTest extends BaseTest {
       assertEquals( 0, executor.getServiceRowLimit() );
     } finally {
       dataService.setUserDefined( userDef );
-      dataService.setRowLimit( null );
+      dataService.setRowLimit( 0 );
       System.getProperties().remove( limitProp );
     }
   }

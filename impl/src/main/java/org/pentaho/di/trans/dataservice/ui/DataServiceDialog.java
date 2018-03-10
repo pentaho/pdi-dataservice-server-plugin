@@ -171,6 +171,8 @@ public class DataServiceDialog {
     public Builder edit( DataServiceMeta dataService ) {
       this.dataService = dataService;
       model.setStreaming( dataService.isStreaming() );
+      model.setServiceMaxRows( dataService.getRowLimit() );
+      model.setServiceMaxTime( dataService.getTimeLimit() );
       model.setServiceName( dataService.getName() );
       model.setServiceStep( dataService.getStepname() );
       model.setPushDownOptimizations( dataService.getPushDownOptimizationMeta() );

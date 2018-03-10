@@ -32,7 +32,6 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
-import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 
@@ -183,14 +182,8 @@ public class DataServiceModel extends XulEventSourceAdapter {
     dataService.setPushDownOptimizationMeta( getPushDownOptimizations() );
     dataService.setStepname( getServiceStep() );
     dataService.setStreaming( isStreaming() );
-
-    int maxRows = serviceMaxRows > 0 ? serviceMaxRows
-      : DataServiceConstants.ROW_LIMIT_DEFAULT;
-    long maxTime = serviceMaxTime > 0 ? serviceMaxTime
-      : DataServiceConstants.TIME_LIMIT_DEFAULT;
-
-    dataService.setRowLimit( maxRows );
-    dataService.setTimeLimit( maxTime );
+    dataService.setRowLimit( serviceMaxRows );
+    dataService.setTimeLimit( serviceMaxTime );
 
     for ( PushDownOptimizationMeta pushDownOptimization : pushDownOptimizations ) {
       pushDownOptimization.getType().init( transMeta, dataService, pushDownOptimization );

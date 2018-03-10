@@ -74,7 +74,7 @@ public class DataServiceMetaTest extends BaseTest {
     try {
       dataService.setRowLimit( MOCK_ROW_LIMIT );
       transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.ROW_LIMIT,
-        ( dataService.getRowLimit().toString() ) );
+        ( String.valueOf( dataService.getRowLimit() ) ) );
       String xml = transMeta.getXML();
       assertTrue( patternRowLimit.matcher( xml ).find() );
     } catch ( Exception ex ) {
@@ -87,7 +87,7 @@ public class DataServiceMetaTest extends BaseTest {
     try {
       dataService.setTimeLimit( MOCK_TIME_LIMIT );
       transMeta.setAttribute( DATA_SERVICE_STEP, DataServiceMeta.TIME_LIMIT,
-        ( dataService.getTimeLimit().toString() ) );
+        ( String.valueOf( dataService.getTimeLimit() ) ) );
       String xml = transMeta.getXML();
       assertTrue( patternTimeLimit.matcher( xml ).find() );
     } catch ( Exception ex ) {
@@ -150,7 +150,7 @@ public class DataServiceMetaTest extends BaseTest {
   @Test
   public void testToString() {
     String result = "DataServiceMeta{name=DataService, serviceTrans=/DataService, stepname=Data Service Step,"
-      + " userDefined=true, streaming=true, row_limit=100, time_limit=200,"
+      + " userDefined=true, streaming=true, rowLimit=100, timeLimit=200,"
       + " pushDownOptimizationMeta=pushDownOptimizations}";
 
     dataService.setStreaming( true );

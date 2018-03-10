@@ -36,7 +36,6 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
-import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.StepMeta;
 
 import java.beans.PropertyChangeSupport;
@@ -169,8 +168,8 @@ public class DataServiceModelTest {
     model.setServiceMaxTime( 0 );
 
     dataService = model.getDataService();
-    assertThat( dataService.getRowLimit(), equalTo( DataServiceConstants.ROW_LIMIT_DEFAULT ) );
-    assertThat( dataService.getTimeLimit(), equalTo( DataServiceConstants.TIME_LIMIT_DEFAULT ) );
+    assertThat( dataService.getRowLimit(), equalTo( 0 ) );
+    assertThat( dataService.getTimeLimit(), equalTo( 0L ) );
   }
 
   @Test

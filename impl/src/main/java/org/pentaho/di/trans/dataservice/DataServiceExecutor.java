@@ -308,7 +308,7 @@ public class DataServiceExecutor {
     }
 
     private int getServiceRowLimit( DataServiceMeta service ) throws KettleException {
-      if ( service.getRowLimit() != null && service.getRowLimit() > 0 ) {
+      if ( service.getRowLimit() > 0 ) {
         return service.getRowLimit();
       } else if ( !service.isUserDefined() || service.isStreaming() ) {
         return getKettleRowLimit();
@@ -338,7 +338,7 @@ public class DataServiceExecutor {
     }
 
     private long getServiceTimeLimit( DataServiceMeta service ) throws KettleException {
-      if ( service.getTimeLimit() != null && service.getTimeLimit() > 0 ) {
+      if ( service.getTimeLimit() > 0 ) {
         return service.getTimeLimit();
       }
       return getKettleTimeLimit();
