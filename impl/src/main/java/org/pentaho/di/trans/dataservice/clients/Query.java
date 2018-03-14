@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,7 +42,8 @@ public interface Query {
 
   interface Service {
     Query prepareQuery( String sql, int maxRows, Map<String, String> parameters ) throws KettleException;
-    Query prepareQuery( String sql, int maxRows, int windowRowSize, long windowMillisSize, long windowRate,
+    Query prepareQuery( String sql, IDataServiceClientService.StreamingMode windowMode,
+                        long windowSize, long windowEvery, long windowLimit,
                         Map<String, String> parameters ) throws KettleException;
   }
 }

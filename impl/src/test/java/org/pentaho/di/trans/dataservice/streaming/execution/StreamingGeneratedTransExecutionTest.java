@@ -34,6 +34,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.streaming.StreamList;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowListener;
@@ -57,9 +58,11 @@ public class StreamingGeneratedTransExecutionTest {
   private String MOCK_RESULT_STEP_NAME = "Mock Result Step Name";
   private String MOCK_INJECTOR_STEP_NAME = "Mock Injector Step Name";
   private String MOCK_QUERY = "Mock Query";
-  private int MOCK_WINDOW_SIZE = 1;
-  private long MOCK_WINDOW_MILLIS = 0;
-  private long MOCK_WINDOW_RATE = 0;
+  private IDataServiceClientService.StreamingMode MOCK_WINDOW_MODE_ROW_BASED
+    = IDataServiceClientService.StreamingMode.ROW_BASED;
+  private long MOCK_WINDOW_SIZE = 1;
+  private long MOCK_WINDOW_EVERY = 0;
+  private long MOCK_WINDOW_MAX_SIZE = 10;
   private List<RowMetaAndData> rowIterator;
   private StreamList<RowMetaAndData> streamList;
   private Observable<List<RowMetaAndData>> mockObservable, mockFallbackObservable;
@@ -84,7 +87,8 @@ public class StreamingGeneratedTransExecutionTest {
 
     when( streamExecutionListener.getBuffer( ) ).thenReturn( mockObservable );
     when( streamExecutionListener.getFallbackBuffer() ).thenReturn( mockFallbackObservable );
-    when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_SIZE, MOCK_WINDOW_MILLIS, MOCK_WINDOW_RATE ) )
+    when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
+      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE ) )
       .thenReturn( streamExecutionListener );
     when( log.isRowLevel() ).thenReturn( true );
     when( genTrans.getLogChannel() ).thenReturn( log );
@@ -92,8 +96,8 @@ public class StreamingGeneratedTransExecutionTest {
     when( genTrans.addRowProducer( MOCK_INJECTOR_STEP_NAME, 0 ) ).thenReturn( rowProducer );
 
     gentransExecutor = new StreamingGeneratedTransExecution( serviceExecutor, genTrans, resultRowListener,
-      MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_SIZE, MOCK_WINDOW_MILLIS,
-      MOCK_WINDOW_RATE );
+      MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
+      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
   }
 
   @Test
@@ -130,7 +134,8 @@ public class StreamingGeneratedTransExecutionTest {
 
   @Test
   public void testRunEmptyStream() throws Exception {
-    when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_SIZE, MOCK_WINDOW_MILLIS, MOCK_WINDOW_RATE ) )
+    when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
+      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE ) )
       .thenReturn( null );
 
     gentransExecutor.run();

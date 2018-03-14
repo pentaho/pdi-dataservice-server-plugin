@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.ui.model;
 
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogLevel;
@@ -53,9 +54,10 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   public static final List<Integer> MAXROWS_CHOICES = Arrays.asList( 100, 500, 1000 );
   public static final List<Integer> MAXROWS_STREAMING_CHOICES = Arrays.asList( 0 );
 
-  private int windowRowSize = 0;
-  private long windowMillisSize = 0;
-  private long windowRate = 0;
+  private IDataServiceClientService.StreamingMode windowMode;
+  private long windowSize = 0;
+  private long windowEvery = 0;
+  private long windowLimit = 0;
 
   private boolean executing = false;
 
@@ -123,28 +125,36 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
     return MAXROWS_STREAMING_CHOICES;
   }
 
-  public int getWindowRowSize() {
-    return windowRowSize;
+  public IDataServiceClientService.StreamingMode getWindowMode() {
+    return windowMode;
   }
 
-  public void setWindowRowSize( int windowRowSize ) {
-    this.windowRowSize = windowRowSize;
+  public void setWindowMode( IDataServiceClientService.StreamingMode windowMode ) {
+    this.windowMode = windowMode;
   }
 
-  public long getWindowMillisSize() {
-    return windowMillisSize;
+  public long getWindowSize() {
+    return windowSize;
   }
 
-  public void setWindowMillisSize( long windowMillisSize ) {
-    this.windowMillisSize = windowMillisSize;
+  public void setWindowSize( long windowSize ) {
+    this.windowSize = windowSize;
   }
 
-  public long getWindowRate() {
-    return windowRate;
+  public long getWindowEvery() {
+    return windowEvery;
   }
 
-  public void setWindowRate( long windowRate ) {
-    this.windowRate = windowRate;
+  public void setWindowEvery( long windowEvery ) {
+    this.windowEvery = windowEvery;
+  }
+
+  public long getWindowLimit() {
+    return windowLimit;
+  }
+
+  public void setWindowLimit( long windowLimit ) {
+    this.windowLimit = windowLimit;
   }
 
   public String getAlertMessage() {

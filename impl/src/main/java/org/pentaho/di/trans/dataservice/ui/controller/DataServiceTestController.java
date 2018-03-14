@@ -47,11 +47,13 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
+import org.pentaho.di.trans.dataservice.ui.BindingConverters;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
@@ -68,8 +70,9 @@ import org.pentaho.ui.xul.binding.DefaultBindingFactory;
 import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMenuList;
+import org.pentaho.ui.xul.components.XulRadio;
 import org.pentaho.ui.xul.components.XulTextbox;
-import org.pentaho.ui.xul.containers.XulHbox;
+import org.pentaho.ui.xul.containers.XulGroupbox;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
 import java.io.ByteArrayInputStream;
@@ -276,26 +279,60 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   private void bindStreamingWindowParameters( BindingFactory bindingFactory ) {
-    XulHbox streamingTitleBox = (XulHbox) document.getElementById( "streaming-title" );
-    XulHbox streamingParametersBox = (XulHbox) document.getElementById( "streaming-parameters" );
-    streamingTitleBox.setVisible( dataService.isStreaming() );
-    streamingParametersBox.setVisible( dataService.isStreaming() );
+    XulGroupbox streamingGroupBox = (XulGroupbox) document.getElementById( "streaming-groupbox" );
+    streamingGroupBox.setVisible( dataService.isStreaming() );
 
+    XulRadio timeBasedRadio = (XulRadio) document.getElementById( "time-based-radio" );
+    XulRadio rowBasedRadio = (XulRadio) document.getElementById( "row-based-radio" );
     XulTextbox sizeTextBox = (XulTextbox) document.getElementById( "window-size" );
-    XulTextbox millisTextBox = (XulTextbox) document.getElementById( "window-millis" );
-    XulTextbox rateTextBox = (XulTextbox) document.getElementById( "window-rate" );
-    sizeTextBox.setValue( String.valueOf( model.getWindowRowSize() ) );
-    millisTextBox.setValue( String.valueOf( model.getWindowMillisSize() ) );
-    rateTextBox.setValue( String.valueOf( model.getWindowRate() ) );
+    XulTextbox everyTextBox = (XulTextbox) document.getElementById( "window-every" );
+    XulTextbox limitTextBox = (XulTextbox) document.getElementById( "window-limit" );
+    XulLabel sizeTimeUnitLabel = (XulLabel) document.getElementById( "window-size-time-unit" );
+    XulLabel everyTimeUnitLabel = (XulLabel) document.getElementById( "window-every-time-unit" );
+    XulLabel limitTimeUnitLabel = (XulLabel) document.getElementById( "window-limit-time-unit" );
+    XulLabel sizeRowUnitLabel = (XulLabel) document.getElementById( "window-size-row-unit" );
+    XulLabel everyRowUnitLabel = (XulLabel) document.getElementById( "window-every-row-unit" );
+    XulLabel limitRowUnitLabel = (XulLabel) document.getElementById( "window-limit-row-unit" );
+
+    model.setWindowMode( IDataServiceClientService.StreamingMode.TIME_BASED );
+
+    timeBasedRadio.setSelected( true );
+    rowBasedRadio.setSelected( false );
+
+    sizeTimeUnitLabel.setVisible( true );
+    everyTimeUnitLabel.setVisible( true );
+    limitTimeUnitLabel.setVisible( false );
+
+    sizeRowUnitLabel.setVisible( false );
+    everyRowUnitLabel.setVisible( false );
+    limitRowUnitLabel.setVisible( true );
+
+    sizeTextBox.setValue( "" );
+    everyTextBox.setValue( "" );
+    limitTextBox.setValue( "" );
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
 
-    bindingFactory.createBinding( model, "windowRowSize", sizeTextBox, "value",
-      BindingConvertor.integer2String() );
-    bindingFactory.createBinding( model, "windowMillisSize", millisTextBox, "value",
-      BindingConvertor.long2String() );
-    bindingFactory.createBinding( model, "windowRate", rateTextBox, "value",
-      BindingConvertor.long2String() );
+    bindingFactory.createBinding( model, "windowSize", sizeTextBox, "value",
+      BindingConverters.longToStringEmptyZero() );
+    bindingFactory.createBinding( model, "windowEvery", everyTextBox, "value",
+      BindingConverters.longToStringEmptyZero() );
+    bindingFactory.createBinding( model, "windowLimit", limitTextBox, "value",
+      BindingConverters.longToStringEmptyZero() );
+
+    bindingFactory.createBinding( timeBasedRadio, "selected", sizeTimeUnitLabel, "visible" );
+    bindingFactory.createBinding( timeBasedRadio, "selected", everyTimeUnitLabel, "visible" );
+    bindingFactory.createBinding( timeBasedRadio, "!selected", limitTimeUnitLabel, "visible" );
+    bindingFactory.createBinding( timeBasedRadio, "!selected", sizeRowUnitLabel, "visible" );
+    bindingFactory.createBinding( timeBasedRadio, "!selected", everyRowUnitLabel, "visible" );
+    bindingFactory.createBinding( timeBasedRadio, "selected", limitRowUnitLabel, "visible" );
+
+    bindingFactory.createBinding( rowBasedRadio, "!selected", sizeTimeUnitLabel, "visible" );
+    bindingFactory.createBinding( rowBasedRadio, "!selected", everyTimeUnitLabel, "visible" );
+    bindingFactory.createBinding( rowBasedRadio, "selected", limitTimeUnitLabel, "visible" );
+    bindingFactory.createBinding( rowBasedRadio, "selected", sizeRowUnitLabel, "visible" );
+    bindingFactory.createBinding( rowBasedRadio, "selected", everyRowUnitLabel, "visible" );
+    bindingFactory.createBinding( rowBasedRadio, "!selected", limitRowUnitLabel, "visible" );
   }
 
   private String getDefaultSql() {
@@ -312,9 +349,17 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     Query query;
 
     if ( dataService.isStreaming() ) {
-      query = annotationsQuery.prepareQuery( model.getSql(), 0,
-        model.getWindowRowSize(), model.getWindowMillisSize(),
-        model.getWindowRate(), ImmutableMap.<String, String>of() );
+      XulRadio timeBasedRadio = (XulRadio) document.getElementById( "time-based-radio" );
+
+      IDataServiceClientService.StreamingMode windowMode = timeBasedRadio.isSelected()
+        ? IDataServiceClientService.StreamingMode.TIME_BASED
+        : IDataServiceClientService.StreamingMode.ROW_BASED;
+
+      model.setWindowMode( windowMode );
+
+      query = annotationsQuery.prepareQuery( model.getSql(), model.getWindowMode(),
+        model.getWindowSize(), model.getWindowEvery(),
+        model.getWindowLimit(), ImmutableMap.<String, String>of() );
     } else {
       query = annotationsQuery.prepareQuery( model.getSql(), model.getMaxRows(), ImmutableMap.<String, String>of() );
     }
@@ -462,9 +507,10 @@ public class DataServiceTestController extends AbstractXulEventHandler {
           timeLimit( dataService.getTimeLimit() ).
           logLevel( model.getLogLevel() ).
           enableMetrics( enableMetrics ).
-          windowRowSize( model.getWindowRowSize() ).
-          windowMillisSize( model.getWindowMillisSize() ).
-          windowRate( model.getWindowRate() );
+          windowMode( model.getWindowMode() ).
+          windowSize( model.getWindowSize() ).
+          windowEvery( model.getWindowEvery() ).
+          windowLimit( model.getWindowLimit() );
       } else {
         builder = new DataServiceExecutor.Builder( new SQL( model.getSql() ), dataService, context ).
           rowLimit( model.getMaxRows() ).

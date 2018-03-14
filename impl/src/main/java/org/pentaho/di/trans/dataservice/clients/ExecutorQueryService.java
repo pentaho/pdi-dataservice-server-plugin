@@ -32,6 +32,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
@@ -54,20 +55,36 @@ public class ExecutorQueryService implements Query.Service {
 
   @Override public Query prepareQuery( String sqlString, int maxRows, Map<String, String> parameters )
     throws KettleException {
-    return prepareQuery( sqlString, maxRows, 0, 0, 0, parameters );
-  }
-
-  @Override public Query prepareQuery( String sqlString, int maxRows, int windowRowSize, long windowMillisSize,
-                                       long windowRate, final Map<String, String> parameters ) throws KettleException {
     SQL sql = new SQL( sqlString );
     Query query;
     try {
       IMetaStore metaStore = metastoreLocator != null ? metastoreLocator.getMetastore() : null;
       DataServiceExecutor executor = resolver.createBuilder( sql )
         .rowLimit( maxRows )
-        .windowRowSize( windowRowSize )
-        .windowMillisSize( windowMillisSize )
-        .windowRate( windowRate )
+        .parameters( parameters )
+        .metastore( metaStore )
+        .build();
+      query = new ExecutorQuery( executor );
+    } catch ( Exception e ) {
+      Throwables.propagateIfInstanceOf( e, KettleException.class );
+      throw new KettleException( e );
+    }
+    return query;
+  }
+
+  @Override public Query prepareQuery( String sqlString, IDataServiceClientService.StreamingMode windowMode,
+                                       long windowSize, long windowEvery, long windowLimit,
+                                       final Map<String, String> parameters ) throws KettleException {
+    SQL sql = new SQL( sqlString );
+    Query query;
+    try {
+      IMetaStore metaStore = metastoreLocator != null ? metastoreLocator.getMetastore() : null;
+      DataServiceExecutor executor = resolver.createBuilder( sql )
+        .rowLimit( 0 )
+        .windowMode( windowMode )
+        .windowSize( windowSize )
+        .windowEvery( windowEvery )
+        .windowLimit( windowLimit )
         .parameters( parameters )
         .metastore( metaStore )
         .build();

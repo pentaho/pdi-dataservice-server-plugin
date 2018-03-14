@@ -43,6 +43,7 @@ import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.clients.TransMutators;
 import org.pentaho.di.trans.dataservice.execution.CopyParameters;
 import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
@@ -81,9 +82,10 @@ public class DataServiceExecutor {
   private final ListMultimap<ExecutionPoint, Runnable> listenerMap;
   private final DataServiceContext context;
 
-  private int windowRowSize;
-  private long windowMillisSize;
-  private long windowRate;
+  private IDataServiceClientService.StreamingMode windowMode;
+  private long windowSize;
+  private long windowEvery;
+  private long windowLimit;
 
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
@@ -94,9 +96,10 @@ public class DataServiceExecutor {
     sqlTransGenerator = builder.sqlTransGenerator;
     genTrans = builder.genTrans;
     context = builder.context;
-    windowRowSize = builder.windowRowSize;
-    windowMillisSize = builder.windowMillisSize;
-    windowRate = builder.windowRate;
+    windowMode = builder.windowMode;
+    windowSize = builder.windowSize;
+    windowEvery = builder.windowEvery;
+    windowLimit = builder.windowLimit;
 
     listenerMap = MultimapBuilder.enumKeys( ExecutionPoint.class ).linkedListValues().build();
   }
@@ -109,9 +112,10 @@ public class DataServiceExecutor {
     private Trans genTrans;
     private int rowLimit = 0;
     private long timeLimit = 0;
-    private int windowRowSize = 0;
-    private long windowMillisSize = 0;
-    private long windowRate = 0;
+    private IDataServiceClientService.StreamingMode windowMode;
+    private long windowSize = 0;
+    private long windowEvery = 0;
+    private long windowLimit = 0;
     private Map<String, String> parameters = Collections.emptyMap();
     private LogLevel logLevel;
     private SqlTransGenerator sqlTransGenerator;
@@ -144,18 +148,23 @@ public class DataServiceExecutor {
       return this;
     }
 
-    public Builder windowRowSize( int windowRowSize ) {
-      this.windowRowSize = windowRowSize;
+    public Builder windowMode( IDataServiceClientService.StreamingMode windowMode ) {
+      this.windowMode = windowMode;
       return this;
     }
 
-    public Builder windowMillisSize( long windowMillisSize ) {
-      this.windowMillisSize = windowMillisSize;
+    public Builder windowSize( long windowSize ) {
+      this.windowSize = windowSize;
       return this;
     }
 
-    public Builder windowRate( long windowRate ) {
-      this.windowRate = windowRate;
+    public Builder windowEvery( long windowEvery ) {
+      this.windowEvery = windowEvery;
+      return this;
+    }
+
+    public Builder windowLimit( long windowLimit ) {
+      this.windowLimit = windowLimit;
       return this;
     }
 
@@ -581,7 +590,7 @@ public class DataServiceExecutor {
   public DataServiceExecutor executeStreamingQuery( final RowListener resultRowListener ) {
     StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( service.getName() ),
       genTrans, resultRowListener, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-      sqlTransGenerator.getSql().getSqlString(), windowRowSize, windowMillisSize, windowRate );
+      sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit );
 
     listenerMap.get( ExecutionPoint.READY ).add( streamWiring );
 

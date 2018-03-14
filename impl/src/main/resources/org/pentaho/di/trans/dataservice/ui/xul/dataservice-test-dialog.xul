@@ -13,6 +13,57 @@
             buttonalign="end"
             buttonlabelaccept="${DataServiceTest.Dialog.Close}"
             padding="10">
+        <groupbox id="streaming-groupbox">
+            <caption label="${DataServiceTest.StreamingParameters.Title}"/>
+            <hbox align="center" >
+                <vbox width="10"/>
+                <vbox flex="1">
+                    <radiogroup>
+                        <radio id="time-based-radio"
+                               label="${DataServiceTest.StreamingParameters.Mode.TimeBased.Label}"/>
+                        <hbox height="10"/>
+                        <radio id="row-based-radio"
+                               label="${DataServiceTest.StreamingParameters.Mode.RowBased.Label}"/>
+                    </radiogroup>
+                </vbox>
+                <separator width="30" orient="vertical" />
+                <vbox flex="1">
+                    <label control="window-size" value="${DataServiceTest.StreamingParameters.Size.Title}" />
+                    <hbox>
+                        <textbox id="window-size" width="60" />
+                        <vbox width="5"/>
+                        <label id="window-size-time-unit"
+                               value="${DataServiceTest.StreamingParameters.TimeUnit.Label}" />
+                        <label id="window-size-row-unit"
+                               value="${DataServiceTest.StreamingParameters.RowUnit.Label}" />
+                    </hbox>
+                </vbox>
+                <vbox flex="1">
+                    <label control="window-every" value="${DataServiceTest.StreamingParameters.Every.Title}" />
+                    <hbox>
+                        <textbox id="window-every" width="60" />
+                        <vbox width="5"/>
+                        <label id="window-every-time-unit"
+                               value="${DataServiceTest.StreamingParameters.TimeUnit.Label}" />
+                        <label id="window-every-row-unit"
+                               value="${DataServiceTest.StreamingParameters.RowUnit.Label}" />
+                    </hbox>
+                </vbox>
+                <vbox flex="1">
+                    <label control="window-limit" value="${DataServiceTest.StreamingParameters.Limit.Title}" />
+                    <hbox>
+                        <textbox id="window-limit" width="60" />
+                        <vbox width="5"/>
+                        <label id="window-limit-time-unit"
+                               value="${DataServiceTest.StreamingParameters.TimeUnit.Label}" />
+                        <label id="window-limit-row-unit"
+                               value="${DataServiceTest.StreamingParameters.RowUnit.Label}" />
+                    </hbox>
+                </vbox>
+                <vbox width="15"/>
+            </hbox>
+            <hbox height="10"/>
+        </groupbox>
         <label value="SQL:"/>
         <textbox id='sql-textbox' multiline="true" height="100" value="{default text}"/>
         <hbox align="right">
@@ -21,26 +72,6 @@
             <button id="exec-sql-btn" label="${DataServiceTest.Execute.Button}" onclick="dataServiceTestController.executeSql()"/>
         </hbox>
         <separator height="10" />
-        <hbox id="streaming-title" align="right">
-            <label value="${DataServiceTest.StreamingParameters.Title}" />
-        </hbox>
-        <hbox id="streaming-parameters" align="right" >
-            <vbox>
-                <label control="window-size" value="${DataServiceTest.StreamingParameters.Size.Title}" />
-                <textbox id="window-size" width="50"
-                         tooltiptext="${DataServiceTest.StreamingParameters.Size.Tooltip}" />
-            </vbox>
-            <vbox>
-                <label control="window-millis" value="${DataServiceTest.StreamingParameters.Time.Title}" />
-                <textbox id="window-millis" width="50"
-                         tooltiptext="${DataServiceTest.StreamingParameters.Time.Tooltip}" />
-            </vbox>
-            <vbox>
-                <label control="window-rate" value="${DataServiceTest.StreamingParameters.Rate.Title}" />
-                <textbox id="window-rate" width="50"
-                         tooltiptext="${DataServiceTest.StreamingParameters.Rate.Tooltip}" />
-            </vbox>
-        </hbox>
         <hbox align="right" >
             <vbox>
                 <label value="${DataServiceTest.LogLevel.Label}"/>

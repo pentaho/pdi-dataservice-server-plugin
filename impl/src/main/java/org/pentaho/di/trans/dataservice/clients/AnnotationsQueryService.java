@@ -38,6 +38,7 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
@@ -56,11 +57,12 @@ public class AnnotationsQueryService implements Query.Service {
 
   @Override public Query prepareQuery( final String sql, final int maxRows, final Map<String, String> parameters )
     throws KettleException {
-    return prepareQuery( sql, maxRows, 0, 0, 0, parameters );
+    return prepareQuery( sql, null, 0, 0, 0, parameters );
   }
 
-  @Override public Query prepareQuery( final String sql, final int maxRows, int windowRowSize, long windowMillisSize,
-                                       long windowRate, final Map<String, String> parameters )
+  @Override public Query prepareQuery( final String sql, IDataServiceClientService.StreamingMode windowMode,
+                                       long windowSize, long windowEvery, long windowLimit,
+                                       final Map<String, String> parameters )
     throws KettleException {
     String prefix = "show annotations from ";
     if ( sql.startsWith( prefix.toLowerCase() ) ) {

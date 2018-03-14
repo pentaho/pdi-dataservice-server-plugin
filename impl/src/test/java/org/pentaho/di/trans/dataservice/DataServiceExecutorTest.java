@@ -50,6 +50,7 @@ import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
@@ -396,9 +397,10 @@ public class DataServiceExecutorTest extends BaseTest {
       metastore( metastore ).
       rowLimit( 1 ).
       timeLimit( 10000 ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      windowSize( 1 ).
+      windowEvery( 0 ).
+      windowLimit( 0 ).
       build();
 
 
@@ -437,9 +439,10 @@ public class DataServiceExecutorTest extends BaseTest {
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
       metastore( metastore ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      windowSize( 1 ).
+      windowEvery( 0 ).
+      windowLimit( 0 ).
       build();
 
     doThrow( InterruptedException.class ).when( genTrans ).isFinishedOrStopped();
@@ -489,9 +492,10 @@ public class DataServiceExecutorTest extends BaseTest {
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
       metastore( metastore ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      windowSize( 1 ).
+      windowEvery( 0 ).
+      windowLimit( 0 ).
       build();
 
     ArgumentCaptor<String> objectIds = ArgumentCaptor.forClass( String.class );
@@ -596,9 +600,10 @@ public class DataServiceExecutorTest extends BaseTest {
       genTrans( genTrans ).
       metastore( metastore ).
       timeLimit( userLimit ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      windowSize( 1 ).
+      windowEvery( 0 ).
+      windowLimit( 0 ).
       build();
 
     StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
@@ -684,9 +689,10 @@ public class DataServiceExecutorTest extends BaseTest {
       genTrans( genTrans ).
       metastore( metastore ).
       rowLimit( userLimit ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      windowSize( 1 ).
+      windowEvery( 0 ).
+      windowLimit( 0 ).
       build();
 
     StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
@@ -951,9 +957,10 @@ public class DataServiceExecutorTest extends BaseTest {
       sqlTransGenerator( sqlTransGenerator ).
       genTrans( genTrans ).
       metastore( metastore ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      windowSize( 1 ).
+      windowEvery( 0 ).
+      windowLimit( 0 ).
       build();
 
     executor.stop();

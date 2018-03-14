@@ -30,6 +30,7 @@ import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
@@ -54,9 +55,10 @@ public class StreamingGeneratedTransExecution implements Runnable {
   private Disposable buffer;
   private Disposable fallbackBuffer;
 
-  private int windowRowSize;
-  private long windowMillisSize;
-  private long windowRate;
+  private IDataServiceClientService.StreamingMode windowMode;
+  private long windowSize;
+  private long windowEvery;
+  private long windowLimit;
 
   /**
    * Constructor.
@@ -68,24 +70,29 @@ public class StreamingGeneratedTransExecution implements Runnable {
    * @param injectorStepName The name of the step in the generated transformation where rows are injected.
    * @param resultStepName The name of the step in the generated transformation where the results are retreived.
    * @param query The query to be executed.
-   * @param windowRowSize The streaming query window size.
-   * @param windowMillisSize The requested query window size time based.
-   * @param windowRate The requested query window update rate - Number of rows for size based windows and milliseconds
-   *                   for time based windows.
+   * @param windowMode The streaming window mode.
+   * @param windowSize The query window size. Number of rows for a ROW_BASED streamingType and milliseconds for a
+   *                 TIME_BASED streamingType.
+   * @param windowEvery The query window rate. Number of rows for a ROW_BASED streamingType and milliseconds for a
+   *                 TIME_BASED streamingType.
+   * @param windowLimit The query max window size. Number of rows for a TIME_BASED streamingType and milliseconds for a
+   *                 ROW_BASED streamingType.
    */
   public StreamingGeneratedTransExecution( final StreamingServiceTransExecutor serviceExecutor, final Trans genTrans,
                                            final RowListener resultRowListener, final String injectorStepName,
-                                           final String resultStepName, final String query, int windowRowSize,
-                                           long windowMillisSize, long windowRate ) {
+                                           final String resultStepName, final String query,
+                                           final IDataServiceClientService.StreamingMode windowMode,
+                                           long windowSize, long windowEvery, long windowLimit ) {
     this.serviceExecutor = serviceExecutor;
     this.genTrans = genTrans;
     this.resultRowListener = resultRowListener;
     this.injectorStepName = injectorStepName;
     this.resultStepName = resultStepName;
     this.query = query;
-    this.windowRowSize = windowRowSize;
-    this.windowMillisSize = windowMillisSize;
-    this.windowRate = windowRate;
+    this.windowMode = windowMode;
+    this.windowSize = windowSize;
+    this.windowEvery = windowEvery;
+    this.windowLimit = windowLimit;
   }
 
   /**
@@ -93,7 +100,8 @@ public class StreamingGeneratedTransExecution implements Runnable {
    */
   @Override public void run() {
     // This is where we will inject the rows from the service transformation step
-    StreamExecutionListener stream = serviceExecutor.getBuffer( query, windowRowSize, windowMillisSize, windowRate );
+    StreamExecutionListener stream = serviceExecutor.getBuffer( query, windowMode, windowSize, windowEvery,
+      windowLimit );
     try {
       if ( stream == null ) {
         this.runGenTrans( Collections.emptyList() );
