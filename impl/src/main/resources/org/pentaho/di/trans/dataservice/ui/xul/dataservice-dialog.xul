@@ -17,29 +17,29 @@
           >
     <label value="${DataServiceDialog.ServiceName.Label}"/>
     <hbox>
-      <textbox id="service-name" width="250"/>
+      <textbox id="service-name" width="300"/>
       <spacer flex="1"/>
     </hbox>
-    <separator height="30"/>
+    <hbox height="7"/>
+    <separator height="21"/>
     <label value="${DataServiceDialog.OutputStep.Label}"/>
     <hbox>
-      <menulist id="trans-steps" width="206">
+      <menulist id="trans-steps" width="280">
         <menupopup/>
       </menulist>
     </hbox>
-    <spacer/>
+    <hbox height="10"/>
+    <label value="${DataServiceDialog.Type.Label}"/>
     <hbox>
-      <checkbox id="streaming-checkbox" label="${DataServiceDialog.EnableStreaming.Label}"/>
+      <radiogroup orient="horizontal">
+        <radio id="regular-type-radio"
+               label="${DataServiceDialog.Type.Regular.Label}"/>
+        <vbox width="20"/>
+        <radio id="streaming-type-radio"
+               label="${DataServiceDialog.Type.Streaming.Label}"/>
+      </radiogroup>
     </hbox>
-    <hbox>
-      <label control="streaming-max-rows" value="${DataServiceDialog.StreamingMaxRows.Label}"/>
-      <textbox id="streaming-max-rows" width="50"/>
-    </hbox>
-    <hbox>
-      <label control="streaming-max-time" value="${DataServiceDialog.StreamingMaxTime.Label}"/>
-      <textbox id="streaming-max-time" width="50"/>
-    </hbox>
-    <spacer/>
+    <hbox height="10"/>
     <tabbox id="optimizationTabs" flex="2" selectedIndex="2">
       <tabs id="opt_tabs">
       </tabs>
@@ -53,7 +53,7 @@
       <spacer flex="1"/>
       <button id="driver-details-button" label="${DataServiceDialog.DriverDetails.Button}" width="120"
               onclick="dataServiceDialogController.showDriverDetailsDialog()"/>
-      <button id="test-dataservice-button" label="${DataServiceDialog.TestDataService.Button}" width="150"
+      <button id="test-dataservice-button" label="${DataServiceDialog.TestDataService.Button}" width="80"
               onclick="dataServiceDialogController.showTestDialog()"/>
       <spacer flex="1"/>
       <button label="${DataServiceDialog.OK.Button}" onclick="dataServiceDialogController.saveAndClose()" width="80"/>

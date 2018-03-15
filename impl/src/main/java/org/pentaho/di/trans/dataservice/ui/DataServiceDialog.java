@@ -34,6 +34,8 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import org.pentaho.di.trans.dataservice.streaming.ui.StreamingController;
+import org.pentaho.di.trans.dataservice.streaming.ui.StreamingOverlay;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceDialogController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.xul.KettleXulLoader;
@@ -87,6 +89,16 @@ public class DataServiceDialog {
         return BaseMessages.getString( packageClass, key );
       }
     };
+  }
+
+  protected DataServiceDialog initStreaming( StreamingOverlay streamingOverlay ) throws KettleException {
+    streamingOverlay.apply( this );
+
+    XulTabbox optimizationTabs = controller.getElementById( "optimizationTabs" );
+    if ( optimizationTabs.getTabs().getTabCount() > 0 ) {
+      optimizationTabs.setSelectedIndex( 0 );
+    }
+    return this;
   }
 
   protected DataServiceDialog initOptimizations( List<PushDownFactory> pushDownFactories )
@@ -193,6 +205,11 @@ public class DataServiceDialog {
         throw new KettleException( "Failed to open the Data Service Dialog ", xulException );
       }
       dialog.initOptimizations( delegate.getPushDownFactories() );
+
+      StreamingController streamingController = new StreamingController();
+      StreamingOverlay streamingOverlay = new StreamingOverlay( streamingController );
+
+      dialog.initStreaming( streamingOverlay );
 
       return dialog;
     }

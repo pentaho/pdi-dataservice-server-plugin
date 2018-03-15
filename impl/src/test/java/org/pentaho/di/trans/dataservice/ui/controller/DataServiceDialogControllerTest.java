@@ -48,6 +48,7 @@ import org.pentaho.ui.xul.binding.BindingConvertor;
 import org.pentaho.ui.xul.binding.BindingFactory;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulMessageBox;
+import org.pentaho.ui.xul.components.XulRadio;
 import org.pentaho.ui.xul.components.XulTextbox;
 import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
@@ -151,13 +152,13 @@ public class DataServiceDialogControllerTest {
     final BindingFactory bindingFactory = mock( BindingFactory.class );
     final XulTextbox serviceName = mock( XulTextbox.class );
     final XulMenuList<String> steps = mock( XulMenuList.class );
-    final XulTextbox maxRows = mock( XulTextbox.class );
-    final XulTextbox maxTime = mock( XulTextbox.class );
+    final XulRadio streamingModeRadio = mock( XulRadio.class );
+    final XulRadio regularModeRadio = mock( XulRadio.class );
 
     when( document.getElementById( "service-name" ) ).thenReturn( serviceName );
     when( document.getElementById( "trans-steps" ) ).thenReturn( steps );
-    when( document.getElementById( "streaming-max-rows" ) ).thenReturn( maxRows );
-    when( document.getElementById( "streaming-max-time" ) ).thenReturn( maxTime );
+    when( document.getElementById( "streaming-type-radio" ) ).thenReturn( streamingModeRadio );
+    when( document.getElementById( "regular-type-radio" ) ).thenReturn( regularModeRadio );
 
     controller.setBindingFactory( bindingFactory );
 

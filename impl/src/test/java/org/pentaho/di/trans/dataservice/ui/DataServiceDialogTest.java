@@ -35,6 +35,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.streaming.ui.StreamingOverlay;
 import org.pentaho.di.trans.dataservice.ui.controller.DataServiceDialogController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.di.ui.xul.KettleXulLoader;
@@ -63,6 +64,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.reset;
 
 /**
  * @author nhudak
@@ -74,6 +76,7 @@ public class DataServiceDialogTest {
   @Mock DataServiceModel model;
   @Mock DataServiceDialogController controller;
   @Mock TransMeta transMeta;
+  @Mock StreamingOverlay streamingOverlay;
 
   DataServiceDialog dialog;
 
@@ -81,6 +84,24 @@ public class DataServiceDialogTest {
   public void setUp() throws Exception {
     when( controller.getXulDomContainer() ).thenReturn( xulDomContainer );
     dialog = new DataServiceDialog( controller, model );
+  }
+
+  @Test
+  public void testInitStreaming() throws Exception {
+    XulTabbox tabBox = mock( XulTabbox.class, RETURNS_DEEP_STUBS );
+    when( controller.getElementById( "optimizationTabs" ) ).thenReturn( tabBox );
+    when( tabBox.getTabs().getTabCount() ).thenReturn( 2 );
+
+    // Create first overlay, low priority
+    dialog.initStreaming( streamingOverlay );
+
+    verify( streamingOverlay ).apply( dialog );
+    verify( tabBox ).setSelectedIndex( 0 );
+
+    reset( tabBox );
+    when( tabBox.getTabs().getTabCount() ).thenReturn( 0 );
+    dialog.initStreaming( streamingOverlay );
+    verify( tabBox, times( 0 ) ).setSelectedIndex( 0 );
   }
 
   @Test
@@ -119,6 +140,11 @@ public class DataServiceDialogTest {
     inOrder.verifyNoMoreInteractions();
 
     verify( tabBox ).setSelectedIndex( 0 );
+
+    reset( tabBox );
+    when( tabBox.getTabs().getTabCount() ).thenReturn( 0 );
+    dialog.initOptimizations( factories );
+    verify( tabBox, times( 0 ) ).setSelectedIndex( 0 );
   }
 
   @Test
