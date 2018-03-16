@@ -154,9 +154,9 @@ public class StreamingServiceTransExecutor {
    * @return The {@link StreamExecutionListener} for the given query or null if parameters invalid.
    */
   public StreamExecutionListener getBuffer( String query, int windowRowSize, long windowMillisSize, long windowRate ) {
-    windowRowSize = windowRowSize < 0 ? 0 : Math.min( windowRowSize, windowMaxRowLimit );
-    windowMillisSize = windowMillisSize < 0 ? 0 : Math.min( windowMillisSize, windowMaxTimeLimit );
-    windowRate = windowRate < 0 ? 0
+    windowRowSize = windowRowSize <= 0 ? 0 : Math.min( windowRowSize, windowMaxRowLimit );
+    windowMillisSize = windowMillisSize <= 0 ? 0 : Math.min( windowMillisSize, windowMaxTimeLimit );
+    windowRate = windowRate <= 0 ? 0
       : ( windowMillisSize > 0 ? Math.min( windowRate, windowMaxTimeLimit ) : Math.min( windowRate, windowMaxRowLimit ) );
 
     if ( windowRowSize == 0 && windowMillisSize == 0 ) {
@@ -178,7 +178,8 @@ public class StreamingServiceTransExecutor {
 
       if ( windowRate > 0 ) {
         if ( windowMillisSize > 0 && windowRowSize > 0 ) {
-          buffer = stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS, windowRowSize );
+          buffer = stepStream.getStream().buffer( windowMillisSize, TimeUnit.MILLISECONDS );
+          fallbackBuffer = stepStream.getStream().buffer( windowRowSize );
         } else if ( windowMillisSize > 0 ) {
           buffer = stepStream.getStream().buffer( windowMillisSize, windowRate, TimeUnit.MILLISECONDS );
           fallbackBuffer = stepStream.getStream().buffer( windowMaxRowLimit );
