@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,8 +26,10 @@ import com.google.common.base.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
@@ -63,10 +65,13 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
   @Mock Query.Service queryService;
   @Mock KettleRepositoryLocator repositoryLocator;
   @Mock DataServiceContext context;
+  @Mock SQL sql;
+  @Mock DataServiceMeta dsMeta;
 
   public void setUp() throws Exception {
     super.setUp();
 
+    when( sql.getServiceName() ).thenReturn( DATA_SERVICE_NAME );
     when( supplier.get() ).thenReturn( repository );
     when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
     factory = new DataServiceFactory( context ) {
@@ -112,5 +117,45 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
     when( supplier.get() ).thenReturn( null );
     assertThat( factory.getRepository(), nullValue() );
     assertThat( factory.getMetaStore(), sameInstance( DataServiceFactory.localPentahoMetaStore ) );
+  }
+
+  @Test
+  public void testCreateBuilderNonStreaming() throws Exception {
+    when( dsMeta.isStreaming() ).thenReturn( false );
+
+    factory = new DataServiceFactory( context ) {
+      @Override public Repository getRepository() {
+        return supplier.get();
+      }
+      @Override public DataServiceMeta getDataService( String serviceName, Repository repository,
+                                                       IMetaStore metaStore ) {
+        return dsMeta;
+      }
+    };
+
+    factory.createBuilder( sql );
+
+    verify( dsMeta, never() ).getRowLimit();
+    verify( dsMeta, never() ).getTimeLimit();
+  }
+
+  @Test
+  public void testCreateBuilderStreaming() throws Exception {
+    when( dsMeta.isStreaming() ).thenReturn( true );
+
+    factory = new DataServiceFactory( context ) {
+      @Override public Repository getRepository() {
+        return supplier.get();
+      }
+      @Override public DataServiceMeta getDataService( String serviceName, Repository repository,
+                                                       IMetaStore metaStore ) {
+        return dsMeta;
+      }
+    };
+
+    factory.createBuilder( sql );
+
+    verify( dsMeta ).getRowLimit();
+    verify( dsMeta ).getTimeLimit();
   }
 }

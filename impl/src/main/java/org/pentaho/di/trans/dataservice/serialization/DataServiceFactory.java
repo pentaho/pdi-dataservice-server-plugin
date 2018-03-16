@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -79,6 +79,11 @@ public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
   public DataServiceExecutor.Builder createBuilder( SQL sql ) throws MetaStoreException {
     // Locate data service and return a new builder
     DataServiceMeta dataService = getDataService( sql.getServiceName() );
+
+    if ( dataService.isStreaming() ) {
+      return new DataServiceExecutor.Builder( sql, dataService, context )
+        .rowLimit( dataService.getRowLimit() ).timeLimit( dataService.getTimeLimit() );
+    }
     return new DataServiceExecutor.Builder( sql, dataService, context );
   }
 
