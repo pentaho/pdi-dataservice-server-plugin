@@ -217,7 +217,6 @@ public class DataServiceExecutor {
     public DataServiceExecutor build() throws KettleException {
       RowMetaInterface serviceFields;
       int serviceRowLimit = getServiceRowLimit( service );
-      long serviceTimeLimit = getServiceTimeLimit( service );
 
       if ( sql.getServiceName() != null && !sql.getServiceName().equals( service.getName() ) ) {
         throw new KettleException(
@@ -236,13 +235,10 @@ public class DataServiceExecutor {
         // Gets service execution from context
         if ( serviceTransExecutor == null ) {
           if ( serviceTrans != null ) {
-            int windowMaxRowLimit = rowLimit > 0
-              ? ( serviceRowLimit > 0 ? Math.min( rowLimit, serviceRowLimit ) : rowLimit ) : serviceRowLimit;
-            long windowMaxTimeLimit = timeLimit > 0
-              ? ( serviceTimeLimit > 0 ? Math.min( timeLimit, serviceTimeLimit ) : timeLimit ) : serviceTimeLimit;
-
-            windowMaxRowLimit = Math.min( windowMaxRowLimit, getKettleRowLimit() );
-            windowMaxTimeLimit = Math.min( windowMaxTimeLimit, getKettleTimeLimit() );
+            int windowMaxRowLimit = (int) getStreamingLimit( rowLimit, service.getRowLimit(), getKettleRowLimit(),
+              DataServiceConstants.ROW_LIMIT_DEFAULT );
+            long windowMaxTimeLimit = getStreamingLimit( timeLimit, service.getTimeLimit(), getKettleTimeLimit(),
+              DataServiceConstants.TIME_LIMIT_DEFAULT );
 
             serviceTransExecutor =
               new StreamingServiceTransExecutor( service.getName(), serviceTrans, service.getStepname(),
@@ -278,7 +274,9 @@ public class DataServiceExecutor {
 
       if ( sqlTransGenerator == null ) {
         sqlTransGenerator = new SqlTransGenerator( sql, service.isStreaming() ? 0 : rowLimit,
-          service.isStreaming() ? 0 : serviceRowLimit );
+          service.isStreaming() ? 0
+            : ( serviceRowLimit > 0 ? serviceRowLimit
+              : ( !service.isUserDefined() ? DataServiceConstants.ROW_LIMIT_DEFAULT : 0 ) ) );
       }
       if ( genTrans == null ) {
         genTrans = new Trans( sqlTransGenerator.generateTransMeta() );
@@ -305,6 +303,35 @@ public class DataServiceExecutor {
       }
 
       return dataServiceExecutor;
+    }
+
+    /**
+     * Gets the streaming dataservice max limit for a window.
+     *
+     * @param userLimit - The user limit.
+     * @param serviceLimit - The metadata limit.
+     * @param kettleLimit - The kettle limit.
+     * @param defaultLimit - The default limit.
+     * @return The streaming max limit.
+     * @throws KettleException
+     */
+    private long getStreamingLimit( long userLimit, long serviceLimit, long kettleLimit, long defaultLimit ) throws KettleException {
+      if ( serviceLimit > 0 && kettleLimit > 0 && userLimit > 0 ) {
+        return Math.min( Math.min( serviceLimit, kettleLimit ), userLimit );
+      } else if ( serviceLimit > 0 && kettleLimit > 0 ) {
+        return Math.min( serviceLimit, kettleLimit );
+      } else if ( serviceLimit > 0 && userLimit > 0 ) {
+        return Math.min( serviceLimit, userLimit );
+      } else if ( kettleLimit > 0 && userLimit > 0 ) {
+        return Math.min( kettleLimit, userLimit );
+      } else if ( kettleLimit > 0 ) {
+        return kettleLimit;
+      } else if ( serviceLimit > 0 ) {
+        return serviceLimit;
+      } else if ( userLimit > 0 ) {
+        return userLimit;
+      }
+      return defaultLimit;
     }
 
     private int getServiceRowLimit( DataServiceMeta service ) throws KettleException {
@@ -334,14 +361,7 @@ public class DataServiceExecutor {
         }
       }
 
-      return result > 0 ? result : DataServiceConstants.ROW_LIMIT_DEFAULT;
-    }
-
-    private long getServiceTimeLimit( DataServiceMeta service ) throws KettleException {
-      if ( service.getTimeLimit() > 0 ) {
-        return service.getTimeLimit();
-      }
-      return getKettleTimeLimit();
+      return result;
     }
 
     private long getKettleTimeLimit() throws KettleException {
@@ -356,7 +376,7 @@ public class DataServiceExecutor {
           }
         }
       }
-      return result > 0 ? result : DataServiceConstants.TIME_LIMIT_DEFAULT;
+      return result;
     }
 
     private String getKettleProperty( String propertyName ) throws KettleException {
