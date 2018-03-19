@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -61,9 +61,15 @@ public class TransPainterStepExtensionPointPlugin implements ExtensionPointInter
     if ( dataService != null && dataService.isUserDefined() ) {
       // Is this step a data service provider?
       //
+
+      String image = dataService.isStreaming()
+          ? "images/data-services-streaming.svg"
+          : "images/data-services.svg";
+
       extension.gc
-        .drawImage( "images/data-services.svg", getClass().getClassLoader(), extension.x1 - 13,
-          extension.y1 - 8 + extension.iconsize );
+          .drawImage( image, getClass().getClassLoader(), extension.x1 - 13,
+              extension.y1 - 8 + extension.iconsize );
+
       extension.areaOwners.add(
         new AreaOwner( AreaType.CUSTOM, extension.x1 - 13, extension.y1 - 8 + extension.iconsize, 16, 16,
           extension.offset, transMeta, stepMeta ) );

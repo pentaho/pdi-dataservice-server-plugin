@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.gui.GCInterface;
@@ -98,10 +99,38 @@ public class TransPainterStepExtesionPointPluginTest {
     when( metaStoreUtil.getDataServiceByStepName( transMeta, STEP_NAME ) ).thenReturn( dataServiceMeta );
     when( dataServiceMeta.isUserDefined() ).thenReturn( true );
 
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass( String.class );
+    when( dataServiceMeta.isStreaming() ).thenReturn( false );
+
     plugin.callExtensionPoint( log, extension );
 
     verify( metaStoreUtil ).getDataServiceByStepName( transMeta, STEP_NAME );
-    verify( gc ).drawImage( anyString(), any( ClassLoader.class ), anyInt(), anyInt() );
+    verify( gc ).drawImage( captor.capture(), any( ClassLoader.class ), anyInt(), anyInt() );
+    assert( captor.getValue().equals( "images/data-services.svg" ) );
+  }
+
+  @Test
+  public void testCallExtensionPointWithStreamingDataService() throws Exception {
+    extension.transMeta = transMeta;
+    extension.stepMeta = stepMeta;
+    extension.gc = gc;
+    extension.x1 = 0;
+    extension.y1 = 0;
+    extension.iconsize = 32;
+    extension.offset = new Point( 0, 0 );
+    extension.areaOwners = new ArrayList<>();
+    when( stepMeta.getName() ).thenReturn( STEP_NAME );
+    when( metaStoreUtil.getDataServiceByStepName( transMeta, STEP_NAME ) ).thenReturn( dataServiceMeta );
+    when( dataServiceMeta.isUserDefined() ).thenReturn( true );
+
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass( String.class );
+    when( dataServiceMeta.isStreaming() ).thenReturn( true );
+
+    plugin.callExtensionPoint( log, extension );
+
+    verify( metaStoreUtil ).getDataServiceByStepName( transMeta, STEP_NAME );
+    verify( gc ).drawImage( captor.capture(), any( ClassLoader.class ), anyInt(), anyInt() );
+    assert( captor.getValue().equals( "images/data-services-streaming.svg" ) );
   }
 
   @Test
