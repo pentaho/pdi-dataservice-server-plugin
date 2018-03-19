@@ -361,6 +361,7 @@ public class DataServiceTestControllerTest  {
     // is initialized are reset on close, i.e. that params set during
     // use of the dialog do not leak.
     dataServiceTestController.initStartingParameterValues();
+    dataServiceTestController.executeSql();
     verify( dataServiceExecutor.getServiceTrans(), never() ).prepareExecution( any( String[].class ) );
     dataServiceTestController.close();
     ArgumentCaptor<NamedParams> paramCaptor = ArgumentCaptor.forClass( NamedParams.class );

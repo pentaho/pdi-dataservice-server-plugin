@@ -97,6 +97,7 @@ public class DataServiceExecutorTest extends BaseTest {
   public static final String RESULT_STEP_NAME = "Result Step";
   public static final String CONTAINER_ID = "12345";
   private long SYSTEM_TIME_LIMIT = 99999;
+  private int SYSTEM_ROW_LIMIT = 99999;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
   @Mock SqlTransGenerator sqlTransGenerator;
@@ -519,208 +520,179 @@ public class DataServiceExecutorTest extends BaseTest {
   }
 
   @Test
-  public void testExecuteStreamQueryKettleTimeLimit() throws Exception {
-    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
-    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
-
-    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
-
-    when( sqlTransGenerator.getSql() ).thenReturn( sql );
-
-    dataService.setStreaming( true );
-
-    IMetaStore metastore = mock( IMetaStore.class );
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
-      serviceTrans( serviceTrans ).
-      sqlTransGenerator( sqlTransGenerator ).
-      genTrans( genTrans ).
-      metastore( metastore ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
-      build();
-
-    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
-
-    assertNotNull( exec );
-    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
-  }
-
-  @Test
-  public void testExecuteStreamQuerySystemTimeLimit() throws Exception {
-    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
-    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
-
-    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
-
-    when( sqlTransGenerator.getSql() ).thenReturn( sql );
-
-    dataService.setStreaming( true );
-
-    IMetaStore metastore = mock( IMetaStore.class );
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
-      serviceTrans( serviceTrans ).
-      sqlTransGenerator( sqlTransGenerator ).
-      genTrans( genTrans ).
-      metastore( metastore ).
-      timeLimit( SYSTEM_TIME_LIMIT + 1 ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
-      build();
-
-    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
-
-    assertNotNull( exec );
-    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
-  }
-
-  @Test
-  public void testExecuteStreamQueryUserTimeLimit() throws Exception {
-    long TIME_LIMIT = 12345;
-
-    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
-    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
-
-    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
-
-    when( sqlTransGenerator.getSql() ).thenReturn( sql );
-
-    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( SYSTEM_TIME_LIMIT ) );
-
-    dataService.setStreaming( true );
-
-    IMetaStore metastore = mock( IMetaStore.class );
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
-      serviceTrans( serviceTrans ).
-      sqlTransGenerator( sqlTransGenerator ).
-      genTrans( genTrans ).
-      metastore( metastore ).
-      timeLimit( TIME_LIMIT ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
-      build();
-
-    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
-
-    assertNotNull( exec );
-    assertEquals( exec.getWindowMaxTimeLimit(), TIME_LIMIT );
-  }
-
-  @Test
-  public void testExecuteStreamQueryMetadataTimeLimit() throws Exception {
-    long SERVICE_TIME_LIMIT = 1234567;
-    long KETTLE_TIME_LIMIT = 10000000;
-
-    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
-    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
-
-    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
-
-    when( sqlTransGenerator.getSql() ).thenReturn( sql );
-
-    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( KETTLE_TIME_LIMIT ) );
-
-    dataService.setTimeLimit( SERVICE_TIME_LIMIT );
-    dataService.setStreaming( true );
-
-    IMetaStore metastore = mock( IMetaStore.class );
-    new DataServiceExecutor.Builder( sql, dataService, context ).
-      serviceTrans( serviceTrans ).
-      sqlTransGenerator( sqlTransGenerator ).
-      genTrans( genTrans ).
-      metastore( metastore ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
-      build();
-
-    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
-
-    assertNotNull( exec );
-    assertEquals( exec.getWindowMaxTimeLimit(), SERVICE_TIME_LIMIT );
-  }
-
-  @Test
-  public void testExecuteStreamQueryMetadataKettleTimeLimit() throws Exception {
-    long KETTLE_TIME_LIMIT = 1234567;
-    long SERVICE_TIME_LIMIT = 10000000;
-
-    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
-    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
-
-    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
-
-    when( sqlTransGenerator.getSql() ).thenReturn( sql );
-
-    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( KETTLE_TIME_LIMIT ) );
-
-    dataService.setTimeLimit( SERVICE_TIME_LIMIT );
-    dataService.setStreaming( true );
-
-    IMetaStore metastore = mock( IMetaStore.class );
-    new DataServiceExecutor.Builder( sql, dataService, context ).
-      serviceTrans( serviceTrans ).
-      sqlTransGenerator( sqlTransGenerator ).
-      genTrans( genTrans ).
-      metastore( metastore ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
-      build();
-
-    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
-
-    assertEquals( exec.getWindowMaxTimeLimit(), KETTLE_TIME_LIMIT );
-  }
-
-  @Test
-  public void testExecuteStreamQueryDefaultTimeLimitNullModelTimeLimit() throws Exception {
-    dataService.setTimeLimit( 0 );
-    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "" );
-    testExecuteStreamQueryDefaultTimeLimitAux();
-  }
-
-  @Test
-  public void testExecuteStreamQueryDefaultTimeLimitZeroModelTimeLimit() throws Exception {
-    dataService.setTimeLimit( 0L );
-    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "" );
-    testExecuteStreamQueryDefaultTimeLimitAux();
-  }
-
-  @Test
-  public void testExecuteStreamQueryDefaultTimeLimitException() throws Exception {
-    dataService.setTimeLimit( 0L );
-    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "NOT_NUMBER" );
-    testExecuteStreamQueryDefaultTimeLimitAux();
-  }
-
-  private void testExecuteStreamQueryDefaultTimeLimitAux() throws Exception {
-    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
-    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
-
-    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
-
-    when( sqlTransGenerator.getSql() ).thenReturn( sql );
-
-    dataService.setStreaming( true );
-
-    IMetaStore metastore = mock( IMetaStore.class );
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
-      serviceTrans( serviceTrans ).
-      sqlTransGenerator( sqlTransGenerator ).
-      genTrans( genTrans ).
-      metastore( metastore ).
-      windowRowSize( 1 ).
-      windowMillisSize( 0 ).
-      windowRate( 0 ).
-      build();
-
-    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
-
+  public void testExecuteStreamQueryTimeLimit() throws Exception {
+    StreamingServiceTransExecutor exec = testTimeLimitAux( 0, 0, 0 );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), DataServiceConstants.TIME_LIMIT_DEFAULT );
+
+    exec = testTimeLimitAux( 0, 0, SYSTEM_TIME_LIMIT );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT, 0 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, 0, 0 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 1, 0, SYSTEM_TIME_LIMIT );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, 0, SYSTEM_TIME_LIMIT + 1 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT + 1, SYSTEM_TIME_LIMIT );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 1 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 1, SYSTEM_TIME_LIMIT, 0 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 1, 0 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 2, SYSTEM_TIME_LIMIT + 1, SYSTEM_TIME_LIMIT );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 2, SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 1 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 2, SYSTEM_TIME_LIMIT + 1 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
+  }
+
+  private StreamingServiceTransExecutor testTimeLimitAux( long userLimit, long metaLimit, long kettleLimit )
+    throws Exception {
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( kettleLimit ) );
+
+    dataService.setStreaming( true );
+
+    dataService.setTimeLimit( metaLimit );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      timeLimit( userLimit ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+    context.removeServiceTransExecutor( dataService.getName() );
+
+    return exec;
+  }
+
+  @Test
+  public void testExecuteStreamQueryRowLimit() throws Exception {
+    StreamingServiceTransExecutor exec = testRowLimitAux( 0, 0, 0 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), DataServiceConstants.ROW_LIMIT_DEFAULT );
+
+    exec = testRowLimitAux( 0, 0, SYSTEM_ROW_LIMIT );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( 0, SYSTEM_ROW_LIMIT, 0 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, 0, 0 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 1, 0, SYSTEM_ROW_LIMIT );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, 0, SYSTEM_ROW_LIMIT + 1 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( 0, SYSTEM_ROW_LIMIT + 1, SYSTEM_ROW_LIMIT );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( 0, SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 1 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 1, SYSTEM_ROW_LIMIT, 0 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 1, 0 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 2, SYSTEM_ROW_LIMIT + 1, SYSTEM_ROW_LIMIT );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 2, SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 1 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 2, SYSTEM_ROW_LIMIT + 1 );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
+  }
+
+  private StreamingServiceTransExecutor testRowLimitAux( int userLimit, int metaLimit, int kettleLimit )
+    throws Exception {
+    when( genTrans.isFinishedOrStopped() ).thenReturn( true );
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
+
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+
+    System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, String.valueOf( kettleLimit ) );
+
+    dataService.setStreaming( true );
+
+    dataService.setRowLimit( metaLimit );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      rowLimit( userLimit ).
+      windowRowSize( 1 ).
+      windowMillisSize( 0 ).
+      windowRate( 0 ).
+      build();
+
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+    context.removeServiceTransExecutor( dataService.getName() );
+
+    return exec;
   }
 
   @Test

@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.streaming.execution;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -298,8 +297,7 @@ public class StreamingServiceTransExecutor {
   /**
    * Clears the listeners cache.
    */
-  @VisibleForTesting
-  protected void clearCache() {
+  public void clearCache() {
     serviceListeners.invalidateAll();
     serviceListeners.cleanUp();
   }

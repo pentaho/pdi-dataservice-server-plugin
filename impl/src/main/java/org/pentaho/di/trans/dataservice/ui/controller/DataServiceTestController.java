@@ -51,6 +51,7 @@ import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
@@ -555,7 +556,15 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     }
     if ( dataServiceExec != null ) {
       stopDataService( dataServiceExec );
+
+      String streamingServiceName = dataService.getName();
+      StreamingServiceTransExecutor streamingServiceCache = context.getServiceTransExecutor( streamingServiceName );
+      if ( streamingServiceCache != null ) {
+        streamingServiceCache.clearCache();
+        context.removeServiceTransExecutor( streamingServiceName );
+      }
     }
+
     model.setExecuting( false );
   }
 
