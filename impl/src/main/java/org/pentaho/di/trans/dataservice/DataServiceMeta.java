@@ -71,7 +71,7 @@ public class DataServiceMeta implements MetaStoreElement {
   protected boolean userDefined = true;
 
   @MetaStoreAttribute( key = IS_STREAMING )
-  protected boolean streaming = true;
+  protected boolean streaming;
 
   /**
    * Constructor.
