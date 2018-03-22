@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -65,7 +65,7 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
     }
   }
 
-  private void refreshTree( SelectionTreeExtension selectionTreeExtension ) {
+  protected void refreshTree( SelectionTreeExtension selectionTreeExtension ) {
     TransMeta meta = (TransMeta) selectionTreeExtension.getMeta();
 
     TreeItem tiRootName = selectionTreeExtension.getTiRootName();
@@ -74,14 +74,17 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
     TreeItem tiDSTitle = createTreeItem( tiRootName, STRING_DATA_SERVICES, guiResource.getImageFolder() );
 
     for ( DataServiceMeta dataService : delegate.getDataServices( meta ) ) {
-      createTreeItem( tiDSTitle, dataService.getName(), getDataServiceImage( guiResource ) );
+      createTreeItem( tiDSTitle, dataService.getName(), getDataServiceImage( guiResource, dataService ) );
     }
   }
 
-  private Image getDataServiceImage( GUIResource guiResource ) {
+  private Image getDataServiceImage( GUIResource guiResource, DataServiceMeta dataService ) {
+    String image = dataService.isStreaming()
+        ? "images/data-services-streaming_padding.svg"
+        : "images/data-services_padding.svg";
     return guiResource.getImage(
-      "images/data-services_padding.svg", getClass().getClassLoader(), ConstUI.MEDIUM_ICON_SIZE,
-      ConstUI.MEDIUM_ICON_SIZE );
+        image, getClass().getClassLoader(), ConstUI.MEDIUM_ICON_SIZE,
+        ConstUI.MEDIUM_ICON_SIZE );
   }
 
   private void editDataService( SelectionTreeExtension selectionTreeExtension ) {

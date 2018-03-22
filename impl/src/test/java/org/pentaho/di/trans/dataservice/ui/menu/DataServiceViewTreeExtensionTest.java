@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -42,11 +42,14 @@ import org.eclipse.swt.graphics.Image;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
+
 
 @RunWith( MockitoJUnitRunner.class )
 public class DataServiceViewTreeExtensionTest {
@@ -82,21 +85,22 @@ public class DataServiceViewTreeExtensionTest {
   DataServiceMeta dataServiceMeta;
 
   DataServiceViewTreeExtension dataServiceViewTreeExtension;
+  DataServiceViewTreeExtension dataServiceViewTreeExtensionSpy;
+  List<DataServiceMeta> dataServiceMetaList = new ArrayList<>();
 
   @Before
   public void setUp() throws Exception {
     when( context.getDataServiceDelegate() ).thenReturn( delegate );
 
     dataServiceViewTreeExtension = new DataServiceViewTreeExtension( context );
+    dataServiceViewTreeExtensionSpy = spy( new DataServiceViewTreeExtension( context ) );
+
+    dataServiceMetaList.add( dataServiceMeta );
+    when( dataServiceMeta.getName() ).thenReturn( DATA_SERVICE_NAME );
   }
 
   @Test
   public void testCallExtension() throws Exception {
-    List<DataServiceMeta> dataServiceMetaList = new ArrayList<>();
-    dataServiceMetaList.add( dataServiceMeta );
-    when( dataServiceMeta.getName() ).thenReturn( DATA_SERVICE_NAME );
-
-    when( guiResource.getImageFolder() ).thenReturn( image );
     when( delegate.getDataServices( transMeta ) ).thenReturn( dataServiceMetaList );
     when( selectionTreeExtension.getAction() ).thenReturn( Spoon.EDIT_SELECTION_EXTENSION );
     when( selectionTreeExtension.getMeta() ).thenReturn( transMeta );
@@ -108,5 +112,22 @@ public class DataServiceViewTreeExtensionTest {
 
     verify( selectionTreeExtension ).getSelection();
     verify( delegate ).editDataService( dataServiceMeta );
+  }
+
+  @Test
+  public void testCallExtensionWithRefreshTree() throws Exception {
+    when( guiResource.getImageFolder() ).thenReturn( image );
+    when( selectionTreeExtension.getGuiResource() ).thenReturn( guiResource );
+
+    doNothing().when( dataServiceViewTreeExtensionSpy ).refreshTree(
+        any( SelectionTreeExtension.class ) );
+
+    when( delegate.getDataServices( transMeta ) ).thenReturn( dataServiceMetaList );
+    when( selectionTreeExtension.getAction() ).thenReturn( Spoon.REFRESH_SELECTION_EXTENSION );
+    when( selectionTreeExtension.getMeta() ).thenReturn( transMeta );
+    dataServiceViewTreeExtensionSpy.callExtensionPoint( log, selectionTreeExtension );
+
+    verify( selectionTreeExtension ).getMeta();
+    verify( dataServiceViewTreeExtensionSpy ).refreshTree( any( SelectionTreeExtension.class ) );
   }
 }
