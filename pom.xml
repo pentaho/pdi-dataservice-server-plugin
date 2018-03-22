@@ -214,12 +214,6 @@
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.jackson</groupId>
-        <artifactId>jackson-mapper-asl</artifactId>
-        <version>1.9.2</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
         <groupId>pentaho</groupId>
         <artifactId>pentaho-cache-manager-api</artifactId>
         <version>${project.version}</version>
