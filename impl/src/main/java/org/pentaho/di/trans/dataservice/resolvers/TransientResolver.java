@@ -105,6 +105,10 @@ public class TransientResolver implements DataServiceResolver {
   @Override public DataServiceExecutor.Builder createBuilder( SQL sql ) {
     DataServiceMeta dataServiceMeta = getDataService( sql.getServiceName() );
     if ( dataServiceMeta != null ) {
+      if ( dataServiceMeta.isStreaming() ) {
+        return new DataServiceExecutor.Builder( sql, dataServiceMeta, context )
+          .rowLimit( dataServiceMeta.getRowLimit() ).timeLimit( dataServiceMeta.getTimeLimit() );
+      }
       return new DataServiceExecutor.Builder( sql, dataServiceMeta, context ).logLevel( logLevel );
     }
     return null;

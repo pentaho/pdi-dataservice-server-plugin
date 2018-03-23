@@ -29,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.CommandExecutor;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -50,9 +51,11 @@ public class CommandQueryServiceTest extends BaseTest {
   private static final String TEST_COMMAND_SQL_QUERY = CommandExecutor.COMMAND_START + " SELECT * FROM "
     + DATA_SERVICE_NAME;
   private static final int MAX_ROWS = 100;
-  private static final int WINDOW_ROW_SIZE = 10;
-  private static final long WINDOW_TIME_SIZE = 0;
-  private static final long WINDOW_RATE = 1;
+  private static final IDataServiceClientService.StreamingMode WINDOW_MODE
+    = IDataServiceClientService.StreamingMode.ROW_BASED;
+  private static final long WINDOW_SIZE = 10;
+  private static final long WINDOW_EVERY = 0;
+  private static final long WINDOW_MAX_SIZE = 1;
 
   private CommandQueryService client;
 
@@ -68,7 +71,7 @@ public class CommandQueryServiceTest extends BaseTest {
   public void testExecuteNonCommandQuery() throws Exception {
     Query result = client.prepareQuery( TEST_NON_COMMAND_SQL_QUERY, MAX_ROWS, new HashMap() );
     assertNull( result );
-    result = client.prepareQuery( TEST_NON_COMMAND_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_TIME_SIZE, WINDOW_RATE,
+    result = client.prepareQuery( TEST_NON_COMMAND_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE,
       new HashMap() );
     assertNull( result );
   }
@@ -78,7 +81,7 @@ public class CommandQueryServiceTest extends BaseTest {
     Query result = client.prepareQuery( TEST_COMMAND_SQL_QUERY, MAX_ROWS, new HashMap() );
     assertNotNull( result );
     assertEquals( 0, result.getTransList().size() );
-    result = client.prepareQuery( TEST_COMMAND_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_TIME_SIZE, WINDOW_RATE,
+    result = client.prepareQuery( TEST_COMMAND_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE,
       new HashMap() );
     assertNotNull( result );
     assertEquals( 0, result.getTransList().size() );

@@ -26,6 +26,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.CommandExecutor;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -47,11 +48,12 @@ public class CommandQueryService implements Query.Service {
 
   @Override public Query prepareQuery( String sql, int maxRows, Map<String, String> parameters )
       throws KettleException {
-    return prepareQuery( sql, maxRows, 0, 0, 0, parameters );
+    return prepareQuery( sql, null, 0, 0, 0, parameters );
   }
 
-  @Override public Query prepareQuery( String sql, int maxRows, int windowRowSize, long windowMillisSize,
-                                       long windowRate, final Map<String, String> parameters )
+  @Override public Query prepareQuery( String sql, IDataServiceClientService.StreamingMode windowMode,
+                                       long windowSize, long windowEvery, long windowLimit,
+                                       final Map<String, String> parameters )
     throws KettleException {
 
     if ( sql.startsWith( CommandExecutor.COMMAND_START ) ) {

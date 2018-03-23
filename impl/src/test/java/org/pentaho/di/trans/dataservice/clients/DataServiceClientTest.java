@@ -37,6 +37,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.BaseTest;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 
@@ -72,9 +73,11 @@ public class DataServiceClientTest extends BaseTest {
   private static final String TEST_SQL_QUERY = "SELECT * FROM " + DATA_SERVICE_NAME;
   private static final String QUERY_RESULT = "...query result...";
   private static final int MAX_ROWS = 100;
-  private static final int WINDOW_ROW_SIZE = 1;
-  private static final long WINDOW_MILLIS_SIZE = 1000;
-  private static final long WINDOW_RATE = 1;
+  private static final IDataServiceClientService.StreamingMode WINDOW_MODE
+    = IDataServiceClientService.StreamingMode.ROW_BASED;
+  private static final long WINDOW_SIZE = 10;
+  private static final long WINDOW_EVERY = 50;
+  private static final long WINDOW_MAX_SIZE = 1;
 
   @Mock RowMetaInterface rowMetaInterface;
   @Mock DataServiceResolver dataServiceResolver;
@@ -117,16 +120,17 @@ public class DataServiceClientTest extends BaseTest {
   @Test
   public void testWindowQuery() throws Exception {
     when( queryServiceDelegate
-      .prepareQuery( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_MILLIS_SIZE, WINDOW_RATE, ImmutableMap.of() ) )
+      .prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE, ImmutableMap.of() ) )
       .thenReturn( (MockQuery) outputStream -> new DataOutputStream( outputStream ).writeUTF( QUERY_RESULT ) );
 
-    try ( DataInputStream dataInputStream = client.query( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_MILLIS_SIZE, WINDOW_RATE ) ) {
+    try ( DataInputStream dataInputStream = client.query( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE,
+      WINDOW_EVERY, WINDOW_MAX_SIZE ) ) {
       assertThat( dataInputStream.readUTF(), equalTo( QUERY_RESULT ) );
       assertThat( dataInputStream.read(), equalTo( -1 ) ); // End of stream
     }
 
     verify( queryServiceDelegate )
-      .prepareQuery( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_MILLIS_SIZE, WINDOW_RATE, ImmutableMap.of() );
+      .prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE, ImmutableMap.of() );
   }
 
   @Test
@@ -160,12 +164,12 @@ public class DataServiceClientTest extends BaseTest {
     IOException expected = new IOException();
     doThrow( expected ).when( mockQuery ).writeTo( anyObject() );
 
-    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE,
-      WINDOW_MILLIS_SIZE, WINDOW_RATE, ImmutableMap.of() ) )
+    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY,
+      WINDOW_MAX_SIZE, ImmutableMap.of() ) )
       .thenReturn( mockQuery );
 
-    try ( DataInputStream stream = client.query( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_MILLIS_SIZE,
-      WINDOW_RATE ) ) {
+    try ( DataInputStream stream = client.query( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY,
+      WINDOW_MAX_SIZE ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
     verify( log ).logError( anyString(), eq( expected ) );
@@ -174,11 +178,11 @@ public class DataServiceClientTest extends BaseTest {
   @Test
   public void testWindowQueryFailure() throws Exception {
     KettleException expected = new KettleException();
-    when( queryServiceDelegate.prepareQuery( eq( TEST_SQL_QUERY ), eq( MAX_ROWS ), eq( WINDOW_ROW_SIZE ),
-      eq( WINDOW_MILLIS_SIZE ), eq( WINDOW_RATE ), any() ) ).thenThrow( expected );
+    when( queryServiceDelegate.prepareQuery( eq( TEST_SQL_QUERY ), eq( WINDOW_MODE ), eq( WINDOW_SIZE ),
+      eq( WINDOW_EVERY ), eq( WINDOW_MAX_SIZE ), any() ) ).thenThrow( expected );
 
-    try ( DataInputStream ignored = client.query( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_MILLIS_SIZE,
-      WINDOW_RATE ) ) {
+    try ( DataInputStream ignored = client.query( TEST_SQL_QUERY,  WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY,
+      WINDOW_MAX_SIZE ) ) {
       fail( "Query should have failed" );
     } catch ( SQLException e ) {
       assertThat( e.getCause(), is( expected ) );
@@ -195,12 +199,11 @@ public class DataServiceClientTest extends BaseTest {
 
   @Test( expected = SQLException.class )
   public void testUnableToResolveWindowQueryException() throws Exception {
-    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_MILLIS_SIZE,
-      WINDOW_RATE, ImmutableMap.of() ) )
+    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY,
+      WINDOW_MAX_SIZE, ImmutableMap.of() ) )
       .thenReturn( null );
 
-    client.query( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_MILLIS_SIZE,
-      WINDOW_RATE );
+    client.query( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE );
   }
 
   @Test
@@ -238,7 +241,8 @@ public class DataServiceClientTest extends BaseTest {
     SettableFuture<Boolean> queryFinished = SettableFuture.create();
 
     // Create a query that blocks on the countdown latch
-    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_MILLIS_SIZE, WINDOW_RATE, ImmutableMap.of() ) )
+    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY,
+      WINDOW_MAX_SIZE, ImmutableMap.of() ) )
       .thenReturn( (MockQuery) outputStream -> {
         Random random = new Random();
         try {
@@ -252,7 +256,7 @@ public class DataServiceClientTest extends BaseTest {
       } );
 
     // Start query and close immediately
-    client.query( TEST_SQL_QUERY, MAX_ROWS, WINDOW_ROW_SIZE, WINDOW_MILLIS_SIZE, WINDOW_RATE ).close();
+    client.query( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE ).close();
     // Unleash query stream
     startQuery.countDown();
 

@@ -31,6 +31,7 @@ import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -72,11 +73,12 @@ public class DualQueryService implements Query.Service {
   }
 
   @Override public Query prepareQuery( String sqlString, int maxRows, Map<String, String> parameters ) {
-    return prepareQuery( sqlString, maxRows, 0, 0, 0, parameters );
+    return prepareQuery( sqlString, null, 0, 0, 0, parameters );
   }
 
-  @Override public Query prepareQuery( String sqlString, int maxRows, int windowRowSize, long windowMillisSize,
-                                          long windowRate, final Map<String, String> parameters ) {
+  @Override public Query prepareQuery( String sqlString, IDataServiceClientService.StreamingMode windowMode,
+                                       long windowSize, long windowEvery, long windowLimit,
+                                       final Map<String, String> parameters ) {
     SQL sql;
     try {
       sql = new SQL( sqlString );

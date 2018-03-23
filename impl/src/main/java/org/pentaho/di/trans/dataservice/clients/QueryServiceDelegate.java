@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.clients;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 
 import java.util.List;
 import java.util.Map;
@@ -40,13 +41,20 @@ public class QueryServiceDelegate implements Query.Service {
 
   @Override public Query prepareQuery( String sql, int maxRows, Map<String, String> parameters )
     throws KettleException {
-    return  prepareQuery( sql, maxRows, 0, 0, 0, parameters );
+    for ( Query.Service queryService : queryServices ) {
+      Query query = queryService.prepareQuery( sql, maxRows, parameters );
+      if ( query != null ) {
+        return query;
+      }
+    }
+    return null;
   }
 
-  @Override public Query prepareQuery( String sql, int maxRows, int windowRowSize, long windowMillisSize,
-                                       long windowRate, final Map<String, String> parameters ) throws KettleException {
+  @Override public Query prepareQuery( String sql, IDataServiceClientService.StreamingMode windowMode,
+                                       long windowSize, long windowEvery, long windowLimit,
+                                       final Map<String, String> parameters ) throws KettleException {
     for ( Query.Service queryService : queryServices ) {
-      Query query = queryService.prepareQuery( sql, maxRows, windowRowSize, windowMillisSize, windowRate, parameters );
+      Query query = queryService.prepareQuery( sql, windowMode, windowSize, windowEvery, windowLimit, parameters );
       if ( query != null ) {
         return query;
       }

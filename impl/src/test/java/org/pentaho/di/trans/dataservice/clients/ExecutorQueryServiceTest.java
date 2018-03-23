@@ -85,9 +85,10 @@ public class ExecutorQueryServiceTest {
     when( builder.rowLimit( rowLimit ) ).thenReturn( builder );
     when( builder.parameters( parameters ) ).thenReturn( builder );
     when( builder.metastore( metastore ) ).thenReturn( builder );
-    when( builder.windowRowSize( 0 ) ).thenReturn( builder );
-    when( builder.windowMillisSize( 0 ) ).thenReturn( builder );
-    when( builder.windowRate( 0 ) ).thenReturn( builder );
+    when( builder.windowMode( null ) ).thenReturn( builder );
+    when( builder.windowSize( 0 ) ).thenReturn( builder );
+    when( builder.windowEvery( 0 ) ).thenReturn( builder );
+    when( builder.windowLimit( 0 ) ).thenReturn( builder );
     when( builder.build() ).thenReturn( dataServiceExecutor );
     when( dataServiceExecutor.getServiceTrans() ).thenReturn( serviceTrans );
     when( dataServiceExecutor.getGenTrans() ).thenReturn( genTrans );

@@ -67,24 +67,35 @@ public class QueryServiceDelegateTest extends BaseTest {
 
   @Test
   public void testPrepareQuery() throws KettleException {
-    when( service1.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, 0, 0, 0,
+    when( service1.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, parameters ) ).thenReturn( query1 );
+    when( service2.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, parameters ) ).thenReturn( query2 );
+    when( service1.prepareQuery( TEST_SQL_QUERY, null, 0, 0, 0,
       parameters ) ).thenReturn( query1 );
-    when( service2.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, 0, 0, 0,
+    when( service2.prepareQuery( TEST_SQL_QUERY, null, 0, 0, 0,
       parameters ) ).thenReturn( query2 );
 
     Query result = client.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, parameters );
     assertEquals( query1, result );
 
-    when( service1.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, 0, 0, 0,
-      parameters ) ).thenReturn( null );
+    result = client.prepareQuery( TEST_SQL_QUERY, null, 0, 0, 0, parameters );
+    assertEquals( query1, result );
 
+    when( service1.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, parameters ) ).thenReturn( null );
     result = client.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, parameters );
     assertEquals( query2, result );
 
-    when( service2.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, 0, 0, 0,
+    when( service1.prepareQuery( TEST_SQL_QUERY, null, 0, 0, 0,
       parameters ) ).thenReturn( null );
+    result = client.prepareQuery( TEST_SQL_QUERY, null, 0, 0, 0, parameters );
+    assertEquals( query2, result );
 
+    when( service2.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, parameters ) ).thenReturn( null );
     result = client.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, parameters );
+    assertNull( result );
+
+    when( service2.prepareQuery( TEST_SQL_QUERY, null, 0, 0, 0,
+      parameters ) ).thenReturn( null );
+    result = client.prepareQuery( TEST_SQL_QUERY, null, 0, 0, 0, parameters );
     assertNull( result );
   }
 }

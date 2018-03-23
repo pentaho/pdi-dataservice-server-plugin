@@ -33,6 +33,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
@@ -57,6 +58,10 @@ public class StreamingServiceTransExecutorTest {
   private String MOCK_ROW_META_STRING = "Mock Row Meta String";
   private int MOCK_ROW_LIMIT = 10;
   private long MOCK_TIME_LIMIT = 1000;
+  private IDataServiceClientService.StreamingMode MOCK_WINDOW_MODE_ROW_BASED
+    = IDataServiceClientService.StreamingMode.ROW_BASED;
+  private IDataServiceClientService.StreamingMode MOCK_WINDOW_MODE_TIME_BASED
+    = IDataServiceClientService.StreamingMode.TIME_BASED;
 
   @Mock Trans serviceTrans;
   @Mock TransMeta serviceTransMeta;
@@ -99,105 +104,79 @@ public class StreamingServiceTransExecutorTest {
   @Test ( expected = RuntimeException.class )
   public void testServiceStepNotFound() {
     when( serviceTrans.findRunThread( MOCK_SERVICE_STEP_NAME ) ).thenReturn( null );
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 0 );
   }
 
   @Test ( expected = RuntimeException.class )
   public void testServiceStartThreadException() throws KettleException {
     doThrow( new KettleException() ).when( serviceTrans ).startThreads();
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 0 );
   }
 
   @Test
   public void testGetBufferWindowNullInvalidValues() throws Exception {
-    StreamExecutionListener buffer = serviceExecutor.getBuffer( MOCK_QUERY, 0, 0, 0 );
+    StreamExecutionListener buffer = serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 0, 0, 0 );
     assertNull( buffer );
 
-    buffer = serviceExecutor.getBuffer( MOCK_QUERY, -1, 0, 0 );
+    buffer = serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, -1, 0, 0 );
     assertNull( buffer );
 
-    buffer = serviceExecutor.getBuffer( MOCK_QUERY, 0, -1, 0 );
+    buffer = serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 0, -1, 0 );
     assertNull( buffer );
 
-    buffer = serviceExecutor.getBuffer( MOCK_QUERY, -1, -1, -1 );
+    buffer = serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, -1, -1, -1 );
     assertNull( buffer );
   }
 
   @Test
   public void testGetBufferWindowRowSize() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 10 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferWindowRowSizeRate() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 1 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 1, 10 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferWindowSizeTime() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_TIME_BASED, 1000, 0, 10000 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferWindowSizeTimeRate() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 1 );
-    testBufferAux();
-  }
-
-  @Test
-  public void testGetBufferWindowRowSizeTime() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 0 );
-    testBufferAux();
-  }
-
-  @Test
-  public void testGetBufferWindowRowSizeTimeRate() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 1 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_TIME_BASED, 1000, 1000, 10000 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferTime2Calls() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 0 );
-    testBufferAux();
-  }
-
-  @Test
-  public void testGetBufferRowsTime2Calls() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 0 );
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_TIME_BASED, 1000, 0, 10000 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_TIME_BASED, 1000, 0, 10000 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferRows2Calls() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 10 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 10 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferTimeRate2Calls() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 1 );
-    serviceExecutor.getBuffer( MOCK_QUERY, 0, 1000, 1 );
-    testBufferAux();
-  }
-
-  @Test
-  public void testGetBufferRowsTimeRate2Calls() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 1 );
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 1000, 1 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_TIME_BASED, 1000, 1000, 10000 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_TIME_BASED, 1000, 1000, 10000 );
     testBufferAux();
   }
 
   @Test
   public void testGetBufferRowsRate2Calls() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 1 );
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 1 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 1, 10 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 1, 10 );
     testBufferAux();
   }
 
@@ -224,7 +203,7 @@ public class StreamingServiceTransExecutorTest {
 
   @Test
   public void testGetBufferCleanup() throws Exception {
-    serviceExecutor.getBuffer( MOCK_QUERY, 1, 0, 0 );
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 0 );
 
     ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );
 

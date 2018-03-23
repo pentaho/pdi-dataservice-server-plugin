@@ -46,6 +46,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
@@ -56,9 +57,11 @@ import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
+import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMenuList;
+import org.pentaho.ui.xul.components.XulRadio;
 import org.pentaho.ui.xul.components.XulTextbox;
-import org.pentaho.ui.xul.containers.XulHbox;
+import org.pentaho.ui.xul.containers.XulGroupbox;
 import org.pentaho.ui.xul.dom.Document;
 
 import java.io.IOException;
@@ -130,7 +133,13 @@ public class DataServiceTestControllerTest  {
   private XulTextbox xulTextBox;
 
   @Mock
-  private XulHbox xulHbox;
+  private XulRadio xulRadio;
+
+  @Mock
+  private XulLabel xulLabel;
+
+  @Mock
+  private XulGroupbox xulGroupbox;
 
   @Mock
   private DataServiceContext context;
@@ -156,9 +165,11 @@ public class DataServiceTestControllerTest  {
   private static final int VERIFY_TIMEOUT_MILLIS = 2000;
   private static final String TEST_ANNOTATIONS = "<annotations> \n</annotations>";
   private static final String MOCK_SQL = "show annotations from TestTable";
-  private static final int MOCK_WINDOW_ROW_SIZE = 1;
-  private static final long MOCK_WINDOW_MILLIS_SIZE = 2L;
-  private static final long MOCK_WINDOW_RATE = 3L;
+  private static final IDataServiceClientService.StreamingMode MOCK_WINDOW_MODE
+    = IDataServiceClientService.StreamingMode.ROW_BASED;
+  private static final long MOCK_WINDOW_SIZE = 1;
+  private static final long MOCK_WINDOW_EVERY = 2L;
+  private static final long MOCK_WINDOW_LIMIT = 3L;
 
   @Before
   public void initMocks() throws Exception {
@@ -224,9 +235,10 @@ public class DataServiceTestControllerTest  {
     when( dataService.getName() ).thenReturn( TEST_TABLE_NAME );
     when( dataService.isStreaming() ).thenReturn( false );
 
-    when( model.getWindowRowSize() ).thenReturn( 0 );
-    when( model.getWindowMillisSize() ).thenReturn( 0L );
-    when( model.getWindowRate() ).thenReturn( 0L );
+    when( model.getWindowMode() ).thenReturn( null );
+    when( model.getWindowSize() ).thenReturn( 0L );
+    when( model.getWindowEvery() ).thenReturn( 0L );
+    when( model.getWindowLimit() ).thenReturn( 0L );
 
     dataServiceTestController = new DataServiceTestControllerTester();
     dataServiceTestController.setXulDomContainer( xulDomContainer );
@@ -238,16 +250,23 @@ public class DataServiceTestControllerTest  {
     when( document.getElementById( "log-levels" ) ).thenReturn( xulMenuList );
     when( document.getElementById( "sql-textbox" ) ).thenReturn( xulTextBox );
     when( document.getElementById( "maxrows-combo" ) ).thenReturn( xulMenuList );
-    when( document.getElementById( "streaming-title" ) ).thenReturn( xulHbox );
-    when( document.getElementById( "streaming-parameters" ) ).thenReturn( xulHbox );
+    when( document.getElementById( "streaming-groupbox" ) ).thenReturn( xulGroupbox );
+    when( document.getElementById( "time-based-radio" ) ).thenReturn( xulRadio );
+    when( document.getElementById( "row-based-radio" ) ).thenReturn( xulRadio );
     when( document.getElementById( "window-size" ) ).thenReturn( xulTextBox );
-    when( document.getElementById( "window-millis" ) ).thenReturn( xulTextBox );
-    when( document.getElementById( "window-rate" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-every" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-limit" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-size-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-every-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-limit-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-size-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-every-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-limit-row-unit" ) ).thenReturn( xulLabel );
 
     dataServiceTestController.init();
 
     verify( bindingFactory ).setDocument( document );
-    verify( document, times( 14 ) ).getElementById( anyString() );
+    verify( document, times( 21 ) ).getElementById( anyString() );
   }
 
   @Test
@@ -405,15 +424,17 @@ public class DataServiceTestControllerTest  {
   @Test
   public void streamingQueryForAnnontations() throws KettleException, IOException {
     when( model.getSql() ).thenReturn( MOCK_SQL );
-    when( model.getWindowRowSize() ).thenReturn( MOCK_WINDOW_ROW_SIZE );
-    when( model.getWindowMillisSize() ).thenReturn( MOCK_WINDOW_MILLIS_SIZE );
-    when( model.getWindowRate() ).thenReturn( MOCK_WINDOW_RATE );
+    when( model.getWindowMode() ).thenReturn( MOCK_WINDOW_MODE );
+    when( model.getWindowSize() ).thenReturn( MOCK_WINDOW_SIZE );
+    when( model.getWindowEvery() ).thenReturn( MOCK_WINDOW_EVERY );
+    when( model.getWindowLimit() ).thenReturn( MOCK_WINDOW_LIMIT );
 
+    when( document.getElementById( "time-based-radio" ) ).thenReturn( xulRadio );
     when( dataService.isStreaming() ).thenReturn( true );
 
-    when( annotationsQueryService.prepareQuery( MOCK_SQL, 0,
-      MOCK_WINDOW_ROW_SIZE, MOCK_WINDOW_MILLIS_SIZE,
-      MOCK_WINDOW_RATE, ImmutableMap.<String, String>of() ) ).thenReturn( annotationsStreamingQuery );
+    when( annotationsQueryService.prepareQuery( MOCK_SQL, MOCK_WINDOW_MODE,
+      MOCK_WINDOW_SIZE, MOCK_WINDOW_EVERY,
+      MOCK_WINDOW_LIMIT, ImmutableMap.<String, String>of() ) ).thenReturn( annotationsStreamingQuery );
 
     doThrow( new IOException() ).when( annotationsStreamingQuery ).writeTo( any( OutputStream.class ) );
 

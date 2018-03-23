@@ -42,9 +42,11 @@ import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
+import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMenuList;
+import org.pentaho.ui.xul.components.XulRadio;
 import org.pentaho.ui.xul.components.XulTextbox;
-import org.pentaho.ui.xul.containers.XulHbox;
+import org.pentaho.ui.xul.containers.XulGroupbox;
 import org.pentaho.ui.xul.dom.Document;
 
 import java.io.OutputStream;
@@ -95,7 +97,13 @@ public class StreamingDataServiceTestControllerTest {
   private XulTextbox xulTextBox;
 
   @Mock
-  private XulHbox xulHbox;
+  private XulGroupbox xulGroupbox;
+
+  @Mock
+  private XulRadio xulRadio;
+
+  @Mock
+  private XulLabel xulLabel;
 
   @Mock
   private DataServiceContext context;
@@ -162,31 +170,38 @@ public class StreamingDataServiceTestControllerTest {
     when( streamingDataService.getName() ).thenReturn( TEST_TABLE_NAME );
     when( streamingDataService.isStreaming() ).thenReturn( true );
 
-    when( model.getWindowRowSize() ).thenReturn( 0 );
-    when( model.getWindowMillisSize() ).thenReturn( 0L );
-    when( model.getWindowRate() ).thenReturn( 0L );
+    when( model.getWindowMode() ).thenReturn( null );
+    when( model.getWindowSize() ).thenReturn( 0L );
+    when( model.getWindowEvery() ).thenReturn( 0L );
+    when( model.getWindowLimit() ).thenReturn( 0L );
 
     dataServiceTestController = new DataServiceTestControllerTester();
     dataServiceTestController.setXulDomContainer( xulDomContainer );
     dataServiceTestController.setAnnotationsQueryService( annotationsQueryService );
   }
 
-
   @Test
   public void testInitStreaming() throws Exception {
     when( document.getElementById( "log-levels" ) ).thenReturn( xulMenuList );
     when( document.getElementById( "sql-textbox" ) ).thenReturn( xulTextBox );
     when( document.getElementById( "maxrows-combo" ) ).thenReturn( xulMenuList );
-    when( document.getElementById( "streaming-title" ) ).thenReturn( xulHbox );
-    when( document.getElementById( "streaming-parameters" ) ).thenReturn( xulHbox );
+    when( document.getElementById( "streaming-groupbox" ) ).thenReturn( xulGroupbox );
+    when( document.getElementById( "time-based-radio" ) ).thenReturn( xulRadio );
+    when( document.getElementById( "row-based-radio" ) ).thenReturn( xulRadio );
     when( document.getElementById( "window-size" ) ).thenReturn( xulTextBox );
-    when( document.getElementById( "window-millis" ) ).thenReturn( xulTextBox );
-    when( document.getElementById( "window-rate" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-every" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-limit" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-size-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-every-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-limit-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-size-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-every-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-limit-row-unit" ) ).thenReturn( xulLabel );
 
     dataServiceTestController.init();
 
     verify( bindingFactory ).setDocument( document );
-    verify( document, times( 14 ) ).getElementById( anyString() );
+    verify( document, times( 21 ) ).getElementById( anyString() );
   }
 
   @Test

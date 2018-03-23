@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -68,6 +68,26 @@ public class BindingConverters {
 
       @Override public Map<K, V> targetToSource( Set<K> value ) {
         throw new AbstractMethodError( "Unable to convert a set to a map" );
+      }
+    };
+  }
+
+  public static BindingConvertor<Long, String> longToStringEmptyZero() {
+    return new BindingConvertor<Long, String>() {
+      @Override public String sourceToTarget( Long value ) {
+        return value != null && value > 0L ? value.toString() : "";
+      }
+
+      @Override public Long targetToSource( String value ) {
+        if ( value != null && !value.isEmpty() ) {
+          try {
+            return Long.valueOf( value );
+          } catch ( NumberFormatException var3 ) {
+            return new Long( 0L );
+          }
+        } else {
+          return new Long( 0L );
+        }
       }
     };
   }
