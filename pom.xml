@@ -81,14 +81,6 @@
     <url>scm:git:git@github.com:pentaho/${project.artifactId}.git</url>
   </scm>
 
-  <distributionManagement>
-    <site>
-      <id>pentaho.public.snapshot.repo</id>
-      <name>${project.artifactId}-${project.version}</name>
-      <url>dav:${site.publish.url}/${project.groupId}/pdi-dataservice-server-plugin-${project.version}</url>
-    </site>
-  </distributionManagement>
-
   <properties>
     <karaf-maven-plugin.aggregateFeatures>false</karaf-maven-plugin.aggregateFeatures>
     <karaf-maven-plugin.version>3.0.8</karaf-maven-plugin.version>
