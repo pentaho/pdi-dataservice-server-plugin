@@ -22,8 +22,10 @@
 
 package org.pentaho.di.trans.dataservice.streaming.ui;
 
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.ui.controller.AbstractController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
+import org.pentaho.di.trans.dataservice.utils.KettleUtils;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
@@ -39,6 +41,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class StreamingController extends AbstractController {
   private static final String NAME = "streamingCtrl";
+  KettleUtils kettleUtils = KettleUtils.getInstance();
 
   public StreamingController() {
     setName( NAME );
@@ -51,7 +54,7 @@ public class StreamingController extends AbstractController {
    * @throws InvocationTargetException
    * @throws XulException
    */
-  public void initBindings( DataServiceModel model ) throws InvocationTargetException, XulException {
+  public void initBindings( DataServiceModel model ) throws InvocationTargetException, XulException, KettleException {
     BindingFactory bindingFactory = getBindingFactory();
 
     XulRadio streamingRadioButton = getElementById( "streaming-type-radio" );
@@ -62,13 +65,26 @@ public class StreamingController extends AbstractController {
 
     bindingFactory.setBindingType( Binding.Type.BI_DIRECTIONAL );
 
+    // Set streaming max rows and time limit value on the text boxes.
+    // Get the values from the model first and fallback to the appropriate Kettle Properties
+    // if they don't exist in the mode.
+    int modelStreamingMaxRows = model.getServiceMaxRows();
+    streamingMaxRows.setValue( modelStreamingMaxRows > 0
+        ? Integer.toString( modelStreamingMaxRows )
+        : kettleUtils.getKettleProperty( "KETTLE_STREAMING_ROW_LIMIT" ) );
+
+    long modelStreamingMaxTime = model.getServiceMaxTime();
+    streamingMaxTime.setValue( modelStreamingMaxTime > 0
+        ? Long.toString( modelStreamingMaxTime )
+        : kettleUtils.getKettleProperty( "KETTLE_STREAMING_TIME_LIMIT" ) );
+
     streamingTab.setVisible( model.isStreaming() );
 
     bindingFactory.createBinding( model, "serviceMaxRows", streamingMaxRows, "value",
-      BindingConvertor.integer2String() ).fireSourceChanged();
+      BindingConvertor.integer2String() );
 
     bindingFactory.createBinding( model, "serviceMaxTime", streamingMaxTime, "value",
-      BindingConvertor.long2String() ).fireSourceChanged();
+      BindingConvertor.long2String() );
 
     bindingFactory.createBinding( streamingRadioButton, "selected", streamingTab, "visible" );
   }

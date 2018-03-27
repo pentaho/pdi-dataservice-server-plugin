@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
@@ -41,7 +42,6 @@ import org.pentaho.ui.xul.dom.Document;
 import java.lang.reflect.InvocationTargetException;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -90,7 +90,7 @@ public class StreamingControllerTest {
   }
 
   @Test
-  public void testInitBindings() throws InvocationTargetException, XulException {
+  public void testInitBindings() throws InvocationTargetException, XulException, KettleException {
     controller.initBindings( model );
 
     verify( streamingTab ).setVisible( true );
@@ -101,5 +101,28 @@ public class StreamingControllerTest {
       BindingConvertor.long2String() );
     verify( bindingFactory ).createBinding( streamingRadioButton, "selected", streamingTab,
       "visible" );
+  }
+
+  @Test
+  public void testInitBindingsUsingKettleProperties() throws InvocationTargetException, XulException, KettleException {
+    int maxRowsValue = 5000;
+    long maxTimeValue = 1000;
+    when( model.getServiceMaxRows() ).thenReturn( maxRowsValue );
+    when( model.getServiceMaxTime() ).thenReturn( maxTimeValue );
+    System.setProperty( "KETTLE_STREAMING_ROW_LIMIT", "5000" );
+    System.setProperty( "KETTLE_STREAMING_TIME_LIMIT", "10000" );
+    controller.initBindings( model );
+
+    verify( streamingTab ).setVisible( true );
+
+    verify( maxRows ).setValue( Integer.toString( maxRowsValue ) );
+    verify( maxTime ).setValue( Long.toString( maxTimeValue ) );
+
+    verify( bindingFactory ).createBinding( model, "serviceMaxRows", maxRows, "value",
+        BindingConvertor.integer2String() );
+    verify( bindingFactory ).createBinding( model, "serviceMaxTime", maxTime, "value",
+        BindingConvertor.long2String() );
+    verify( bindingFactory ).createBinding( streamingRadioButton, "selected", streamingTab,
+        "visible" );
   }
 }
