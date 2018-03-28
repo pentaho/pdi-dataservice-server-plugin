@@ -54,6 +54,7 @@ import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
+import org.pentaho.di.trans.dataservice.utils.KettleUtils;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
@@ -126,6 +127,8 @@ public class DataServiceExecutor {
     private IMetaStore metastore;
     private BiConsumer<String, TransMeta> transMutator =
       ( stepName, transMeta ) -> TransMutators.disableAllUnrelatedHops( stepName, transMeta, true );
+
+    private KettleUtils kettleUtils = KettleUtils.getInstance();
 
     public Builder( SQL sql, DataServiceMeta service, DataServiceContext context ) {
       this.sql = Preconditions.checkNotNull( sql, "SQL must not be null." );
@@ -353,11 +356,11 @@ public class DataServiceExecutor {
     }
 
     private int getKettleRowLimit() throws KettleException {
-      String limit = getKettleProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
+      String limit = kettleUtils.getKettleProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
       int result = 0;
 
       if ( limit == null || limit.isEmpty() ) {
-        limit = getKettleProperty( DataServiceConstants.LEGACY_LIMIT_PROPERTY );
+        limit = kettleUtils.getKettleProperty( DataServiceConstants.LEGACY_LIMIT_PROPERTY );
       }
 
       if ( !Utils.isEmpty( limit ) ) {
@@ -374,7 +377,7 @@ public class DataServiceExecutor {
     }
 
     private long getKettleTimeLimit() throws KettleException {
-      String limit = getKettleProperty( DataServiceConstants.TIME_LIMIT_PROPERTY );
+      String limit = kettleUtils.getKettleProperty( DataServiceConstants.TIME_LIMIT_PROPERTY );
       long result = 0;
       if ( !Utils.isEmpty( limit ) ) {
         try {
@@ -386,11 +389,6 @@ public class DataServiceExecutor {
         }
       }
       return result;
-    }
-
-    private String getKettleProperty( String propertyName ) throws KettleException {
-      // loaded in system properties at startup
-      return System.getProperty( propertyName );
     }
   }
 
