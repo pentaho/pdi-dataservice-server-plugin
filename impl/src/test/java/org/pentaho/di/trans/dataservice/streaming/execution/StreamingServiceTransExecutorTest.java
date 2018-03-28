@@ -29,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
@@ -43,7 +44,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.pentaho.di.core.util.Assert.assertNull;
 
 /**
@@ -129,6 +134,16 @@ public class StreamingServiceTransExecutorTest {
   }
 
   @Test
+  public void testIgnoredExceptionOnLog() throws Exception {
+    Object[] data = new Object[] { 0 };
+    doThrow( new KettleValueException() ).when( rowMetaInterface ).getString( data );
+
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 10 );
+
+    testBufferAux( rowMetaInterface, data, false );
+  }
+
+  @Test
   public void testGetBufferWindowRowSize() throws Exception {
     serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 10 );
     testBufferAux();
@@ -181,6 +196,12 @@ public class StreamingServiceTransExecutorTest {
   }
 
   private void testBufferAux() throws Exception {
+    RowMetaInterface rowMeta = serviceTrans.getTransMeta().getStepFields( MOCK_SERVICE_STEP_NAME );
+    Object[] data = new Object[] { 0 };
+    testBufferAux( rowMeta, data, true );
+  }
+
+  private void testBufferAux( RowMetaInterface mockRowMeta, Object[] mockData, boolean checkLog ) throws Exception {
     ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );
 
     verify( serviceStep ).addRowListener( listenerArgumentCaptor.capture() );
@@ -192,10 +213,11 @@ public class StreamingServiceTransExecutorTest {
     RowListener serviceRowListener = listenerArgumentCaptor.getValue();
     assertNotNull( serviceRowListener );
 
-    RowMetaInterface rowMeta = serviceTrans.getTransMeta().getStepFields( MOCK_SERVICE_STEP_NAME );
-    Object[] data = new Object[] { 0 };
-    serviceRowListener.rowWrittenEvent( rowMeta, data );
-    verify( log ).logRowlevel( DataServiceConstants.PASSING_ALONG_ROW + rowMeta.getString( data ) );
+    serviceRowListener.rowWrittenEvent( mockRowMeta, mockData );
+
+    if ( checkLog ) {
+      verify( log ).logRowlevel( DataServiceConstants.PASSING_ALONG_ROW + mockRowMeta.getString( mockData ) );
+    }
     verify( serviceTrans, never( ) ).stopAll( );
     verify( serviceTrans, never( ) ).waitUntilFinished( );
     verify( log, never( ) ).logDebug( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
@@ -224,7 +246,6 @@ public class StreamingServiceTransExecutorTest {
     serviceRowListener.rowWrittenEvent( rowMeta, data );
     verify( log ).logRowlevel( DataServiceConstants.PASSING_ALONG_ROW + rowMeta.getString( data ) );
     verify( serviceTrans ).stopAll( );
-    verify( serviceTrans ).waitUntilFinished( );
     verify( log ).logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
   }
 }

@@ -114,8 +114,6 @@ public class DataServiceExecutorTest extends BaseTest {
     when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
     when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP_NAME );
     when( sqlTransGenerator.getResultStepName() ).thenReturn( RESULT_STEP_NAME );
-
-    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( SYSTEM_TIME_LIMIT ) );
   }
 
   @Test
@@ -414,12 +412,10 @@ public class DataServiceExecutorTest extends BaseTest {
 
     executor.waitUntilFinished();
     verify( genTrans, times( 4 ) ).isFinishedOrStopped();
-    verify( genTrans, times( 1 ) ).waitUntilFinished();
 
     when( genTrans.isFinishedOrStopped() ).thenReturn( true );
     executor.waitUntilFinished();
     verify( genTrans, times( 5 ) ).isFinishedOrStopped();
-    verify( genTrans, times( 2 ) ).waitUntilFinished();
   }
 
   @Test( expected = RuntimeException.class )
@@ -525,60 +521,64 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Test
   public void testExecuteStreamQueryTimeLimit() throws Exception {
-    StreamingServiceTransExecutor exec = testTimeLimitAux( 0, 0, 0 );
+    StreamingServiceTransExecutor exec = testTimeLimitAux( 0, 0, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), DataServiceConstants.TIME_LIMIT_DEFAULT );
 
-    exec = testTimeLimitAux( 0, 0, SYSTEM_TIME_LIMIT );
+    exec = testTimeLimitAux( 0, 0, "NotNumber" );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxTimeLimit(), DataServiceConstants.TIME_LIMIT_DEFAULT );
+
+    exec = testTimeLimitAux( 0, 0, String.valueOf( SYSTEM_TIME_LIMIT ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT, 0 );
+    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, 0, 0 );
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, 0, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 1, 0, SYSTEM_TIME_LIMIT );
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 1, 0, String.valueOf( SYSTEM_TIME_LIMIT ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, 0, SYSTEM_TIME_LIMIT + 1 );
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, 0, String.valueOf( SYSTEM_TIME_LIMIT + 1 ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT + 1, SYSTEM_TIME_LIMIT );
+    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT + 1, String.valueOf( SYSTEM_TIME_LIMIT ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 1 );
+    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT, String.valueOf( SYSTEM_TIME_LIMIT + 1 ) ) ;
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 1, SYSTEM_TIME_LIMIT, 0 );
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 1, SYSTEM_TIME_LIMIT, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 1, 0 );
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 1, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 2, SYSTEM_TIME_LIMIT + 1, SYSTEM_TIME_LIMIT );
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 2, SYSTEM_TIME_LIMIT + 1, String.valueOf( SYSTEM_TIME_LIMIT ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 2, SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 1 );
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT + 2, SYSTEM_TIME_LIMIT, String.valueOf( SYSTEM_TIME_LIMIT + 1 ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 2, SYSTEM_TIME_LIMIT + 1 );
+    exec = testTimeLimitAux( SYSTEM_TIME_LIMIT, SYSTEM_TIME_LIMIT + 2, String.valueOf( SYSTEM_TIME_LIMIT + 1 ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
   }
 
-  private StreamingServiceTransExecutor testTimeLimitAux( long userLimit, long metaLimit, long kettleLimit )
+  private StreamingServiceTransExecutor testTimeLimitAux( long userLimit, long metaLimit, String kettleLimit )
     throws Exception {
     when( genTrans.isFinishedOrStopped() ).thenReturn( true );
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
@@ -587,7 +587,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
     when( sqlTransGenerator.getSql() ).thenReturn( sql );
 
-    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, String.valueOf( kettleLimit ) );
+    System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, kettleLimit );
 
     dataService.setStreaming( true );
 
@@ -614,60 +614,65 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Test
   public void testExecuteStreamQueryRowLimit() throws Exception {
-    StreamingServiceTransExecutor exec = testRowLimitAux( 0, 0, 0 );
+    StreamingServiceTransExecutor exec = testRowLimitAux( 0, 0, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), DataServiceConstants.ROW_LIMIT_DEFAULT );
 
-    exec = testRowLimitAux( 0, 0, SYSTEM_ROW_LIMIT );
+    exec = testRowLimitAux( 0, 0, "NotNumber" );
+    assertNotNull( exec );
+    assertEquals( exec.getWindowMaxRowLimit(), DataServiceConstants.ROW_LIMIT_DEFAULT );
+
+    exec = testRowLimitAux( 0, 0, String.valueOf( SYSTEM_ROW_LIMIT ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( 0, SYSTEM_ROW_LIMIT, 0 );
+    exec = testRowLimitAux( 0, SYSTEM_ROW_LIMIT, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, 0, 0 );
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, 0, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 1, 0, SYSTEM_ROW_LIMIT );
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 1, 0, String.valueOf( SYSTEM_ROW_LIMIT ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, 0, SYSTEM_ROW_LIMIT + 1 );
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, 0, String.valueOf( SYSTEM_ROW_LIMIT + 1 ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( 0, SYSTEM_ROW_LIMIT + 1, SYSTEM_ROW_LIMIT );
+    exec = testRowLimitAux( 0, SYSTEM_ROW_LIMIT + 1, String.valueOf( SYSTEM_ROW_LIMIT ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( 0, SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 1 );
+    exec = testRowLimitAux( 0, SYSTEM_ROW_LIMIT, String.valueOf( SYSTEM_ROW_LIMIT + 1 ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 1, SYSTEM_ROW_LIMIT, 0 );
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 1, SYSTEM_ROW_LIMIT, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 1, 0 );
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 1, "0" );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 2, SYSTEM_ROW_LIMIT + 1, SYSTEM_ROW_LIMIT );
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 2, SYSTEM_ROW_LIMIT + 1,
+      String.valueOf( SYSTEM_ROW_LIMIT ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 2, SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 1 );
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT + 2, SYSTEM_ROW_LIMIT, String.valueOf( SYSTEM_ROW_LIMIT + 1 ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
 
-    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 2, SYSTEM_ROW_LIMIT + 1 );
+    exec = testRowLimitAux( SYSTEM_ROW_LIMIT, SYSTEM_ROW_LIMIT + 2, String.valueOf( SYSTEM_ROW_LIMIT + 1 ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxRowLimit(), SYSTEM_ROW_LIMIT );
   }
 
-  private StreamingServiceTransExecutor testRowLimitAux( int userLimit, int metaLimit, int kettleLimit )
+  private StreamingServiceTransExecutor testRowLimitAux( int userLimit, int metaLimit, String kettleLimit )
     throws Exception {
     when( genTrans.isFinishedOrStopped() ).thenReturn( true );
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
@@ -676,7 +681,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
     when( sqlTransGenerator.getSql() ).thenReturn( sql );
 
-    System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, String.valueOf( kettleLimit ) );
+    System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, kettleLimit );
 
     dataService.setStreaming( true );
 

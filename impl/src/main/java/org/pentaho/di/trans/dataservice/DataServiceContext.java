@@ -51,9 +51,8 @@ public class DataServiceContext implements Context {
     .softValues()
     .<String, DataServiceExecutor>build().asMap();
 
-  // Use an in-memory cache with timed expiration and soft value references to prevent heap memory leaks
+  // Use an in-memory cache with soft value references to prevent heap memory leaks
   private final ConcurrentMap<String, StreamingServiceTransExecutor> serviceExecutors = CacheBuilder.newBuilder()
-    .expireAfterAccess( 30, TimeUnit.SECONDS )
     .softValues()
     .<String, StreamingServiceTransExecutor>build().asMap();
 

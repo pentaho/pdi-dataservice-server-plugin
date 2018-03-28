@@ -23,7 +23,6 @@
 package org.pentaho.di.trans.dataservice.streaming.execution;
 
 import com.google.common.base.Throwables;
-import io.reactivex.disposables.Disposable;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -52,13 +51,12 @@ public class StreamingGeneratedTransExecution implements Runnable {
   private final String query;
   private final AtomicBoolean isRunning = new AtomicBoolean( false );
 
-  private Disposable buffer;
-  private Disposable fallbackBuffer;
-
   private IDataServiceClientService.StreamingMode windowMode;
   private long windowSize;
   private long windowEvery;
   private long windowLimit;
+
+  private boolean finished;
 
   /**
    * Constructor.
@@ -105,26 +103,8 @@ public class StreamingGeneratedTransExecution implements Runnable {
     try {
       if ( stream == null ) {
         this.runGenTrans( Collections.emptyList() );
-      } else if ( stream.hasCachedWindow() ) {
-        this.runGenTrans( stream.getCachedWindow() );
       } else {
-        if ( stream.getBuffer() != null ) {
-          buffer = stream.getBuffer().subscribe( list -> {
-            if ( fallbackBuffer != null ) {
-              fallbackBuffer.dispose();
-            }
-            this.runGenTrans( list );
-
-          } );
-        }
-        if ( stream.getFallbackBuffer() != null ) {
-          fallbackBuffer = stream.getFallbackBuffer().subscribe( list -> {
-            if ( buffer != null ) {
-              buffer.dispose();
-            }
-            this.runGenTrans( list );
-          } );
-        }
+        this.runGenTrans( stream.getCachedWindow() );
       }
     } catch ( KettleStepException e ) {
       throw Throwables.propagate( e );
@@ -168,15 +148,6 @@ public class StreamingGeneratedTransExecution implements Runnable {
         genTrans.stopAll();
 
         log.logDetailed( DataServiceConstants.STREAMING_GENERATED_TRANSFORMATION_STOPPED );
-
-        if ( buffer != null ) {
-          buffer.dispose();
-          buffer = null;
-        }
-        if ( fallbackBuffer != null ) {
-          fallbackBuffer.dispose();
-          fallbackBuffer = null;
-        }
       } catch ( KettleException e ) {
         throw new KettleStepException( e );
       }

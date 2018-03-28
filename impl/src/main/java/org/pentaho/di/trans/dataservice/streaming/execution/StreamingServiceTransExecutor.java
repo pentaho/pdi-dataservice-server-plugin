@@ -27,7 +27,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-import io.reactivex.Observable;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -41,9 +40,6 @@ import org.pentaho.di.trans.dataservice.streaming.StreamList;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.StepInterface;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -186,27 +182,8 @@ public class StreamingServiceTransExecutor {
         stepStream = new StreamList<>();
       }
 
-      Observable<List<RowMetaAndData>> buffer = null;
-      Observable<List<RowMetaAndData>> fallbackBuffer = null;
-
-      if ( windowEvery > 0 ) {
-        if ( timeBased ) {
-          buffer = stepStream.getStream().buffer( windowSize, windowEvery, TimeUnit.MILLISECONDS );
-          fallbackBuffer = stepStream.getStream().buffer( maxRows );
-        } else if ( rowBased ) {
-          buffer = stepStream.getStream().buffer( (int) windowSize, (int) windowEvery );
-          fallbackBuffer = stepStream.getStream()
-            .buffer( maxTime, TimeUnit.MILLISECONDS );
-        }
-      } else if ( timeBased ) {
-        buffer = stepStream.getStream().buffer( windowSize, TimeUnit.MILLISECONDS );
-        fallbackBuffer = stepStream.getStream().buffer( maxRows );
-      } else {
-        buffer = stepStream.getStream().buffer( (int) windowSize );
-        fallbackBuffer = stepStream.getStream().buffer( maxTime, TimeUnit.MILLISECONDS );
-      }
-
-      streamListener = new StreamExecutionListener( buffer, fallbackBuffer );
+      streamListener = new StreamExecutionListener( stepStream.getStream(), windowMode, windowSize, windowEvery,
+        maxRows, maxTime );
 
       serviceListeners.put( cacheId, streamListener );
     }
@@ -282,7 +259,6 @@ public class StreamingServiceTransExecutor {
             stepStream.add( rowData );
           } else if ( isRunning.compareAndSet( true, false ) ) {
             serviceTrans.stopAll();
-            serviceTrans.waitUntilFinished();
             stepStream = null;
             log.logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
           }
