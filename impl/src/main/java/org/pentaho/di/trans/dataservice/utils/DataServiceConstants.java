@@ -46,6 +46,8 @@ public final class DataServiceConstants {
   public static final long STREAMING_CACHE_DURATION = 120;
   public static final TimeUnit STREAMING_CACHE_TIME_UNIT = TimeUnit.SECONDS;
   public static final long STREAMING_CACHE_CLEANUP_INTERVAL_SECONDS = 130;
+  public static final int KETTLE_STREAMING_ROW_LIMIT = 5000;
+  public static final int KETTLE_STREAMING_TIME_LIMIT = 10000;
 
   private DataServiceConstants() {
     throw new AssertionError();

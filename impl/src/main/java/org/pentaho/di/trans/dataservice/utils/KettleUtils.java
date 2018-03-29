@@ -41,13 +41,29 @@ public class KettleUtils {
   /**
    * Get the value of a specific Kettle Property
    *
-   * @param propertyName
+   * @param propertyName The name of the property to retrieve
    * @return The property value
    * @throws KettleException
    */
-  public String getKettleProperty( String propertyName ) throws KettleException {
+  public String getKettleProperty( String propertyName ) throws KettleException  {
+    return getKettleProperty( propertyName, "" );
+  }
+
+  /**
+   * Get the value of a specific Kettle Property or a default value if present
+   *
+   * @param propertyName The name of the property to retrieve
+   * @param defaultValue An optional default value in case the property is not found
+   * @return The property value
+   * @throws KettleException
+   */
+  public String getKettleProperty( String propertyName, String defaultValue ) throws KettleException {
     // loaded in system properties at startup
-    return System.getProperty( propertyName );
+    if ( defaultValue != null && !defaultValue.isEmpty() ) {
+      return System.getProperty( propertyName, defaultValue );
+    } else {
+      return System.getProperty( propertyName );
+    }
   }
 
 }

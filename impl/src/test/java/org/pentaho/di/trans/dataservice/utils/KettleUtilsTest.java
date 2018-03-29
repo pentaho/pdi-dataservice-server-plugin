@@ -47,7 +47,43 @@ public class KettleUtilsTest {
 
   @Test
   public void testGettingMissingProperty() throws KettleException {
-    assertEquals( kettleUtils.getKettleProperty(  "NOT_VALID_PROPERTY" ),null );
+    assertEquals( kettleUtils.getKettleProperty(  "INVALID_PROPERTY" ),null );
+  }
+
+  @Test
+  public void testGettingExistingPropertyWithDefault() throws KettleException {
+    assertEquals( kettleUtils.getKettleProperty(  "VALID_PROPERTY", "someDefaultValue" ),
+        VALID_PROPERTY );
+  }
+
+  @Test
+  public void testGettingMissingPropertyWithDefault() throws KettleException {
+    assertEquals( kettleUtils.getKettleProperty(  "INVALID_PROPERTY", "someDefaultValue" ),
+        "someDefaultValue" );
+  }
+
+  @Test
+  public void testGettingExistingPropertyWithNullDefault() throws KettleException {
+    assertEquals( kettleUtils.getKettleProperty(  "VALID_PROPERTY", null ),
+        VALID_PROPERTY );
+  }
+
+  @Test
+  public void testGettingExistingPropertyWithEmptyDefault() throws KettleException {
+    assertEquals( kettleUtils.getKettleProperty(  "VALID_PROPERTY", "" ),
+        VALID_PROPERTY );
+  }
+
+  @Test
+  public void testGettingMissingPropertyWithNullDefault() throws KettleException {
+    assertEquals( kettleUtils.getKettleProperty(  "INVALID_PROPERTY", null ),
+        null );
+  }
+
+  @Test
+  public void testGettingMissingPropertyWithEmptyDefault() throws KettleException {
+    assertEquals( kettleUtils.getKettleProperty(  "INVALID_PROPERTY", "" ),
+        null );
   }
 
   @Test( expected = KettleException.class )
