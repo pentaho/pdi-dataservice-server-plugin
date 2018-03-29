@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.RowMetaAndData;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.streaming.StreamList;
 
 import java.util.List;
@@ -56,14 +57,9 @@ public class StreamExecutionListenerTest {
     streamList = new StreamList();
     buffer = streamList.getStream().buffer( 1 );
     fallbackBuffer = streamList.getStream().buffer( 1000 );
-    streamExecutionListener = new StreamExecutionListener( buffer, fallbackBuffer );
-  }
 
-  @Test
-  public void testHasCachedWindow() {
-    assertFalse( streamExecutionListener.hasCachedWindow() );
-    streamList.add( mockRowMetaAndData  );
-    assertTrue( streamExecutionListener.hasCachedWindow() );
+    streamExecutionListener = new StreamExecutionListener( streamList.getStream(),
+      IDataServiceClientService.StreamingMode.ROW_BASED, 1, 1, 10000, 1000 );
   }
 
   @Test
@@ -80,10 +76,27 @@ public class StreamExecutionListenerTest {
   }
 
   @Test
+  public void testStarterData() {
+    streamExecutionListener = new StreamExecutionListener( streamList.getStream(),
+      IDataServiceClientService.StreamingMode.ROW_BASED, 1000, 1000, 10000, 10000 );
+
+    assertTrue( streamExecutionListener.getCachedWindow().isEmpty() );
+    streamList.add( mockRowMetaAndData  );
+    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
+    assertEquals( 1, streamExecutionListener.getCachedWindow().size() );
+    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
+    streamList.add( mockRowMetaAndData2  );
+    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
+    assertEquals( 2, streamExecutionListener.getCachedWindow().size() );
+    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
+    assertSame( mockRowMetaAndData2, streamExecutionListener.getCachedWindow().get( 1 ) );
+  }
+
+  @Test
   public void testGetCachedWindowFallback() {
-    buffer = streamList.getStream().buffer( 1000 );
-    fallbackBuffer = streamList.getStream().buffer( 1 );
-    streamExecutionListener = new StreamExecutionListener( buffer, fallbackBuffer );
+    streamExecutionListener = new StreamExecutionListener( streamList.getStream(),
+      IDataServiceClientService.StreamingMode.TIME_BASED, 10000, 10000, 1, 10000 );
+    streamExecutionListener.unSubscribeStarter();
 
     assertTrue( streamExecutionListener.getCachedWindow().isEmpty() );
     streamList.add( mockRowMetaAndData  );
@@ -94,58 +107,6 @@ public class StreamExecutionListenerTest {
     assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
     assertEquals( 1, streamExecutionListener.getCachedWindow().size() );
     assertSame( mockRowMetaAndData2, streamExecutionListener.getCachedWindow().get( 0 ) );
-  }
-
-  @Test
-  public void testGetCachedWindowBufferSwitchFallback() {
-    buffer = streamList.getStream().buffer( 1 );
-    fallbackBuffer = streamList.getStream().buffer( 2 );
-    streamExecutionListener = new StreamExecutionListener( buffer, fallbackBuffer );
-
-    assertTrue( streamExecutionListener.getCachedWindow().isEmpty() );
-    streamList.add( mockRowMetaAndData  );
-    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
-    assertEquals( 1, streamExecutionListener.getCachedWindow().size() );
-    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
-
-    streamExecutionListener.unSubscribeBuffer();
-    streamList.add( mockRowMetaAndData  );
-    streamList.add( mockRowMetaAndData2  );
-    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
-    assertEquals( 2, streamExecutionListener.getCachedWindow().size() );
-    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
-    assertSame( mockRowMetaAndData2, streamExecutionListener.getCachedWindow().get( 1 ) );
-  }
-
-  @Test
-  public void testGetCachedWindowFallbackSwitchBuffer() {
-    buffer = streamList.getStream().buffer( 2 );
-    fallbackBuffer = streamList.getStream().buffer( 1 );
-    streamExecutionListener = new StreamExecutionListener( buffer, fallbackBuffer );
-
-    assertTrue( streamExecutionListener.getCachedWindow().isEmpty() );
-    streamList.add( mockRowMetaAndData  );
-    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
-    assertEquals( 1, streamExecutionListener.getCachedWindow().size() );
-    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
-
-    streamExecutionListener.unSubscribeFallbackBuffer();
-    streamList.add( mockRowMetaAndData  );
-    streamList.add( mockRowMetaAndData2  );
-    assertFalse( streamExecutionListener.getCachedWindow().isEmpty() );
-    assertEquals( 2, streamExecutionListener.getCachedWindow().size() );
-    assertSame( mockRowMetaAndData, streamExecutionListener.getCachedWindow().get( 0 ) );
-    assertSame( mockRowMetaAndData2, streamExecutionListener.getCachedWindow().get( 1 ) );
-  }
-
-  @Test
-  public void testGetBuffer() {
-    assertSame( buffer, streamExecutionListener.getBuffer() );
-  }
-
-  @Test
-  public void testGetFallbackBuffer() {
-    assertSame( fallbackBuffer, streamExecutionListener.getFallbackBuffer() );
   }
 
   @Test

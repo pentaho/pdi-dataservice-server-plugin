@@ -236,16 +236,16 @@ public class DataServiceExecutor {
             sql.getServiceName(), service.getName() ) );
       }
 
-      if ( serviceTrans == null && service.getServiceTrans() != null ) {
-        serviceTrans( service.getServiceTrans() );
-      }
-
-      // Check if theres already a serviceTransformation in the context
+      // Check if there is already a serviceTransformation in the context
       if ( service.isStreaming() ) {
         StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( service.getName() );
 
         // Gets service execution from context
         if ( serviceTransExecutor == null ) {
+          if ( serviceTrans == null && service.getServiceTrans() != null ) {
+            serviceTrans( service.getServiceTrans() );
+          }
+
           if ( serviceTrans != null ) {
             int windowMaxRowLimit = (int) getStreamingLimit( rowLimit, service.getRowLimit(), getKettleRowLimit(),
               DataServiceConstants.ROW_LIMIT_DEFAULT );
@@ -258,8 +258,11 @@ public class DataServiceExecutor {
             context.addServiceTransExecutor( serviceTransExecutor );
           }
         } else {
+          prepareExecution = false;
           serviceTrans( serviceTransExecutor.getServiceTrans() );
         }
+      } else if ( serviceTrans == null && service.getServiceTrans() != null ) {
+        serviceTrans( service.getServiceTrans() );
       }
 
       // Sets the service transformation fields
@@ -649,6 +652,7 @@ public class DataServiceExecutor {
   public void waitUntilFinished() {
     if ( !service.isStreaming() ) {
       serviceTrans.waitUntilFinished();
+      genTrans.waitUntilFinished();
     } else {
       try {
         // we need to actively wait for the genTrans to finish, because otherwise it will return on the
@@ -660,7 +664,6 @@ public class DataServiceExecutor {
         throw new RuntimeException( e );
       }
     }
-    genTrans.waitUntilFinished();
   }
 
   /**
