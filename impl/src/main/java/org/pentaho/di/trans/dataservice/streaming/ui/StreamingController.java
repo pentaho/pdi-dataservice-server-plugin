@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice.streaming.ui;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.ui.controller.AbstractController;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
+import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.dataservice.utils.KettleUtils;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
@@ -71,12 +72,14 @@ public class StreamingController extends AbstractController {
     int modelStreamingMaxRows = model.getServiceMaxRows();
     streamingMaxRows.setValue( modelStreamingMaxRows > 0
         ? Integer.toString( modelStreamingMaxRows )
-        : kettleUtils.getKettleProperty( "KETTLE_STREAMING_ROW_LIMIT" ) );
+        : kettleUtils.getKettleProperty( "KETTLE_STREAMING_ROW_LIMIT",
+              Integer.toString( DataServiceConstants.KETTLE_STREAMING_ROW_LIMIT ) ) );
 
     long modelStreamingMaxTime = model.getServiceMaxTime();
     streamingMaxTime.setValue( modelStreamingMaxTime > 0
         ? Long.toString( modelStreamingMaxTime )
-        : kettleUtils.getKettleProperty( "KETTLE_STREAMING_TIME_LIMIT" ) );
+        : kettleUtils.getKettleProperty( "KETTLE_STREAMING_TIME_LIMIT",
+              Integer.toString( DataServiceConstants.KETTLE_STREAMING_TIME_LIMIT ) ) );
 
     streamingTab.setVisible( model.isStreaming() );
 
