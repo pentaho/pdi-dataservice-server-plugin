@@ -36,6 +36,8 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -92,6 +94,14 @@ public class DataServiceContextTest extends BaseTest {
     assertThat( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ), sameInstance( streamingExecutor ) );
     context.removeServiceTransExecutor( STREAMING_EXECUTOR_ID );
     assertNull( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ) );
+    verify( streamingExecutor ).stopAll();
+  }
+
+  @Test
+  public void testRemoveInexistingServiceTransExecutor() throws Exception {
+    assertNull( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ) );
+    context.removeServiceTransExecutor( STREAMING_EXECUTOR_ID );
+    verify( streamingExecutor, times( 0 ) ).stopAll();
   }
 
   protected Matcher<DataServiceMetaStoreUtil> validMetaStoreUtil() {

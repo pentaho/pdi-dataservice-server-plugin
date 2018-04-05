@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -87,5 +87,6 @@ public class DataServiceStepDeleteExtensionPointPluginTest {
     plugin.callExtensionPoint( null, steps );
 
     verify( delegate, times( 1 ) ).removeDataService( dataService );
+    verify( context, times( 1 ) ).removeServiceTransExecutor( dataService.getName() );
   }
 }

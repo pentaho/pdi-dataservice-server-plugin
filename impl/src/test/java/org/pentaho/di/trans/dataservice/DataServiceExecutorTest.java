@@ -77,6 +77,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -88,7 +89,15 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.pentaho.di.trans.dataservice.testing.answers.ReturnsSelf.RETURNS_SELF;
 
 @RunWith( org.mockito.runners.MockitoJUnitRunner.class )
@@ -100,10 +109,12 @@ public class DataServiceExecutorTest extends BaseTest {
   private long SYSTEM_TIME_LIMIT = 99999;
   private int SYSTEM_ROW_LIMIT = 99999;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTransChanged;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
   @Mock SqlTransGenerator sqlTransGenerator;
   @Mock BiConsumer<String, TransMeta> mutator;
   @Mock TransMeta serviceTransMeta;
+  @Mock TransMeta serviceTransMetaChanged;
   @Mock StreamingServiceTransExecutor serviceTransExecutor;
 
   @Before
@@ -222,6 +233,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
     when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
     when( serviceTransExecutor.getId() ).thenReturn( DATA_SERVICE_NAME );
+    when( serviceTrans.getTransMeta() ).thenReturn( dataService.getServiceTrans() );
 
     context.addServiceTransExecutor( serviceTransExecutor );
     dataService.setStreaming( true );
@@ -236,8 +248,22 @@ public class DataServiceExecutorTest extends BaseTest {
       rowLimit( 50 ).
       build();
 
-    verify( serviceTransExecutor ).getServiceTrans();
+    verify( serviceTransExecutor, times( 2 ) ).getServiceTrans();
     assertSame( executor.getServiceTrans(), serviceTrans );
+
+    when( serviceTrans.getTransMeta() ).thenReturn( serviceTransMetaChanged );
+    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTransChanged );
+
+    executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      build();
+
+    assertNotSame( executor.getServiceTrans(), serviceTrans );
   }
 
   @Test
@@ -553,7 +579,7 @@ public class DataServiceExecutorTest extends BaseTest {
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 
-    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT, String.valueOf( SYSTEM_TIME_LIMIT + 1 ) ) ;
+    exec = testTimeLimitAux( 0, SYSTEM_TIME_LIMIT, String.valueOf( SYSTEM_TIME_LIMIT + 1 ) );
     assertNotNull( exec );
     assertEquals( exec.getWindowMaxTimeLimit(), SYSTEM_TIME_LIMIT );
 

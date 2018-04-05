@@ -248,4 +248,26 @@ public class StreamingServiceTransExecutorTest {
     verify( serviceTrans ).stopAll( );
     verify( log ).logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
   }
+
+  @Test
+  public void testStopAll() {
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 0 );
+
+    serviceExecutor.stopAll();
+
+    verify( serviceStep ).stopAll();
+    verify( serviceTrans ).stopAll();
+    verify( serviceTrans ).waitUntilFinished();
+    verify( log ).logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
+  }
+
+  @Test
+  public void testStopAllNoServiceRunning() {
+    serviceExecutor.stopAll();
+
+    verify( serviceStep, times( 0 ) ).stopAll();
+    verify( serviceTrans, times( 0 ) ).stopAll();
+    verify( serviceTrans, times( 0 ) ).waitUntilFinished();
+    verify( log, times( 0 ) ).logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
+  }
 }

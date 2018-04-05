@@ -240,6 +240,14 @@ public class DataServiceExecutor {
       if ( service.isStreaming() ) {
         StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( service.getName() );
 
+        if ( serviceTransExecutor != null
+          && !serviceTransExecutor.getServiceTrans().getTransMeta().getModifiedDate()
+            .equals( service.getServiceTrans().getModifiedDate() ) ) {
+          context.removeServiceTransExecutor( serviceTransExecutor.getId() );
+          serviceTransExecutor.stopAll();
+          serviceTransExecutor = null;
+        }
+
         // Gets service execution from context
         if ( serviceTransExecutor == null ) {
           if ( serviceTrans == null && service.getServiceTrans() != null ) {
