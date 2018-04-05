@@ -31,6 +31,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
@@ -55,10 +56,10 @@ public class DataServiceContext implements Context {
     .<String, DataServiceExecutor>build().asMap();
 
   // Use an in-memory cache with soft value references to prevent heap memory leaks
-  private final ConcurrentMap<String, StreamingServiceTransExecutor> serviceExecutors = CacheBuilder.newBuilder()
+  private final ConcurrentMap<StreamServiceKey, StreamingServiceTransExecutor> serviceExecutors = CacheBuilder.newBuilder()
     .expireAfterAccess( 1, TimeUnit.DAYS )
-    .removalListener( new RemovalListener<String, StreamingServiceTransExecutor>() {
-      public void onRemoval( RemovalNotification<String, StreamingServiceTransExecutor> removal ) {
+    .removalListener( new RemovalListener<StreamServiceKey, StreamingServiceTransExecutor>() {
+      public void onRemoval( RemovalNotification<StreamServiceKey, StreamingServiceTransExecutor> removal ) {
         StreamingServiceTransExecutor item = removal.getValue();
         LogChannelInterface log = item.getServiceTrans().getLogChannel();
 
@@ -68,7 +69,7 @@ public class DataServiceContext implements Context {
       }
     } )
     .softValues()
-    .<String, StreamingServiceTransExecutor>build().asMap();
+    .<StreamServiceKey, StreamingServiceTransExecutor>build().asMap();
 
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
@@ -146,16 +147,25 @@ public class DataServiceContext implements Context {
 
   @Override
   public void addServiceTransExecutor( final StreamingServiceTransExecutor serviceExecutor ) {
-    serviceExecutors.putIfAbsent( serviceExecutor.getId(), serviceExecutor );
+    serviceExecutors.putIfAbsent( serviceExecutor.getKey(), serviceExecutor );
   }
 
   @Override
-  public StreamingServiceTransExecutor getServiceTransExecutor( String id ) {
-    return serviceExecutors.get( id );
+  public StreamingServiceTransExecutor getServiceTransExecutor( StreamServiceKey key ) {
+    return serviceExecutors.get( key );
   }
 
   @Override
-  public void removeServiceTransExecutor( String id ) {
-    serviceExecutors.remove( id );
+  public void removeServiceTransExecutor( StreamServiceKey key ) {
+    serviceExecutors.remove( key );
+  }
+
+  @Override
+  public void removeServiceTransExecutor( String dataServiceName ) {
+    for ( StreamServiceKey key : serviceExecutors.keySet() ) {
+      if ( key.getDataServiceId().equals( dataServiceName ) ) {
+        serviceExecutors.remove( key );
+      }
+    }
   }
 }

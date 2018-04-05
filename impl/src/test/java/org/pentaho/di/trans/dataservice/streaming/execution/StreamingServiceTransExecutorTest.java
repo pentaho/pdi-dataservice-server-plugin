@@ -35,6 +35,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
@@ -73,10 +74,11 @@ public class StreamingServiceTransExecutorTest {
   @Mock StepInterface serviceStep;
   @Mock RowMetaInterface rowMetaInterface;
   @Mock LogChannelInterface log;
+  @Mock StreamServiceKey streamKey;
 
   @Before
   public void setup() throws Exception {
-    serviceExecutor = new StreamingServiceTransExecutor( MOCK_ID, serviceTrans, MOCK_SERVICE_STEP_NAME,
+    serviceExecutor = new StreamingServiceTransExecutor( streamKey, serviceTrans, MOCK_SERVICE_STEP_NAME,
       MOCK_ROW_LIMIT, MOCK_TIME_LIMIT );
     when( serviceTrans.findRunThread( MOCK_SERVICE_STEP_NAME ) ).thenReturn( serviceStep );
     when( serviceTrans.getLogChannel( ) ).thenReturn( log );
@@ -103,7 +105,7 @@ public class StreamingServiceTransExecutorTest {
 
   @Test
   public void testGetId() {
-    assertSame( MOCK_ID, serviceExecutor.getId() );
+    assertSame( streamKey, serviceExecutor.getKey() );
   }
 
   @Test ( expected = RuntimeException.class )
@@ -195,6 +197,20 @@ public class StreamingServiceTransExecutorTest {
     testBufferAux();
   }
 
+  @Test
+  public void testGetDistinctBuffers() throws Exception {
+    RowMetaInterface rowMeta = serviceTrans.getTransMeta().getStepFields( MOCK_SERVICE_STEP_NAME );
+    Object[] data = new Object[] { 0 };
+
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 1, 10 );
+
+    testBufferAux( rowMeta, data, false );
+
+    serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 1, 2 );
+
+    testBufferAux( rowMeta, data, false );
+  }
+
   private void testBufferAux() throws Exception {
     RowMetaInterface rowMeta = serviceTrans.getTransMeta().getStepFields( MOCK_SERVICE_STEP_NAME );
     Object[] data = new Object[] { 0 };
@@ -225,6 +241,8 @@ public class StreamingServiceTransExecutorTest {
 
   @Test
   public void testGetBufferCleanup() throws Exception {
+    when( serviceTrans.isRunning() ).thenReturn( true );
+
     serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 0 );
 
     ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );
@@ -255,9 +273,7 @@ public class StreamingServiceTransExecutorTest {
 
     serviceExecutor.stopAll();
 
-    verify( serviceStep ).stopAll();
     verify( serviceTrans ).stopAll();
-    verify( serviceTrans ).waitUntilFinished();
     verify( log ).logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
   }
 
@@ -265,9 +281,7 @@ public class StreamingServiceTransExecutorTest {
   public void testStopAllNoServiceRunning() {
     serviceExecutor.stopAll();
 
-    verify( serviceStep, times( 0 ) ).stopAll();
     verify( serviceTrans, times( 0 ) ).stopAll();
-    verify( serviceTrans, times( 0 ) ).waitUntilFinished();
     verify( log, times( 0 ) ).logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
   }
 }

@@ -29,13 +29,18 @@ import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyMap;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,8 +53,19 @@ import static org.mockito.Mockito.when;
 public class DataServiceContextTest extends BaseTest {
   public static final String EXECUTOR_ID = "Executor ID";
   public static final String STREAMING_EXECUTOR_ID = "Streaming Executor ID";
+  public static final String STREAMING_EXECUTOR_ID3 = "Streaming Executor ID X";
+
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) DataServiceExecutor dataServiceExecutor;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingServiceTransExecutor streamingExecutor;
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingServiceTransExecutor streamingExecutor2;
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingServiceTransExecutor streamingExecutor3;
+
+  private StreamServiceKey streamKey;
+  private StreamServiceKey streamKey2;
+  private StreamServiceKey streamKey3;
+
+  private Map<String, String> mockStreamKeyParams;
+  private Map<String, String> mockStreamKeyParams2;
 
   @Before
   public void setUp() throws Exception {
@@ -58,8 +74,18 @@ public class DataServiceContextTest extends BaseTest {
       cacheManager, uiFactory, logChannel
     );
 
+    mockStreamKeyParams = new HashMap();
+    mockStreamKeyParams2 = new HashMap();
+    mockStreamKeyParams2.put( "DummyKey", "DummyValue" );
+
+    streamKey = StreamServiceKey.create( STREAMING_EXECUTOR_ID, mockStreamKeyParams );
+    streamKey2 = StreamServiceKey.create( STREAMING_EXECUTOR_ID, mockStreamKeyParams2 );
+    streamKey3 = StreamServiceKey.create( STREAMING_EXECUTOR_ID3, mockStreamKeyParams );
+
     when( dataServiceExecutor.getId() ).thenReturn( EXECUTOR_ID );
-    when( streamingExecutor.getId() ).thenReturn( STREAMING_EXECUTOR_ID );
+    when( streamingExecutor.getKey() ).thenReturn( streamKey );
+    when( streamingExecutor2.getKey() ).thenReturn( streamKey2 );
+    when( streamingExecutor3.getKey() ).thenReturn( streamKey3 );
 
     assertThat( context.getCacheManager(), sameInstance( cacheManager ) );
     assertThat( context.getUIFactory(), sameInstance( uiFactory ) );
@@ -89,17 +115,41 @@ public class DataServiceContextTest extends BaseTest {
 
   @Test
   public void testServiceTransExecutor() throws Exception {
-    assertNull( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ) );
+    assertNull( context.getServiceTransExecutor( streamKey ) );
     context.addServiceTransExecutor( streamingExecutor );
-    assertThat( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ), sameInstance( streamingExecutor ) );
-    context.removeServiceTransExecutor( STREAMING_EXECUTOR_ID );
-    assertNull( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ) );
+    assertThat( context.getServiceTransExecutor( streamKey ), sameInstance( streamingExecutor ) );
+    context.removeServiceTransExecutor( streamKey );
+    assertNull( context.getServiceTransExecutor( streamKey ) );
     verify( streamingExecutor ).stopAll();
   }
 
   @Test
+  public void testRemoveServiceTransExecutor() throws Exception {
+    assertNull( context.getServiceTransExecutor( streamKey ) );
+    assertNull( context.getServiceTransExecutor( streamKey2 ) );
+    assertNull( context.getServiceTransExecutor( streamKey3 ) );
+    context.addServiceTransExecutor( streamingExecutor );
+    context.addServiceTransExecutor( streamingExecutor2 );
+    context.addServiceTransExecutor( streamingExecutor3 );
+
+    assertThat( context.getServiceTransExecutor( streamKey ), sameInstance( streamingExecutor ) );
+    assertThat( context.getServiceTransExecutor( streamKey2 ), sameInstance( streamingExecutor2 ) );
+    assertThat( context.getServiceTransExecutor( streamKey3 ), sameInstance( streamingExecutor3 ) );
+
+    context.removeServiceTransExecutor( STREAMING_EXECUTOR_ID );
+    assertNull( context.getServiceTransExecutor( streamKey ) );
+    assertNull( context.getServiceTransExecutor( streamKey2 ) );
+    assertThat( context.getServiceTransExecutor( streamKey3 ), sameInstance( streamingExecutor3 ) );
+
+    context.removeServiceTransExecutor( STREAMING_EXECUTOR_ID3 );
+    assertNull( context.getServiceTransExecutor( streamKey ) );
+    assertNull( context.getServiceTransExecutor( streamKey2 ) );
+    assertNull( context.getServiceTransExecutor( streamKey3 ) );
+  }
+
+  @Test
   public void testRemoveInexistingServiceTransExecutor() throws Exception {
-    assertNull( context.getServiceTransExecutor( STREAMING_EXECUTOR_ID ) );
+    assertNull( context.getServiceTransExecutor( streamKey ) );
     context.removeServiceTransExecutor( STREAMING_EXECUTOR_ID );
     verify( streamingExecutor, times( 0 ) ).stopAll();
   }

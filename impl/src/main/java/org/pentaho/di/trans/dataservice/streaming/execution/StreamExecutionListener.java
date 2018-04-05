@@ -175,9 +175,9 @@ public class StreamExecutionListener {
         this.fallbackSubject.dispose();
         this.fallbackSubject = this.fallbackBuffer.subscribe( bufferList -> processFallbackWindow( bufferList ) );
       }
-      hasWindow.set( true );
 
       unSubscribeStarter();
+      hasWindow.set( true );
 
       setCacheWindow( list );
       isProcessing.set( false );
@@ -195,9 +195,9 @@ public class StreamExecutionListener {
         this.subject.dispose();
         this.subject = this.buffer.subscribe( bufferList -> processBufferWindow( bufferList ) );
       }
-      hasWindow.set( true );
 
       unSubscribeStarter();
+      hasWindow.set( true );
 
       setCacheWindow( list );
       isProcessing.set( false );

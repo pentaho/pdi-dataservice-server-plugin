@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -81,75 +81,77 @@ public class ServiceCache extends StepOptimization {
   }
 
   @Override public boolean activate( final DataServiceExecutor executor, StepInterface stepInterface ) {
-    final LogChannelInterface logChannel = executor.getGenTrans().getLogChannel();
+    if ( !executor.getService().isStreaming() ) {
+      final LogChannelInterface logChannel = executor.getGenTrans().getLogChannel();
 
-    for ( CachedService availableCache : getAvailableCache( executor ).values() ) {
-      try {
-        ListenableFuture<Integer> replay = factory.createCachedServiceLoader( availableCache ).replay( executor );
-        addReplayCallback( logChannel, replay );
-        return true;
-      } catch ( Throwable e ) {
-        logChannel.logError( "Unable to replay from cache", e );
-      }
-    }
-
-    CachedService.CacheKey rootKey = createRootKey( executor );
-    final Map<CachedService.CacheKey, ServiceObserver> runningServices = factory.getRunningServices();
-    if ( runningServices.containsKey( rootKey ) ) {
-      try {
-        ListenableFuture<Integer> replay =
-          factory.createCachedServiceLoader( () -> runningServices.get( rootKey ).rows() ).replay( executor );
-        addReplayCallback( logChannel, replay );
-        return true;
-      } catch ( KettleException e ) {
-        logChannel.logError( "Unable to replay from running service" );
-      }
-    }
-
-    ServiceObserver serviceObserver = factory.createObserver( executor );
-    //only allow replay from this running trans if it's going to return all the rows
-    if ( CachedService.calculateRank( executor ) == Integer.MAX_VALUE ) {
-      runningServices.put( rootKey, serviceObserver );
-    }
-    // Allow service transformation to run, observe rows
-    Futures.addCallback( serviceObserver.install(), new FutureCallback<CachedService>() {
-      @Override public void onSuccess( CachedService result ) {
-        if ( executor.isStopped() || executor.hasErrors() ) {
-          runningServices.remove( rootKey );
-          return;
+      for ( CachedService availableCache : getAvailableCache( executor ).values() ) {
+        try {
+          ListenableFuture<Integer> replay = factory.createCachedServiceLoader( availableCache ).replay( executor );
+          addReplayCallback( logChannel, replay );
+          return true;
+        } catch ( Throwable e ) {
+          logChannel.logError( "Unable to replay from cache", e );
         }
+      }
 
-        Cache<CachedService.CacheKey, CachedService>
+      CachedService.CacheKey rootKey = createRootKey( executor );
+      final Map<CachedService.CacheKey, ServiceObserver> runningServices = factory.getRunningServices();
+      if ( runningServices.containsKey( rootKey ) ) {
+        try {
+          ListenableFuture<Integer> replay =
+            factory.createCachedServiceLoader( () -> runningServices.get( rootKey ).rows() ).replay( executor );
+          addReplayCallback( logChannel, replay );
+          return true;
+        } catch ( KettleException e ) {
+          logChannel.logError( "Unable to replay from running service" );
+        }
+      }
+
+      ServiceObserver serviceObserver = factory.createObserver( executor );
+      //only allow replay from this running trans if it's going to return all the rows
+      if ( CachedService.calculateRank( executor ) == Integer.MAX_VALUE ) {
+        runningServices.put( rootKey, serviceObserver );
+      }
+      // Allow service transformation to run, observe rows
+      Futures.addCallback( serviceObserver.install(), new FutureCallback<CachedService>() {
+        @Override public void onSuccess( CachedService result ) {
+          if ( executor.isStopped() || executor.hasErrors() ) {
+            runningServices.remove( rootKey );
+            return;
+          }
+
+          Cache<CachedService.CacheKey, CachedService>
             cache =
             factory.getCache( ServiceCache.this, executor.getServiceName() );
-        CachedService.CacheKey key = createRootKey( executor );
-        // If result set is complete, order is not important
-        if ( result.isComplete() ) {
-          key = key.withoutOrder();
-        }
-        if ( cache.putIfAbsent( key, result ) ) {
-          logChannel.logBasic( "Service Transformation results cached", key );
-        } else {
-          try {
-            CachedService existing = checkNotNull( cache.get( key ) );
-            // If the existing result set can't answer this query, replace it
-            if ( !existing.answersQuery( executor ) && cache.replace( key, existing, result ) ) {
-              logChannel.logBasic( "Service Transformation cache updated", key );
-            } else {
-              logChannel.logDetailed( "Service Transformation cache was not updated", key );
-            }
-          } catch ( Throwable t ) {
-            onFailure( t );
+          CachedService.CacheKey key = createRootKey( executor );
+          // If result set is complete, order is not important
+          if ( result.isComplete() ) {
+            key = key.withoutOrder();
           }
+          if ( cache.putIfAbsent( key, result ) ) {
+            logChannel.logBasic( "Service Transformation results cached", key );
+          } else {
+            try {
+              CachedService existing = checkNotNull( cache.get( key ) );
+              // If the existing result set can't answer this query, replace it
+              if ( !existing.answersQuery( executor ) && cache.replace( key, existing, result ) ) {
+                logChannel.logBasic( "Service Transformation cache updated", key );
+              } else {
+                logChannel.logDetailed( "Service Transformation cache was not updated", key );
+              }
+            } catch ( Throwable t ) {
+              onFailure( t );
+            }
+          }
+          runningServices.remove( rootKey );
         }
-        runningServices.remove( rootKey );
-      }
 
-      @Override public void onFailure( Throwable t ) {
-        runningServices.remove( rootKey );
-        logChannel.logError( "Cache failed to observe service transformation", t );
-      }
-    }, factory.getExecutorService() );
+        @Override public void onFailure( Throwable t ) {
+          runningServices.remove( rootKey );
+          logChannel.logError( "Cache failed to observe service transformation", t );
+        }
+      }, factory.getExecutorService() );
+    }
     return false;
   }
 
