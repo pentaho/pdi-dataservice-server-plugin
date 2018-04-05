@@ -24,6 +24,8 @@ package org.pentaho.di.trans.dataservice;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
@@ -32,6 +34,7 @@ import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
+import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
@@ -53,6 +56,17 @@ public class DataServiceContext implements Context {
 
   // Use an in-memory cache with soft value references to prevent heap memory leaks
   private final ConcurrentMap<String, StreamingServiceTransExecutor> serviceExecutors = CacheBuilder.newBuilder()
+    .expireAfterAccess( 1, TimeUnit.DAYS )
+    .removalListener( new RemovalListener<String, StreamingServiceTransExecutor>() {
+      public void onRemoval( RemovalNotification<String, StreamingServiceTransExecutor> removal ) {
+        StreamingServiceTransExecutor item = removal.getValue();
+        LogChannelInterface log = item.getServiceTrans().getLogChannel();
+
+        item.stopAll();
+
+        log.logDebug( DataServiceConstants.STREAMING_SERVICE_CACHE_REMOVED + removal.getKey() );
+      }
+    } )
     .softValues()
     .<String, StreamingServiceTransExecutor>build().asMap();
 

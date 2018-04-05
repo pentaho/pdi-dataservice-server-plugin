@@ -220,7 +220,16 @@ public class StreamingServiceTransExecutor {
   private void startService() {
     try {
       lastCacheCleanupMillis = System.currentTimeMillis();
+
+      serviceTrans.cleanup();
+      serviceTrans.prepareExecution( null );
       serviceTrans.startThreads();
+      serviceTrans.addTransListener( new TransAdapter() {
+        @Override
+        public void transFinished( Trans trans ) throws KettleException {
+          isRunning.set( false );
+        }
+      } );
 
       StepInterface serviceStep = serviceTrans.findRunThread( serviceStepName );
       if ( serviceStep == null ) {
@@ -238,7 +247,7 @@ public class StreamingServiceTransExecutor {
          */
         @Override
         public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-          // Simply pass along the row to the other transformation (to the Injector step)
+          // Add the row to the data stream. If no listeners are registered then the service transformation is stopped.
           LogChannelInterface log = serviceTrans.getLogChannel();
 
           try {
@@ -257,10 +266,8 @@ public class StreamingServiceTransExecutor {
             rowData.setData( row );
 
             stepStream.add( rowData );
-          } else if ( isRunning.compareAndSet( true, false ) ) {
-            serviceTrans.stopAll();
-            stepStream = null;
-            log.logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
+          } else {
+            stopService();
           }
         }
       } );
@@ -288,5 +295,30 @@ public class StreamingServiceTransExecutor {
   public void clearCache() {
     serviceListeners.invalidateAll();
     serviceListeners.cleanUp();
+  }
+
+  /**
+   * Stops the transformation.
+   */
+  private void stopService() {
+    if ( isRunning.compareAndSet( true, false ) ) {
+      LogChannelInterface log = serviceTrans.getLogChannel();
+
+      StepInterface serviceStep = serviceTrans.findRunThread( serviceStepName );
+
+      serviceStep.stopAll();
+
+      serviceTrans.stopAll();
+      serviceTrans.waitUntilFinished();
+      log.logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
+    }
+  }
+
+  /**
+   * Stops the transformation and cleans the cached executions.
+   */
+  public void stopAll() {
+    stopService();
+    clearCache();
   }
 }
