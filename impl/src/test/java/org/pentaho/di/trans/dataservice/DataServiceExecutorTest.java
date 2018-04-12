@@ -52,6 +52,7 @@ import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowListener;
@@ -62,6 +63,7 @@ import org.pentaho.metastore.api.IMetaStore;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +110,7 @@ public class DataServiceExecutorTest extends BaseTest {
   public static final String CONTAINER_ID = "12345";
   private long SYSTEM_TIME_LIMIT = 99999;
   private int SYSTEM_ROW_LIMIT = 99999;
+  private StreamServiceKey key;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTransChanged;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans genTrans;
@@ -116,9 +119,12 @@ public class DataServiceExecutorTest extends BaseTest {
   @Mock TransMeta serviceTransMeta;
   @Mock TransMeta serviceTransMetaChanged;
   @Mock StreamingServiceTransExecutor serviceTransExecutor;
+  @Mock StreamServiceKey streamKey;
 
   @Before
   public void setUp() throws Exception {
+    key = StreamServiceKey.create( dataService.getName(), Collections.emptyMap() );
+
     doAnswer( RETURNS_SELF ).when( transMeta ).realClone( anyBoolean() );
     doAnswer( RETURNS_SELF ).when( transMeta ).clone();
 
@@ -192,6 +198,24 @@ public class DataServiceExecutorTest extends BaseTest {
   }
 
   @Test( expected =  KettleException.class )
+  public void testBuilderBuildNoSqlServiceName() throws Exception {
+    SQL sql = mock( SQL.class );
+    IMetaStore metastore = mock( IMetaStore.class );
+
+    when( sql.getServiceName() ).thenReturn( null );
+
+    new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      build();
+  }
+
+  @Test( expected =  KettleException.class )
   public void testBuilderBuildNullQueryServiceName() throws Exception {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
 
@@ -232,7 +256,7 @@ public class DataServiceExecutorTest extends BaseTest {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
 
     when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
-    when( serviceTransExecutor.getId() ).thenReturn( DATA_SERVICE_NAME );
+    when( serviceTransExecutor.getKey() ).thenReturn( key );
     when( serviceTrans.getTransMeta() ).thenReturn( dataService.getServiceTrans() );
 
     context.addServiceTransExecutor( serviceTransExecutor );
@@ -300,6 +324,15 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Test
   public void testExecuteQuery() throws Exception {
+   testExecuteQueryAux( true );
+  }
+
+  @Test
+  public void testExecuteQueryOptimizationsDisabled() throws Exception {
+    testExecuteQueryAux( false );
+  }
+
+  public void testExecuteQueryAux( boolean optimizationsEnabled ) throws Exception {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
     StepInterface serviceStep = serviceTrans.findRunThread( DATA_SERVICE_STEP );
     StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
@@ -307,7 +340,7 @@ public class DataServiceExecutorTest extends BaseTest {
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[0] );
 
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
-    when( optimization.isEnabled() ).thenReturn( true );
+    when( optimization.isEnabled() ).thenReturn( optimizationsEnabled );
     dataService.getPushDownOptimizationMeta().add( optimization );
 
     IMetaStore metastore = mock( IMetaStore.class );
@@ -351,7 +384,12 @@ public class DataServiceExecutorTest extends BaseTest {
     RowListener clientRowListener = listenerArgumentCaptor.getValue();
     genTransStartup.verify( genTrans ).startThreads();
 
-    serviceTransStartup.verify( optimization ).activate( executor );
+    if ( optimizationsEnabled ) {
+      serviceTransStartup.verify( optimization ).activate( executor );
+    } else {
+      serviceTransStartup.verify( optimization, times( 0 ) ).activate( executor );
+    }
+
     serviceTransStartup.verify( serviceStep ).addRowListener( listenerArgumentCaptor.capture() );
     serviceTransStartup.verify( serviceTrans ).startThreads();
 
@@ -632,7 +670,7 @@ public class DataServiceExecutorTest extends BaseTest {
       windowLimit( 0 ).
       build();
 
-    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( key );
     context.removeServiceTransExecutor( dataService.getName() );
 
     return exec;
@@ -726,7 +764,7 @@ public class DataServiceExecutorTest extends BaseTest {
       windowLimit( 0 ).
       build();
 
-    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( dataService.getName() );
+    StreamingServiceTransExecutor exec = context.getServiceTransExecutor( key );
     context.removeServiceTransExecutor( dataService.getName() );
 
     return exec;

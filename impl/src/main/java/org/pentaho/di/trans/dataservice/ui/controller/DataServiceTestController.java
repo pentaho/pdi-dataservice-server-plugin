@@ -52,7 +52,7 @@ import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
-import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.ui.BindingConverters;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
@@ -342,7 +342,10 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   public void executeSql() throws KettleException {
     resetMetrics();
     dataServiceExec = getNewDataServiceExecutor( true );
-    updateOptimizationImpact( dataServiceExec );
+
+    if ( !dataServiceExec.getServiceTrans().isRunning() ) {
+      updateOptimizationImpact( dataServiceExec );
+    }
     updateModel( dataServiceExec );
 
     AnnotationsQueryService annotationsQuery = getAnnotationsQueryService();
@@ -471,7 +474,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   @SuppressWarnings( "unused" ) // Bound via XUL
   public void previewQueries() throws KettleException {
     DataServiceExecutor dataServiceExec = getNewDataServiceExecutor( false );
-    updateOptimizationImpact( dataServiceExec );
+    if ( !dataServiceExec.getServiceTrans().isRunning() ) {
+      updateOptimizationImpact( dataServiceExec );
+    }
   }
 
   private void updateOptimizationImpact( DataServiceExecutor dataServiceExec ) {
@@ -604,11 +609,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       stopDataService( dataServiceExec );
 
       String streamingServiceName = dataService.getName();
-      StreamingServiceTransExecutor streamingServiceCache = context.getServiceTransExecutor( streamingServiceName );
-      if ( streamingServiceCache != null ) {
-        streamingServiceCache.clearCache();
-        context.removeServiceTransExecutor( streamingServiceName );
-      }
+      StreamServiceKey key = StreamServiceKey.create( streamingServiceName, dataServiceExec.getParameters() );
+
+      context.removeServiceTransExecutor( key );
     }
 
     model.setExecuting( false );

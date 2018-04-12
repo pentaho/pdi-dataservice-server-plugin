@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -66,15 +66,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.ignoreStubs;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 
 /**
@@ -155,6 +147,24 @@ public class ServiceCacheTest {
     assertThat( serviceCache.activate( executor, serviceStep ), is( false ) );
 
     verify( cache ).putIfAbsent( key.withoutOrder(), cachedService );
+    verifyNoMoreInteractions( ignoreStubs( cache ) );
+  }
+
+  @Test
+  public void testActivateObserveStreaming() throws Exception {
+    DataServiceExecutor executor = dataServiceStreamingExecutor( "SELECT * FROM MOCK_SERVICE ORDER BY ID" );
+    CachedService.CacheKey key = CachedService.CacheKey.create( executor );
+    CachedService cachedService = CachedService.complete( ImmutableList.<RowMetaAndData>of() );
+
+    ServiceObserver observer = mock( ServiceObserver.class );
+    when( factory.createObserver( executor ) ).thenReturn( observer );
+    when( observer.install() ).thenReturn( Futures.immediateFuture( cachedService ) );
+
+    when( cache.get( any( CachedService.CacheKey.class ) ) ).thenReturn( null );
+    when( cache.putIfAbsent( key.withoutOrder(), cachedService ) ).thenReturn( true );
+    assertThat( serviceCache.activate( executor, serviceStep ), is( false ) );
+
+    verify( cache, times( 0 ) ).putIfAbsent( key.withoutOrder(), cachedService );
     verifyNoMoreInteractions( ignoreStubs( cache ) );
   }
 
@@ -324,6 +334,15 @@ public class ServiceCacheTest {
   }
 
   private DataServiceExecutor dataServiceExecutor( String query ) throws KettleException {
+    return new DataServiceExecutor.Builder( new SQL( query ), dataServiceMeta, context )
+      .sqlTransGenerator( sqlTransGenerator )
+      .serviceTrans( serviceTrans )
+      .genTrans( genTrans )
+      .build();
+  }
+
+  private DataServiceExecutor dataServiceStreamingExecutor( String query ) throws KettleException {
+    dataServiceMeta.setStreaming( true );
     return new DataServiceExecutor.Builder( new SQL( query ), dataServiceMeta, context )
       .sqlTransGenerator( sqlTransGenerator )
       .serviceTrans( serviceTrans )

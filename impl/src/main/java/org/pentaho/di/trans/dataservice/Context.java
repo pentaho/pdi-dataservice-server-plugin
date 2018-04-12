@@ -25,6 +25,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
@@ -115,16 +116,24 @@ public interface Context {
   /**
    * Get {@link StreamingServiceTransExecutor} from the service transformations executions cache.
    *
-   * @param id The ID of the requested executor.   *
-   * @return The {@link StreamingServiceTransExecutor} with the given ID from cache if exists, null otherwise.
+   * @param key The key of the requested executor.
+   * @return The {@link StreamingServiceTransExecutor} with the given key from cache if exists, null otherwise.
    */
-  StreamingServiceTransExecutor getServiceTransExecutor( String id );
+  StreamingServiceTransExecutor getServiceTransExecutor( StreamServiceKey key );
 
   /**
-   * Removes the {@link StreamingServiceTransExecutor} with the given ID from the
+   * Removes the {@link StreamingServiceTransExecutor} with the given key from the
    * service transformations executors cache.
    *
-   * @param id The ID of the executor to me removed.
+   * @param key The key of the executor to be removed.
    */
-  void removeServiceTransExecutor( String id );
+  void removeServiceTransExecutor( StreamServiceKey key );
+
+  /**
+   * Removes all {@link StreamingServiceTransExecutor} with the given data service name from the
+   * service transformations executors cache.
+   *
+   * @param dataServiceName The name of the data service to be removed.
+   */
+  void removeServiceTransExecutor( String dataServiceName );
 }

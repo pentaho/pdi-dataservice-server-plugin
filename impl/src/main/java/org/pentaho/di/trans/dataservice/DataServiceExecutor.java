@@ -51,6 +51,7 @@ import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
@@ -230,7 +231,7 @@ public class DataServiceExecutor {
       RowMetaInterface serviceFields;
       int serviceRowLimit = getServiceRowLimit( service );
 
-      if ( sql.getServiceName() != null && !sql.getServiceName().equals( service.getName() ) ) {
+      if ( sql.getServiceName() == null || !sql.getServiceName().equals( service.getName() ) ) {
         throw new KettleException(
           BaseMessages.getString( PKG, "DataServiceExecutor.Error.TableNameAndDataServiceNameDifferent",
             sql.getServiceName(), service.getName() ) );
@@ -238,12 +239,13 @@ public class DataServiceExecutor {
 
       // Check if there is already a serviceTransformation in the context
       if ( service.isStreaming() ) {
-        StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( service.getName() );
+        StreamServiceKey key = StreamServiceKey.create( service.getName(), parameters );
+        StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( key );
 
         if ( serviceTransExecutor != null
           && !serviceTransExecutor.getServiceTrans().getTransMeta().getModifiedDate()
             .equals( service.getServiceTrans().getModifiedDate() ) ) {
-          context.removeServiceTransExecutor( serviceTransExecutor.getId() );
+          context.removeServiceTransExecutor( serviceTransExecutor.getKey() );
           serviceTransExecutor.stopAll();
           serviceTransExecutor = null;
         }
@@ -261,7 +263,7 @@ public class DataServiceExecutor {
               DataServiceConstants.TIME_LIMIT_DEFAULT );
 
             serviceTransExecutor =
-              new StreamingServiceTransExecutor( service.getName(), serviceTrans, service.getStepname(),
+              new StreamingServiceTransExecutor( key, serviceTrans, service.getStepname(),
                 windowMaxRowLimit, windowMaxTimeLimit );
             context.addServiceTransExecutor( serviceTransExecutor );
           }
@@ -512,12 +514,13 @@ public class DataServiceExecutor {
     ImmutableMultimap.Builder<ExecutionPoint, Runnable> builder = ImmutableMultimap.builder();
 
     builder.putAll( ExecutionPoint.PREPARE,
-      new CopyParameters( parameters, serviceTrans ),
-      new PrepareExecution( serviceTrans )
+      new CopyParameters( parameters, serviceTrans )
     );
 
     if ( !service.isStreaming() ) {
-      builder.put( ExecutionPoint.PREPARE, new PrepareExecution( genTrans ) );
+      builder.putAll( ExecutionPoint.PREPARE,
+        new PrepareExecution( serviceTrans ),
+        new PrepareExecution( genTrans ) );
 
       builder.putAll( ExecutionPoint.READY,
         new DefaultTransWiring( this )
@@ -597,7 +600,9 @@ public class DataServiceExecutor {
   }
 
   public DataServiceExecutor executeStreamingQuery( final RowListener resultRowListener ) {
-    StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( service.getName() ),
+    StreamServiceKey key = StreamServiceKey.create( service.getName(), parameters );
+    StreamingGeneratedTransExecution streamWiring =
+      new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
       genTrans, resultRowListener, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
       sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit );
 
@@ -622,12 +627,10 @@ public class DataServiceExecutor {
   }
 
   public DataServiceExecutor executeQuery() {
-    if ( !service.isStreaming() ) {
-      // Apply Push Down Optimizations
-      for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
-        if ( optimizationMeta.isEnabled() ) {
-          optimizationMeta.activate( this );
-        }
+    // Apply Push Down Optimizations
+    for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
+      if ( optimizationMeta.isEnabled() ) {
+        optimizationMeta.activate( this );
       }
     }
 

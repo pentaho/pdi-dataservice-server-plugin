@@ -49,6 +49,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService;
 import org.pentaho.di.trans.dataservice.clients.Query;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
@@ -156,6 +157,9 @@ public class DataServiceTestControllerTest  {
   @Mock
   private StreamingServiceTransExecutor streamingExecution;
 
+  @Mock
+  private StreamServiceKey streamServiceKey;
+
   @Captor
   private ArgumentCaptor<String> queryCaptor;
 
@@ -197,8 +201,8 @@ public class DataServiceTestControllerTest  {
       }
     } ).when( annotationsQueryService ).prepareQuery( any( String.class ), anyInt(), any( Map.class ) );
 
-    when( streamingExecution.getId() ).thenReturn( TEST_TABLE_NAME );
-    when( context.getServiceTransExecutor( TEST_TABLE_NAME ) ).thenReturn( streamingExecution );
+    when( streamingExecution.getKey() ).thenReturn( streamServiceKey );
+    when( context.getServiceTransExecutor( streamServiceKey ) ).thenReturn( streamingExecution );
 
     when( dataServiceExecutor.getServiceTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getGenTrans() ).thenReturn( mock( Trans.class ) );
@@ -446,6 +450,22 @@ public class DataServiceTestControllerTest  {
     } catch ( Exception e ) {
       fail();
     }
+  }
+
+  @Test
+  public void testPreviewOptimizations() throws KettleException {
+    dataServiceTestController.previewQueries();
+
+    verify( model ).clearOptimizationImpact();
+  }
+
+  @Test
+  public void testPreviewOptimizationsTransRunning() throws KettleException {
+    when( dataServiceExecutor.getServiceTrans().isRunning() ).thenReturn( true );
+
+    dataServiceTestController.previewQueries();
+
+    verify( model, times( 0 ) ).clearOptimizationImpact();
   }
 
   /**

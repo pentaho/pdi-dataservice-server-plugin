@@ -34,12 +34,15 @@ import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.TransAdapter;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
+import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
+import org.pentaho.di.trans.dataservice.execution.TransStarter;
 import org.pentaho.di.trans.dataservice.streaming.StreamList;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.StepInterface;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -49,9 +52,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class StreamingServiceTransExecutor {
   private final Trans serviceTrans;
-  private final String id;
+  private final StreamServiceKey key;
   private final String serviceStepName;
   private final AtomicBoolean isRunning = new AtomicBoolean( false );
+  private final AtomicBoolean isStopping = new AtomicBoolean( false );
 
   private StreamList<RowMetaAndData> stepStream;
   private long lastCacheCleanupMillis = 0;
@@ -78,27 +82,19 @@ public class StreamingServiceTransExecutor {
   /**
    * Constructor.
    *
-   * @param id The instance id.
+   * @param key The instance key.
    * @param serviceTrans The {@link org.pentaho.di.trans.Trans} Service Transformation.
    * @param serviceStepName The Service Transformation Step Name.
    * @param windowMaxRowLimit The streaming window max row limit.
    * @param windowMaxTimeLimit The streaming window max time limit.
    */
-  public StreamingServiceTransExecutor( final String id, final Trans serviceTrans, final String serviceStepName,
+  public StreamingServiceTransExecutor( final StreamServiceKey key, Trans serviceTrans, final String serviceStepName,
                                         final int windowMaxRowLimit, final long windowMaxTimeLimit ) {
     this.serviceTrans = serviceTrans;
-    this.id = id;
+    this.key = key;
     this.serviceStepName = serviceStepName;
     this.windowMaxRowLimit = windowMaxRowLimit;
     this.windowMaxTimeLimit = windowMaxTimeLimit;
-
-    // Add trans finished listener to reset the isRunning control boolean
-    this.serviceTrans.addTransListener( new TransAdapter() {
-      @Override
-      public void transFinished( Trans trans ) {
-        isRunning.set( false );
-      }
-    } );
   }
 
   /**
@@ -111,12 +107,12 @@ public class StreamingServiceTransExecutor {
   }
 
   /**
-   * Getter for the id.
+   * Getter for the key.
    *
-   * @return the id of this object instance.
+   * @return the key of this object instance.
    */
-  public String getId() {
-    return id;
+  public StreamServiceKey getKey() {
+    return key;
   }
 
   /**
@@ -218,23 +214,31 @@ public class StreamingServiceTransExecutor {
    * Starts the Service transformation and its row event listener.
    */
   private void startService() {
-    try {
-      lastCacheCleanupMillis = System.currentTimeMillis();
+    lastCacheCleanupMillis = System.currentTimeMillis();
 
-      serviceTrans.cleanup();
-      serviceTrans.prepareExecution( null );
-      serviceTrans.startThreads();
-      serviceTrans.addTransListener( new TransAdapter() {
-        @Override
-        public void transFinished( Trans trans ) throws KettleException {
-          isRunning.set( false );
-        }
-      } );
+    PrepareExecution prepExec = new PrepareExecution( serviceTrans );
+    Runnable serviceTransWiring = getServiceTransWiring();
+    TransStarter startTrans = new TransStarter( serviceTrans );
 
-      StepInterface serviceStep = serviceTrans.findRunThread( serviceStepName );
+    prepExec.run();
+    serviceTransWiring.run();
+    startTrans.run();
+  }
+
+  /**
+   * Sets up the service transformation to be started.
+   *
+   * @return Runnable to set up the service transformation for running.
+   */
+  private Runnable getServiceTransWiring() {
+    return () -> {
+      final Trans trans = serviceTrans;
+
+      StepInterface serviceStep = trans.findRunThread( serviceStepName );
       if ( serviceStep == null ) {
         throw Throwables.propagate( new KettleException( "Service step is not accessible" ) );
       }
+
       serviceStep.addRowListener( new RowAdapter() {
         /**
          * Listener for the service transformation output rows.
@@ -248,12 +252,10 @@ public class StreamingServiceTransExecutor {
         @Override
         public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
           // Add the row to the data stream. If no listeners are registered then the service transformation is stopped.
-          LogChannelInterface log = serviceTrans.getLogChannel();
+          LogChannelInterface log = trans.getLogChannel();
 
           try {
-            if ( log.isRowLevel() ) {
-              log.logRowlevel( DataServiceConstants.PASSING_ALONG_ROW + rowMeta.getString( row ) );
-            }
+            log.logRowlevel( DataServiceConstants.PASSING_ALONG_ROW + rowMeta.getString( row ) );
           } catch ( KettleValueException e ) {
             // Ignore error
           }
@@ -271,9 +273,7 @@ public class StreamingServiceTransExecutor {
           }
         }
       } );
-    } catch ( KettleException e ) {
-      throw Throwables.propagate( e );
-    }
+    };
   }
 
   /**
@@ -301,15 +301,14 @@ public class StreamingServiceTransExecutor {
    * Stops the transformation.
    */
   private void stopService() {
-    if ( isRunning.compareAndSet( true, false ) ) {
+    if ( isRunning.get() && isStopping.compareAndSet( false, true ) ) {
       LogChannelInterface log = serviceTrans.getLogChannel();
 
-      StepInterface serviceStep = serviceTrans.findRunThread( serviceStepName );
-
-      serviceStep.stopAll();
-
       serviceTrans.stopAll();
-      serviceTrans.waitUntilFinished();
+
+      isRunning.set( false );
+      isStopping.set( false );
+
       log.logDetailed( DataServiceConstants.STREAMING_TRANSFORMATION_STOPPED );
     }
   }
