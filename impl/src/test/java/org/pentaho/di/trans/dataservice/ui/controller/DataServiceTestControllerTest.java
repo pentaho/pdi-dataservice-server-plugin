@@ -79,6 +79,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
@@ -250,6 +251,122 @@ public class DataServiceTestControllerTest  {
   }
 
   @Test
+  public void testInitAssertsFail() throws Exception {
+    when( document.getElementById( "log-levels" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "sql-textbox" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "maxrows-combo" ) ).thenReturn( xulMenuList );
+    when( document.getElementById( "streaming-groupbox" ) ).thenReturn( xulGroupbox );
+    when( document.getElementById( "time-based-radio" ) ).thenReturn( xulRadio );
+    when( document.getElementById( "row-based-radio" ) ).thenReturn( xulRadio );
+    when( document.getElementById( "window-size" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-every" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-limit" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-size-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-every-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-limit-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-size-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-every-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-limit-row-unit" ) ).thenReturn( xulLabel );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "log-levels" ) ).thenReturn( xulMenuList );
+    when( document.getElementById( "sql-textbox" ) ).thenReturn( xulMenuList );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "sql-textbox" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "maxrows-combo" ) ).thenReturn( xulTextBox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "maxrows-combo" ) ).thenReturn( xulMenuList );
+    when( document.getElementById( "streaming-groupbox" ) ).thenReturn( xulMenuList );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "streaming-groupbox" ) ).thenReturn( xulGroupbox );
+    when( document.getElementById( "time-based-radio" ) ).thenReturn( xulGroupbox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "time-based-radio" ) ).thenReturn( xulRadio );
+    when( document.getElementById( "row-based-radio" ) ).thenReturn( xulGroupbox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "row-based-radio" ) ).thenReturn( xulRadio );
+    when( document.getElementById( "window-size" ) ).thenReturn( xulGroupbox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "window-size" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-every" ) ).thenReturn( xulGroupbox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "window-every" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-limit" ) ).thenReturn( xulGroupbox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "window-limit" ) ).thenReturn( xulTextBox );
+    when( document.getElementById( "window-size-time-unit" ) ).thenReturn( xulTextBox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "window-size-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-every-time-unit" ) ).thenReturn( xulTextBox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "window-every-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-limit-time-unit" ) ).thenReturn( xulTextBox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "window-limit-time-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-size-row-unit" ) ).thenReturn( xulTextBox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "window-size-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-every-row-unit" ) ).thenReturn( xulTextBox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "window-every-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "window-limit-row-unit" ) ).thenReturn( xulTextBox );
+
+    testInitAssertFail();
+
+    when( document.getElementById( "window-limit-row-unit" ) ).thenReturn( xulLabel );
+
+    testInitAssertNotFail();
+  }
+
+  private void testInitAssertFail() throws Exception {
+    try {
+      dataServiceTestController.init();
+      fail();
+    } catch ( AssertionError e ) {
+      // Pass test
+    } catch ( Exception e ) {
+      fail();
+    }
+  }
+
+  private void testInitAssertNotFail() throws Exception {
+    try {
+      dataServiceTestController.init();
+    } catch ( AssertionError e ) {
+      fail();
+    } catch ( Exception e ) {
+      fail();
+    }
+  }
+
+  @Test
   public void testInit() throws Exception {
     when( document.getElementById( "log-levels" ) ).thenReturn( xulMenuList );
     when( document.getElementById( "sql-textbox" ) ).thenReturn( xulTextBox );
@@ -270,7 +387,7 @@ public class DataServiceTestControllerTest  {
     dataServiceTestController.init();
 
     verify( bindingFactory ).setDocument( document );
-    verify( document, times( 21 ) ).getElementById( anyString() );
+    verify( document, times( 34 ) ).getElementById( anyString() );
   }
 
   @Test
@@ -331,7 +448,10 @@ public class DataServiceTestControllerTest  {
 
   @Test
   public void hideStreamingTest() throws KettleException {
+    when( dataService.isStreaming() ).thenReturn( false );
     assertTrue( dataServiceTestController.hideStreaming() );
+    when( dataService.isStreaming() ).thenReturn( true );
+    assertFalse( dataServiceTestController.hideStreaming() );
   }
 
   @Test
@@ -353,6 +473,17 @@ public class DataServiceTestControllerTest  {
     when( dataServiceExecutor.getGenTrans().isFinished() )
       .thenReturn( true );
     verify( callback, timeout( VERIFY_TIMEOUT_MILLIS ).times( 1 ) ).onExecuteComplete();
+  }
+
+  @Test
+  public void testExecuteStreamingServiceTransRunning() throws Exception {
+    when( model.isExecuting() ).thenReturn( true );
+    when( model.isExecuting() ).thenReturn( true );
+    when( dataService.isStreaming() ).thenReturn( true );
+    when( dataServiceExecutor.getServiceTrans().isRunning() )
+      .thenReturn( true );
+    dataServiceTestController.executeSql();
+    verify( model, times( 0 ) ).clearOptimizationImpact();
   }
 
   @Test
