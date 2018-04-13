@@ -201,7 +201,7 @@ public class StreamingDataServiceTestControllerTest {
     dataServiceTestController.init();
 
     verify( bindingFactory ).setDocument( document );
-    verify( document, times( 21 ) ).getElementById( anyString() );
+    verify( document, times( 34 ) ).getElementById( anyString() );
   }
 
   @Test

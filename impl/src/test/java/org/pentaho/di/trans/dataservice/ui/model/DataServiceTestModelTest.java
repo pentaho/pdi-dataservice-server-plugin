@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -168,5 +168,25 @@ public class DataServiceTestModelTest {
     assertFalse( model.isExecuting() );
     model.setExecuting( true );
     assertTrue( model.isExecuting() );
+  }
+
+  @Test
+  public void testGetSetWindowModeTimeBased() throws Exception {
+    model.setWindowMode( null );
+    assertFalse( model.isTimeBased() );
+    model.setTimeBased( true );
+    assertTrue( model.isTimeBased() );
+    model.setTimeBased( false );
+    assertFalse( model.isTimeBased() );
+  }
+
+  @Test
+  public void testGetSetWindowRowBased() throws Exception {
+    model.setWindowMode( null );
+    assertFalse( model.isRowBased() );
+    model.setRowBased( true );
+    assertTrue( model.isRowBased() );
+    model.setRowBased( false );
+    assertFalse( model.isRowBased() );
   }
 }

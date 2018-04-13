@@ -269,6 +269,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   private void bindSqlText( BindingFactory bindingFactory ) {
+    assert document.getElementById( "sql-textbox" ) instanceof XulTextbox;
     XulTextbox sqlTextBox = (XulTextbox) document.getElementById( "sql-textbox" );
     String initSql = getDefaultSql();
     model.setSql( initSql );
@@ -278,7 +279,20 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     bindingFactory.createBinding( model, "sql", sqlTextBox, "value" );
   }
 
-  private void bindStreamingWindowParameters( BindingFactory bindingFactory ) {
+  private void bindStreamingWindowParameters( BindingFactory bindingFactory )
+    throws InvocationTargetException, XulException {
+    assert document.getElementById( "streaming-groupbox" ) instanceof XulGroupbox;
+    assert document.getElementById( "time-based-radio" ) instanceof XulRadio;
+    assert document.getElementById( "row-based-radio" ) instanceof XulRadio;
+    assert document.getElementById( "window-size" ) instanceof XulTextbox;
+    assert document.getElementById( "window-every" ) instanceof XulTextbox;
+    assert document.getElementById( "window-limit" ) instanceof XulTextbox;
+    assert document.getElementById( "window-size-time-unit" ) instanceof XulLabel;
+    assert document.getElementById( "window-every-time-unit" ) instanceof XulLabel;
+    assert document.getElementById( "window-limit-time-unit" ) instanceof XulLabel;
+    assert document.getElementById( "window-size-row-unit" ) instanceof XulLabel;
+    assert document.getElementById( "window-every-row-unit" ) instanceof XulLabel;
+    assert document.getElementById( "window-limit-row-unit" ) instanceof XulLabel;
     XulGroupbox streamingGroupBox = (XulGroupbox) document.getElementById( "streaming-groupbox" );
     streamingGroupBox.setVisible( dataService.isStreaming() );
 
@@ -320,6 +334,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     bindingFactory.createBinding( model, "windowLimit", limitTextBox, "value",
       BindingConverters.longToStringEmptyZero() );
 
+    bindingFactory.createBinding( model, "timeBased", timeBasedRadio, "selected" ).fireSourceChanged();
+    bindingFactory.createBinding( model, "rowBased", rowBasedRadio, "selected" ).fireSourceChanged();
+
     bindingFactory.createBinding( timeBasedRadio, "selected", sizeTimeUnitLabel, "visible" );
     bindingFactory.createBinding( timeBasedRadio, "selected", everyTimeUnitLabel, "visible" );
     bindingFactory.createBinding( timeBasedRadio, "!selected", limitTimeUnitLabel, "visible" );
@@ -352,14 +369,6 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     Query query;
 
     if ( dataService.isStreaming() ) {
-      XulRadio timeBasedRadio = (XulRadio) document.getElementById( "time-based-radio" );
-
-      IDataServiceClientService.StreamingMode windowMode = timeBasedRadio.isSelected()
-        ? IDataServiceClientService.StreamingMode.TIME_BASED
-        : IDataServiceClientService.StreamingMode.ROW_BASED;
-
-      model.setWindowMode( windowMode );
-
       query = annotationsQuery.prepareQuery( model.getSql(), model.getWindowMode(),
         model.getWindowSize(), model.getWindowEvery(),
         model.getWindowLimit(), ImmutableMap.<String, String>of() );

@@ -54,7 +54,7 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   public static final List<Integer> MAXROWS_CHOICES = Arrays.asList( 100, 500, 1000 );
   public static final List<Integer> MAXROWS_STREAMING_CHOICES = Arrays.asList( 0 );
 
-  private IDataServiceClientService.StreamingMode windowMode;
+  private IDataServiceClientService.StreamingMode windowMode = IDataServiceClientService.StreamingMode.TIME_BASED;
   private long windowSize = 0;
   private long windowEvery = 0;
   private long windowLimit = 0;
@@ -155,6 +155,30 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
 
   public void setWindowLimit( long windowLimit ) {
     this.windowLimit = windowLimit;
+  }
+
+  public boolean isTimeBased() {
+    return IDataServiceClientService.StreamingMode.TIME_BASED.equals( windowMode );
+  }
+
+  public void setTimeBased( boolean timeBased ) {
+    if ( timeBased ) {
+      this.windowMode = IDataServiceClientService.StreamingMode.TIME_BASED;
+    } else {
+      this.windowMode = IDataServiceClientService.StreamingMode.ROW_BASED;
+    }
+  }
+
+  public boolean isRowBased() {
+    return IDataServiceClientService.StreamingMode.ROW_BASED.equals( windowMode );
+  }
+
+  public void setRowBased( boolean rowBased ) {
+    if ( rowBased ) {
+      this.windowMode = IDataServiceClientService.StreamingMode.ROW_BASED;
+    } else {
+      this.windowMode = IDataServiceClientService.StreamingMode.TIME_BASED;
+    }
   }
 
   public String getAlertMessage() {
