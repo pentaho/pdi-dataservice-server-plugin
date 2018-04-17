@@ -24,8 +24,11 @@ package org.pentaho.di.trans.dataservice.streaming;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
+import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -42,29 +45,41 @@ public class StreamServiceKey implements Serializable {
    */
   private final ImmutableMap<String, String> parameters;
 
+  private final List<String> optimizations;
+
   /**
    * Private Constructor.
    *
    * @param dataServiceId - The data service ID
    * @param parameters - The data service parameters.
    */
-  private StreamServiceKey( String dataServiceId, ImmutableMap<String, String> parameters ) {
+  private StreamServiceKey( String dataServiceId, ImmutableMap<String, String> parameters, List<String> optimizations ) {
     this.dataServiceId = dataServiceId;
     this.parameters = parameters;
+    this.optimizations = optimizations;
   }
 
   /**
    * Key creation factory method.
    *
-   * @param dataServiceId - The data service ID
+   * @param dataServiceId - The data service ID.
    * @param parameters - The data service parameters.
-   * @return
+   * @param optimizationList - The data service optimizations.
+   * @return - The key for the given arguments.
    */
-  public static StreamServiceKey create( String dataServiceId, Map<String, String> parameters ) {
+  public static StreamServiceKey create( String dataServiceId, Map<String, String> parameters, List<OptimizationImpactInfo> optimizationList ) {
     // Copy execution parameters
     ImmutableMap<String, String> params = ImmutableMap.copyOf( parameters );
 
-    return new StreamServiceKey( dataServiceId, params );
+    List<String> optimizations = new ArrayList<>();
+    if ( optimizationList != null ) {
+      for ( OptimizationImpactInfo optimizationImpact : optimizationList ) {
+        if ( optimizationImpact.getQueryAfterOptimization() != null && !optimizationImpact.getQueryAfterOptimization().isEmpty() ) {
+          optimizations.add( optimizationImpact.getQueryAfterOptimization() );
+        }
+      }
+    }
+    return new StreamServiceKey( dataServiceId, params, optimizations );
   }
 
   /**
@@ -85,6 +100,10 @@ public class StreamServiceKey implements Serializable {
     return parameters;
   }
 
+  public List<String> getOptimizations() {
+    return optimizations;
+  }
+
   @Override
   public boolean equals( Object o ) {
     if ( this == o ) {
@@ -95,12 +114,13 @@ public class StreamServiceKey implements Serializable {
     }
     StreamServiceKey cacheKey = (StreamServiceKey) o;
     return Objects.equal( dataServiceId, cacheKey.dataServiceId )
-      && Objects.equal( parameters, cacheKey.parameters );
+      && Objects.equal( parameters, cacheKey.parameters )
+      && Objects.equal( optimizations, cacheKey.optimizations );
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode( dataServiceId, parameters );
+    return Objects.hashCode( dataServiceId, parameters, optimizations );
   }
 
   @Override
@@ -108,6 +128,7 @@ public class StreamServiceKey implements Serializable {
     return Objects.toStringHelper( StreamServiceKey.class )
       .add( "dataServiceId", dataServiceId )
       .add( "parameters", parameters )
+      .add( "optimizations", optimizations )
       .toString();
   }
 }

@@ -28,11 +28,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
+import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.allOf;
@@ -40,7 +43,6 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyMap;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,6 +68,7 @@ public class DataServiceContextTest extends BaseTest {
 
   private Map<String, String> mockStreamKeyParams;
   private Map<String, String> mockStreamKeyParams2;
+  private List<OptimizationImpactInfo> mockStreamKeyOptimizationList;
 
   @Before
   public void setUp() throws Exception {
@@ -77,10 +80,11 @@ public class DataServiceContextTest extends BaseTest {
     mockStreamKeyParams = new HashMap();
     mockStreamKeyParams2 = new HashMap();
     mockStreamKeyParams2.put( "DummyKey", "DummyValue" );
+    mockStreamKeyOptimizationList = new ArrayList<>();
 
-    streamKey = StreamServiceKey.create( STREAMING_EXECUTOR_ID, mockStreamKeyParams );
-    streamKey2 = StreamServiceKey.create( STREAMING_EXECUTOR_ID, mockStreamKeyParams2 );
-    streamKey3 = StreamServiceKey.create( STREAMING_EXECUTOR_ID3, mockStreamKeyParams );
+    streamKey = StreamServiceKey.create( STREAMING_EXECUTOR_ID, mockStreamKeyParams, mockStreamKeyOptimizationList );
+    streamKey2 = StreamServiceKey.create( STREAMING_EXECUTOR_ID, mockStreamKeyParams2, mockStreamKeyOptimizationList );
+    streamKey3 = StreamServiceKey.create( STREAMING_EXECUTOR_ID3, mockStreamKeyParams, mockStreamKeyOptimizationList );
 
     when( dataServiceExecutor.getId() ).thenReturn( EXECUTOR_ID );
     when( streamingExecutor.getKey() ).thenReturn( streamKey );

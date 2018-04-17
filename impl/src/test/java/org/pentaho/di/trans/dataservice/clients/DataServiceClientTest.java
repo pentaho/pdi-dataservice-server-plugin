@@ -79,6 +79,8 @@ public class DataServiceClientTest extends BaseTest {
   private static final long WINDOW_EVERY = 50;
   private static final long WINDOW_MAX_SIZE = 1;
 
+  private ImmutableMap<String, String> params = ImmutableMap.of();
+
   @Mock RowMetaInterface rowMetaInterface;
   @Mock DataServiceResolver dataServiceResolver;
   @Mock Query.Service queryServiceDelegate;
@@ -118,6 +120,19 @@ public class DataServiceClientTest extends BaseTest {
   }
 
   @Test
+  public void testQueryParams() throws Exception {
+    when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, params ) )
+      .thenReturn( (MockQuery) outputStream -> new DataOutputStream( outputStream ).writeUTF( QUERY_RESULT ) );
+
+    try ( DataInputStream dataInputStream = client.query( TEST_SQL_QUERY, MAX_ROWS, params ) ) {
+      assertThat( dataInputStream.readUTF(), equalTo( QUERY_RESULT ) );
+      assertThat( dataInputStream.read(), equalTo( -1 ) ); // End of stream
+    }
+
+    verify( queryServiceDelegate ).prepareQuery( TEST_SQL_QUERY, MAX_ROWS, params );
+  }
+
+  @Test
   public void testWindowQuery() throws Exception {
     when( queryServiceDelegate
       .prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE, ImmutableMap.of() ) )
@@ -131,6 +146,22 @@ public class DataServiceClientTest extends BaseTest {
 
     verify( queryServiceDelegate )
       .prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE, ImmutableMap.of() );
+  }
+
+  @Test
+  public void testWindowQueryParams() throws Exception {
+    when( queryServiceDelegate
+      .prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE, params ) )
+      .thenReturn( (MockQuery) outputStream -> new DataOutputStream( outputStream ).writeUTF( QUERY_RESULT ) );
+
+    try ( DataInputStream dataInputStream = client.query( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE,
+      WINDOW_EVERY, WINDOW_MAX_SIZE, params ) ) {
+      assertThat( dataInputStream.readUTF(), equalTo( QUERY_RESULT ) );
+      assertThat( dataInputStream.read(), equalTo( -1 ) ); // End of stream
+    }
+
+    verify( queryServiceDelegate )
+      .prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY, WINDOW_MAX_SIZE, params );
   }
 
   @Test

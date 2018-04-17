@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice.clients;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -63,12 +64,17 @@ public class DataServiceClient implements IDataServiceClientService {
   }
 
   @Override public DataInputStream query( String sqlQuery, final int maxRows ) throws SQLException {
+    return query( sqlQuery, maxRows, ImmutableMap.of() );
+  }
+
+  @Override public DataInputStream query( String sqlQuery, final int maxRows,
+                                          Map<String, String> params ) throws SQLException {
     try {
       // Create a pipe to for results
       SafePipedStreams pipe = new SafePipedStreams();
 
       // Prepare query, exception will be thrown if query is invalid
-      Query query = prepareQuery( sqlQuery, maxRows, ImmutableMap.of() );
+      Query query = prepareQuery( sqlQuery, maxRows, params );
 
       // Write query results to pipe on a separate thread
       executorService.execute( () -> {
@@ -91,12 +97,18 @@ public class DataServiceClient implements IDataServiceClientService {
   @Override public DataInputStream query( String sqlQuery, IDataServiceClientService.StreamingMode windowMode,
                                           long windowSize, long windowEvery,
                                           long windowLimit ) throws SQLException {
+    return query( sqlQuery, windowMode, windowSize, windowEvery, windowLimit, ImmutableMap.of() );
+  }
+
+  @Override public DataInputStream query( String sqlQuery, IDataServiceClientService.StreamingMode windowMode,
+                                          long windowSize, long windowEvery,
+                                          long windowLimit, Map<String, String> params ) throws SQLException {
     try {
       // Create a pipe to for results
       SafePipedStreams pipe = new SafePipedStreams();
 
       // Prepare query, exception will be thrown if query is invalid
-      Query query = prepareQuery( sqlQuery, windowMode, windowSize, windowEvery, windowLimit, ImmutableMap.of() );
+      Query query = prepareQuery( sqlQuery, windowMode, windowSize, windowEvery, windowLimit, params );
 
       // Write query results to pipe on a separate thread
       executorService.execute( () -> {
@@ -118,7 +130,7 @@ public class DataServiceClient implements IDataServiceClientService {
 
   public Query prepareQuery( String sql, int maxRows, Map<String, String> parameters )
     throws KettleException {
-    Query query = queryService.prepareQuery( sql, maxRows, parameters );
+    Query query = queryService.prepareQuery( sql, maxRows, collectParameters( parameters ) );
     if ( query != null ) {
       return query;
     }
@@ -128,7 +140,7 @@ public class DataServiceClient implements IDataServiceClientService {
   public Query prepareQuery( String sql, IDataServiceClientService.StreamingMode windowMode,
                              long windowSize, long windowEvery, long windowLimit, Map<String, String> parameters )
     throws KettleException {
-    Query query = queryService.prepareQuery( sql, windowMode, windowSize, windowEvery, windowLimit, parameters );
+    Query query = queryService.prepareQuery( sql, windowMode, windowSize, windowEvery, windowLimit, collectParameters( parameters ) );
     if ( query != null ) {
       return query;
     }
@@ -211,6 +223,23 @@ public class DataServiceClient implements IDataServiceClientService {
    */
   @Deprecated
   public void setMetaStore( IMetaStore metaStore ) {
+  }
+
+  /**
+   * Parses the parameters map.
+   * @param map - The parameters map to parse.
+   * @return The parsed parameters map.
+   */
+  private Map<String, String> collectParameters( Map<String, String> map ) {
+    Map<String, String> parameters = Maps.newHashMap();
+    for ( Map.Entry<String, String> parameterEntry : map.entrySet() ) {
+      String name = parameterEntry.getKey();
+      String value = parameterEntry.getValue();
+      if ( name.startsWith( PARAMETER_PREFIX ) && value != null ) {
+        parameters.put( name.substring( PARAMETER_PREFIX.length() ), value );
+      }
+    }
+    return ImmutableMap.copyOf( parameters );
   }
 
   /**
