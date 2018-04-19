@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -33,6 +33,7 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.www.BaseCartePlugin;
@@ -56,8 +57,6 @@ import java.util.Map;
   description = "Get data from a transformation data service using SQL" )
 public class TransDataServlet extends BaseCartePlugin {
   private static final long serialVersionUID = 3634806745372015720L;
-
-  public static final String PARAMETER_PREFIX = "PARAMETER_";
 
   private static final String MAX_ROWS = "MaxRows";
   private static final String SQL = "SQL";
@@ -147,9 +146,9 @@ public class TransDataServlet extends BaseCartePlugin {
     for ( Map.Entry<String, Collection<String>> parameterEntry : map.entrySet() ) {
       String name = parameterEntry.getKey();
       Iterator<String> value = parameterEntry.getValue().iterator();
-      if ( name.startsWith( PARAMETER_PREFIX ) && value.hasNext() ) {
+      if ( name.startsWith( IDataServiceClientService.PARAMETER_PREFIX ) && value.hasNext() ) {
         String firstVal = value.next();
-        parameters.put( name.substring( PARAMETER_PREFIX.length() ), firstVal );
+        parameters.put( name.substring( IDataServiceClientService.PARAMETER_PREFIX.length() ), firstVal );
         if ( value.hasNext() ) {
           logDetailed(
             String.format(

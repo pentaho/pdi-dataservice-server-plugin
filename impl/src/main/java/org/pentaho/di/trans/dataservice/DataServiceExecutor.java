@@ -49,6 +49,7 @@ import org.pentaho.di.trans.dataservice.execution.CopyParameters;
 import org.pentaho.di.trans.dataservice.execution.DefaultTransWiring;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
+import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
@@ -63,8 +64,10 @@ import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -88,12 +91,12 @@ public class DataServiceExecutor {
   private long windowSize;
   private long windowEvery;
   private long windowLimit;
+  private StreamServiceKey streamServiceKey;
 
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
     service = builder.service;
-    parameters = Maps.newHashMap( builder.parameters );
-    parameters.putAll( getWhereConditionParameters() );
+    parameters = builder.parameters;
     serviceTrans = builder.serviceTrans;
     sqlTransGenerator = builder.sqlTransGenerator;
     genTrans = builder.genTrans;
@@ -102,6 +105,7 @@ public class DataServiceExecutor {
     windowSize = builder.windowSize;
     windowEvery = builder.windowEvery;
     windowLimit = builder.windowLimit;
+    streamServiceKey = builder.streamServiceKey;
 
     listenerMap = MultimapBuilder.enumKeys( ExecutionPoint.class ).linkedListValues().build();
   }
@@ -121,6 +125,7 @@ public class DataServiceExecutor {
     private Map<String, String> parameters = Collections.emptyMap();
     private LogLevel logLevel;
     private SqlTransGenerator sqlTransGenerator;
+    private StreamServiceKey streamServiceKey;
 
     private boolean normalizeConditions = true;
     private boolean prepareExecution = true;
@@ -138,7 +143,7 @@ public class DataServiceExecutor {
     }
 
     public Builder parameters( Map<String, String> parameters ) {
-      this.parameters = parameters;
+      this.parameters = Maps.newHashMap( parameters );
       return this;
     }
 
@@ -231,16 +236,46 @@ public class DataServiceExecutor {
       RowMetaInterface serviceFields;
       int serviceRowLimit = getServiceRowLimit( service );
 
+      if ( service.isStreaming() && windowMode == null ) {
+        throw new KettleException(
+          BaseMessages.getString( PKG, "DataServiceExecutor.Error.WindowModeMandatory",
+            sql.getServiceName(), service.getName() ) );
+      }
+
       if ( sql.getServiceName() == null || !sql.getServiceName().equals( service.getName() ) ) {
         throw new KettleException(
           BaseMessages.getString( PKG, "DataServiceExecutor.Error.TableNameAndDataServiceNameDifferent",
             sql.getServiceName(), service.getName() ) );
       }
 
+      // Sets the service transformation fields
+      if ( service.getServiceTrans() != null ) {
+        serviceFields = service.getServiceTrans().getStepFields( service.getStepname() );
+      } else {
+        throw new KettleException(
+          BaseMessages.getString( PKG, "DataServiceExecutor.Error.NoServiceTransformation",
+            sql.getServiceName(), service.getName() ) );
+      }
+
+      ValueMetaResolver resolver = new ValueMetaResolver( serviceFields );
+
+      sql.parse( resolver.getRowMeta() );
+
+      if ( normalizeConditions ) {
+        if ( sql.getWhereCondition() != null && sql.getWhereCondition().getCondition() != null ) {
+          convertCondition( sql.getWhereCondition().getCondition(), resolver );
+        }
+        if ( sql.getHavingCondition() != null && sql.getHavingCondition().getCondition() != null ) {
+          convertCondition( sql.getHavingCondition().getCondition(), resolver );
+        }
+      }
+
+      this.parameters.putAll( getWhereConditionParameters() );
+
       // Check if there is already a serviceTransformation in the context
       if ( service.isStreaming() ) {
-        StreamServiceKey key = StreamServiceKey.create( service.getName(), parameters );
-        StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( key );
+        this.streamServiceKey = getStreamingServiceKey();
+        StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
 
         if ( serviceTransExecutor != null
           && !serviceTransExecutor.getServiceTrans().getTransMeta().getModifiedDate()
@@ -263,7 +298,7 @@ public class DataServiceExecutor {
               DataServiceConstants.TIME_LIMIT_DEFAULT );
 
             serviceTransExecutor =
-              new StreamingServiceTransExecutor( key, serviceTrans, service.getStepname(),
+              new StreamingServiceTransExecutor( streamServiceKey, serviceTrans, service.getStepname(),
                 windowMaxRowLimit, windowMaxTimeLimit );
             context.addServiceTransExecutor( serviceTransExecutor );
           }
@@ -273,28 +308,6 @@ public class DataServiceExecutor {
         }
       } else if ( serviceTrans == null && service.getServiceTrans() != null ) {
         serviceTrans( service.getServiceTrans() );
-      }
-
-      // Sets the service transformation fields
-      if ( serviceTrans != null ) {
-        serviceFields = serviceTrans.getTransMeta().getStepFields( service.getStepname() );
-      } else {
-        throw new KettleException(
-          BaseMessages.getString( PKG, "DataServiceExecutor.Error.NoServiceTransformation",
-            sql.getServiceName(), service.getName() ) );
-      }
-
-      ValueMetaResolver resolver = new ValueMetaResolver( serviceFields );
-
-      sql.parse( resolver.getRowMeta() );
-
-      if ( normalizeConditions ) {
-        if ( sql.getWhereCondition() != null && sql.getWhereCondition().getCondition() != null ) {
-          convertCondition( sql.getWhereCondition().getCondition(), resolver );
-        }
-        if ( sql.getHavingCondition() != null && sql.getHavingCondition().getCondition() != null ) {
-          convertCondition( sql.getHavingCondition().getCondition(), resolver );
-        }
       }
 
       if ( sqlTransGenerator == null ) {
@@ -328,6 +341,24 @@ public class DataServiceExecutor {
       }
 
       return dataServiceExecutor;
+    }
+
+    private StreamServiceKey getStreamingServiceKey() {
+      // Apply Push Down Optimizations
+      List<OptimizationImpactInfo> optimizationImpactList = new ArrayList<>();
+
+      if ( serviceTrans == null ) {
+        this.serviceTrans( service.getServiceTrans() );
+      }
+
+      DataServiceExecutor transientDataServiceExecutor = new DataServiceExecutor( this );
+      for ( PushDownOptimizationMeta optimizationMeta : service.getPushDownOptimizationMeta() ) {
+        if ( optimizationMeta.isEnabled() ) {
+          optimizationImpactList.add( optimizationMeta.preview( transientDataServiceExecutor ) );
+        }
+      }
+
+      return StreamServiceKey.create( service.getName(), parameters, optimizationImpactList );
     }
 
     /**
@@ -402,6 +433,45 @@ public class DataServiceExecutor {
         }
       }
       return result;
+    }
+
+    private Map<String, String> getWhereConditionParameters() {
+      // Parameters: see which ones are defined in the SQL
+      //
+      Map<String, String> conditionParameters = new HashMap<>();
+      if ( sql.getWhereCondition() != null ) {
+        extractConditionParameters( sql.getWhereCondition().getCondition(), conditionParameters );
+      }
+      return conditionParameters;
+    }
+
+    private void extractConditionParameters( Condition condition, Map<String, String> parameters ) {
+      if ( condition.isAtomic() ) {
+        if ( condition.getFunction() == Condition.FUNC_TRUE ) {
+          parameters.put( condition.getLeftValuename(), condition.getRightExactString() );
+          stripFieldNamesFromTrueFunction( condition );
+        }
+      } else {
+        for ( Condition sub : condition.getChildren() ) {
+          extractConditionParameters( sub, parameters );
+        }
+      }
+    }
+
+    /**
+     * Strips the "fake" values from a Condition used
+     * to pass parameter key/value info in the WHERE clause.
+     * E.g. if
+     * WHERE PARAMETER('foo') = 'bar'
+     * is in the where clause a FUNC_TRUE condition will be
+     * created with leftValueName = 'foo' and rightValueName = 'bar'.
+     * These need to be stripped out to avoid failing checks
+     * for existent field names.
+     */
+    private void stripFieldNamesFromTrueFunction( Condition condition ) {
+      assert condition.getFunction() == Condition.FUNC_TRUE;
+      condition.setLeftValuename( null );
+      condition.setRightValuename( null );
     }
   }
 
@@ -480,35 +550,6 @@ public class DataServiceExecutor {
     }
   }
 
-  private void extractConditionParameters( Condition condition, Map<String, String> parameters ) {
-    if ( condition.isAtomic() ) {
-      if ( condition.getFunction() == Condition.FUNC_TRUE ) {
-        parameters.put( condition.getLeftValuename(), condition.getRightExactString() );
-        stripFieldNamesFromTrueFunction( condition );
-      }
-    } else {
-      for ( Condition sub : condition.getChildren() ) {
-        extractConditionParameters( sub, parameters );
-      }
-    }
-  }
-
-  /**
-   * Strips the "fake" values from a Condition used
-   * to pass parameter key/value info in the WHERE clause.
-   * E.g. if
-   * WHERE PARAMETER('foo') = 'bar'
-   * is in the where clause a FUNC_TRUE condition will be
-   * created with leftValueName = 'foo' and rightValueName = 'bar'.
-   * These need to be stripped out to avoid failing checks
-   * for existent field names.
-   */
-  private void stripFieldNamesFromTrueFunction( Condition condition ) {
-    assert condition.getFunction() == Condition.FUNC_TRUE;
-    condition.setLeftValuename( null );
-    condition.setRightValuename( null );
-  }
-
   protected void prepareExecution() throws KettleException {
     // Setup executor with streaming execution plan
     ImmutableMultimap.Builder<ExecutionPoint, Runnable> builder = ImmutableMultimap.builder();
@@ -532,16 +573,6 @@ public class DataServiceExecutor {
       );
     }
     listenerMap.putAll( builder.build() );
-  }
-
-  private Map<String, String> getWhereConditionParameters() {
-    // Parameters: see which ones are defined in the SQL
-    //
-    Map<String, String> conditionParameters = new HashMap<>();
-    if ( sql.getWhereCondition() != null ) {
-      extractConditionParameters( sql.getWhereCondition().getCondition(), conditionParameters );
-    }
-    return conditionParameters;
   }
 
   public static void writeMetadata( DataOutputStream dos, String... metadatas ) throws IOException {
@@ -600,9 +631,8 @@ public class DataServiceExecutor {
   }
 
   public DataServiceExecutor executeStreamingQuery( final RowListener resultRowListener ) {
-    StreamServiceKey key = StreamServiceKey.create( service.getName(), parameters );
     StreamingGeneratedTransExecution streamWiring =
-      new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
+      new StreamingGeneratedTransExecution( context.getServiceTransExecutor( streamServiceKey ),
       genTrans, resultRowListener, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
       sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit );
 

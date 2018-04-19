@@ -26,12 +26,17 @@ import com.google.common.base.Objects;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link StreamServiceKey} test class
@@ -42,6 +47,22 @@ public class StreamServiceKeyTest {
   private String mockOtherDataServiceId;
   private Map<String, String> mockParameters;
   private Map<String, String> mockOtherParameters;
+  private List<OptimizationImpactInfo> mockOptimizationList;
+  private List<OptimizationImpactInfo> mockOtherOptimizationList;
+  private String queryAfterOptimization;
+  private String otherQueryAfterOptimization;
+
+  @Mock
+  OptimizationImpactInfo mockOptimizationImpact;
+
+  @Mock
+  OptimizationImpactInfo mockEmptyOptimizationImpact;
+
+  @Mock
+  OptimizationImpactInfo mockNullOptimizationImpact;
+
+  @Mock
+  OptimizationImpactInfo mockOtherOptimizationImpact;
 
   @Before
   public void setup() throws Exception {
@@ -49,22 +70,40 @@ public class StreamServiceKeyTest {
     mockParameters = new HashMap();
     mockOtherDataServiceId = "Mock ID";
     mockOtherParameters = new HashMap();
+    queryAfterOptimization = "Mock Optimized Query";
+    otherQueryAfterOptimization = "Mock Other Optimized Query";
+
+    when( mockOptimizationImpact.getQueryAfterOptimization() ).thenReturn( queryAfterOptimization );
+    when( mockEmptyOptimizationImpact.getQueryAfterOptimization() ).thenReturn( "" );
+    when( mockNullOptimizationImpact.getQueryAfterOptimization() ).thenReturn( null );
+    when( mockOtherOptimizationImpact.getQueryAfterOptimization() ).thenReturn( otherQueryAfterOptimization );
+
+    mockOptimizationList = new ArrayList<>(  );
+    mockOptimizationList.add( mockOptimizationImpact );
+    mockOptimizationList.add( mockEmptyOptimizationImpact );
+    mockOptimizationList.add( mockNullOptimizationImpact );
+
+    mockOtherOptimizationList = new ArrayList<>(  );
+    mockOtherOptimizationList.add( mockOtherOptimizationImpact );
   }
 
   @Test
   public void testCreate() {
-    StreamServiceKey key = StreamServiceKey.create( mockDataServiceId, mockParameters );
+    StreamServiceKey key = StreamServiceKey.create( mockDataServiceId, mockParameters, mockOptimizationList );
 
     assertNotNull( key );
     assertEquals( mockDataServiceId, key.getDataServiceId() );
     assertEquals( mockParameters, key.getParameters() );
     assertNotSame( mockParameters, key.getParameters() );
+    assertEquals( 1, key.getOptimizations().size() );
+    assertEquals( queryAfterOptimization, key.getOptimizations().get( 0 ) );
   }
 
   @Test
   public void testEquals() {
-    StreamServiceKey key = StreamServiceKey.create( mockDataServiceId, mockParameters );
-    StreamServiceKey key2 = StreamServiceKey.create( mockOtherDataServiceId, mockOtherParameters );
+    StreamServiceKey key = StreamServiceKey.create( mockDataServiceId, mockParameters, mockOptimizationList );
+    StreamServiceKey key2 = StreamServiceKey.create( mockOtherDataServiceId, mockOtherParameters,
+      mockOptimizationList );
 
     assertNotNull( key );
     assertNotNull( key2 );
@@ -74,51 +113,62 @@ public class StreamServiceKeyTest {
 
     mockParameters.put( "Test", "Test" );
 
-    key = StreamServiceKey.create( mockDataServiceId, mockParameters );
+    key = StreamServiceKey.create( mockDataServiceId, mockParameters, mockOptimizationList );
 
     assertFalse( key.equals( key2 ) );
     assertFalse( key2.equals( key ) );
 
     mockOtherParameters.put( "Test", "Test" );
 
-    key2 = StreamServiceKey.create( mockOtherDataServiceId, mockOtherParameters );
+    key2 = StreamServiceKey.create( mockOtherDataServiceId, mockOtherParameters, mockOptimizationList );
 
     assertTrue( key.equals( key2 ) );
     assertTrue( key2.equals( key ) );
 
     mockDataServiceId = mockDataServiceId + mockDataServiceId;
 
-    key = StreamServiceKey.create( mockDataServiceId, mockParameters );
+    key = StreamServiceKey.create( mockDataServiceId, mockParameters, mockOptimizationList );
 
     assertFalse( key.equals( key2 ) );
     assertFalse( key2.equals( key ) );
 
     mockOtherDataServiceId = mockDataServiceId;
 
-    key2 = StreamServiceKey.create( mockOtherDataServiceId, mockOtherParameters );
+    key2 = StreamServiceKey.create( mockOtherDataServiceId, mockOtherParameters, mockOptimizationList );
 
     assertTrue( key.equals( key2 ) );
     assertTrue( key2.equals( key ) );
 
-    assertTrue( key.equals( key ) );
-    assertFalse( key.equals( null ) );
+    key2 = StreamServiceKey.create( mockOtherDataServiceId, mockOtherParameters, mockOtherOptimizationList );
+
+    assertFalse( key.equals( key2 ) );
+    assertFalse( key2.equals( key ) );
+
+    key = StreamServiceKey.create( mockDataServiceId, mockParameters, mockOtherOptimizationList );
+
+    assertTrue( key.equals( key2 ) );
+    assertTrue( key2.equals( key ) );
   }
 
   @Test
   public void testHashCode() {
-    StreamServiceKey key = StreamServiceKey.create( mockDataServiceId, mockParameters );
-    int hashCode = Objects.hashCode( mockDataServiceId, mockParameters );
+    StreamServiceKey key = StreamServiceKey.create( mockDataServiceId, mockParameters, mockOptimizationList );
+    List<String> optimizations = new ArrayList<>();
+    optimizations.add( queryAfterOptimization );
+    int hashCode = Objects.hashCode( mockDataServiceId, mockParameters, optimizations );
     assertEquals( hashCode, key.hashCode() );
   }
 
   @Test
   public void testToString() {
-    StreamServiceKey key = StreamServiceKey.create( mockDataServiceId, mockParameters );
+    StreamServiceKey key = StreamServiceKey.create( mockDataServiceId, mockParameters, mockOptimizationList );
     String toStringTest = "StreamServiceKey{dataServiceId="
       + mockDataServiceId
       + ", parameters="
       + mockParameters.toString()
-      + "}";
+      + ", optimizations=["
+      + queryAfterOptimization
+      + "]}";
     assertEquals( toStringTest, key.toString() );
 
     mockParameters.put( "Test", "Test" );
@@ -126,9 +176,11 @@ public class StreamServiceKeyTest {
       + mockDataServiceId
       + ", parameters="
       + mockParameters.toString()
-      + "}";
+      + ", optimizations=["
+      + queryAfterOptimization
+      + "]}";
 
-    key = StreamServiceKey.create( mockDataServiceId, mockParameters );
+    key = StreamServiceKey.create( mockDataServiceId, mockParameters, mockOptimizationList );
     assertEquals( toStringTest, key.toString() );
   }
 }

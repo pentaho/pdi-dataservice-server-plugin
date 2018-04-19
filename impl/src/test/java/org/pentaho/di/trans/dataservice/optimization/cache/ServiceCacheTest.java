@@ -46,6 +46,7 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.SqlTransGenerator;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownType;
 import org.pentaho.di.trans.step.StepInterface;
@@ -347,6 +348,7 @@ public class ServiceCacheTest {
       .sqlTransGenerator( sqlTransGenerator )
       .serviceTrans( serviceTrans )
       .genTrans( genTrans )
+      .windowMode( IDataServiceClientService.StreamingMode.ROW_BASED )
       .build();
   }
 }

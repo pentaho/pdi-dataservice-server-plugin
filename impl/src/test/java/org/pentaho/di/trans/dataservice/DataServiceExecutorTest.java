@@ -51,6 +51,7 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
+import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
@@ -62,6 +63,7 @@ import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -85,12 +87,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -110,6 +107,7 @@ public class DataServiceExecutorTest extends BaseTest {
   public static final String CONTAINER_ID = "12345";
   private long SYSTEM_TIME_LIMIT = 99999;
   private int SYSTEM_ROW_LIMIT = 99999;
+  private String optimizedQueryAfter = "Mock Optimized Query";
   private StreamServiceKey key;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTrans;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) Trans serviceTransChanged;
@@ -123,7 +121,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Before
   public void setUp() throws Exception {
-    key = StreamServiceKey.create( dataService.getName(), Collections.emptyMap() );
+    key = StreamServiceKey.create( dataService.getName(), Collections.emptyMap(), Collections.emptyList() );
 
     doAnswer( RETURNS_SELF ).when( transMeta ).realClone( anyBoolean() );
     doAnswer( RETURNS_SELF ).when( transMeta ).clone();
@@ -251,6 +249,26 @@ public class DataServiceExecutorTest extends BaseTest {
       build();
   }
 
+  @Test( expected =  KettleException.class )
+  public void testBuilderBuildStreamingNullWindowMode() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    dataService.setName( DATA_SERVICE_NAME );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    new DataServiceExecutor.Builder( sql, dataService, context ).
+      serviceTrans( serviceTrans ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      windowMode( null ).
+      build();
+  }
+
   @Test
   public void testBuilderBuildStreamingServiceContext() throws Exception {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
@@ -270,6 +288,7 @@ public class DataServiceExecutorTest extends BaseTest {
       enableMetrics( false ).
       normalizeConditions( false ).
       rowLimit( 50 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
       build();
 
     verify( serviceTransExecutor, times( 2 ) ).getServiceTrans();
@@ -285,6 +304,7 @@ public class DataServiceExecutorTest extends BaseTest {
       enableMetrics( false ).
       normalizeConditions( false ).
       rowLimit( 50 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
       build();
 
     assertNotSame( executor.getServiceTrans(), serviceTrans );
@@ -310,21 +330,22 @@ public class DataServiceExecutorTest extends BaseTest {
     dataService.setStreaming( true );
 
     IMetaStore metastore = mock( IMetaStore.class );
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
-      sqlTransGenerator( sqlTransGenerator ).
-      genTrans( genTrans ).
-      metastore( metastore ).
-      enableMetrics( false ).
-      normalizeConditions( false ).
-      rowLimit( 50 ).
-      build();
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context )
+      .sqlTransGenerator( sqlTransGenerator )
+      .genTrans( genTrans )
+      .metastore( metastore )
+      .enableMetrics( false )
+      .normalizeConditions( false )
+      .rowLimit( 50 )
+      .windowMode( IDataServiceClientService.StreamingMode.ROW_BASED )
+      .build();
 
     assertSame( dataService.getServiceTrans(), serviceTrans.getTransMeta() );
   }
 
   @Test
   public void testExecuteQuery() throws Exception {
-   testExecuteQueryAux( true );
+    testExecuteQueryAux( true );
   }
 
   @Test
@@ -447,7 +468,10 @@ public class DataServiceExecutorTest extends BaseTest {
     when( sqlTransGenerator.getSql() ).thenReturn( sql );
 
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
+    OptimizationImpactInfo optimizationInfo = mock( OptimizationImpactInfo.class );
+    when( optimizationInfo.getQueryAfterOptimization() ).thenReturn( optimizedQueryAfter );
     when( optimization.isEnabled() ).thenReturn( true );
+    when( optimization.preview( anyObject() ) ).thenReturn( optimizationInfo );
     dataService.getPushDownOptimizationMeta().add( optimization );
     dataService.setStreaming( true );
 
@@ -542,7 +566,10 @@ public class DataServiceExecutorTest extends BaseTest {
     when( sqlTransGenerator.getSql() ).thenReturn( sql );
 
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
+    OptimizationImpactInfo optimizationInfo = mock( OptimizationImpactInfo.class );
+    when( optimizationInfo.getQueryAfterOptimization() ).thenReturn( optimizedQueryAfter );
     when( optimization.isEnabled() ).thenReturn( true );
+    when( optimization.preview( anyObject() ) ).thenReturn( optimizationInfo );
     dataService.getPushDownOptimizationMeta().add( optimization );
     dataService.setStreaming( true );
 
@@ -1016,7 +1043,10 @@ public class DataServiceExecutorTest extends BaseTest {
     when( sqlTransGenerator.getSql() ).thenReturn( sql );
 
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
+    OptimizationImpactInfo optimizationInfo = mock( OptimizationImpactInfo.class );
+    when( optimizationInfo.getQueryAfterOptimization() ).thenReturn( optimizedQueryAfter );
     when( optimization.isEnabled() ).thenReturn( true );
+    when( optimization.preview( anyObject() ) ).thenReturn( optimizationInfo );
     dataService.getPushDownOptimizationMeta().add( optimization );
     dataService.setStreaming( true );
 
