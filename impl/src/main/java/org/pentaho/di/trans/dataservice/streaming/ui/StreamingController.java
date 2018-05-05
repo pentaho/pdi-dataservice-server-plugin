@@ -59,6 +59,7 @@ public class StreamingController extends AbstractController {
     BindingFactory bindingFactory = getBindingFactory();
 
     XulRadio streamingRadioButton = getElementById( "streaming-type-radio" );
+    XulRadio normalModeRadio = getElementById( "regular-type-radio" );
     XulTab streamingTab = getElementById( "streaming-tab" );
 
     XulTextbox streamingMaxRows = getElementById( "streaming-max-rows" );
@@ -90,5 +91,6 @@ public class StreamingController extends AbstractController {
       BindingConvertor.long2String() );
 
     bindingFactory.createBinding( streamingRadioButton, "selected", streamingTab, "visible" );
+    bindingFactory.createBinding( normalModeRadio, "!selected", streamingTab, "visible" );
   }
 }
