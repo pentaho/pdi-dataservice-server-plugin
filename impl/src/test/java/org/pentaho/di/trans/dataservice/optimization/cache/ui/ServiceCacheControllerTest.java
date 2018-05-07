@@ -67,6 +67,7 @@ public class ServiceCacheControllerTest {
   @Mock XulTextbox ttl;
   @Mock XulTab serviceCacheTab;
   @Mock XulRadio regularTypeRadio;
+  @Mock XulRadio streamingTypeRadio;
   @Mock PentahoCacheTemplateConfiguration cacheConfig;
   @Mock LogChannel log;
 
@@ -82,6 +83,7 @@ public class ServiceCacheControllerTest {
     when( document.getElementById( "service-cache-ttl" ) ).thenReturn( ttl );
     when( document.getElementById( "service-cache-tab" ) ).thenReturn( serviceCacheTab );
     when( document.getElementById( "regular-type-radio" ) ).thenReturn( regularTypeRadio );
+    when( document.getElementById( "streaming-type-radio" ) ).thenReturn( streamingTypeRadio );
     when( model.isStreaming() ).thenReturn( false );
   }
 
@@ -96,6 +98,10 @@ public class ServiceCacheControllerTest {
     verify( bindingFactory ).createBinding( checkbox, "checked", meta, "enabled" );
     verify( bindingFactory ).createBinding( ttl, "value", serviceCache, "timeToLive" );
     verify( serviceCacheTab ).setVisible( true );
+    verify( bindingFactory ).createBinding( streamingTypeRadio, "!selected", serviceCacheTab,
+      "visible" );
+    verify( bindingFactory ).createBinding( regularTypeRadio, "selected", serviceCacheTab,
+      "visible" );
   }
 
   @Test
@@ -111,6 +117,10 @@ public class ServiceCacheControllerTest {
     verify( bindingFactory ).createBinding( checkbox, "checked", meta, "enabled" );
     verify( bindingFactory ).createBinding( ttl, "value", serviceCache, "timeToLive" );
     verify( serviceCacheTab ).setVisible( false );
+    verify( bindingFactory ).createBinding( streamingTypeRadio, "!selected", serviceCacheTab,
+      "visible" );
+    verify( bindingFactory ).createBinding( regularTypeRadio, "selected", serviceCacheTab,
+      "visible" );
   }
 
   @Test
