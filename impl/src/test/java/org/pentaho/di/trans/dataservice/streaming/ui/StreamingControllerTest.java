@@ -60,6 +60,7 @@ public class StreamingControllerTest {
   @Mock XulTextbox maxTime;
   @Mock DataServiceModel model;
   @Mock XulRadio streamingRadioButton;
+  @Mock XulRadio regularRadioButton;
   @Mock XulTab streamingTab;
   @Mock Binding binding;
 
@@ -69,6 +70,7 @@ public class StreamingControllerTest {
     when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
 
     when( document.getElementById( "streaming-type-radio" ) ).thenReturn( streamingRadioButton );
+    when( document.getElementById( "regular-type-radio" ) ).thenReturn( regularRadioButton );
     when( document.getElementById( "streaming-tab" ) ).thenReturn( streamingTab );
     when( document.getElementById( "streaming-max-rows" ) ).thenReturn( maxRows );
     when( document.getElementById( "streaming-max-time" ) ).thenReturn( maxTime );
@@ -101,6 +103,8 @@ public class StreamingControllerTest {
       BindingConvertor.long2String() );
     verify( bindingFactory ).createBinding( streamingRadioButton, "selected", streamingTab,
       "visible" );
+    verify( bindingFactory ).createBinding( regularRadioButton, "!selected", streamingTab,
+      "visible" );
   }
 
   @Test
@@ -124,5 +128,7 @@ public class StreamingControllerTest {
         BindingConvertor.long2String() );
     verify( bindingFactory ).createBinding( streamingRadioButton, "selected", streamingTab,
         "visible" );
+    verify( bindingFactory ).createBinding( regularRadioButton, "!selected", streamingTab,
+      "visible" );
   }
 }
