@@ -38,6 +38,7 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
@@ -73,15 +74,28 @@ public class TransDataServletTest extends BaseServletTest {
   private static final String CONTEXT_PATH = "/sql";
   private static final String HEADER_SQL = "SQL";
   private static final String HEADER_MAX_ROWS = "MaxRows";
+  private static final String HEADER_WINDOW_MODE = "WindowMode";
+  private static final String HEADER_WINDOW_SIZE = "WindowSize";
+  private static final String HEADER_WINDOW_EVERY = "WindowEvery";
+  private static final String HEADER_WINDOW_LIMIT = "WindowLimit";
+  private static final String TEST_DATA_SERVICE_NAME = "dataservice_test";
   private static final String TEST_SQL_QUERY = "SELECT * FROM dataservice_test";
   private static final String TEST_LARGE_SQL_QUERY = TEST_SQL_QUERY + " /" + StringUtils.repeat( "*", 8000 ) + "/";
   private static final String DEBUG_TRANS_FILE = "debugtransfile";
   private static final String TEST_MAX_ROWS = "100";
+  private static final String TEST_WINDOW_MODE_ROW = IDataServiceClientService.StreamingMode.ROW_BASED.toString();
+  private static final String TEST_WINDOW_MODE_TIME = IDataServiceClientService.StreamingMode.TIME_BASED.toString();
+  private static final String TEST_WINDOW_SIZE = "1";
+  private static final String TEST_WINDOW_EVERY = "2";
+  private static final String TEST_WINDOW_LIMIT = "3";
   private static final String PARAM_DEBUG_TRANS = "debugtrans";
   private static final String SERVLET_STRING = "Get data from a data service";
   private static final String serviceTransUUID = UUID.randomUUID().toString();
   private static final String genTransUUID = UUID.randomUUID().toString();
   private static final String GEN_TRANS_XML = "<trans name=genTrans mock/>";
+
+  private static final int DEFAULT_WINDOW_MAX_ROWS = 50;
+  private static final long DEFAULT_WINDOW_MAX_TIME = 1000;
 
   @Rule public TemporaryFolder fs = new TemporaryFolder();
 
@@ -133,6 +147,10 @@ public class TransDataServletTest extends BaseServletTest {
 
     verify( request, times( 1 ) ).getParameter( HEADER_SQL );
     verify( request, times( 1 ) ).getParameter( HEADER_MAX_ROWS );
+    verify( request, never() ).getParameter( HEADER_WINDOW_MODE );
+    verify( request, never() ).getParameter( HEADER_WINDOW_SIZE );
+    verify( request, never() ).getParameter( HEADER_WINDOW_EVERY );
+    verify( request, never() ).getParameter( HEADER_WINDOW_LIMIT );
 
     verify( response ).setStatus( HttpServletResponse.SC_OK );
     verify( response ).setContentType( "binary/jdbc" );
@@ -151,6 +169,153 @@ public class TransDataServletTest extends BaseServletTest {
       (TransConfiguration) argThat( hasProperty( "transMeta", is( genTransMeta ) ) )
     );
     Files.readLines( debugTrans, Charsets.UTF_8 ).contains( GEN_TRANS_XML );
+  }
+
+  @Test
+  public void testStreamingHeader() throws Exception {
+    headers.put( HEADER_MAX_ROWS, TEST_MAX_ROWS );
+    headers.put( HEADER_SQL, TEST_SQL_QUERY );
+    headers.put( HEADER_WINDOW_MODE, TEST_WINDOW_MODE_TIME );
+    headers.put( HEADER_WINDOW_SIZE, TEST_WINDOW_SIZE );
+    headers.put( HEADER_WINDOW_EVERY, TEST_WINDOW_EVERY );
+    headers.put( HEADER_WINDOW_LIMIT, TEST_WINDOW_LIMIT );
+
+    Query query = mock( Query.class );
+    doReturn( query )
+      .when( client )
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.TIME_BASED,
+        Long.valueOf( TEST_WINDOW_SIZE ),
+        Long.valueOf( TEST_WINDOW_EVERY ),
+        Long.valueOf( TEST_WINDOW_LIMIT ),
+        ImmutableMap.of( "FOO", "BAR" ) );
+    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
+
+    when( request.getMethod() ).thenReturn( "POST" );
+    servlet.service( request, response );
+    verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
+
+    verify( request, times( 1 ) ).getParameter( HEADER_SQL );
+    verify( request, times( 1 ) ).getParameter( HEADER_MAX_ROWS );
+    verify( request, times( 1 ) ).getParameter( HEADER_WINDOW_MODE );
+    verify( request, times( 1 ) ).getParameter( HEADER_WINDOW_SIZE );
+    verify( request, times( 1 ) ).getParameter( HEADER_WINDOW_EVERY );
+    verify( request, times( 1 ) ).getParameter( HEADER_WINDOW_LIMIT );
+    verify( request, times( 1 ) ).getHeader( HEADER_SQL );
+    verify( request, times( 1 ) ).getHeader( HEADER_MAX_ROWS );
+    verify( request, times( 1 ) ).getHeader( HEADER_WINDOW_MODE );
+    verify( request, times( 1 ) ).getHeader( HEADER_WINDOW_SIZE );
+    verify( request, times( 1 ) ).getHeader( HEADER_WINDOW_EVERY );
+    verify( request, times( 1 ) ).getHeader( HEADER_WINDOW_LIMIT );
+  }
+
+  @Test
+  public void testStreamingParameters() throws Exception {
+    parameters.put( HEADER_MAX_ROWS, TEST_MAX_ROWS );
+    parameters.put( HEADER_SQL, TEST_SQL_QUERY );
+    parameters.put( HEADER_WINDOW_MODE, TEST_WINDOW_MODE_TIME );
+    parameters.put( HEADER_WINDOW_SIZE, TEST_WINDOW_SIZE );
+    parameters.put( HEADER_WINDOW_EVERY, TEST_WINDOW_EVERY );
+    parameters.put( HEADER_WINDOW_LIMIT, TEST_WINDOW_LIMIT );
+
+    Query query = mock( Query.class );
+    doReturn( query )
+      .when( client )
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.TIME_BASED,
+        Long.valueOf( TEST_WINDOW_SIZE ),
+        Long.valueOf( TEST_WINDOW_EVERY ),
+        Long.valueOf( TEST_WINDOW_LIMIT ),
+        ImmutableMap.of( "FOO", "BAR" ) );
+    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
+
+    when( request.getMethod() ).thenReturn( "POST" );
+    servlet.service( request, response );
+    verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
+
+    verify( request, times( 2 ) ).getParameter( HEADER_SQL );
+    verify( request, times( 2 ) ).getParameter( HEADER_MAX_ROWS );
+    verify( request, times( 2 ) ).getParameter( HEADER_WINDOW_MODE );
+    verify( request, times( 2 ) ).getParameter( HEADER_WINDOW_SIZE );
+    verify( request, times( 2 ) ).getParameter( HEADER_WINDOW_EVERY );
+    verify( request, times( 2 ) ).getParameter( HEADER_WINDOW_LIMIT );
+    verify( request, never() ).getHeader( HEADER_SQL );
+    verify( request, never() ).getHeader( HEADER_MAX_ROWS );
+    verify( request, never() ).getHeader( HEADER_WINDOW_MODE );
+    verify( request, never() ).getHeader( HEADER_WINDOW_SIZE );
+    verify( request, never() ).getHeader( HEADER_WINDOW_EVERY );
+    verify( request, never() ).getHeader( HEADER_WINDOW_LIMIT );
+  }
+
+  @Test
+  public void testStreamingRowBasedDefaultParams() throws Exception {
+    headers.put( HEADER_SQL, TEST_SQL_QUERY );
+    headers.put( HEADER_WINDOW_MODE, TEST_WINDOW_MODE_ROW );
+
+    streamingDataService.setTimeLimit( DEFAULT_WINDOW_MAX_TIME );
+    streamingDataService.setRowLimit( DEFAULT_WINDOW_MAX_ROWS );
+
+    Query query = mock( Query.class );
+    doReturn( query )
+      .when( client )
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.ROW_BASED,
+        Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
+        Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
+        Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
+        ImmutableMap.of( "FOO", "BAR" ) );
+    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
+
+    when( request.getMethod() ).thenReturn( "POST" );
+    servlet.service( request, response );
+    verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
+  }
+
+  @Test
+  public void testStreamingDefaultModeDefauldParams() throws Exception {
+    headers.put( HEADER_SQL, TEST_SQL_QUERY );
+
+    streamingDataService.setTimeLimit( DEFAULT_WINDOW_MAX_TIME );
+    streamingDataService.setRowLimit( DEFAULT_WINDOW_MAX_ROWS );
+
+    Query query = mock( Query.class );
+    doReturn( query )
+      .when( client )
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.ROW_BASED,
+        Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
+        Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
+        Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
+        ImmutableMap.of( "FOO", "BAR" ) );
+    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
+
+    when( request.getMethod() ).thenReturn( "POST" );
+    servlet.service( request, response );
+    verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
+  }
+
+  @Test
+  public void testStreamingTimeBasedModeDefauldParams() throws Exception {
+    headers.put( HEADER_SQL, TEST_SQL_QUERY );
+    headers.put( HEADER_WINDOW_MODE, TEST_WINDOW_MODE_TIME );
+
+    streamingDataService.setTimeLimit( DEFAULT_WINDOW_MAX_TIME );
+    streamingDataService.setRowLimit( DEFAULT_WINDOW_MAX_ROWS );
+
+    Query query = mock( Query.class );
+    doReturn( query )
+      .when( client )
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.TIME_BASED,
+        Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
+        Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
+        Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
+        ImmutableMap.of( "FOO", "BAR" ) );
+    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
+
+    when( request.getMethod() ).thenReturn( "POST" );
+    servlet.service( request, response );
+    verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
   }
 
   @Test

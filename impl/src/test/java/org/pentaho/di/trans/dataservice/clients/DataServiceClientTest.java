@@ -37,6 +37,7 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.BaseTest;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
@@ -92,8 +93,10 @@ public class DataServiceClientTest extends BaseTest {
   public void setUp() throws Exception {
     when( dataServiceResolver.getDataService( DATA_SERVICE_NAME ) ).thenReturn( dataService );
     when( dataServiceResolver.getDataService( STREAMING_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
-    when( dataServiceResolver.getDataServices( anyString(), any() ) ).thenReturn( ImmutableList.of( dataService ) );
-    when( dataServiceResolver.getDataServices( any() ) ).thenReturn( ImmutableList.of( dataService ) );
+    when( dataServiceResolver.getDataServices( anyString(), any() ) ).thenReturn( ImmutableList.of( dataService,
+      streamingDataService) );
+    when( dataServiceResolver.getDataServices( any() ) ).thenReturn( ImmutableList.of( dataService,
+      streamingDataService ) );
 
     client = new DataServiceClient( queryServiceDelegate, dataServiceResolver, Executors.newCachedThreadPool() );
     client.setLogChannel( log );
@@ -299,6 +302,8 @@ public class DataServiceClientTest extends BaseTest {
   @Test
   public void testGetServiceInformation() throws Exception {
     when( transMeta.getStepFields( dataService.getStepname() ) ).thenReturn( rowMetaInterface );
+    when( dataServiceResolver.getDataServices( anyString(), any() ) ).thenReturn( ImmutableList.of( dataService ) );
+    when( dataServiceResolver.getDataServices( any() ) ).thenReturn( ImmutableList.of( dataService ) );
 
     assertThat( client.getServiceInformation(), contains( allOf(
       hasProperty( "name", equalTo( DATA_SERVICE_NAME ) ),
@@ -337,6 +342,20 @@ public class DataServiceClientTest extends BaseTest {
 
     assertThat( serviceInformation.getName(), equalTo( DATA_SERVICE_NAME ) );
     assertThat( serviceInformation.getServiceFields(), equalTo( rowMetaInterface ) );
+  }
+
+  @Test
+  public void testGetServiceMeta() throws Exception {
+    assertThat( client.getServiceMeta(), contains( dataService, streamingDataService ) );
+  }
+
+  @Test
+  public void testGetServiceMetaByName() throws Exception {
+    DataServiceMeta serviceMetaRegular = client.getServiceMeta( DATA_SERVICE_NAME );
+    DataServiceMeta serviceMetaStreaming = client.getServiceMeta( STREAMING_DATA_SERVICE_NAME );
+
+    assertSame( serviceMetaRegular, dataService );
+    assertSame( serviceMetaStreaming, streamingDataService );
   }
 
   @Test

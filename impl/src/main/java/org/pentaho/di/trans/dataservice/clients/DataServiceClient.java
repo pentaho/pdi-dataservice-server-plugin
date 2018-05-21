@@ -195,6 +195,31 @@ public class DataServiceClient implements IDataServiceClientService {
     return resolver.getDataServiceNames();
   }
 
+  /**
+   * Getter for the registered {@link DataServiceMeta}.
+   *
+   * @return The list of registered {@link DataServiceMeta}
+   */
+  public List<DataServiceMeta> getServiceMeta() {
+    List<DataServiceMeta> services = Lists.newArrayList();
+
+    for ( DataServiceMeta serviceMeta : resolver.getDataServices( logErrors()::apply ) ) {
+      services.add( serviceMeta );
+    }
+
+    return services;
+  }
+
+  /**
+   * Getter for the registered {@link DataServiceMeta} for the given data service name.
+   *
+   * @param serviceName - The data service name.
+   * @return The {@link DataServiceMeta} for the given data service name if found, null otherwise.
+   */
+  public DataServiceMeta getServiceMeta( String serviceName ) {
+    return resolver.getDataService( serviceName );
+  }
+
 
   private Function<Exception, Void> logErrors() {
     return e -> {

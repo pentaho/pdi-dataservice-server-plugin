@@ -28,11 +28,13 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.CarteServlet;
+import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.clients.Query;
@@ -59,6 +61,10 @@ public class TransDataServlet extends BaseCartePlugin {
   private static final long serialVersionUID = 3634806745372015720L;
 
   private static final String MAX_ROWS = "MaxRows";
+  private static final String WINDOW_MODE = "WindowMode";
+  private static final String WINDOW_SIZE = "WindowSize";
+  private static final String WINDOW_EVERY = "WindowEvery";
+  private static final String WINDOW_LIMIT = "WindowLimit";
   private static final String SQL = "SQL";
   private final DataServiceClient client;
 
@@ -74,23 +80,72 @@ public class TransDataServlet extends BaseCartePlugin {
       sqlQuery =
       !Strings.isNullOrEmpty( request.getParameter( SQL ) ) ? request.getParameter( SQL ) : request.getHeader( SQL );
     if ( Strings.isNullOrEmpty( sqlQuery ) ) {
-
       String sqlParamMissing = "SQL not specified";
       logError( sqlParamMissing );
       request.respond( 400 ).withMessage( sqlParamMissing );
       return;
     }
-    String
-      maxRowsValue =
-      !Strings.isNullOrEmpty( request.getParameter( MAX_ROWS ) ) ? request.getParameter( MAX_ROWS )
-        : request.getHeader( MAX_ROWS );
-    final int maxRows = Const.toInt( maxRowsValue, -1 );
 
-    final String debugTransFile = request.getParameter( "debugtrans" );
-
-    Map<String, String> parameters = collectParameters( request.getParameters() );
     try {
-      final Query query = client.prepareQuery( sqlQuery, maxRows, parameters );
+      String serviceName = new SQL( sqlQuery ).getServiceName();
+
+      DataServiceMeta clientMeta =  !Strings.isNullOrEmpty( serviceName )
+        ? client.getServiceMeta( serviceName ) : null;
+
+      boolean isStreaming = clientMeta != null && clientMeta.isStreaming();
+
+      String
+        maxRowsValue =
+        !Strings.isNullOrEmpty( request.getParameter( MAX_ROWS ) ) ? request.getParameter( MAX_ROWS )
+          : request.getHeader( MAX_ROWS );
+
+      final int maxRows = Const.toInt( maxRowsValue, -1 );
+
+      final String debugTransFile = request.getParameter( "debugtrans" );
+
+      Map<String, String> parameters = collectParameters( request.getParameters() );
+
+      final Query query;
+
+      if ( isStreaming ) {
+        String
+          windowModeValue =
+          !Strings.isNullOrEmpty( request.getParameter( WINDOW_MODE ) ) ? request.getParameter( WINDOW_MODE )
+            : request.getHeader( WINDOW_MODE );
+
+        String
+          windowSizeValue =
+          !Strings.isNullOrEmpty( request.getParameter( WINDOW_SIZE ) ) ? request.getParameter( WINDOW_SIZE )
+            : request.getHeader( WINDOW_SIZE );
+
+        String
+          windowEveryValue =
+          !Strings.isNullOrEmpty( request.getParameter( WINDOW_EVERY ) ) ? request.getParameter( WINDOW_EVERY )
+            : request.getHeader( WINDOW_EVERY );
+
+        String
+          windowLimitValue =
+          !Strings.isNullOrEmpty( request.getParameter( WINDOW_LIMIT ) ) ? request.getParameter( WINDOW_LIMIT )
+            : request.getHeader( WINDOW_LIMIT );
+
+        final IDataServiceClientService.StreamingMode windowMode
+          = IDataServiceClientService.StreamingMode.TIME_BASED.toString().equalsIgnoreCase( windowModeValue )
+          ? IDataServiceClientService.StreamingMode.TIME_BASED : IDataServiceClientService.StreamingMode.ROW_BASED;
+
+        final boolean rowBased = IDataServiceClientService.StreamingMode.ROW_BASED.equals( windowMode );
+
+        final long windowSize = Const.toLong( windowSizeValue,
+          rowBased ? clientMeta.getRowLimit() : clientMeta.getTimeLimit() );
+        final long windowEvery = Const.toLong( windowEveryValue,
+          rowBased ? clientMeta.getRowLimit() : clientMeta.getTimeLimit() );
+        final long windowLimit = Const.toLong( windowLimitValue,
+          rowBased ? clientMeta.getTimeLimit() : clientMeta.getRowLimit() );
+
+        query = client.prepareQuery( sqlQuery, windowMode, windowSize, windowEvery, windowLimit,
+          parameters );
+      } else {
+        query = client.prepareQuery( sqlQuery, maxRows, parameters );
+      }
 
       // For logging and tracking purposes, let's expose both the service transformation as well
       // as the generated transformation on this very carte instance
