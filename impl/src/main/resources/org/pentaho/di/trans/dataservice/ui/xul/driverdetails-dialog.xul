@@ -21,6 +21,9 @@
       <label value="${DriverDetailsDialog.JdbcUrl.Label}"/>
       <label value="${DriverDetailsDialog.JdbcUrl.Text}"/>
       <hbox height="7"/>
+      <label value="${DriverDetailsDialog.JdbcStreamingUrl.Label}"/>
+      <label value="${DriverDetailsDialog.JdbcStreamingUrl.Text}"/>
+      <hbox height="7"/>
       <label value="${DriverDetailsDialog.UserName.Label}"/>
       <hbox height="7"/>
       <label value="${DriverDetailsDialog.Password.Label}"/>
