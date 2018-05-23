@@ -56,6 +56,7 @@ public class ServiceCacheController extends AbstractController {
     BindingFactory bindingFactory = getBindingFactory();
 
     XulRadio normalModeRadio = getElementById( "regular-type-radio" );
+    XulRadio streamingRadioButton = getElementById( "streaming-type-radio" );
     XulTab serviceCacheTab = getElementById( "service-cache-tab" );
 
     XulCheckbox serviceCacheCheckBox = getElementById( "service-cache-checkbox" );
@@ -79,6 +80,7 @@ public class ServiceCacheController extends AbstractController {
     bindingFactory.createBinding( serviceCacheCheckBox, "checked", serviceCacheTextBox, "disabled", not() );
 
     bindingFactory.createBinding( normalModeRadio, "selected", serviceCacheTab, "visible" );
+    bindingFactory.createBinding( streamingRadioButton, "!selected", serviceCacheTab, "visible" );
   }
 
   /**
