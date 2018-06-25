@@ -28,6 +28,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.IifFunction;
+import org.pentaho.di.core.sql.DateToStrFunction;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLAggregation;
 import org.pentaho.di.core.sql.SQLField;
@@ -50,12 +51,14 @@ import org.pentaho.di.trans.steps.selectvalues.SelectMetadataChange;
 import org.pentaho.di.trans.steps.selectvalues.SelectValuesMeta;
 import org.pentaho.di.trans.steps.sort.SortRowsMeta;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_INTEGER;
 import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NONE;
 import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NUMBER;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_STRING;
 
 public class SqlTransGenerator {
 
@@ -135,8 +138,24 @@ public class SqlTransGenerator {
     // We optionally need to aggregate the data
     //
     if ( sql.getWhereCondition() != null && !sql.getWhereCondition().isEmpty() ) {
+      Collection<DateToStrFunction> dateToStrFunctions = sql.getWhereCondition().getDateToStrFunctions();
+      if ( !dateToStrFunctions.isEmpty() ) {
+        // Create a copy of the fields used in the DATE_TO_STR calls
+        StepMeta fieldCloneStep = generateCloneForDateToStrStep( dateToStrFunctions );
+        lastStep = addToTrans( fieldCloneStep, transMeta, lastStep );
+        // Convert the type to String on the new fields
+        StepMeta dateToStrStep = generateSelectForDateToStrStep( dateToStrFunctions );
+        lastStep = addToTrans( dateToStrStep, transMeta, lastStep );
+      }
+
       StepMeta filterStep = generateFilterStep( sql.getWhereCondition().getCondition(), false );
       lastStep = addToTrans( filterStep, transMeta, lastStep );
+
+      if ( !dateToStrFunctions.isEmpty() ) {
+        // Remove temporary fields
+        StepMeta cleanupStep = generateRemoveStep( dateToStrFunctions );
+        lastStep = addToTrans( cleanupStep, transMeta, lastStep );
+      }
     }
 
     // We optionally need to aggregate the data
@@ -436,6 +455,75 @@ public class SqlTransGenerator {
     xLocation += 100;
     stepMeta.setDraw( true );
     return stepMeta;
+  }
+
+  private StepMeta generateCloneForDateToStrStep( Collection<DateToStrFunction> dateToStrFunctions ) {
+    CalculatorMeta meta = new CalculatorMeta();
+    meta.setCalculation(
+        dateToStrFunctions.stream()
+            .map( function -> getDateToStrCloneMetaFunction( meta, function ) )
+            .collect( Collectors.toList() )
+            .toArray( new CalculatorMetaFunction[ dateToStrFunctions.size() ] ) );
+
+    StepMeta stepMeta = new StepMeta( "DateToStr - Copy input fields", meta );
+    stepMeta.setLocation( xLocation, 50 );
+    xLocation += 100;
+    stepMeta.setDraw( true );
+    return stepMeta;
+  }
+
+  private CalculatorMetaFunction getDateToStrCloneMetaFunction( CalculatorMeta meta, DateToStrFunction function ) {
+    CalculatorMetaFunction calcFunction = new CalculatorMetaFunction();
+    calcFunction.setFieldName( function.getResultName() );
+    calcFunction.setFieldA( function.getFieldName() );
+
+    int inputFieldIndex = serviceFields.indexOfValue( function.getFieldName() );
+    calcFunction.setValueType( serviceFields.getValueMeta( inputFieldIndex ).getType() );
+
+    calcFunction.setRemovedFromResult( false );
+    calcFunction.setCalcType( CalculatorMetaFunction.CALC_COPY_OF_FIELD );
+    return calcFunction;
+  }
+
+  private StepMeta generateSelectForDateToStrStep( Collection<DateToStrFunction> dateToStrFunctions ) {
+    // Use Select step to convert dates to strings
+    SelectValuesMeta meta = new SelectValuesMeta();
+    meta.allocate( 0, 0, dateToStrFunctions.size() );
+    meta.setMeta(
+        dateToStrFunctions.stream()
+            .map( function -> getDateToStrMetadataChange( meta, function ) )
+            .collect( Collectors.toList() )
+            .toArray( new SelectMetadataChange[ dateToStrFunctions.size() ] ) );
+
+    StepMeta stepMeta = new StepMeta( "DateToStr - Format temporary fields", meta );
+    stepMeta.setLocation( xLocation, 50 );
+    xLocation += 100;
+    stepMeta.setDraw( true );
+    return stepMeta;
+  }
+
+  private SelectMetadataChange getDateToStrMetadataChange( SelectValuesMeta meta, DateToStrFunction function ) {
+    SelectMetadataChange metadataChange = new SelectMetadataChange( meta );
+    metadataChange.setName( function.getResultName() );
+    metadataChange.setConversionMask( function.getDateMask() );
+    metadataChange.setType( TYPE_STRING );
+    return metadataChange;
+  }
+
+  private StepMeta generateRemoveStep( Collection<DateToStrFunction> dateToStrFunctions ) {
+    SelectValuesMeta selectMeta = new SelectValuesMeta();
+    String[] fieldsToDelete = dateToStrFunctions
+        .stream()
+        .map( function -> function.getResultName() )
+        .collect( Collectors.toList() )
+        .toArray( new String[dateToStrFunctions.size()] );
+
+    selectMeta.setDeleteName( fieldsToDelete );
+    StepMeta stepMetaSelect =  new StepMeta( "DateToStr - Remove temporary fields", selectMeta );
+    stepMetaSelect.setLocation( xLocation, 50 );
+    xLocation += 100;
+    stepMetaSelect.setDraw( true );
+    return stepMetaSelect;
   }
 
   private StepMeta generateFilterStep( Condition condition, boolean isHaving ) {

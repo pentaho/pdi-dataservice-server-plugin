@@ -39,11 +39,15 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.steps.calculator.CalculatorMeta;
+import org.pentaho.di.trans.steps.filterrows.FilterRowsMeta;
 import org.pentaho.di.trans.steps.samplerows.SampleRowsMeta;
 import org.pentaho.di.trans.steps.selectvalues.SelectValuesMeta;
 
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.logging.Filter;
 
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -51,10 +55,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NONE;
 import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NUMBER;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_STRING;
 
 public class SqlTransGeneratorTest {
 
@@ -306,6 +310,54 @@ public class SqlTransGeneratorTest {
     generator = new SqlTransGenerator( sql, 0, -3 );
     transMeta = generator.generateTransMeta();
     assertTrue( "limit<=0 not ignored", Arrays.asList( transMeta.getStepNames() ).indexOf( genLimitStep ) < 0 );
+  }
+
+  @Test
+  public void testGenerateDateToStrSteps() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM table WHERE DATE_TO_STR(date, 'MM') = '01'" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaDate( "date" ) );
+    sql.parse( rowMeta );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 0 );
+
+    /* get steps */
+    TransMeta transMeta = generator.generateTransMeta();
+    CalculatorMeta cloneStepMeta = (CalculatorMeta) getStepByName( transMeta, "DateToStr - Copy input fields" );
+    SelectValuesMeta formatStepMeta = (SelectValuesMeta) getStepByName( transMeta, "DateToStr - Format temporary fields" );
+    SelectValuesMeta cleanUpStepMeta = (SelectValuesMeta) getStepByName( transMeta, "DateToStr - Remove temporary fields" );
+    FilterRowsMeta whereStepMeta = (FilterRowsMeta) getStepByName( transMeta, "Where filter" );
+
+    String temporaryField = cloneStepMeta.getCalculation()[0].getFieldName();
+    assertEquals( temporaryField, formatStepMeta.getMeta()[0].getName() );
+    assertEquals( temporaryField, cleanUpStepMeta.getDeleteName()[0] );
+    assertEquals( temporaryField, whereStepMeta.getCondition().getLeftValuename() );
+    assertThat( cloneStepMeta.getCalculation()[0].getFieldA(), equalTo( "date" ) );
+    assertThat( formatStepMeta.getMeta()[0].getConversionMask(), equalTo( "MM" ) );
+    assertThat( formatStepMeta.getMeta()[0].getType(), is( TYPE_STRING ) );
+  }
+
+  @Test
+  public void testDateToStrStepsNotGenerated() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM table WHERE date > [2016/04/01]" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaDate( "date" ) );
+    sql.parse( rowMeta );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 0 );
+
+    /* get steps */
+    TransMeta transMeta = generator.generateTransMeta();
+    assertStepNotPresent( transMeta, "DateToStr - Copy input fields" );
+    assertStepNotPresent( transMeta, "DateToStr - Format temporary fields" );
+    assertStepNotPresent( transMeta, "DateToStr - Remove temporary fields" );
+  }
+
+  private void assertStepNotPresent( TransMeta transMeta, String stepName ) {
+    int selectValuesIndex = Arrays.asList( transMeta.getStepNames() ).indexOf( stepName );
+    if ( selectValuesIndex >= 0 ) {
+      fail( "Expected not to find a step named '" + stepName + "'" );
+    }
   }
 }
 
