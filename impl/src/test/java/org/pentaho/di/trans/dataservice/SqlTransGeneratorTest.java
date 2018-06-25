@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -323,18 +323,16 @@ public class SqlTransGeneratorTest {
 
     /* get steps */
     TransMeta transMeta = generator.generateTransMeta();
-    CalculatorMeta cloneStepMeta = (CalculatorMeta) getStepByName( transMeta, "DateToStr - Copy input fields" );
-    SelectValuesMeta formatStepMeta = (SelectValuesMeta) getStepByName( transMeta, "DateToStr - Format temporary fields" );
+    CalculatorMeta dateToStrStepMeta = (CalculatorMeta) getStepByName( transMeta, "DateToStr" );
     SelectValuesMeta cleanUpStepMeta = (SelectValuesMeta) getStepByName( transMeta, "DateToStr - Remove temporary fields" );
     FilterRowsMeta whereStepMeta = (FilterRowsMeta) getStepByName( transMeta, "Where filter" );
 
-    String temporaryField = cloneStepMeta.getCalculation()[0].getFieldName();
-    assertEquals( temporaryField, formatStepMeta.getMeta()[0].getName() );
+    String temporaryField = dateToStrStepMeta.getCalculation()[0].getFieldName();
     assertEquals( temporaryField, cleanUpStepMeta.getDeleteName()[0] );
     assertEquals( temporaryField, whereStepMeta.getCondition().getLeftValuename() );
-    assertThat( cloneStepMeta.getCalculation()[0].getFieldA(), equalTo( "date" ) );
-    assertThat( formatStepMeta.getMeta()[0].getConversionMask(), equalTo( "MM" ) );
-    assertThat( formatStepMeta.getMeta()[0].getType(), is( TYPE_STRING ) );
+    assertThat( dateToStrStepMeta.getCalculation()[0].getFieldA(), equalTo( "date" ) );
+    assertThat( dateToStrStepMeta.getCalculation()[0].getConversionMask(), equalTo( "MM" ) );
+    assertThat( dateToStrStepMeta.getCalculation()[0].getValueType(), is( TYPE_STRING ) );
   }
 
   @Test
@@ -348,8 +346,7 @@ public class SqlTransGeneratorTest {
 
     /* get steps */
     TransMeta transMeta = generator.generateTransMeta();
-    assertStepNotPresent( transMeta, "DateToStr - Copy input fields" );
-    assertStepNotPresent( transMeta, "DateToStr - Format temporary fields" );
+    assertStepNotPresent( transMeta, "DateToStr" );
     assertStepNotPresent( transMeta, "DateToStr - Remove temporary fields" );
   }
 

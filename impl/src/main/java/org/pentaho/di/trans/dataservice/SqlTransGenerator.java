@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -140,12 +140,8 @@ public class SqlTransGenerator {
     if ( sql.getWhereCondition() != null && !sql.getWhereCondition().isEmpty() ) {
       Collection<DateToStrFunction> dateToStrFunctions = sql.getWhereCondition().getDateToStrFunctions();
       if ( !dateToStrFunctions.isEmpty() ) {
-        // Create a copy of the fields used in the DATE_TO_STR calls
-        StepMeta fieldCloneStep = generateCloneForDateToStrStep( dateToStrFunctions );
+        StepMeta fieldCloneStep = generateDateToStrStep( dateToStrFunctions );
         lastStep = addToTrans( fieldCloneStep, transMeta, lastStep );
-        // Convert the type to String on the new fields
-        StepMeta dateToStrStep = generateSelectForDateToStrStep( dateToStrFunctions );
-        lastStep = addToTrans( dateToStrStep, transMeta, lastStep );
       }
 
       StepMeta filterStep = generateFilterStep( sql.getWhereCondition().getCondition(), false );
@@ -457,7 +453,7 @@ public class SqlTransGenerator {
     return stepMeta;
   }
 
-  private StepMeta generateCloneForDateToStrStep( Collection<DateToStrFunction> dateToStrFunctions ) {
+  private StepMeta generateDateToStrStep( Collection<DateToStrFunction> dateToStrFunctions ) {
     CalculatorMeta meta = new CalculatorMeta();
     meta.setCalculation(
         dateToStrFunctions.stream()
@@ -465,7 +461,7 @@ public class SqlTransGenerator {
             .collect( Collectors.toList() )
             .toArray( new CalculatorMetaFunction[ dateToStrFunctions.size() ] ) );
 
-    StepMeta stepMeta = new StepMeta( "DateToStr - Copy input fields", meta );
+    StepMeta stepMeta = new StepMeta( "DateToStr", meta );
     stepMeta.setLocation( xLocation, 50 );
     xLocation += 100;
     stepMeta.setDraw( true );
@@ -476,38 +472,11 @@ public class SqlTransGenerator {
     CalculatorMetaFunction calcFunction = new CalculatorMetaFunction();
     calcFunction.setFieldName( function.getResultName() );
     calcFunction.setFieldA( function.getFieldName() );
-
-    int inputFieldIndex = serviceFields.indexOfValue( function.getFieldName() );
-    calcFunction.setValueType( serviceFields.getValueMeta( inputFieldIndex ).getType() );
-
+    calcFunction.setConversionMask( function.getDateMask() );
+    calcFunction.setValueType( TYPE_STRING );
     calcFunction.setRemovedFromResult( false );
     calcFunction.setCalcType( CalculatorMetaFunction.CALC_COPY_OF_FIELD );
     return calcFunction;
-  }
-
-  private StepMeta generateSelectForDateToStrStep( Collection<DateToStrFunction> dateToStrFunctions ) {
-    // Use Select step to convert dates to strings
-    SelectValuesMeta meta = new SelectValuesMeta();
-    meta.allocate( 0, 0, dateToStrFunctions.size() );
-    meta.setMeta(
-        dateToStrFunctions.stream()
-            .map( function -> getDateToStrMetadataChange( meta, function ) )
-            .collect( Collectors.toList() )
-            .toArray( new SelectMetadataChange[ dateToStrFunctions.size() ] ) );
-
-    StepMeta stepMeta = new StepMeta( "DateToStr - Format temporary fields", meta );
-    stepMeta.setLocation( xLocation, 50 );
-    xLocation += 100;
-    stepMeta.setDraw( true );
-    return stepMeta;
-  }
-
-  private SelectMetadataChange getDateToStrMetadataChange( SelectValuesMeta meta, DateToStrFunction function ) {
-    SelectMetadataChange metadataChange = new SelectMetadataChange( meta );
-    metadataChange.setName( function.getResultName() );
-    metadataChange.setConversionMask( function.getDateMask() );
-    metadataChange.setType( TYPE_STRING );
-    return metadataChange;
   }
 
   private StepMeta generateRemoveStep( Collection<DateToStrFunction> dateToStrFunctions ) {
