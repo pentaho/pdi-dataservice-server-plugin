@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,6 +28,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.sql.IifFunction;
+import org.pentaho.di.core.sql.DateToStrFunction;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLAggregation;
 import org.pentaho.di.core.sql.SQLField;
@@ -50,12 +51,14 @@ import org.pentaho.di.trans.steps.selectvalues.SelectMetadataChange;
 import org.pentaho.di.trans.steps.selectvalues.SelectValuesMeta;
 import org.pentaho.di.trans.steps.sort.SortRowsMeta;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_INTEGER;
 import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NONE;
 import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NUMBER;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_STRING;
 
 public class SqlTransGenerator {
 
@@ -135,8 +138,20 @@ public class SqlTransGenerator {
     // We optionally need to aggregate the data
     //
     if ( sql.getWhereCondition() != null && !sql.getWhereCondition().isEmpty() ) {
+      Collection<DateToStrFunction> dateToStrFunctions = sql.getWhereCondition().getDateToStrFunctions();
+      if ( !dateToStrFunctions.isEmpty() ) {
+        StepMeta fieldCloneStep = generateDateToStrStep( dateToStrFunctions );
+        lastStep = addToTrans( fieldCloneStep, transMeta, lastStep );
+      }
+
       StepMeta filterStep = generateFilterStep( sql.getWhereCondition().getCondition(), false );
       lastStep = addToTrans( filterStep, transMeta, lastStep );
+
+      if ( !dateToStrFunctions.isEmpty() ) {
+        // Remove temporary fields
+        StepMeta cleanupStep = generateRemoveStep( dateToStrFunctions );
+        lastStep = addToTrans( cleanupStep, transMeta, lastStep );
+      }
     }
 
     // We optionally need to aggregate the data
@@ -436,6 +451,48 @@ public class SqlTransGenerator {
     xLocation += 100;
     stepMeta.setDraw( true );
     return stepMeta;
+  }
+
+  private StepMeta generateDateToStrStep( Collection<DateToStrFunction> dateToStrFunctions ) {
+    CalculatorMeta meta = new CalculatorMeta();
+    meta.setCalculation(
+        dateToStrFunctions.stream()
+            .map( function -> getDateToStrCloneMetaFunction( meta, function ) )
+            .collect( Collectors.toList() )
+            .toArray( new CalculatorMetaFunction[ dateToStrFunctions.size() ] ) );
+
+    StepMeta stepMeta = new StepMeta( "DateToStr", meta );
+    stepMeta.setLocation( xLocation, 50 );
+    xLocation += 100;
+    stepMeta.setDraw( true );
+    return stepMeta;
+  }
+
+  private CalculatorMetaFunction getDateToStrCloneMetaFunction( CalculatorMeta meta, DateToStrFunction function ) {
+    CalculatorMetaFunction calcFunction = new CalculatorMetaFunction();
+    calcFunction.setFieldName( function.getResultName() );
+    calcFunction.setFieldA( function.getFieldName() );
+    calcFunction.setConversionMask( function.getDateMask() );
+    calcFunction.setValueType( TYPE_STRING );
+    calcFunction.setRemovedFromResult( false );
+    calcFunction.setCalcType( CalculatorMetaFunction.CALC_COPY_OF_FIELD );
+    return calcFunction;
+  }
+
+  private StepMeta generateRemoveStep( Collection<DateToStrFunction> dateToStrFunctions ) {
+    SelectValuesMeta selectMeta = new SelectValuesMeta();
+    String[] fieldsToDelete = dateToStrFunctions
+        .stream()
+        .map( function -> function.getResultName() )
+        .collect( Collectors.toList() )
+        .toArray( new String[dateToStrFunctions.size()] );
+
+    selectMeta.setDeleteName( fieldsToDelete );
+    StepMeta stepMetaSelect =  new StepMeta( "DateToStr - Remove temporary fields", selectMeta );
+    stepMetaSelect.setLocation( xLocation, 50 );
+    xLocation += 100;
+    stepMetaSelect.setDraw( true );
+    return stepMetaSelect;
   }
 
   private StepMeta generateFilterStep( Condition condition, boolean isHaving ) {
