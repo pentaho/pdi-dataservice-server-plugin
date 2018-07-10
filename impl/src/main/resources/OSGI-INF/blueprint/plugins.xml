@@ -79,4 +79,11 @@
         <argument ref="referenceSynchronizer"/>
         <pen:di-plugin type="org.pentaho.di.core.extension.ExtensionPointPluginType"/>
     </bean>
+
+    <bean id="DataServiceLifecycleListener"
+          class="org.pentaho.di.trans.dataservice.ui.menu.DataServiceLifecycleListener">
+        <argument ref="context" />
+        <pen:di-plugin type="org.pentaho.di.core.plugins.LifecyclePluginType" />
+    </bean>
+
 </blueprint>
