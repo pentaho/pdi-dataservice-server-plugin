@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -40,6 +40,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceReferenceSynchronizer;
 import org.pentaho.di.trans.dataservice.serialization.SynchronizationListener;
+import org.pentaho.di.trans.dataservice.ui.menu.DataServiceFolderProvider;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
@@ -182,7 +183,7 @@ public class DataServiceDelegate extends DataServiceFactory {
   public void save( DataServiceMeta dataService ) throws MetaStoreException {
     Spoon spoon = getSpoon();
     super.save( dataService );
-    spoon.refreshTree();
+    spoon.refreshTree( DataServiceFolderProvider.STRING_DATA_SERVICES );
     spoon.refreshGraph();
   }
 
@@ -202,7 +203,7 @@ public class DataServiceDelegate extends DataServiceFactory {
   @Override
   public void removeDataService( DataServiceMeta dataService ) {
     super.removeDataService( dataService );
-    getSpoon().refreshTree();
+    getSpoon().refreshTree( DataServiceFolderProvider.STRING_DATA_SERVICES );
     getSpoon().refreshGraph();
   }
 
