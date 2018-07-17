@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.streaming;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableMap;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 
 import java.io.Serializable;
@@ -97,8 +98,8 @@ public class StreamServiceKey implements Serializable {
    *
    * @return - The parameters property.
    */
-  public Map<String, String> getParameters() {
-    return parameters;
+  public ImmutableMap<String, String> getParameters() {
+    return ImmutableMap.copyOf( parameters );
   }
 
   public List<String> getOptimizations() {
