@@ -96,6 +96,7 @@
     <pentaho-modeler.version>9.0.0.0-SNAPSHOT</pentaho-modeler.version>
     <rxjava.version>2.0.4</rxjava.version>
     <reactivestreams.version>1.0.2</reactivestreams.version>
+    <jsr305.version>2.0.3</jsr305.version>
   </properties>
 
   <dependencyManagement>
@@ -237,7 +238,7 @@
       <dependency>
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>jsr305</artifactId>
-        <version>2.0.3</version>
+        <version>${jsr305.version}</version>
       </dependency>
       <dependency>
         <groupId>xerces</groupId>
