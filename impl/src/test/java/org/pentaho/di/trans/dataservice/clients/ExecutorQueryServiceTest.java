@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -34,6 +35,7 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.IMetaStore;
@@ -46,8 +48,13 @@ import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -56,58 +63,120 @@ import static org.mockito.Mockito.when;
  */
 @RunWith( MockitoJUnitRunner.class )
 public class ExecutorQueryServiceTest {
-  @Mock DataOutputStream dataOutputStream;
-  @Mock OutputStream outputStream;
+  private Query result;
+  private int rowLimit = 5432;
+  private SQL sql;
+  private HashMap<String, String> parameters = new HashMap<>();
+  private ExecutorQueryService executorQueryService;
 
-  @Test
-  public void testQueryBuildsWithMetastore() throws Exception {
-    final DataServiceFactory factory = mock( DataServiceFactory.class );
-    final DataServiceContext context = mock( DataServiceContext.class );
-    final DataServiceResolver dataServiceResolver = mock( DataServiceResolver.class );
-    final DataServiceExecutor dataServiceExecutor = mock( DataServiceExecutor.class );
-    final Trans serviceTrans = mock( Trans.class );
-    final Trans genTrans = mock( Trans.class );
+  @Mock private DataServiceFactory factory;
+  @Mock private DataServiceContext context;
+  @Mock private DataServiceResolver dataServiceResolver;
+  @Mock private DataServiceExecutor dataServiceExecutor;
+  @Mock private Trans serviceTrans;
+  @Mock private Trans genTrans;
+  @Mock private DataServiceExecutor.Builder builder;
+  @Mock private IMetaStore metastore;
+  @Mock private MetastoreLocator metastoreLocator;
+  @Mock private DataOutputStream dataOutputStream;
+  @Mock private OutputStream outputStream;
+
+  @Before
+  public void setup() throws Exception {
+    rowLimit = 5432;
+    parameters = new HashMap<>();
+    sql = new SQL( "select field from table" );
+
     when( context.getMetaStoreUtil() ).thenReturn( factory );
-    DataServiceExecutor.Builder builder = mock( DataServiceExecutor.Builder.class );
-
-    final IMetaStore metastore = mock( IMetaStore.class );
-    final MetastoreLocator metastoreLocator = mock( MetastoreLocator.class );
     when( metastoreLocator.getMetastore() ).thenReturn( metastore );
 
-    SQL sql = new SQL( "select field from table" );
-    HashMap<String, String> parameters = new HashMap<>();
-    int rowLimit = 5432;
-
-    ExecutorQueryService executorQueryService = new ExecutorQueryService( dataServiceResolver, metastoreLocator );
+    executorQueryService = new ExecutorQueryService( dataServiceResolver, metastoreLocator );
     when( dataServiceResolver.createBuilder( argThat( matchesSql( sql ) ) ) ).thenReturn( builder );
     when( factory.getMetaStore() ).thenReturn( metastore );
 
     when( builder.rowLimit( rowLimit ) ).thenReturn( builder );
     when( builder.parameters( parameters ) ).thenReturn( builder );
     when( builder.metastore( metastore ) ).thenReturn( builder );
-    when( builder.windowMode( null ) ).thenReturn( builder );
-    when( builder.windowSize( 0 ) ).thenReturn( builder );
-    when( builder.windowEvery( 0 ) ).thenReturn( builder );
-    when( builder.windowLimit( 0 ) ).thenReturn( builder );
+    when( builder.windowMode( any( IDataServiceClientService.StreamingMode.class ) ) ).thenReturn( builder );
+    when( builder.windowSize( anyLong() ) ).thenReturn( builder );
+    when( builder.windowEvery( anyLong() ) ).thenReturn( builder );
+    when( builder.windowLimit( anyLong() ) ).thenReturn( builder );
+    when( builder.rowLimit( anyInt() ) ).thenReturn( builder );
     when( builder.build() ).thenReturn( dataServiceExecutor );
     when( dataServiceExecutor.getServiceTrans() ).thenReturn( serviceTrans );
     when( dataServiceExecutor.getGenTrans() ).thenReturn( genTrans );
+  }
 
-    Query result = executorQueryService.prepareQuery( sql.getSqlString(), rowLimit, parameters );
+  @Test
+  public void testQueryBuildsWithMetastore() throws Exception {
+    result = executorQueryService.prepareQuery( sql.getSqlString(), rowLimit, parameters );
+
     assertEquals( ImmutableList.of( serviceTrans, genTrans ), result.getTransList() );
-
     verify( builder ).rowLimit( rowLimit );
     verify( builder ).parameters( parameters );
     verify( builder ).metastore( metastore );
   }
 
   @Test
+  public void testQueryBuildsWithWindowRowBased() throws Exception {
+    result = executorQueryService.prepareQuery( sql.getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED,
+      10, 1, 15000, parameters );
+
+    assertEquals( ImmutableList.of( serviceTrans, genTrans ), result.getTransList() );
+    verify( builder ).rowLimit( 0 );
+    verify( builder ).parameters( parameters );
+    verify( builder ).metastore( metastore );
+    verify( builder ).windowLimit( 15000 );
+    verify( builder ).windowSize( 10 );
+    verify( builder ).windowEvery( 1 );
+    verify( builder ).windowMode( IDataServiceClientService.StreamingMode.ROW_BASED );
+  }
+
+  @Test
+  public void testQueryBuildsWithWindowTimeBased() throws Exception {
+    result = executorQueryService.prepareQuery( sql.getSqlString(), IDataServiceClientService.StreamingMode.TIME_BASED,
+      100, 10, 22000, parameters );
+
+    assertEquals( ImmutableList.of( serviceTrans, genTrans ), result.getTransList() );
+    verify( builder ).rowLimit( 0 );
+    verify( builder ).parameters( parameters );
+    verify( builder ).metastore( metastore );
+    verify( builder ).windowLimit( 22000 );
+    verify( builder ).windowSize( 100 );
+    verify( builder ).windowEvery( 10 );
+    verify( builder ).windowMode( IDataServiceClientService.StreamingMode.TIME_BASED );
+  }
+
+  @Test
   public void testAsDataOutputStream() throws IOException {
     assertSame( dataOutputStream, ExecutorQueryService.asDataOutputStream( dataOutputStream ) );
     DataOutputStream out = ExecutorQueryService.asDataOutputStream( outputStream );
-
     out.write( 1 );
     verify( outputStream ).write( 1 );
+  }
+
+  @Test
+  public void testExecutorQueryInnerClass() throws Exception {
+    SQL sql = new SQL( "select field from table" );
+    ExecutorQueryService executorQueryService = new ExecutorQueryService( dataServiceResolver, metastoreLocator );
+    Query executorQuery = executorQueryService.prepareQuery( sql.getSqlString(), rowLimit, parameters );
+
+    DataOutputStream dataOutputStreamMock = mock( DataOutputStream.class );
+    doReturn( dataServiceExecutor ).when( dataServiceExecutor ).executeQuery( dataOutputStreamMock );
+    executorQuery.writeTo( dataOutputStreamMock );
+    verify( dataServiceExecutor, times( 1 ) ).waitUntilFinished();
+  }
+
+  @Test
+  public void testExecutorQueryInnerClassNullExecutor() throws Exception {
+    SQL sql = new SQL( "select field from table" );
+    ExecutorQueryService executorQueryService = new ExecutorQueryService( dataServiceResolver, metastoreLocator );
+    Query executorQuery = executorQueryService.prepareQuery( sql.getSqlString(), rowLimit, parameters );
+
+    DataOutputStream dataOutputStreamMock = mock( DataOutputStream.class );
+    doReturn( null ).when( dataServiceExecutor ).executeQuery( dataOutputStreamMock );
+    executorQuery.writeTo( dataOutputStreamMock );
+    verify( dataServiceExecutor, times( 0 ) ).waitUntilFinished();
   }
 
   private Matcher<SQL> matchesSql( final SQL sql ) {

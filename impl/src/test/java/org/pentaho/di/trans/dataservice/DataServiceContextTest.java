@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 
 import java.util.ArrayList;
@@ -61,10 +62,17 @@ public class DataServiceContextTest extends BaseTest {
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingServiceTransExecutor streamingExecutor;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingServiceTransExecutor streamingExecutor2;
   @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingServiceTransExecutor streamingExecutor3;
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingGeneratedTransExecution streamingGeneratedTrans;
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingGeneratedTransExecution streamingGeneratedTrans2;
+  @Mock( answer = Answers.RETURNS_DEEP_STUBS ) StreamingGeneratedTransExecution streamingGeneratedTrans3;
 
   private StreamServiceKey streamKey;
   private StreamServiceKey streamKey2;
   private StreamServiceKey streamKey3;
+
+  private String generatedTransKey;
+  private String generatedTransKey2;
+  private String generatedTransKey3;
 
   private Map<String, String> mockStreamKeyParams;
   private Map<String, String> mockStreamKeyParams2;
@@ -85,6 +93,10 @@ public class DataServiceContextTest extends BaseTest {
     streamKey = StreamServiceKey.create( STREAMING_EXECUTOR_ID, mockStreamKeyParams, mockStreamKeyOptimizationList );
     streamKey2 = StreamServiceKey.create( STREAMING_EXECUTOR_ID, mockStreamKeyParams2, mockStreamKeyOptimizationList );
     streamKey3 = StreamServiceKey.create( STREAMING_EXECUTOR_ID3, mockStreamKeyParams, mockStreamKeyOptimizationList );
+
+    generatedTransKey = "generatedTransKey";
+    generatedTransKey2 = "generatedTransKey2";
+    generatedTransKey3 = "generatedTransKey3";
 
     when( dataServiceExecutor.getId() ).thenReturn( EXECUTOR_ID );
     when( streamingExecutor.getKey() ).thenReturn( streamKey );
@@ -165,5 +177,55 @@ public class DataServiceContextTest extends BaseTest {
       hasProperty( "logChannel", sameInstance( logChannel ) ),
       hasProperty( "pushDownFactories", sameInstance( pushDownFactories ) )
     );
+  }
+
+  @Test
+  public void testStreamingGeneratedTransExecution() throws Exception {
+    assertNull( context.getStreamingGeneratedTransExecution( generatedTransKey ) );
+    context.addStreamingGeneratedTransExecution( generatedTransKey, streamingGeneratedTrans );
+
+    assertThat( context.getStreamingGeneratedTransExecution( generatedTransKey ), sameInstance( streamingGeneratedTrans ) );
+    context.removeStreamingGeneratedTransExecution( generatedTransKey );
+
+    assertNull( context.getStreamingGeneratedTransExecution( generatedTransKey ) );
+    verify( streamingGeneratedTrans ).clearRowConsumers();
+
+    assertNull( context.getStreamingGeneratedTransExecution( null ) );
+  }
+
+  @Test
+  public void testAddNullStreamingGeneratedTransExecution() throws Exception {
+    context.addStreamingGeneratedTransExecution( null, streamingGeneratedTrans );
+    context.removeStreamingGeneratedTransExecution( null );
+    verify( streamingGeneratedTrans, times( 0 ) ).clearRowConsumers();
+  }
+
+  @Test
+  public void testRemoveStreamingGeneratedTransExecution() throws Exception {
+    assertNull( context.getStreamingGeneratedTransExecution( generatedTransKey ) );
+    assertNull( context.getStreamingGeneratedTransExecution( generatedTransKey2 ) );
+    assertNull( context.getStreamingGeneratedTransExecution( generatedTransKey3 ) );
+    context.addStreamingGeneratedTransExecution( generatedTransKey, streamingGeneratedTrans );
+    context.addStreamingGeneratedTransExecution( generatedTransKey2, streamingGeneratedTrans2 );
+    context.addStreamingGeneratedTransExecution( generatedTransKey3, streamingGeneratedTrans3 );
+
+    assertThat( context.getStreamingGeneratedTransExecution( generatedTransKey ), sameInstance( streamingGeneratedTrans ) );
+    assertThat( context.getStreamingGeneratedTransExecution( generatedTransKey2 ), sameInstance( streamingGeneratedTrans2 ) );
+    assertThat( context.getStreamingGeneratedTransExecution( generatedTransKey3 ), sameInstance( streamingGeneratedTrans3 ) );
+
+    context.removeStreamingGeneratedTransExecution( generatedTransKey );
+    assertNull( context.getStreamingGeneratedTransExecution( generatedTransKey ) );
+    assertThat( context.getStreamingGeneratedTransExecution( generatedTransKey2 ), sameInstance( streamingGeneratedTrans2 ) );
+    assertThat( context.getStreamingGeneratedTransExecution( generatedTransKey3 ), sameInstance( streamingGeneratedTrans3 ) );
+  }
+
+  @Test
+  public void testRemoveInexistingStreamingGeneratedTransExecution() throws Exception {
+    assertNull( context.getStreamingGeneratedTransExecution( generatedTransKey ) );
+    context.removeStreamingGeneratedTransExecution( generatedTransKey );
+    verify( streamingGeneratedTrans, times( 0 ) ).clearRowConsumers();
+
+    context.removeStreamingGeneratedTransExecution( null );
+    verify( streamingGeneratedTrans, times( 0 ) ).clearRowConsumers();
   }
 }

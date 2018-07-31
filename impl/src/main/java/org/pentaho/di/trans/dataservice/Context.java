@@ -26,6 +26,7 @@ import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
@@ -136,4 +137,24 @@ public interface Context {
    * @param dataServiceName The name of the data service to be removed.
    */
   void removeServiceTransExecutor( String dataServiceName );
+
+  /**
+   * Gets the {@link StreamingGeneratedTransExecution} by using the key used to cache/store it.
+   * @param key The key to use
+   * @return The cached {@link StreamingGeneratedTransExecution}, or null if it doesn't exist
+   */
+  StreamingGeneratedTransExecution getStreamingGeneratedTransExecution( String key );
+
+  /**
+   * Adds a {@link StreamingGeneratedTransExecution} to the cache of streaming generated transformation executions.
+   * @param key The key used to index the {@link StreamingGeneratedTransExecution} to cache.
+   * @param streamingGeneratedTransExecution the {@link StreamingGeneratedTransExecution} instance to cache.
+   */
+  void addStreamingGeneratedTransExecution( String key, StreamingGeneratedTransExecution streamingGeneratedTransExecution );
+
+  /**
+   * Removes a {@link StreamingGeneratedTransExecution} from the cache/store by key.
+   * @param key The key used to find the {@link StreamingGeneratedTransExecution} instance to remove from the cache/store.
+   */
+  void removeStreamingGeneratedTransExecution( String key );
 }

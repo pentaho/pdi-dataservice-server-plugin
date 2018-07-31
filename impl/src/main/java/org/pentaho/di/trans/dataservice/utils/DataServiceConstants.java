@@ -42,6 +42,7 @@ public final class DataServiceConstants {
   public static final String STREAMING_GENERATED_TRANSFORMATION_STOPPED = "Generated transformation stopped";
   public static final String STREAMING_CACHE_REMOVED = "Streaming cache listener removed: ";
   public static final String STREAMING_SERVICE_CACHE_REMOVED = "Streaming service cache listener removed: ";
+  public static final String STREAMING_GEN_TRANS_CACHE_REMOVED = "Streaming generated transformation cache listener removed: ";
 
   // Streaming cache management
   public static final long STREAMING_CACHE_DURATION = 120;

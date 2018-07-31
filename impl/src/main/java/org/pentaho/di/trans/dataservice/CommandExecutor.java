@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -117,7 +117,7 @@ public class CommandExecutor {
     @Override public String execute( String[] args ) {
       DataServiceExecutor executor = context.getExecutor( args[0] );
       if ( executor != null ) {
-        executor.stop();
+        executor.stop( false );
         context.removeExecutor( args[0] );
         return "true";
       }
