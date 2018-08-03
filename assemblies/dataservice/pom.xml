@@ -65,6 +65,23 @@
       <artifactId>pdi-dataservice-server-plugin</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-blueprint-collection-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-kettle-repository-locator-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-metastore-locator-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
   </dependencies>
 
 </project>
