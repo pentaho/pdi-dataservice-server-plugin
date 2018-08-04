@@ -24,10 +24,12 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
+import io.reactivex.Observer;
+import io.reactivex.subjects.PublishSubject;
 import org.apache.commons.io.IOUtils;
+import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.KettleLogStore;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogLevel;
@@ -56,7 +58,6 @@ import org.pentaho.di.trans.dataservice.ui.BindingConverters;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
-import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 import org.pentaho.metastore.api.IMetaStore;
@@ -107,6 +108,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   private XulMenuList<String> logLevels;
   private Timer completionPollTimer;
   private DataServiceExecutor dataServiceExec;
+  private boolean stopQuery = false;
   private DataServiceContext context;
 
   private BindingFactory bindingFactory;
@@ -380,8 +382,12 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       handleCompletion( dataServiceExec );
     } else {
       callback.onLogChannelUpdate();
-      dataServiceExec.executeQuery( getDataServiceRowListener() );
-      pollForCompletion( dataServiceExec );
+      this.stopQuery = false;
+      if ( dataServiceExec.executeQuery( getDataServiceObserver() ) != null ) {
+        pollForCompletion( dataServiceExec );
+      } else {
+        handleCompletion( dataServiceExec );
+      }
     }
   }
 
@@ -403,7 +409,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
               checkForFailures( dataServiceExec );
               updateExecutingMessage( startMillis, dataServiceExec );
 
-              if ( anyTransErrors( dataServiceExec ) || transDone( svcTrans, genTrans ) ) {
+              if ( stopQuery || anyTransErrors( dataServiceExec ) || transDone( svcTrans, genTrans ) ) {
                 handleCompletion( dataServiceExec );
                 completionPollTimer.cancel();
               }
@@ -443,7 +449,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   private void stopDataService( DataServiceExecutor dataServiceExec ) {
-    dataServiceExec.stop();
+    dataServiceExec.stop( true );
   }
 
   private void updateExecutingMessage( long start, DataServiceExecutor dataServiceExec ) {
@@ -580,26 +586,18 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     return sqlFieldsRowMeta;
   }
 
-  private RowListener getDataServiceRowListener() {
-    return new RowListener() {
-      @Override
-      public void rowReadEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-        model.addResultRow( row );
+  private Observer<RowMetaAndData> getDataServiceObserver() {
+    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
+    consumer.doOnComplete( () -> {
+      stopQuery = true;
+    } )
+      .subscribe( rowMetaAndData -> {
+        model.addResultRow( rowMetaAndData.getData() );
         // if there were any rows read we want to make sure RowMeta is consistent w/ the
         // actual results, since datatypes may have changed (e.g. with sum(integer_field) )
-        model.setResultRowMeta( rowMeta );
-      }
-
-      @Override
-      public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-        // throw away
-      }
-
-      @Override
-      public void errorRowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-        model.addResultRow( row );
-      }
-    };
+        model.setResultRowMeta( rowMetaAndData.getRowMeta() );
+      } );
+    return consumer;
   }
 
   public void close() throws KettleException {

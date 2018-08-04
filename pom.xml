@@ -95,6 +95,7 @@
     <commons.collections.version>3.2.2</commons.collections.version>
     <pentaho-modeler.version>9.0.0.0-SNAPSHOT</pentaho-modeler.version>
     <rxjava.version>2.0.4</rxjava.version>
+    <reactivestreams.version>1.0.2</reactivestreams.version>
   </properties>
 
   <dependencyManagement>
@@ -227,6 +228,11 @@
         <groupId>io.reactivex.rxjava2</groupId>
         <artifactId>rxjava</artifactId>
         <version>${rxjava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.reactivestreams</groupId>
+        <artifactId>reactive-streams</artifactId>
+        <version>${reactivestreams.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.findbugs</groupId>

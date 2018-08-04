@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -36,6 +36,10 @@ import java.io.IOException;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,23 +70,43 @@ import static org.mockito.Mockito.when;
 
   @Test public void testExecuteStop() throws Exception {
     CommandExecutor commandExecutor = new CommandExecutor.Builder( STOP_COMMAND, context ).build();
-
     DataInputStream dataInputStream = executeCommand( commandExecutor );
-
-    verify( executor ).stop();
-
+    verify( context ).removeExecutor( EXECUTOR_ID );
     assertThat( dataInputStream.readUTF(), equalTo( "true" ) );
+  }
+
+  @Test public void testExecuteStopFalse() throws Exception {
+    doReturn( null ).when( context ).getExecutor( anyString() );
+    CommandExecutor commandExecutor = new CommandExecutor.Builder( STOP_COMMAND, context ).build();
+    DataInputStream dataInputStream = executeCommand( commandExecutor );
+    verify( context, times( 0 ) ).removeExecutor( EXECUTOR_ID );
+    assertThat( dataInputStream.readUTF(), equalTo( "false" ) );
   }
 
   @Test public void testExecuteErrors() throws Exception {
     when( executor.hasErrors() ).thenReturn( true );
     CommandExecutor commandExecutor = new CommandExecutor.Builder( ERRORS_COMMAND, context ).build();
-
     DataInputStream dataInputStream = executeCommand( commandExecutor );
-
     verify( executor ).hasErrors();
-
     assertThat( dataInputStream.readUTF(), equalTo( "true" ) );
+  }
+
+  @Test public void testExecuteErrorsFalse() throws Exception {
+    doReturn( null ).when( context ).getExecutor( anyString() );
+    when( executor.hasErrors() ).thenReturn( true );
+    CommandExecutor commandExecutor = new CommandExecutor.Builder( ERRORS_COMMAND, context ).build();
+    DataInputStream dataInputStream = executeCommand( commandExecutor );
+    verify( executor, times( 0 ) ).hasErrors();
+    assertTrue( executor.hasErrors() );
+    assertThat( dataInputStream.readUTF(), equalTo( "false" ) );
+  }
+
+  @Test public void testExecuteErrorsFalseNoErrors() throws Exception {
+    when( executor.hasErrors() ).thenReturn( false );
+    CommandExecutor commandExecutor = new CommandExecutor.Builder( ERRORS_COMMAND, context ).build();
+    DataInputStream dataInputStream = executeCommand( commandExecutor );
+    verify( executor, times( 1 ) ).hasErrors();
+    assertThat( dataInputStream.readUTF(), equalTo( "false" ) );
   }
 
   private static DataInputStream executeCommand( CommandExecutor commandExecutor ) throws IOException {

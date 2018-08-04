@@ -27,6 +27,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import io.reactivex.functions.Consumer;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -34,15 +35,19 @@ import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
 import org.pentaho.di.trans.dataservice.streaming.StreamList;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
+import org.pentaho.di.trans.dataservice.streaming.WindowParametersHelper;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.StepInterface;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -61,6 +66,7 @@ public class StreamingServiceTransExecutor {
   private long lastCacheCleanupMillis = 0;
   private int windowMaxRowLimit;
   private long windowMaxTimeLimit;
+  private DataServiceContext context;
 
   /**
    * Service listener cache.
@@ -72,6 +78,13 @@ public class StreamingServiceTransExecutor {
         LogChannelInterface log = serviceTrans.getLogChannel();
 
         removal.getValue().unSubscribe();
+
+        //remove the generated trans from the dataservices context cache
+        context.removeStreamingGeneratedTransExecution( removal.getKey() );
+        DataServiceExecutor dataServiceExecutor = context.getExecutor( serviceTrans.getContainerObjectId() );
+        if ( dataServiceExecutor != null ) {
+          dataServiceExecutor.stop( true );
+        }
 
         log.logDebug( DataServiceConstants.STREAMING_CACHE_REMOVED + removal.getKey() );
       }
@@ -87,14 +100,17 @@ public class StreamingServiceTransExecutor {
    * @param serviceStepName The Service Transformation Step Name.
    * @param windowMaxRowLimit The streaming window max row limit.
    * @param windowMaxTimeLimit The streaming window max time limit.
+   * @param context The dataservices context.
    */
   public StreamingServiceTransExecutor( final StreamServiceKey key, Trans serviceTrans, final String serviceStepName,
-                                        final int windowMaxRowLimit, final long windowMaxTimeLimit ) {
+                                        final int windowMaxRowLimit, final long windowMaxTimeLimit,
+                                        final DataServiceContext context ) {
     this.serviceTrans = serviceTrans;
     this.key = key;
     this.serviceStepName = serviceStepName;
     this.windowMaxRowLimit = windowMaxRowLimit;
     this.windowMaxTimeLimit = windowMaxTimeLimit;
+    this.context = context;
   }
 
   /**
@@ -139,6 +155,7 @@ public class StreamingServiceTransExecutor {
    * started, otherwise it returns the cached listener.
    *
    * @param query The requested query.
+   * @param windowConsumer The consumer for the window that is produced by the buffer.
    * @param windowMode The streaming window mode.
    * @param windowSize The query window size. Number of rows for a ROW_BASED streamingType and milliseconds for a
    *                 TIME_BASED streamingType.
@@ -146,30 +163,19 @@ public class StreamingServiceTransExecutor {
    *                 TIME_BASED streamingType.
    * @param windowLimit The query max window size. Number of rows for a TIME_BASED streamingType and milliseconds for a
    *                 ROW_BASED streamingType.
-   * @return The {@link StreamExecutionListener} for the given query or null if parameters invalid.
+   * @return The {@link StreamExecutionListener} for the given query or null if any parameters are invalid (windowSize equal to 0).
    */
-  public StreamExecutionListener getBuffer( String query, final IDataServiceClientService.StreamingMode windowMode,
+  public StreamExecutionListener getBuffer( String query, Consumer<List<RowMetaAndData>> windowConsumer, final IDataServiceClientService.StreamingMode windowMode,
                                             long windowSize, long windowEvery, long windowLimit ) {
-    boolean rowBased = IDataServiceClientService.StreamingMode.ROW_BASED.equals( windowMode );
-    boolean timeBased = IDataServiceClientService.StreamingMode.TIME_BASED.equals( windowMode );
 
-    int maxRows = windowLimit > 0 && timeBased ? (int) Math.min( windowLimit, windowMaxRowLimit )
-      : windowMaxRowLimit;
+    String cacheId = WindowParametersHelper.getCacheKey( query, windowMode, windowSize, windowEvery, windowMaxRowLimit,
+      windowMaxTimeLimit, windowLimit );
 
-    long maxTime = windowLimit > 0 && rowBased ? Math.min( windowLimit, windowMaxTimeLimit )
-      : windowMaxTimeLimit;
-
-    windowSize = windowSize <= 0 ? 0
-      : ( timeBased ? Math.min( windowSize, maxTime ) : Math.min( windowSize, maxRows ) );
-    windowEvery = windowEvery <= 0 ? 0
-      : ( timeBased ? Math.min( windowEvery, maxTime ) : Math.min( windowEvery, maxRows ) );
-
-    if ( windowSize == 0 ) {
+    //this is a special case we want to deal in a graceful way... when this is true
+    //an empty output should be produced upstream (the null should ensure that behaviour)
+    if ( cacheId == null ) {
       return null;
     }
-
-    String cacheId = getCacheKey( query, windowMode, windowSize, windowEvery, maxRows,
-      maxTime );
 
     StreamExecutionListener streamListener = serviceListeners.getIfPresent( cacheId );
 
@@ -178,7 +184,16 @@ public class StreamingServiceTransExecutor {
         stepStream = new StreamList<>();
       }
 
-      streamListener = new StreamExecutionListener( stepStream.getStream(), windowMode, windowSize, windowEvery,
+      boolean timeBased = IDataServiceClientService.StreamingMode.TIME_BASED.equals( windowMode );
+      boolean rowBased = IDataServiceClientService.StreamingMode.ROW_BASED.equals( windowMode );
+
+      int maxRows = WindowParametersHelper.getMaxRows( windowMaxRowLimit, windowLimit, timeBased );
+      long maxTime = WindowParametersHelper.getMaxTime( windowMaxTimeLimit, windowLimit, rowBased );
+
+      windowSize = WindowParametersHelper.getWindowSize( windowSize, timeBased, maxRows, maxTime );
+      windowEvery = WindowParametersHelper.getWindowEvery( windowEvery, timeBased, maxRows, maxTime );
+
+      streamListener = new StreamExecutionListener( stepStream.getStream(), windowConsumer, windowMode, windowSize, windowEvery,
         maxRows, maxTime );
 
       serviceListeners.put( cacheId, streamListener );
@@ -189,25 +204,6 @@ public class StreamingServiceTransExecutor {
     }
 
     return streamListener;
-  }
-
-  /**
-   * Generates the cache key for a given query with a specific size and rate.
-   *
-   * @param query The query.
-   * @param mode The query window mode.
-   * @param size The query window size.
-   * @param every The query window rate.
-   * @param maxRows The query window max rows.
-   * @param maxTime The query window max time.
-   * @return The cache key for the query.
-   */
-  private String getCacheKey( String query, IDataServiceClientService.StreamingMode mode, long size, long every,
-                              int maxRows, long maxTime ) {
-    return query.concat( mode.toString() ).concat( "-" ).concat( String.valueOf( size ) )
-      .concat( "-" ).concat( String.valueOf( every ) )
-      .concat( "-" ).concat( String.valueOf( maxRows ) )
-      .concat( "-" ).concat( String.valueOf( maxTime ) );
   }
 
   /**
@@ -298,6 +294,17 @@ public class StreamingServiceTransExecutor {
   }
 
   /**
+   * Clears the listeners cache for a specific listener by cache key.
+   * @param key The key to use to remove the listener
+   */
+  public void clearCacheByKey( String key ) {
+    if ( key != null ) {
+      serviceListeners.invalidate( key );
+      serviceListeners.cleanUp();
+    }
+  }
+
+  /**
    * Stops the transformation.
    */
   private void stopService() {
@@ -319,5 +326,20 @@ public class StreamingServiceTransExecutor {
   public void stopAll() {
     stopService();
     clearCache();
+  }
+
+  /**
+   * Get the execution listener, and performs warmup procedures on it like renewing the cache lease.
+   *
+   * Notice: since at present time, although we are pushing the rows from the service to the gen transformation,
+   * the query mechanism is still polling we need to do a warmup so that the service listener doesn't get cleaned...
+   * If later we implement a push mechanism in the client part, this should be guaranteed by some other technique,
+   * since we can't rely on a query being issued to hit the service listener cache.
+   *
+   * @param key the service listener key.
+   * @return the {@see StreamExecutionListener}, or null if doesn't exist
+   */
+  public StreamExecutionListener touchServiceListener( String key ) {
+    return this.serviceListeners.getIfPresent( key );
   }
 }

@@ -22,12 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
@@ -37,8 +33,11 @@ import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author nhudak
@@ -112,7 +111,10 @@ public class ExecutorQueryService implements Query.Service {
 
     @Override
     public void writeTo( OutputStream outputStream ) throws IOException {
-      executor.executeQuery( asDataOutputStream( outputStream ) ).waitUntilFinished();
+      DataServiceExecutor dataServiceExecutor = executor.executeQuery( asDataOutputStream( outputStream ) );
+      if ( dataServiceExecutor != null ) {
+        dataServiceExecutor.waitUntilFinished();
+      }
     }
 
     @Override public List<Trans> getTransList() {

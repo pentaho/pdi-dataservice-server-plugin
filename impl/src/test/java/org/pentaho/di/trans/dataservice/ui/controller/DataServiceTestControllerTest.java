@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.ui.controller;
 
 import com.google.common.collect.ImmutableMap;
+import io.reactivex.Observer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -53,7 +54,6 @@ import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceTestCallback;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceTestModel;
-import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.Binding;
@@ -82,9 +82,9 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -405,7 +405,7 @@ public class DataServiceTestControllerTest  {
     inOrder.verify( model ).setServiceTransLogChannel( dataServiceExecutor.getServiceTrans().getLogChannel() );
     inOrder.verify( model ).setGenTransLogChannel( dataServiceExecutor.getGenTrans().getLogChannel() );
     inOrder.verify( callback ).onLogChannelUpdate();
-    inOrder.verify( dataServiceExecutor ).executeQuery( any( RowListener.class ) );
+    inOrder.verify( dataServiceExecutor ).executeQuery( any( Observer.class ) );
   }
 
   @Test

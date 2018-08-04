@@ -22,14 +22,18 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.MultimapBuilder;
+import io.reactivex.Observer;
+import io.reactivex.subjects.PublishSubject;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogLevel;
@@ -53,12 +57,12 @@ import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
+import org.pentaho.di.trans.dataservice.streaming.WindowParametersHelper;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.dataservice.utils.KettleUtils;
 import org.pentaho.di.trans.step.RowAdapter;
-import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.metastore.api.IMetaStore;
 
@@ -91,6 +95,9 @@ public class DataServiceExecutor {
   private long windowEvery;
   private long windowLimit;
   private StreamServiceKey streamServiceKey;
+
+  private final AtomicBoolean genTransformationPushBasedIsFinished = new AtomicBoolean( false );
+  private final AtomicBoolean transListenerFinishTransAdded = new AtomicBoolean( false );
 
   private DataServiceExecutor( Builder builder ) {
     sql = builder.sql;
@@ -296,7 +303,7 @@ public class DataServiceExecutor {
 
             serviceTransExecutor =
               new StreamingServiceTransExecutor( streamServiceKey, serviceTrans, service.getStepname(),
-                windowMaxRowLimit, windowMaxTimeLimit );
+                windowMaxRowLimit, windowMaxTimeLimit, context );
             context.addServiceTransExecutor( serviceTransExecutor );
           }
         } else {
@@ -400,7 +407,8 @@ public class DataServiceExecutor {
       return 0;
     }
 
-    private int getKettleRowLimit() throws KettleException {
+    @VisibleForTesting
+    protected int getKettleRowLimit() throws KettleException {
       String limit = kettleUtils.getKettleProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
       int result = 0;
 
@@ -421,7 +429,8 @@ public class DataServiceExecutor {
       return result;
     }
 
-    private long getKettleTimeLimit() throws KettleException {
+    @VisibleForTesting
+    protected long getKettleTimeLimit() throws KettleException {
       String limit = kettleUtils.getKettleProperty( DataServiceConstants.TIME_LIMIT_PROPERTY );
       long result = 0;
       if ( !Utils.isEmpty( limit ) ) {
@@ -589,68 +598,134 @@ public class DataServiceExecutor {
 
     final AtomicBoolean rowMetaWritten = new AtomicBoolean( false );
 
+    genTransformationPushBasedIsFinished.set( false );
+
     // When done, check if no row metadata was written.  The client is still going to expect it...
     // Since we know it, we'll pass it.
-    //
-    getGenTrans().addTransListener( new TransAdapter() {
-      @Override
-      public void transFinished( Trans trans ) throws KettleException {
-        if ( rowMetaWritten.compareAndSet( false, true ) ) {
-          RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
-          stepFields.writeMeta( dos );
-        }
-      }
-    } );
-
-    // Now execute the query transformation(s) and pass the data to the output stream...
-    return executeQuery( new RowAdapter() {
-      @Override
-      public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-
-        // On the first row, write the metadata...
-        //
-        try {
+    if ( transListenerFinishTransAdded.compareAndSet( false, true ) ) {
+      getGenTrans().addTransListener( new TransAdapter() {
+        @Override
+        public void transFinished( Trans trans ) throws KettleException {
           if ( rowMetaWritten.compareAndSet( false, true ) ) {
-            rowMeta.writeMeta( dos );
+            RowMetaInterface stepFields = trans.getTransMeta().getStepFields( getResultStepName() );
+            stepFields.writeMeta( dos );
           }
-          rowMeta.writeData( dos, row );
-        } catch ( Exception e ) {
-          if ( !getServiceTrans().isStopped() ) {
-            throw new KettleStepException( e );
-          }
+        }
+      } );
+    }
+
+    // Now execute the query transformation(s) and pass the data to the output stream, using a reactivex consumer
+    final PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
+    consumer.doOnError( throwable -> {
+      wrapupConsumerResources( consumer );
+    } ).doOnComplete( () -> {
+      genTransformationPushBasedIsFinished.set( true );
+    } ).subscribe( rowMetaAndData -> {
+      try {
+        if ( rowMetaWritten.compareAndSet( false, true ) ) {
+          rowMetaAndData.getRowMeta().writeMeta( dos );
+        }
+        rowMetaAndData.getRowMeta().writeData( dos, rowMetaAndData.getData() );
+      } catch ( Exception e ) {
+        if ( !getServiceTrans().isStopped() ) {
+          throw new KettleStepException( e );
         }
       }
     } );
+
+    return executeQuery( consumer );
   }
 
-  public DataServiceExecutor executeQuery( final RowListener resultRowListener ) {
+  /**
+   * Wrap up consumer resources and removes it from the consumers list.
+   * @param consumer the consumer that we want to clean up.
+   */
+  @VisibleForTesting
+  protected void wrapupConsumerResources( Observer<RowMetaAndData> consumer ) {
+    StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
+    String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
+      windowMode, windowSize, windowEvery, (int) serviceTransExecutor.getWindowMaxRowLimit(), serviceTransExecutor.getWindowMaxTimeLimit(), windowLimit );
+    StreamingGeneratedTransExecution streamWiring = context.getStreamingGeneratedTransExecution( streamingGenTransCacheKey );
+    if ( streamWiring != null ) {
+      streamWiring.clearRowConsumer( consumer );
+    }
+    serviceTransExecutor.clearCacheByKey( streamingGenTransCacheKey );
+
+    context.removeServiceTransExecutor( serviceTransExecutor.getKey().getDataServiceId() );
+
+    genTransformationPushBasedIsFinished.set( true );
+  }
+
+  public DataServiceExecutor executeQuery( Observer<RowMetaAndData> consumer ) {
     if ( service.isStreaming() ) {
-      return executeStreamingQuery( resultRowListener );
+      return executeStreamingQuery( consumer );
     } else {
-      return executeDefaultQuery( resultRowListener );
+      return executeDefaultQuery( consumer );
     }
   }
 
-  public DataServiceExecutor executeStreamingQuery( final RowListener resultRowListener ) {
-    StreamingGeneratedTransExecution streamWiring =
-      new StreamingGeneratedTransExecution( context.getServiceTransExecutor( streamServiceKey ),
-      genTrans, resultRowListener, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-      sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit );
+  public DataServiceExecutor executeStreamingQuery( final Observer<RowMetaAndData> streamingConsumer ) {
 
-    listenerMap.get( ExecutionPoint.READY ).add( streamWiring );
+    StreamingServiceTransExecutor serviceExecutor = context.getServiceTransExecutor( streamServiceKey );
+    String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
+      windowMode, windowSize, windowEvery, (int) serviceExecutor.getWindowMaxRowLimit(), serviceExecutor.getWindowMaxTimeLimit(), windowLimit );
 
-    return executeQuery();
+    if ( streamingGenTransCacheKey == null ) {
+      return null;
+    }
+
+    //Try to fetch the streaming generated transformation execution from cache
+    StreamingGeneratedTransExecution streamingGenTransFromCache = context.getStreamingGeneratedTransExecution( streamingGenTransCacheKey );
+    if ( streamingGenTransFromCache == null ) {
+      StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( streamServiceKey ),
+          genTrans, streamingConsumer, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+          sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit );
+
+      serviceTrans.addTransListener( new TransAdapter() {
+        @Override
+        public void transFinished( Trans trans ) throws KettleException {
+          //When the service transformation stops we should remove the service stream from the cache
+          context.removeServiceTransExecutor( streamServiceKey.getDataServiceId() );
+        }
+      } );
+
+      listenerMap.get( ExecutionPoint.READY ).add( streamWiring );
+
+      context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
+
+      return executeQuery();
+
+    } else {
+      //Since we don't create a service transformation executor we need to touch the current one so that
+      //it is kept in cache
+      context.getServiceTransExecutor( streamServiceKey ).touchServiceListener( streamingGenTransCacheKey );
+
+      //There is already a streaming generated transformation execution in cache, so we just register the consumer as
+      //one more consumer for that generated transformation
+      streamingGenTransFromCache.addNewRowConsumer( streamingConsumer );
+    }
+
+    return this;
   }
 
-  public DataServiceExecutor executeDefaultQuery( final RowListener resultRowListener ) {
+  public DataServiceExecutor executeDefaultQuery( final Observer<RowMetaAndData> consumer ) {
     listenerMap.get( ExecutionPoint.READY ).add( new Runnable() {
       @Override public void run() {
         // Give back the eventual result rows...
-        //
         StepInterface resultStep = genTrans.findRunThread( getResultStepName() );
 
         if ( resultStep != null ) {
-          resultStep.addRowListener( resultRowListener );
+          resultStep.addRowListener( new RowAdapter() {
+            @Override
+            public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
+              consumer.onNext( new RowMetaAndData( rowMeta, row ) );
+            }
+
+            @Override
+            public void errorRowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
+              consumer.onNext( new RowMetaAndData( rowMeta, row ) );
+            }
+          } );
         }
       }
     } );
@@ -699,9 +774,10 @@ public class DataServiceExecutor {
       try {
         // we need to actively wait for the genTrans to finish, because otherwise it will return on the
         // waitUntilFinished since it didn't had time to start
-        while ( !genTrans.isFinishedOrStopped() ) {
+        while ( !genTrans.isFinishedOrStopped() && !genTransformationPushBasedIsFinished.get() ) {
           Thread.sleep( 50 );
         }
+
       } catch ( InterruptedException e ) {
         throw new RuntimeException( e );
       }
@@ -785,13 +861,29 @@ public class DataServiceExecutor {
     return sbsql.toString();
   }
 
-  public void stop() {
-    if ( !service.isStreaming() ) {
+  public void stop( boolean stopTrans ) {
+    if ( stopTrans || !service.isStreaming() ) {
       if ( serviceTrans.isRunning() ) {
         serviceTrans.stopAll();
       }
       if ( genTrans.isRunning() ) {
         genTrans.stopAll();
+      }
+
+      if ( service.isStreaming() ) {
+        this.genTransformationPushBasedIsFinished.set( true );
+
+        StreamingServiceTransExecutor serviceExecutor = context.getServiceTransExecutor( streamServiceKey );
+        if ( serviceExecutor != null ) {
+          String streamingGenTransCacheKey =
+            WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
+              windowMode, windowSize, windowEvery, (int) serviceExecutor.getWindowMaxRowLimit(),
+              serviceExecutor.getWindowMaxTimeLimit(), windowLimit );
+
+          context.removeStreamingGeneratedTransExecution( streamingGenTransCacheKey );
+
+          serviceExecutor.clearCacheByKey( streamingGenTransCacheKey );
+        }
       }
     }
   }

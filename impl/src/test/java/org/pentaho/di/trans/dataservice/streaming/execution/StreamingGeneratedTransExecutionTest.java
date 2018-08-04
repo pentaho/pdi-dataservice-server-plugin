@@ -22,7 +22,8 @@
 
 package org.pentaho.di.trans.dataservice.streaming.execution;
 
-import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.functions.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,23 +31,31 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.SqlTransGenerator;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
-import org.pentaho.di.trans.dataservice.streaming.StreamList;
+import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
+import org.pentaho.di.trans.step.BaseStep;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,87 +65,114 @@ import static org.mockito.Mockito.when;
  */
 @RunWith( MockitoJUnitRunner.class )
 public class StreamingGeneratedTransExecutionTest {
-  private StreamingGeneratedTransExecution gentransExecutor;
+  private StreamingGeneratedTransExecution genTransExecutor;
 
   private String MOCK_RESULT_STEP_NAME = "Mock Result Step Name";
   private String MOCK_INJECTOR_STEP_NAME = "Mock Injector Step Name";
   private String MOCK_QUERY = "Mock Query";
+  private String MOCK_KEY = "Dataservice key";
   private IDataServiceClientService.StreamingMode MOCK_WINDOW_MODE_ROW_BASED
     = IDataServiceClientService.StreamingMode.ROW_BASED;
   private long MOCK_WINDOW_SIZE = 1;
-  private long MOCK_WINDOW_EVERY = 0;
+  private long MOCK_WINDOW_EVERY = 1;
   private long MOCK_WINDOW_MAX_SIZE = 10;
   private List<RowMetaAndData> rowIterator;
-  private StreamList<RowMetaAndData> streamList;
-  private Observable<List<RowMetaAndData>> mockObservable, mockFallbackObservable;
+  private StreamingServiceTransExecutor serviceExecutor;
+  private StreamServiceKey streamServiceKey;
 
-  @Mock StreamingServiceTransExecutor serviceExecutor;
   @Mock Trans genTrans;
-  @Mock RowListener resultRowListener;
+  @Mock Trans serviceTrans;
+  @Mock DataServiceContext context;
+  @Mock Observer<RowMetaAndData> consumer;
   @Mock StreamExecutionListener streamExecutionListener;
   @Mock RowMetaAndData rowMetaAndData;
   @Mock LogChannelInterface log;
-  @Mock StepInterface resultStep;
+  StepInterface resultStep = mock( BaseStep.class );
   @Mock RowProducer rowProducer;
-  @Mock RowMetaAndData mockRowMetaAndData;
+  @Mock Consumer windowConsumer;
+  @Mock SqlTransGenerator sqlTransGenerator;
 
   @Before
   public void setup() throws Exception {
     rowIterator = new ArrayList();
     rowIterator.add( rowMetaAndData );
-    streamList = new StreamList();
-    mockObservable = streamList.getStream().buffer( 1 );
-    mockFallbackObservable = streamList.getStream().buffer( 1000 );
 
-    when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
-      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE ) )
-      .thenReturn( streamExecutionListener );
+    when( serviceTrans.findRunThread( MOCK_RESULT_STEP_NAME ) ).thenReturn( resultStep );
+
+    streamServiceKey = StreamServiceKey.create( MOCK_KEY, Collections.EMPTY_MAP, Collections.EMPTY_LIST );
+    serviceExecutor = spy( new StreamingServiceTransExecutor( streamServiceKey, serviceTrans, MOCK_RESULT_STEP_NAME, 10000, 1000, context ) );
+
+    doReturn( streamExecutionListener ).when( serviceExecutor ).getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
+      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
+
     when( log.isRowLevel() ).thenReturn( true );
     when( genTrans.getLogChannel() ).thenReturn( log );
     when( genTrans.findRunThread( MOCK_RESULT_STEP_NAME ) ).thenReturn( resultStep );
     when( genTrans.addRowProducer( MOCK_INJECTOR_STEP_NAME, 0 ) ).thenReturn( rowProducer );
+    when( genTrans.isRunning() ).thenReturn( true );
 
-    gentransExecutor = new StreamingGeneratedTransExecution( serviceExecutor, genTrans, resultRowListener,
+    genTransExecutor = spy( new StreamingGeneratedTransExecution( serviceExecutor, genTrans, consumer,
       MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
-      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
+      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE ) );
+    when ( genTransExecutor.getWindowConsumer() ).thenReturn( windowConsumer );
   }
 
   @Test
   public void testRunCachedWindow() throws Exception {
-    when( streamExecutionListener.getCachedWindow() ).thenReturn( rowIterator );
+    when( streamExecutionListener.getCachePreWindow() ).thenReturn( rowIterator );
+    when( genTrans.isRunning() ).thenReturn( true );
 
-    gentransExecutor.run();
+    genTransExecutor = spy( new StreamingGeneratedTransExecution( serviceExecutor, genTrans, consumer,
+      MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 10000,
+      1, 10000 ) );
+
+    genTransExecutor.run();
+
+    verifyExecution( 0 );
+  }
+
+  @Test( expected = RuntimeException.class )
+  public void testThrowExceptionWhenRunningTransExecutor() throws Exception {
+    doReturn( null ).when( serviceExecutor ).getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
+      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
+    when( genTrans.isRunning() ).thenReturn( true );
+    doThrow( new KettleStepException( "This is expected" ) ).when( genTransExecutor ).runGenTrans( Collections.emptyList() );
+
+    genTransExecutor.run();
+  }
+
+  @Test
+  public void testRunEmptyStream() throws Exception {
+    doReturn( null ).when( serviceExecutor ).getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
+      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
+    when( genTrans.isRunning() ).thenReturn( true );
+
+    genTransExecutor.run();
 
     verifyExecution( 1 );
   }
 
   @Test
-  public void testRunEmptyStream() throws Exception {
-    when( serviceExecutor.getBuffer( MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
-      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE ) )
-      .thenReturn( null );
-
-    gentransExecutor.run();
-
-    verifyExecution( 1 );
-  }
-
-  @Test( expected = RuntimeException.class )
   public void testRunException() throws KettleException {
-    when( streamExecutionListener.getCachedWindow() ).thenReturn( rowIterator );
-    doThrow( new KettleException() ).when( genTrans ).startThreads();
+    //since the processing is now aync, the exception should not interrupt the test (but should be thrown anyway: visible on test log)
+    doThrow( new KettleException("This exception is expected!!!") ).when( genTrans ).startThreads();
 
-    gentransExecutor.run();
+    genTransExecutor.run();
+    genTransExecutor.getGeneratedDataObservable().onNext( rowIterator );
+
+    verify( genTrans, times( 1 ) ).startThreads( );
   }
 
   @Test
   public void testPutRowLog() {
     when( rowProducer.putRowWait( any( RowMetaInterface.class ), any( Object[].class ), anyLong(),
       any( TimeUnit.class ) ) ).thenReturn( false, true );
-    when( genTrans.isRunning() ).thenReturn( true );
-    when( streamExecutionListener.getCachedWindow() ).thenReturn( rowIterator );
 
-    gentransExecutor.run();
+    genTransExecutor.run();
+    genTransExecutor.getGeneratedDataObservable().onNext( rowIterator );
+
+    genTrans.waitUntilFinished();
+
     verify( log ).logRowlevel( DataServiceConstants.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
   }
 
@@ -146,7 +182,7 @@ public class StreamingGeneratedTransExecutionTest {
     verify( genTrans, times( numExecs ) ).startThreads( );
     verify( genTrans, times( numExecs ) ).findRunThread( MOCK_RESULT_STEP_NAME );
     verify( resultStep, times( numExecs ) ).cleanup( );
-    verify( resultStep, times( numExecs ) ).addRowListener( resultRowListener );
+    verify( resultStep, times( 1 ) ).addRowListener( any( RowListener.class ) );
     verify( rowProducer, times( numExecs ) ).finished( );
     verify( genTrans, times( numExecs ) ).waitUntilFinished( );
     verify( genTrans, times( numExecs ) ).stopAll( );

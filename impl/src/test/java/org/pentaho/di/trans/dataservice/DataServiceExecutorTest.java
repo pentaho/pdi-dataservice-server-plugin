@@ -25,6 +25,8 @@ package org.pentaho.di.trans.dataservice;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
+import io.reactivex.Observer;
+import io.reactivex.subjects.PublishSubject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,10 +36,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.row.RowMeta;
@@ -55,6 +57,8 @@ import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
+import org.pentaho.di.trans.dataservice.streaming.WindowParametersHelper;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowListener;
@@ -64,33 +68,37 @@ import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -122,6 +130,7 @@ public class DataServiceExecutorTest extends BaseTest {
   @Mock TransMeta serviceTransMetaChanged;
   @Mock StreamingServiceTransExecutor serviceTransExecutor;
   @Mock StreamServiceKey streamKey;
+  @Mock Observer<RowMetaAndData> consumer;
 
   @Before
   public void setUp() throws Exception {
@@ -349,15 +358,20 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Test
   public void testExecuteQuery() throws Exception {
-    testExecuteQueryAux( true );
+    testExecuteQueryAux( true, false );
+  }
+
+  @Test
+  public void testExecuteQueryWithErrorRow() throws Exception {
+    testExecuteQueryAux( true, true );
   }
 
   @Test
   public void testExecuteQueryOptimizationsDisabled() throws Exception {
-    testExecuteQueryAux( false );
+    testExecuteQueryAux( false, false );
   }
 
-  public void testExecuteQueryAux( boolean optimizationsEnabled ) throws Exception {
+  public void testExecuteQueryAux( boolean optimizationsEnabled, boolean produceErrorRow ) throws Exception {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
     StepInterface serviceStep = serviceTrans.findRunThread( DATA_SERVICE_STEP );
     StepInterface resultStep = genTrans.findRunThread( RESULT_STEP_NAME );
@@ -451,13 +465,20 @@ public class DataServiceExecutorTest extends BaseTest {
       Object[] row = { i };
       clientRowListener.rowWrittenEvent( rowMeta, row );
     }
+    if( produceErrorRow ) {
+      clientRowListener.errorRowWrittenEvent( rowMeta, new Object[] { 999 } );
+    }
     transListenerCaptor.getValue().transFinished( genTrans );
 
     InOrder writeRows = inOrder( rowMeta );
     ArgumentCaptor<DataOutputStream> streamCaptor = ArgumentCaptor.forClass( DataOutputStream.class );
     writeRows.verify( rowMeta ).writeMeta( streamCaptor.capture() );
     DataOutputStream dataOutputStream = streamCaptor.getValue();
-    writeRows.verify( rowMeta, times( 50 ) ).writeData( same( dataOutputStream ), argThat( arrayWithSize( 1 ) ) );
+    if( produceErrorRow ) {
+      writeRows.verify( rowMeta, times( 51 ) ).writeData( same( dataOutputStream ), argThat( arrayWithSize( 1 ) ) );
+    } else {
+      writeRows.verify( rowMeta, times( 50 ) ).writeData( same( dataOutputStream ), argThat( arrayWithSize( 1 ) ) );
+    }
     writeRows.verifyNoMoreInteractions();
 
     executor.waitUntilFinished();
@@ -562,6 +583,20 @@ public class DataServiceExecutorTest extends BaseTest {
 
   @Test
   public void testExecuteStreamQuery() throws Exception {
+    testExecuteStreamQuery( 1, 1, false );
+  }
+
+  @Test
+  public void testExecuteStreamQueryWindowSizeZero() throws Exception {
+    testExecuteStreamQuery( 0, 0, false );
+  }
+
+  @Test
+  public void testExecuteStreamQueryUseCache() throws Exception {
+    testExecuteStreamQuery( 1, 0, true );
+  }
+
+  private void testExecuteStreamQuery( int windowSize, int addTransListenerServiceTransNExecs, boolean setCachedStreamingGeneratedValue ) throws Exception {
     when( genTrans.isFinishedOrStopped() ).thenReturn( true );
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
 
@@ -577,6 +612,23 @@ public class DataServiceExecutorTest extends BaseTest {
     dataService.getPushDownOptimizationMeta().add( optimization );
     dataService.setStreaming( true );
 
+    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
+    when( serviceTransExecutor.getKey() ).thenReturn( key );
+    when( serviceTransExecutor.getWindowMaxRowLimit() ).thenReturn( 50000L );
+    when( serviceTransExecutor.getWindowMaxTimeLimit() ).thenReturn( 10000L );
+
+    if ( setCachedStreamingGeneratedValue ) {
+      StreamingGeneratedTransExecution streamWiring =
+        new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
+          genTrans, consumer, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+          sql.getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, windowSize, 1, 10000 );
+
+      String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sql.getSqlString(),
+        IDataServiceClientService.StreamingMode.ROW_BASED, 1, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(),
+        serviceTransExecutor.getWindowMaxTimeLimit(), 10000 );
+      context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
+    }
+
     IMetaStore metastore = mock( IMetaStore.class );
     DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
       serviceTrans( serviceTrans ).
@@ -584,10 +636,12 @@ public class DataServiceExecutorTest extends BaseTest {
       genTrans( genTrans ).
       metastore( metastore ).
       windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
-      windowSize( 1 ).
-      windowEvery( 0 ).
-      windowLimit( 0 ).
+      windowSize( windowSize ).
+      windowEvery( 1 ).
+      windowLimit( 10000 ).
       build();
+
+    context.addExecutor( executor );
 
     ArgumentCaptor<String> objectIds = ArgumentCaptor.forClass( String.class );
     verify( serviceTrans ).setContainerObjectId( objectIds.capture() );
@@ -605,13 +659,24 @@ public class DataServiceExecutorTest extends BaseTest {
     // Start Execution
     executor.executeQuery( new DataOutputStream( outputStream ) );
 
+    // Push row from service to sql Trans
+    for ( int i = 0; i < 50; i++ ) {
+      Object[] row = { i };
+      //clientRowListener.rowWrittenEvent( rowMeta, row );
+    }
+
     // Check header was written
     assertThat( outputStream.size(), greaterThan( 0 ) );
     outputStream.reset();
 
     executor.waitUntilFinished();
     verify( serviceTrans, times( 0 ) ).waitUntilFinished();
-    verify( genTrans ).waitUntilFinished();
+    verify( genTrans, times( 0 ) ).waitUntilFinished();
+    if ( setCachedStreamingGeneratedValue ) {
+      verify( serviceTrans, times( 0 ) ).addTransListener( any() );
+    } else {
+      verify( serviceTrans, times( addTransListenerServiceTransNExecs ) ).addTransListener( any() );
+    }
   }
 
   @Test
@@ -1008,7 +1073,7 @@ public class DataServiceExecutorTest extends BaseTest {
       genTrans( genTrans ).
       build();
 
-    executor.stop();
+    executor.stop( true );
 
     verify( serviceTrans ).stopAll();
     verify( genTrans ).stopAll();
@@ -1029,13 +1094,13 @@ public class DataServiceExecutorTest extends BaseTest {
 
     when( serviceTrans.isRunning() ).thenReturn( false );
     when( genTrans.isRunning() ).thenReturn( true );
-    executor.stop();
+    executor.stop( true );
     verify( serviceTrans, times( 0 ) ).stopAll();
     verify( genTrans, times( 1 ) ).stopAll();
 
     when( serviceTrans.isRunning() ).thenReturn( true );
     when( genTrans.isRunning() ).thenReturn( false );
-    executor.stop();
+    executor.stop( true );
     verify( serviceTrans, times( 1 ) ).stopAll();
     verify( genTrans, times( 1 ) ).stopAll();
   }
@@ -1066,7 +1131,7 @@ public class DataServiceExecutorTest extends BaseTest {
       windowLimit( 0 ).
       build();
 
-    executor.stop();
+    executor.stop( true );
 
     verify( serviceTrans, times( 0 ) ).stopAll();
     verify( genTrans, times( 0 ) ).stopAll();
@@ -1128,7 +1193,7 @@ public class DataServiceExecutorTest extends BaseTest {
       genTrans( genTrans ).
       build();
 
-    executor.stop();
+    executor.stop( true );
 
     verify( serviceTrans, times( 0 ) ).stopAll();
     verify( genTrans, times( 0 ) ).stopAll();
@@ -1302,4 +1367,216 @@ public class DataServiceExecutorTest extends BaseTest {
 
   }
 
+  @Test
+  public void testWrapupConsumerResourcesNoGenTrans() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
+    when( serviceTransExecutor.getKey() ).thenReturn( key );
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+    when( serviceTrans.getTransMeta() ).thenReturn( dataService.getServiceTrans() );
+
+    context.addServiceTransExecutor( serviceTransExecutor );
+    dataService.setStreaming( true );
+
+    StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
+      genTrans, consumer, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000 );
+
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      build();
+
+    AtomicBoolean onCompleteCalled = new AtomicBoolean( false );
+    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
+    consumer.doOnComplete( () -> onCompleteCalled.set( true ) ).subscribe();
+
+    executor.wrapupConsumerResources( consumer );
+
+    verify( serviceTransExecutor, times( 1 ) ).clearCacheByKey( anyString() );
+    assertFalse( onCompleteCalled.get() );
+  }
+
+  @Test
+  public void testWrapupConsumerResources() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
+    when( serviceTransExecutor.getKey() ).thenReturn( key );
+    when( serviceTransExecutor.getWindowMaxRowLimit() ).thenReturn( 1000L );
+    when( serviceTransExecutor.getWindowMaxTimeLimit() ).thenReturn( 1000L );
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+    when( serviceTrans.getTransMeta() ).thenReturn( dataService.getServiceTrans() );
+
+    context.addServiceTransExecutor( serviceTransExecutor );
+    dataService.setStreaming( true );
+
+    StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
+      genTrans, consumer, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000 );
+
+    String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
+      IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(), serviceTransExecutor.getWindowMaxTimeLimit(), 10000 );
+    context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      windowEvery( 1 ).
+      windowSize( 10 ).
+      windowLimit( 10000 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      build();
+
+    AtomicBoolean onCompleteCalled = new AtomicBoolean( false );
+    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
+    consumer.doOnComplete( () -> onCompleteCalled.set( true ) ).subscribe();
+
+    executor.wrapupConsumerResources( consumer );
+
+    verify( serviceTransExecutor, times( 1 ) ).clearCacheByKey( anyString() );
+    assertTrue( onCompleteCalled.get() );
+  }
+
+  @Test
+  public void testGeneratedTransClearRowConsumers() throws KettleException {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
+    when( serviceTransExecutor.getKey() ).thenReturn( key );
+    when( serviceTransExecutor.getWindowMaxRowLimit() ).thenReturn( 1000L );
+    when( serviceTransExecutor.getWindowMaxTimeLimit() ).thenReturn( 1000L );
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+    when( serviceTrans.getTransMeta() ).thenReturn( dataService.getServiceTrans() );
+
+    context.addServiceTransExecutor( serviceTransExecutor );
+    dataService.setStreaming( true );
+
+    StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
+      genTrans, consumer, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000 );
+
+    String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
+      IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(), serviceTransExecutor.getWindowMaxTimeLimit(), 10000 );
+    context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      windowEvery( 1 ).
+      windowSize( 10 ).
+      windowLimit( 10000 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      build();
+
+    AtomicBoolean onCompleteCalled = new AtomicBoolean( false );
+    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
+    consumer.doOnComplete( () -> onCompleteCalled.set( true ) ).subscribe();
+
+    executor.wrapupConsumerResources( consumer );
+
+    verify( serviceTransExecutor, times( 1 ) ).clearCacheByKey( anyString() );
+    assertTrue( onCompleteCalled.get() );
+
+    context.removeStreamingGeneratedTransExecution( streamingGenTransCacheKey );
+  }
+
+  @Test
+  public void testeGetKettleRowLimit() throws Exception {
+    DataServiceContext spyContext = spy( context );
+    DataServiceExecutor.Builder dataServiceExecutorBuilder = new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, spyContext );
+
+    assertEquals( 0, dataServiceExecutorBuilder.getKettleRowLimit() );
+
+    String oldValue = System.getProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
+    try{
+      System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, "55" );
+      assertEquals( 55, dataServiceExecutorBuilder.getKettleRowLimit() );
+
+      System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, "invalid number" );
+      assertEquals( 0, dataServiceExecutorBuilder.getKettleRowLimit() );
+      verify( spyContext, times( 2 ) ).getLogChannel();
+    } finally {
+      if( oldValue != null ) {
+        System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, oldValue );
+      } else {
+        System.clearProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
+      }
+      assertEquals( 0, dataServiceExecutorBuilder.getKettleRowLimit() );
+    }
+
+    dataServiceExecutorBuilder = new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, null );
+    assertEquals( 0, dataServiceExecutorBuilder.getKettleRowLimit() );
+    try{
+      System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, "99" );
+      assertEquals( 99, dataServiceExecutorBuilder.getKettleRowLimit() );
+    } finally {
+      if( oldValue != null ) {
+        System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, oldValue );
+      } else {
+        System.clearProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
+      }
+      assertEquals( 0, dataServiceExecutorBuilder.getKettleRowLimit() );
+    }
+  }
+
+  @Test
+  public void testeGetKettleTimeLimit() throws Exception {
+    DataServiceContext spyContext = spy( context );
+    DataServiceExecutor.Builder dataServiceExecutorBuilder = new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, spyContext );
+
+    assertEquals( 0, dataServiceExecutorBuilder.getKettleTimeLimit() );
+
+    String oldValue = System.getProperty( DataServiceConstants.TIME_LIMIT_PROPERTY );
+    try{
+      System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "55" );
+      assertEquals( 55, dataServiceExecutorBuilder.getKettleTimeLimit() );
+
+      System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "invalid number" );
+      assertEquals( 0, dataServiceExecutorBuilder.getKettleTimeLimit() );
+      verify( spyContext, times( 2 ) ).getLogChannel();
+    } finally {
+      if( oldValue != null ) {
+        System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, oldValue );
+      } else {
+        System.clearProperty( DataServiceConstants.TIME_LIMIT_PROPERTY );
+      }
+      assertEquals( 0, dataServiceExecutorBuilder.getKettleTimeLimit() );
+    }
+
+    dataServiceExecutorBuilder = new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, null );
+    assertEquals( 0, dataServiceExecutorBuilder.getKettleTimeLimit() );
+    try{
+      System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, "99" );
+      assertEquals( 99, dataServiceExecutorBuilder.getKettleTimeLimit() );
+    } finally {
+      if( oldValue != null ) {
+        System.setProperty( DataServiceConstants.TIME_LIMIT_PROPERTY, oldValue );
+      } else {
+        System.clearProperty( DataServiceConstants.TIME_LIMIT_PROPERTY );
+      }
+      assertEquals( 0, dataServiceExecutorBuilder.getKettleTimeLimit() );
+    }
+  }
 }

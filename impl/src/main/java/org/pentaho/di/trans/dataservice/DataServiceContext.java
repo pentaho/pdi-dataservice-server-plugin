@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
@@ -32,6 +33,7 @@ import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
+import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTransExecutor;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
@@ -48,6 +50,18 @@ public class DataServiceContext implements Context {
   private final List<PushDownFactory> pushDownFactories;
   private final LogChannelInterface logChannel;
   private final UIFactory uiFactory;
+
+  //Cache for the generated tranformation executions, so that we can keep the same genTransExecution for multiple consumers
+  private final Cache<String, StreamingGeneratedTransExecution> streamingGeneratedTransExecutionCache = CacheBuilder.newBuilder()
+    .expireAfterAccess( DataServiceConstants.STREAMING_CACHE_DURATION, DataServiceConstants.STREAMING_CACHE_TIME_UNIT )
+    .removalListener( new RemovalListener<String, StreamingGeneratedTransExecution>() {
+      public void onRemoval( RemovalNotification<String, StreamingGeneratedTransExecution> removal ) {
+        removal.getValue().clearRowConsumers();
+        logChannel.logDebug( DataServiceConstants.STREAMING_GEN_TRANS_CACHE_REMOVED + removal.getKey() );
+      }
+    } )
+    .softValues()
+    .build();
 
   // Use an in-memory cache with timed expiration and soft value references to prevent heap memory leaks
   private final ConcurrentMap<String, DataServiceExecutor> executors = CacheBuilder.newBuilder()
@@ -166,6 +180,30 @@ public class DataServiceContext implements Context {
       if ( key.getDataServiceId().equals( dataServiceName ) ) {
         serviceExecutors.remove( key );
       }
+    }
+  }
+
+  @Override
+  public StreamingGeneratedTransExecution getStreamingGeneratedTransExecution( String key ) {
+    if ( key != null ) {
+      return this.streamingGeneratedTransExecutionCache.getIfPresent( key );
+    }
+    return null;
+  }
+
+  @Override
+  public void addStreamingGeneratedTransExecution( String key,
+                                                   StreamingGeneratedTransExecution streamingGeneratedTransExecution ) {
+    if ( key != null ) {
+      this.streamingGeneratedTransExecutionCache.put( key, streamingGeneratedTransExecution );
+    }
+  }
+
+  @Override
+  public void removeStreamingGeneratedTransExecution( String key ) {
+    if ( key != null ) {
+      this.streamingGeneratedTransExecutionCache.invalidate( key );
+      this.streamingGeneratedTransExecutionCache.cleanUp();
     }
   }
 }
