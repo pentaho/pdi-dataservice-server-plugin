@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.resolvers;
 
 import com.google.common.base.Function;
+import org.osgi.service.blueprint.container.ServiceUnavailableException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
@@ -80,11 +81,14 @@ public class DataServiceResolverDelegate implements DataServiceResolver {
   @Override public DataServiceExecutor.Builder createBuilder( SQL sql ) throws KettleException {
     boolean foundDataService = false;
     for ( DataServiceResolver resolver : resolvers ) {
-      DataServiceExecutor.Builder builder = resolver.createBuilder( sql );
-      if ( builder != null ) {
-        return builder;
-      } else {
-        foundDataService = foundDataService || ( resolver.getDataService( sql.getServiceName() ) != null );
+      try {
+        DataServiceExecutor.Builder builder = resolver.createBuilder( sql );
+        if ( builder != null ) {
+          return builder;
+        } else {
+          foundDataService = foundDataService || ( resolver.getDataService( sql.getServiceName() ) != null );
+        }
+      } catch ( ServiceUnavailableException ignored ) {
       }
     }
     throw new KettleException( foundDataService ? "Error when creating builder for sql query"
