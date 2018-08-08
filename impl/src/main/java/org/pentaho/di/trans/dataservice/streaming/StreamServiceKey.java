@@ -28,7 +28,6 @@ import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +43,7 @@ public class StreamServiceKey implements Serializable {
   /**
    * Required
    */
-  private final Map<String, String> parameters;
+  private final ImmutableMap<String, String> parameters;
 
   private final List<String> optimizations;
 
@@ -54,7 +53,7 @@ public class StreamServiceKey implements Serializable {
    * @param dataServiceId - The data service ID
    * @param parameters - The data service parameters.
    */
-  private StreamServiceKey( String dataServiceId, Map<String, String> parameters, List<String> optimizations ) {
+  private StreamServiceKey( String dataServiceId, ImmutableMap<String, String> parameters, List<String> optimizations ) {
     this.dataServiceId = dataServiceId;
     this.parameters = parameters;
     this.optimizations = optimizations;
@@ -70,8 +69,7 @@ public class StreamServiceKey implements Serializable {
    */
   public static StreamServiceKey create( String dataServiceId, Map<String, String> parameters, List<OptimizationImpactInfo> optimizationList ) {
     // Copy execution parameters
-    Map<String, String> params = new HashMap<>();
-    params.putAll( parameters );
+    ImmutableMap<String, String> params = ImmutableMap.copyOf( parameters );
 
     List<String> optimizations = new ArrayList<>();
     if ( optimizationList != null ) {
@@ -99,7 +97,7 @@ public class StreamServiceKey implements Serializable {
    * @return - The parameters property.
    */
   public ImmutableMap<String, String> getParameters() {
-    return ImmutableMap.copyOf( parameters );
+    return parameters;
   }
 
   public List<String> getOptimizations() {

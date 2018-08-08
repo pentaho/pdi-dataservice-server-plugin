@@ -65,6 +65,7 @@ import org.pentaho.metastore.api.IMetaStore;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +122,7 @@ public class DataServiceExecutor {
     private long windowSize = 0;
     private long windowEvery = 0;
     private long windowLimit = 0;
-    private Map<String, String> parameters = new HashMap<>( );
+    private Map<String, String> parameters = Collections.emptyMap();
     private LogLevel logLevel;
     private SqlTransGenerator sqlTransGenerator;
     private StreamServiceKey streamServiceKey;
@@ -269,6 +270,8 @@ public class DataServiceExecutor {
         }
       }
 
+      this.parameters.putAll( getWhereConditionParameters() );
+
       // Check if there is already a serviceTransformation in the context
       if ( service.isStreaming() ) {
         this.streamServiceKey = getStreamingServiceKey();
@@ -324,10 +327,6 @@ public class DataServiceExecutor {
       genTrans.setContainerObjectId( UUID.randomUUID().toString() );
       genTrans.setMetaStore( metastore );
       genTrans.setGatheringMetrics( enableMetrics );
-
-      if ( !service.isStreaming() ) {
-        this.parameters.putAll( getWhereConditionParameters() );
-      }
 
       DataServiceExecutor dataServiceExecutor = new DataServiceExecutor( this );
 
