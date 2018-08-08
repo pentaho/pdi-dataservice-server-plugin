@@ -34,7 +34,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
@@ -68,7 +67,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -78,7 +76,6 @@ import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -97,7 +94,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1288,18 +1284,4 @@ public class DataServiceExecutorTest extends BaseTest {
       .serviceTrans( serviceTransMeta );
     Mockito.verify( mutator ).accept( dataService.getStepname(), serviceTransMeta );
   }
-
-  @Test
-  public void testDataExecutorServiceWithWhereClause() throws Exception {
-
-    SQL sqlQuery = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME + " where(1=0)" );
-    DataServiceExecutor dataServiceExecutor = new DataServiceExecutor.Builder( sqlQuery, dataService, context ).build();
-    Map<String, String> parameters = dataServiceExecutor.getParameters();
-
-    assertEquals( sqlQuery, dataServiceExecutor.getSql() );
-    assertNotNull( parameters );
-    assertEquals( 1, parameters.size() );
-
-  }
-
 }
