@@ -24,6 +24,10 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+
+import io.reactivex.Observer;
+
+import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
@@ -121,5 +125,12 @@ public class ExecutorQueryService implements Query.Service {
       return ImmutableList.of( executor.getServiceTrans(), executor.getGenTrans() );
     }
 
+    @Override
+    public void pushTo( Observer<List<RowMetaAndData>> streamingWindowObserver ) throws Exception {
+      DataServiceExecutor dataServiceExecutor = executor.executeStreamingPushQuery( streamingWindowObserver );
+      if ( dataServiceExecutor != null ) {
+        dataServiceExecutor.waitUntilFinished();
+      }
+    }
   }
 }

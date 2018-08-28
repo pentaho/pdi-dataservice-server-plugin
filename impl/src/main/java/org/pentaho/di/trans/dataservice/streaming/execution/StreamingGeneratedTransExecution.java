@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.streaming.execution;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Observer;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
@@ -45,8 +46,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.reactivex.BackpressureStrategy.LATEST;
 
 /**
  * Class to represent the Streaming execution of boundary Generated Transformation (SQL query over dataservices)
@@ -119,7 +118,7 @@ public class StreamingGeneratedTransExecution implements Runnable {
    */
   @Override public void run() {
     //we stop back pressure by only processing the last data
-    getGeneratedDataObservable().toFlowable( LATEST ).onBackpressureBuffer( 1 )
+    getGeneratedDataObservable().toFlowable( BackpressureStrategy.LATEST ).onBackpressureBuffer( 1 )
       .doOnError( throwable -> Throwables.propagate( throwable ) )
       .subscribe( rowMetaAndDataList -> this.runGenTrans( rowMetaAndDataList ) );
 
@@ -182,7 +181,6 @@ public class StreamingGeneratedTransExecution implements Runnable {
         genTrans.waitUntilFinished();
         genTrans.stopAll();
 
-        this.consumersList.stream().forEach( Observer::onComplete );
         this.genTransCachePublishSubject.onComplete();
 
         log.logDetailed( DataServiceConstants.STREAMING_GENERATED_TRANSFORMATION_STOPPED );
@@ -202,7 +200,6 @@ public class StreamingGeneratedTransExecution implements Runnable {
    */
   public void addNewRowConsumer( final Observer<RowMetaAndData> consumer ) {
     this.consumersList.add( consumer );
-    this.genTransCachePublishSubject.doOnComplete( () -> this.clearRowConsumer( consumer ) ).subscribe( consumer );
   }
 
   /**
