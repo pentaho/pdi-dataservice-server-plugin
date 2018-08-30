@@ -89,17 +89,17 @@ public class StreamingGeneratedTransExecutionTest {
   @Mock LogChannelInterface log;
   StepInterface resultStep = mock( BaseStep.class );
   @Mock RowProducer rowProducer;
-  @Mock Consumer windowConsumer;
+  @Mock Consumer<List<RowMetaAndData>> windowConsumer;
   @Mock SqlTransGenerator sqlTransGenerator;
 
   @Before
   public void setup() throws Exception {
-    rowIterator = new ArrayList();
+    rowIterator = new ArrayList<>();
     rowIterator.add( rowMetaAndData );
 
     when( serviceTrans.findRunThread( MOCK_RESULT_STEP_NAME ) ).thenReturn( resultStep );
 
-    streamServiceKey = StreamServiceKey.create( MOCK_KEY, Collections.EMPTY_MAP, Collections.EMPTY_LIST );
+    streamServiceKey = StreamServiceKey.create( MOCK_KEY, Collections.emptyMap(), Collections.emptyList() );
     serviceExecutor = spy( new StreamingServiceTransExecutor( streamServiceKey, serviceTrans, MOCK_RESULT_STEP_NAME, 10000, 1000, context ) );
 
     doReturn( streamExecutionListener ).when( serviceExecutor ).getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,

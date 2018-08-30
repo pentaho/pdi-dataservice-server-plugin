@@ -29,7 +29,9 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.MultimapBuilder;
+
 import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.di.core.Condition;
@@ -706,6 +708,51 @@ public class DataServiceExecutor {
     }
 
     return this;
+  }
+
+  public DataServiceExecutor executeStreamingPushQuery( final Observer<List<RowMetaAndData>> streamingWindowConsumer ) {
+    final Observer<RowMetaAndData> consumer = makeBufferObserver( streamingWindowConsumer );
+    return executeQuery( consumer );
+  }
+
+  @VisibleForTesting
+  protected Observer<RowMetaAndData> makeBufferObserver( Observer<List<RowMetaAndData>> streamingWindowConsumer ) {
+    PublishSubject<RowMetaAndData> bridgeConsumer = PublishSubject.create();
+    final PublishSubject<Object> boundary = PublishSubject.create();
+    bridgeConsumer.buffer( boundary ).doOnDispose( () ->  stop( false ) ).subscribe( streamingWindowConsumer );
+    return makeUncompleteable( bridgeConsumer, boundary );
+  }
+
+  private Observer<RowMetaAndData> makeUncompleteable(
+      Observer<RowMetaAndData> pipeTo, Observer<Object> completeListener ) {
+
+    return new Observer<RowMetaAndData>() {
+      @Override
+      public void onSubscribe( Disposable d ) {
+        pipeTo.onSubscribe( d );
+      }
+
+      @Override
+      public void onNext( RowMetaAndData t ) {
+        pipeTo.onNext( t );
+      }
+
+      @Override
+      public void onError( Throwable e ) {
+        wrapupConsumerResources( this );
+        pipeTo.onError( e );
+      }
+
+      @Override
+      public void onComplete() {
+        if ( isStopped() ) {
+          completeListener.onComplete();
+          pipeTo.onComplete();
+        } else {
+          completeListener.onNext( "split window" );
+        }
+      }
+    };
   }
 
   public DataServiceExecutor executeDefaultQuery( final Observer<RowMetaAndData> consumer ) {

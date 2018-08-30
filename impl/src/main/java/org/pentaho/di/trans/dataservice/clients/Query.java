@@ -22,9 +22,12 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
+import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
+
+import io.reactivex.Observer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,6 +42,10 @@ public interface Query {
   void writeTo( OutputStream outputStream ) throws IOException;
 
   List<Trans> getTransList();
+
+  default void pushTo( Observer<List<RowMetaAndData>> streamingWindowObserver ) throws Exception {
+    throw new UnsupportedOperationException();
+  }
 
   interface Service {
     Query prepareQuery( String sql, int maxRows, Map<String, String> parameters ) throws KettleException;

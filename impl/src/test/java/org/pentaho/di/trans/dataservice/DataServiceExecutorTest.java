@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -68,6 +69,7 @@ import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -1578,5 +1580,52 @@ public class DataServiceExecutorTest extends BaseTest {
       }
       assertEquals( 0, dataServiceExecutorBuilder.getKettleTimeLimit() );
     }
+  }
+
+  @Test
+  @SuppressWarnings( "unchecked" )
+  public void testMakeBufferObserver() throws Exception {
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
+          .sqlTransGenerator( sqlTransGenerator )
+          .genTrans( genTrans )
+          .enableMetrics( false )
+          .normalizeConditions( false )
+          .rowLimit( 50 )
+          .windowMode( IDataServiceClientService.StreamingMode.ROW_BASED )
+          .build();
+
+    Observer<List<RowMetaAndData>> observer = mock( Observer.class );
+    Observer<RowMetaAndData> adapter = executor.makeBufferObserver( observer );
+
+    RowMetaInterface header = new RowMeta();
+    header.addValueMeta( new ValueMetaInteger( "i" ) );
+    header.addValueMeta( new ValueMetaString( "name" ) );
+    List<RowMetaAndData> rows = Arrays.asList(
+      new RowMetaAndData( header, 1L, "one" ),
+      new RowMetaAndData( header, 2L, "two" ),
+      new RowMetaAndData( header, 3L, "three" ),
+      new RowMetaAndData( header, 4L, "four" ),
+      new RowMetaAndData( header, 5L, "five" ) );
+
+    Disposable disp = mock( Disposable.class );
+    when( genTrans.isStopped() ).thenReturn( false );
+    adapter.onSubscribe( disp );
+    adapter.onNext( rows.get( 0 ) );
+    adapter.onNext( rows.get( 1 ) );
+    adapter.onNext( rows.get( 2 ) );
+    adapter.onComplete();
+    adapter.onSubscribe( disp );
+    adapter.onNext( rows.get( 3 ) );
+    adapter.onNext( rows.get( 4 ) );
+    when( genTrans.isStopped() ).thenReturn( true );
+    adapter.onComplete();
+
+    @SuppressWarnings( "rawtypes" )
+    ArgumentCaptor<List> captor = ArgumentCaptor.forClass( List.class );
+
+    verify( observer, times( 2 ) ).onNext( captor.capture() );
+    verify( observer, times( 1 ) ).onComplete();
+    assertEquals( rows.subList( 0, 3 ), captor.getAllValues().get( 0 ) );
+    assertEquals( rows.subList( 3, 5 ), captor.getAllValues().get( 1 ) );
   }
 }
