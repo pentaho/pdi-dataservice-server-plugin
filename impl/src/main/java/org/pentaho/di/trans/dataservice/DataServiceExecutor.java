@@ -140,7 +140,7 @@ public class DataServiceExecutor {
     private boolean enableMetrics = false;
     private IMetaStore metastore;
     private BiConsumer<String, TransMeta> transMutator =
-        ( stepName, transMeta ) -> TransMutators.disableAllUnrelatedHops( stepName, transMeta, true );
+      ( stepName, transMeta ) -> TransMutators.disableAllUnrelatedHops( stepName, transMeta, true );
 
     private KettleUtils kettleUtils = KettleUtils.getInstance();
 

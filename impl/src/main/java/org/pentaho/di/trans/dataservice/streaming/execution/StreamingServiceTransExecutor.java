@@ -36,7 +36,6 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.Context;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
