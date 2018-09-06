@@ -25,6 +25,12 @@
         <version>${rxjava.version}</version>
         <scope>provided</scope>
       </dependency>
+      <dependency>
+        <groupId>org.reactivestreams</groupId>
+        <artifactId>reactive-streams</artifactId>
+        <version>${reactivestreams.version}</version>
+        <scope>provided</scope>
+      </dependency>
 
       <!-- jsr305 is providing javax.annotation package that is already being provided by
            the felix framework in karaf -->
