@@ -35,7 +35,7 @@ import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.Context;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
@@ -66,7 +66,7 @@ public class StreamingServiceTransExecutor {
   private long lastCacheCleanupMillis = 0;
   private int windowMaxRowLimit;
   private long windowMaxTimeLimit;
-  private DataServiceContext context;
+  private Context context;
 
   /**
    * Service listener cache.
@@ -104,7 +104,7 @@ public class StreamingServiceTransExecutor {
    */
   public StreamingServiceTransExecutor( final StreamServiceKey key, Trans serviceTrans, final String serviceStepName,
                                         final int windowMaxRowLimit, final long windowMaxTimeLimit,
-                                        final DataServiceContext context ) {
+                                        final Context context ) {
     this.serviceTrans = serviceTrans;
     this.key = key;
     this.serviceStepName = serviceStepName;

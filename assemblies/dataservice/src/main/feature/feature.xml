@@ -2,6 +2,21 @@
   <feature name="${project.artifactId}" version="${project.version}">
 
     <details>${project.description}</details>
+    <feature>pentaho-metaverse-core</feature>
 
+
+  </feature>
+
+  <!-- This feature is here as a hack because the pentaho-metaverse feature from the
+  standard pentaho-server repository loads half the world.
+   We still need to confirm if metaverse needs to bring anything else along. -->
+  <feature name="pentaho-metaverse-core" version="${project.version}">
+    <feature>pentaho-tinkerpop-gremlin</feature>
+
+    <configfile finalname="/etc/pentaho.metaverse.cfg">
+      mvn:pentaho/pentaho-osgi-config/${project.version}/cfg/pentaho-metaverse
+    </configfile>
+
+    <bundle>mvn:pentaho/pentaho-metaverse-core/${project.version}</bundle>
   </feature>
 </features>

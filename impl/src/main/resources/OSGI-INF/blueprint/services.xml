@@ -71,20 +71,24 @@
              interface="org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService"/>
     <!-- /Local Client Service -->
 
+    <bean id="transientResolverBean" class="org.pentaho.di.trans.dataservice.resolvers.TransientResolver">
+      <argument ref="repositoryLocator"/>
+      <argument ref="context"/>
+      <argument ref="serviceCacheFactory"/>
+      <argument value="${transient.service.loglevel}"/>
+    </bean>
+
+    <bean id="metaStoreResolverBean" class="org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver">
+      <argument ref="repositoryLocator"/>
+      <argument ref="context"/>
+    </bean>
+
+    <service ref="transientResolverBean" interface="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver" ranking="1"/>
+    <service ref="metaStoreResolverBean" interface="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver"/>
+
     <bean id="dataServiceResolverDelegate" class="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolverDelegate">
         <argument>
-            <list>
-                <bean class="org.pentaho.di.trans.dataservice.resolvers.TransientResolver">
-                    <argument ref="repositoryLocator"/>
-                    <argument ref="context"/>
-                    <argument ref="serviceCacheFactory"/>
-                    <argument value="${transient.service.loglevel}"/>
-                </bean>
-                <bean class="org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver">
-                    <argument ref="repositoryLocator"/>
-                    <argument ref="context"/>
-                </bean>
-            </list>
+          <reference-list interface="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver" availability="optional"/>
         </argument>
     </bean>
 

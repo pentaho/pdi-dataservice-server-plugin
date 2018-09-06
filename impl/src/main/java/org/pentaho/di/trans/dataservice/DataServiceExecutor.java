@@ -90,7 +90,7 @@ public class DataServiceExecutor {
   private final Map<String, String> parameters;
   private final SqlTransGenerator sqlTransGenerator;
   private final ListMultimap<ExecutionPoint, Runnable> listenerMap;
-  private final DataServiceContext context;
+  private final Context context;
 
   private IDataServiceClientService.StreamingMode windowMode;
   private long windowSize;
@@ -121,7 +121,7 @@ public class DataServiceExecutor {
   public static class Builder {
     private final SQL sql;
     private final DataServiceMeta service;
-    private final DataServiceContext context;
+    private final Context context;
     private Trans serviceTrans;
     private Trans genTrans;
     private int rowLimit = 0;
@@ -130,7 +130,7 @@ public class DataServiceExecutor {
     private long windowSize = 0;
     private long windowEvery = 0;
     private long windowLimit = 0;
-    private Map<String, String> parameters = new HashMap<>( );
+    private Map<String, String> parameters = new HashMap<>();
     private LogLevel logLevel;
     private SqlTransGenerator sqlTransGenerator;
     private StreamServiceKey streamServiceKey;
@@ -144,7 +144,7 @@ public class DataServiceExecutor {
 
     private KettleUtils kettleUtils = KettleUtils.getInstance();
 
-    public Builder( SQL sql, DataServiceMeta service, DataServiceContext context ) {
+    public Builder( SQL sql, DataServiceMeta service, Context context ) {
       this.sql = Preconditions.checkNotNull( sql, "SQL must not be null." );
       this.service = Preconditions.checkNotNull( service, "Service must not be null." );
       this.context = context;
@@ -246,14 +246,14 @@ public class DataServiceExecutor {
 
       if ( service.isStreaming() && windowMode == null ) {
         throw new KettleException(
-          BaseMessages.getString( PKG, "DataServiceExecutor.Error.WindowModeMandatory",
-            sql.getServiceName(), service.getName() ) );
+            BaseMessages.getString( PKG, "DataServiceExecutor.Error.WindowModeMandatory",
+                sql.getServiceName(), service.getName() ) );
       }
 
       if ( sql.getServiceName() == null || !sql.getServiceName().equals( service.getName() ) ) {
         throw new KettleException(
-          BaseMessages.getString( PKG, "DataServiceExecutor.Error.TableNameAndDataServiceNameDifferent",
-            sql.getServiceName(), service.getName() ) );
+            BaseMessages.getString( PKG, "DataServiceExecutor.Error.TableNameAndDataServiceNameDifferent",
+                sql.getServiceName(), service.getName() ) );
       }
 
       // Sets the service transformation fields
@@ -261,8 +261,8 @@ public class DataServiceExecutor {
         serviceFields = service.getServiceTrans().getStepFields( service.getStepname() );
       } else {
         throw new KettleException(
-          BaseMessages.getString( PKG, "DataServiceExecutor.Error.NoServiceTransformation",
-            sql.getServiceName(), service.getName() ) );
+            BaseMessages.getString( PKG, "DataServiceExecutor.Error.NoServiceTransformation",
+                sql.getServiceName(), service.getName() ) );
       }
 
       ValueMetaResolver resolver = new ValueMetaResolver( serviceFields );
@@ -284,7 +284,7 @@ public class DataServiceExecutor {
         StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
 
         if ( serviceTransExecutor != null
-          && !serviceTransExecutor.getServiceTrans().getTransMeta().getModifiedDate()
+            && !serviceTransExecutor.getServiceTrans().getTransMeta().getModifiedDate()
             .equals( service.getServiceTrans().getModifiedDate() ) ) {
           context.removeServiceTransExecutor( serviceTransExecutor.getKey() );
           serviceTransExecutor.stopAll();
@@ -299,12 +299,12 @@ public class DataServiceExecutor {
 
           if ( serviceTrans != null ) {
             int windowMaxRowLimit = (int) getStreamingLimit( rowLimit, service.getRowLimit(), getKettleRowLimit(),
-              DataServiceConstants.ROW_LIMIT_DEFAULT );
+                DataServiceConstants.ROW_LIMIT_DEFAULT );
             long windowMaxTimeLimit = getStreamingLimit( timeLimit, service.getTimeLimit(), getKettleTimeLimit(),
-              DataServiceConstants.TIME_LIMIT_DEFAULT );
+                DataServiceConstants.TIME_LIMIT_DEFAULT );
 
             serviceTransExecutor =
-              new StreamingServiceTransExecutor( streamServiceKey, serviceTrans, service.getStepname(),
+                new StreamingServiceTransExecutor( streamServiceKey, serviceTrans, service.getStepname(),
                 windowMaxRowLimit, windowMaxTimeLimit, context );
             context.addServiceTransExecutor( serviceTransExecutor );
           }
@@ -318,9 +318,9 @@ public class DataServiceExecutor {
 
       if ( sqlTransGenerator == null ) {
         sqlTransGenerator = new SqlTransGenerator( sql, service.isStreaming() ? 0 : rowLimit,
-          service.isStreaming() ? 0
-            : ( serviceRowLimit > 0 ? serviceRowLimit
-              : ( !service.isUserDefined() ? DataServiceConstants.ROW_LIMIT_DEFAULT : 0 ) ) );
+            service.isStreaming() ? 0
+                : ( serviceRowLimit > 0 ? serviceRowLimit
+                : ( !service.isUserDefined() ? DataServiceConstants.ROW_LIMIT_DEFAULT : 0 ) ) );
       }
       if ( genTrans == null ) {
         genTrans = new Trans( sqlTransGenerator.generateTransMeta() );
@@ -374,11 +374,13 @@ public class DataServiceExecutor {
     /**
      * Gets the streaming dataservice max limit for a window.
      *
-     * @param userLimit - The user limit.
+     * @param userLimit    - The user limit.
      * @param serviceLimit - The metadata limit.
-     * @param kettleLimit - The kettle limit.
+     * @param kettleLimit  - The kettle limit.
      * @param defaultLimit - The default limit.
+     *
      * @return The streaming max limit.
+     *
      * @throws KettleException
      */
     private long getStreamingLimit( long userLimit, long serviceLimit, long kettleLimit, long defaultLimit ) throws KettleException {
@@ -550,9 +552,9 @@ public class DataServiceExecutor {
       Object[] typedValues = resolver.inListToTypedObjectArray( fieldName, condition.getRightExactString() );
 
       // Encode list values
-      String[] typedValueStrings = new String[typedValues.length];
+      String[] typedValueStrings = new String[ typedValues.length ];
       for ( int i = 0; i < typedValues.length; i++ ) {
-        typedValueStrings[i] = resolvedValueMeta.getCompatibleString( typedValues[i] );
+        typedValueStrings[ i ] = resolvedValueMeta.getCompatibleString( typedValues[ i ] );
       }
 
       // Set new condition in-list (leave meta as string)
@@ -567,21 +569,21 @@ public class DataServiceExecutor {
     ImmutableMultimap.Builder<ExecutionPoint, Runnable> builder = ImmutableMultimap.builder();
 
     builder.putAll( ExecutionPoint.PREPARE,
-      new CopyParameters( parameters, serviceTrans )
+        new CopyParameters( parameters, serviceTrans )
     );
 
     if ( !service.isStreaming() ) {
       builder.putAll( ExecutionPoint.PREPARE,
-        new PrepareExecution( serviceTrans ),
-        new PrepareExecution( genTrans ) );
+          new PrepareExecution( serviceTrans ),
+          new PrepareExecution( genTrans ) );
 
       builder.putAll( ExecutionPoint.READY,
-        new DefaultTransWiring( this )
+          new DefaultTransWiring( this )
       );
 
       builder.putAll( ExecutionPoint.START,
-        new TransStarter( genTrans ),
-        new TransStarter( serviceTrans )
+          new TransStarter( genTrans ),
+          new TransStarter( serviceTrans )
       );
     }
     listenerMap.putAll( builder.build() );
@@ -757,7 +759,8 @@ public class DataServiceExecutor {
 
   public DataServiceExecutor executeDefaultQuery( final Observer<RowMetaAndData> consumer ) {
     listenerMap.get( ExecutionPoint.READY ).add( new Runnable() {
-      @Override public void run() {
+      @Override
+      public void run() {
         // Give back the eventual result rows...
         StepInterface resultStep = genTrans.findRunThread( getResultStepName() );
 
@@ -802,8 +805,8 @@ public class DataServiceExecutor {
       }
       if ( !listenerMap.get( stage ).equals( tasks ) ) {
         getGenTrans().getLogChannel().logError(
-          "Listeners were modified while executing {0}. Started with {1} and ended with {2}",
-          stage, tasks, listenerMap.get( stage )
+            "Listeners were modified while executing {0}. Started with {1} and ended with {2}",
+            stage, tasks, listenerMap.get( stage )
         );
       }
     }

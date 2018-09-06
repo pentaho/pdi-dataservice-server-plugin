@@ -14,6 +14,49 @@
   <name>Pentaho Community Edition Project: ${project.artifactId}</name>
   <description>Pentaho Data Services Server and Client bundled</description>
 
+
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- rxJava is provided via karaf custom.properties because of AEL ??? -->
+      <dependency>
+        <groupId>io.reactivex.rxjava2</groupId>
+        <artifactId>rxjava</artifactId>
+        <version>${rxjava.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.reactivestreams</groupId>
+        <artifactId>reactive-streams</artifactId>
+        <version>${reactivestreams.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <!-- jsr305 is providing javax.annotation package that is already being provided by
+           the felix framework in karaf -->
+      <dependency>
+        <groupId>com.google.code.findbugs</groupId>
+        <artifactId>jsr305</artifactId>
+        <version>${jsr305.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.eclipse</groupId>
+        <artifactId>jface</artifactId>
+        <version>${jface.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.eclipse.swt</groupId>
+        <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
+        <version>${swt.version}</version>
+        <scope>provided</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>pentaho</groupId>
@@ -22,54 +65,29 @@
       <type>xml</type>
       <classifier>features</classifier>
     </dependency>
+
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pdi-dataservice-server-plugin</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>compile</scope>
     </dependency>
+
     <dependency>
-      <groupId>commons-collections</groupId>
-      <artifactId>commons-collections</artifactId>
-      <version>${commons.collections.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mongodb</groupId>
-      <artifactId>mongo-java-driver</artifactId>
-      <version>${mongo.java.driver.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>compile</scope>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-blueprint-collection-utils</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
-      <artifactId>pentaho-modeler</artifactId>
-      <version>${pentaho-modeler.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>compile</scope>
+      <artifactId>pentaho-kettle-repository-locator-api</artifactId>
+      <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-metastore-locator-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
   </dependencies>
 
 </project>
