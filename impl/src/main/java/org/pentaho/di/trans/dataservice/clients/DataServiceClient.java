@@ -26,9 +26,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import io.reactivex.Observer;
-
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -315,7 +313,7 @@ public class DataServiceClient implements IDataServiceClientService {
 
   @Override
   public void query( String sqlQuery, IStreamingParams streamParams,
-      Map<String, String> params, Observer<List<RowMetaAndData>> consumer )
+                     Map<String, String> params, Observer<List<RowMetaAndData>> consumer )
     throws Exception {
     // Prepare query, exception will be thrown if query is invalid
     Query query = prepareQuery( sqlQuery,

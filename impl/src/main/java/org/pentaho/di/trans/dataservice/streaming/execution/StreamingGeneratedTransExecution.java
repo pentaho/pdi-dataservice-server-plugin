@@ -24,11 +24,14 @@ package org.pentaho.di.trans.dataservice.streaming.execution;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
+import io.reactivex.BackpressureOverflowStrategy;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Observer;
 import io.reactivex.functions.Consumer;
+import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.ReplaySubject;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -41,9 +44,9 @@ import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.StepInterface;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -51,14 +54,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Class to represent the Streaming execution of boundary Generated Transformation (SQL query over dataservices)
  */
 public class StreamingGeneratedTransExecution implements Runnable {
+
+  private static final Log logger = LogFactory.getLog( StreamingGeneratedTransExecution.class );
+
   private final StreamingServiceTransExecutor serviceExecutor;
   private final Trans genTrans;
   private final String injectorStepName;
   private final String resultStepName;
-  private ReplaySubject<RowMetaAndData> genTransCachePublishSubject = ReplaySubject.create();
+  private BehaviorSubject<List<RowMetaAndData>> genTransCachePublishSubject = BehaviorSubject.create();
   private final String query;
   private final AtomicBoolean isRunning = new AtomicBoolean( false );
-  private final ConcurrentLinkedQueue<Observer<RowMetaAndData>> consumersList = new ConcurrentLinkedQueue<>( );
+  private final List<Observer<List<RowMetaAndData>>> consumersList = Collections.synchronizedList( new ArrayList<>() );
+  private Boolean pollingModeActivated = Boolean.FALSE;
   private StreamExecutionListener stream;
 
   private final PublishSubject<List<RowMetaAndData>> generatedDataObservable;
@@ -67,6 +74,7 @@ public class StreamingGeneratedTransExecution implements Runnable {
   private long windowSize;
   private long windowEvery;
   private long windowLimit;
+  private String streamingGeneratedTransCacheKey;
 
   /**
    * Constructor.
@@ -84,12 +92,14 @@ public class StreamingGeneratedTransExecution implements Runnable {
    *                 TIME_BASED streamingType.
    * @param windowLimit The query max window size. Number of rows for boundary TIME_BASED streamingType and milliseconds for boundary
    *                 ROW_BASED streamingType.
+   * @param streamingGeneratedTransCacheKey The generated transformation cache key, so that it could be easily accessed.
    */
   public StreamingGeneratedTransExecution( final StreamingServiceTransExecutor serviceExecutor, final Trans genTrans,
-                                           final Observer<RowMetaAndData> rowConsumer, final String injectorStepName,
-                                           final String resultStepName, final String query,
+                                           final Observer<List<RowMetaAndData>> rowConsumer, boolean pollingMode,
+                                           final String injectorStepName, final String resultStepName, final String query,
                                            final IDataServiceClientService.StreamingMode windowMode,
-                                           long windowSize, long windowEvery, long windowLimit ) {
+                                           long windowSize, long windowEvery, long windowLimit,
+                                           String streamingGeneratedTransCacheKey ) {
     this.serviceExecutor = serviceExecutor;
     this.genTrans = genTrans;
     this.injectorStepName = injectorStepName;
@@ -99,9 +109,10 @@ public class StreamingGeneratedTransExecution implements Runnable {
     this.windowSize = windowSize;
     this.windowEvery = windowEvery;
     this.windowLimit = windowLimit;
+    this.streamingGeneratedTransCacheKey = streamingGeneratedTransCacheKey;
 
     this.generatedDataObservable = PublishSubject.create();
-    this.addNewRowConsumer( rowConsumer );
+    this.addNewRowConsumer( rowConsumer, pollingMode );
   }
 
   /**
@@ -118,8 +129,19 @@ public class StreamingGeneratedTransExecution implements Runnable {
    */
   @Override public void run() {
     //we stop back pressure by only processing the last data
-    getGeneratedDataObservable().toFlowable( BackpressureStrategy.LATEST ).onBackpressureBuffer( 1 )
-      .doOnError( throwable -> Throwables.propagate( throwable ) )
+    getGeneratedDataObservable().
+      toFlowable( BackpressureStrategy.LATEST ).
+      onBackpressureBuffer( 1, () -> { }, BackpressureOverflowStrategy.DROP_OLDEST )
+      .doOnError( t -> logger.error( "Error receiving data from the service transformation observable", t ) )
+      .doOnNext( rowMetaAndDataList -> {
+        if ( this.consumersList.size() == 0 ) {
+          if ( !pollingModeActivated ) {
+            serviceExecutor.clearCacheByKey( this.streamingGeneratedTransCacheKey );
+          }
+        } else {
+          serviceExecutor.touchServiceListener( this.streamingGeneratedTransCacheKey );
+        }
+      } )
       .subscribe( rowMetaAndDataList -> this.runGenTrans( rowMetaAndDataList ) );
 
     // This is where we will inject the rows from the service transformation step
@@ -150,8 +172,11 @@ public class StreamingGeneratedTransExecution implements Runnable {
         RowProducer rowProducer;
         StepInterface resultStep;
         //create a replay subject, so that new added consumers, can replay the last results obtained from the generated transformation
-        this.genTransCachePublishSubject = ReplaySubject.create();
-        this.consumersList.stream().forEach( rowMetaAndDataObserver -> this.genTransCachePublishSubject.subscribe( rowMetaAndDataObserver ) );
+        this.genTransCachePublishSubject = BehaviorSubject.create( );
+
+        this.consumersList.stream().forEach( observer -> this.genTransCachePublishSubject.defaultIfEmpty( new ArrayList<>( ) ).
+          doOnDispose( () -> this.consumersList.remove( observer ) ).
+          safeSubscribe( observer ) );
 
         genTrans.getTransListeners().clear();
         genTrans.cleanup();
@@ -164,11 +189,13 @@ public class StreamingGeneratedTransExecution implements Runnable {
         resultStep = genTrans.findRunThread( resultStepName );
 
         resultStep.cleanup();
-        resultStep.addRowListener( new RowAdapter() {
-            @Override public void rowWrittenEvent( RowMetaInterface rowMetaInterface, Object[] objects ) throws KettleStepException {
-              StreamingGeneratedTransExecution.this.genTransCachePublishSubject.onNext( new RowMetaAndData( rowMetaInterface, objects ) );
-            }
-        } );
+        List<RowMetaAndData> tempList = new ArrayList<>( );
+        RowAdapter rowListener = new RowAdapter() {
+          @Override public void rowWrittenEvent( RowMetaInterface rowMetaInterface, Object[] objects ) throws KettleStepException {
+            tempList.add( new RowMetaAndData( rowMetaInterface, objects ) );
+          }
+        };
+        resultStep.addRowListener( rowListener );
 
         for ( RowMetaAndData injectRows : rowIterator ) {
           while ( !rowProducer.putRowWait( injectRows.getRowMeta(), injectRows.getData(), 1, TimeUnit.SECONDS )
@@ -180,8 +207,11 @@ public class StreamingGeneratedTransExecution implements Runnable {
         rowProducer.finished();
         genTrans.waitUntilFinished();
         genTrans.stopAll();
+        resultStep.removeRowListener( rowListener );
 
-        this.genTransCachePublishSubject.onComplete();
+        if ( !StreamingGeneratedTransExecution.this.genTransCachePublishSubject.hasComplete() ) {
+          StreamingGeneratedTransExecution.this.genTransCachePublishSubject.onNext( Collections.unmodifiableList( tempList ) );
+        }
 
         log.logDetailed( DataServiceConstants.STREAMING_GENERATED_TRANSFORMATION_STOPPED );
       } catch ( KettleException e ) {
@@ -197,9 +227,16 @@ public class StreamingGeneratedTransExecution implements Runnable {
   /**
    * Adds a new consumer that will receive the result of the generated transformation
    * @param consumer The consumer to register.
+   * @param pollingMode True if the new consumer is a polling consumer, False if it is a push one.
    */
-  public void addNewRowConsumer( final Observer<RowMetaAndData> consumer ) {
-    this.consumersList.add( consumer );
+  public void addNewRowConsumer( final Observer<List<RowMetaAndData>> consumer, boolean pollingMode ) {
+    if ( pollingMode ) {
+      pollingModeActivated = Boolean.TRUE;
+      this.genTransCachePublishSubject.defaultIfEmpty( new ArrayList<>( ) ).safeSubscribe( consumer );
+    } else {
+      this.consumersList.add( consumer );
+    }
+
   }
 
   /**
@@ -207,7 +244,7 @@ public class StreamingGeneratedTransExecution implements Runnable {
    */
   public void clearRowConsumers( ) {
     this.genTransCachePublishSubject.onComplete();
-    this.genTransCachePublishSubject = ReplaySubject.create();
+    this.genTransCachePublishSubject = BehaviorSubject.create( );
 
     this.consumersList.stream().forEach( Observer::onComplete );
     this.consumersList.clear();
@@ -217,9 +254,11 @@ public class StreamingGeneratedTransExecution implements Runnable {
    * Clear a specific consumer from the cache, and wrap up resources used by it.
    * @param consumer
    */
-  public void clearRowConsumer( final Observer<RowMetaAndData> consumer ) {
+  public void clearRowConsumer( final Observer<List<RowMetaAndData>> consumer ) {
     this.consumersList.remove( consumer );
-    consumer.onComplete();
+    if ( consumer != null ) {
+      consumer.onComplete();
+    }
   }
 
   @VisibleForTesting
