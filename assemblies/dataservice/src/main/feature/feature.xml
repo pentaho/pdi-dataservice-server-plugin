@@ -11,11 +11,17 @@
   standard pentaho-server repository loads half the world.
    We still need to confirm if metaverse needs to bring anything else along. -->
   <feature name="pentaho-metaverse-core" version="${project.version}">
-    <feature>pentaho-tinkerpop-gremlin</feature>
-
     <configfile finalname="/etc/pentaho.metaverse.cfg">
       mvn:pentaho/pentaho-osgi-config/${project.version}/cfg/pentaho-metaverse
     </configfile>
+
+    <feature>pentaho-fasterxml</feature>
+    <feature>pentaho-tinkerpop-gremlin</feature>
+
+    <!-- For some reason pentaho-metaverse-core is failing without letting
+    pentaho-fasterxml feature load. As such, we are expliciting declaring a
+    dependency on the jackson-annotations bundle.-->
+    <bundle>mvn:com.fasterxml.jackson.core/jackson-annotations/${fasterxml-jackson.version}</bundle>
 
     <bundle>mvn:pentaho/pentaho-metaverse-core/${project.version}</bundle>
   </feature>
