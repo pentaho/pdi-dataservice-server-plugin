@@ -88,6 +88,18 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-modeler</artifactId>
+      <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
   </dependencies>
 
 </project>

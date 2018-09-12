@@ -4,7 +4,6 @@
     <details>${project.description}</details>
     <feature>pentaho-metaverse-core</feature>
 
-
   </feature>
 
   <!-- This feature is here as a hack because the pentaho-metaverse feature from the
@@ -17,12 +16,6 @@
 
     <feature>pentaho-fasterxml</feature>
     <feature>pentaho-tinkerpop-gremlin</feature>
-
-    <!-- For some reason pentaho-metaverse-core is failing without letting
-    pentaho-fasterxml feature load. As such, we are expliciting declaring a
-    dependency on the jackson-annotations bundle.-->
-    <bundle>mvn:com.fasterxml.jackson.core/jackson-annotations/${fasterxml-jackson.version}</bundle>
-
     <bundle>mvn:pentaho/pentaho-metaverse-core/${project.version}</bundle>
   </feature>
 </features>
