@@ -22,12 +22,11 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
+import io.reactivex.Observer;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
-
-import io.reactivex.Observer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -43,7 +42,7 @@ public interface Query {
 
   List<Trans> getTransList();
 
-  default void pushTo( Observer<List<RowMetaAndData>> streamingWindowObserver ) throws Exception {
+  default void pushTo( Observer<List<RowMetaAndData>> streamingWindowConsumer ) throws Exception {
     throw new UnsupportedOperationException();
   }
 

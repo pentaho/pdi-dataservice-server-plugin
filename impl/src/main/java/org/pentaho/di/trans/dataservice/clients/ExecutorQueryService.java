@@ -24,9 +24,7 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-
 import io.reactivex.Observer;
-
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
@@ -126,11 +124,8 @@ public class ExecutorQueryService implements Query.Service {
     }
 
     @Override
-    public void pushTo( Observer<List<RowMetaAndData>> streamingWindowObserver ) throws Exception {
-      DataServiceExecutor dataServiceExecutor = executor.executeStreamingPushQuery( streamingWindowObserver );
-      if ( dataServiceExecutor != null ) {
-        dataServiceExecutor.waitUntilFinished();
-      }
+    public void pushTo( Observer<List<RowMetaAndData>> streamingWindowConsumer ) throws Exception {
+      executor.executeStreamingQuery( streamingWindowConsumer, false );
     }
   }
 }

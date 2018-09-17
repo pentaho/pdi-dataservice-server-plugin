@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import io.reactivex.Observer;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,7 +68,6 @@ import org.pentaho.metastore.api.IMetaStore;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -132,7 +130,8 @@ public class DataServiceExecutorTest extends BaseTest {
   @Mock TransMeta serviceTransMetaChanged;
   @Mock StreamingServiceTransExecutor serviceTransExecutor;
   @Mock StreamServiceKey streamKey;
-  @Mock Observer<RowMetaAndData> consumer;
+  @Mock Observer<List<RowMetaAndData>> consumer;
+  Boolean pollingMode = Boolean.FALSE;
 
   @Before
   public void setUp() throws Exception {
@@ -144,6 +143,7 @@ public class DataServiceExecutorTest extends BaseTest {
     when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
     when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP_NAME );
     when( sqlTransGenerator.getResultStepName() ).thenReturn( RESULT_STEP_NAME );
+    when( sqlTransGenerator.getSql() ).thenReturn( new SQL( "SELECT * FROM dummy" ) );
   }
 
   @Test
@@ -408,6 +408,10 @@ public class DataServiceExecutorTest extends BaseTest {
     // Start Execution
     executor.executeQuery( new DataOutputStream( outputStream ) );
 
+    InOrder genTransFinnishListener = inOrder( executor.getGenTrans() );
+    ArgumentCaptor<TransListener> genTransListenerCaptor = ArgumentCaptor.forClass( TransListener.class );
+    genTransFinnishListener.verify( executor.getGenTrans(), times( 2 ) ).addTransListener( genTransListenerCaptor.capture() );
+
     // Check header was written
     assertThat( outputStream.size(), greaterThan( 0 ) );
     outputStream.reset();
@@ -416,9 +420,7 @@ public class DataServiceExecutorTest extends BaseTest {
     InOrder serviceTransStartup = inOrder( optimization, serviceTrans, serviceStep );
     ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );
     ArgumentCaptor<StepListener> resultStepListener = ArgumentCaptor.forClass( StepListener.class );
-    ArgumentCaptor<TransListener> transListenerCaptor = ArgumentCaptor.forClass( TransListener.class );
 
-    genTransStartup.verify( genTrans ).addTransListener( transListenerCaptor.capture() );
     genTransStartup.verify( genTrans ).addRowProducer( INJECTOR_STEP_NAME, 0 );
     genTransStartup.verify( resultStep ).addStepListener( resultStepListener.capture() );
     genTransStartup.verify( resultStep ).addRowListener( listenerArgumentCaptor.capture() );
@@ -447,8 +449,10 @@ public class DataServiceExecutorTest extends BaseTest {
       Object[] dataClone = { i };
       when( rowMeta.cloneRow( data ) ).thenReturn( dataClone );
       serviceRowListener.rowWrittenEvent( rowMeta, data );
-      verify( sqlTransRowProducer )
-        .putRowWait( same( rowMeta ), and( eq( dataClone ), not( same( data ) ) ), any( Long.class ), any( TimeUnit.class ) );
+      verify( sqlTransRowProducer ).putRowWait( same( rowMeta ),
+        and( eq( dataClone ), not( same( data ) ) ),
+        any( Long.class ),
+        any( TimeUnit.class ) );
       verify( rowMeta ).cloneRow( data );
     }
 
@@ -470,7 +474,15 @@ public class DataServiceExecutorTest extends BaseTest {
     if( produceErrorRow ) {
       clientRowListener.errorRowWrittenEvent( rowMeta, new Object[] { 999 } );
     }
-    transListenerCaptor.getValue().transFinished( genTrans );
+    genTransListenerCaptor.getAllValues().stream().forEach( transListener -> {
+      try {
+        transListener.transFinished( genTrans );
+      } catch ( KettleException e ) {
+        throw new RuntimeException( e );
+      }
+    } );
+
+    executor.waitUntilFinished();
 
     InOrder writeRows = inOrder( rowMeta );
     ArgumentCaptor<DataOutputStream> streamCaptor = ArgumentCaptor.forClass( DataOutputStream.class );
@@ -483,7 +495,6 @@ public class DataServiceExecutorTest extends BaseTest {
     }
     writeRows.verifyNoMoreInteractions();
 
-    executor.waitUntilFinished();
     verify( serviceTrans ).waitUntilFinished();
     verify( genTrans ).waitUntilFinished();
   }
@@ -622,8 +633,8 @@ public class DataServiceExecutorTest extends BaseTest {
     if ( setCachedStreamingGeneratedValue ) {
       StreamingGeneratedTransExecution streamWiring =
         new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
-          genTrans, consumer, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-          sql.getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, windowSize, 1, 10000 );
+          genTrans, consumer, pollingMode, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+          sql.getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, windowSize, 1, 10000, "" );
 
       String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sql.getSqlString(),
         IDataServiceClientService.StreamingMode.ROW_BASED, 1, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(),
@@ -1382,8 +1393,8 @@ public class DataServiceExecutorTest extends BaseTest {
     dataService.setStreaming( true );
 
     StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
-      genTrans, consumer, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000 );
+      genTrans, consumer, pollingMode, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000, "" );
 
     dataService.setStreaming( true );
 
@@ -1399,7 +1410,7 @@ public class DataServiceExecutorTest extends BaseTest {
       build();
 
     AtomicBoolean onCompleteCalled = new AtomicBoolean( false );
-    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
+    PublishSubject<List<RowMetaAndData>> consumer = PublishSubject.create();
     consumer.doOnComplete( () -> onCompleteCalled.set( true ) ).subscribe();
 
     executor.wrapupConsumerResources( consumer );
@@ -1423,8 +1434,8 @@ public class DataServiceExecutorTest extends BaseTest {
     dataService.setStreaming( true );
 
     StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
-      genTrans, consumer, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000 );
+      genTrans, consumer, pollingMode, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000, "" );
 
     String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
       IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(), serviceTransExecutor.getWindowMaxTimeLimit(), 10000 );
@@ -1446,7 +1457,7 @@ public class DataServiceExecutorTest extends BaseTest {
       build();
 
     AtomicBoolean onCompleteCalled = new AtomicBoolean( false );
-    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
+    PublishSubject<List<RowMetaAndData>> consumer = PublishSubject.create();
     consumer.doOnComplete( () -> onCompleteCalled.set( true ) ).subscribe();
 
     executor.wrapupConsumerResources( consumer );
@@ -1470,8 +1481,8 @@ public class DataServiceExecutorTest extends BaseTest {
     dataService.setStreaming( true );
 
     StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
-      genTrans, consumer, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000 );
+      genTrans, consumer, pollingMode, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000, "" );
 
     String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
       IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(), serviceTransExecutor.getWindowMaxTimeLimit(), 10000 );
@@ -1493,7 +1504,7 @@ public class DataServiceExecutorTest extends BaseTest {
       build();
 
     AtomicBoolean onCompleteCalled = new AtomicBoolean( false );
-    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
+    PublishSubject<List<RowMetaAndData>> consumer = PublishSubject.create();
     consumer.doOnComplete( () -> onCompleteCalled.set( true ) ).subscribe();
 
     executor.wrapupConsumerResources( consumer );
@@ -1580,52 +1591,5 @@ public class DataServiceExecutorTest extends BaseTest {
       }
       assertEquals( 0, dataServiceExecutorBuilder.getKettleTimeLimit() );
     }
-  }
-
-  @Test
-  @SuppressWarnings( "unchecked" )
-  public void testMakeBufferObserver() throws Exception {
-    DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context )
-          .sqlTransGenerator( sqlTransGenerator )
-          .genTrans( genTrans )
-          .enableMetrics( false )
-          .normalizeConditions( false )
-          .rowLimit( 50 )
-          .windowMode( IDataServiceClientService.StreamingMode.ROW_BASED )
-          .build();
-
-    Observer<List<RowMetaAndData>> observer = mock( Observer.class );
-    Observer<RowMetaAndData> adapter = executor.makeBufferObserver( observer );
-
-    RowMetaInterface header = new RowMeta();
-    header.addValueMeta( new ValueMetaInteger( "i" ) );
-    header.addValueMeta( new ValueMetaString( "name" ) );
-    List<RowMetaAndData> rows = Arrays.asList(
-      new RowMetaAndData( header, 1L, "one" ),
-      new RowMetaAndData( header, 2L, "two" ),
-      new RowMetaAndData( header, 3L, "three" ),
-      new RowMetaAndData( header, 4L, "four" ),
-      new RowMetaAndData( header, 5L, "five" ) );
-
-    Disposable disp = mock( Disposable.class );
-    when( genTrans.isStopped() ).thenReturn( false );
-    adapter.onSubscribe( disp );
-    adapter.onNext( rows.get( 0 ) );
-    adapter.onNext( rows.get( 1 ) );
-    adapter.onNext( rows.get( 2 ) );
-    adapter.onComplete();
-    adapter.onSubscribe( disp );
-    adapter.onNext( rows.get( 3 ) );
-    adapter.onNext( rows.get( 4 ) );
-    when( genTrans.isStopped() ).thenReturn( true );
-    adapter.onComplete();
-
-    @SuppressWarnings( "rawtypes" )
-    ArgumentCaptor<List> captor = ArgumentCaptor.forClass( List.class );
-
-    verify( observer, times( 2 ) ).onNext( captor.capture() );
-    verify( observer, times( 1 ) ).onComplete();
-    assertEquals( rows.subList( 0, 3 ), captor.getAllValues().get( 0 ) );
-    assertEquals( rows.subList( 3, 5 ), captor.getAllValues().get( 1 ) );
   }
 }

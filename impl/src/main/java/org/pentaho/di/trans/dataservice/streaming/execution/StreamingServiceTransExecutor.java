@@ -290,7 +290,7 @@ public class StreamingServiceTransExecutor {
    */
   public void clearCache() {
     serviceListeners.invalidateAll();
-    serviceListeners.cleanUp();
+    this.serviceListeners.cleanUp();
   }
 
   /**
@@ -300,7 +300,7 @@ public class StreamingServiceTransExecutor {
   public void clearCacheByKey( String key ) {
     if ( key != null ) {
       serviceListeners.invalidate( key );
-      serviceListeners.cleanUp();
+      this.serviceListeners.cleanUp();
     }
   }
 

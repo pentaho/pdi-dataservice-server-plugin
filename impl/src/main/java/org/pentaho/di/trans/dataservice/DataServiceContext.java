@@ -53,7 +53,7 @@ public class DataServiceContext implements Context {
 
   //Cache for the generated tranformation executions, so that we can keep the same genTransExecution for multiple consumers
   private final Cache<String, StreamingGeneratedTransExecution> streamingGeneratedTransExecutionCache = CacheBuilder.newBuilder()
-    .expireAfterAccess( DataServiceConstants.STREAMING_CACHE_DURATION, DataServiceConstants.STREAMING_CACHE_TIME_UNIT )
+    .expireAfterAccess( 1, TimeUnit.DAYS )
     .removalListener( new RemovalListener<String, StreamingGeneratedTransExecution>() {
       public void onRemoval( RemovalNotification<String, StreamingGeneratedTransExecution> removal ) {
         removal.getValue().clearRowConsumers();

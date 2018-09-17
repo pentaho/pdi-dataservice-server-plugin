@@ -37,7 +37,6 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
-import org.pentaho.di.trans.dataservice.SqlTransGenerator;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
@@ -83,14 +82,14 @@ public class StreamingGeneratedTransExecutionTest {
   @Mock Trans genTrans;
   @Mock Trans serviceTrans;
   @Mock DataServiceContext context;
-  @Mock Observer<RowMetaAndData> consumer;
+  @Mock Observer<List<RowMetaAndData>> consumer;
+  Boolean pollingMode = Boolean.FALSE;
   @Mock StreamExecutionListener streamExecutionListener;
   @Mock RowMetaAndData rowMetaAndData;
   @Mock LogChannelInterface log;
   StepInterface resultStep = mock( BaseStep.class );
   @Mock RowProducer rowProducer;
   @Mock Consumer<List<RowMetaAndData>> windowConsumer;
-  @Mock SqlTransGenerator sqlTransGenerator;
 
   @Before
   public void setup() throws Exception {
@@ -111,9 +110,9 @@ public class StreamingGeneratedTransExecutionTest {
     when( genTrans.addRowProducer( MOCK_INJECTOR_STEP_NAME, 0 ) ).thenReturn( rowProducer );
     when( genTrans.isRunning() ).thenReturn( true );
 
-    genTransExecutor = spy( new StreamingGeneratedTransExecution( serviceExecutor, genTrans, consumer,
+    genTransExecutor = spy( new StreamingGeneratedTransExecution( serviceExecutor, genTrans, consumer, pollingMode,
       MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
-      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE ) );
+      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE, "" ) );
     when ( genTransExecutor.getWindowConsumer() ).thenReturn( windowConsumer );
   }
 
@@ -122,9 +121,9 @@ public class StreamingGeneratedTransExecutionTest {
     when( streamExecutionListener.getCachePreWindow() ).thenReturn( rowIterator );
     when( genTrans.isRunning() ).thenReturn( true );
 
-    genTransExecutor = spy( new StreamingGeneratedTransExecution( serviceExecutor, genTrans, consumer,
+    genTransExecutor = spy( new StreamingGeneratedTransExecution( serviceExecutor, genTrans, consumer, pollingMode,
       MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 10000,
-      1, 10000 ) );
+      1, 10000, "" ) );
 
     genTransExecutor.run();
 
