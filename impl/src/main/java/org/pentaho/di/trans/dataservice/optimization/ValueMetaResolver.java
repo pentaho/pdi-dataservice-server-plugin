@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -63,18 +63,24 @@ public class ValueMetaResolver {
     new Function<ValueMetaInterface, ValueMetaInterface>() {
       @Override public ValueMetaInterface apply( ValueMetaInterface valueMetaInterface ) {
         valueMetaInterface = valueMetaInterface.clone();
-
+        String mask = valueMetaInterface.getConversionMask();
         switch ( valueMetaInterface.getType() ) {
           case ValueMetaInterface.TYPE_DATE:
-            valueMetaInterface.setConversionMask( ANSI_DATE_LITERAL );
+            if ( mask == null || mask.isEmpty() ) {
+              valueMetaInterface.setConversionMask( ANSI_DATE_LITERAL );
+            }
             break;
           case ValueMetaInterface.TYPE_TIMESTAMP:
-            valueMetaInterface.setConversionMask( ANSI_TIMESTAMP_LITERAL );
+            if ( mask == null || mask.isEmpty() ) {
+              valueMetaInterface.setConversionMask( ANSI_TIMESTAMP_LITERAL );
+            }
             break;
           case ValueMetaInterface.TYPE_INTEGER:
           case ValueMetaInterface.TYPE_NUMBER:
           case ValueMetaInterface.TYPE_BIGNUMBER:
-            valueMetaInterface.setConversionMask( NUMERIC_LITERAL );
+            if ( mask == null || mask.isEmpty() ) {
+              valueMetaInterface.setConversionMask( NUMERIC_LITERAL );
+            }
         }
         return valueMetaInterface;
       }
