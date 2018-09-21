@@ -731,7 +731,7 @@ public class DataServiceExecutor {
         @Override
         public void transFinished( Trans trans ) throws KettleException {
           //When the service transformation stops we should remove the service stream from the cache
-          context.removeServiceTransExecutor( streamServiceKey.getDataServiceId() );
+          context.removeServiceTransExecutor( streamServiceKey );
         }
       } );
 
@@ -757,7 +757,7 @@ public class DataServiceExecutor {
   public String getStreamingGenTransCacheKey() {
     StreamingServiceTransExecutor serviceExecutor = context.getServiceTransExecutor( streamServiceKey );
     return WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
-      windowMode, windowSize, windowEvery, (int) serviceExecutor.getWindowMaxRowLimit(), serviceExecutor.getWindowMaxTimeLimit(), windowLimit );
+      windowMode, windowSize, windowEvery, (int) serviceExecutor.getWindowMaxRowLimit(), serviceExecutor.getWindowMaxTimeLimit(), windowLimit, serviceExecutor.getKey().hashCode() );
   }
 
   public DataServiceExecutor executeDefaultQuery( final Observer<List<RowMetaAndData>> consumer ) {

@@ -44,10 +44,11 @@ public abstract class WindowParametersHelper {
    * @param windowMaxRowLimit The query window max rows.
    * @param windowMaxTimeLimit The query window max time.
    * @param windowLimit The query window limit.
+   * @param serviceExecutorCacheKeyHash The service transformation service executor key cache hash.
    * @return The cache key for the query.
    */
   public static String getCacheKey( String query, IDataServiceClientService.StreamingMode windowMode, long windowSize, long windowEvery,
-                                    int windowMaxRowLimit, long windowMaxTimeLimit, long windowLimit ) {
+                                    int windowMaxRowLimit, long windowMaxTimeLimit, long windowLimit, int serviceExecutorCacheKeyHash ) {
 
     boolean timeBased = IDataServiceClientService.StreamingMode.TIME_BASED.equals( windowMode );
     boolean rowBased = IDataServiceClientService.StreamingMode.ROW_BASED.equals( windowMode );
@@ -62,7 +63,9 @@ public abstract class WindowParametersHelper {
 
     windowEvery = getWindowEvery( windowEvery, timeBased, maxRows, maxTime );
 
-    return query.concat( windowMode.toString() ).concat( "-" ).concat( String.valueOf( windowSize ) )
+    return String.valueOf( serviceExecutorCacheKeyHash )
+      .concat( "-" ).concat( query.concat( windowMode.toString() ) )
+      .concat( "-" ).concat( String.valueOf( windowSize ) )
       .concat( "-" ).concat( String.valueOf( windowEvery ) )
       .concat( "-" ).concat( String.valueOf( maxRows ) )
       .concat( "-" ).concat( String.valueOf( maxTime ) );

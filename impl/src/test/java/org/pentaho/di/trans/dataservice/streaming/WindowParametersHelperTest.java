@@ -38,16 +38,20 @@ public class WindowParametersHelperTest {
 
   @Test
   public void testGetCacheKey() {
-    assertNull( WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 0, 1, 10000, 10000, 1000 ) );
-    assertEquals( "queryROW_BASED-10-1-10000-1000", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000, 10000, 1000 ) );
-    assertEquals( "queryROW_BASED-1-1-1-2", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 10, 5, 1, 2, 1000 ) );
-    assertEquals( "queryTIME_BASED-10-1-1000-10000", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.TIME_BASED, 10, 1, 10000, 10000, 1000 ) );
-    assertEquals( "queryTIME_BASED-2-2-1-2", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.TIME_BASED, 10, 5, 1, 2, 1000 ) );
+    assertNull( WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 0, 1, 10000, 10000, 1000, 99999 ) );
+    assertEquals( "99999-queryROW_BASED-10-1-10000-1000", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000, 10000, 1000, 99999 ) );
+    assertEquals( "99999-queryROW_BASED-1-1-1-2", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 10, 5, 1, 2, 1000, 99999 ) );
+    assertEquals( "88888-queryROW_BASED-1-1-1-2", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 10, 5, 1, 2, 1000, 88888 ) );
+    assertEquals( "99999-queryTIME_BASED-10-1-1000-10000", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.TIME_BASED, 10, 1, 10000, 10000, 1000, 99999 ) );
+    assertEquals( "99999-queryTIME_BASED-2-2-1-2", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.TIME_BASED, 10, 5, 1, 2, 1000, 99999 ) );
+    assertEquals( "77777-queryTIME_BASED-2-2-1-2", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.TIME_BASED, 10, 5, 1, 2, 1000, 77777 ) );
 
-    assertEquals( "queryROW_BASED-10-0-10000-1000", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 10, -1, 10000, 10000, 1000 ) );
-    assertNull( WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, -10, 1, 10000, 10000, 1000 ) );
+    assertEquals( "99999-queryROW_BASED-10-0-10000-1000", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 10, -1, 10000, 10000, 1000, 99999 ) );
+    assertEquals( "55555-queryROW_BASED-10-0-10000-1000", WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, 10, -1, 10000, 10000, 1000, 55555 ) );
 
-    assertNull( WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, -10, -1, 10000, 10000, 1000 ) );
+    assertNull( WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, -10, 1, 10000, 10000, 1000, 99999 ) );
+
+    assertNull( WindowParametersHelper.getCacheKey( "query", IDataServiceClientService.StreamingMode.ROW_BASED, -10, -1, 10000, 10000, 1000, 99999 ) );
   }
 
   @Test
