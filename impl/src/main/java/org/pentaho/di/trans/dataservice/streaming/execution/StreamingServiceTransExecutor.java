@@ -36,7 +36,6 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.Context;
-import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
@@ -81,9 +80,8 @@ public class StreamingServiceTransExecutor {
 
         //remove the generated trans from the dataservices context cache
         context.removeStreamingGeneratedTransExecution( removal.getKey() );
-        DataServiceExecutor dataServiceExecutor = context.getExecutor( serviceTrans.getContainerObjectId() );
-        if ( dataServiceExecutor != null ) {
-          dataServiceExecutor.stop( true );
+        if ( serviceListeners.size() == 0 ) {
+          context.removeServiceTransExecutor( key );
         }
 
         log.logDebug( DataServiceConstants.STREAMING_CACHE_REMOVED + removal.getKey() );
@@ -169,7 +167,7 @@ public class StreamingServiceTransExecutor {
                                             long windowSize, long windowEvery, long windowLimit ) {
 
     String cacheId = WindowParametersHelper.getCacheKey( query, windowMode, windowSize, windowEvery, windowMaxRowLimit,
-      windowMaxTimeLimit, windowLimit );
+      windowMaxTimeLimit, windowLimit, getKey().hashCode() );
 
     //this is a special case we want to deal in a graceful way... when this is true
     //an empty output should be produced upstream (the null should ensure that behaviour)

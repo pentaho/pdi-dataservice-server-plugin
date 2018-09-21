@@ -638,7 +638,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
       String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sql.getSqlString(),
         IDataServiceClientService.StreamingMode.ROW_BASED, 1, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(),
-        serviceTransExecutor.getWindowMaxTimeLimit(), 10000 );
+        serviceTransExecutor.getWindowMaxTimeLimit(), 10000, serviceTransExecutor.getKey().hashCode() );
       context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
     }
 
@@ -686,7 +686,7 @@ public class DataServiceExecutorTest extends BaseTest {
     verify( serviceTrans, times( 0 ) ).waitUntilFinished();
     verify( genTrans, times( 0 ) ).waitUntilFinished();
     if ( setCachedStreamingGeneratedValue ) {
-      verify( serviceTrans, times( 0 ) ).addTransListener( any() );
+      verify( serviceTrans, times( 1 ) ).addTransListener( any() );
     } else {
       verify( serviceTrans, times( addTransListenerServiceTransNExecs ) ).addTransListener( any() );
     }
@@ -1438,7 +1438,8 @@ public class DataServiceExecutorTest extends BaseTest {
       sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000, "" );
 
     String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
-      IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(), serviceTransExecutor.getWindowMaxTimeLimit(), 10000 );
+      IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(),
+      serviceTransExecutor.getWindowMaxTimeLimit(), 10000, serviceTransExecutor.getKey().hashCode() );
     context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
     dataService.setStreaming( true );
 
@@ -1485,7 +1486,8 @@ public class DataServiceExecutorTest extends BaseTest {
       sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000, "" );
 
     String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
-      IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(), serviceTransExecutor.getWindowMaxTimeLimit(), 10000 );
+      IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(),
+      serviceTransExecutor.getWindowMaxTimeLimit(), 10000, serviceTransExecutor.getKey().hashCode() );
     context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
     dataService.setStreaming( true );
 
