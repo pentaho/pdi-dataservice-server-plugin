@@ -65,7 +65,6 @@ public class StreamingGeneratedTransExecution implements Runnable {
   private final String query;
   private final AtomicBoolean isRunning = new AtomicBoolean( false );
   private final List<Observer<List<RowMetaAndData>>> consumersList = Collections.synchronizedList( new ArrayList<>() );
-  private Boolean pollingModeActivated = Boolean.FALSE;
   private StreamExecutionListener stream;
 
   private final PublishSubject<List<RowMetaAndData>> generatedDataObservable;
@@ -134,11 +133,7 @@ public class StreamingGeneratedTransExecution implements Runnable {
       onBackpressureBuffer( 1, () -> { }, BackpressureOverflowStrategy.DROP_OLDEST )
       .doOnError( t -> logger.error( "Error receiving data from the service transformation observable", t ) )
       .doOnNext( rowMetaAndDataList -> {
-        if ( this.consumersList.size() == 0 ) {
-          if ( !pollingModeActivated ) {
-            serviceExecutor.clearCacheByKey( this.streamingGeneratedTransCacheKey );
-          }
-        } else {
+        if ( this.consumersList.size() != 0 ) {
           serviceExecutor.touchServiceListener( this.streamingGeneratedTransCacheKey );
         }
       } )
@@ -231,7 +226,6 @@ public class StreamingGeneratedTransExecution implements Runnable {
    */
   public void addNewRowConsumer( final Observer<List<RowMetaAndData>> consumer, boolean pollingMode ) {
     if ( pollingMode ) {
-      pollingModeActivated = Boolean.TRUE;
       this.genTransCachePublishSubject.defaultIfEmpty( new ArrayList<>( ) ).safeSubscribe( consumer );
     } else {
       this.consumersList.add( consumer );

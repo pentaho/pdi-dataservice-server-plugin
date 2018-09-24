@@ -706,10 +706,10 @@ public class DataServiceExecutor {
   }
 
   /**
-   * Executes a streaming push query. If the consumer keepAlive is passed as null, then the service listener is kept in cache
-   * until it is removed by timeout (use case for polling through non-push queries).
+   * Executes a streaming push query. If the pollingMode is passed as true, then the resulting query is going to return a single
+   * window, and the consumer is not kept as an active consumer in the consumer list.
    * @param streamingConsumer
-   * @param pollingMode True, if the query is to be executed in polling mode (the service transformation is kept running)
+   * @param pollingMode True, if the query is to be executed in polling mode
    * @return
    */
   public DataServiceExecutor executeStreamingQuery( final Observer<List<RowMetaAndData>> streamingConsumer, boolean pollingMode ) {
@@ -721,11 +721,15 @@ public class DataServiceExecutor {
     }
 
     //Try to fetch the streaming generated transformation execution from cache
-    StreamingGeneratedTransExecution streamingGenTransFromCache = context.getStreamingGeneratedTransExecution( streamingGenTransCacheKey );
+    StreamingGeneratedTransExecution streamingGenTransFromCache =
+      context.getStreamingGeneratedTransExecution( streamingGenTransCacheKey );
     if ( streamingGenTransFromCache == null ) {
-      StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( streamServiceKey ),
-          genTrans, streamingConsumer, pollingMode, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-          sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit, streamingGenTransCacheKey );
+      StreamingGeneratedTransExecution streamWiring =
+        new StreamingGeneratedTransExecution( context.getServiceTransExecutor( streamServiceKey ),
+          genTrans, streamingConsumer, pollingMode, sqlTransGenerator.getInjectorStepName(),
+          sqlTransGenerator.getResultStepName(),
+          sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit,
+          streamingGenTransCacheKey );
 
       serviceTrans.addTransListener( new TransAdapter() {
         @Override
