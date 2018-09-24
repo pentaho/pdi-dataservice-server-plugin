@@ -133,8 +133,10 @@ public class StreamingGeneratedTransExecution implements Runnable {
       onBackpressureBuffer( 1, () -> { }, BackpressureOverflowStrategy.DROP_OLDEST )
       .doOnError( t -> logger.error( "Error receiving data from the service transformation observable", t ) )
       .doOnNext( rowMetaAndDataList -> {
-        if ( this.consumersList.size() != 0 ) {
-          serviceExecutor.touchServiceListener( this.streamingGeneratedTransCacheKey );
+        synchronized ( this.consumersList ) {
+          if ( this.consumersList.size() != 0 ) {
+            serviceExecutor.touchServiceListener( this.streamingGeneratedTransCacheKey );
+          }
         }
       } )
       .subscribe( rowMetaAndDataList -> this.runGenTrans( rowMetaAndDataList ) );
@@ -169,9 +171,12 @@ public class StreamingGeneratedTransExecution implements Runnable {
         //create a replay subject, so that new added consumers, can replay the last results obtained from the generated transformation
         this.genTransCachePublishSubject = BehaviorSubject.create( );
 
-        this.consumersList.stream().forEach( observer -> this.genTransCachePublishSubject.defaultIfEmpty( new ArrayList<>( ) ).
-          doOnDispose( () -> this.consumersList.remove( observer ) ).
-          safeSubscribe( observer ) );
+        synchronized ( this.consumersList ) {
+          this.consumersList.stream()
+            .forEach( observer -> this.genTransCachePublishSubject.defaultIfEmpty( new ArrayList<>() ).
+              doOnDispose( () -> this.consumersList.remove( observer ) ).
+              safeSubscribe( observer ) );
+        }
 
         genTrans.getTransListeners().clear();
         genTrans.cleanup();
@@ -228,7 +233,9 @@ public class StreamingGeneratedTransExecution implements Runnable {
     if ( pollingMode ) {
       this.genTransCachePublishSubject.defaultIfEmpty( new ArrayList<>( ) ).safeSubscribe( consumer );
     } else {
-      this.consumersList.add( consumer );
+      synchronized ( this.consumersList ) {
+        this.consumersList.add( consumer );
+      }
     }
 
   }
@@ -240,8 +247,10 @@ public class StreamingGeneratedTransExecution implements Runnable {
     this.genTransCachePublishSubject.onComplete();
     this.genTransCachePublishSubject = BehaviorSubject.create( );
 
-    this.consumersList.stream().forEach( Observer::onComplete );
-    this.consumersList.clear();
+    synchronized ( this.consumersList ) {
+      this.consumersList.stream().forEach( Observer::onComplete );
+      this.consumersList.clear();
+    }
   }
 
   /**
@@ -249,7 +258,9 @@ public class StreamingGeneratedTransExecution implements Runnable {
    * @param consumer
    */
   public void clearRowConsumer( final Observer<List<RowMetaAndData>> consumer ) {
-    this.consumersList.remove( consumer );
+    synchronized ( this.consumersList ) {
+      this.consumersList.remove( consumer );
+    }
     if ( consumer != null ) {
       consumer.onComplete();
     }
