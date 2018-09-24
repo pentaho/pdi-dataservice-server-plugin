@@ -327,12 +327,7 @@ public class StreamingServiceTransExecutor {
   }
 
   /**
-   * Get the execution listener, and performs warmup procedures on it like renewing the cache lease.
-   *
-   * Notice: since at present time, although we are pushing the rows from the service to the gen transformation,
-   * the query mechanism is still polling we need to do a warmup so that the service listener doesn't get cleaned...
-   * If later we implement a push mechanism in the client part, this should be guaranteed by some other technique,
-   * since we can't rely on a query being issued to hit the service listener cache.
+   * Get the execution listener and does a touch in it's cache value so that the timeout time is reset.
    *
    * @param key the service listener key.
    * @return the {@see StreamExecutionListener}, or null if doesn't exist
