@@ -24,20 +24,25 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 
 import com.google.common.collect.ImmutableMap;
 import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InOrder;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.parameters.NamedParams;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLField;
@@ -73,8 +78,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -163,6 +168,9 @@ public class DataServiceTestControllerTest  {
 
   @Captor
   private ArgumentCaptor<String> queryCaptor;
+
+  @Captor
+  private ArgumentCaptor<Observer<List<RowMetaAndData>>> consumerGrabber;
 
   private DataServiceTestControllerTester dataServiceTestController;
 
@@ -478,7 +486,6 @@ public class DataServiceTestControllerTest  {
   @Test
   public void testExecuteStreamingServiceTransRunning() throws Exception {
     when( model.isExecuting() ).thenReturn( true );
-    when( model.isExecuting() ).thenReturn( true );
     when( dataService.isStreaming() ).thenReturn( true );
     when( dataServiceExecutor.getServiceTrans().isRunning() )
       .thenReturn( true );
@@ -597,6 +604,30 @@ public class DataServiceTestControllerTest  {
     dataServiceTestController.previewQueries();
 
     verify( model, times( 0 ) ).clearOptimizationImpact();
+  }
+
+  @Test
+  public void testExecuteStreamingService() throws Exception {
+    when( dataService.isStreaming() ).thenReturn( true );
+    when( dataServiceExecutor.executeStreamingQuery( consumerGrabber.capture(), Matchers.eq( false ) ) )
+        .thenReturn( dataServiceExecutor );
+
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaInteger( "i" ) );
+    List<RowMetaAndData> rows = Arrays.asList(
+      new RowMetaAndData( rowMeta, 1 ),
+      new RowMetaAndData( rowMeta, 2 ) );
+
+    dataServiceTestController.executeSql();
+    Disposable disp = mock( Disposable.class );
+    Observer<List<RowMetaAndData>> consumer = consumerGrabber.getValue();
+    consumer.onSubscribe( disp );
+    consumer.onNext( rows );
+
+    verify( model ).setResultRowMeta( Matchers.eq( rowMeta ) );
+    verify( model, times( 2 ) ).addResultRow( any() );
+    verify( callback ).onExecuteComplete();
+    verify( disp ).dispose();
   }
 
   /**

@@ -25,7 +25,9 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
+
 import org.apache.commons.io.IOUtils;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -383,10 +385,16 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     } else {
       callback.onLogChannelUpdate();
       this.stopQuery = false;
-      if ( dataServiceExec.executeQuery( getDataServiceObserver() ) != null ) {
-        pollForCompletion( dataServiceExec );
+      if ( dataService.isStreaming() ) {
+        if ( dataServiceExec.executeStreamingQuery( getDataServicePushObserver(), false ) == null ) {
+          handleCompletion( dataServiceExec );
+        }
       } else {
-        handleCompletion( dataServiceExec );
+        if ( dataServiceExec.executeQuery( getDataServiceObserver() ) != null ) {
+          pollForCompletion( dataServiceExec );
+        } else {
+          handleCompletion( dataServiceExec );
+        }
       }
     }
   }
@@ -584,6 +592,45 @@ public class DataServiceTestController extends AbstractXulEventHandler {
       sqlFieldsRowMeta.addValueMeta( rowMeta.getValueMeta( indexOfField ) );
     }
     return sqlFieldsRowMeta;
+  }
+
+  private Observer<List<RowMetaAndData>> getDataServicePushObserver() {
+
+    return new Observer<List<RowMetaAndData>>() {
+      private Disposable toDispose;
+      long start = System.currentTimeMillis();
+
+      @Override
+      public void onSubscribe( Disposable d ) {
+        toDispose = d;
+      }
+
+      @Override
+      public void onNext( List<RowMetaAndData> rowsList ) {
+        model.clearResultRows();
+        if ( !rowsList.isEmpty() ) {
+          model.setResultRowMeta( rowsList.get( 0 ).getRowMeta() );
+          rowsList.stream().map( RowMetaAndData::getData ).forEach( model::addResultRow );
+        }
+        if ( toDispose != null && !toDispose.isDisposed() ) {
+          toDispose.dispose();
+        }
+        document.invokeLater( () -> {
+          updateExecutingMessage( start, dataServiceExec );
+          handleCompletion( dataServiceExec );
+        } );
+      }
+
+      @Override
+      public void onError( Throwable e ) {
+        document.invokeLater( () -> handleCompletion( dataServiceExec ) );
+      }
+
+      @Override
+      public void onComplete() {
+        stopQuery = true;
+      }
+    };
   }
 
   private Observer<List<RowMetaAndData>> getDataServiceObserver() {
