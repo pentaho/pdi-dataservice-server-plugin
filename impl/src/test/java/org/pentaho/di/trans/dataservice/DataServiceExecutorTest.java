@@ -1392,10 +1392,6 @@ public class DataServiceExecutorTest extends BaseTest {
     context.addServiceTransExecutor( serviceTransExecutor );
     dataService.setStreaming( true );
 
-    StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
-      genTrans, consumer, pollingMode, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000, "" );
-
     dataService.setStreaming( true );
 
     IMetaStore metastore = mock( IMetaStore.class );
@@ -1416,7 +1412,7 @@ public class DataServiceExecutorTest extends BaseTest {
     executor.wrapupConsumerResources( consumer );
 
     verify( serviceTransExecutor, times( 1 ) ).clearCacheByKey( anyString() );
-    assertFalse( onCompleteCalled.get() );
+    assertTrue( onCompleteCalled.get() );
   }
 
   @Test

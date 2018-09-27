@@ -30,6 +30,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.MultimapBuilder;
 import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -621,10 +622,11 @@ public class DataServiceExecutor {
 
     // Now execute the query transformation(s) and pass the data to the output stream, using a reactivex consumer
     final PublishSubject<List<RowMetaAndData>> consumer = PublishSubject.create();
+    Disposable[] disposableWrapper = new Disposable[1];
     consumer.doOnError( t -> {
       logger.error( "Error consuming data from the generated transformation into the consumer", t );
       wrapupConsumerResources( consumer );
-    } ).subscribe( rowMetaAndDataList -> {
+    } ).doOnSubscribe( disposable ->  disposableWrapper[0] = disposable ).subscribe( rowMetaAndDataList -> {
       try {
         for ( RowMetaAndData rowMetaAndData : rowMetaAndDataList ) {
           RowMetaInterface rowMetaInterface = rowMetaAndData.getRowMeta();
@@ -637,6 +639,7 @@ public class DataServiceExecutor {
         }
       } finally {
         genTransformationPushBasedIsFinished.set( true );
+        disposableWrapper[0].dispose();
       }
     } );
 
@@ -684,12 +687,10 @@ public class DataServiceExecutor {
    */
   @VisibleForTesting
   protected void wrapupConsumerResources( Observer<List<RowMetaAndData>> consumer ) {
+    consumer.onComplete();
+
     StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
     String streamingGenTransCacheKey = getStreamingGenTransCacheKey();
-    StreamingGeneratedTransExecution streamWiring = context.getStreamingGeneratedTransExecution( streamingGenTransCacheKey );
-    if ( streamWiring != null ) {
-      streamWiring.clearRowConsumer( consumer );
-    }
     serviceTransExecutor.clearCacheByKey( streamingGenTransCacheKey );
 
     context.removeServiceTransExecutor( serviceTransExecutor.getKey().getDataServiceId() );
@@ -708,6 +709,8 @@ public class DataServiceExecutor {
   /**
    * Executes a streaming push query. If the pollingMode is passed as true, then the resulting query is going to return a single
    * window, and the consumer is not kept as an active consumer in the consumer list.
+   * This method is synchronized to make sure that no duplicate entries are created if we have two, or more, executions running in parallel for the same
+   * dataservice and query.
    * @param streamingConsumer
    * @param pollingMode True, if the query is to be executed in polling mode
    * @return
@@ -720,39 +723,40 @@ public class DataServiceExecutor {
       return null;
     }
 
-    //Try to fetch the streaming generated transformation execution from cache
-    StreamingGeneratedTransExecution streamingGenTransFromCache =
-      context.getStreamingGeneratedTransExecution( streamingGenTransCacheKey );
-    if ( streamingGenTransFromCache == null ) {
-      StreamingGeneratedTransExecution streamWiring =
-        new StreamingGeneratedTransExecution( context.getServiceTransExecutor( streamServiceKey ),
-          genTrans, streamingConsumer, pollingMode, sqlTransGenerator.getInjectorStepName(),
-          sqlTransGenerator.getResultStepName(),
-          sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit,
-          streamingGenTransCacheKey );
+    //Try to fetch the streaming generated transformation execution from cache (synchronize to avoid adding duplicates)
+    synchronized ( context ) {
+      StreamingGeneratedTransExecution streamingGenTransFromCache = context.getStreamingGeneratedTransExecution( streamingGenTransCacheKey );
+      if ( streamingGenTransFromCache == null ) {
+        StreamingGeneratedTransExecution streamWiring =
+          new StreamingGeneratedTransExecution( context.getServiceTransExecutor( streamServiceKey ),
+            genTrans, streamingConsumer, pollingMode, sqlTransGenerator.getInjectorStepName(),
+            sqlTransGenerator.getResultStepName(),
+            sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit,
+            streamingGenTransCacheKey );
 
-      serviceTrans.addTransListener( new TransAdapter() {
-        @Override
-        public void transFinished( Trans trans ) throws KettleException {
-          //When the service transformation stops we should remove the service stream from the cache
-          context.removeServiceTransExecutor( streamServiceKey );
-        }
-      } );
+        serviceTrans.addTransListener( new TransAdapter() {
+          @Override
+          public void transFinished( Trans trans ) throws KettleException {
+            //When the service transformation stops we should remove the service stream from the cache
+            context.removeServiceTransExecutor( streamServiceKey );
+          }
+        } );
 
-      listenerMap.get( ExecutionPoint.READY ).add( streamWiring );
+        listenerMap.get( ExecutionPoint.READY ).add( streamWiring );
 
-      context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
+        context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
 
-      return executeQuery();
+        return executeQuery();
 
-    } else {
-      //Since we don't create a service transformation executor we need to touch the current one so that
-      //it is kept in cache
-      context.getServiceTransExecutor( streamServiceKey ).touchServiceListener( streamingGenTransCacheKey );
+      } else {
+        //Since we don't create a service transformation executor we need to touch the current one so that
+        //it is kept in cache
+        context.getServiceTransExecutor( streamServiceKey ).touchServiceListener( streamingGenTransCacheKey );
 
-      //There is already a streaming generated transformation execution in cache, so we just register the consumer as
-      //one more consumer for that generated transformation
-      streamingGenTransFromCache.addNewRowConsumer( streamingConsumer, pollingMode );
+        //There is already a streaming generated transformation execution in cache, so we just register the consumer as
+        //one more consumer for that generated transformation
+        streamingGenTransFromCache.addNewRowConsumer( streamingConsumer, pollingMode );
+      }
     }
 
     return this;
