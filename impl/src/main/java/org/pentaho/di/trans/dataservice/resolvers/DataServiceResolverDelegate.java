@@ -31,7 +31,6 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class DataServiceResolverDelegate implements DataServiceResolver {
@@ -69,13 +68,13 @@ public class DataServiceResolverDelegate implements DataServiceResolver {
   }
 
   @Override public List<String> getDataServiceNames( String dataServiceName ) {
+    List<String> dataServiceNames = new ArrayList<>();
+
     for ( DataServiceResolver resolver : resolvers ) {
-      List<String> dataServiceNames = resolver.getDataServiceNames( dataServiceName );
-      if ( dataServiceNames != null && dataServiceNames.size() > 0 ) {
-        return dataServiceNames;
-      }
+      dataServiceNames.addAll( resolver.getDataServiceNames( dataServiceName ) );
     }
-    return Collections.emptyList();
+
+    return dataServiceNames;
   }
 
   @Override public DataServiceExecutor.Builder createBuilder( SQL sql ) throws KettleException {
