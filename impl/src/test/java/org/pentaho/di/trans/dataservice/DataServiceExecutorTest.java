@@ -1518,8 +1518,6 @@ public class DataServiceExecutorTest extends BaseTest {
     DataServiceContext spyContext = spy( context );
     DataServiceExecutor.Builder dataServiceExecutorBuilder = new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, spyContext );
 
-    assertEquals( 0, dataServiceExecutorBuilder.getKettleRowLimit() );
-
     String oldValue = System.getProperty( DataServiceConstants.ROW_LIMIT_PROPERTY );
     try{
       System.setProperty( DataServiceConstants.ROW_LIMIT_PROPERTY, "55" );
@@ -1556,8 +1554,6 @@ public class DataServiceExecutorTest extends BaseTest {
   public void testeGetKettleTimeLimit() throws Exception {
     DataServiceContext spyContext = spy( context );
     DataServiceExecutor.Builder dataServiceExecutorBuilder = new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, spyContext );
-
-    assertEquals( 0, dataServiceExecutorBuilder.getKettleTimeLimit() );
 
     String oldValue = System.getProperty( DataServiceConstants.TIME_LIMIT_PROPERTY );
     try{
