@@ -3,9 +3,9 @@
 <window id="dataservice-test-window" orient="vertical" height="600" width="800" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:pen="http://www.pentaho.org/2008/xul" onload="dataServiceTestController.init()">
     <dialog id="dataservice-test-dialog"
             title="${DataServiceTest.Dialog.Title}"
-            resizable="false"
-            height="700"
-            width="900"
+            resizable="true"
+            height="600"
+            width="800"
             appicon="images/data-services.svg"
             buttons="accept"
             ondialogaccept="dataServiceTestController.close()"
@@ -99,7 +99,7 @@
             <tabpanels id="repository-panels-set" flex="1">
                 <tabpanel id="results-tab" flex="1"/>
                 <tabpanel>
-                    <textbox multiline="true" height="370" id="optimization-impact-info"  value=""/>
+                    <textbox multiline="true" flex="1" readonly="true" id="optimization-impact-info"  value=""/>
                 </tabpanel>
                 <tabpanel id="serviceTrans-log-tab" />
                 <tabpanel id="genTrans-log-tab" />

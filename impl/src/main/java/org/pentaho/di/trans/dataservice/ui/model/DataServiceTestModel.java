@@ -60,6 +60,7 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   private long windowLimit = 0;
 
   private boolean executing = false;
+  private boolean streaming = false;
 
   public String getSql() {
     return sql;
@@ -229,4 +230,15 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
     this.executing = executing;
     firePropertyChange( "executing", null, executing );
   }
+
+  public boolean isStreaming() {
+    return streaming;
+  }
+
+  public void setStreaming( boolean streaming ) {
+    boolean previous = this.streaming;
+    this.streaming = streaming;
+    firePropertyChange( "streaming", previous, streaming );
+  }
+
 }
