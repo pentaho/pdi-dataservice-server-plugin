@@ -614,19 +614,18 @@ public class DataServiceTestControllerTest  {
 
     RowMetaInterface rowMeta = new RowMeta();
     rowMeta.addValueMeta( new ValueMetaInteger( "i" ) );
-    List<RowMetaAndData> rows = Arrays.asList(
-      new RowMetaAndData( rowMeta, 1 ),
-      new RowMetaAndData( rowMeta, 2 ) );
 
     dataServiceTestController.executeSql();
     Disposable disp = mock( Disposable.class );
     Observer<List<RowMetaAndData>> consumer = consumerGrabber.getValue();
     consumer.onSubscribe( disp );
-    consumer.onNext( rows );
+    consumer.onNext( Arrays.asList( new RowMetaAndData( rowMeta, 1 ), new RowMetaAndData( rowMeta, 2 ) ) );
+    consumer.onNext( Arrays.asList( new RowMetaAndData( rowMeta, 3 ) ) );
+    dataServiceTestController.close();
 
-    verify( model ).setResultRowMeta( Matchers.eq( rowMeta ) );
-    verify( model, times( 2 ) ).addResultRow( any() );
-    verify( callback ).onExecuteComplete();
+    verify( model, times( 2 ) ).setResultRowMeta( Matchers.eq( rowMeta ) );
+    verify( model, times( 3 ) ).addResultRow( any() );
+    verify( callback, times( 2 ) ).onExecuteComplete();
     verify( disp ).dispose();
   }
 

@@ -119,6 +119,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
 
   private AnnotationsQueryService annotationsQueryService;
 
+  private static interface IDisposableObserver<T> extends Disposable, Observer<T> { }
+  private IDisposableObserver<List<RowMetaAndData>> pushObserver;
+
   public DataServiceTestController( DataServiceTestModel model, DataServiceMeta dataService, DataServiceContext context ) throws KettleException {
     this( model, dataService, new DefaultBindingFactory(), context );
   }
@@ -162,15 +165,32 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   private void bindButtons( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
-    bindButton( bindingFactory, (XulButton) document.getElementById( "preview-opt-btn" ) );
-    bindButton( bindingFactory, (XulButton) document.getElementById( "exec-sql-btn" ) );
+    bindExecutingButton( bindingFactory, (XulButton) document.getElementById( "preview-opt-btn" ) );
+    XulButton execButton = (XulButton) document.getElementById( "exec-sql-btn" );
+    if ( dataService.isStreaming() ) {
+      bindingFactory.createBinding( model, "streaming", execButton, "label", new BindingConvertor<Boolean, String>() {
+
+        @Override
+        public String sourceToTarget( Boolean value ) {
+          return BaseMessages.getString( PKG,
+            value ? "DataServiceTest.Execute.Stop.Button" : "DataServiceTest.Execute.Button" );
+        }
+
+        @Override
+        public Boolean targetToSource( String value ) {
+          return false;
+        }
+      } );
+    } else {
+      bindExecutingButton( bindingFactory, execButton );
+    }
   }
 
   /**
    * Binds the button to the executing prop of model, such that the button will be
    * disabled for the duration of a query execution.
    */
-  private void bindButton( BindingFactory bindingFactory, XulButton button ) throws XulException, InvocationTargetException {
+  private void bindExecutingButton( BindingFactory bindingFactory, XulButton button ) throws XulException, InvocationTargetException {
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
     Binding binding = bindingFactory.createBinding( model, "executing", button, "disabled" );
     binding.initialize();
@@ -360,12 +380,18 @@ public class DataServiceTestController extends AbstractXulEventHandler {
   }
 
   public void executeSql() throws KettleException {
+    if ( model.isStreaming() ) {
+      stopStreaming();
+      return;
+    }
+
     resetMetrics();
     dataServiceExec = getNewDataServiceExecutor( true );
 
     if ( !dataServiceExec.getServiceTrans().isRunning() ) {
       updateOptimizationImpact( dataServiceExec );
     }
+
     updateModel( dataServiceExec );
 
     AnnotationsQueryService annotationsQuery = getAnnotationsQueryService();
@@ -396,6 +422,14 @@ public class DataServiceTestController extends AbstractXulEventHandler {
           handleCompletion( dataServiceExec );
         }
       }
+    }
+  }
+
+  private void stopStreaming() {
+    model.setStreaming( false );
+    model.setExecuting( false );
+    if ( pushObserver != null ) {
+      pushObserver.dispose();
     }
   }
 
@@ -594,43 +628,64 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     return sqlFieldsRowMeta;
   }
 
-  private Observer<List<RowMetaAndData>> getDataServicePushObserver() {
+  private IDisposableObserver<List<RowMetaAndData>> getDataServicePushObserver() {
+    if ( pushObserver == null ) {
+      pushObserver = new IDisposableObserver<List<RowMetaAndData>>() {
+        private Disposable toDispose;
+        long start;
+        final Object rowsMutex = new Object();
 
-    return new Observer<List<RowMetaAndData>>() {
-      private Disposable toDispose;
-      long start = System.currentTimeMillis();
-
-      @Override
-      public void onSubscribe( Disposable d ) {
-        toDispose = d;
-      }
-
-      @Override
-      public void onNext( List<RowMetaAndData> rowsList ) {
-        model.clearResultRows();
-        if ( !rowsList.isEmpty() ) {
-          model.setResultRowMeta( rowsList.get( 0 ).getRowMeta() );
-          rowsList.stream().map( RowMetaAndData::getData ).forEach( model::addResultRow );
+        @Override
+        public void onSubscribe( Disposable d ) {
+          toDispose = d;
+          document.invokeLater( () -> model.setStreaming( true ) );
+          start = System.currentTimeMillis();
         }
-        if ( toDispose != null && !toDispose.isDisposed() ) {
-          toDispose.dispose();
+
+        @Override
+        public void onNext( List<RowMetaAndData> rowsList ) {
+          synchronized ( rowsMutex ) {
+            model.clearResultRows();
+            if ( !rowsList.isEmpty() ) {
+              model.setResultRowMeta( rowsList.get( 0 ).getRowMeta() );
+              rowsList.stream().map( RowMetaAndData::getData ).forEach( model::addResultRow );
+            }
+            final long batchStart = start;
+            start = System.currentTimeMillis();
+            document.invokeLater( () -> {
+              synchronized ( rowsMutex ) {
+                updateExecutingMessage( batchStart, dataServiceExec );
+                maybeSetErrorAlert( dataServiceExec );
+                callback.onExecuteComplete();
+              }
+            } );
+          }
         }
-        document.invokeLater( () -> {
-          updateExecutingMessage( start, dataServiceExec );
-          handleCompletion( dataServiceExec );
-        } );
-      }
 
-      @Override
-      public void onError( Throwable e ) {
-        document.invokeLater( () -> handleCompletion( dataServiceExec ) );
-      }
+        @Override
+        public void onError( Throwable e ) {
+          document.invokeLater( () -> model.setStreaming( false ) );
+        }
 
-      @Override
-      public void onComplete() {
-        stopQuery = true;
-      }
-    };
+        @Override
+        public void onComplete() {
+          document.invokeLater( () -> model.setStreaming( false ) );
+        }
+
+        @Override
+        public void dispose() {
+          if ( toDispose != null ) {
+            toDispose.dispose();
+          }
+        }
+
+        @Override
+        public boolean isDisposed() {
+          return toDispose != null && toDispose.isDisposed();
+        }
+      };
+    }
+    return pushObserver;
   }
 
   private Observer<List<RowMetaAndData>> getDataServiceObserver() {
@@ -668,6 +723,10 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     }
 
     model.setExecuting( false );
+    model.setStreaming( false );
+    if ( pushObserver != null && !pushObserver.isDisposed() ) {
+      pushObserver.dispose();
+    }
   }
 
   private void clearLogLines() {
