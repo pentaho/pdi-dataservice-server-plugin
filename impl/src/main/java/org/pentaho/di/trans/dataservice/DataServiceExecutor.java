@@ -619,27 +619,31 @@ public class DataServiceExecutor {
     }
 
     // Now execute the query transformation(s) and pass the data to the output stream, using a reactivex consumer
-    final PublishSubject<List<RowMetaAndData>> consumer = PublishSubject.create();
-    Disposable[] disposableWrapper = new Disposable[1];
-    consumer.doOnError( t -> {
-      logger.error( "Error consuming data from the generated transformation into the consumer", t );
-      wrapupConsumerResources( consumer );
-    } ).doOnSubscribe( disposable ->  disposableWrapper[0] = disposable ).subscribe( rowMetaAndDataList -> {
-      try {
-        for ( RowMetaAndData rowMetaAndData : rowMetaAndDataList ) {
+    final PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
+    Disposable[] disposableWrapper = new Disposable[ 1 ];
+    consumer
+      .doOnError( t -> {
+        logger.error( "Error consuming data from the generated transformation into the consumer", t );
+        wrapupConsumerResources( consumer );
+      } )
+      .doOnComplete( () -> {
+        genTransformationPushBasedIsFinished.set( true );
+        if ( disposableWrapper[ 0 ] != null ) {
+          disposableWrapper[ 0 ].dispose();
+        }
+      } )
+      .doOnSubscribe( disposable -> disposableWrapper[ 0 ] = disposable )
+      .subscribe( rowMetaAndData -> {
+        try {
           RowMetaInterface rowMetaInterface = rowMetaAndData.getRowMeta();
           writeMeta( rowMetaInterface, dos, rowMetaWritten );
           rowMetaInterface.writeData( dos, rowMetaAndData.getData() );
+        } catch ( Exception e ) {
+          if ( !getServiceTrans().isStopped() ) {
+            throw new KettleStepException( e );
+          }
         }
-      } catch ( Exception e ) {
-        if ( !getServiceTrans().isStopped() ) {
-          throw new KettleStepException( e );
-        }
-      } finally {
-        genTransformationPushBasedIsFinished.set( true );
-        disposableWrapper[0].dispose();
-      }
-    } );
+      } );
 
     //In cases where there are now rows generated, it may end without having written the
     //metadata, and in that case the pipes are closed and an exception may rise (pipe close)
@@ -684,7 +688,7 @@ public class DataServiceExecutor {
    * @param consumer the consumer that we want to clean up.
    */
   @VisibleForTesting
-  protected void wrapupConsumerResources( Observer<List<RowMetaAndData>> consumer ) {
+  protected void wrapupConsumerResources( Observer<RowMetaAndData> consumer ) {
     consumer.onComplete();
 
     StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
@@ -696,9 +700,23 @@ public class DataServiceExecutor {
     genTransformationPushBasedIsFinished.set( true );
   }
 
-  public DataServiceExecutor executeQuery( Observer<List<RowMetaAndData>> consumer ) {
+  public DataServiceExecutor executeQuery( Observer<RowMetaAndData> consumer ) {
     if ( service.isStreaming() ) {
-      return executeStreamingQuery( consumer, true );
+      //Builds an accumulator to gather all the rows and then dispatch them to the row-by-row consumer
+      final Disposable[] disposableWrapper = new Disposable[ 1 ];
+
+      PublishSubject<List<RowMetaAndData>> accumulator = PublishSubject.create();
+      accumulator.doOnNext( rowMetaAndDataList -> {
+        rowMetaAndDataList.stream().forEach( consumer::onNext );
+        // since we are polling, after a window is received we complete the consumer
+        consumer.onComplete();
+        accumulator.onComplete();
+        if ( disposableWrapper[ 0 ] != null ) {
+          disposableWrapper[ 0 ].dispose();
+        }
+      } ).doOnSubscribe( disposable -> disposableWrapper[ 0 ] = disposable ).subscribe();
+
+      return executeStreamingQuery( accumulator, true );
     } else {
       return executeDefaultQuery( consumer );
     }
@@ -766,7 +784,7 @@ public class DataServiceExecutor {
       windowMode, windowSize, windowEvery, (int) serviceExecutor.getWindowMaxRowLimit(), serviceExecutor.getWindowMaxTimeLimit(), windowLimit, serviceExecutor.getKey().hashCode() );
   }
 
-  public DataServiceExecutor executeDefaultQuery( final Observer<List<RowMetaAndData>> consumer ) {
+  public DataServiceExecutor executeDefaultQuery( final Observer<RowMetaAndData> consumer ) {
     listenerMap.get( ExecutionPoint.READY ).add( new Runnable() {
       @Override
       public void run() {
@@ -774,25 +792,23 @@ public class DataServiceExecutor {
         StepInterface resultStep = genTrans.findRunThread( getResultStepName() );
 
         if ( resultStep != null ) {
-          PublishSubject<RowMetaAndData> accumulator = PublishSubject.create();
           resultStep.addRowListener( new RowAdapter() {
             @Override
             public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-              accumulator.onNext( new RowMetaAndData( rowMeta, row ) );
+              consumer.onNext( new RowMetaAndData( rowMeta, row ) );
             }
 
             @Override
             public void errorRowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-              accumulator.onNext( new RowMetaAndData( rowMeta, row ) );
+              consumer.onNext( new RowMetaAndData( rowMeta, row ) );
             }
           } );
-          accumulator.collect( () -> new ArrayList<RowMetaAndData>(), ( rowsList, rowMetaAndData ) -> rowsList.add( rowMetaAndData ) ).toObservable().subscribe( consumer );
 
           //signal the end of the accumulator when the transformation finishes
-          getGenTrans().addTransListener( new TransAdapter() {
+          genTrans.addTransListener( new TransAdapter() {
             @Override
             public void transFinished( Trans trans ) throws KettleException {
-              accumulator.onComplete();
+              consumer.onComplete();
             }
           } );
         }
