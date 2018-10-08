@@ -87,10 +87,11 @@
     <service ref="metaStoreResolverBean" interface="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver"/>
 
     <bean id="dataServiceResolverDelegate" class="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolverDelegate">
-        <argument>
-          <reference-list interface="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver" availability="optional"/>
-        </argument>
     </bean>
+
+    <reference-list interface="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver" availability="optional">
+        <reference-listener ref="dataServiceResolverDelegate" bind-method="addResolver" unbind-method="removeResolver"/>
+    </reference-list>
 
     <bean id="queryServiceDelegate" class="org.pentaho.di.trans.dataservice.clients.QueryServiceDelegate">
         <argument>
