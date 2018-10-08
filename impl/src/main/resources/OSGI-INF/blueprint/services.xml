@@ -89,6 +89,10 @@
     <bean id="dataServiceResolverDelegate" class="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolverDelegate">
     </bean>
 
+    <!--
+        We used the bind and unbind methods to inject the resolver list because using the constructor will cause a
+        ServiceUnavailableException to be thrown (check BACKLOG-26002) because the proxies may not be resolved.
+    -->
     <reference-list interface="org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver" availability="optional">
         <reference-listener ref="dataServiceResolverDelegate" bind-method="addResolver" unbind-method="removeResolver"/>
     </reference-list>
