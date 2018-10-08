@@ -65,7 +65,6 @@ public class StreamingGeneratedTransExecution implements Runnable {
   private final BehaviorSubject<List<RowMetaAndData>> genTransCachePublishSubject = BehaviorSubject.createDefault( new ArrayList<>( ) );
   private final String query;
   private final AtomicBoolean isRunning = new AtomicBoolean( false );
-  private final List<Observer<List<RowMetaAndData>>> consumersList = Collections.synchronizedList( new ArrayList<>() );
   private StreamExecutionListener stream;
   private final AtomicInteger consumersCount = new AtomicInteger( 0 );
 

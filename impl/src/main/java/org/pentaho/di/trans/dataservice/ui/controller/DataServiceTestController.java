@@ -688,17 +688,15 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     return pushObserver;
   }
 
-  private Observer<List<RowMetaAndData>> getDataServiceObserver() {
-    PublishSubject<List<RowMetaAndData>> consumer = PublishSubject.create();
+  private Observer<RowMetaAndData> getDataServiceObserver() {
+    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
     consumer.doOnComplete( () -> {
       stopQuery = true;
-    } ).subscribe( rowsList -> {
-      for ( RowMetaAndData rowMetaAndData : rowsList ) {
-        model.addResultRow( rowMetaAndData.getData() );
-        // if there were any rows read we want to make sure RowMeta is consistent w/ the
-        // actual results, since datatypes may have changed (e.g. with sum(integer_field) )
-        model.setResultRowMeta( rowMetaAndData.getRowMeta() );
-      }
+    } ).subscribe( rowMetaAndData -> {
+      model.addResultRow( rowMetaAndData.getData() );
+      // if there were any rows read we want to make sure RowMeta is consistent w/ the
+      // actual results, since datatypes may have changed (e.g. with sum(integer_field) )
+      model.setResultRowMeta( rowMetaAndData.getRowMeta() );
     } );
     return consumer;
   }

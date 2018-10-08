@@ -1406,7 +1406,7 @@ public class DataServiceExecutorTest extends BaseTest {
       build();
 
     AtomicBoolean onCompleteCalled = new AtomicBoolean( false );
-    PublishSubject<List<RowMetaAndData>> consumer = PublishSubject.create();
+    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
     consumer.doOnComplete( () -> onCompleteCalled.set( true ) ).subscribe();
 
     executor.wrapupConsumerResources( consumer );
@@ -1454,7 +1454,7 @@ public class DataServiceExecutorTest extends BaseTest {
       build();
 
     AtomicBoolean onCompleteCalled = new AtomicBoolean( false );
-    PublishSubject<List<RowMetaAndData>> consumer = PublishSubject.create();
+    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
     consumer.doOnComplete( () -> onCompleteCalled.set( true ) ).subscribe();
 
     executor.wrapupConsumerResources( consumer );
@@ -1502,7 +1502,7 @@ public class DataServiceExecutorTest extends BaseTest {
       build();
 
     AtomicBoolean onCompleteCalled = new AtomicBoolean( false );
-    PublishSubject<List<RowMetaAndData>> consumer = PublishSubject.create();
+    PublishSubject<RowMetaAndData> consumer = PublishSubject.create();
     consumer.doOnComplete( () -> onCompleteCalled.set( true ) ).subscribe();
 
     executor.wrapupConsumerResources( consumer );
