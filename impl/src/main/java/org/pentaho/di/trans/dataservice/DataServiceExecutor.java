@@ -627,6 +627,10 @@ public class DataServiceExecutor {
         wrapupConsumerResources( consumer );
       } )
       .doOnComplete( () -> {
+        //In cases where there are now rows generated, it may end without having written the
+        //metadata, and in that case the pipes are closed and an exception may rise (pipe close)
+        writeMeta( getGenTrans(), dos, rowMetaWritten );
+
         genTransformationPushBasedIsFinished.set( true );
         if ( disposableWrapper[ 0 ] != null ) {
           disposableWrapper[ 0 ].dispose();
@@ -644,10 +648,6 @@ public class DataServiceExecutor {
           }
         }
       } );
-
-    //In cases where there are now rows generated, it may end without having written the
-    //metadata, and in that case the pipes are closed and an exception may rise (pipe close)
-    writeMeta( getGenTrans(), dos, rowMetaWritten );
 
     return executeQuery( consumer );
   }
