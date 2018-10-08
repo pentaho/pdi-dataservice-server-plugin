@@ -634,12 +634,14 @@ public class DataServiceTestController extends AbstractXulEventHandler {
         private Disposable toDispose;
         long start;
         final Object rowsMutex = new Object();
+        private boolean updating;
 
         @Override
         public void onSubscribe( Disposable d ) {
           toDispose = d;
           document.invokeLater( () -> model.setStreaming( true ) );
           start = System.currentTimeMillis();
+          updating = false;
         }
 
         @Override
@@ -652,13 +654,17 @@ public class DataServiceTestController extends AbstractXulEventHandler {
             }
             final long batchStart = start;
             start = System.currentTimeMillis();
-            document.invokeLater( () -> {
-              synchronized ( rowsMutex ) {
-                updateExecutingMessage( batchStart, dataServiceExec );
-                maybeSetErrorAlert( dataServiceExec );
-                callback.onExecuteComplete();
-              }
-            } );
+            if ( !updating ) {
+              updating = true;
+              document.invokeLater( () -> {
+                synchronized ( rowsMutex ) {
+                  updateExecutingMessage( batchStart, dataServiceExec );
+                  maybeSetErrorAlert( dataServiceExec );
+                  callback.onExecuteComplete();
+                  updating = false;
+                }
+              } );
+            }
           }
         }
 
