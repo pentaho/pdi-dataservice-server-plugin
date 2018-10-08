@@ -23,7 +23,6 @@
 package org.pentaho.di.trans.dataservice.resolvers;
 
 import com.google.common.base.Function;
-import org.osgi.service.blueprint.container.ServiceUnavailableException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
@@ -37,8 +36,20 @@ public class DataServiceResolverDelegate implements DataServiceResolver {
 
   private List<DataServiceResolver> resolvers;
 
+  public DataServiceResolverDelegate() {
+    resolvers = new ArrayList<>();
+  }
+
   public DataServiceResolverDelegate( List<DataServiceResolver> resolvers ) {
     this.resolvers = resolvers;
+  }
+
+  public void addResolver( DataServiceResolver resolver ) {
+    resolvers.add( resolver );
+  }
+
+  public void removeResolver( DataServiceResolver resolver ) {
+    resolvers.remove( resolver );
   }
 
   @Override public List<DataServiceMeta> getDataServices( Function<Exception, Void> logger ) {
@@ -80,18 +91,15 @@ public class DataServiceResolverDelegate implements DataServiceResolver {
   @Override public DataServiceExecutor.Builder createBuilder( SQL sql ) throws KettleException {
     boolean foundDataService = false;
     for ( DataServiceResolver resolver : resolvers ) {
-      try {
-        DataServiceExecutor.Builder builder = resolver.createBuilder( sql );
-        if ( builder != null ) {
-          return builder;
-        } else {
-          foundDataService = foundDataService || ( resolver.getDataService( sql.getServiceName() ) != null );
-        }
-      } catch ( ServiceUnavailableException ignored ) {
+      DataServiceExecutor.Builder builder = resolver.createBuilder( sql );
+      if ( builder != null ) {
+        return builder;
+      } else {
+        foundDataService = foundDataService || ( resolver.getDataService( sql.getServiceName() ) != null );
       }
     }
     throw new KettleException( foundDataService ? "Error when creating builder for sql query"
-        : MessageFormat.format( "Data Service {0} was not found", sql.getServiceName() ) );
+      : MessageFormat.format( "Data Service {0} was not found", sql.getServiceName() ) );
   }
 
   @Override public List<String> getDataServiceNames() {

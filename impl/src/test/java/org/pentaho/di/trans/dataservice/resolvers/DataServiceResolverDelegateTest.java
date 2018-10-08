@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -35,7 +35,6 @@ import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +50,8 @@ import static org.mockito.Mockito.when;
 /**
  * Created by fcamara on 10/12/2016.
  */
-@RunWith( MockitoJUnitRunner.class ) public class DataServiceResolverDelegateTest {
+@RunWith( MockitoJUnitRunner.class )
+public class DataServiceResolverDelegateTest {
 
   private final String DATA_SERVICE_NAME = "DS_TEST";
   private final String DATA_SERVICE_NOT_FOUND = "Data Service " + DATA_SERVICE_NAME + " was not found";
@@ -70,7 +70,8 @@ import static org.mockito.Mockito.when;
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  @Before public void setup() throws Exception {
+  @Before
+  public void setup() throws Exception {
     when( resolver.getDataServices( any() ) ).thenReturn( dataServices );
     when( resolver.getDataServices( DATA_SERVICE_NAME, logger ) ).thenReturn( dataServices );
     when( dataServices.toArray() ).thenReturn( new DataServiceMeta[] { dataServiceMeta } );
@@ -82,32 +83,36 @@ import static org.mockito.Mockito.when;
 
     when( dataServices.get( 0 ) ).thenReturn( dataServiceMeta );
 
-    resolvers = Arrays.asList( resolver );
-    dataServiceResolverDelegate = new DataServiceResolverDelegate( resolvers );
+    dataServiceResolverDelegate = new DataServiceResolverDelegate();
+    dataServiceResolverDelegate.addResolver( resolver );
   }
 
-  @Test public void testGetDataServicesWithFunction() {
+  @Test
+  public void testGetDataServicesWithFunction() {
     List<DataServiceMeta> lDataServiceMeta = dataServiceResolverDelegate.getDataServices( logger );
 
     assertTrue( lDataServiceMeta.size() == 1 );
     verify( resolver ).getDataServices( logger );
   }
 
-  @Test public void testGetDataServicesWithName() {
+  @Test
+  public void testGetDataServicesWithName() {
     List<DataServiceMeta> lDataServiceMeta = dataServiceResolverDelegate.getDataServices( DATA_SERVICE_NAME, logger );
 
     assertTrue( lDataServiceMeta.size() == 1 );
     verify( resolver ).getDataServices( DATA_SERVICE_NAME, logger );
   }
 
-  @Test public void testGetDataServiceWithName() {
+  @Test
+  public void testGetDataServiceWithName() {
     DataServiceMeta returnDataServiceMeta = dataServiceResolverDelegate.getDataService( DATA_SERVICE_NAME );
 
     assertEquals( returnDataServiceMeta, dataServiceMeta );
     verify( resolver ).getDataService( DATA_SERVICE_NAME );
   }
 
-  @Test public void testGetDataServiceWithNameRetNull() {
+  @Test
+  public void testGetDataServiceWithNameRetNull() {
     when( resolver.getDataService( DATA_SERVICE_NAME ) ).thenReturn( null );
     DataServiceMeta returnDataServiceMeta = dataServiceResolverDelegate.getDataService( DATA_SERVICE_NAME );
 
@@ -115,39 +120,44 @@ import static org.mockito.Mockito.when;
     verify( resolver ).getDataService( DATA_SERVICE_NAME );
   }
 
-  @Test public void testGetDataServiceNoResolvers() {
+  @Test
+  public void testGetDataServiceNoResolvers() {
     DataServiceResolverDelegate
-        nullDataServiceResolverDelegate =
-        new DataServiceResolverDelegate( new ArrayList<DataServiceResolver>() );
+      nullDataServiceResolverDelegate =
+      new DataServiceResolverDelegate();
     DataServiceMeta returnDataServiceMeta = nullDataServiceResolverDelegate.getDataService( DATA_SERVICE_NAME );
 
     assertNull( returnDataServiceMeta );
   }
 
-  @Test public void testGetDataServiceNamesNoResolvers() {
+  @Test
+  public void testGetDataServiceNamesNoResolvers() {
     DataServiceResolverDelegate
-        nullDataServiceResolverDelegate =
-        new DataServiceResolverDelegate( Collections.emptyList() );
+      nullDataServiceResolverDelegate =
+      new DataServiceResolverDelegate();
     List<String> names = nullDataServiceResolverDelegate.getDataServiceNames();
 
     assertEquals( names, Collections.emptyList() );
   }
 
-  @Test public void testGetDataServiceNamesWName() {
+  @Test
+  public void testGetDataServiceNamesWName() {
     List<String> lDataServiceNames = dataServiceResolverDelegate.getDataServiceNames( DATA_SERVICE_NAME );
 
     assertTrue( lDataServiceNames.contains( DATA_SERVICE_NAME ) );
     verify( resolver ).getDataServiceNames( DATA_SERVICE_NAME );
   }
 
-  @Test public void testGetDataServiceNames() {
+  @Test
+  public void testGetDataServiceNames() {
     List<String> lDataServiceNames = dataServiceResolverDelegate.getDataServiceNames();
 
     assertTrue( lDataServiceNames.contains( DATA_SERVICE_NAME ) );
     verify( resolver ).getDataServiceNames();
   }
 
-  @Test public void testCreateBuilder() throws KettleException {
+  @Test
+  public void testCreateBuilder() throws KettleException {
     DataServiceExecutor.Builder returnBuilder = dataServiceResolverDelegate.createBuilder( sql );
 
     assertEquals( returnBuilder, builder );
@@ -155,7 +165,8 @@ import static org.mockito.Mockito.when;
     verify( sql, never() ).getServiceName();
   }
 
-  @Test public void testCreateBuilderExceptionDataServiceFailedSqlBuild() throws KettleException {
+  @Test
+  public void testCreateBuilderExceptionDataServiceFailedSqlBuild() throws KettleException {
     when( resolver.createBuilder( sql ) ).thenReturn( null );
     thrown.expect( KettleException.class );
     thrown.expectMessage( ERROR_BUILDING_SQL );
@@ -166,7 +177,8 @@ import static org.mockito.Mockito.when;
     verify( sql ).getServiceName();
   }
 
-  @Test public void testCreateBuilderExceptionDataServiceNotFound() throws KettleException {
+  @Test
+  public void testCreateBuilderExceptionDataServiceNotFound() throws KettleException {
     when( resolver.createBuilder( sql ) ).thenReturn( null );
     when( resolver.getDataService( DATA_SERVICE_NAME ) ).thenReturn( null );
     thrown.expect( KettleException.class );
