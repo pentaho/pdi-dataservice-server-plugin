@@ -224,13 +224,11 @@ public class DataServiceTestController extends AbstractXulEventHandler {
     maxRows = (XulMenuList<String>) document.getElementById( "maxrows-combo" );
     bindingFactory.setBindingType( Binding.Type.ONE_WAY );
 
-    if ( dataService.isStreaming() ) {
-      bindingFactory.createBinding( model, "allStreamingMaxRows", maxRows, "elements" )
-        .fireSourceChanged();
-    } else {
+    if ( !dataService.isStreaming() ) {
       bindingFactory.createBinding( model, "allMaxRows", maxRows, "elements" )
         .fireSourceChanged();
     }
+    maxRows.setDisabled( dataService.isStreaming() );
   }
 
   private void bindSelectedMaxRows( BindingFactory bindingFactory ) throws InvocationTargetException, XulException {
@@ -635,6 +633,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
         long start;
         final Object rowsMutex = new Object();
         private boolean updating;
+        private boolean first;
 
         @Override
         public void onSubscribe( Disposable d ) {
@@ -642,6 +641,7 @@ public class DataServiceTestController extends AbstractXulEventHandler {
           document.invokeLater( () -> model.setStreaming( true ) );
           start = System.currentTimeMillis();
           updating = false;
+          first = true;
         }
 
         @Override
@@ -660,7 +660,12 @@ public class DataServiceTestController extends AbstractXulEventHandler {
                 synchronized ( rowsMutex ) {
                   updateExecutingMessage( batchStart, dataServiceExec );
                   maybeSetErrorAlert( dataServiceExec );
-                  callback.onExecuteComplete();
+                  if ( first ) {
+                    first = false;
+                    callback.onExecuteComplete();
+                  } else {
+                    callback.onUpdate( model.getResultRows() );
+                  }
                   updating = false;
                 }
               } );

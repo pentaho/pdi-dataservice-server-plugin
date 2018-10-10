@@ -625,7 +625,8 @@ public class DataServiceTestControllerTest  {
 
     verify( model, times( 2 ) ).setResultRowMeta( Matchers.eq( rowMeta ) );
     verify( model, times( 3 ) ).addResultRow( any() );
-    verify( callback, times( 2 ) ).onExecuteComplete();
+    verify( callback, times( 1 ) ).onExecuteComplete();
+    verify( callback, times( 1 ) ).onUpdate( any() );
     verify( disp ).dispose();
   }
 
