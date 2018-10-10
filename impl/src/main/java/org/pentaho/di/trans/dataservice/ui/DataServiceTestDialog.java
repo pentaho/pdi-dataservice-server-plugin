@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -150,12 +150,7 @@ public class DataServiceTestDialog implements java.io.Serializable {
         public void onExecuteComplete() {
           resultsView.setRowMeta( model.getResultRowMeta() );
           resultsView.load( model.getResultRows(), new SqlKeyListener( dataServiceTestController, false ) );
-          List<MetricsDuration> genTransMetrics = MetricsUtil.getAllDurations( model.getGenTransLogChannel().getLogChannelId() );
-          DataServiceTestDialog.this.genTransMetrics.display( genTransMetrics );
-          LogChannelInterface serviceTransLogChannel = model.getServiceTransLogChannel();
-          if ( serviceTransLogChannel != null ) {
-            serviceTransMetrics.display( MetricsUtil.getAllDurations( serviceTransLogChannel.getLogChannelId() ) );
-          }
+          updateMetrics();
         }
 
         @Override
@@ -166,6 +161,21 @@ public class DataServiceTestDialog implements java.io.Serializable {
         @Override
         public void onClose() {
           close();
+        }
+
+        @Override
+        public void onUpdate( List<Object[]> rows ) {
+          resultsView.updateTableView( model.getResultRows() );
+          updateMetrics();
+        }
+
+        private void updateMetrics() {
+          List<MetricsDuration> genTransMetrics = MetricsUtil.getAllDurations( model.getGenTransLogChannel().getLogChannelId() );
+          DataServiceTestDialog.this.genTransMetrics.display( genTransMetrics );
+          LogChannelInterface serviceTransLogChannel = model.getServiceTransLogChannel();
+          if ( serviceTransLogChannel != null ) {
+            serviceTransMetrics.display( MetricsUtil.getAllDurations( serviceTransLogChannel.getLogChannelId() ) );
+          }
         }
       }
     );

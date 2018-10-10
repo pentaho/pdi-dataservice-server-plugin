@@ -52,7 +52,6 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
   private int maxRows = 0;
 
   public static final List<Integer> MAXROWS_CHOICES = Arrays.asList( 100, 500, 1000 );
-  public static final List<Integer> MAXROWS_STREAMING_CHOICES = Arrays.asList( 0 );
 
   private IDataServiceClientService.StreamingMode windowMode = IDataServiceClientService.StreamingMode.TIME_BASED;
   private long windowSize = 0;
@@ -120,10 +119,6 @@ public class DataServiceTestModel extends XulEventSourceAdapter {
 
   public List<Integer> getAllMaxRows() {
     return MAXROWS_CHOICES;
-  }
-
-  public List<Integer> getAllStreamingMaxRows() {
-    return MAXROWS_STREAMING_CHOICES;
   }
 
   public IDataServiceClientService.StreamingMode getWindowMode() {

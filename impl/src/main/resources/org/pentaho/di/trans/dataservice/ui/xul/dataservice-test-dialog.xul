@@ -62,7 +62,7 @@
                 </vbox>
                 <vbox width="15"/>
             </hbox>
-            <hbox height="10"/>
+            <hbox height="5"/>
         </groupbox>
         <label value="SQL:"/>
         <textbox id='sql-textbox' multiline="true" height="100" value="{default text}"/>

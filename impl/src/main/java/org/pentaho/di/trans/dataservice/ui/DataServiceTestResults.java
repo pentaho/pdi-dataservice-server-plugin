@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -50,6 +50,7 @@ public class DataServiceTestResults {
   private RowMetaInterface rowMeta;
   private final TransMeta transMeta;
   private final Composite container;
+  private TableView tableView;
 
   public DataServiceTestResults( DataServiceMeta dataService,
                                  Composite container ) throws KettleStepException {
@@ -63,8 +64,7 @@ public class DataServiceTestResults {
   }
 
   public void load( List<Object[]> rows, Listener tableKeyListener ) {
-    TableView tableView = initTableView( rows );
-    tableView.table.addListener( SWT.KeyDown, tableKeyListener );
+    tableView = initTableView( rows.size(), tableKeyListener );
 
     for ( Object[] rowData : rows ) {
       TableItem item = new TableItem( tableView.table, SWT.NONE );
@@ -78,17 +78,29 @@ public class DataServiceTestResults {
     container.layout();
   }
 
-  private TableView initTableView( List<Object[]> rows ) {
+  private TableView initTableView( int rowSize, Listener tableKeyListener ) {
     for ( Control control : container.getChildren() ) {
       control.dispose();
     }
     TableView tableView =
       new TableView( transMeta, container, SWT.NONE,
-        rowMetaToColumnInfo(), rows.size(), true, null,
+        rowMetaToColumnInfo(), rowSize, true, null,
         PropsUI.getInstance() );
     tableView.table.setItemCount( 0 );
-
+    tableView.table.addListener( SWT.KeyDown, tableKeyListener );
     return tableView;
+  }
+
+  public void updateTableView( List<Object[]> rows ) {
+    int itemCount = tableView.table.getItemCount();
+    for ( int i = 0; i < rows.size(); i++ ) {
+      TableItem item = i < itemCount
+          ? tableView.table.getItem( i )
+          : new TableItem( tableView.table, SWT.NONE );
+      applyRowDataToTableItem( rows.get( i ), item );
+    }
+    tableView.table.setItemCount( rows.size() );
+    tableView.setRowNums();
   }
 
   private void applyRowDataToTableItem( Object[] rowData, TableItem item ) {
