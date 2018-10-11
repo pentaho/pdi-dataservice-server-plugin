@@ -64,23 +64,21 @@ public class ValueMetaResolver {
       @Override public ValueMetaInterface apply( ValueMetaInterface valueMetaInterface ) {
         valueMetaInterface = valueMetaInterface.clone();
         String mask = valueMetaInterface.getConversionMask();
-        switch ( valueMetaInterface.getType() ) {
-          case ValueMetaInterface.TYPE_DATE:
-            if ( mask == null || mask.isEmpty() ) {
+        boolean isStorageBinaryString = valueMetaInterface.isStorageBinaryString();
+
+        if ( ( mask == null || mask.isEmpty() ) || isStorageBinaryString ) {
+          switch ( valueMetaInterface.getType() ) {
+            case ValueMetaInterface.TYPE_DATE:
               valueMetaInterface.setConversionMask( ANSI_DATE_LITERAL );
-            }
-            break;
-          case ValueMetaInterface.TYPE_TIMESTAMP:
-            if ( mask == null || mask.isEmpty() ) {
+              break;
+            case ValueMetaInterface.TYPE_TIMESTAMP:
               valueMetaInterface.setConversionMask( ANSI_TIMESTAMP_LITERAL );
-            }
-            break;
-          case ValueMetaInterface.TYPE_INTEGER:
-          case ValueMetaInterface.TYPE_NUMBER:
-          case ValueMetaInterface.TYPE_BIGNUMBER:
-            if ( mask == null || mask.isEmpty() ) {
+              break;
+            case ValueMetaInterface.TYPE_INTEGER:
+            case ValueMetaInterface.TYPE_NUMBER:
+            case ValueMetaInterface.TYPE_BIGNUMBER:
               valueMetaInterface.setConversionMask( NUMERIC_LITERAL );
-            }
+          }
         }
         return valueMetaInterface;
       }
