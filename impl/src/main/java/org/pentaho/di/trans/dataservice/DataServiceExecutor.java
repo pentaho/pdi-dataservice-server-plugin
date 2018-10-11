@@ -325,9 +325,7 @@ public class DataServiceExecutor {
       genTrans.setMetaStore( metastore );
       genTrans.setGatheringMetrics( enableMetrics );
 
-      if ( !service.isStreaming() ) {
-        this.parameters.putAll( getWhereConditionParameters() );
-      }
+      this.parameters.putAll( getWhereConditionParameters() );
 
       DataServiceExecutor dataServiceExecutor = new DataServiceExecutor( this );
 
