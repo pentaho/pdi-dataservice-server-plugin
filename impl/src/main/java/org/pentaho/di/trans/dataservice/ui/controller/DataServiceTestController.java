@@ -658,6 +658,9 @@ public class DataServiceTestController extends AbstractXulEventHandler {
               updating = true;
               document.invokeLater( () -> {
                 synchronized ( rowsMutex ) {
+                  if ( isDisposed() ) {
+                    return;
+                  }
                   updateExecutingMessage( batchStart, dataServiceExec );
                   maybeSetErrorAlert( dataServiceExec );
                   if ( first ) {
