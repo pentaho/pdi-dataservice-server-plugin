@@ -26,6 +26,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
@@ -102,7 +103,7 @@ public class StreamExecutionListener {
     } else {
       this.buffer = stream.buffer( (int) windowSize );
     }
-    this.fallbackBuffer = stream.buffer( maxTime, TimeUnit.MILLISECONDS, maxRows );
+    this.fallbackBuffer = stream.buffer( maxTime, TimeUnit.MILLISECONDS, Schedulers.single(), maxRows, () -> new ArrayList<>(), true );
 
     this.outputBufferPublisher = PublishSubject.create();
     this.outputSubject = this.outputBufferPublisher.subscribe( windowConsumer );
