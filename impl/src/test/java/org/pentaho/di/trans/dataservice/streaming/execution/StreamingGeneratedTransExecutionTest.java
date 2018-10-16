@@ -33,6 +33,7 @@ import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
@@ -41,6 +42,7 @@ import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
 import org.pentaho.di.trans.step.BaseStep;
+import org.pentaho.di.trans.step.RowAdapter;
 import org.pentaho.di.trans.step.RowListener;
 import org.pentaho.di.trans.step.StepInterface;
 
@@ -49,8 +51,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -173,6 +180,81 @@ public class StreamingGeneratedTransExecutionTest {
     genTrans.waitUntilFinished();
 
     verify( log ).logRowlevel( DataServiceConstants.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
+  }
+
+  @Test
+  public void testInjectRows(){
+    List<RowMetaAndData> rowIterator = new ArrayList<>();
+    LogChannelInterface log = mock( LogChannelInterface.class );
+    RowProducer rowProducer = mock( RowProducer.class );
+
+    RowMeta rowMeta = new RowMeta( );
+    Object data = "data";
+    Object[] dataArray = new Object[] { data };
+
+    RowMetaAndData rowMetaAndData = new RowMetaAndData( rowMeta, data );
+    rowIterator.add( rowMetaAndData );
+
+    doReturn( true ).when( rowProducer ).putRowWait( rowMeta, dataArray, 1, TimeUnit.SECONDS );
+    doCallRealMethod().when( genTransExecutor ).injectRows( rowIterator, log, rowProducer );
+
+    genTransExecutor.injectRows( rowIterator, log, rowProducer );
+
+    verify( rowProducer, times( 1 ) ).putRowWait( rowMeta, dataArray, 1, TimeUnit.SECONDS );
+  }
+
+  @Test
+  public void testInjectNoRows(){
+    List<RowMetaAndData> rowIterator = new ArrayList<>();
+    LogChannelInterface log = mock( LogChannelInterface.class );
+    RowProducer rowProducer = mock( RowProducer.class );
+
+    RowMeta rowMeta = new RowMeta( );
+    Object[] dataArray = new Object[0];
+
+    doReturn( true ).when( rowProducer ).putRowWait( rowMeta, dataArray, 1, TimeUnit.SECONDS );
+    doCallRealMethod().when( genTransExecutor ).injectRows( rowIterator, log, rowProducer );
+
+    genTransExecutor.injectRows( rowIterator, log, rowProducer );
+
+    verify( rowProducer, times( 0 ) ).putRowWait( rowMeta, dataArray, 1, TimeUnit.SECONDS );
+  }
+
+  @Test
+  public void testGetRowListener() throws Exception {
+    List<RowMetaAndData> tempList = new ArrayList<>( );
+    RowAdapter rowAdapter = genTransExecutor.getRowWrittenListener( tempList );
+
+    RowMeta rowMeta = new RowMeta( );
+    Object data = "data";
+    Object[] dataArray = new Object[] { data };
+
+    rowAdapter.rowWrittenEvent( rowMeta, dataArray );
+
+    assertEquals( dataArray.length, tempList.size() );
+    assertNotNull( tempList.get(0).getData() );
+    assertEquals( dataArray.length, tempList.get(0).getData().length );
+    assertSame( data, tempList.get(0).getData()[0] );
+  }
+
+  @Test
+  public void testWaitForGeneratedTransToFinnish(){
+    doThrow( new RuntimeException( new InterruptedException( ) ) ).when( genTrans ).waitUntilFinished();
+    genTransExecutor.waitForGeneratedTransToFinnish();
+  }
+
+  @Test ( expected = RuntimeException.class )
+  public void testWaitForGeneratedTransToFinnishCauseNotInterruptedException(){
+    doThrow( new RuntimeException( new NullPointerException( ) ) ).when( genTrans ).waitUntilFinished();
+    genTransExecutor.waitForGeneratedTransToFinnish();
+    fail( "When the thrown exception is not a RuntimeException with a InterruptedException cause, it should rethrow a RuntimeException" );
+  }
+
+  @Test ( expected = RuntimeException.class )
+  public void testWaitForGeneratedTransToFinnishNullPointerExceptionCatch(){
+    doThrow( new NullPointerException( ) ).when( genTrans ).waitUntilFinished();
+    genTransExecutor.waitForGeneratedTransToFinnish();
+    fail( "When the thrown exception is not a RuntimeException it should rethrow a RuntimeException" );
   }
 
   private void verifyExecution( int numExecs ) throws Exception {
