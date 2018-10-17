@@ -162,7 +162,7 @@ public class StreamingGeneratedTransExecution implements Runnable {
    */
   @VisibleForTesting
   protected void runGenTrans( final List<RowMetaAndData> rowIterator ) throws KettleStepException {
-    if  ( isRunning.compareAndSet( false, true ) ) {
+    if ( isRunning.compareAndSet( false, true ) ) {
       try {
         LogChannelInterface log = genTrans.getLogChannel();
         RowProducer rowProducer;
@@ -170,37 +170,30 @@ public class StreamingGeneratedTransExecution implements Runnable {
 
         genTrans.getTransListeners().clear();
         genTrans.cleanup();
-        genTrans.prepareExecution( null );
-
-        rowProducer = genTrans.addRowProducer( injectorStepName, 0 );
-
-        genTrans.startThreads();
+        synchronized ( serviceExecutor.getServiceTrans() ) {
+          genTrans.prepareExecution( null );
+          rowProducer = genTrans.addRowProducer( injectorStepName, 0 );
+          genTrans.startThreads();
+        }
 
         resultStep = genTrans.findRunThread( resultStepName );
-
         resultStep.cleanup();
-        List<RowMetaAndData> tempList = new ArrayList<>( );
-        RowAdapter rowListener = new RowAdapter() {
-          @Override public void rowWrittenEvent( RowMetaInterface rowMetaInterface, Object[] objects ) throws KettleStepException {
-            tempList.add( new RowMetaAndData( rowMetaInterface, objects ) );
-          }
-        };
-        resultStep.addRowListener( rowListener );
 
-        for ( RowMetaAndData injectRows : rowIterator ) {
-          while ( !rowProducer.putRowWait( injectRows.getRowMeta(), injectRows.getData(), 1, TimeUnit.SECONDS )
-            && genTrans.isRunning() ) {
-            // Row queue was full, try again
-            log.logRowlevel( DataServiceConstants.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
-          }
-        }
+        List<RowMetaAndData> rowsList = new ArrayList<>( );
+        RowAdapter rowListener = getRowWrittenListener( rowsList );
+        resultStep.addRowListener( rowListener );
+        injectRows( rowIterator, log, rowProducer );
+
         rowProducer.finished();
-        genTrans.waitUntilFinished();
+
+        // The execution will not continue until the trans finishes)
+        waitForGeneratedTransToFinnish();
+
         genTrans.stopAll();
         resultStep.removeRowListener( rowListener );
 
         if ( !this.genTransCachePublishSubject.hasComplete() ) {
-          this.genTransCachePublishSubject.onNext( Collections.unmodifiableList( tempList ) );
+          this.genTransCachePublishSubject.onNext( Collections.unmodifiableList( rowsList ) );
         }
 
         log.logDetailed( DataServiceConstants.STREAMING_GENERATED_TRANSFORMATION_STOPPED );
@@ -210,6 +203,40 @@ public class StreamingGeneratedTransExecution implements Runnable {
         isRunning.set( false );
         genTrans.setRunning( false );
         genTrans.setStopped( true );
+      }
+    }
+  }
+
+  @VisibleForTesting
+  protected void waitForGeneratedTransToFinnish() {
+    try {
+      genTrans.waitUntilFinished();
+    } catch ( RuntimeException e ) {
+      if ( e.getCause() instanceof InterruptedException ) {
+        logger.debug( "The generated transformation was stopped, which resulted in an interruption of the generated transformation wait until finished call" );
+        //this is normal if the transformation is terminated while we are waiting for it to finnish
+      } else {
+        throw new RuntimeException( e );
+      }
+    }
+  }
+
+  @VisibleForTesting
+  protected RowAdapter getRowWrittenListener( List<RowMetaAndData> tempList ) {
+    return new RowAdapter() {
+      @Override public void rowWrittenEvent( RowMetaInterface rowMetaInterface, Object[] objects ) throws KettleStepException {
+        tempList.add( new RowMetaAndData( rowMetaInterface, objects ) );
+      }
+    };
+  }
+
+  @VisibleForTesting
+  protected void injectRows( List<RowMetaAndData> rowIterator, LogChannelInterface log, RowProducer rowProducer ) {
+    for ( RowMetaAndData injectRows : rowIterator ) {
+      while ( !rowProducer.putRowWait( injectRows.getRowMeta(), injectRows.getData(), 1, TimeUnit.SECONDS )
+        && genTrans.isRunning() ) {
+        // Row queue was full, try again
+        log.logRowlevel( DataServiceConstants.ROW_BUFFER_IS_FULL_TRYING_AGAIN );
       }
     }
   }

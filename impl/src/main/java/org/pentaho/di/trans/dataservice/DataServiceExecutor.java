@@ -947,22 +947,24 @@ public class DataServiceExecutor {
   }
 
   public void stop( boolean stopTrans ) {
-    if ( stopTrans || !service.isStreaming() ) {
-      if ( serviceTrans.isRunning() ) {
-        serviceTrans.stopAll();
-      }
-      if ( genTrans.isRunning() ) {
-        genTrans.stopAll();
-      }
+    synchronized ( getServiceTrans() ) {
+      if ( stopTrans || !service.isStreaming() ) {
+        if ( serviceTrans.isRunning() ) {
+          serviceTrans.stopAll();
+        }
+        if ( genTrans.isRunning() ) {
+          genTrans.stopAll();
+        }
 
-      if ( service.isStreaming() ) {
-        this.genTransformationPushBasedIsFinished.set( true );
+        if ( service.isStreaming() ) {
+          this.genTransformationPushBasedIsFinished.set( true );
 
-        StreamingServiceTransExecutor serviceExecutor = context.getServiceTransExecutor( streamServiceKey );
-        if ( serviceExecutor != null ) {
-          String streamingGenTransCacheKey = getStreamingGenTransCacheKey();
-          context.removeStreamingGeneratedTransExecution( streamingGenTransCacheKey );
-          serviceExecutor.clearCacheByKey( streamingGenTransCacheKey );
+          StreamingServiceTransExecutor serviceExecutor = context.getServiceTransExecutor( streamServiceKey );
+          if ( serviceExecutor != null ) {
+            String streamingGenTransCacheKey = getStreamingGenTransCacheKey();
+            context.removeStreamingGeneratedTransExecution( streamingGenTransCacheKey );
+            serviceExecutor.clearCacheByKey( streamingGenTransCacheKey );
+          }
         }
       }
     }
