@@ -129,9 +129,9 @@ public class StreamingGeneratedTransExecution implements Runnable {
    */
   @Override public void run() {
     //we stop back pressure by only processing the last data
-    getGeneratedDataObservable().
-      toFlowable( BackpressureStrategy.LATEST ).
-      onBackpressureBuffer( 1, () -> { }, BackpressureOverflowStrategy.DROP_OLDEST )
+    getGeneratedDataObservable()
+      .toFlowable( BackpressureStrategy.LATEST )
+      .onBackpressureBuffer( 1, () -> { }, BackpressureOverflowStrategy.DROP_OLDEST )
       .doOnError( t -> logger.error( "Error receiving data from the service transformation observable", t ) )
       .doOnNext( rowMetaAndDataList -> {
         if ( consumersCount.get() > 0 ) {
@@ -171,6 +171,10 @@ public class StreamingGeneratedTransExecution implements Runnable {
         genTrans.getTransListeners().clear();
         genTrans.cleanup();
         synchronized ( serviceExecutor.getServiceTrans() ) {
+          if ( Thread.currentThread().isInterrupted() ) {
+            //avoids InterruptedException caused by the transformations being stopped in the meantime
+            return;
+          }
           genTrans.prepareExecution( null );
           rowProducer = genTrans.addRowProducer( injectorStepName, 0 );
           genTrans.startThreads();

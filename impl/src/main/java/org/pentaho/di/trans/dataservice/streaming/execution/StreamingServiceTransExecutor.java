@@ -36,7 +36,9 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.Context;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
+import org.pentaho.di.trans.dataservice.execution.CopyParameters;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
 import org.pentaho.di.trans.dataservice.streaming.StreamList;
@@ -209,6 +211,12 @@ public class StreamingServiceTransExecutor {
    */
   private void startService() {
     lastCacheCleanupMillis = System.currentTimeMillis();
+
+    //Copy parameters into the service transformation
+    DataServiceExecutor dataServiceExecutor = context.getExecutor( serviceTrans.getContainerObjectId() );
+    if ( dataServiceExecutor != null ) {
+      new CopyParameters( dataServiceExecutor.getParameters(), serviceTrans ).run();
+    }
 
     PrepareExecution prepExec = new PrepareExecution( serviceTrans );
     Runnable serviceTransWiring = getServiceTransWiring();

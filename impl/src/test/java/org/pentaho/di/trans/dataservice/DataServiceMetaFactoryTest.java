@@ -159,14 +159,4 @@ public class DataServiceMetaFactoryTest {
     DataServiceMeta ds5 = factory.createDataService( stepMeta );
     assertTrue( TransientResolver.isTransient( ds5.getName() ) );
   }
-
-  @Test
-  public void testCreateStreamingDataService() throws Exception {
-    DataServiceMeta ds = factory.createStreamingDataService( stepMeta );
-    assertNotNull( ds );
-    assertEquals( transMeta, ds.getServiceTrans() );
-    assertEquals( stepName, ds.getStepname() );
-    assertEquals( 0, ds.getRowLimit() );
-    verify( factory, times( 1 ) ).createStreamingDataService( eq( stepMeta ) );
-  }
 }

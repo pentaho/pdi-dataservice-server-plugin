@@ -141,7 +141,6 @@ public class DataServiceExecutor {
     private StreamServiceKey streamServiceKey;
 
     private boolean normalizeConditions = true;
-    private boolean prepareExecution = true;
     private boolean enableMetrics = false;
     private IMetaStore metastore;
     private BiConsumer<String, TransMeta> transMutator =
@@ -240,11 +239,6 @@ public class DataServiceExecutor {
       return this;
     }
 
-    public Builder prepareExecution( boolean enable ) {
-      prepareExecution = enable;
-      return this;
-    }
-
     public DataServiceExecutor build() throws KettleException {
       RowMetaInterface serviceFields;
       int serviceRowLimit = getServiceRowLimit( service );
@@ -285,37 +279,38 @@ public class DataServiceExecutor {
 
       // Check if there is already a serviceTransformation in the context
       if ( service.isStreaming() ) {
-        this.streamServiceKey = getStreamingServiceKey();
-        StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
+        synchronized ( context ) {
+          this.streamServiceKey = getStreamingServiceKey();
+          StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
 
-        if ( serviceTransExecutor != null
+          if ( serviceTransExecutor != null
             && !serviceTransExecutor.getServiceTrans().getTransMeta().getModifiedDate()
             .equals( service.getServiceTrans().getModifiedDate() ) ) {
-          context.removeServiceTransExecutor( serviceTransExecutor.getKey() );
-          serviceTransExecutor.stopAll();
-          serviceTransExecutor = null;
-        }
-
-        // Gets service execution from context
-        if ( serviceTransExecutor == null ) {
-          if ( serviceTrans == null && service.getServiceTrans() != null ) {
-            serviceTrans( service.getServiceTrans() );
+            context.removeServiceTransExecutor( serviceTransExecutor.getKey() );
+            serviceTransExecutor.stopAll();
+            serviceTransExecutor = null;
           }
 
-          if ( serviceTrans != null ) {
-            int windowMaxRowLimit = (int) getStreamingLimit( rowLimit, service.getRowLimit(), getKettleRowLimit(),
+          // Gets service execution from context
+          if ( serviceTransExecutor == null ) {
+            if ( serviceTrans == null && service.getServiceTrans() != null ) {
+              serviceTrans( service.getServiceTrans() );
+            }
+
+            if ( serviceTrans != null ) {
+              int windowMaxRowLimit = (int) getStreamingLimit( rowLimit, service.getRowLimit(), getKettleRowLimit(),
                 DataServiceConstants.ROW_LIMIT_DEFAULT );
-            long windowMaxTimeLimit = getStreamingLimit( timeLimit, service.getTimeLimit(), getKettleTimeLimit(),
+              long windowMaxTimeLimit = getStreamingLimit( timeLimit, service.getTimeLimit(), getKettleTimeLimit(),
                 DataServiceConstants.TIME_LIMIT_DEFAULT );
 
-            serviceTransExecutor =
+              serviceTransExecutor =
                 new StreamingServiceTransExecutor( streamServiceKey, serviceTrans, service.getStepname(),
-                windowMaxRowLimit, windowMaxTimeLimit, context );
-            context.addServiceTransExecutor( serviceTransExecutor );
+                  windowMaxRowLimit, windowMaxTimeLimit, context );
+              context.addServiceTransExecutor( serviceTransExecutor );
+            }
+          } else {
+            serviceTrans( serviceTransExecutor.getServiceTrans() );
           }
-        } else {
-          prepareExecution = false;
-          serviceTrans( serviceTransExecutor.getServiceTrans() );
         }
       } else if ( serviceTrans == null && service.getServiceTrans() != null ) {
         serviceTrans( service.getServiceTrans() );
@@ -349,7 +344,7 @@ public class DataServiceExecutor {
         dataServiceExecutor.setLogLevel( logLevel );
       }
 
-      if ( prepareExecution ) {
+      if ( !service.isStreaming() ) {
         dataServiceExecutor.prepareExecution();
       }
 
@@ -572,23 +567,19 @@ public class DataServiceExecutor {
     ImmutableMultimap.Builder<ExecutionPoint, Runnable> builder = ImmutableMultimap.builder();
 
     builder.putAll( ExecutionPoint.PREPARE,
-        new CopyParameters( parameters, serviceTrans )
+        new CopyParameters( parameters, serviceTrans ),
+        new PrepareExecution( serviceTrans ),
+        new PrepareExecution( genTrans ) );
+
+    builder.putAll( ExecutionPoint.READY,
+        new DefaultTransWiring( this )
     );
 
-    if ( !service.isStreaming() ) {
-      builder.putAll( ExecutionPoint.PREPARE,
-          new PrepareExecution( serviceTrans ),
-          new PrepareExecution( genTrans ) );
+    builder.putAll( ExecutionPoint.START,
+        new TransStarter( genTrans ),
+        new TransStarter( serviceTrans )
+    );
 
-      builder.putAll( ExecutionPoint.READY,
-          new DefaultTransWiring( this )
-      );
-
-      builder.putAll( ExecutionPoint.START,
-          new TransStarter( genTrans ),
-          new TransStarter( serviceTrans )
-      );
-    }
     listenerMap.putAll( builder.build() );
   }
 
@@ -753,8 +744,14 @@ public class DataServiceExecutor {
         serviceTrans.addTransListener( new TransAdapter() {
           @Override
           public void transFinished( Trans trans ) throws KettleException {
-            //When the service transformation stops we should remove the service stream from the cache
-            context.removeServiceTransExecutor( streamServiceKey );
+            //When the service transformation is not being used we should remove the service stream from the cache
+            //It can be running because it may have been restarted (eg. ktr changes - see Builder::build())
+            synchronized ( context ) {
+              StreamingServiceTransExecutor streamingServiceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
+              if ( streamingServiceTransExecutor != null && !streamingServiceTransExecutor.getServiceTrans().isRunning() ) {
+                context.removeServiceTransExecutor( streamServiceKey );
+              }
+            }
           }
         } );
 
@@ -780,8 +777,12 @@ public class DataServiceExecutor {
 
   public String getStreamingGenTransCacheKey() {
     StreamingServiceTransExecutor serviceExecutor = context.getServiceTransExecutor( streamServiceKey );
-    return WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
-      windowMode, windowSize, windowEvery, (int) serviceExecutor.getWindowMaxRowLimit(), serviceExecutor.getWindowMaxTimeLimit(), windowLimit, serviceExecutor.getKey().hashCode() );
+    if ( serviceExecutor != null && serviceExecutor.getKey() != null ) {
+      return WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
+        windowMode, windowSize, windowEvery, (int) serviceExecutor.getWindowMaxRowLimit(),
+        serviceExecutor.getWindowMaxTimeLimit(), windowLimit, serviceExecutor.getKey().hashCode() );
+    }
+    return null;
   }
 
   public DataServiceExecutor executeDefaultQuery( final Observer<RowMetaAndData> consumer ) {
