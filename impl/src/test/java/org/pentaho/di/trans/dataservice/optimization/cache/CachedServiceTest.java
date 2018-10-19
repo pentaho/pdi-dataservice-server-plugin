@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -170,12 +170,10 @@ public class CachedServiceTest {
     sql.parse( rowMeta );
 
     assertThat( CacheKey.create( new DataServiceExecutor.Builder( sql, dataServiceMeta, context )
-        .prepareExecution( false )
         .parameters( ImmutableMap.of( "foo", "bar" ) )
         .serviceTrans( serviceTrans )
         .build() ),
       not( equalTo( CacheKey.create( new DataServiceExecutor.Builder( sql, dataServiceMeta, context )
-        .prepareExecution( false )
         .serviceTrans( serviceTrans )
         .build() ) ) ) );
   }

@@ -103,19 +103,21 @@ public class StreamExecutionListener {
     } else {
       this.buffer = stream.buffer( (int) windowSize );
     }
-    this.fallbackBuffer = stream.buffer( maxTime, TimeUnit.MILLISECONDS, Schedulers.single(), maxRows, () -> new ArrayList<>(), true );
+    this.fallbackBuffer = stream.buffer( maxTime, TimeUnit.MILLISECONDS, Schedulers.computation(), maxRows, () -> new ArrayList<>(), true );
 
     this.outputBufferPublisher = PublishSubject.create();
     this.outputSubject = this.outputBufferPublisher.subscribe( windowConsumer );
 
-    this.subject = this.buffer.subscribe( this::processBufferWindow );
-    this.fallbackSubject = this.fallbackBuffer.subscribe( this::processFallbackWindow );
+    //Creates the buffer and fallback buffer
+    resetBuffer();
+    resetFallbackBuffer();
 
     // below is created the streaming objects used while the first window is not produced
     if ( timeBased ) {
       this.starterSubject = stream.buffer( (int) ( windowEvery > 0 ? windowEvery : windowSize ), TimeUnit.MILLISECONDS )
         .subscribe( items -> {
           if ( !hasWindow.get() ) {
+            resetFallbackBuffer();
             this.cachePreWindow.addAll( items );
             outputBufferPublisher.onNext( this.cachePreWindow );
           }
@@ -124,6 +126,7 @@ public class StreamExecutionListener {
       this.starterSubject = stream.buffer( (int) ( windowEvery > 0 ? windowEvery : windowSize ) )
         .subscribe( items -> {
           if ( !hasWindow.get() ) {
+            resetFallbackBuffer();
             this.cachePreWindow.addAll( items );
             outputBufferPublisher.onNext( this.cachePreWindow );
           }
@@ -207,9 +210,7 @@ public class StreamExecutionListener {
         unSubscribeStarter();
       }
 
-      //If we are processing a regular window buffer, we should discard the fallback one
-      unSubscribeFallbackBuffer();
-      this.fallbackSubject = this.fallbackBuffer.subscribe( this::processFallbackWindow );
+      resetFallbackBuffer();
 
       if ( this.outputSubject != null && !this.outputSubject.isDisposed() ) {
         outputBufferPublisher.onNext( windowList );
@@ -225,18 +226,35 @@ public class StreamExecutionListener {
   private void processFallbackWindow( List<RowMetaAndData> windowList ) {
     //When the observable is complete it means that a window was produced
     synchronized ( this.buffer ) {
-
       if ( hasWindow.compareAndSet( false, true ) ) {
         unSubscribeStarter();
       }
 
-      //If we are processing a fallback window buffer, we should discard the regular one
-      unSubscribeBuffer();
-      this.subject = this.buffer.subscribe( this::processBufferWindow );
+      resetBuffer();
 
       if ( this.outputSubject != null && !this.outputSubject.isDisposed() ) {
         outputBufferPublisher.onNext( windowList );
       }
     }
+  }
+
+  /**
+   * Creates the regular buffer if it is not created. If it is already created, it is
+   * discarded beforehand.
+   */
+  private void resetBuffer() {
+    //If we are processing a fallback window buffer, we should discard the regular one
+    unSubscribeBuffer();
+    this.subject = this.buffer.subscribe( this::processBufferWindow );
+  }
+
+  /**
+   * Creates the fallback buffer if it is not created. If it is already created, it is
+   * discarded beforehand.
+   */
+  private void resetFallbackBuffer() {
+    //If we are processing a regular window buffer, we should discard the fallback one
+    unSubscribeFallbackBuffer();
+    this.fallbackSubject = this.fallbackBuffer.subscribe( this::processFallbackWindow );
   }
 }

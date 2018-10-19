@@ -77,18 +77,6 @@ public class DataServiceMetaFactory implements IDataServiceMetaFactory {
     return dataServiceMeta;
   }
 
-  @Override public DataServiceMeta createStreamingDataService( StepMeta step ) throws KettleException {
-    TransMeta transformation = step.getParentTransMeta();
-
-    DataServiceMeta dataServiceMeta = new DataServiceMeta( transformation, true );
-
-    dataServiceMeta.setName( createDataServiceName( step, 0, true ) );
-    dataServiceMeta.setStepname( step.getName() );
-    dataServiceMeta.setRowLimit( 0 );
-
-    return dataServiceMeta;
-  }
-
   private String createDataServiceName( StepMeta step, Integer rowLimit, boolean streaming ) throws KettleException {
     TransMeta transMeta = step.getParentTransMeta();
     String fullFileName;

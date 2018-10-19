@@ -54,6 +54,7 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransListener;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
+import org.pentaho.di.trans.dataservice.execution.CopyParameters;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
@@ -71,6 +72,7 @@ import java.io.DataOutputStream;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -155,7 +157,6 @@ public class DataServiceExecutorTest extends BaseTest {
     new DataServiceExecutor.Builder( new SQL( "SELECT * FROM " + DATA_SERVICE_NAME ), dataService, context ).
       serviceTrans( serviceTrans ).
       genTrans( genTrans ).
-      prepareExecution( false ).
       logLevel( LogLevel.DETAILED ).
       build();
 
@@ -180,7 +181,6 @@ public class DataServiceExecutorTest extends BaseTest {
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), dataService, context ).
       serviceTrans( transMeta ).
-      prepareExecution( false ).
       build();
 
     Condition condition = executor.getSql().getWhereCondition().getCondition();
@@ -1050,7 +1050,6 @@ public class DataServiceExecutorTest extends BaseTest {
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( query ), dataService, context ).
       serviceTrans( new Trans( transMeta ) ).
-      prepareExecution( false ).
       build();
 
     executor.getSql().getWhereCondition().getCondition().evaluate( rowMeta, new Object[] { "value".getBytes() } );
@@ -1256,7 +1255,6 @@ public class DataServiceExecutorTest extends BaseTest {
 
     String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
-      prepareExecution( false ).
       sqlTransGenerator( sqlTransGenerator ).
       serviceTrans( serviceTrans ).
       genTrans( genTrans ).
@@ -1390,8 +1388,6 @@ public class DataServiceExecutorTest extends BaseTest {
     when( serviceTrans.getTransMeta() ).thenReturn( dataService.getServiceTrans() );
 
     context.addServiceTransExecutor( serviceTransExecutor );
-    dataService.setStreaming( true );
-
     dataService.setStreaming( true );
 
     IMetaStore metastore = mock( IMetaStore.class );
@@ -1585,5 +1581,104 @@ public class DataServiceExecutorTest extends BaseTest {
       }
       assertEquals( 0, dataServiceExecutorBuilder.getKettleTimeLimit() );
     }
+  }
+
+  @Test
+  public void testPrepareExecution() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
+    IMetaStore metastore = mock( IMetaStore.class );
+
+    Map<String, String> parameters = new HashMap<>( );
+    parameters.put( "param1", "value1" );
+
+    DataServiceExecutor executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      parameters( parameters ).
+      build();
+
+    assertNotNull( executor.getListenerMap() );
+    assertNotNull( executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.PREPARE ) );
+    boolean existsCopyParameters = false;
+    for ( Runnable runnable : executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.PREPARE ) ) {
+      if ( runnable instanceof CopyParameters ) {
+        existsCopyParameters = true;
+      }
+    }
+    assertTrue( existsCopyParameters );
+
+    assertEquals( 3, executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.PREPARE ).size() );
+    assertEquals( 1, executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.READY ).size() );
+    assertEquals( 2, executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.START ).size() );
+    assertEquals( 0, executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.OPTIMIZE ).size() );
+
+    //Make the same assertions without passing parameters... to make sure that the CopyParameters is also applied
+    executor = new DataServiceExecutor.Builder( sql, dataService, context ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      build();
+
+    assertNotNull( executor.getListenerMap() );
+    assertNotNull( executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.PREPARE ) );
+    existsCopyParameters = false;
+    for ( Runnable runnable : executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.PREPARE ) ) {
+      if ( runnable instanceof CopyParameters ) {
+        existsCopyParameters = true;
+      }
+    }
+    assertTrue( existsCopyParameters );
+
+    assertEquals( 3, executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.PREPARE ).size() );
+    assertEquals( 1, executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.READY ).size() );
+    assertEquals( 2, executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.START ).size() );
+    assertEquals( 0, executor.getListenerMap().get( DataServiceExecutor.ExecutionPoint.OPTIMIZE ).size() );
+  }
+
+  @Test
+  public void testPrepareExecutionNotUsedInStreaming() throws Exception {
+    SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
+
+    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
+    when( serviceTransExecutor.getKey() ).thenReturn( key );
+    when( serviceTransExecutor.getWindowMaxRowLimit() ).thenReturn( 1000L );
+    when( serviceTransExecutor.getWindowMaxTimeLimit() ).thenReturn( 1000L );
+    when( sqlTransGenerator.getSql() ).thenReturn( sql );
+    when( serviceTrans.getTransMeta() ).thenReturn( dataService.getServiceTrans() );
+
+    context.addServiceTransExecutor( serviceTransExecutor );
+    dataService.setStreaming( true );
+
+    StreamingGeneratedTransExecution streamWiring = new StreamingGeneratedTransExecution( context.getServiceTransExecutor( key ),
+      genTrans, consumer, pollingMode, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
+      sqlTransGenerator.getSql().getSqlString(), IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, 10000, "" );
+
+    String streamingGenTransCacheKey = WindowParametersHelper.getCacheKey( sqlTransGenerator.getSql().getSqlString(),
+      IDataServiceClientService.StreamingMode.ROW_BASED, 10, 1, (int) serviceTransExecutor.getWindowMaxRowLimit(),
+      serviceTransExecutor.getWindowMaxTimeLimit(), 10000, serviceTransExecutor.getKey().hashCode() );
+    context.addStreamingGeneratedTransExecution( streamingGenTransCacheKey, streamWiring );
+    dataService.setStreaming( true );
+
+    IMetaStore metastore = mock( IMetaStore.class );
+    DataServiceExecutor executor = spy( new DataServiceExecutor.Builder( sql, dataService, context ).
+      sqlTransGenerator( sqlTransGenerator ).
+      genTrans( genTrans ).
+      metastore( metastore ).
+      enableMetrics( false ).
+      normalizeConditions( false ).
+      rowLimit( 50 ).
+      windowEvery( 1 ).
+      windowSize( 10 ).
+      windowLimit( 10000 ).
+      windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+      build() );
+
+    verify( executor, times( 0 ) ).prepareExecution();
   }
 }

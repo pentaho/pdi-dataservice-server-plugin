@@ -257,6 +257,17 @@ public class StreamingGeneratedTransExecutionTest {
     fail( "When the thrown exception is not a RuntimeException it should rethrow a RuntimeException" );
   }
 
+  @Test
+  public void testThreadNotInterrupted() throws KettleException {
+    when( rowProducer.putRowWait( any( RowMetaInterface.class ), any( Object[].class ), anyLong(),
+      any( TimeUnit.class ) ) ).thenReturn( false, true );
+
+    genTransExecutor.run();
+    genTransExecutor.getGeneratedDataObservable().onNext( rowIterator );
+    genTransExecutor.waitForGeneratedTransToFinnish();
+    verify( genTrans, times(1) ).startThreads( );
+  }
+
   private void verifyExecution( int numExecs ) throws Exception {
     verify( genTrans, times( numExecs ) ).cleanup( );
     verify( genTrans, times( numExecs ) ).prepareExecution( null );

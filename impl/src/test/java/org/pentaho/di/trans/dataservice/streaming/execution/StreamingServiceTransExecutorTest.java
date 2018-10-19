@@ -36,6 +36,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
@@ -47,7 +48,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -213,6 +216,27 @@ public class StreamingServiceTransExecutorTest {
 
     testBufferAux( rowMeta, data, false );
   }
+
+  @Test
+  public void testStartServiceDataServiceExecutorNull() throws Exception {
+    doReturn( null ).when( context ).getExecutor( any() );
+    RowMetaInterface rowMeta = serviceTrans.getTransMeta().getStepFields( MOCK_SERVICE_STEP_NAME );
+    Object[] data = new Object[] { 0 };
+    serviceExecutor.getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, 1, 1, 10 );
+    testBufferAux( rowMeta, data, false );
+  }
+
+  @Test
+  public void testStartServiceDataServiceExecutor() throws Exception {
+    DataServiceExecutor dataServiceExecutor = mock( DataServiceExecutor.class );
+    doReturn( dataServiceExecutor ).when( context ).getExecutor( any() );
+    RowMetaInterface rowMeta = serviceTrans.getTransMeta().getStepFields( MOCK_SERVICE_STEP_NAME );
+    Object[] data = new Object[] { 0 };
+    serviceExecutor.getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, 1, 1, 10 );
+    testBufferAux( rowMeta, data, false );
+    verify( dataServiceExecutor ).getParameters();
+  }
+
 
   private void testBufferAux() throws Exception {
     RowMetaInterface rowMeta = serviceTrans.getTransMeta().getStepFields( MOCK_SERVICE_STEP_NAME );

@@ -31,6 +31,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -182,5 +183,41 @@ public class StreamServiceKeyTest {
 
     key = StreamServiceKey.create( mockDataServiceId, mockParameters, mockOptimizationList );
     assertEquals( toStringTest, key.toString() );
+  }
+
+  @Test
+  public void testImmutable(){
+    Map<String, String> parameters = new HashMap<>( );
+    parameters.put( "key1", "value1" );
+    List<OptimizationImpactInfo> optimizations = new ArrayList<>();
+    OptimizationImpactInfo optimizationImpactInfo = new OptimizationImpactInfo( "STEP_NAME" );
+    optimizationImpactInfo.setQueryAfterOptimization( "AFTER" );
+    optimizations.add( optimizationImpactInfo );
+
+    StreamServiceKey streamServiceKey = StreamServiceKey.create( "DATA_SERVICE_ID", parameters, optimizations );
+    int streamServiceKeyValue = streamServiceKey.hashCode();
+    StreamServiceKey otherStreamServiceKey = StreamServiceKey.create( "DATA_SERVICE_ID", parameters, optimizations );
+
+    assertEquals( streamServiceKeyValue, otherStreamServiceKey.hashCode() );
+    assertEquals( 1, streamServiceKey.getParameters().size() );
+    assertEquals( Arrays.asList("AFTER"), streamServiceKey.getOptimizations() );
+    assertEquals( "DATA_SERVICE_ID", streamServiceKey.getDataServiceId() );
+
+    parameters.clear();
+    parameters.put( "key2", "value2" );
+
+    assertEquals( streamServiceKeyValue, streamServiceKey.hashCode() );
+    assertEquals( 1, streamServiceKey.getParameters().size() );
+
+    OptimizationImpactInfo optimizationImpactInfo2 = new OptimizationImpactInfo( "STEP_NAME_2" );
+    optimizationImpactInfo2.setQueryAfterOptimization( "AFTER2" );
+    optimizations.add( optimizationImpactInfo2 );
+
+    optimizationImpactInfo.setQueryAfterOptimization( "AFTER_CHANGED" );
+
+    assertEquals( streamServiceKeyValue, streamServiceKey.hashCode() );
+    assertEquals( 1, streamServiceKey.getParameters().size() );
+    assertEquals( Arrays.asList("AFTER"), streamServiceKey.getOptimizations() );
+    assertEquals( "DATA_SERVICE_ID", streamServiceKey.getDataServiceId() );
   }
 }
