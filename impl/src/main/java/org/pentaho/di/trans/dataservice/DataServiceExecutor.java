@@ -60,6 +60,7 @@ import org.pentaho.di.trans.dataservice.execution.TransStarter;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
+import org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdown;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.WindowParametersHelper;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
@@ -79,6 +80,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 public class DataServiceExecutor {
 
@@ -280,6 +282,7 @@ public class DataServiceExecutor {
       // Check if there is already a serviceTransformation in the context
       if ( service.isStreaming() ) {
         synchronized ( context ) {
+          addPushDownParameters();
           this.streamServiceKey = getStreamingServiceKey();
           StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
 
@@ -367,6 +370,26 @@ public class DataServiceExecutor {
       }
 
       return StreamServiceKey.create( service.getName(), parameters, optimizationImpactList );
+    }
+
+    private void addPushDownParameters() {
+      List<String> pdParams = getPushdownParameters( service.getPushDownOptimizationMeta() );
+      if ( !pdParams.isEmpty() ) {
+        Map<String, String> whereParams = getWhereConditionParameters();
+        for ( String param : pdParams ) {
+          if ( whereParams.containsKey( param ) ) {
+            parameters.put( param, whereParams.get( param ) );
+          }
+        }
+      }
+    }
+
+    private List<String> getPushdownParameters( List<PushDownOptimizationMeta> optimetas ) {
+      return optimetas.stream()
+        .filter( p -> p.isEnabled() )
+        .map( p -> p.getType() ).filter( t -> t instanceof ParameterPushdown ).map( t -> ( (ParameterPushdown) t ) )
+        .flatMap( pd -> pd.getDefinitions().stream() ).map( d -> d.getParameter() )
+        .collect( Collectors.toList() );
     }
 
     /**
