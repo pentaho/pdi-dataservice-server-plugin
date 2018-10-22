@@ -57,6 +57,7 @@ import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.execution.CopyParameters;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdown;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.WindowParametersHelper;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
@@ -85,6 +86,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -1680,5 +1682,46 @@ public class DataServiceExecutorTest extends BaseTest {
       build() );
 
     verify( executor, times( 0 ) ).prepareExecution();
+  }
+
+  @Test
+  public void testStreamServiceCachePushdownParameter() throws Exception {
+    when( serviceTrans.getTransMeta() ).thenReturn( dataService.getServiceTrans() );
+    IMetaStore metastore = mock( IMetaStore.class );
+
+    dataService.setStreaming( true );
+    ParameterPushdown pp = new ParameterPushdown();
+    pp.createDefinition().setParameter( "param_param" );
+    PushDownOptimizationMeta optimization = new PushDownOptimizationMeta();
+    optimization.setType( pp );
+    optimization.setEnabled( true );
+    dataService.getPushDownOptimizationMeta().add( optimization );
+    dataService.setStreaming( true );
+    context = Mockito.spy( context );
+
+    SQL[] queries = new SQL[] {
+      new SQL( "SELECT * FROM " + DATA_SERVICE_NAME + " where PARAMETER('param_param')='tutuu'" ),
+      new SQL( "SELECT * FROM " + DATA_SERVICE_NAME + " where PARAMETER('param_param')='rururuu'" ),
+      new SQL( "SELECT * FROM " + DATA_SERVICE_NAME + " where p=2 and PARAMETER('param_param') = 'tutuu'" )
+    };
+    for ( SQL sql : queries ) {
+      new DataServiceExecutor.Builder( sql, dataService, context ).
+          sqlTransGenerator( sqlTransGenerator ).
+          genTrans( genTrans ).
+          metastore( metastore ).
+          enableMetrics( false ).
+          normalizeConditions( true ).
+          rowLimit( 50 ).
+          windowEvery( 1 ).
+          windowSize( 10 ).
+          windowLimit( 10000 ).
+          windowMode( IDataServiceClientService.StreamingMode.ROW_BASED ).
+          build();
+    }
+    ArgumentCaptor<StreamServiceKey> keyCaptor = ArgumentCaptor.forClass( StreamServiceKey.class );
+
+    verify( context, times( 3 ) ).getServiceTransExecutor( keyCaptor.capture() );
+    assertNotEquals( keyCaptor.getAllValues().get( 0 ), keyCaptor.getAllValues().get( 1 ) );
+    assertEquals( keyCaptor.getAllValues().get( 0 ), keyCaptor.getAllValues().get( 2 ) );
   }
 }
