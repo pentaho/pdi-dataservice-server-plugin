@@ -60,7 +60,6 @@ import org.pentaho.di.trans.dataservice.execution.TransStarter;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
-import org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdown;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.WindowParametersHelper;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
@@ -80,7 +79,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
 public class DataServiceExecutor {
 
@@ -282,7 +281,7 @@ public class DataServiceExecutor {
       // Check if there is already a serviceTransformation in the context
       if ( service.isStreaming() ) {
         synchronized ( context ) {
-          addPushDownParameters();
+          addInlinePushDownParameters();
           this.streamServiceKey = getStreamingServiceKey();
           StreamingServiceTransExecutor serviceTransExecutor = context.getServiceTransExecutor( streamServiceKey );
 
@@ -372,25 +371,33 @@ public class DataServiceExecutor {
       return StreamServiceKey.create( service.getName(), parameters, optimizationImpactList );
     }
 
-    private void addPushDownParameters() {
-      List<String> pdParams = getPushdownParameters( service.getPushDownOptimizationMeta() );
-      if ( !pdParams.isEmpty() ) {
-        Map<String, String> whereParams = getWhereConditionParameters();
-        for ( String param : pdParams ) {
-          if ( whereParams.containsKey( param ) ) {
-            parameters.put( param, whereParams.get( param ) );
+    /**
+     * add parameters defined as PARAMETER('param') = value
+     */
+    private void addInlinePushDownParameters() {
+      if ( sql.getWhereCondition() != null ) {
+        traverseConditions( sql.getWhereCondition().getCondition(), c -> {
+          if ( isParameterFunction( c ) ) {
+            parameters.put( c.getLeftValuename(), c.getRightExactString() );
           }
-        }
+        } );
       }
     }
 
-    private List<String> getPushdownParameters( List<PushDownOptimizationMeta> optimetas ) {
-      return optimetas.stream()
-        .filter( p -> p.isEnabled() )
-        .map( p -> p.getType() ).filter( t -> t instanceof ParameterPushdown ).map( t -> ( (ParameterPushdown) t ) )
-        .flatMap( pd -> pd.getDefinitions().stream() ).map( d -> d.getParameter() )
-        .collect( Collectors.toList() );
+    private boolean isParameterFunction( Condition cond ) {
+      return cond.getFunction() == Condition.FUNC_TRUE
+          && cond.getLeftValuename() != null
+          &&  cond.getLeftValuename().equals( cond.getRightValuename() )
+          && cond.getRightExact() != null;
     }
+
+    private void traverseConditions( Condition cond, Consumer<Condition> consumer ) {
+      consumer.accept( cond );
+      for ( Condition child : cond.getChildren() ) {
+        traverseConditions( child, consumer );
+      }
+    }
+
 
     /**
      * Gets the streaming dataservice max limit for a window.
