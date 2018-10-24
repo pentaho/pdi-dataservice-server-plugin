@@ -70,17 +70,21 @@ public class StreamingController extends AbstractController {
     // Set streaming max rows and time limit value on the text boxes.
     // Get the values from the model first and fallback to the appropriate Kettle Properties
     // if they don't exist in the mode.
-    int modelStreamingMaxRows = model.getServiceMaxRows();
-    streamingMaxRows.setValue( modelStreamingMaxRows > 0
-        ? Integer.toString( modelStreamingMaxRows )
-        : kettleUtils.getKettleProperty( "KETTLE_STREAMING_ROW_LIMIT",
-              Integer.toString( DataServiceConstants.KETTLE_STREAMING_ROW_LIMIT ) ) );
+    int modelStreamingMaxRows = model.getServiceMaxRows() > 0
+      ? model.getServiceMaxRows()
+      : Integer.valueOf( kettleUtils.getKettleProperty( "KETTLE_STREAMING_ROW_LIMIT",
+          Integer.toString( DataServiceConstants.KETTLE_STREAMING_ROW_LIMIT ) )  );
+    streamingMaxRows.setValue( Integer.toString( modelStreamingMaxRows ) );
 
-    long modelStreamingMaxTime = model.getServiceMaxTime();
-    streamingMaxTime.setValue( modelStreamingMaxTime > 0
-        ? Long.toString( modelStreamingMaxTime )
-        : kettleUtils.getKettleProperty( "KETTLE_STREAMING_TIME_LIMIT",
-              Integer.toString( DataServiceConstants.KETTLE_STREAMING_TIME_LIMIT ) ) );
+    model.setServiceMaxRows( modelStreamingMaxRows );
+
+    long modelStreamingMaxTime = model.getServiceMaxTime() > 0
+      ? model.getServiceMaxTime()
+      : Long.parseLong( kettleUtils.getKettleProperty( "KETTLE_STREAMING_TIME_LIMIT",
+          Integer.toString( DataServiceConstants.KETTLE_STREAMING_TIME_LIMIT ) )  );
+    streamingMaxTime.setValue( Long.toString( modelStreamingMaxTime ) );
+
+    model.setServiceMaxTime( modelStreamingMaxTime );
 
     streamingTab.setVisible( model.isStreaming() );
 
