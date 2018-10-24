@@ -1690,12 +1690,6 @@ public class DataServiceExecutorTest extends BaseTest {
     IMetaStore metastore = mock( IMetaStore.class );
 
     dataService.setStreaming( true );
-    ParameterPushdown pp = new ParameterPushdown();
-    pp.createDefinition().setParameter( "param_param" );
-    PushDownOptimizationMeta optimization = new PushDownOptimizationMeta();
-    optimization.setType( pp );
-    optimization.setEnabled( true );
-    dataService.getPushDownOptimizationMeta().add( optimization );
     dataService.setStreaming( true );
     context = Mockito.spy( context );
 
