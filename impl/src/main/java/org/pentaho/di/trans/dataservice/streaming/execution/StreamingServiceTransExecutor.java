@@ -34,7 +34,10 @@ import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.dataservice.Context;
+import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
+import org.pentaho.di.trans.dataservice.execution.CopyParameters;
 import org.pentaho.di.trans.dataservice.execution.PrepareExecution;
 import org.pentaho.di.trans.dataservice.execution.TransStarter;
 import org.pentaho.di.trans.dataservice.streaming.StreamList;
@@ -61,6 +64,7 @@ public class StreamingServiceTransExecutor {
   private long lastCacheCleanupMillis = 0;
   private int windowMaxRowLimit;
   private long windowMaxTimeLimit;
+  private Context context;
 
   /**
    * Service listener cache.
@@ -89,12 +93,14 @@ public class StreamingServiceTransExecutor {
    * @param windowMaxTimeLimit The streaming window max time limit.
    */
   public StreamingServiceTransExecutor( final StreamServiceKey key, Trans serviceTrans, final String serviceStepName,
-                                        final int windowMaxRowLimit, final long windowMaxTimeLimit ) {
+                                        final int windowMaxRowLimit, final long windowMaxTimeLimit,
+                                        final Context context ) {
     this.serviceTrans = serviceTrans;
     this.key = key;
     this.serviceStepName = serviceStepName;
     this.windowMaxRowLimit = windowMaxRowLimit;
     this.windowMaxTimeLimit = windowMaxTimeLimit;
+    this.context = context;
   }
 
   /**
@@ -215,6 +221,12 @@ public class StreamingServiceTransExecutor {
    */
   private void startService() {
     lastCacheCleanupMillis = System.currentTimeMillis();
+
+    //Copy parameters into the service transformation
+    DataServiceExecutor dataServiceExecutor = context.getExecutor( serviceTrans.getContainerObjectId() );
+    if ( dataServiceExecutor != null ) {
+      new CopyParameters( dataServiceExecutor.getParameters(), serviceTrans ).run();
+    }
 
     PrepareExecution prepExec = new PrepareExecution( serviceTrans );
     Runnable serviceTransWiring = getServiceTransWiring();

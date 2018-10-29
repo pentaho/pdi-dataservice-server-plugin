@@ -23,11 +23,11 @@
 package org.pentaho.di.trans.dataservice.streaming;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableMap;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,9 +69,9 @@ public class StreamServiceKey implements Serializable {
    * @return - The key for the given arguments.
    */
   public static StreamServiceKey create( String dataServiceId, Map<String, String> parameters, List<OptimizationImpactInfo> optimizationList ) {
-    // Copy execution parameters
-    Map<String, String> params = new HashMap<>();
-    params.putAll( parameters );
+    // Copy execution parameters (to be really unmodifiable, the below must be done - the unmodifiable references
+    // the argument list internally, allowing it to be changed outside and hence having it's contents also modified)
+    Map<String, String> params = Collections.unmodifiableMap( new HashMap<>( parameters ) );
 
     List<String> optimizations = new ArrayList<>();
     if ( optimizationList != null ) {
@@ -98,8 +98,8 @@ public class StreamServiceKey implements Serializable {
    *
    * @return - The parameters property.
    */
-  public ImmutableMap<String, String> getParameters() {
-    return ImmutableMap.copyOf( parameters );
+  public Map<String, String> getParameters() {
+    return parameters;
   }
 
   public List<String> getOptimizations() {

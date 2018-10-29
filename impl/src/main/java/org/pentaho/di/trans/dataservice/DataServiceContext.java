@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
@@ -56,7 +57,7 @@ public class DataServiceContext implements Context {
     .<String, DataServiceExecutor>build().asMap();
 
   // Use an in-memory cache with soft value references to prevent heap memory leaks
-  private final ConcurrentMap<StreamServiceKey, StreamingServiceTransExecutor> serviceExecutors = CacheBuilder.newBuilder()
+  private final Cache<StreamServiceKey, StreamingServiceTransExecutor> serviceExecutors = CacheBuilder.newBuilder()
     .expireAfterAccess( 1, TimeUnit.DAYS )
     .removalListener( new RemovalListener<StreamServiceKey, StreamingServiceTransExecutor>() {
       public void onRemoval( RemovalNotification<StreamServiceKey, StreamingServiceTransExecutor> removal ) {
@@ -69,7 +70,7 @@ public class DataServiceContext implements Context {
       }
     } )
     .softValues()
-    .<StreamServiceKey, StreamingServiceTransExecutor>build().asMap();
+    .<StreamServiceKey, StreamingServiceTransExecutor>build();
 
   public DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
@@ -147,24 +148,25 @@ public class DataServiceContext implements Context {
 
   @Override
   public void addServiceTransExecutor( final StreamingServiceTransExecutor serviceExecutor ) {
-    serviceExecutors.putIfAbsent( serviceExecutor.getKey(), serviceExecutor );
+    serviceExecutors.put( serviceExecutor.getKey(), serviceExecutor );
   }
 
   @Override
   public StreamingServiceTransExecutor getServiceTransExecutor( StreamServiceKey key ) {
-    return serviceExecutors.get( key );
+    return serviceExecutors.getIfPresent( key );
   }
 
   @Override
   public void removeServiceTransExecutor( StreamServiceKey key ) {
-    serviceExecutors.remove( key );
+    serviceExecutors.invalidate( key );
+    serviceExecutors.cleanUp();
   }
 
   @Override
   public void removeServiceTransExecutor( String dataServiceName ) {
-    for ( StreamServiceKey key : serviceExecutors.keySet() ) {
+    for ( StreamServiceKey key : serviceExecutors.asMap().keySet() ) {
       if ( key.getDataServiceId().equals( dataServiceName ) ) {
-        serviceExecutors.remove( key );
+        removeServiceTransExecutor( key );
       }
     }
   }
