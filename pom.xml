@@ -94,7 +94,7 @@
     <mongo.java.driver.version>3.6.3</mongo.java.driver.version>
     <commons.collections.version>3.2.2</commons.collections.version>
     <pentaho-modeler.version>9.0.0.0-SNAPSHOT</pentaho-modeler.version>
-    <rxjava.version>2.0.4</rxjava.version>
+    <rxjava.version>2.2.3</rxjava.version>
     <reactivestreams.version>1.0.2</reactivestreams.version>
     <jsr305.version>2.0.3</jsr305.version>
   </properties>
