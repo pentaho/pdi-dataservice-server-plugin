@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -96,7 +96,6 @@ public class DataServiceDelegateTest extends BaseTest {
     when( spoon.getActiveTransformation() ).thenReturn( transMeta );
     when( spoon.getShell() ).thenReturn( shell );
     when( uiFactory.getMessageBox( any( Shell.class ), anyInt() ) ).thenReturn( messageBox );
-    when( uiFactory.getShell( shell ) ).thenReturn( shell );
     when( uiFactory.getDataServiceTestDialog( any( Shell.class ), any( DataServiceMeta.class ), any(
       DataServiceContext.class ) ) )
       .thenReturn( dataServiceTestDialog );

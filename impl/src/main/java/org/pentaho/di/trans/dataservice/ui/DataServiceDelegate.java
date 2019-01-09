@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -213,7 +213,7 @@ public class DataServiceDelegate extends DataServiceFactory {
 
   public void showTestDataServiceDialog( DataServiceMeta dataService, Shell shell ) {
     try {
-      getUiFactory().getDataServiceTestDialog( getUiFactory().getShell( shell ), dataService, context ).open();
+      getUiFactory().getDataServiceTestDialog( shell, dataService, context ).open();
     } catch ( KettleException e ) {
       getLogChannel().logError( "Unable to create test data service dialog", e );
     }
