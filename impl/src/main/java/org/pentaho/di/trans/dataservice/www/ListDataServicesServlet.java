@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,16 +22,21 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
+import com.google.common.collect.Lists;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
+import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.dataservice.jdbc.api.IThinServiceInformation;
 import org.pentaho.di.www.BaseCartePlugin;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URLDecoder;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This servlet allows a user to get data from a "service" which is a transformation step.
@@ -50,6 +55,7 @@ public class ListDataServicesServlet extends BaseCartePlugin {
 
   public static final String XML_TAG_SERVICES = "services";
   public static final String XML_TAG_SERVICE = "service";
+  private final String CONTENT_CHARSET = "utf-8";
   private final DataServiceClient client;
 
   public ListDataServicesServlet( DataServiceClient client ) {
@@ -61,7 +67,21 @@ public class ListDataServicesServlet extends BaseCartePlugin {
   public void handleRequest( CarteRequest request ) throws IOException {
     final List<IThinServiceInformation> serviceInformation;
     try {
-      serviceInformation = client.getServiceInformation();
+      Map<String, Collection<String>> requestParameters = request.getParameters();
+      if ( requestParameters.isEmpty() ) {
+        serviceInformation = client.getServiceInformation();
+      } else {
+        serviceInformation = Lists.newArrayList();
+        if ( requestParameters.containsKey( "serviceName" ) ) {
+          Collection<String> servicesNames = requestParameters.get( "serviceName" );
+          for ( String serviceName : servicesNames ) {
+            ThinServiceInformation service = client.getServiceInformation( URLDecoder.decode( serviceName, CONTENT_CHARSET ) );
+            if ( service != null ) {
+              serviceInformation.add( service );
+            }
+          }
+        }
+      }
     } catch ( SQLException e ) {
       String msg = "Failed to retrieve service info";
       logError( msg, e );

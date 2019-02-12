@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -23,11 +23,11 @@
 package org.pentaho.di.trans.dataservice.www;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
@@ -43,6 +43,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -127,5 +128,17 @@ public class ListDataServicesServletTest extends BaseServletTest {
   @Test
   public void testGetContextPath() {
     assertEquals( CONTEXT_PATH, servlet.getContextPath() );
+  }
+
+  @Test
+  public void testRequestGetParameters() throws Exception {
+    ImmutableMultimap.Builder<String, String> builder = ImmutableMultimap.builder();
+    builder.put( "serviceName", "service1" );
+    ThinServiceInformation thinServiceInformation = new ThinServiceInformation( DATA_SERVICE_NAME, false, rowMetaInterface );
+    when( carteRequest.getParameters() ).thenReturn( builder.build().asMap() );
+    when( client.getServiceInformation( anyString() ) ).thenReturn( thinServiceInformation );
+    when( carteRequest.respond( 200 ) ).thenReturn( carteResponse );
+    servlet.handleRequest( carteRequest );
+    verify( client, times( 1 ) ).getServiceInformation( anyString() );
   }
 }
