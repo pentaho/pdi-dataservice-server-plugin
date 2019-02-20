@@ -17,6 +17,10 @@
 
   <dependencies>
     <dependency>
+       <groupId>org.osgi</groupId>
+       <artifactId>org.osgi.core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-core</artifactId>
     </dependency>
