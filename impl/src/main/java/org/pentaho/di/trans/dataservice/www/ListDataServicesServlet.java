@@ -68,7 +68,7 @@ public class ListDataServicesServlet extends BaseCartePlugin {
     final List<IThinServiceInformation> serviceInformation;
     try {
       Map<String, Collection<String>> requestParameters = request.getParameters();
-      if ( requestParameters.isEmpty() ) {
+      if ( requestParameters.isEmpty() || !requestParameters.containsKey( "serviceName" ) ) {
         serviceInformation = client.getServiceInformation();
       } else {
         serviceInformation = Lists.newArrayList();
