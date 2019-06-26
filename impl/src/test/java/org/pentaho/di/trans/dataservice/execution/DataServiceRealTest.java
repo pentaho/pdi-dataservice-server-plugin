@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -38,6 +38,7 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
+import org.pentaho.di.trans.steps.delay.DelayMeta;
 
 import java.util.HashMap;
 import java.util.concurrent.Executors;
@@ -51,6 +52,11 @@ public class DataServiceRealTest {
   public static void setUp() throws Exception {
     KettleClientEnvironment.init();
     PluginRegistry.addPluginType( StepPluginType.getInstance() );
+
+    StepPluginType.getInstance().handlePluginAnnotation(
+      DelayMeta.class,
+      DelayMeta.class.getAnnotation( org.pentaho.di.core.annotations.Step.class ),
+      emptyList(), false, null );
     PluginRegistry.init();
     if ( !Props.isInitialized() ) {
       Props.init( 0 );
