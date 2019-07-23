@@ -224,6 +224,12 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
+        <groupId>org.pentaho.di.plugins</groupId>
+        <artifactId>pdi-core-plugins-impl</artifactId>
+        <version>${pdi.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
         <groupId>io.reactivex.rxjava2</groupId>
         <artifactId>rxjava</artifactId>
         <version>${rxjava.version}</version>
