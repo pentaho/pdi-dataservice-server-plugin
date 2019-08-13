@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice.optimization.mongod;
 import com.mongodb.BasicDBList;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import com.mongodb.util.JSON;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
 import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.core.Condition;
@@ -52,12 +53,11 @@ public class MongodbPredicate {
   }
 
   public String asMatch() throws PushDownOptimizationException {
-    return QueryBuilder.start( MATCH ).is(
-      conditionAsDBObject() ).get().toString();
+    return JSON.serialize( QueryBuilder.start( MATCH ).is( conditionAsDBObject() ).get() );
   }
 
   public String asFilterCriteria() throws PushDownOptimizationException {
-    return conditionAsDBObject().toString();
+    return JSON.serialize( conditionAsDBObject() );
   }
 
   protected DBObject conditionAsDBObject() throws PushDownOptimizationException {
