@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -40,6 +40,7 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
+import org.pentaho.di.trans.step.StepMetaDataCombi;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
 
@@ -79,15 +80,22 @@ public class AnnotationsQueryService implements Query.Service {
     }
 
     @Override public void writeTo( final OutputStream outputStream ) throws IOException {
+      Trans trans = null;
       try {
+        trans = prepareExecution();
         ModelAnnotationGroup modelAnnotations =
-          (ModelAnnotationGroup) prepareExecution().getExtensionDataMap().get( "KEY_MODEL_ANNOTATIONS" );
+          (ModelAnnotationGroup) trans.getExtensionDataMap().get( "KEY_MODEL_ANNOTATIONS" );
         writeAnnotations( outputStream, modelAnnotations );
       } catch ( MetaStoreException | KettleException e ) {
         String msg = "Error while executing 'show annotations from " + serviceName + "'";
 
-        //not including original execption here because we don't want that info going back to the jdbc client
+        //not including original exception here because we don't want that info going back to the jdbc client
         throw new IOException( msg );
+      } finally {
+        if ( null != trans ) {
+          // Dispose resources
+          trans.cleanup();
+        }
       }
     }
 
@@ -116,9 +124,9 @@ public class AnnotationsQueryService implements Query.Service {
 
       disableAllUnrelatedHops( dataService.getStepname(), serviceTrans, false );
       final Trans trans = getTrans( serviceTrans );
-      trans.setMetaStore( metastoreLocator.getMetastore( ) );
-      if ( serviceTrans.getTransHopSteps( false ).size() > 0 ) {
-        trans.prepareExecution( new String[]{} );
+      trans.setMetaStore( metastoreLocator.getMetastore() );
+      if ( !serviceTrans.getTransHopSteps( false ).isEmpty() ) {
+        trans.prepareExecution( new String[] {} );
       }
       return trans;
     }
@@ -131,5 +139,4 @@ public class AnnotationsQueryService implements Query.Service {
       return Collections.emptyList();
     }
   }
-
 }

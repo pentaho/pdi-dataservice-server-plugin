@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -131,16 +131,21 @@ public class AnnotationsQueryServiceTest {
       queryService.prepareQuery( "show annotations from annotatedService", 0, Collections.<String, String>emptyMap() );
     AnnotationsQueryService.AnnotationsQuery spy = (AnnotationsQueryService.AnnotationsQuery) Mockito.spy( query );
     final ModelAnnotationGroup mag = new ModelAnnotationGroup( new ModelAnnotation<>( new CreateMeasure() ) );
+    final Trans[] transSpy = { null };
     when( spy.getTrans( transMeta ) ).then( new Answer<Trans>() {
       @Override public Trans answer( final InvocationOnMock invocationOnMock ) throws Throwable {
         Trans trans = (Trans) invocationOnMock.callRealMethod();
+        // Keep this reference to later validate its use
+        transSpy[ 0 ] = Mockito.spy( trans );
         trans.getExtensionDataMap().put( "KEY_MODEL_ANNOTATIONS", mag );
-        return trans;
+        return transSpy[ 0 ];
       }
     } );
 
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     spy.writeTo( outputStream );
+    // PDI-18214/CDA-243: The disposal of the steps must be done
+    verify( transSpy[ 0 ] ).cleanup();
     ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( outputStream.toByteArray() );
     DataInputStream dataInputStream = new DataInputStream( byteArrayInputStream );
     ThinResultSet thinResultSet = new ThinResultFactory().loadResultSet( dataInputStream, null );
