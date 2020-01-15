@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.ui.menu;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Tree;
@@ -80,6 +81,9 @@ public class DataServicePopupMenuExtensionTest {
   private Menu menu;
 
   @Mock
+  private Display display;
+
+  @Mock
   private MenuItem menuItem;
 
   @Mock
@@ -98,6 +102,7 @@ public class DataServicePopupMenuExtensionTest {
     when( uiFactory.getMenu( any( Tree.class ) ) ).thenReturn( menu );
     TreeSelection[] treeSelection = new TreeSelection[] { selection };
     when( spoon.getTreeObjects( any( Tree.class ) ) ).thenReturn( treeSelection );
+    when( extension.getDisplay() ).thenReturn( display );
 
     dataServicePopupMenuExtension = new DataServicePopupMenuExtension( context );
   }
