@@ -27,7 +27,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.TableItem;
-import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -50,8 +49,7 @@ public class DataServiceTestResults {
   private final Composite container;
   private TableView tableView;
 
-  public DataServiceTestResults( DataServiceMeta dataService,
-                                 Composite container ) throws KettleStepException {
+  public DataServiceTestResults( DataServiceMeta dataService, Composite container ) {
     this.transMeta = dataService.getServiceTrans();
     this.container = container;
     rowMeta = new RowMeta();
@@ -80,13 +78,11 @@ public class DataServiceTestResults {
     for ( Control control : container.getChildren() ) {
       control.dispose();
     }
-    TableView tableView =
-      new TableView( transMeta, container, SWT.NONE,
-        rowMetaToColumnInfo(), rowSize, true, null,
-        PropsUI.getInstance() );
-    tableView.table.setItemCount( 0 );
-    tableView.table.addListener( SWT.KeyDown, tableKeyListener );
-    return tableView;
+    TableView result = new TableView( transMeta, container, SWT.NONE,
+      rowMetaToColumnInfo(), rowSize, true, null, PropsUI.getInstance() );
+    result.table.setItemCount( 0 );
+    result.table.addListener( SWT.KeyDown, tableKeyListener );
+    return result;
   }
 
   public void updateTableView( List<Object[]> rows ) {
