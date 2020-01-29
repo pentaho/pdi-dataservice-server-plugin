@@ -1,8 +1,8 @@
-/*! ******************************************************************************
+/*******************************************************************************
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2020 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -19,7 +19,6 @@
  * limitations under the License.
  *
  ******************************************************************************/
-
 package org.pentaho.di.trans.dataservice.ui;
 
 import org.eclipse.swt.widgets.Listener;
@@ -42,8 +41,7 @@ import org.pentaho.di.ui.core.widget.TableView;
 import java.util.List;
 
 /**
- * Encapsulation of a TableView for displaying results within
- * the DataServiceTestDialog.
+ * Encapsulation of a TableView for displaying results within the DataServiceTestDialog.
  */
 public class DataServiceTestResults {
 
@@ -95,8 +93,8 @@ public class DataServiceTestResults {
     int itemCount = tableView.table.getItemCount();
     for ( int i = 0; i < rows.size(); i++ ) {
       TableItem item = i < itemCount
-          ? tableView.table.getItem( i )
-          : new TableItem( tableView.table, SWT.NONE );
+        ? tableView.table.getItem( i )
+        : new TableItem( tableView.table, SWT.NONE );
       applyRowDataToTableItem( rows.get( i ), item );
     }
     tableView.table.setItemCount( rows.size() );
@@ -106,7 +104,7 @@ public class DataServiceTestResults {
   private void applyRowDataToTableItem( Object[] rowData, TableItem item ) {
     assert rowData.length == rowMeta.size();
     for ( int colNr = 0; colNr < rowMeta.size(); colNr++ ) {
-      String cellText = getCellTextFromObj( rowData[colNr], rowMeta.getValueMeta( colNr ) );
+      String cellText = getCellTextFromObj( rowData[ colNr ], rowMeta.getValueMeta( colNr ) );
       setCellText( colNr, cellText, item );
     }
   }
@@ -123,23 +121,18 @@ public class DataServiceTestResults {
 
   private String getCellTextFromObj( Object object, ValueMetaInterface valueMeta ) {
     try {
-      if ( valueMeta.isStorageBinaryString() ) {
-        return valueMeta.getStorageMetadata().getString(
-          valueMeta.convertBinaryStringToNativeType( (byte[]) object ) );
-      } else {
-        return valueMeta.getString( object );
-      }
+      return valueMeta.getString( object );
     } catch ( KettleValueException valueException ) {
       return "ERROR: " + valueException.getMessage();
     }
   }
 
   private ColumnInfo[] rowMetaToColumnInfo() {
-    ColumnInfo[] columnInfo = new ColumnInfo[rowMeta.size()];
+    ColumnInfo[] columnInfo = new ColumnInfo[ rowMeta.size() ];
     for ( int i = 0; i < columnInfo.length; i++ ) {
       ValueMetaInterface valueMeta = rowMeta.getValueMeta( i );
-      columnInfo[i] = new ColumnInfo( valueMeta.getName(), ColumnInfo.COLUMN_TYPE_TEXT, false, true );
-      columnInfo[i].setValueMeta( valueMeta );
+      columnInfo[ i ] = new ColumnInfo( valueMeta.getName(), ColumnInfo.COLUMN_TYPE_TEXT, false, true );
+      columnInfo[ i ].setValueMeta( valueMeta );
     }
     return columnInfo;
   }
