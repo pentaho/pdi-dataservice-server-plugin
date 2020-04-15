@@ -21,6 +21,7 @@
  ******************************************************************************/
 package org.pentaho.di.trans.dataservice.ui;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.eclipse.swt.widgets.Listener;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.eclipse.swt.SWT;
@@ -115,7 +116,8 @@ public class DataServiceTestResults {
     tableItem.setText( colNr + 1, cellText );
   }
 
-  private String getCellTextFromObj( Object object, ValueMetaInterface valueMeta ) {
+  @VisibleForTesting
+  String getCellTextFromObj( Object object, ValueMetaInterface valueMeta ) {
     try {
       return valueMeta.getString( object );
     } catch ( KettleValueException valueException ) {
