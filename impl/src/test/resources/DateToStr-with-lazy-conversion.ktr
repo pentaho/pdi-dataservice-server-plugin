@@ -6,6 +6,7 @@
     <extended_description/>
     <trans_version/>
     <trans_type>Normal</trans_type>
+    <trans_status>0</trans_status>
     <directory>/</directory>
     <parameters>
     </parameters>
@@ -123,11 +124,6 @@
           <enabled>N</enabled>
           <name>CLIENT</name>
         </field>
-        <field>
-          <id>TIMEOUT</id>
-          <enabled>N</enabled>
-          <name>TIMEOUT</name>
-        </field>
       </trans-log-table>
       <perf-log-table>
         <connection/>
@@ -210,11 +206,6 @@
           <enabled>Y</enabled>
           <name>OUTPUT_BUFFER_ROWS</name>
         </field>
-        <field>
-          <id>TIMEOUT</id>
-          <enabled>N</enabled>
-          <name>TIMEOUT</name>
-        </field>
       </perf-log-table>
       <channel-log-table>
         <connection/>
@@ -280,11 +271,6 @@
           <id>ROOT_CHANNEL_ID</id>
           <enabled>Y</enabled>
           <name>ROOT_CHANNEL_ID</name>
-        </field>
-        <field>
-          <id>TIMEOUT</id>
-          <enabled>N</enabled>
-          <name>TIMEOUT</name>
         </field>
       </channel-log-table>
       <step-log-table>
@@ -362,11 +348,6 @@
           <enabled>N</enabled>
           <name>LOG_FIELD</name>
         </field>
-        <field>
-          <id>TIMEOUT</id>
-          <enabled>N</enabled>
-          <name>TIMEOUT</name>
-        </field>
       </step-log-table>
       <metrics-log-table>
         <connection/>
@@ -418,11 +399,6 @@
           <enabled>Y</enabled>
           <name>METRICS_VALUE</name>
         </field>
-        <field>
-          <id>TIMEOUT</id>
-          <enabled>N</enabled>
-          <name>TIMEOUT</name>
-        </field>
       </metrics-log-table>
     </log>
     <maxdate>
@@ -452,16 +428,568 @@
     <clusterschemas>
     </clusterschemas>
     <created_user>-</created_user>
-    <created_date>2020/04/16 11:20:52.350</created_date>
+    <created_date>2018/06/27 10:44:10.670</created_date>
     <modified_user>-</modified_user>
-    <modified_date>2020/04/16 11:20:52.350</modified_date>
-    <key_for_session_key/>
+    <modified_date>2018/06/27 10:44:10.670</modified_date>
+    <key_for_session_key>H4sIAAAAAAAAAAMAAAAAAAAAAAA=</key_for_session_key>
     <is_key_private>N</is_key_private>
   </info>
   <notepads>
   </notepads>
   <order>
+    <hop>
+      <from>Set Conversion</from>
+      <to>DateToStr</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>DateToStr</from>
+      <to>Where filter</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Where filter</from>
+      <to>DateToStr - Remove temporary fields</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>DateToStr - Remove temporary fields</from>
+      <to>Select values</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Select values</from>
+      <to>Sample rows</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Sample rows</from>
+      <to>RESULT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Data Grid</from>
+      <to>Set Conversion</to>
+      <enabled>N</enabled>
+    </hop>
   </order>
+  <step>
+    <name>Data Grid</name>
+    <type>DataGrid</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <name>date</name>
+        <type>Date</type>
+        <format>yyyy</format>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+      <field>
+        <name>timestamp</name>
+        <type>Timestamp</type>
+        <format>yyyy/MM/dd HH:mm:ss.SSS</format>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+      <field>
+        <name>date_tmz</name>
+        <type>Date</type>
+        <format>yyyy-MM-dd'T'HH:mm:ss.SSSSX</format>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+      <field>
+        <name>number</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+      <field>
+        <name>date_time</name>
+        <type>Date</type>
+        <format>yyyy/MM/dd HH:mm</format>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+      <field>
+        <name>timst</name>
+        <type>Timestamp</type>
+        <format>yyyy-MM-dd</format>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+    </fields>
+    <data>
+      <line>
+        <item>2018</item>
+        <item>2015/12/30 00:00:00.000</item>
+        <item>2015-12-31T10:00:00.000-10</item>
+        <item>10</item>
+        <item>2018/05/23 09:00</item>
+        <item>2015-01-01</item>
+      </line>
+      <line>
+        <item>2019</item>
+        <item>2016/01/01 00:00:00.000</item>
+        <item>2015-10-31T23:00:00.000-10</item>
+        <item>12</item>
+        <item>2018/05/23 10:00</item>
+        <item>2015-01-02</item>
+      </line>
+      <line>
+        <item>2017</item>
+        <item>1015/12/30 01:00:00.00</item>
+        <item>2015-12-31T10:00:00.000-07</item>
+        <item>7</item>
+        <item>2018/05/23 11:00</item>
+        <item>2016-01-01</item>
+      </line>
+    </data>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>160</xloc>
+      <yloc>224</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>DateToStr</name>
+    <type>Calculator</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <failIfNoFile>N</failIfNoFile>
+    <calculation>
+      <field_name>__date_to_str_date_yyy</field_name>
+      <calc_type>COPY_FIELD</calc_type>
+      <field_a>date_tmz</field_a>
+      <field_b/>
+      <field_c/>
+      <value_type>String</value_type>
+      <value_length>0</value_length>
+      <value_precision>0</value_precision>
+      <remove>N</remove>
+      <conversion_mask>yyyy-MM-dd'T'HH:mm:ss.SSSSX</conversion_mask>
+      <decimal_symbol/>
+      <grouping_symbol/>
+      <currency_symbol/>
+    </calculation>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>250</xloc>
+      <yloc>50</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>DateToStr - Remove temporary fields</name>
+    <type>SelectValues</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <select_unspecified>N</select_unspecified>
+      <remove>
+        <name>__date_to_str_date_yyy</name>
+      </remove>
+    </fields>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>496</xloc>
+      <yloc>48</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Injector</name>
+    <type>Injector</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <name>date</name>
+        <type>Date</type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>timestamp</name>
+        <type>Timestamp</type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>date_tmz</name>
+        <type>Date</type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>number</name>
+        <type>Number</type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>date_time</name>
+        <type>Date</type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>timst</name>
+        <type>Timestamp</type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+    </fields>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>50</xloc>
+      <yloc>50</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>RESULT</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>832</xloc>
+      <yloc>48</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Sample rows</name>
+    <type>SampleRows</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <linesrange>1..100</linesrange>
+    <linenumfield/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>752</xloc>
+      <yloc>48</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Select values</name>
+    <type>SelectValues</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <name>date</name>
+      </field>
+      <field>
+        <name>timestamp</name>
+      </field>
+      <field>
+        <name>date_tmz</name>
+      </field>
+      <field>
+        <name>number</name>
+      </field>
+      <field>
+        <name>date_time</name>
+      </field>
+      <field>
+        <name>timst</name>
+      </field>
+      <select_unspecified>N</select_unspecified>
+    </fields>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>656</xloc>
+      <yloc>48</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Set Conversion</name>
+    <type>SelectValues</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <select_unspecified>N</select_unspecified>
+      <meta>
+        <name>date</name>
+        <rename>date</rename>
+        <type>None</type>
+        <length>-2</length>
+        <precision>-2</precision>
+        <conversion_mask>yyyy-MM-dd</conversion_mask>
+        <date_format_lenient>false</date_format_lenient>
+        <date_format_locale/>
+        <date_format_timezone/>
+        <lenient_string_to_number>false</lenient_string_to_number>
+        <encoding/>
+        <decimal_symbol/>
+        <grouping_symbol/>
+        <currency_symbol/>
+        <storage_type/>
+      </meta>
+      <meta>
+        <name>timestamp</name>
+        <rename>timestamp</rename>
+        <type>None</type>
+        <length>-2</length>
+        <precision>-2</precision>
+        <conversion_mask>yyyy-MM-dd HH:mm:ss.SSS</conversion_mask>
+        <date_format_lenient>false</date_format_lenient>
+        <date_format_locale/>
+        <date_format_timezone/>
+        <lenient_string_to_number>false</lenient_string_to_number>
+        <encoding/>
+        <decimal_symbol/>
+        <grouping_symbol/>
+        <currency_symbol/>
+        <storage_type/>
+      </meta>
+      <meta>
+        <name>date_tmz</name>
+        <rename>date_tmz</rename>
+        <type>None</type>
+        <length>-2</length>
+        <precision>-2</precision>
+        <conversion_mask>yyyy-MM-dd'T'HH:mm:ss.SSSSX</conversion_mask>
+        <date_format_lenient>false</date_format_lenient>
+        <date_format_locale/>
+        <date_format_timezone/>
+        <lenient_string_to_number>false</lenient_string_to_number>
+        <encoding/>
+        <decimal_symbol/>
+        <grouping_symbol/>
+        <currency_symbol/>
+        <storage_type/>
+      </meta>
+      <meta>
+        <name>number</name>
+        <rename>number</rename>
+        <type>None</type>
+        <length>-2</length>
+        <precision>-2</precision>
+        <conversion_mask>###0.###</conversion_mask>
+        <date_format_lenient>false</date_format_lenient>
+        <date_format_locale/>
+        <date_format_timezone/>
+        <lenient_string_to_number>false</lenient_string_to_number>
+        <encoding/>
+        <decimal_symbol/>
+        <grouping_symbol/>
+        <currency_symbol/>
+        <storage_type/>
+      </meta>
+      <meta>
+        <name>date_time</name>
+        <rename>date_time</rename>
+        <type>None</type>
+        <length>-2</length>
+        <precision>-2</precision>
+        <conversion_mask>yyyy-MM-dd</conversion_mask>
+        <date_format_lenient>false</date_format_lenient>
+        <date_format_locale/>
+        <date_format_timezone/>
+        <lenient_string_to_number>false</lenient_string_to_number>
+        <encoding/>
+        <decimal_symbol/>
+        <grouping_symbol/>
+        <currency_symbol/>
+        <storage_type/>
+      </meta>
+      <meta>
+        <name>timst</name>
+        <rename>timst</rename>
+        <type>None</type>
+        <length>-2</length>
+        <precision>-2</precision>
+        <conversion_mask>yyyy-MM-dd HH:mm:ss.SSS</conversion_mask>
+        <date_format_lenient>false</date_format_lenient>
+        <date_format_locale/>
+        <date_format_timezone/>
+        <lenient_string_to_number>false</lenient_string_to_number>
+        <encoding/>
+        <decimal_symbol/>
+        <grouping_symbol/>
+        <currency_symbol/>
+        <storage_type/>
+      </meta>
+    </fields>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>150</xloc>
+      <yloc>50</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Where filter</name>
+    <type>FilterRows</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <send_true_to/>
+    <send_false_to/>
+    <compare>
+      <condition>
+        <negated>N</negated>
+        <leftvalue>__date_to_str_date_yyy</leftvalue>
+        <function>&gt;=</function>
+        <rightvalue/>
+        <value>
+          <name>Constant</name>
+          <type>String</type>
+          <text>2015-12-31T20:00:00.0000Z</text>
+          <length>-1</length>
+          <precision>-1</precision>
+          <isnull>N</isnull>
+          <mask/>
+        </value>
+      </condition>
+    </compare>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>350</xloc>
+      <yloc>50</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
   <step>
     <name>CSV file input</name>
     <type>CsvInput</type>
@@ -485,7 +1013,6 @@
     <add_filename_result>N</add_filename_result>
     <parallel>N</parallel>
     <newline_possible>N</newline_possible>
-    <format/>
     <encoding/>
     <fields>
       <field>
@@ -753,7 +1280,6 @@
         <trim_type>none</trim_type>
       </field>
     </fields>
-    <attributes/>
     <cluster_schema/>
     <remotesteps>
       <input>
@@ -762,8 +1288,8 @@
       </output>
     </remotesteps>
     <GUI>
-      <xloc>48</xloc>
-      <yloc>16</yloc>
+      <xloc>400</xloc>
+      <yloc>224</yloc>
       <draw>Y</draw>
     </GUI>
   </step>
@@ -776,43 +1302,15 @@
     <group>
       <name>METASTORE.pentaho</name>
       <attribute>
-        <key>Snowflake Staging VFS Connection</key>
-        <value>{"namespace":"pentaho","id":"Snowflake Staging VFS Connection","name":"Snowflake Staging VFS Connection","description":"Defines the connection details for a Snowflake staging area VFS connection","metaStoreName":null}</value>
-      </attribute>
-      <attribute>
-        <key>Amazon S3 Connection</key>
-        <value>{"namespace":"pentaho","id":"Amazon S3 Connection","name":"Amazon S3 Connection","description":"Defines the connection details for an Amazon S3 connection","metaStoreName":null}</value>
+        <key>Kettle Data Service</key>
+        <value>{"namespace":"pentaho","id":"Kettle Data Service","name":"Kettle Data Service","description":"The elements describing data services based upon transformation output","metaStoreName":null}</value>
       </attribute>
     </group>
     <group>
-      <name>{"_":"Embedded MetaStore Elements","namespace":"pentaho","type":"Amazon S3 Connection"}</name>
-      <attribute>
-        <key>AmazonS3</key>
-        <value>{"children":[{"children":[],"id":"credentialsFile","value":"Encrypted 5b64656661756c745d0a6177735f6163636573735f6b65795f6964203d204153494158554a33545a5a5042443756434f33530a6177735f7365637265745f6163636573735f6b6579203d2032576f425477776b717333696567304835527657692b73525643664d34787a574e45384e7951376f0a6177735f73657373696f6e5f746f6b656e203d2046776f475a5849765958647a454655614442596a394d62474d70466f42316c7566694c3341657349373139583253387053716271495a466d6870745064666c3631334c6c6947796966337973795377414b35674d2f536b6d36397764646e6d57786371346e715562442f576862615637467967775134506b732f302f2b715a7757433555434d2f6c69734a324e6b30737034365769354f6a444a3147775271586479696d67357a47756e6e4c59736332455359796f47456f7452497549424d48313547314c57584e6237302b39306d2b6331545461687274566369314770423737497767577668794d62616f576761625a4974422f35732f71665133514b36615233364f307a39672b55456e372b506a79446970306d747538544551726967375674706f5666544277334b534f77575362692f67333859494e6b56756a347a6d674136752f5754397931795a436757594757664d494c737830315956714a3051395635764b736a785a354c67506b456f674c4848385155794b30727a524f736f7469514732504c6d393644622b556e385471704452532f6b416c63472f6e68694152637a482defd7f59d1e97c28d9b4bf96acdcfc5b0"},{"children":[],"id":"profileName","value":"default"},{"children":[],"id":"secretKey","value":null},{"children":[],"id":"accessKey","value":null},{"children":[],"id":"name","value":"AmazonS3"},{"children":[],"id":"sessionToken","value":null},{"children":[],"id":"credentialsFilePath","value":"/home/bbruno/.aws/credentials"},{"children":[],"id":"description","value":null},{"children":[],"id":"authType","value":"1"},{"children":[],"id":"region","value":"us-east-1"}],"id":"AmazonS3","value":null,"name":"AmazonS3","owner":null,"ownerPermissionsList":[]}</value>
-      </attribute>
-      <attribute>
-        <key>EMR524Secure_S3</key>
-        <value>{"children":[{"children":[],"id":"credentialsFile","value":"Encrypted 5b64656661756c745d0a6177735f6163636573735f6b65795f6964203d204153494158554a33545a5a504f58554d4444434f0a6177735f7365637265745f6163636573735f6b6579203d2049616d4d4a464138666a3335553034743146583635414673614662744b6f78645a2f376863592b620a6177735f73657373696f6e5f746f6b656e203d2046776f475a5849765958647a4546386144502f4f5a6c444c457335585774415569794c3941537669364c516c42566a75346f756c4578446e323546437330762b68306a4777513161764c446e4b5341564b574b6e342f6953683178722f546542362b422b382f416b78556265542f72474c35574441542b62593749766e4b45736f5841667341626832686a796b38733363577a4a396163664f795a54694e454974366a474e647849536d5179516147757957506c66576d446d45767856636a6b53554177686653786351526334506d77623342334e3967476165684a454c494c4a2b41664b2b662f48532b6a2b457132713058354a6a63663579743735344f6b6e37545953464a4b31514a694a2f4a49507049505737665979524b6b70453454377833634b434b4b4c2b59386f50734843305834383070324b4d565a315555734362654e7a6f7a67364c464677474f384e30756e775852647a7a4868795a686d53536c68362f70346c736655414c39376e4b2f425562636f7839546f377755794b36354c5a3477556158644c77626951585144444735684879625749756b3642444d504b30505232376156317446c7e9cefd10ec87adfa1ead58ddcfc5b0"},{"children":[],"id":"profileName","value":"default"},{"children":[],"id":"secretKey","value":null},{"children":[],"id":"accessKey","value":null},{"children":[],"id":"name","value":"EMR524Secure_S3"},{"children":[],"id":"sessionToken","value":null},{"children":[],"id":"credentialsFilePath","value":"C:\\Users\\Administrator\\.aws\\credentials"},{"children":[],"id":"description","value":null},{"children":[],"id":"authType","value":"1"},{"children":[],"id":"region","value":"us-east-1"}],"id":"EMR524Secure_S3","value":null,"name":"EMR524Secure_S3","owner":null,"ownerPermissionsList":[]}</value>
-      </attribute>
-      <attribute>
-        <key>Ezequiel S3</key>
-        <value>{"children":[{"children":[],"id":"credentialsFile","value":"Encrypted 5b64656661756c745d0a6177735f6163636573735f6b65795f6964203d204153494158554a33545a5a50414c4d59374f55470a6177735f7365637265745f6163636573735f6b6579203d2038456f4d547a71356b4e6b397369524a456a7541476c6f61583533447645434d344b6d4b386f6e7a0a726567696f6e203d2075732d656173742d310a6177735f73657373696f6e5f746f6b656e203d2046516f475a5849765958647a454c6e2f2f2f2f2f2f2f2f2f2f7745614444796a52622f46464f6168704652666c694c47416b435a46714243513369682f30636942446b726e4d4556754e52372b36526d756458303266376248654652397275664c7a384c45612b46316179436e674b34394143422b3970622f512f65316232534c5668494b33736d54664c4c53334d47367471325250534f5146596e77527a505549394470375254744d59323262642b4f4d52586331746853556c6e63466653612b4e536478445136417335526b6734744b57614d7a475445756f6b64724e6e6535557730614633513146565a4b52525a3342694a71646957673848574b5133432b4d4a526c4d73543668735a417367704c45533369304e48527a6d7133776e67585539574a3161666e53675a30366d4c736f6e78487a4447786364674372734675733045414735575a6872676c4e496344354d706d46784371314c4436573677797630455449756f48376241494f78394165646e6a7377416d6f4c4f497630764573315558764c6c784d78775733416177667276524b562b76396f2b7532555170525767457374426e41553332666e76746e582b4d49612b65486a2b4b61716d38657851466c34387a2b303074364c2f4b75627a41302b6a2f4d3841308eed9a9b38ccb9b4882aa175d1b4c5b0"},{"children":[],"id":"profileName","value":"default"},{"children":[],"id":"secretKey","value":null},{"children":[],"id":"accessKey","value":null},{"children":[],"id":"name","value":"Ezequiel S3"},{"children":[],"id":"sessionToken","value":null},{"children":[],"id":"credentialsFilePath","value":"C:\\Users\\ezecuellarojeda\\.aws\\credentials"},{"children":[],"id":"description","value":null},{"children":[],"id":"authType","value":"1"},{"children":[],"id":"region","value":null}],"id":"Ezequiel S3","value":null,"name":"Ezequiel S3","owner":null,"ownerPermissionsList":[]}</value>
-      </attribute>
+      <name>explorerState</name>
     </group>
     <group>
-      <name>{"_":"Embedded MetaStore Elements","namespace":"pentaho","type":"Snowflake Staging VFS Connection"}</name>
-      <attribute>
-        <key>Snowflake Stage</key>
-        <value>{"children":[{"children":[],"id":"schema","value":"Public"},{"children":[],"id":"database","value":"Bruno_db"},{"children":[],"id":"password","value":"Encrypted 2be98afc86aa7f2e48f4abc7edd9fa488"},{"children":[],"id":"port","value":"443"},{"children":[],"id":"host","value":"hitachi_vantara_partner.snowflakecomputing.com"},{"children":[],"id":"name","value":"Snowflake Stage"},{"children":[],"id":"description","value":null},{"children":[],"id":"username","value":"MCAMPBELL"}],"id":"Snowflake Stage","value":null,"name":"Snowflake Stage","owner":null,"ownerPermissionsList":[]}</value>
-      </attribute>
-      <attribute>
-        <key>Ezequiel VFS Connection</key>
-        <value>{"children":[{"children":[],"id":"schema","value":"PUBLIC"},{"children":[],"id":"database","value":"EZE_DB"},{"children":[],"id":"password","value":"Encrypted 2be98afc86aa7f2b0aa14be79dd9df785"},{"children":[],"id":"port","value":"443"},{"children":[],"id":"host","value":"hitachi_vantara_partner.snowflakecomputing.com"},{"children":[],"id":"name","value":"Ezequiel VFS Connection"},{"children":[],"id":"description","value":null},{"children":[],"id":"username","value":"ecuellar"}],"id":"Ezequiel VFS Connection","value":null,"name":"Ezequiel VFS Connection","owner":null,"ownerPermissionsList":[]}</value>
-      </attribute>
-      <attribute>
-        <key>SnowflakeTest_DB</key>
-        <value>{"children":[{"children":[],"id":"schema","value":"Public"},{"children":[],"id":"database","value":"TEST_DB"},{"children":[],"id":"password","value":"Encrypted 2be98afc86aa7f2e48f4abc7edd9fa488"},{"children":[],"id":"port","value":"443"},{"children":[],"id":"host","value":"hitachi_vantara_partner.snowflakecomputing.com"},{"children":[],"id":"name","value":"SnowflakeTest_DB"},{"children":[],"id":"description","value":null},{"children":[],"id":"username","value":"MCAMPBELL"}],"id":"SnowflakeTest_DB","value":null,"name":"SnowflakeTest_DB","owner":null,"ownerPermissionsList":[]}</value>
-      </attribute>
+      <name>{"_":"Embedded MetaStore Elements","namespace":"pentaho","type":"Kettle Data Service"}</name>
     </group>
   </attributes>
 </transformation>
