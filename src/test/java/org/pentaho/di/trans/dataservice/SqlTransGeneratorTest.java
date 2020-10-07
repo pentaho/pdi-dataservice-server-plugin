@@ -22,12 +22,18 @@
 
 package org.pentaho.di.trans.dataservice;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettlePluginException;
+import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaBigNumber;
 import org.pentaho.di.core.row.value.ValueMetaDate;
 import org.pentaho.di.core.row.value.ValueMetaInteger;
+import org.pentaho.di.core.row.value.ValueMetaNumber;
+import org.pentaho.di.core.row.value.ValueMetaPluginType;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.TransMeta;
@@ -40,15 +46,21 @@ import java.util.Arrays;
 import java.util.Calendar;
 
 import static junit.framework.TestCase.fail;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NONE;
+import static org.pentaho.di.core.row.ValueMetaInterface.TYPE_NUMBER;
 
 public class SqlTransGeneratorTest {
+
+  @Before
+  public void before() throws KettlePluginException {
+    PluginRegistry.addPluginType( ValueMetaPluginType.getInstance() );
+    PluginRegistry.init();
+  }
 
   @Test
   public void testGenTransUsingSqlWithAggAndAliases() throws KettleException {
@@ -97,6 +109,27 @@ public class SqlTransGeneratorTest {
     SelectValuesMeta selectValuesMeta = getSelectStepValuesMeta( generator.generateTransMeta() );
     assertThat( selectValuesMeta.getSelectName(), equalTo( new String[] { "c1", "c2", "c3" } ) );
     assertThat( selectValuesMeta.getSelectRename(), equalTo( new String[] { null, null, null } ) );
+  }
+
+  @Test
+  public void testTypeHandlingWithAvg() throws KettleException {
+    SQL sql = new SQL( "SELECT avg( intVal ), avg( numericVal ), avg( bigNumber)  FROM table" );
+    RowMetaInterface rowMeta = new RowMeta();
+    rowMeta.addValueMeta( new ValueMetaInteger( "intVal" ) );
+    rowMeta.addValueMeta( new ValueMetaNumber( "numericVal" ) );
+    rowMeta.addValueMeta( new ValueMetaBigNumber( "bigNumber" ) );
+    sql.parse( rowMeta );
+
+    SqlTransGenerator generator = new SqlTransGenerator( sql, 0 );
+    SelectValuesMeta meta =
+      (SelectValuesMeta) getStepByName( generator.generateTransMeta(), "Set Conversion" );
+    assertThat( meta.getMeta().length, is( 3 ) );
+    // Integer should be converted to TYPE_NUMBER
+    assertThat( meta.getMeta()[0].getType(), is( TYPE_NUMBER ) );
+
+    // Other types should be left alone ( SelectMetadataChange.getType remains TYPE_NONE )
+    assertThat( meta.getMeta()[1].getType(), is( TYPE_NONE ) );
+    assertThat( meta.getMeta()[2].getType(), is( TYPE_NONE ) );
   }
 
   @Test
