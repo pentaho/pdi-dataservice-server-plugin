@@ -1,8 +1,8 @@
-/*! ******************************************************************************
+/*******************************************************************************
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2020 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -19,16 +19,15 @@
  * limitations under the License.
  *
  ******************************************************************************/
-
 package org.pentaho.di.trans.dataservice.ui;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.eclipse.swt.widgets.Listener;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.TableItem;
-import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -42,8 +41,7 @@ import org.pentaho.di.ui.core.widget.TableView;
 import java.util.List;
 
 /**
- * Encapsulation of a TableView for displaying results within
- * the DataServiceTestDialog.
+ * Encapsulation of a TableView for displaying results within the DataServiceTestDialog.
  */
 public class DataServiceTestResults {
 
@@ -52,8 +50,7 @@ public class DataServiceTestResults {
   private final Composite container;
   private TableView tableView;
 
-  public DataServiceTestResults( DataServiceMeta dataService,
-                                 Composite container ) throws KettleStepException {
+  public DataServiceTestResults( DataServiceMeta dataService, Composite container ) {
     this.transMeta = dataService.getServiceTrans();
     this.container = container;
     rowMeta = new RowMeta();
@@ -82,21 +79,19 @@ public class DataServiceTestResults {
     for ( Control control : container.getChildren() ) {
       control.dispose();
     }
-    TableView tableView =
-      new TableView( transMeta, container, SWT.NONE,
-        rowMetaToColumnInfo(), rowSize, true, null,
-        PropsUI.getInstance() );
-    tableView.table.setItemCount( 0 );
-    tableView.table.addListener( SWT.KeyDown, tableKeyListener );
-    return tableView;
+    TableView result = new TableView( transMeta, container, SWT.NONE,
+      rowMetaToColumnInfo(), rowSize, true, null, PropsUI.getInstance() );
+    result.table.setItemCount( 0 );
+    result.table.addListener( SWT.KeyDown, tableKeyListener );
+    return result;
   }
 
   public void updateTableView( List<Object[]> rows ) {
     int itemCount = tableView.table.getItemCount();
     for ( int i = 0; i < rows.size(); i++ ) {
       TableItem item = i < itemCount
-          ? tableView.table.getItem( i )
-          : new TableItem( tableView.table, SWT.NONE );
+        ? tableView.table.getItem( i )
+        : new TableItem( tableView.table, SWT.NONE );
       applyRowDataToTableItem( rows.get( i ), item );
     }
     tableView.table.setItemCount( rows.size() );
@@ -106,7 +101,7 @@ public class DataServiceTestResults {
   private void applyRowDataToTableItem( Object[] rowData, TableItem item ) {
     assert rowData.length == rowMeta.size();
     for ( int colNr = 0; colNr < rowMeta.size(); colNr++ ) {
-      String cellText = getCellTextFromObj( rowData[colNr], rowMeta.getValueMeta( colNr ) );
+      String cellText = getCellTextFromObj( rowData[ colNr ], rowMeta.getValueMeta( colNr ) );
       setCellText( colNr, cellText, item );
     }
   }
@@ -121,25 +116,21 @@ public class DataServiceTestResults {
     tableItem.setText( colNr + 1, cellText );
   }
 
-  private String getCellTextFromObj( Object object, ValueMetaInterface valueMeta ) {
+  @VisibleForTesting
+  String getCellTextFromObj( Object object, ValueMetaInterface valueMeta ) {
     try {
-      if ( valueMeta.isStorageBinaryString() ) {
-        return valueMeta.getStorageMetadata().getString(
-          valueMeta.convertBinaryStringToNativeType( (byte[]) object ) );
-      } else {
-        return valueMeta.getString( object );
-      }
+      return valueMeta.getString( object );
     } catch ( KettleValueException valueException ) {
       return "ERROR: " + valueException.getMessage();
     }
   }
 
   private ColumnInfo[] rowMetaToColumnInfo() {
-    ColumnInfo[] columnInfo = new ColumnInfo[rowMeta.size()];
+    ColumnInfo[] columnInfo = new ColumnInfo[ rowMeta.size() ];
     for ( int i = 0; i < columnInfo.length; i++ ) {
       ValueMetaInterface valueMeta = rowMeta.getValueMeta( i );
-      columnInfo[i] = new ColumnInfo( valueMeta.getName(), ColumnInfo.COLUMN_TYPE_TEXT, false, true );
-      columnInfo[i].setValueMeta( valueMeta );
+      columnInfo[ i ] = new ColumnInfo( valueMeta.getName(), ColumnInfo.COLUMN_TYPE_TEXT, false, true );
+      columnInfo[ i ].setValueMeta( valueMeta );
     }
     return columnInfo;
   }

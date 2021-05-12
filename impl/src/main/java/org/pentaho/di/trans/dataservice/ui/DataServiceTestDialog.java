@@ -31,7 +31,6 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.metrics.MetricsDuration;
 import org.pentaho.di.core.metrics.MetricsUtil;
@@ -49,15 +48,17 @@ import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.swt.SwtXulLoader;
 import org.pentaho.ui.xul.swt.SwtXulRunner;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class DataServiceTestDialog implements java.io.Serializable {
-  public static Class<?> PKG = DataServiceTestDialog.class;
-
+public class DataServiceTestDialog {
+  private static final Logger LOG = LoggerFactory.getLogger( DataServiceTestDialog.class );
+  private static final Class<?> PKG = DataServiceTestDialog.class;
   private static final String XUL_PATH = "org/pentaho/di/trans/dataservice/ui/xul/dataservice-test-dialog.xul";
   private static final String XUL_DIALOG_ID = "dataservice-test-dialog";
   private static final String GENTRANS_LOG_XUL_ID = "genTrans-log-tab";
@@ -89,7 +90,8 @@ public class DataServiceTestDialog implements java.io.Serializable {
     }
   };
 
-  public DataServiceTestDialog( Shell parent, DataServiceMeta dataService, DataServiceContext context ) throws KettleException {
+  public DataServiceTestDialog( Shell parent, DataServiceMeta dataService, DataServiceContext context )
+    throws KettleException {
     try {
       dataServiceTestController = new DataServiceTestController( model, dataService, context );
     } catch ( KettleException ke ) {
@@ -123,7 +125,7 @@ public class DataServiceTestDialog implements java.io.Serializable {
     return (Composite) xulDocument.getElementById( elementId ).getManagedObject();
   }
 
-  public void open() throws KettleException {
+  public void open() {
     dialog.show();
   }
 
@@ -135,7 +137,7 @@ public class DataServiceTestDialog implements java.io.Serializable {
     dialog.dispose();
   }
 
-  private DataServiceTestResults initDataServiceResultsView( DataServiceMeta dataService ) throws KettleStepException {
+  private DataServiceTestResults initDataServiceResultsView( DataServiceMeta dataService ) {
 
     Composite results = getComposite( QUERY_RESULTS_XUL_ID );
     results.setLayout( new FillLayout() );
@@ -170,8 +172,9 @@ public class DataServiceTestDialog implements java.io.Serializable {
         }
 
         private void updateMetrics() {
-          List<MetricsDuration> genTransMetrics = MetricsUtil.getAllDurations( model.getGenTransLogChannel().getLogChannelId() );
-          DataServiceTestDialog.this.genTransMetrics.display( genTransMetrics );
+          List<MetricsDuration> metrics =
+            MetricsUtil.getAllDurations( model.getGenTransLogChannel().getLogChannelId() );
+          DataServiceTestDialog.this.genTransMetrics.display( metrics );
           LogChannelInterface serviceTransLogChannel = model.getServiceTransLogChannel();
           if ( serviceTransLogChannel != null ) {
             serviceTransMetrics.display( MetricsUtil.getAllDurations( serviceTransLogChannel.getLogChannelId() ) );
@@ -220,12 +223,11 @@ public class DataServiceTestDialog implements java.io.Serializable {
 
     @Override
     public void handleEvent( Event e ) {
-
       if ( ( e.keyCode == SWT.CR && ( e.stateMask & SWT.CONTROL ) != 0 ) && dataServiceTestController != null ) {
         try {
           dataServiceTestController.executeSql();
         } catch ( KettleException e1 ) {
-          e1.printStackTrace();
+          LOG.error( "Unexpected error trying to execute SQL statement: {}", e1.getMessage(), e1 );
         }
         e.doit = !consume;
       }
