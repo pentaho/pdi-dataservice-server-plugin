@@ -31,7 +31,7 @@
       <hbox height="30">
         <!--<button label="${DriverDetailsDialog.GetDriver.Button}" onclick="driverDetailsDialogController.saveDriver()"/>-->
       <label value="Download the driver from "/>
-      <textbox value="http://nexus.pentaho.org/content/groups/omni/pentaho/pdi-dataservice-driver-bundle/9.3.0.0-SNAPSHOT/pdi-dataservice-driver-bundle-9.3.0.0-SNAPSHOT.zip" readonly="true"/>
+      <textbox value="http://nexus.pentaho.org/content/groups/omni/pentaho/pdi-dataservice-driver-bundle/9.2.0.0-SNAPSHOT/pdi-dataservice-driver-bundle-9.2.0.0-SNAPSHOT.zip" readonly="true"/>
       </hbox>
     </vbox>
     <separator height="21"/>
