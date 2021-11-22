@@ -24,6 +24,7 @@ package org.pentaho.di.trans.dataservice.ui;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.dataservice.ui.controller.DriverDetailsDialogController;
@@ -45,6 +46,7 @@ public class DriverDetailsDialog {
   public static final String XUL_DIALOG_ID = "driver-details-dialog";
 
   private static final String XUL_DIALOG_PATH = "org/pentaho/di/trans/dataservice/ui/xul/driverdetails-dialog.xul";
+  private static final String XUL_DTE_DIALOG_PATH = "org/pentaho/di/trans/dataservice/ui/xul/dte-driverdetails-dialog.xul";
   private final DriverDetailsDialogController controller;
   private final SwtDialog dialog;
   private static final Class<?> PKG = DriverDetailsDialog.class;
@@ -71,7 +73,7 @@ public class DriverDetailsDialog {
     try {
       xulLoader.setOuterContext( parent );
       xulLoader.registerClassLoader( getClass().getClassLoader() );
-      XulDomContainer container = xulLoader.loadXul( XUL_DIALOG_PATH, resourceBundle );
+      XulDomContainer container = xulLoader.loadXul( Const.isRunningOnWebspoonMode() ? XUL_DTE_DIALOG_PATH : XUL_DIALOG_PATH, resourceBundle );
       container.addEventHandler( controller );
 
       xulRunner.addContainer( container );

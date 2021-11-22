@@ -22,7 +22,9 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.DisposeEvent;
@@ -41,12 +43,9 @@ import org.pentaho.di.core.gui.Point;
 import org.pentaho.di.core.logging.MetricsPainter;
 import org.pentaho.di.core.metrics.MetricsDuration;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.trans.dataservice.ui.controller.DataServiceTestController;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.spoon.SWTGC;
-
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 
 /**
  * @author nhudak
@@ -85,7 +84,11 @@ public class DataServiceTestMetrics {
 
     canvas.addPaintListener( new PaintListener() {
       public void paintControl( final PaintEvent event ) {
-        event.gc.drawImage( refreshImage(), 0, 0 );
+        if ( Const.isRunningOnWebspoonMode() ) {
+          refreshImage( event.gc );
+        } else {
+          event.gc.drawImage( refreshImage(), 0, 0 );
+        }
       }
     } );
   }
@@ -108,6 +111,25 @@ public class DataServiceTestMetrics {
     canvas.redraw();
   }
 
+  private synchronized void refreshImage( GC gc2 ) {
+    Rectangle bounds = metricsComposite.getBounds();
+
+    String metricsMessage = BaseMessages.getString( DataServiceTestController.PKG, "DataServiceTest.MetricsPlaceholder" );
+    org.eclipse.swt.graphics.Point textExtent = new GC( canvas ).textExtent( metricsMessage );
+    if ( durations.isEmpty() ) {
+      bounds.height = textExtent.y * 2;
+      gc2.drawText( metricsMessage, ( bounds.width - textExtent.x ) / 2, textExtent.y / 2 );
+    } else {
+      // Adjust height to fit all bars
+      int barHeight = textExtent.y + 5;
+      bounds.height = Math.max( 20 + durations.size() * ( barHeight + 5 ), bounds.height );
+      SWTGC gc = new SWTGC( gc2, new Point( bounds.width, bounds.height ), PropsUI.getInstance().getIconSize() );
+      MetricsPainter painter = new MetricsPainter( gc, barHeight );
+      painter.paint( durations );
+      gc.dispose();
+    }
+  }
+
   private synchronized Image refreshImage() {
     Display device = metricsComposite.getDisplay();
     Rectangle bounds = metricsComposite.getBounds();
@@ -127,7 +149,7 @@ public class DataServiceTestMetrics {
     String metricsMessage = BaseMessages.getString( DataServiceTestController.PKG, "DataServiceTest.MetricsPlaceholder" );
     org.eclipse.swt.graphics.Point textExtent = new GC( canvas ).textExtent( metricsMessage );
     if ( durations.isEmpty() ) {
-      bounds.height =  textExtent.y * 2;
+      bounds.height = textExtent.y * 2;
       image = new Image( device, bounds.width, bounds.height );
       GC gc = new GC( image );
       gc.drawText( metricsMessage, ( bounds.width - textExtent.x ) / 2, textExtent.y / 2 );
