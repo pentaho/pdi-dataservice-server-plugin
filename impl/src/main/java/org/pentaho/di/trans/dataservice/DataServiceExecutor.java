@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -543,6 +543,13 @@ public class DataServiceExecutor {
   }
 
   private static void convertAtomicCondition( Condition condition, ValueMetaResolver resolver ) {
+
+    // Apply extra condition to remove nulls when we have some types of conditions
+    // Please check PDI-19396 and BACKLOG-18831 for more info.
+    if ( Condition.FUNC_NOT_NULL != condition.getFunction() && Condition.FUNC_NULL != condition.getFunction() ) {
+      condition.addCondition( new Condition( Condition.OPERATOR_AND, condition.getLeftValuename(), Condition.FUNC_NOT_NULL, null, null ) );
+    }
+
     // No need to convert conditions with no right side argument
     if ( condition.getRightExact() == null ) {
       return;
