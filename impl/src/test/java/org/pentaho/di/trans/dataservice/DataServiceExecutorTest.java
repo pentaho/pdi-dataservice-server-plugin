@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -990,8 +990,10 @@ public class DataServiceExecutorTest extends BaseTest {
       // verifies that each of the parameter conditions have their left and right valuename
       // set to null after executor initialization.  This prevents failure due to non-existent
       // fieldnames being present.
-      assertNull( condition.getLeftValuename() );
-      assertNull( condition.getRightValuename() );
+      // To account for the changes made by PDI-19396 and BACKLOG-18831 the condition checked
+      // by the below assertion was changed to check for the first child condition
+      assertNull( condition.getChildren().get( 0 ).getLeftValuename() );
+      assertNull( condition.getChildren().get( 0 ).getRightValuename() );
     }
 
     assertThat( executor.getParameters(), equalTo( (Map<String, String>) ImmutableMap.of(
