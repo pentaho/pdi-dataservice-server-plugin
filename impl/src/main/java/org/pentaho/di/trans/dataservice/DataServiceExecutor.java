@@ -546,8 +546,8 @@ public class DataServiceExecutor {
 
     // Apply extra condition to remove nulls when we have some types of conditions
     // Please check PDI-19396 and BACKLOG-18831 for more info.
-    if ( Condition.FUNC_NOT_NULL != condition.getFunction() && Condition.FUNC_NULL != condition.getFunction()
-      && Condition.FUNC_TRUE != condition.getFunction() && Condition.FUNC_REGEXP != condition.getFunction() ) {
+    if ( Condition.FUNC_LARGER == condition.getFunction() || Condition.FUNC_LARGER_EQUAL == condition.getFunction()
+      || Condition.FUNC_SMALLER == condition.getFunction() || Condition.FUNC_SMALLER_EQUAL == condition.getFunction() ) {
       condition.addCondition( new Condition( Condition.OPERATOR_AND, condition.getLeftValuename(), Condition.FUNC_NOT_NULL, null, null ) );
     }
 
