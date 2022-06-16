@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -36,7 +36,7 @@ import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.stores.memory.MemoryMetaStore;
-import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
+import org.pentaho.kettle.repository.locator.api.KettleRepositoryLocator;
 
 import java.util.concurrent.Executors;
 

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -23,7 +23,7 @@
 package org.pentaho.di.trans.dataservice.www;
 
 import org.pentaho.di.repository.Repository;
-import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryProvider;
+import org.pentaho.kettle.repository.locator.api.KettleRepositoryProvider;
 
 /**
  * Created by bmorrise on 9/9/16.

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,22 +22,26 @@
 
 package org.pentaho.di.trans.dataservice.clients;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import io.reactivex.Observer;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.core.service.PluginServiceLoader;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
+import org.pentaho.metastore.locator.api.MetastoreLocator;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -49,9 +53,22 @@ public class ExecutorQueryService implements Query.Service {
   private DataServiceResolver resolver;
   private MetastoreLocator metastoreLocator;
 
-  public ExecutorQueryService( DataServiceResolver resolver, MetastoreLocator metastoreLocator ) {
+  @VisibleForTesting
+  ExecutorQueryService( DataServiceResolver resolver, MetastoreLocator metastoreLocator ) {
     this.resolver = resolver;
     this.metastoreLocator = metastoreLocator;
+  }
+
+  // OSGi blueprint constructor
+  public ExecutorQueryService( DataServiceResolver resolver ) {
+    this.resolver = resolver;
+    try {
+      Collection<MetastoreLocator> metastoreLocators = PluginServiceLoader.loadServices( MetastoreLocator.class );
+      metastoreLocator = metastoreLocators.stream().findFirst().get();
+    } catch ( Exception e ) {
+      LogChannel.GENERAL.logError( "Error getting MetastoreLocator", e );
+      throw new IllegalStateException( e );
+    }
   }
 
   @Override public Query prepareQuery( String sqlString, int maxRows, Map<String, String> parameters )

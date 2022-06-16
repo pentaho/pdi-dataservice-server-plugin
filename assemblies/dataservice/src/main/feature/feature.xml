@@ -10,12 +10,7 @@
   standard pentaho-server repository loads half the world.
    We still need to confirm if metaverse needs to bring anything else along. -->
   <feature name="pentaho-metaverse-core" version="${project.version}">
-    <configfile finalname="/etc/pentaho.metaverse.cfg">
-      mvn:pentaho/pentaho-osgi-config/${project.version}/cfg/pentaho-metaverse
-    </configfile>
-
     <feature>pentaho-fasterxml</feature>
     <feature>pentaho-tinkerpop-gremlin</feature>
-    <bundle>mvn:pentaho/pentaho-metaverse-core/${project.version}</bundle>
   </feature>
 </features>
