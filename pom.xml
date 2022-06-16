@@ -160,12 +160,12 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>pentaho</groupId>
+        <groupId>org.pentaho.di.plugins</groupId>
         <artifactId>pentaho-kettle-repository-locator-api</artifactId>
         <version>${pdi.version}</version>
       </dependency>
       <dependency>
-        <groupId>pentaho</groupId>
+        <groupId>org.pentaho.di.plugins</groupId>
         <artifactId>pentaho-metastore-locator-api</artifactId>
         <version>${pdi.version}</version>
       </dependency>
@@ -246,7 +246,7 @@
       <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
-	<version>${commons-io.version}</version>
+        <version>${commons-io.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-collections</groupId>

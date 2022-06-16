@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -51,7 +51,7 @@ import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.dummytrans.DummyTransMeta;
 import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
+import org.pentaho.kettle.repository.locator.api.KettleRepositoryLocator;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
