@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,8 +24,9 @@ package org.pentaho.di.trans.dataservice.www;
 
 import org.osgi.framework.BundleContext;
 import org.pentaho.di.core.annotations.CarteServlet;
+import org.pentaho.di.core.service.PluginServiceLoader;
 import org.pentaho.di.www.BaseCartePlugin;
-import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryProvider;
+import org.pentaho.kettle.repository.locator.api.KettleRepositoryProvider;
 
 import java.io.IOException;
 
@@ -41,9 +42,7 @@ public class RepositoryPublishServlet extends BaseCartePlugin {
   public static final String CONTEXT_PATH = "/repositoryPublished";
 
   public RepositoryPublishServlet( BundleContext bundleContext ) {
-    ServletRepositoryProvider repositoryProvider =
-      new ServletRepositoryProvider( new ServletRepositoryAdapter( this ) );
-    bundleContext.registerService( KettleRepositoryProvider.class.getName(), repositoryProvider, null );
+    PluginServiceLoader.registerService( this, KettleRepositoryProvider.class, new ServletRepositoryProvider( new ServletRepositoryAdapter( this ) ), 0 );
   }
 
   @Override public void handleRequest( CarteRequest request ) throws IOException {
@@ -53,6 +52,4 @@ public class RepositoryPublishServlet extends BaseCartePlugin {
   @Override public String getContextPath() {
     return CONTEXT_PATH;
   }
-
-
 }

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -21,19 +21,14 @@
  ******************************************************************************/
 package org.pentaho.di.trans.dataservice.clients;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroup;
 import org.pentaho.agilebi.modeler.models.annotations.ModelAnnotationGroupXmlWriter;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleFileException;
+import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.value.ValueMetaString;
+import org.pentaho.di.core.service.PluginServiceLoader;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
@@ -41,7 +36,15 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
-import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
+import org.pentaho.metastore.locator.api.MetastoreLocator;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.pentaho.di.trans.dataservice.clients.TransMutators.disableAllUnrelatedHops;
 
@@ -50,8 +53,21 @@ public class AnnotationsQueryService implements Query.Service {
   private MetastoreLocator metastoreLocator;
   private DataServiceResolver resolver;
 
+
   public AnnotationsQueryService( final MetastoreLocator metastoreLocator, final DataServiceResolver resolver ) {
     this.metastoreLocator = metastoreLocator;
+    this.resolver = resolver;
+  }
+
+  // OSGi blueprint constructor
+  public AnnotationsQueryService( final DataServiceResolver resolver ) {
+    try {
+      Collection<MetastoreLocator> metastoreLocators = PluginServiceLoader.loadServices( MetastoreLocator.class );
+      metastoreLocator = metastoreLocators.stream().findFirst().get();
+    } catch ( Exception e ) {
+      LogChannel.GENERAL.logError( "Error getting MetastoreLocator", e );
+      throw new IllegalStateException( e );
+    }
     this.resolver = resolver;
   }
 

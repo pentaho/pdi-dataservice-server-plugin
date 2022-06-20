@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,8 +22,11 @@
 
 package org.pentaho.di.trans.dataservice.resolvers;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogLevel;
+import org.pentaho.di.core.service.PluginServiceLoader;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
@@ -34,11 +37,12 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
 import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
+import org.pentaho.kettle.repository.locator.api.KettleRepositoryLocator;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -62,12 +66,21 @@ public class TransientResolver implements DataServiceResolver {
   private LogLevel logLevel;
   private Supplier<Spoon> spoonSupplier;
 
-  public TransientResolver( KettleRepositoryLocator repositoryLocator, DataServiceContext context,
+  // OSGi blueprint constructor
+  public TransientResolver( DataServiceContext context,
                             ServiceCacheFactory cacheFactory, final LogLevel logLevel ) {
-    this( repositoryLocator, context, cacheFactory, logLevel, Spoon::getInstance );
+    this( null, context, cacheFactory, logLevel, Spoon::getInstance );
+    try {
+      Collection<KettleRepositoryLocator> repositoryLocators = PluginServiceLoader.loadServices( KettleRepositoryLocator.class );
+      repositoryLocator = repositoryLocators.stream().findFirst().get();
+    } catch ( Exception e ) {
+      LogChannel.GENERAL.logError( "Error getting MetastoreLocator", e );
+      throw new IllegalStateException( e );
+    }
   }
 
-  public TransientResolver( KettleRepositoryLocator repositoryLocator, DataServiceContext context,
+  @VisibleForTesting
+  TransientResolver( KettleRepositoryLocator repositoryLocator, DataServiceContext context,
                             ServiceCacheFactory cacheFactory, final LogLevel logLevel, Supplier<Spoon> spoonSupplier ) {
     this.repositoryLocator = repositoryLocator;
     this.context = context;

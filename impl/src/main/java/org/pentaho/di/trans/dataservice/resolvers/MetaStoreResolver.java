@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,10 @@
 
 package org.pentaho.di.trans.dataservice.resolvers;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
+import org.pentaho.di.core.logging.LogChannel;
+import org.pentaho.di.core.service.PluginServiceLoader;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -30,9 +33,10 @@ import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
-import org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator;
+import org.pentaho.kettle.repository.locator.api.KettleRepositoryLocator;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -42,7 +46,25 @@ public class MetaStoreResolver implements DataServiceResolver {
 
   private DataServiceDelegate delegate;
 
+  // OSGi constructor
+  public MetaStoreResolver( DataServiceContext context ) {
+    KettleRepositoryLocator repositoryLocator;
+    try {
+      Collection<KettleRepositoryLocator> metastoreLocators = PluginServiceLoader.loadServices( KettleRepositoryLocator.class );
+      repositoryLocator = metastoreLocators.stream().findFirst().get();
+    } catch ( Exception e ) {
+      LogChannel.GENERAL.logError( "Error getting MetastoreLocator", e );
+      throw new IllegalStateException( e );
+    }
+    initialize( repositoryLocator, context );
+  }
+
+  @VisibleForTesting
   public MetaStoreResolver( KettleRepositoryLocator repositoryLocator, DataServiceContext context ) {
+    initialize( repositoryLocator, context );
+  }
+
+  private void initialize( KettleRepositoryLocator repositoryLocator, DataServiceContext context ) {
     if ( repositoryLocator != null ) {
       this.delegate = new DataServiceDelegate( context ) {
         @Override public Repository getRepository() {

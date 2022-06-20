@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -39,7 +39,7 @@ import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
+import org.pentaho.metastore.locator.api.MetastoreLocator;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
