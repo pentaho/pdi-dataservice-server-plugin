@@ -50,10 +50,6 @@
                     interface="org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService"
                     availability="optional"/>
 
-    <reference id="repositoryLocator"
-               interface="org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator"
-               availability="optional"/>
-
     <bean id="dataServiceClient" class="org.pentaho.di.trans.dataservice.clients.DataServiceClient">
         <argument ref="queryServiceDelegate"/>
         <argument ref="dataServiceResolverDelegate"/>
