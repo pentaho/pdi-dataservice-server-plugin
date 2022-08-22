@@ -50,15 +50,6 @@
                     interface="org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService"
                     availability="optional"/>
 
-    <reference id="repositoryLocator"
-               interface="org.pentaho.osgi.kettle.repository.locator.api.KettleRepositoryLocator"
-               availability="optional"/>
-
-    <reference id="metastoreLocator"
-               interface="org.pentaho.osgi.metastore.locator.api.MetastoreLocator"
-               availability="optional"/>
-
-
     <bean id="dataServiceClient" class="org.pentaho.di.trans.dataservice.clients.DataServiceClient">
         <argument ref="queryServiceDelegate"/>
         <argument ref="dataServiceResolverDelegate"/>
@@ -72,14 +63,12 @@
     <!-- /Local Client Service -->
 
     <bean id="transientResolverBean" class="org.pentaho.di.trans.dataservice.resolvers.TransientResolver">
-      <argument ref="repositoryLocator"/>
       <argument ref="context"/>
       <argument ref="serviceCacheFactory"/>
       <argument value="${transient.service.loglevel}"/>
     </bean>
 
     <bean id="metaStoreResolverBean" class="org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver">
-      <argument ref="repositoryLocator"/>
       <argument ref="context"/>
     </bean>
 
@@ -104,12 +93,10 @@
                     <argument ref="context"/>
                 </bean>
                 <bean class="org.pentaho.di.trans.dataservice.clients.AnnotationsQueryService">
-                    <argument ref="metastoreLocator"/>
                     <argument ref="dataServiceResolverDelegate"/>
                 </bean>
                 <bean class="org.pentaho.di.trans.dataservice.clients.DualQueryService" />
                 <bean class="org.pentaho.di.trans.dataservice.clients.ExecutorQueryService">
-                    <argument ref="metastoreLocator"/>
                     <argument ref="dataServiceResolverDelegate"/>
                 </bean>
             </list>
