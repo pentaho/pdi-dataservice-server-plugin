@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -62,13 +62,19 @@ public class ExecutorQueryService implements Query.Service {
   // OSGi blueprint constructor
   public ExecutorQueryService( DataServiceResolver resolver ) {
     this.resolver = resolver;
-    try {
-      Collection<MetastoreLocator> metastoreLocators = PluginServiceLoader.loadServices( MetastoreLocator.class );
-      metastoreLocator = metastoreLocators.stream().findFirst().get();
-    } catch ( Exception e ) {
-      LogChannel.GENERAL.logError( "Error getting MetastoreLocator", e );
-      throw new IllegalStateException( e );
+  }
+
+  private MetastoreLocator getMetaStoreLocator() {
+    if ( metastoreLocator == null ) {
+      try {
+        Collection<MetastoreLocator> metastoreLocators = PluginServiceLoader.loadServices( MetastoreLocator.class );
+        metastoreLocator = metastoreLocators.stream().findFirst().get();
+      } catch ( Exception e ) {
+        LogChannel.GENERAL.logError( "Error getting MetastoreLocator", e );
+        throw new IllegalStateException( e );
+      }
     }
+    return this.metastoreLocator;
   }
 
   @Override public Query prepareQuery( String sqlString, int maxRows, Map<String, String> parameters )
@@ -76,7 +82,7 @@ public class ExecutorQueryService implements Query.Service {
     SQL sql = new SQL( sqlString );
     Query query;
     try {
-      IMetaStore metaStore = metastoreLocator != null ? metastoreLocator.getMetastore() : null;
+      IMetaStore metaStore = getMetaStoreLocator() != null ? getMetaStoreLocator().getMetastore() : null;
       DataServiceExecutor executor = resolver.createBuilder( sql )
         .rowLimit( maxRows )
         .parameters( parameters )
@@ -96,7 +102,7 @@ public class ExecutorQueryService implements Query.Service {
     SQL sql = new SQL( sqlString );
     Query query;
     try {
-      IMetaStore metaStore = metastoreLocator != null ? metastoreLocator.getMetastore() : null;
+      IMetaStore metaStore = getMetaStoreLocator() != null ? getMetaStoreLocator().getMetastore() : null;
       DataServiceExecutor executor = resolver.createBuilder( sql )
         .rowLimit( 0 )
         .windowMode( windowMode )
