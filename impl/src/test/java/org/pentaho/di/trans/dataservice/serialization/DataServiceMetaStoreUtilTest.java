@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -114,7 +114,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
       } );
 
     metaStore.setName( DataServiceMetaStoreUtilTest.class.getName() );
-    when( repository.getMetaStore() ).thenReturn( metaStore );
+    when( repository.getRepositoryMetaStore() ).thenReturn( metaStore );
 
     PushDownFactory optimizationFactory = mock( PushDownFactory.class );
     when( (Class) optimizationFactory.getType() ).thenReturn( TestOptimization.class );
