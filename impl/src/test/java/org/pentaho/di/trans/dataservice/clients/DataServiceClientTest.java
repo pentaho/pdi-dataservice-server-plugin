@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -265,7 +265,7 @@ public class DataServiceClientTest extends BaseTest {
     startQuery.countDown();
 
     // Assert no errors thrown or logged
-    assertThat( Futures.get( queryFinished, IOException.class ), is( true ) );
+    assertThat( Futures.getChecked( queryFinished, IOException.class ), is( true ) );
     verify( log, never() ).logError( anyString(), any( Throwable.class ) );
   }
 
@@ -295,7 +295,7 @@ public class DataServiceClientTest extends BaseTest {
     startQuery.countDown();
 
     // Assert no errors thrown or logged
-    assertThat( Futures.get( queryFinished, IOException.class ), is( true ) );
+    assertThat( Futures.getChecked( queryFinished, IOException.class ), is( true ) );
     verify( log, never() ).logError( anyString(), any( Throwable.class ) );
   }
 

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -116,7 +116,7 @@ public class ServiceCacheTest {
             anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean() ) ).thenReturn( "<transformation/>" );
     when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( rowMeta );
 
-    when( factory.getExecutorService() ).thenReturn( MoreExecutors.sameThreadExecutor() );
+    when( factory.getExecutorService() ).thenReturn( MoreExecutors.newDirectExecutorService() );
 
     serviceCacheOpt =
       when( mock( PushDownOptimizationMeta.class ).getType() ).thenReturn( mock( ServiceCache.class ) ).getMock();

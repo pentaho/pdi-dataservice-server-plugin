@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.optimization;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 public class OptimizationImpactInfo {
   private String queryBeforeOptimization = "";
@@ -69,7 +69,7 @@ public class OptimizationImpactInfo {
   }
 
   public void setErrorMsg( Exception ex ) {
-    this.errorMsg = Objects.firstNonNull( ex.getMessage(), ex.toString() );
+    this.errorMsg = MoreObjects.firstNonNull( ex.getMessage(), ex.toString() );
   }
 
   public void setErrorMsg( String errorMsg ) {
