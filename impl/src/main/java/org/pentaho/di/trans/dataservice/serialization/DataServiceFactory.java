@@ -76,7 +76,8 @@ public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
     return new DataServiceExecutor.Builder( sql, dataService, context );
   }
 
-  static void setMetastoreSupplier( Supplier<IMetaStore> metastoreSupplier ) {
+  // public for testing only. 
+  public static void setMetastoreSupplier( Supplier<IMetaStore> metastoreSupplier ) {
     DataServiceFactory.metastoreSupplier = metastoreSupplier;
   }
 }
