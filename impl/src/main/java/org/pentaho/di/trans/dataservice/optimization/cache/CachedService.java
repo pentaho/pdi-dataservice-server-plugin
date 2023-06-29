@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.dataservice.optimization.cache;
 
 import com.google.common.base.Function;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
@@ -85,7 +86,7 @@ class CachedService implements Serializable {
   }
 
   @Override public String toString() {
-    return Objects.toStringHelper( this )
+    return MoreObjects.toStringHelper( this )
       .add( "rowMetaAndData.length", rowMetaAndData.size() )
       .add( "ranking", ranking )
       .toString();
@@ -272,7 +273,7 @@ class CachedService implements Serializable {
     }
 
     @Override public String toString() {
-      return Objects.toStringHelper( CacheKey.class )
+      return MoreObjects.toStringHelper( CacheKey.class )
         .add( "transMetaVersionId", transMetaVersionId )
         .add( "parameters", parameters )
         .add( "whereClause", whereClause )

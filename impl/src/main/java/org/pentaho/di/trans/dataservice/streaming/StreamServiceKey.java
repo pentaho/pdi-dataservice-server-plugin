@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.streaming;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 
@@ -127,7 +128,7 @@ public class StreamServiceKey implements Serializable {
 
   @Override
   public String toString() {
-    return Objects.toStringHelper( StreamServiceKey.class )
+    return MoreObjects.toStringHelper( StreamServiceKey.class )
       .add( "dataServiceId", dataServiceId )
       .add( "parameters", parameters )
       .add( "optimizations", optimizations )

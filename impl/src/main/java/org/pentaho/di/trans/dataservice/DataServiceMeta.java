@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,7 @@
 
 package org.pentaho.di.trans.dataservice;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
@@ -248,7 +248,7 @@ public class DataServiceMeta implements MetaStoreElement {
   }
 
   @Override public String toString() {
-    return Objects.toStringHelper( this )
+    return MoreObjects.toStringHelper( this )
       .add( "name", name )
       .add( "serviceTrans", serviceTrans )
       .add( "stepname", stepname )
