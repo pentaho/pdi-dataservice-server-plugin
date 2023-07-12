@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.List;
@@ -281,7 +281,7 @@ public class DataServiceDelegate extends DataServiceFactory {
   }
 
   public Display getDisplay() {
-    return Objects.firstNonNull( Display.getCurrent(), Display.getDefault() );
+    return MoreObjects.firstNonNull( Display.getCurrent(), Display.getDefault() );
   }
 
   public void syncExec( Runnable runnable ) {

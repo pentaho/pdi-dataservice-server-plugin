@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
@@ -226,7 +226,7 @@ public class ParameterGeneration extends StepOptimization {
   }
 
   @Override public String toString() {
-    return Objects.toStringHelper( this )
+    return MoreObjects.toStringHelper( this )
       .add( "fieldMappings", fieldMappings )
       .add( "parameterName", parameterName )
       .toString();
