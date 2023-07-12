@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,6 +22,7 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -116,7 +117,7 @@ public class ServiceTrans implements MetaStoreElement {
   }
 
   @Override public String toString() {
-    return Objects.toStringHelper( this )
+    return MoreObjects.toStringHelper( this )
       .add( "name", name )
       .add( "references", references )
       .toString();
@@ -166,7 +167,7 @@ public class ServiceTrans implements MetaStoreElement {
     }
 
     @Override public String toString() {
-      return Objects.toStringHelper( this )
+      return MoreObjects.toStringHelper( this )
         .add( "method", method )
         .add( "location", location )
         .toString();

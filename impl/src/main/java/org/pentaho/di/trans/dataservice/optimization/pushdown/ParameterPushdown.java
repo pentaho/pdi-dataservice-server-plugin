@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -25,7 +25,7 @@ package org.pentaho.di.trans.dataservice.optimization.pushdown;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
@@ -174,7 +174,7 @@ public class ParameterPushdown implements PushDownType {
       Map<String, String> defaults = Maps.newLinkedHashMap();
       for ( Definition definition : definitions ) {
         String defaultValue = serviceTrans.getParameterDefault( definition.getParameter() );
-        defaults.put( definition.getParameter(), Objects.firstNonNull( defaultValue, "" ) );
+        defaults.put( definition.getParameter(), MoreObjects.firstNonNull( defaultValue, "" ) );
       }
 
       Map<String, String> parameterValues = Maps.newLinkedHashMap( defaults );
@@ -235,7 +235,7 @@ public class ParameterPushdown implements PushDownType {
     }
 
     @Override public String toString() {
-      return Objects.toStringHelper( this )
+      return MoreObjects.toStringHelper( this )
         .add( "fieldName", getFieldName() )
         .add( "parameter", getParameter() )
         .add( "format", getFormat() )
