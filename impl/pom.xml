@@ -99,10 +99,6 @@
       <artifactId>pdi-dataservice-client-plugin-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
-    </dependency>
-    <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
     </dependency>
@@ -151,6 +147,7 @@
               org.pentaho.dictionary,
               org.pentaho.metaverse.api,
               org.pentaho.metaverse.api.*,
+              !javax.annotation,
               *
             </Import-Package>
           </instructions>
