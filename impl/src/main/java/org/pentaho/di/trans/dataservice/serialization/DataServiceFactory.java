@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -33,6 +33,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
+import java.util.function.Supplier;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -40,16 +41,7 @@ import static org.pentaho.di.i18n.BaseMessages.getString;
 
 public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
   private static final Class<?> PKG = DataServiceFactory.class;
-  protected static IMetaStore localPentahoMetaStore = openLocalPentahoMetaStore();
-
-  private static IMetaStore openLocalPentahoMetaStore() {
-    try {
-      return MetaStoreConst.openLocalPentahoMetaStore();
-    } catch ( MetaStoreException e ) {
-      LogChannel.GENERAL.logError( getString( PKG, "DataServiceFactory.LocalMetaStoreError" ), e );
-      return null;
-    }
-  }
+  private static Supplier<IMetaStore> metastoreSupplier = MetaStoreConst.getDefaultMetastoreSupplier();
 
   protected DataServiceFactory( DataServiceContext context ) {
     super( context.getMetaStoreUtil() );
@@ -58,10 +50,7 @@ public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
   public abstract Repository getRepository();
 
   public IMetaStore getMetaStore() {
-    Repository repository = getRepository();
-    return checkNotNull( repository != null ? repository.getMetaStore() : localPentahoMetaStore,
-      getString( PKG, "DataServiceFactory.NullMetaStore" )
-    );
+    return metastoreSupplier != null ? metastoreSupplier.get() : null;
   }
 
   public DataServiceMeta getDataService( String serviceName ) throws MetaStoreException {
@@ -87,4 +76,9 @@ public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
     return new DataServiceExecutor.Builder( sql, dataService, context );
   }
 
+  // public for testing only. 
+  public static void setMetastoreSupplier( Supplier<IMetaStore> metastoreSupplier ) {
+    DataServiceFactory.metastoreSupplier = metastoreSupplier;
+  }
 }
+

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -83,6 +83,7 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
 
   @Test
   public void testGetDataService() throws Exception {
+    DataServiceFactory.setMetastoreSupplier( () -> metaStore );
     assertThat( factory.getDataServiceNames(), empty() );
     metaStoreUtil.save( dataService );
     metaStoreUtil.sync( transMeta, exceptionHandler );
@@ -97,6 +98,8 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
   @Test
   public void testCreateClient() throws Exception {
 
+    DataServiceFactory.setMetastoreSupplier( () -> metaStore );
+
     when( repositoryLocator.getRepository() ).thenReturn( repository );
     DataServiceResolver dataServiceResolver = new MetaStoreResolver( repositoryLocator, context );
 
@@ -109,14 +112,14 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
 
   @Test
   public void testLocalMetaStore() throws Exception {
-    DataServiceFactory.localPentahoMetaStore = new MemoryMetaStore();
+    DataServiceFactory.setMetastoreSupplier( () -> metaStore );
 
     assertThat( factory.getRepository(), sameInstance( repository ) );
     assertThat( factory.getMetaStore(), sameInstance( (IMetaStore) metaStore ) );
 
     when( supplier.get() ).thenReturn( null );
     assertThat( factory.getRepository(), nullValue() );
-    assertThat( factory.getMetaStore(), sameInstance( DataServiceFactory.localPentahoMetaStore ) );
+    assertThat( factory.getMetaStore(), sameInstance( metaStore ) );
   }
 
   @Test

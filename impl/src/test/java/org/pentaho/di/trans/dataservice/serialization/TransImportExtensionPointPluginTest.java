@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -48,7 +48,7 @@ public class TransImportExtensionPointPluginTest {
     TransMeta transMeta = mock( TransMeta.class );
     Repository transRepository = mock( Repository.class );
     IMetaStore transMetaStore = mock( IMetaStore.class );
-    when( transRepository.getMetaStore() ).thenReturn( transMetaStore );
+    when( transRepository.getRepositoryMetaStore() ).thenReturn( transMetaStore );
     when( transMeta.getRepository() ).thenReturn( transRepository );
     when( transMeta.getMetaStore() ).thenReturn( transMetaStore );
 
