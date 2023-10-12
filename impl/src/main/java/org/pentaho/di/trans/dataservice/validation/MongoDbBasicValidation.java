@@ -44,7 +44,11 @@ public class MongoDbBasicValidation implements StepValidation {
 
   @Override
   public boolean supportsStep( StepMeta step, LogChannelInterface log ) {
-    return step.getStepMetaInterface() instanceof MongoDbInputMeta;
+    try {
+      return step.getStepMetaInterface() instanceof MongoDbInputMeta;
+    } catch ( NoClassDefFoundError e ) {
+      return false;
+    }
   }
 
   @Override
