@@ -67,17 +67,6 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>pentaho</groupId>
-      <artifactId>pentaho-modeler</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>io.reactivex.rxjava2</groupId>
       <artifactId>rxjava</artifactId>
       <exclusions>

@@ -2,6 +2,7 @@
   <feature name="${project.artifactId}" version="${project.version}">
 
     <details>${project.description}</details>
+    <bundle>wrap:mvn:pentaho/pentaho-modeler/${project.version}$Import-Package=!java.*,*</bundle>
     <feature>pentaho-metaverse-core</feature>
 
   </feature>
