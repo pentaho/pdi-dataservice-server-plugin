@@ -4,6 +4,6 @@
     <details>${project.description}</details>
 
     <feature>pentaho-base</feature>
-
+    <bundle>wrap:mvn:pentaho/pentaho-modeler/${project.version}$Import-Package=!java.*,*</bundle>
   </feature>
 </features>
