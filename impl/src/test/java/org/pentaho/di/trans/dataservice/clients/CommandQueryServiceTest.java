@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,7 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.trans.dataservice.BaseTest;
 import org.pentaho.di.trans.dataservice.CommandExecutor;
 import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
@@ -36,16 +36,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.verify;
 
 /**
  * {@link CommandQueryService} test class
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class CommandQueryServiceTest extends BaseTest {
   private static final String TEST_NON_COMMAND_SQL_QUERY = "SELECT * FROM " + DATA_SERVICE_NAME;
   private static final String TEST_COMMAND_SQL_QUERY = CommandExecutor.COMMAND_START + " SELECT * FROM "

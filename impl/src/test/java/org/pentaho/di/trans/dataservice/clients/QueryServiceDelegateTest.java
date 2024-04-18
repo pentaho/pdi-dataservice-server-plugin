@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,9 +24,7 @@ package org.pentaho.di.trans.dataservice.clients;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.BaseTest;
 
@@ -42,7 +40,6 @@ import static org.mockito.Mockito.when;
 /**
  * {@link QueryServiceDelegate} test class
  */
-@RunWith( MockitoJUnitRunner.class )
 public class QueryServiceDelegateTest extends BaseTest {
   private static final String TEST_SQL_QUERY = "SELECT * FROM " + DATA_SERVICE_NAME;
   private static final int MAX_ROWS = 100;

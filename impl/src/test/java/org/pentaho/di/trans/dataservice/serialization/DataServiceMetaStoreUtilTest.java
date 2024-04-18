@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -32,12 +32,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.hamcrest.MockitoHamcrest;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -76,9 +75,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -89,7 +87,6 @@ import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStor
 import static org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil.createCacheKeys;
 import static org.pentaho.metastore.util.PentahoDefaults.NAMESPACE;
 
-@RunWith( MockitoJUnitRunner.class )
 public class DataServiceMetaStoreUtilTest extends BaseTest {
   static final String OPTIMIZATION = "Optimization";
   static final String OPTIMIZED_STEP = "Optimized Step";
@@ -381,7 +378,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
   @Test public void testStepCacheSave() throws Exception {
     metaStoreUtil.save( dataService );
     Set<Integer> keys = createCacheKeys( transMeta, DATA_SERVICE_STEP );
-    verify( cache ).putAll( argThat( hasEntry( in( keys ), equalTo( DATA_SERVICE_NAME ) ) ) );
+    verify( cache ).putAll( MockitoHamcrest.argThat( hasEntry( in( keys ), equalTo( DATA_SERVICE_NAME ) ) ) );
   }
 
   @Test public void testStepCacheHit() throws Exception {

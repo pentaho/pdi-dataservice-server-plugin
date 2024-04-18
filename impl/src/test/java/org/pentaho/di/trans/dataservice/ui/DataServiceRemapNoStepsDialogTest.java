@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import java.util.ResourceBundle;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,9 +36,9 @@ import org.pentaho.ui.xul.XulRunner;
 import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -53,7 +52,7 @@ public class DataServiceRemapNoStepsDialogTest {
     XulLoader xulLoader = mock( XulLoader.class );
     XulRunner xulRunner = mock( XulRunner.class );
     XulDomContainer xulDomContainer = mock( XulDomContainer.class );
-    when( xulLoader.loadXul( anyString(), any( ResourceBundle.class ) ) ).thenReturn( xulDomContainer );
+    when( xulLoader.loadXul( anyString(), any() ) ).thenReturn( xulDomContainer );
 
     DataServiceRemapNoStepsDialog dialog = mock( DataServiceRemapNoStepsDialog.class );
     when( dialog.initXul( shell, xulLoader, xulRunner ) ).thenCallRealMethod();

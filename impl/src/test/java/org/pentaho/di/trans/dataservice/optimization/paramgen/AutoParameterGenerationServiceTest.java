@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -33,7 +33,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
@@ -57,14 +58,15 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 @SuppressWarnings( "unchecked" )
 public class AutoParameterGenerationServiceTest {
   public static final String NAME = "testService";
@@ -87,6 +89,7 @@ public class AutoParameterGenerationServiceTest {
     RowMeta serviceRowMeta = mock( RowMeta.class );
 
     when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( serviceRowMeta );
+    when( transMeta.getLogChannel() ).thenReturn( mock( LogChannel.class ) );
     when( serviceRowMeta.getFieldNames() ).thenReturn( SERVICE_FIELDS );
     when( serviceProvider.createPushDown() ).thenReturn( parameterGeneration );
   }
@@ -120,7 +123,7 @@ public class AutoParameterGenerationServiceTest {
     ).thenReturn( operationPaths );
 
     StepMeta input1Meta = mock( StepMeta.class );
-    when( transMeta.findStep( "Input 1" ) ).thenReturn( input1Meta );
+    lenient().when( transMeta.findStep( "Input 1" ) ).thenReturn( input1Meta );
     when( serviceProvider.supportsStep( input1Meta ) ).thenReturn( true );
 
     List<PushDownOptimizationMeta> optimizationMetaList = service.apply( dataService );

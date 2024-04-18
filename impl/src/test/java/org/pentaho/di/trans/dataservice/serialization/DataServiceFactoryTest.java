@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,7 +24,6 @@ package org.pentaho.di.trans.dataservice.serialization;
 
 import com.google.common.base.Supplier;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.repository.Repository;
@@ -34,9 +33,8 @@ import org.pentaho.di.trans.dataservice.clients.DataServiceClient;
 import org.pentaho.di.trans.dataservice.clients.Query;
 import org.pentaho.di.trans.dataservice.resolvers.DataServiceResolver;
 import org.pentaho.di.trans.dataservice.resolvers.MetaStoreResolver;
-import org.pentaho.metastore.api.IMetaStore;
-import org.pentaho.metastore.stores.memory.MemoryMetaStore;
 import org.pentaho.kettle.repository.locator.api.KettleRepositoryLocator;
+import org.pentaho.metastore.api.IMetaStore;
 
 import java.util.concurrent.Executors;
 
@@ -55,8 +53,6 @@ import static org.mockito.Mockito.when;
 /**
  * @author nhudak
  */
-
-@RunWith( org.mockito.runners.MockitoJUnitRunner.class )
 public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
   DataServiceFactory factory;
 

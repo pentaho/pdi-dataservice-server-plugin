@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -29,6 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.hamcrest.MockitoHamcrest;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdown;
 
 import java.beans.PropertyChangeSupport;
@@ -43,15 +45,13 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 /**
  * @author nhudak
  */
-
-@RunWith( org.mockito.runners.MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class ParameterPushdownModelTest {
   ParameterPushdown parameterPushdown;
   ParameterPushdownModel model;
@@ -73,7 +73,7 @@ public class ParameterPushdownModelTest {
     definition.setParameter( "param" );
 
     ImmutableList<ParameterPushdownModel.DefinitionAdapter> definitions = model.reset().getDefinitions();
-    verify( changeSupport ).firePropertyChange( eq( "definitions" ), argThat( empty() ), eq( definitions ) );
+    verify( changeSupport ).firePropertyChange( eq( "definitions" ), MockitoHamcrest.argThat( empty() ), eq( definitions ) );
 
     assertThat( definitions, hasSize( greaterThan( 1 ) ) );
     assertThat( definitions.get( 0 ), equalsDefinition( "field", "param", ParameterPushdown.DEFAULT_FORMAT ) );

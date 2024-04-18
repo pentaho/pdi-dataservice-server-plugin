@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,7 +30,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.hamcrest.MockitoHamcrest;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -48,10 +49,9 @@ import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.argThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -61,7 +61,7 @@ import static org.mockito.Mockito.when;
 /**
  * {@link ExecutorQueryService} test class
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class ExecutorQueryServiceTest {
   private Query result;
   private int rowLimit = 5432;
@@ -87,14 +87,11 @@ public class ExecutorQueryServiceTest {
     parameters = new HashMap<>();
     sql = new SQL( "select field from table" );
 
-    when( context.getMetaStoreUtil() ).thenReturn( factory );
     when( metastoreLocator.getMetastore() ).thenReturn( metastore );
 
     executorQueryService = new ExecutorQueryService( dataServiceResolver, metastoreLocator );
-    when( dataServiceResolver.createBuilder( argThat( matchesSql( sql ) ) ) ).thenReturn( builder );
-    when( factory.getMetaStore() ).thenReturn( metastore );
+    when( dataServiceResolver.createBuilder( MockitoHamcrest.argThat( matchesSql( sql ) ) ) ).thenReturn( builder );
 
-    when( builder.rowLimit( rowLimit ) ).thenReturn( builder );
     when( builder.parameters( parameters ) ).thenReturn( builder );
     when( builder.metastore( metastore ) ).thenReturn( builder );
     when( builder.windowMode( any( IDataServiceClientService.StreamingMode.class ) ) ).thenReturn( builder );

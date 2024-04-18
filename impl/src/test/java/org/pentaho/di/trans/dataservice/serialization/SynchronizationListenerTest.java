@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -31,7 +31,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.listeners.ContentChangedListener;
 import org.pentaho.di.core.logging.LogChannel;
@@ -43,11 +43,12 @@ import org.pentaho.metastore.api.exceptions.MetaStoreException;
 
 import java.util.function.Function;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -58,7 +59,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author nhudak
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class SynchronizationListenerTest {
 
   @Mock TransMeta transMeta;
@@ -79,7 +80,7 @@ public class SynchronizationListenerTest {
     verify( transMeta ).addStepChangeListener( service );
     verify( transMeta ).addContentChangedListener( service );
 
-    when( transMeta.getContentChangedListeners() ).thenReturn( ImmutableList.<ContentChangedListener>of( service ) );
+    lenient().when( transMeta.getContentChangedListeners() ).thenReturn( ImmutableList.<ContentChangedListener>of( service ) );
 
     verifyNoMoreInteractions( ignoreStubs( transMeta ) );
   }
@@ -116,7 +117,7 @@ public class SynchronizationListenerTest {
 
     MetaStoreException metaStoreException = new MetaStoreException();
     errorHandler.getValue().apply( metaStoreException );
-    verify( logChannel ).logError( anyString(), same( metaStoreException ) );
+    verify( logChannel ).logError( any(), same( metaStoreException ) );
   }
 
   @Test
@@ -133,7 +134,7 @@ public class SynchronizationListenerTest {
 
     MetaStoreException metaStoreException = new MetaStoreException();
     errorHandler.getValue().apply( metaStoreException );
-    verify( logChannel ).logError( anyString(), same( metaStoreException ) );
+    verify( logChannel ).logError( any(), same( metaStoreException ) );
   }
 
   @Test

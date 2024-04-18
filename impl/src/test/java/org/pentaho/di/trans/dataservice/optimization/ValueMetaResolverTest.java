@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -36,8 +36,8 @@ import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ValueMetaResolverTest  {
 
@@ -56,7 +56,7 @@ public class ValueMetaResolverTest  {
     int originalType = ValueMetaInterface.TYPE_STRING;
     Object value = resolver.getTypedValue( "field", originalType, "101010" );
     assertTrue( value instanceof Long );
-    assertTrue( value.equals( new Long( 101010 ) ) );
+    assertTrue( value.equals( 101010L ) );
   }
 
   @Test
@@ -68,12 +68,12 @@ public class ValueMetaResolverTest  {
           ValueMetaInterface.TYPE_BIGNUMBER,
           ValueMetaInterface.TYPE_BOOLEAN
         } ) );
-    assertEquals( new Long( 123 ),
-      resolver.getTypedValue( "field1", ValueMetaInterface.TYPE_INTEGER, 123l ) );
+    assertEquals( 123L,
+      resolver.getTypedValue( "field1", ValueMetaInterface.TYPE_INTEGER, 123L ) );
     assertEquals( new BigDecimal( 123 ),
-      resolver.getTypedValue( "field2", ValueMetaInterface.TYPE_INTEGER, 123l ) );
-    assertEquals( new Boolean( true ),
-      resolver.getTypedValue( "field3", ValueMetaInterface.TYPE_INTEGER, 1l ) );
+      resolver.getTypedValue( "field2", ValueMetaInterface.TYPE_INTEGER, 123L ) );
+    assertEquals( true,
+      resolver.getTypedValue( "field3", ValueMetaInterface.TYPE_INTEGER, 1L ) );
 
     try {
       resolver.getTypedValue( "fieldNonExistent", ValueMetaInterface.TYPE_STRING, "blah" );
