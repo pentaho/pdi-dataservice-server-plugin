@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.pentaho</groupId>
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
-    <version>10.2.0.0-SNAPSHOT</version>
+    <version>10.2.0.0-105</version>
   </parent>
 
   <groupId>pentaho</groupId>
@@ -84,17 +84,17 @@
   <properties>
     <servlet-api.version>2.3</servlet-api.version>
     <mockito.version>1.9.5</mockito.version>
-    <pdi.version>10.2.0.0-SNAPSHOT</pdi.version>
-    <pentaho-mongodb-plugin.version>10.2.0.0-SNAPSHOT</pentaho-mongodb-plugin.version>
+    <pdi.version>10.2.0.0-105</pdi.version>
+    <pentaho-mongodb-plugin.version>10.2.0.0-105</pentaho-mongodb-plugin.version>
     <jface.version>3.3.0-I20070606-0010</jface.version>
     <swt.version>4.6</swt.version>
     <mongo.java.driver.version>3.12.10</mongo.java.driver.version>
     <commons.collections.version>3.2.2</commons.collections.version>
-    <pentaho-modeler.version>10.2.0.0-SNAPSHOT</pentaho-modeler.version>
+    <pentaho-modeler.version>10.2.0.0-105</pentaho-modeler.version>
     <rxjava.version>2.2.3</rxjava.version>
     <reactivestreams.version>1.0.2</reactivestreams.version>
     <jsr305.version>2.0.3</jsr305.version>
-    <platform.version>10.2.0.0-SNAPSHOT</platform.version>
+    <platform.version>10.2.0.0-105</platform.version>
   </properties>
 
   <dependencyManagement>
