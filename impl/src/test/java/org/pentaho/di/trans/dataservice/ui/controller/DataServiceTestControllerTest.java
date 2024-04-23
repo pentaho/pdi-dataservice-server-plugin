@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -25,16 +25,15 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 import com.google.common.collect.ImmutableMap;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InOrder;
-import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
@@ -63,6 +62,7 @@ import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
+import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulRadio;
@@ -74,25 +74,26 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.same;
@@ -101,6 +102,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class DataServiceTestControllerTest  {
 
   @Mock
@@ -146,6 +148,9 @@ public class DataServiceTestControllerTest  {
   private XulLabel xulLabel;
 
   @Mock
+  private XulButton xulButton;
+
+  @Mock
   private XulGroupbox xulGroupbox;
 
   @Mock
@@ -186,10 +191,8 @@ public class DataServiceTestControllerTest  {
 
   @Before
   public void initMocks() throws Exception {
-    MockitoAnnotations.initMocks( this );
-
     when( dataService.getServiceTrans() ).thenReturn( transMeta );
-    when( transMeta.realClone( false ) ).thenReturn( transMeta );
+//    when( transMeta.realClone( false ) ).thenReturn( transMeta );
 
     doAnswer( new Answer<Void>() {
       @Override
@@ -199,7 +202,7 @@ public class DataServiceTestControllerTest  {
       }
     } ).when( annotationsQuery ).writeTo( any( OutputStream.class ) );
 
-    doAnswer( new Answer<Query>() {
+    lenient().doAnswer( new Answer<Query>() {
       @Override
       public Query answer( InvocationOnMock invocation ) {
         String sql = (String) invocation.getArguments()[ 0 ];
@@ -208,14 +211,10 @@ public class DataServiceTestControllerTest  {
         }
         return null;
       }
-    } ).when( annotationsQueryService ).prepareQuery( any( String.class ), anyInt(), any( Map.class ) );
-
-    when( streamingExecution.getKey() ).thenReturn( streamServiceKey );
-    when( context.getServiceTransExecutor( streamServiceKey ) ).thenReturn( streamingExecution );
+    } ).when( annotationsQueryService ).prepareQuery( anyString(), anyInt(), anyMap() );
 
     when( dataServiceExecutor.getServiceTrans() ).thenReturn( mock( Trans.class ) );
     when( dataServiceExecutor.getGenTrans() ).thenReturn( mock( Trans.class ) );
-    when( dataServiceExecutor.getServiceTransMeta() ).thenReturn( transMeta );
     when( dataServiceExecutor.getServiceTrans().getLogChannel() ).thenReturn( mock( LogChannelInterface.class ) );
     when( dataServiceExecutor.getGenTrans().getLogChannel() ).thenReturn( mock( LogChannelInterface.class ) );
     when( dataServiceExecutor.getSql() ).thenReturn( mock( SQL.class ) );
@@ -224,18 +223,12 @@ public class DataServiceTestControllerTest  {
     when( dataServiceExecutor.getSql().getSelectFields().getFields() )
       .thenReturn( new ArrayList<SQLField>() );
 
-    when( rowMeta.getValueMetaList() ).thenReturn( Collections.EMPTY_LIST );
-
     when( transMeta.listParameters() ).thenReturn( new String[] { "foo", "bar" } );
-    when( transMeta.listVariables() ).thenReturn( new String[] { "varFoo", "varBar" } );
-    when( transMeta.getStepFields( anyString() ) ).thenReturn( rowMeta );
-
-    when( transMeta.getVariable( "varFoo" ) ).thenReturn( "varFooVal" );
-    when( transMeta.getVariable( "varBar" ) ).thenReturn( "varBarVal" );
     when( transMeta.getParameterDefault( "foo" ) ).thenReturn( "fooVal" );
     when( transMeta.getParameterDefault( "bar" ) ).thenReturn( "barVal" );
 
-    when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString() ) ).thenReturn( binding );
+    lenient().when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString() ) ).thenReturn( binding );
+    lenient().when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString(), any() ) ).thenReturn( binding );
 
     // mocks to deal with Xul multithreading.
     when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
@@ -275,6 +268,10 @@ public class DataServiceTestControllerTest  {
     when( document.getElementById( "window-size-row-unit" ) ).thenReturn( xulLabel );
     when( document.getElementById( "window-every-row-unit" ) ).thenReturn( xulLabel );
     when( document.getElementById( "window-limit-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "preview-opt-btn" ) ).thenReturn( xulButton );
+    when( document.getElementById( "exec-sql-btn" ) ).thenReturn( xulButton );
+    when( document.getElementById( "error-alert" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "optimization-impact-info" ) ).thenReturn( xulTextBox );
 
     testInitAssertFail();
 
@@ -367,9 +364,7 @@ public class DataServiceTestControllerTest  {
   private void testInitAssertNotFail() throws Exception {
     try {
       dataServiceTestController.init();
-    } catch ( AssertionError e ) {
-      fail();
-    } catch ( Exception e ) {
+    } catch ( AssertionError | Exception e ) {
       fail();
     }
   }
@@ -391,6 +386,10 @@ public class DataServiceTestControllerTest  {
     when( document.getElementById( "window-size-row-unit" ) ).thenReturn( xulLabel );
     when( document.getElementById( "window-every-row-unit" ) ).thenReturn( xulLabel );
     when( document.getElementById( "window-limit-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "preview-opt-btn" ) ).thenReturn( xulButton );
+    when( document.getElementById( "exec-sql-btn" ) ).thenReturn( xulButton );
+    when( document.getElementById( "error-alert" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "optimization-impact-info" ) ).thenReturn( xulTextBox );
 
     dataServiceTestController.init();
 
@@ -427,9 +426,8 @@ public class DataServiceTestControllerTest  {
 
   @Test
   public void errorAlertMessageSetIfErrorInGenTrans() throws KettleException {
-    when( model.isExecuting() ).thenReturn( true );
     when( dataServiceExecutor.getGenTrans().getErrors() ).thenReturn( 1 );
-    when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
+    lenient().when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
       .thenReturn( true );
     dataServiceTestController.executeSql();
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass( String.class );
@@ -441,12 +439,7 @@ public class DataServiceTestControllerTest  {
 
   @Test
   public void errorAlertMessageSetIfErrorInSvcTrans() throws KettleException {
-    when( model.isExecuting() ).thenReturn( true );
     when( dataServiceExecutor.getServiceTrans().getErrors() ).thenReturn( 1 );
-    when( dataServiceExecutor.getServiceTrans().isFinishedOrStopped() )
-      .thenReturn( true );
-    when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
-      .thenReturn( true );
     dataServiceTestController.executeSql();
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass( String.class );
     verify( model, timeout( VERIFY_TIMEOUT_MILLIS ).atLeast( 2 ) ).setAlertMessage( argument.capture() );
@@ -464,28 +457,24 @@ public class DataServiceTestControllerTest  {
 
   @Test
   public void callbackNotifiedOnExecutionComplete() throws Exception {
-    when( model.isExecuting() ).thenReturn( true );
     dataServiceTestController.executeSql();
-    when( dataServiceExecutor.getServiceTrans().isFinishedOrStopped() )
+    lenient().when( dataServiceExecutor.getServiceTrans().isFinishedOrStopped() )
       .thenReturn( true );
-    when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
+    lenient().when( dataServiceExecutor.getGenTrans().isFinishedOrStopped() )
       .thenReturn( true );
     verify( callback, timeout( VERIFY_TIMEOUT_MILLIS ).times( 1 ) ).onExecuteComplete();
   }
 
   @Test
   public void callbackNotifiedOnExecutionCompleteStreaming() throws Exception {
-    when( model.isExecuting() ).thenReturn( true );
     dataServiceTestController.executeSql();
-    when( dataService.isStreaming() ).thenReturn( true );
-    when( dataServiceExecutor.getGenTrans().isFinished() )
+    lenient().when( dataServiceExecutor.getGenTrans().isFinished() )
       .thenReturn( true );
     verify( callback, timeout( VERIFY_TIMEOUT_MILLIS ).times( 1 ) ).onExecuteComplete();
   }
 
   @Test
   public void testExecuteStreamingServiceTransRunning() throws Exception {
-    when( model.isExecuting() ).thenReturn( true );
     when( dataService.isStreaming() ).thenReturn( true );
     when( dataServiceExecutor.getServiceTrans().isRunning() )
       .thenReturn( true );
@@ -564,14 +553,13 @@ public class DataServiceTestControllerTest  {
   }
 
   @Test
-  public void streamingQueryForAnnontations() throws KettleException, IOException {
+  public void streamingQueryForAnnotations() throws KettleException, IOException {
     when( model.getSql() ).thenReturn( MOCK_SQL );
     when( model.getWindowMode() ).thenReturn( MOCK_WINDOW_MODE );
     when( model.getWindowSize() ).thenReturn( MOCK_WINDOW_SIZE );
     when( model.getWindowEvery() ).thenReturn( MOCK_WINDOW_EVERY );
     when( model.getWindowLimit() ).thenReturn( MOCK_WINDOW_LIMIT );
 
-    when( document.getElementById( "time-based-radio" ) ).thenReturn( xulRadio );
     when( dataService.isStreaming() ).thenReturn( true );
 
     when( annotationsQueryService.prepareQuery( MOCK_SQL, MOCK_WINDOW_MODE,
@@ -609,7 +597,7 @@ public class DataServiceTestControllerTest  {
   @Test
   public void testExecuteStreamingService() throws Exception {
     when( dataService.isStreaming() ).thenReturn( true );
-    when( dataServiceExecutor.executeStreamingQuery( consumerGrabber.capture(), Matchers.eq( false ) ) )
+    when( dataServiceExecutor.executeStreamingQuery( consumerGrabber.capture(), eq( false ) ) )
         .thenReturn( dataServiceExecutor );
 
     RowMetaInterface rowMeta = new RowMeta();
@@ -623,7 +611,7 @@ public class DataServiceTestControllerTest  {
     consumer.onNext( Arrays.asList( new RowMetaAndData( rowMeta, 3 ) ) );
     dataServiceTestController.close();
 
-    verify( model, times( 2 ) ).setResultRowMeta( Matchers.eq( rowMeta ) );
+    verify( model, times( 2 ) ).setResultRowMeta( eq( rowMeta ) );
     verify( model, times( 3 ) ).addResultRow( any() );
     verify( callback, times( 1 ) ).onExecuteComplete();
     verify( callback, times( 1 ) ).onUpdate( any() );

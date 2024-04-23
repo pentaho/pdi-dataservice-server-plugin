@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -25,7 +25,6 @@ package org.pentaho.di.trans.dataservice;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
@@ -51,8 +50,6 @@ import static org.mockito.Mockito.when;
 /**
  * @author nhudak
  */
-
-@RunWith( org.mockito.runners.MockitoJUnitRunner.class )
 public class DataServiceContextTest extends BaseTest {
   public static final String EXECUTOR_ID = "Executor ID";
   public static final String STREAMING_EXECUTOR_ID = "Streaming Executor ID";

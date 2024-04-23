@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,7 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -49,7 +49,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class DataServicePopupMenuExtensionTest {
 
   @Mock
@@ -94,7 +94,7 @@ public class DataServicePopupMenuExtensionTest {
     when( spoon.getActiveTransformation() ).thenReturn( transMeta );
     when( transMeta.getSteps() ).thenReturn( new ArrayList<StepMeta>() );
     when( context.getUIFactory() ).thenReturn( uiFactory );
-    when( uiFactory.getMenuItem( any( Menu.class ), anyInt() ) ).thenReturn( menuItem );
+    when( uiFactory.getMenuItem( any(), anyInt() ) ).thenReturn( menuItem );
     when( uiFactory.getMenu( any( Tree.class ) ) ).thenReturn( menu );
     TreeSelection[] treeSelection = new TreeSelection[] { selection };
     when( spoon.getTreeObjects( any( Tree.class ) ) ).thenReturn( treeSelection );

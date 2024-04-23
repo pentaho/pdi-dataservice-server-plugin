@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,19 +22,13 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.attributes.metastore.EmbeddedMetaStore;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectId;
@@ -51,12 +45,19 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.anyObject;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -64,7 +65,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class DataServiceReferenceSynchronizerTest {
 
   @Mock TransMeta transMeta;
@@ -88,7 +89,6 @@ public class DataServiceReferenceSynchronizerTest {
     ObjectId transId = new StringObjectId( "transId" );
     when( transMeta.getMetaStore() ).thenReturn( externalMetastore );
     when( transMeta.getEmbeddedMetaStore() ).thenReturn( embeddedMetastore );
-    when( transMeta.getObjectId() ).thenReturn( transId );
     when( transMeta.getRepository() ).thenReturn( repository );
 
     when( repository.getRepositoryMeta() ).thenReturn( repositoryMeta );
@@ -204,7 +204,7 @@ public class DataServiceReferenceSynchronizerTest {
 
   @Test
   public void testMetastoreExceptionDuringSave() throws MetaStoreException {
-    doThrow( exception ).when( externalMetaStoreFactory ).saveElement( anyObject() );
+    doThrow( exception ).when( externalMetaStoreFactory ).saveElement( any() );
     List<DataServiceMeta> metas = mockDataServiceMetas( "foo" );
     List<ServiceTrans> serviceTrans = mockDataServiceTrans( "/location", "bar" );
     setupMetaStoreFactoryMocks( metas, serviceTrans );
@@ -215,7 +215,7 @@ public class DataServiceReferenceSynchronizerTest {
   @Test
   public void testMetastoreExceptionDuringDelete() throws MetaStoreException {
     when( transMeta.getPathAndName() ).thenReturn( "/location" );
-    doThrow( exception ).when( externalMetaStoreFactory ).deleteElement( anyObject() );
+    doThrow( exception ).when( externalMetaStoreFactory ).deleteElement( any() );
     List<DataServiceMeta> metas = mockDataServiceMetas( "foo" );
     List<ServiceTrans> serviceTrans = mockDataServiceTrans( "/location", "bar" );
     setupMetaStoreFactoryMocks( metas, serviceTrans );

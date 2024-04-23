@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,19 +22,15 @@
 
 package org.pentaho.di.trans.dataservice.ui;
 
-import java.util.List;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.BaseTest;
@@ -52,9 +48,9 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -63,7 +59,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith( MockitoJUnitRunner.class )
 public class DataServiceDelegateTest extends BaseTest {
 
   private static final String STEP_NAME = "Step Name";
@@ -99,10 +94,8 @@ public class DataServiceDelegateTest extends BaseTest {
     when( uiFactory.getDataServiceTestDialog( any( Shell.class ), any( DataServiceMeta.class ), any(
       DataServiceContext.class ) ) )
       .thenReturn( dataServiceTestDialog );
-    when( uiFactory
-      .getMessageDialog( any( Shell.class ), anyString(), any( Image.class ), anyString(), anyInt(),
-        any( String[].class ),
-        anyInt() ) ).thenReturn( messageDialog );
+    when( uiFactory.getMessageDialog( any(), anyString(), any(), anyString(), anyInt(), any(), anyInt() ) )
+      .thenReturn( messageDialog );
     when( messageDialog.open() ).thenReturn( 0 );
 
     delegate = new DataServiceDelegate( context, spoon );
@@ -261,9 +254,7 @@ public class DataServiceDelegateTest extends BaseTest {
     DataServiceRemapConfirmationDialog dialog = mock( DataServiceRemapConfirmationDialog.class );
 
     when( dialog.getAction() ).thenReturn( DataServiceRemapConfirmationDialog.Action.REMAP );
-    when( uiFactory
-        .getRemapConfirmationDialog( any( Shell.class ), any( DataServiceMeta.class ), any( List.class ),
-            any( DataServiceDelegate.class ) ) ).thenReturn( dialog );
+    when( uiFactory.getRemapConfirmationDialog( any(), any(), any(), any() ) ).thenReturn( dialog );
 
     assertThat( delegate.showRemapConfirmationDialog( null, null ),
         is( DataServiceRemapConfirmationDialog.Action.REMAP ) );
@@ -282,9 +273,7 @@ public class DataServiceDelegateTest extends BaseTest {
     DataServiceRemapStepChooserDialog dialog = mock( DataServiceRemapStepChooserDialog.class );
 
     when( dialog.getAction() ).thenReturn( DataServiceRemapStepChooserDialog.Action.REMAP );
-    when( uiFactory
-        .getRemapStepChooserDialog( any( Shell.class ), any( DataServiceMeta.class ), any( List.class ),
-            any( DataServiceDelegate.class ) ) ).thenReturn( dialog );
+    when( uiFactory.getRemapStepChooserDialog( any(), any(), any(), any() ) ).thenReturn( dialog );
 
     assertThat( delegate.showRemapStepChooserDialog( null, null, null ),
         is( DataServiceRemapStepChooserDialog.Action.REMAP ) );
@@ -302,7 +291,7 @@ public class DataServiceDelegateTest extends BaseTest {
   public void testShowRemapNoStepsDialog() throws KettleException {
     DataServiceRemapNoStepsDialog dialog = mock( DataServiceRemapNoStepsDialog.class );
 
-    when( uiFactory.getRemapNoStepsDialog( any( Shell.class ) ) ).thenReturn( dialog );
+    when( uiFactory.getRemapNoStepsDialog( any() ) ).thenReturn( dialog );
 
     delegate.showRemapNoStepsDialog( null );
     verify( dialog ).open();

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -39,7 +39,6 @@ import org.pentaho.di.trans.dataservice.serialization.DataServiceFactory;
 import org.pentaho.di.www.CarteRequestHandler;
 import org.pentaho.di.www.SlaveServerConfig;
 import org.pentaho.di.www.TransformationMap;
-import org.pentaho.metastore.api.IMetaStore;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -50,8 +49,9 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -79,20 +79,20 @@ public abstract class BaseServletTest extends BaseTest {
   @Before
   public void setupRequest() throws Exception {
     context = mock( DataServiceContext.class );
-    when( context.getLogChannel() ).thenReturn( log );
+    lenient().when( context.getLogChannel() ).thenReturn( log );
 
     headers = HashMultimap.create();
-    when( request.getHeaderNames() ).then( new Answer<Enumeration>() {
+    lenient().when( request.getHeaderNames() ).then( new Answer<Enumeration>() {
       @Override public Enumeration answer( InvocationOnMock invocation ) throws Throwable {
         return Collections.enumeration( headers.keySet() );
       }
     } );
-    when( request.getHeaders( anyString() ) ).then( new Answer<Enumeration>() {
+    lenient().when( request.getHeaders( anyString() ) ).then( new Answer<Enumeration>() {
       @Override public Enumeration answer( InvocationOnMock invocation ) throws Throwable {
         return Collections.enumeration( headers.get( (String) invocation.getArguments()[0] ) );
       }
     } );
-    when( request.getHeader( anyString() ) ).then( new Answer<String>() {
+    lenient().when( request.getHeader( anyString() ) ).then( new Answer<String>() {
       @Override public String answer( InvocationOnMock invocation ) throws Throwable {
         Iterator<String> value = headers.get( (String) invocation.getArguments()[0] ).iterator();
         return value.hasNext() ? value.next() : null;
@@ -111,36 +111,36 @@ public abstract class BaseServletTest extends BaseTest {
         return value.hasNext() ? value.next() : null;
       }
     } );
-    when( request.getParameterValues( anyString() ) ).then( new Answer<String[]>() {
+    lenient().when( request.getParameterValues( anyString() ) ).then( new Answer<String[]>() {
       @Override public String[] answer( InvocationOnMock invocation ) throws Throwable {
         Set<String> values = parameters.get( (String) invocation.getArguments()[0] );
         return values.toArray( new String[values.size()] );
       }
     } );
 
-    when( request.getMethod() ).thenReturn( "GET" );
+    lenient().when( request.getMethod() ).thenReturn( "GET" );
 
-    when( response.getOutputStream() ).thenReturn( outputStream );
+    lenient().when( response.getOutputStream() ).thenReturn( outputStream );
     when( response.getWriter() ).thenReturn( printWriter );
-    when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
-    when( slaveServerConfig.getRepository() ).thenReturn( repository );
+    lenient().when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
+    lenient().when( slaveServerConfig.getRepository() ).thenReturn( repository );
 
-    when( factory.getContext() ).thenReturn( context );
-    when( factory.getStepCache() ).thenReturn( cache );
-    when( factory.getLogChannel() ).thenReturn( logChannel );
+    lenient().when( factory.getContext() ).thenReturn( context );
+    lenient().when( factory.getStepCache() ).thenReturn( cache );
+    lenient().when( factory.getLogChannel() ).thenReturn( logChannel );
     when( client.getLogChannel() ).thenReturn( log );
   }
 
   @After
   @SuppressWarnings( "deprecation" )
   public void tearDown() throws Exception {
-    verify( client, never() ).setRepository( (Repository) any() );
-    verify( client, never() ).setMetaStore( (IMetaStore) any() );
+    verify( client, never() ).setRepository( any() );
+    verify( client, never() ).setMetaStore( any() );
   }
 
-  public class ValidRepositorySupplier extends ArgumentMatcher<Supplier<Repository>> {
-    @Override public boolean matches( Object argument ) {
-      return argument instanceof Supplier && ( (Supplier) argument ).get() == repository;
+  public class ValidRepositorySupplier implements ArgumentMatcher<Supplier<Repository>> {
+    @Override public boolean matches( Supplier<Repository> argument ) {
+      return argument.get() == repository;
     }
   }
 }

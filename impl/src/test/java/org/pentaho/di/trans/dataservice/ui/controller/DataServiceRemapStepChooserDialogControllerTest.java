@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,6 +30,7 @@ import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.DataServiceRemapStepChooserDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceRemapStepChooserModel;
+import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.binding.Binding;
@@ -42,9 +43,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -96,7 +97,7 @@ public class DataServiceRemapStepChooserDialogControllerTest {
 
     when( model.getServiceStep() ).thenReturn( "step2" );
 
-    doNothing().doThrow( Exception.class ).when( delegate ).save( any( DataServiceMeta.class ) );
+    doNothing().doThrow( MetaStoreException.class ).when( delegate ).save( any( DataServiceMeta.class ) );
 
     DataServiceRemapStepChooserDialogController
         controller =

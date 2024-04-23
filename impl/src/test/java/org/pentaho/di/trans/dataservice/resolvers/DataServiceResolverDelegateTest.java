@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,25 +24,25 @@ package org.pentaho.di.trans.dataservice.resolvers;
 
 import com.google.common.base.Function;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.sql.SQL;
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by fcamara on 10/12/2016.
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class DataServiceResolverDelegateTest {
 
   private final String DATA_SERVICE_NAME = "DS_TEST";
@@ -80,8 +80,6 @@ public class DataServiceResolverDelegateTest {
     when( resolver.getDataServiceNames() ).thenReturn( dataServicesName );
     when( resolver.createBuilder( sql ) ).thenReturn( builder );
     when( sql.getServiceName() ).thenReturn( DATA_SERVICE_NAME );
-
-    when( dataServices.get( 0 ) ).thenReturn( dataServiceMeta );
 
     dataServiceResolverDelegate = new DataServiceResolverDelegate();
     dataServiceResolverDelegate.addResolver( resolver );

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,9 +24,10 @@ package org.pentaho.di.trans.dataservice.ui.controller;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.TransMeta;
@@ -42,6 +43,7 @@ import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingFactory;
+import org.pentaho.ui.xul.components.XulButton;
 import org.pentaho.ui.xul.components.XulLabel;
 import org.pentaho.ui.xul.components.XulMenuList;
 import org.pentaho.ui.xul.components.XulRadio;
@@ -53,15 +55,16 @@ import java.io.OutputStream;
 import java.util.Map;
 
 import static junit.framework.Assert.assertFalse;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.same;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class StreamingDataServiceTestControllerTest {
 
   private DataServiceExecutor dataServiceExecutor;
@@ -106,6 +109,9 @@ public class StreamingDataServiceTestControllerTest {
   private XulLabel xulLabel;
 
   @Mock
+  private XulButton xulButton;
+
+  @Mock
   private DataServiceContext context;
 
   @Mock
@@ -129,11 +135,9 @@ public class StreamingDataServiceTestControllerTest {
 
   @Before
   public void initMocks() throws Exception {
-    MockitoAnnotations.initMocks( this );
-
     when( streamingDataService.getServiceTrans() ).thenReturn( transMeta );
 
-    doAnswer( new Answer<Void>() {
+    lenient().doAnswer( new Answer<Void>() {
       @Override
       public Void answer( InvocationOnMock invocation ) throws Throwable {
         ( (OutputStream) invocation.getArguments()[0] ).write( TEST_ANNOTATIONS.getBytes() );
@@ -141,7 +145,7 @@ public class StreamingDataServiceTestControllerTest {
       }
     } ).when( annotationsQuery ).writeTo( any( OutputStream.class ) );
 
-    doAnswer( new Answer<Query>() {
+    lenient().doAnswer( new Answer<Query>() {
       @Override
       public Query answer( InvocationOnMock invocation ) {
         String sql = (String) invocation.getArguments()[ 0 ];
@@ -160,7 +164,7 @@ public class StreamingDataServiceTestControllerTest {
 
     // mocks to deal with Xul multithreading.
     when( xulDomContainer.getDocumentRoot() ).thenReturn( document );
-    doAnswer( new Answer() {
+    lenient().doAnswer( new Answer() {
       @Override public Object answer( InvocationOnMock invocationOnMock ) throws Throwable {
         ( (Runnable) invocationOnMock.getArguments()[ 0 ] ).run();
         return null;
@@ -169,11 +173,6 @@ public class StreamingDataServiceTestControllerTest {
 
     when( streamingDataService.getName() ).thenReturn( TEST_TABLE_NAME );
     when( streamingDataService.isStreaming() ).thenReturn( true );
-
-    when( model.getWindowMode() ).thenReturn( null );
-    when( model.getWindowSize() ).thenReturn( 0L );
-    when( model.getWindowEvery() ).thenReturn( 0L );
-    when( model.getWindowLimit() ).thenReturn( 0L );
 
     dataServiceTestController = new DataServiceTestControllerTester();
     dataServiceTestController.setXulDomContainer( xulDomContainer );
@@ -197,6 +196,10 @@ public class StreamingDataServiceTestControllerTest {
     when( document.getElementById( "window-size-row-unit" ) ).thenReturn( xulLabel );
     when( document.getElementById( "window-every-row-unit" ) ).thenReturn( xulLabel );
     when( document.getElementById( "window-limit-row-unit" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "preview-opt-btn" ) ).thenReturn( xulButton );
+    when( document.getElementById( "exec-sql-btn" ) ).thenReturn( xulButton );
+    when( document.getElementById( "error-alert" ) ).thenReturn( xulLabel );
+    when( document.getElementById( "optimization-impact-info" ) ).thenReturn( xulTextBox );
 
     dataServiceTestController.init();
 

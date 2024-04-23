@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -37,7 +37,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
@@ -82,10 +82,10 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.AdditionalMatchers.and;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -96,7 +96,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author nhudak
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class CachedServiceTest {
 
   public static final String INJECTOR_STEP = "INJECTOR_STEP";
@@ -132,7 +132,6 @@ public class CachedServiceTest {
     }
 
     when( serviceTrans.findRunThread( SERVICE_STEP ) ).thenReturn( serviceStep );
-    when( serviceStep.getTrans() ).thenReturn( serviceTrans );
     when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP );
 
     transMeta = serviceTrans.getTransMeta();
@@ -213,8 +212,6 @@ public class CachedServiceTest {
     CachedService unbounded, rowLimit, ordered;
 
     unbounded = CachedService.complete( testData );
-
-    when( sqlTransGenerator.getRowLimit() ).thenReturn( 10, 0 );
     rowLimit = CachedService.complete( testData );
 
     ordered = CachedService.complete( testData );
@@ -345,7 +342,7 @@ public class CachedServiceTest {
     verify( genTrans ).startThreads();
 
     when(
-      rowProducer.putRowWait( any( RowMetaInterface.class ), any( Object[].class ), anyInt(), any( TimeUnit.class ) )
+      rowProducer.putRowWait( any(), any(), anyLong(), any() )
     ).then( new Answer<Boolean>() {
       int calls = 0;
 
@@ -367,7 +364,7 @@ public class CachedServiceTest {
       // Tenth row was called twice, since row set was full
       Object[] data = metaAndData.getData();
       rowsProduced.verify( rowProducer, times( i == 9 ? 2 : 1 ) )
-        .putRowWait( eq( metaAndData.getRowMeta() ), and( eq( data ), AdditionalMatchers.not( same( data ) ) ), anyInt(), any( TimeUnit.class ) );
+        .putRowWait( eq( metaAndData.getRowMeta() ), and( eq( data ), AdditionalMatchers.not( same( data ) ) ), anyLong(), any( TimeUnit.class ) );
     }
     rowsProduced.verify( rowProducer ).finished();
     rowsProduced.verifyNoMoreInteractions();
@@ -407,7 +404,7 @@ public class CachedServiceTest {
 
     final AtomicInteger rowsProduced = new AtomicInteger( 0 );
     when(
-      rowProducer.putRowWait( any( RowMetaInterface.class ), any( Object[].class ), anyInt(), any( TimeUnit.class ) )
+      rowProducer.putRowWait( any( RowMetaInterface.class ), any( Object[].class ), anyLong(), any( TimeUnit.class ) )
     ).then( new Answer<Boolean>() {
       @Override public Boolean answer( InvocationOnMock invocation ) throws Throwable {
         rowsProduced.getAndIncrement();
@@ -430,7 +427,7 @@ public class CachedServiceTest {
     for ( RowMetaAndData metaAndData : Iterables.limit( testData, 20 ) ) {
       Object[] data = metaAndData.getData();
       verify( rowProducer )
-        .putRowWait( eq( metaAndData.getRowMeta() ), and( eq( data ), AdditionalMatchers.not( same( data ) ) ), anyInt(), any( TimeUnit.class ) );
+        .putRowWait( eq( metaAndData.getRowMeta() ), and( eq( data ), AdditionalMatchers.not( same( data ) ) ), anyLong(), any( TimeUnit.class ) );
     }
   }
 

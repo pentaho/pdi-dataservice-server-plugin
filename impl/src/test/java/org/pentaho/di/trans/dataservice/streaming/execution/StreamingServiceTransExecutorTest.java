@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -47,7 +47,7 @@ import org.pentaho.di.trans.step.StepInterface;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -60,7 +60,7 @@ import static org.pentaho.di.core.util.Assert.assertNull;
 /**
  * {@link StreamExecutionListener} test class
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class StreamingServiceTransExecutorTest {
   private StreamingServiceTransExecutor serviceExecutor;
   private String MOCK_SERVICE_STEP_NAME = "Mock Step Name";
@@ -91,7 +91,6 @@ public class StreamingServiceTransExecutorTest {
     when( serviceTrans.getTransMeta( ) ).thenReturn( serviceTransMeta );
     when( serviceTransMeta.getStepFields( MOCK_SERVICE_STEP_NAME ) ).thenReturn( rowMetaInterface );
     when( rowMetaInterface.getString( any( Object[].class ) ) ).thenReturn( MOCK_ROW_META_STRING );
-    when( log.isRowLevel( ) ).thenReturn( true );
   }
 
   @Test
@@ -268,8 +267,6 @@ public class StreamingServiceTransExecutorTest {
 
   @Test
   public void testGetBufferCleanup() throws Exception {
-    when( serviceTrans.isRunning() ).thenReturn( true );
-
     serviceExecutor.getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, 1, 0, 0 );
 
     ArgumentCaptor<RowListener> listenerArgumentCaptor = ArgumentCaptor.forClass( RowListener.class );

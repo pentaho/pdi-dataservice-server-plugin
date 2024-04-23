@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,9 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.dataservice.jdbc.ThinServiceInformation;
 import org.pentaho.di.trans.dataservice.jdbc.api.IThinServiceInformation;
@@ -44,8 +42,9 @@ import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,7 +52,6 @@ import static org.mockito.Mockito.when;
 /**
  * @author bmorrise
  */
-@RunWith( MockitoJUnitRunner.class )
 public class ListDataServicesServletTest extends BaseServletTest {
 
   private static final String SERVLET_STRING = "List data services";
@@ -98,7 +96,7 @@ public class ListDataServicesServletTest extends BaseServletTest {
 
   @Test
   public void testDoPost() throws Exception {
-    when( request.getMethod() ).thenReturn( "POST" );
+    lenient().when( request.getMethod() ).thenReturn( "POST" );
     servlet.service( request, response );
     verifyRun();
   }

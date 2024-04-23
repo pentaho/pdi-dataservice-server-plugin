@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,7 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
 import org.pentaho.di.trans.dataservice.ui.model.DataServiceModel;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 /**
  * {@link StreamingOverlay} test class
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class StreamingOverlayTest {
   private StreamingOverlay streamingOverlay;
   private String XUL_OVERLAY =
@@ -57,7 +57,6 @@ public class StreamingOverlayTest {
   @Before
   public void setup() throws Exception {
     streamingOverlay = new StreamingOverlay( controller );
-    when( model.isStreaming() ).thenReturn( true );
     when( dialog.applyOverlay( streamingOverlay, XUL_OVERLAY ) ).thenReturn( container );
     when( dialog.getModel() ).thenReturn( model );
   }

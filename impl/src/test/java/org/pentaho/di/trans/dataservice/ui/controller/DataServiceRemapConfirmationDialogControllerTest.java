@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,18 +22,19 @@
 
 package org.pentaho.di.trans.dataservice.ui.controller;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.DataServiceRemapConfirmationDialog;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -53,7 +54,7 @@ public class DataServiceRemapConfirmationDialogControllerTest {
     Assert.assertEquals( controller.getAction(), DataServiceRemapConfirmationDialog.Action.CANCEL );
     controller.remap();
 
-    verify( delegate, times( 1 ) ).showRemapNoStepsDialog( any( Shell.class ) );
+    verify( delegate, times( 1 ) ).showRemapNoStepsDialog( Mockito.<Shell>any() );
   }
 
   @Test

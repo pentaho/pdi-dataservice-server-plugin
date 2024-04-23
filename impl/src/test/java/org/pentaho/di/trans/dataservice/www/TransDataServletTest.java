@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -31,9 +31,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.hamcrest.MockitoHamcrest;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransConfiguration;
@@ -53,11 +52,11 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -67,7 +66,6 @@ import static org.mockito.Mockito.when;
 /**
  * @author bmorrise nhudak
  */
-@RunWith( MockitoJUnitRunner.class )
 public class TransDataServletTest extends BaseServletTest {
 
   private static final String BAD_CONTEXT_PATH = "/badsql";
@@ -111,7 +109,7 @@ public class TransDataServletTest extends BaseServletTest {
 
   @Before
   public void setUp() throws Exception {
-    when( context.getLogChannel() ).thenReturn( log );
+//    when( context.getLogChannel() ).thenReturn( log );
     serviceTrans = new Trans( transMeta );
     serviceTrans.setContainerObjectId( serviceTransUUID );
     genTransMeta = createTransMeta( TEST_SQL_QUERY );
@@ -141,7 +139,7 @@ public class TransDataServletTest extends BaseServletTest {
       .prepareQuery( TEST_SQL_QUERY, Integer.valueOf( TEST_MAX_ROWS ), ImmutableMap.of( "FOO", "BAR" ) );
     when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
 
-    when( request.getMethod() ).thenReturn( "POST" );
+//    when( request.getMethod() ).thenReturn( "POST" );
     servlet.service( request, response );
     verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
 
@@ -160,13 +158,13 @@ public class TransDataServletTest extends BaseServletTest {
       eq( DATA_SERVICE_NAME ),
       eq( serviceTransUUID ),
       eq( serviceTrans ),
-      (TransConfiguration) argThat( hasProperty( "transMeta", is( transMeta ) ) )
+      (TransConfiguration) MockitoHamcrest.argThat( hasProperty( "transMeta", is( transMeta ) ) )
     );
     verify( transformationMap ).addTransformation(
       eq( TEST_SQL_QUERY ),
       eq( genTransUUID ),
       eq( genTrans ),
-      (TransConfiguration) argThat( hasProperty( "transMeta", is( genTransMeta ) ) )
+      (TransConfiguration) MockitoHamcrest.argThat( hasProperty( "transMeta", is( genTransMeta ) ) )
     );
     Files.readLines( debugTrans, Charsets.UTF_8 ).contains( GEN_TRANS_XML );
   }
@@ -181,17 +179,17 @@ public class TransDataServletTest extends BaseServletTest {
     headers.put( HEADER_WINDOW_LIMIT, TEST_WINDOW_LIMIT );
 
     Query query = mock( Query.class );
-    doReturn( query )
+    lenient().doReturn( query )
       .when( client )
       .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.TIME_BASED,
         Long.valueOf( TEST_WINDOW_SIZE ),
         Long.valueOf( TEST_WINDOW_EVERY ),
         Long.valueOf( TEST_WINDOW_LIMIT ),
         ImmutableMap.of( "FOO", "BAR" ) );
-    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    lenient().when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
     when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
 
-    when( request.getMethod() ).thenReturn( "POST" );
+    lenient().when( request.getMethod() ).thenReturn( "POST" );
     servlet.service( request, response );
     verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
 
@@ -219,17 +217,17 @@ public class TransDataServletTest extends BaseServletTest {
     parameters.put( HEADER_WINDOW_LIMIT, TEST_WINDOW_LIMIT );
 
     Query query = mock( Query.class );
-    doReturn( query )
+    lenient().doReturn( query )
       .when( client )
       .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.TIME_BASED,
         Long.valueOf( TEST_WINDOW_SIZE ),
         Long.valueOf( TEST_WINDOW_EVERY ),
         Long.valueOf( TEST_WINDOW_LIMIT ),
         ImmutableMap.of( "FOO", "BAR" ) );
-    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    lenient().when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
     when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
 
-    when( request.getMethod() ).thenReturn( "POST" );
+    lenient().when( request.getMethod() ).thenReturn( "POST" );
     servlet.service( request, response );
     verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
 
@@ -256,17 +254,17 @@ public class TransDataServletTest extends BaseServletTest {
     streamingDataService.setRowLimit( DEFAULT_WINDOW_MAX_ROWS );
 
     Query query = mock( Query.class );
-    doReturn( query )
+    lenient().doReturn( query )
       .when( client )
       .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.ROW_BASED,
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
         Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
         ImmutableMap.of( "FOO", "BAR" ) );
-    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    lenient().when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
     when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
 
-    when( request.getMethod() ).thenReturn( "POST" );
+    lenient().when( request.getMethod() ).thenReturn( "POST" );
     servlet.service( request, response );
     verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
   }
@@ -279,17 +277,17 @@ public class TransDataServletTest extends BaseServletTest {
     streamingDataService.setRowLimit( DEFAULT_WINDOW_MAX_ROWS );
 
     Query query = mock( Query.class );
-    doReturn( query )
+    lenient().doReturn( query )
       .when( client )
       .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.ROW_BASED,
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
         Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
         ImmutableMap.of( "FOO", "BAR" ) );
-    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    lenient().when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
     when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
 
-    when( request.getMethod() ).thenReturn( "POST" );
+    lenient().when( request.getMethod() ).thenReturn( "POST" );
     servlet.service( request, response );
     verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
   }
@@ -303,17 +301,17 @@ public class TransDataServletTest extends BaseServletTest {
     streamingDataService.setRowLimit( DEFAULT_WINDOW_MAX_ROWS );
 
     Query query = mock( Query.class );
-    doReturn( query )
+    lenient().doReturn( query )
       .when( client )
       .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.TIME_BASED,
         Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
         Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
         ImmutableMap.of( "FOO", "BAR" ) );
-    when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
+    lenient().when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
     when( client.getServiceMeta( TEST_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
 
-    when( request.getMethod() ).thenReturn( "POST" );
+    lenient().when( request.getMethod() ).thenReturn( "POST" );
     servlet.service( request, response );
     verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
   }
@@ -329,7 +327,7 @@ public class TransDataServletTest extends BaseServletTest {
         .prepareQuery( TEST_LARGE_SQL_QUERY, Integer.valueOf( TEST_MAX_ROWS ), ImmutableMap.<String, String>of() );
     when( query.getTransList() ).thenReturn( ImmutableList.of( serviceTrans, genTrans ) );
 
-    when( request.getMethod() ).thenReturn( "POST" );
+    lenient().when( request.getMethod() ).thenReturn( "POST" );
     servlet.service( request, response );
     verify( logChannel, never() ).logError( anyString(), (Throwable) any() );
 
@@ -350,7 +348,7 @@ public class TransDataServletTest extends BaseServletTest {
 
   @Test
   public void testDoGetException() throws Exception {
-    when( factory.createBuilder( any( SQL.class ) ) ).thenThrow( new MetaStoreException( "expected" ) );
+    lenient().when( factory.createBuilder( any( SQL.class ) ) ).thenThrow( new MetaStoreException( "expected" ) );
 
     headers.put( HEADER_SQL, TEST_SQL_QUERY );
     servlet.service( request, response );

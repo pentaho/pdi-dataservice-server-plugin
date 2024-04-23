@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,7 +24,6 @@ package org.pentaho.di.trans.dataservice.ui;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.trans.dataservice.ui.controller.DriverDetailsDialogController;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulRunner;
@@ -32,13 +31,11 @@ import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.impl.AbstractXulLoader;
 import org.pentaho.ui.xul.swt.tags.SwtDialog;
 
-import java.util.ResourceBundle;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -46,8 +43,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
- * //TODO Add some javadoc or remove this comment
- *
  * @author Pavel Sakun
  */
 public class DriverDetailsDialogTest {
@@ -59,7 +54,7 @@ public class DriverDetailsDialogTest {
     XulRunner xulRunner = mock( XulRunner.class );
     Document document = mock( Document.class );
     XulDomContainer container = mock( XulDomContainer.class );
-    doReturn( container ).when( xulLoader ).loadXul( anyString(), any( ResourceBundle.class ) );
+    doReturn( container ).when( xulLoader ).loadXul( anyString(), any() );
     doReturn( document ).when( container ).getDocumentRoot();
     doCallRealMethod().when( dialog ).initXul( parentShell, xulLoader, xulRunner );
 
@@ -67,9 +62,9 @@ public class DriverDetailsDialogTest {
 
     verify( xulLoader ).setOuterContext( parentShell );
     verify( xulLoader ).registerClassLoader( dialog.getClass().getClassLoader() );
-    verify( xulLoader ).loadXul( anyString(), any( ResourceBundle.class ) );
+    verify( xulLoader ).loadXul( anyString(), any() );
 
-    verify( container ).addEventHandler( any( DriverDetailsDialogController.class ) );
+    verify( container ).addEventHandler( any() );
     verify( container ).getDocumentRoot(  );
 
     verify( xulRunner ).addContainer( container );
@@ -77,11 +72,11 @@ public class DriverDetailsDialogTest {
   }
 
   @Test( expected = KettleException.class )
-  public void testInitXulThrowsKettleExceptionOnError() throws KettleException {
+  public void testInitXulThrowsKettleExceptionOnError() throws KettleException, XulException {
     DriverDetailsDialog dialog = mock( DriverDetailsDialog.class );
     AbstractXulLoader xulLoader = mock( AbstractXulLoader.class );
     doCallRealMethod().when( dialog ).initXul( null, xulLoader, null );
-    doThrow( XulException.class ).when( xulLoader ).setOuterContext( null );
+    doThrow( new XulException() ).when( xulLoader ).loadXul( any(), any() );
     dialog.initXul( null, xulLoader, null );
   }
 
