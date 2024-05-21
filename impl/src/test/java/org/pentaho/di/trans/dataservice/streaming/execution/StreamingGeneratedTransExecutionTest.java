@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,13 +28,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.RowProducer;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -55,11 +54,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -69,7 +69,7 @@ import static org.mockito.Mockito.when;
 /**
  * {@link StreamingGeneratedTransExecution} test class
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class StreamingGeneratedTransExecutionTest {
   private StreamingGeneratedTransExecution genTransExecutor;
 
@@ -108,10 +108,9 @@ public class StreamingGeneratedTransExecutionTest {
     streamServiceKey = StreamServiceKey.create( MOCK_KEY, Collections.emptyMap(), Collections.emptyList() );
     serviceExecutor = spy( new StreamingServiceTransExecutor( streamServiceKey, serviceTrans, MOCK_RESULT_STEP_NAME, 10000, 1000, context ) );
 
-    doReturn( streamExecutionListener ).when( serviceExecutor ).getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
+    lenient().doReturn( streamExecutionListener ).when( serviceExecutor ).getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
       MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
 
-    when( log.isRowLevel() ).thenReturn( true );
     when( genTrans.getLogChannel() ).thenReturn( log );
     when( genTrans.findRunThread( MOCK_RESULT_STEP_NAME ) ).thenReturn( resultStep );
     when( genTrans.addRowProducer( MOCK_INJECTOR_STEP_NAME, 0 ) ).thenReturn( rowProducer );
@@ -125,9 +124,6 @@ public class StreamingGeneratedTransExecutionTest {
 
   @Test
   public void testRunCachedWindow() throws Exception {
-    when( streamExecutionListener.getCachePreWindow() ).thenReturn( rowIterator );
-    when( genTrans.isRunning() ).thenReturn( true );
-
     genTransExecutor = spy( new StreamingGeneratedTransExecution( serviceExecutor, genTrans, consumer, pollingMode,
       MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, 10000,
       1, 10000, "" ) );
@@ -141,7 +137,6 @@ public class StreamingGeneratedTransExecutionTest {
   public void testThrowExceptionWhenRunningTransExecutor() throws Exception {
     doReturn( null ).when( serviceExecutor ).getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
       MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
-    when( genTrans.isRunning() ).thenReturn( true );
     doThrow( new KettleStepException( "This is expected" ) ).when( genTransExecutor ).runGenTrans( Collections.emptyList() );
 
     genTransExecutor.run();
@@ -151,7 +146,6 @@ public class StreamingGeneratedTransExecutionTest {
   public void testRunEmptyStream() throws Exception {
     doReturn( null ).when( serviceExecutor ).getBuffer( MOCK_QUERY, windowConsumer, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
       MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
-    when( genTrans.isRunning() ).thenReturn( true );
 
     genTransExecutor.run();
 
@@ -171,8 +165,7 @@ public class StreamingGeneratedTransExecutionTest {
 
   @Test
   public void testPutRowLog() {
-    when( rowProducer.putRowWait( any( RowMetaInterface.class ), any( Object[].class ), anyLong(),
-      any( TimeUnit.class ) ) ).thenReturn( false, true );
+    when( rowProducer.putRowWait( any(), any(), anyLong(), any() ) ).thenReturn( false, true );
 
     genTransExecutor.run();
     genTransExecutor.getGeneratedDataObservable().onNext( rowIterator );
@@ -212,7 +205,7 @@ public class StreamingGeneratedTransExecutionTest {
     RowMeta rowMeta = new RowMeta( );
     Object[] dataArray = new Object[0];
 
-    doReturn( true ).when( rowProducer ).putRowWait( rowMeta, dataArray, 1, TimeUnit.SECONDS );
+    lenient().doReturn( true ).when( rowProducer ).putRowWait( rowMeta, dataArray, 1, TimeUnit.SECONDS );
     doCallRealMethod().when( genTransExecutor ).injectRows( rowIterator, log, rowProducer );
 
     genTransExecutor.injectRows( rowIterator, log, rowProducer );
@@ -259,8 +252,7 @@ public class StreamingGeneratedTransExecutionTest {
 
   @Test
   public void testThreadNotInterrupted() throws KettleException {
-    when( rowProducer.putRowWait( any( RowMetaInterface.class ), any( Object[].class ), anyLong(),
-      any( TimeUnit.class ) ) ).thenReturn( false, true );
+    when( rowProducer.putRowWait( any(), any(), anyLong(), any() ) ).thenReturn( false, true );
 
     genTransExecutor.run();
     genTransExecutor.getGeneratedDataObservable().onNext( rowIterator );

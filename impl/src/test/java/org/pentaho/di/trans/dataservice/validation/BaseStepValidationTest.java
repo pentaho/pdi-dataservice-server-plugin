@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,13 +22,10 @@
 
 package org.pentaho.di.trans.dataservice.validation;
 
-import org.pentaho.di.trans.dataservice.DataServiceMeta;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -37,16 +34,20 @@ import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.CheckStepsExtension;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceMeta;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGeneration;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.metastore.api.IMetaStore;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public abstract class BaseStepValidationTest {
 
   @Mock
@@ -85,8 +86,7 @@ public abstract class BaseStepValidationTest {
     checkStepsExtension = new CheckStepsExtension(
         remarks, space, transMeta, stepMetas, repository, metaStore );
     pushDownOptMetas = new ArrayList<PushDownOptimizationMeta>();
-    when( dataServiceMeta.getPushDownOptimizationMeta() )
-        .thenReturn( pushDownOptMetas );
+    lenient().when( dataServiceMeta.getPushDownOptimizationMeta() ).thenReturn( pushDownOptMetas );
     init();
   }
 

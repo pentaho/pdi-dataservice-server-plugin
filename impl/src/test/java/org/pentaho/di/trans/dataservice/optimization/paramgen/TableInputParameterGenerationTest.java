@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,9 +22,6 @@
 
 package org.pentaho.di.trans.dataservice.optimization.paramgen;
 
-import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
-import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
-import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,7 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.Const;
@@ -47,6 +44,9 @@ import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.variables.Variables;
+import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
+import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationException;
+import org.pentaho.di.trans.dataservice.optimization.ValueMetaResolver;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInput;
@@ -59,9 +59,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.AND;
-import static org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.OR;
-import static org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.newCondition;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -70,17 +67,20 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.AND;
+import static org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.OR;
+import static org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationTest.newCondition;
 
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class TableInputParameterGenerationTest {
 
   public static final String MOCK_PARTITION_ID = "Mock Partition ID";

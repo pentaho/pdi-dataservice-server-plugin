@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,12 +30,12 @@ import io.reactivex.subjects.PublishSubject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.hamcrest.MockitoHamcrest;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.Condition;
@@ -57,7 +57,6 @@ import org.pentaho.di.trans.dataservice.client.api.IDataServiceClientService;
 import org.pentaho.di.trans.dataservice.execution.CopyParameters;
 import org.pentaho.di.trans.dataservice.optimization.OptimizationImpactInfo;
 import org.pentaho.di.trans.dataservice.optimization.PushDownOptimizationMeta;
-import org.pentaho.di.trans.dataservice.optimization.pushdown.ParameterPushdown;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.WindowParametersHelper;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
@@ -96,13 +95,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -115,7 +112,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.pentaho.di.trans.dataservice.testing.answers.ReturnsSelf.RETURNS_SELF;
 
-@RunWith( org.mockito.runners.MockitoJUnitRunner.class )
 public class DataServiceExecutorTest extends BaseTest {
 
   public static final String INJECTOR_STEP_NAME = "Injector Step";
@@ -142,7 +138,7 @@ public class DataServiceExecutorTest extends BaseTest {
     key = StreamServiceKey.create( dataService.getName(), Collections.emptyMap(), Collections.emptyList() );
 
     doAnswer( RETURNS_SELF ).when( transMeta ).realClone( anyBoolean() );
-    doAnswer( RETURNS_SELF ).when( transMeta ).clone();
+//    doAnswer( RETURNS_SELF ).when( transMeta ).clone();
 
     when( serviceTrans.getContainerObjectId() ).thenReturn( CONTAINER_ID );
     when( sqlTransGenerator.getInjectorStepName() ).thenReturn( INJECTOR_STEP_NAME );
@@ -311,7 +307,6 @@ public class DataServiceExecutorTest extends BaseTest {
     verify( serviceTransExecutor, times( 2 ) ).getServiceTrans();
     assertSame( executor.getServiceTrans(), serviceTrans );
 
-    when( serviceTrans.getTransMeta() ).thenReturn( serviceTransMetaChanged );
     when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTransChanged );
 
     executor = new DataServiceExecutor.Builder( sql, dataService, context ).
@@ -491,9 +486,9 @@ public class DataServiceExecutorTest extends BaseTest {
     writeRows.verify( rowMeta ).writeMeta( streamCaptor.capture() );
     DataOutputStream dataOutputStream = streamCaptor.getValue();
     if( produceErrorRow ) {
-      writeRows.verify( rowMeta, times( 51 ) ).writeData( same( dataOutputStream ), argThat( arrayWithSize( 1 ) ) );
+      writeRows.verify( rowMeta, times( 51 ) ).writeData( same( dataOutputStream ), MockitoHamcrest.argThat( arrayWithSize( 1 ) ) );
     } else {
-      writeRows.verify( rowMeta, times( 50 ) ).writeData( same( dataOutputStream ), argThat( arrayWithSize( 1 ) ) );
+      writeRows.verify( rowMeta, times( 50 ) ).writeData( same( dataOutputStream ), MockitoHamcrest.argThat( arrayWithSize( 1 ) ) );
     }
     writeRows.verifyNoMoreInteractions();
 
@@ -505,13 +500,12 @@ public class DataServiceExecutorTest extends BaseTest {
   public void testWaitUntilFinishedStreaming() throws Exception {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[ 0 ] );
-    when( sqlTransGenerator.getSql() ).thenReturn( sql );
 
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
     OptimizationImpactInfo optimizationInfo = mock( OptimizationImpactInfo.class );
     when( optimizationInfo.getQueryAfterOptimization() ).thenReturn( optimizedQueryAfter );
     when( optimization.isEnabled() ).thenReturn( true );
-    when( optimization.preview( anyObject() ) ).thenReturn( optimizationInfo );
+    when( optimization.preview( any() ) ).thenReturn( optimizationInfo );
     dataService.getPushDownOptimizationMeta().add( optimization );
     dataService.setStreaming( true );
 
@@ -550,7 +544,6 @@ public class DataServiceExecutorTest extends BaseTest {
   public void testWaitInterruptedException() throws Exception {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[ 0 ] );
-    when( sqlTransGenerator.getSql() ).thenReturn( sql );
 
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
     when( optimization.isEnabled() ).thenReturn( true );
@@ -580,7 +573,6 @@ public class DataServiceExecutorTest extends BaseTest {
     when( serviceTrans.getTransMeta().listParameters() ).thenReturn( new String[ 0 ] );
 
     PushDownOptimizationMeta optimization = mock( PushDownOptimizationMeta.class );
-    when( optimization.isEnabled() ).thenReturn( true );
     dataService.getPushDownOptimizationMeta().add( optimization );
 
     IMetaStore metastore = mock( IMetaStore.class );
@@ -623,11 +615,10 @@ public class DataServiceExecutorTest extends BaseTest {
     OptimizationImpactInfo optimizationInfo = mock( OptimizationImpactInfo.class );
     when( optimizationInfo.getQueryAfterOptimization() ).thenReturn( optimizedQueryAfter );
     when( optimization.isEnabled() ).thenReturn( true );
-    when( optimization.preview( anyObject() ) ).thenReturn( optimizationInfo );
+    when( optimization.preview( any() ) ).thenReturn( optimizationInfo );
     dataService.getPushDownOptimizationMeta().add( optimization );
     dataService.setStreaming( true );
 
-    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
     when( serviceTransExecutor.getKey() ).thenReturn( key );
     when( serviceTransExecutor.getWindowMaxRowLimit() ).thenReturn( 50000L );
     when( serviceTransExecutor.getWindowMaxTimeLimit() ).thenReturn( 10000L );
@@ -962,7 +953,7 @@ public class DataServiceExecutorTest extends BaseTest {
     ArgumentCaptor<DataOutputStream> streamCaptor = ArgumentCaptor.forClass( DataOutputStream.class );
     writeRows.verify( rowMeta ).writeMeta( streamCaptor.capture() );
     DataOutputStream dataOutputStream = streamCaptor.getValue();
-    writeRows.verify( rowMeta, times( 0 ) ).writeData( same( dataOutputStream ), argThat( arrayWithSize( 1 ) ) );
+    writeRows.verify( rowMeta, times( 0 ) ).writeData( same( dataOutputStream ), MockitoHamcrest.argThat( arrayWithSize( 1 ) ) );
     writeRows.verifyNoMoreInteractions();
 
     executor.waitUntilFinished();
@@ -1129,7 +1120,7 @@ public class DataServiceExecutorTest extends BaseTest {
     OptimizationImpactInfo optimizationInfo = mock( OptimizationImpactInfo.class );
     when( optimizationInfo.getQueryAfterOptimization() ).thenReturn( optimizedQueryAfter );
     when( optimization.isEnabled() ).thenReturn( true );
-    when( optimization.preview( anyObject() ) ).thenReturn( optimizationInfo );
+    when( optimization.preview( any() ) ).thenReturn( optimizationInfo );
     dataService.getPushDownOptimizationMeta().add( optimization );
     dataService.setStreaming( true );
 
@@ -1155,8 +1146,6 @@ public class DataServiceExecutorTest extends BaseTest {
   public void testGetRowLimit() throws KettleException {
     String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
 
-    when( serviceTrans.isRunning() ).thenReturn( true );
-    when( genTrans.isRunning() ).thenReturn( true );
     when( sqlTransGenerator.getRowLimit() ).thenReturn( 999 );
 
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
@@ -1172,10 +1161,6 @@ public class DataServiceExecutorTest extends BaseTest {
   public void testHasErrors() throws KettleException {
     String sql = "SELECT * FROM " + DATA_SERVICE_NAME;
 
-    when( serviceTrans.isRunning() ).thenReturn( true );
-    when( genTrans.isRunning() ).thenReturn( true );
-    when( sqlTransGenerator.getRowLimit() ).thenReturn( 999 );
-
     DataServiceExecutor executor = new DataServiceExecutor.Builder( new SQL( sql ), dataService, context ).
       serviceTrans( serviceTrans ).
       sqlTransGenerator( sqlTransGenerator ).
@@ -1190,7 +1175,6 @@ public class DataServiceExecutorTest extends BaseTest {
     when( genTrans.getErrors() ).thenReturn( 1 );
     assertTrue( executor.hasErrors() );
     when( serviceTrans.getErrors() ).thenReturn( 1 );
-    when( genTrans.getErrors() ).thenReturn( 0 );
     assertTrue( executor.hasErrors() );
   }
 
@@ -1409,7 +1393,7 @@ public class DataServiceExecutorTest extends BaseTest {
 
     executor.wrapupConsumerResources( consumer );
 
-    verify( serviceTransExecutor, times( 1 ) ).clearCacheByKey( anyString() );
+    verify( serviceTransExecutor, times( 1 ) ).clearCacheByKey( any() );
     assertTrue( onCompleteCalled.get() );
   }
 
@@ -1588,7 +1572,6 @@ public class DataServiceExecutorTest extends BaseTest {
   @Test
   public void testPrepareExecution() throws Exception {
     SQL sql = new SQL( "SELECT * FROM " + DATA_SERVICE_NAME );
-    when( serviceTransExecutor.getServiceTrans() ).thenReturn( serviceTrans );
     IMetaStore metastore = mock( IMetaStore.class );
 
     Map<String, String> parameters = new HashMap<>( );

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,7 +30,7 @@ import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.caching.api.Constants;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.caching.api.PentahoCacheTemplateConfiguration;
@@ -54,20 +54,18 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 /**
  * @author nhudak
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public abstract class BaseTest {
   public static final String DATA_SERVICE_NAME = "DataService";
   public static final String STREAMING_DATA_SERVICE_NAME = "StreamingDataService";
@@ -116,8 +114,9 @@ public abstract class BaseTest {
     transMeta.setName( dataServiceTrans );
     transMeta.setObjectId( new StringObjectId( UUID.randomUUID().toString() ) );
     try {
-      doNothing().when( transMeta ).activateParameters();
-      doAnswer( RETURNS_DEEP_STUBS ).when( transMeta ).getStepFields( any( StepMeta.class ) );
+      lenient().doNothing().when( transMeta ).activateParameters();
+      lenient().doAnswer( RETURNS_DEEP_STUBS ).when( transMeta ).getStepFields( any( StepMeta.class ) );
+      lenient().doAnswer( RETURNS_DEEP_STUBS ).when( transMeta ).getStepFields( anyString() );
     } catch ( KettleException e ) {
       Throwables.propagate( e );
     }
@@ -130,12 +129,12 @@ public abstract class BaseTest {
     streamingTransMeta = createTransMeta( STREAMING_DATA_SERVICE_NAME );
 
     StepMeta stepMeta = mock( StepMeta.class );
-    when( stepMeta.getName() ).thenReturn( DATA_SERVICE_STEP );
+    lenient().when( stepMeta.getName() ).thenReturn( DATA_SERVICE_STEP );
     transMeta.addStep( stepMeta );
     transMeta.clearChanged();
 
     StepMeta streamingStepMeta = mock( StepMeta.class );
-    when( streamingStepMeta.getName() ).thenReturn( STREAMING_DATA_SERVICE_NAME );
+    lenient().when( streamingStepMeta.getName() ).thenReturn( STREAMING_DATA_SERVICE_NAME );
     streamingTransMeta.addStep( streamingStepMeta );
     streamingTransMeta.clearChanged();
 
@@ -143,8 +142,8 @@ public abstract class BaseTest {
     streamingDataService = createStreamingDataService( STREAMING_DATA_SERVICE_NAME, streamingTransMeta );
 
     PentahoCacheTemplateConfiguration template = mock( PentahoCacheTemplateConfiguration.class );
-    when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( Constants.DEFAULT_TEMPLATE, template ) );
-    when( template.createCache( anyString(), eq( Integer.class ), eq( String.class ) ) ).thenReturn( cache );
+    lenient().when( cacheManager.getTemplates() ).thenReturn( ImmutableMap.of( Constants.DEFAULT_TEMPLATE, template ) );
+    lenient().when( template.createCache( anyString(), eq( Integer.class ), eq( String.class ) ) ).thenReturn( cache );
 
     context = new DataServiceContext(
       pushDownFactories = Lists.newArrayList(),
@@ -154,10 +153,10 @@ public abstract class BaseTest {
       logChannel
     );
 
-    when( metaStoreUtil.getContext() ).thenReturn( context );
-    when( metaStoreUtil.getStepCache() ).thenReturn( cache );
-    when( metaStoreUtil.getLogChannel() ).thenReturn( logChannel );
-    when( client.getLogChannel() ).thenReturn( logChannel );
+    lenient().when( metaStoreUtil.getContext() ).thenReturn( context );
+    lenient().when( metaStoreUtil.getStepCache() ).thenReturn( cache );
+    lenient().when( metaStoreUtil.getLogChannel() ).thenReturn( logChannel );
+    lenient().when( client.getLogChannel() ).thenReturn( logChannel );
   }
 
   protected Matcher<SQL> sql( String sqlString ) {

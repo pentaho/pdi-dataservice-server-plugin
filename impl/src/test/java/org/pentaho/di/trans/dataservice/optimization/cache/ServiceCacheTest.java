@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
@@ -66,14 +66,23 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import static org.pentaho.caching.api.Constants.CONFIG_TTL;
 
 /**
  * @author nhudak
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class ServiceCacheTest {
 
   static final String SERVICE_STEP = "SERVICE STEP";
@@ -112,8 +121,6 @@ public class ServiceCacheTest {
     dataServiceMeta = new DataServiceMeta( transMeta );
     dataServiceMeta.setName( "MOCK_SERVICE" );
     dataServiceMeta.setStepname( SERVICE_STEP );
-    when( transMeta.getXML( anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(),
-            anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean() ) ).thenReturn( "<transformation/>" );
     when( transMeta.getStepFields( SERVICE_STEP ) ).thenReturn( rowMeta );
 
     when( factory.getExecutorService() ).thenReturn( MoreExecutors.newDirectExecutorService() );
@@ -158,11 +165,11 @@ public class ServiceCacheTest {
     CachedService cachedService = CachedService.complete( ImmutableList.<RowMetaAndData>of() );
 
     ServiceObserver observer = mock( ServiceObserver.class );
-    when( factory.createObserver( executor ) ).thenReturn( observer );
-    when( observer.install() ).thenReturn( Futures.immediateFuture( cachedService ) );
+    lenient().when( factory.createObserver( executor ) ).thenReturn( observer );
+    lenient().when( observer.install() ).thenReturn( Futures.immediateFuture( cachedService ) );
 
-    when( cache.get( any( CachedService.CacheKey.class ) ) ).thenReturn( null );
-    when( cache.putIfAbsent( key.withoutOrder(), cachedService ) ).thenReturn( true );
+    lenient().when( cache.get( any( CachedService.CacheKey.class ) ) ).thenReturn( null );
+    lenient().when( cache.putIfAbsent( key.withoutOrder(), cachedService ) ).thenReturn( true );
     assertThat( serviceCache.activate( executor, serviceStep ), is( false ) );
 
     verify( cache, times( 0 ) ).putIfAbsent( key.withoutOrder(), cachedService );
@@ -317,8 +324,8 @@ public class ServiceCacheTest {
     serviceCache.setTimeToLive( "1010" );
     CachedService.CacheKey key = CachedService.CacheKey.create( executor );
     CachedService existingCache = mock( CachedService.class );
-    when( cache.get( key ) ).thenReturn( existingCache );
-    when( existingCache.answersQuery( executor ) ).thenReturn( true );
+    lenient().when( cache.get( key ) ).thenReturn( existingCache );
+    lenient().when( existingCache.answersQuery( executor ) ).thenReturn( true );
     assertThat( serviceCache.getAvailableCache( executor ).size(), is( 0 ) );
   }
 

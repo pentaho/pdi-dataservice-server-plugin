@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,20 +30,21 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.www.CarteRequestHandler;
 
 import javax.cache.Cache;
 
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * @author nhudak
  */
-
-@RunWith( org.mockito.runners.MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class ResetCacheServletTest {
   @Mock ServiceCacheFactory factory;
   @Mock Cache<CachedService.CacheKey, CachedService> cache;
@@ -60,7 +61,7 @@ public class ResetCacheServletTest {
     parameterMap = HashMultimap.create();
     when( request.getParameters() ).thenReturn( parameterMap.asMap() );
 
-    when( request.getMethod() ).thenReturn( "POST" );
+    lenient().when( request.getMethod() ).thenReturn( "POST" );
 
     when( factory.getCache( anyString() ) )
       .thenReturn( Optional.<Cache<CachedService.CacheKey, CachedService>>absent() );

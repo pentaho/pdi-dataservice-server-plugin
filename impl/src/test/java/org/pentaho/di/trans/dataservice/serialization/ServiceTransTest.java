@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,12 +22,10 @@
 
 package org.pentaho.di.trans.dataservice.serialization;
 
-import java.net.URL;
-import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
@@ -38,17 +36,21 @@ import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.TransMeta;
 
+import java.net.URL;
+import java.util.Arrays;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class ServiceTransTest {
   @Mock TransMeta transMeta;
   @Mock Repository repository;
@@ -83,13 +85,12 @@ public class ServiceTransTest {
     when( repository.loadRepositoryDirectoryTree() ).thenReturn( root );
     RepositoryDirectoryInterface dir = mock( RepositoryDirectoryInterface.class );
 
-    when( root.findDirectory( eq( "/existing" ) ) ).thenReturn( dir, null );
-    when( repository.getTransformationID( eq( "Trans" ), eq( dir ) ) ).thenReturn( null );
+    lenient().when( root.findDirectory( eq( "/existing" ) ) ).thenReturn( dir, null );
+    lenient().when( repository.getTransformationID( eq( "Trans" ), eq( dir ) ) ).thenReturn( null );
     RepositoryElementMetaInterface transInfo = mock( RepositoryElementMetaInterface.class );
     when( transInfo.getName() ).thenReturn( "Trans" );
     when( transInfo.getObjectId() ).thenReturn( transId );
-    when( repository.getTransformationObjects( eq( rootId ), eq( true ) ) ).thenReturn(
-        Arrays.asList( transInfo ) );
+    lenient().when( repository.getTransformationObjects( eq( rootId ), eq( true ) ) ).thenReturn( Arrays.asList( transInfo ) );
 
     ServiceTrans.StorageMethod method = ServiceTrans.StorageMethod.REPO_PATH;
 

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,7 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
@@ -58,14 +58,15 @@ import java.util.List;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -74,7 +75,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class DataServiceDialogControllerTest {
 
   @Mock TransMeta transMeta;
@@ -124,11 +125,9 @@ public class DataServiceDialogControllerTest {
     doReturn( new String[] { STEP_ONE_NAME, STEP_TWO_NAME } ).when( transMeta ).getStepNames();
 
     when( model.getServiceName() ).thenReturn( SERVICE_NAME );
-    when( model.getServiceStep() ).thenReturn( SELECTED_STEP );
     when( model.getTransMeta() ).thenReturn( transMeta );
 
     when( dataServiceMeta.getName() ).thenReturn( SERVICE_NAME );
-    when( dataServiceMeta.getStepname() ).thenReturn( SELECTED_STEP );
 
     when( model.getDataService() ).thenReturn( dataServiceMeta );
 
@@ -144,7 +143,7 @@ public class DataServiceDialogControllerTest {
 
   @Test
   public void testBindingsStreaming() throws Exception {
-    when( model.isStreaming() ).thenReturn( true );
+    lenient().when( model.isStreaming() ).thenReturn( true );
     testBindingsAux();
   }
 
@@ -169,7 +168,7 @@ public class DataServiceDialogControllerTest {
         bindings.add( binding );
         return binding;
       } );
-    when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString(),
+    lenient().when( bindingFactory.createBinding( same( model ), anyString(), any( XulComponent.class ), anyString(),
       any( BindingConvertor.class ) ) ).thenAnswer( invocationOnMock -> {
         Binding binding = mock( Binding.class );
         bindings.add( binding );
@@ -209,7 +208,7 @@ public class DataServiceDialogControllerTest {
     controller.saveAndClose();
 
     verify( messageBox, times( 3 ) ).open();
-    verify( logChannel ).logError( anyString(), same( metaStoreException ) );
+    verify( logChannel ).logError( any(), same( metaStoreException ) );
     verify( dialog, never() ).dispose();
 
     controller.saveAndClose();

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2023 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,7 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -60,15 +60,18 @@ import static org.hamcrest.core.AllOf.allOf;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author bmorrise
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class DataServiceClientTest extends BaseTest {
 
   private static final String TEST_SQL_QUERY = "SELECT * FROM " + DATA_SERVICE_NAME;
@@ -93,8 +96,6 @@ public class DataServiceClientTest extends BaseTest {
   public void setUp() throws Exception {
     when( dataServiceResolver.getDataService( DATA_SERVICE_NAME ) ).thenReturn( dataService );
     when( dataServiceResolver.getDataService( STREAMING_DATA_SERVICE_NAME ) ).thenReturn( streamingDataService );
-    when( dataServiceResolver.getDataServices( anyString(), any() ) ).thenReturn( ImmutableList.of( dataService,
-      streamingDataService) );
     when( dataServiceResolver.getDataServices( any() ) ).thenReturn( ImmutableList.of( dataService,
       streamingDataService ) );
 
@@ -182,7 +183,7 @@ public class DataServiceClientTest extends BaseTest {
   @Test
   public void testWriteFailure() throws Exception {
     IOException expected = new IOException();
-    doThrow( expected ).when( mockQuery ).writeTo( anyObject() );
+    doThrow( expected ).when( mockQuery ).writeTo( any() );
 
     when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.of() ) )
       .thenReturn( mockQuery );
@@ -190,13 +191,13 @@ public class DataServiceClientTest extends BaseTest {
     try ( DataInputStream stream = client.query( TEST_SQL_QUERY, MAX_ROWS ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
-    verify( log ).logError( anyString(), eq( expected ) );
+    verify( log ).logError( any(), eq( expected ) );
   }
 
   @Test
   public void testWindowQueryWriteFailure() throws Exception {
     IOException expected = new IOException();
-    doThrow( expected ).when( mockQuery ).writeTo( anyObject() );
+    doThrow( expected ).when( mockQuery ).writeTo( any() );
 
     when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY,
       WINDOW_MAX_SIZE, ImmutableMap.of() ) )
@@ -206,7 +207,7 @@ public class DataServiceClientTest extends BaseTest {
       WINDOW_MAX_SIZE ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
-    verify( log ).logError( anyString(), eq( expected ) );
+    verify( log ).logError( any(), eq( expected ) );
   }
 
   @Test
@@ -302,7 +303,6 @@ public class DataServiceClientTest extends BaseTest {
   @Test
   public void testGetServiceInformation() throws Exception {
     when( transMeta.getStepFields( dataService.getStepname() ) ).thenReturn( rowMetaInterface );
-    when( dataServiceResolver.getDataServices( anyString(), any() ) ).thenReturn( ImmutableList.of( dataService ) );
     when( dataServiceResolver.getDataServices( any() ) ).thenReturn( ImmutableList.of( dataService ) );
 
     assertThat( client.getServiceInformation(), contains( allOf(
@@ -319,7 +319,6 @@ public class DataServiceClientTest extends BaseTest {
   @Test
   public void testWindowGetServiceInformation() throws Exception {
     when( streamingTransMeta.getStepFields( streamingDataService.getStepname() ) ).thenReturn( rowMetaInterface );
-    when( dataServiceResolver.getDataServices( anyString(), any() ) ).thenReturn( ImmutableList.of( streamingDataService ) );
     when( dataServiceResolver.getDataServices( any() ) ).thenReturn( ImmutableList.of( streamingDataService ) );
 
     assertThat( client.getServiceInformation(), contains( allOf(

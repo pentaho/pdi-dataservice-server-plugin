@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,13 +22,14 @@
 
 package org.pentaho.di.trans.dataservice.ui.menu;
 
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.TreeItem;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
@@ -37,21 +38,17 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.spoon.SelectionTreeExtension;
 import org.pentaho.di.ui.spoon.Spoon;
-import org.eclipse.swt.graphics.Image;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
 
-
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class DataServiceViewTreeExtensionTest {
 
   private static String DATA_SERVICE_NAME = "Data Service Name";
@@ -96,16 +93,11 @@ public class DataServiceViewTreeExtensionTest {
     dataServiceViewTreeExtensionSpy = spy( new DataServiceViewTreeExtension( context ) );
 
     dataServiceMetaList.add( dataServiceMeta );
-    when( dataServiceMeta.getName() ).thenReturn( DATA_SERVICE_NAME );
   }
 
   @Test
   public void testCallExtension() throws Exception {
-    when( delegate.getDataServices( transMeta ) ).thenReturn( dataServiceMetaList );
     when( selectionTreeExtension.getAction() ).thenReturn( Spoon.EDIT_SELECTION_EXTENSION );
-    when( selectionTreeExtension.getMeta() ).thenReturn( transMeta );
-    when( selectionTreeExtension.getTiRootName() ).thenReturn( treeItem );
-    when( guiResource.getImage( anyString(), any( ClassLoader.class ), anyInt(), anyInt() ) ).thenReturn( image );
     when( selectionTreeExtension.getSelection() ).thenReturn( dataServiceMeta );
 
     dataServiceViewTreeExtension.callExtensionPoint( log, selectionTreeExtension );
@@ -116,13 +108,9 @@ public class DataServiceViewTreeExtensionTest {
 
   @Test
   public void testCallExtensionWithRefreshTree() throws Exception {
-    when( guiResource.getImageFolder() ).thenReturn( image );
-    when( selectionTreeExtension.getGuiResource() ).thenReturn( guiResource );
-
     doNothing().when( dataServiceViewTreeExtensionSpy ).refreshTree(
         any( SelectionTreeExtension.class ) );
 
-    when( delegate.getDataServices( transMeta ) ).thenReturn( dataServiceMetaList );
     when( selectionTreeExtension.getAction() ).thenReturn( Spoon.REFRESH_SELECTION_EXTENSION );
     when( selectionTreeExtension.getMeta() ).thenReturn( transMeta );
     dataServiceViewTreeExtensionSpy.callExtensionPoint( log, selectionTreeExtension );

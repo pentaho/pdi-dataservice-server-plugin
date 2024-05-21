@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.attributes.metastore.EmbeddedMetaStore;
 import org.pentaho.di.core.exception.KettleValueException;
@@ -35,7 +35,6 @@ import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.core.sql.SQLCondition;
-import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
@@ -53,8 +52,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doThrow;
@@ -64,7 +63,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class ParameterGenerationTest {
 
   public static final String DATA_SERVICE_NAME = "My Data Service";
@@ -78,7 +77,6 @@ public class ParameterGenerationTest {
   private ParameterGeneration paramGen;
   @Mock private ParameterGenerationFactory serviceProvider;
   @Mock private ParameterGenerationService service;
-  @Mock private Trans trans;
   @Mock private TransMeta transMeta;
   @Mock private StepInterface stepInterface;
   @Mock private StepMeta stepMeta;
@@ -93,9 +91,7 @@ public class ParameterGenerationTest {
     paramGen.createFieldMapping( "B_src", "B_tgt" );
     paramGen.createFieldMapping( "C_src", "C_tgt" );
 
-    when( trans.getTransMeta() ).thenReturn( transMeta );
     when( transMeta.findStep( OPT_STEP ) ).thenReturn( stepMeta );
-    when( transMeta.getEmbeddedMetaStore() ).thenReturn( embeddedMetaStore );
     when( stepInterface.getStepMeta() ).thenReturn( stepMeta );
     when( serviceProvider.getService( stepMeta ) ).thenReturn( service );
     when( service.getParameterDefault() ).thenReturn( EXPECTED_DEFAULT );

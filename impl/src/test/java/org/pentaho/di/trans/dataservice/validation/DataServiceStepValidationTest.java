@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,10 +24,6 @@ package org.pentaho.di.trans.dataservice.validation;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
-import org.pentaho.metaverse.api.ILineageClient;
-import org.pentaho.metaverse.api.MetaverseException;
-import org.pentaho.metaverse.api.StepField;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -36,7 +32,10 @@ import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.ParameterGenerationFactory;
+import org.pentaho.metaverse.api.ILineageClient;
+import org.pentaho.metaverse.api.MetaverseException;
+import org.pentaho.metaverse.api.StepField;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,8 +44,8 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -93,7 +92,7 @@ public class DataServiceStepValidationTest extends BaseStepValidationTest {
   @Test
   public void allSupportedFieldsLeaveRemarksUntouched() throws MetaverseException {
     setupServiceStepNameMatches();
-    when( serviceProvider.supportsStep( any( StepMeta.class ) ) )
+    when( serviceProvider.supportsStep( any() ) )
         .thenReturn( true );
     checkStepWithMockedOriginSteps();
 
