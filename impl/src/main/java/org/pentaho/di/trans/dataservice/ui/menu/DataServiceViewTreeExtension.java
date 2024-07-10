@@ -68,10 +68,10 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
   protected void refreshTree( SelectionTreeExtension selectionTreeExtension ) {
     TransMeta meta = (TransMeta) selectionTreeExtension.getMeta();
 
-    TreeItem tiRootName = selectionTreeExtension.getTiRootName();
+    TreeItem treeItem = selectionTreeExtension.getTreeItem();
     GUIResource guiResource = selectionTreeExtension.getGuiResource();
 
-    TreeItem tiDSTitle = createTreeItem( tiRootName, STRING_DATA_SERVICES, guiResource.getImageFolder() );
+    TreeItem tiDSTitle = createTreeItem( treeItem, STRING_DATA_SERVICES, guiResource.getImageFolder() );
 
     for ( DataServiceMeta dataService : delegate.getDataServices( meta ) ) {
       createTreeItem( tiDSTitle, dataService.getName(), getDataServiceImage( guiResource, dataService ) );
