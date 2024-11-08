@@ -52,7 +52,7 @@ public class DataServiceFolderProvider extends TreeFolderProvider {
 
   @Override
   public void refresh( Optional<AbstractMeta> meta, TreeNode treeNode, String filter ) {
-    if ( meta.isPresent() ) {
+    if ( meta.isPresent() && meta.get() instanceof TransMeta ) {
       for ( DataServiceMeta dataService : dataServiceDelegate.getDataServices( (TransMeta) meta.get() ) ) {
         if ( !filterMatch( dataService.getName(), filter ) ) {
           continue;
@@ -75,4 +75,10 @@ public class DataServiceFolderProvider extends TreeFolderProvider {
   public String getTitle() {
     return STRING_DATA_SERVICES;
   }
+
+  @Override
+  public Class getType() {
+    return DataServiceMeta.class;
+  }
+
 }
