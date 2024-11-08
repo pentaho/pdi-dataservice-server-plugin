@@ -44,7 +44,7 @@ public class DataServiceLifecycleListener implements LifecycleListener {
 
   @Override
   public void onStart( LifeEventHandler handler ) throws LifecycleException {
-    Spoon.getInstance().getTreeManager().addTreeProvider( Spoon.STRING_TRANSFORMATIONS,
+    Spoon.getInstance().getTreeManager().addTreeProvider( Spoon.STRING_CONFIGURATIONS,
             new DataServiceFolderProvider( dataServiceDelegate ) );
   }
 
