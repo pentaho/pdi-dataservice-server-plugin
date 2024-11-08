@@ -50,8 +50,8 @@ import static org.mockito.Mockito.when;
 @RunWith( MockitoJUnitRunner.StrictStubs.class)
 public class DataServiceTreeDelegateExtensionTest {
 
+  private static int CASE_NUMBER_TWO = 2;
   private static int CASE_NUMBER_THREE = 3;
-  private static int CASE_NUMBER_FOUR = 4;
 
   @Mock DataServiceMetaStoreUtil metaStoreUtil;
 
@@ -76,16 +76,16 @@ public class DataServiceTreeDelegateExtensionTest {
   @Test public void testCallExtensionPoint() throws Exception {
 
     List<TreeSelection> objects = new ArrayList<>();
-    String[] path = new String[] { "/", "/", DataServiceTreeDelegateExtension.STRING_DATA_SERVICES, "" };
+    String[] path = new String[] { "/", DataServiceTreeDelegateExtension.STRING_DATA_SERVICES, "" };
 
-    when( spoonTreeDelegateExtension.getCaseNumber() ).thenReturn( CASE_NUMBER_THREE );
+    when( spoonTreeDelegateExtension.getCaseNumber() ).thenReturn( CASE_NUMBER_TWO );
     when( spoonTreeDelegateExtension.getTransMeta() ).thenReturn( transMeta );
     when( spoonTreeDelegateExtension.getPath() ).thenReturn( path );
     when( spoonTreeDelegateExtension.getObjects() ).thenReturn( objects );
 
     dataServiceTreeDelegateExtension.callExtensionPoint( log, spoonTreeDelegateExtension );
 
-    when( spoonTreeDelegateExtension.getCaseNumber() ).thenReturn( CASE_NUMBER_FOUR );
+    when( spoonTreeDelegateExtension.getCaseNumber() ).thenReturn( CASE_NUMBER_THREE );
     when( metaStoreUtil.getDataService( "", transMeta ) ).thenReturn( dataServiceMeta );
 
     dataServiceTreeDelegateExtension.callExtensionPoint( log, spoonTreeDelegateExtension );
