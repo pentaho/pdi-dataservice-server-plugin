@@ -63,15 +63,15 @@ public class DataServiceTreeDelegateExtension implements ExtensionPointInterface
 
     TreeSelection object = null;
 
-    if ( path[2].equals( STRING_DATA_SERVICES ) ) {
+    if ( path[1].equals( STRING_DATA_SERVICES ) ) {
       switch ( caseNumber ) {
-        case 3:
-          object = new TreeSelection( path[2], DataServiceMeta.class, transMeta );
+        case 2:
+          object = new TreeSelection( path[1], DataServiceMeta.class, transMeta );
           break;
-        case 4:
+        case 3:
           try {
-            DataServiceMeta dataService = metaStoreUtil.getDataService( path[3], transMeta );
-            object = new TreeSelection( path[ 3 ], dataService, transMeta );
+            DataServiceMeta dataService = metaStoreUtil.getDataService( path[2], transMeta );
+            object = new TreeSelection( path[ 2 ], dataService, transMeta );
           } catch ( Exception e ) {
             // Do Nothing
           }
