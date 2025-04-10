@@ -51,6 +51,7 @@ import static org.hamcrest.core.AllOf.allOf;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -182,7 +183,7 @@ public class DataServiceClientTest extends BaseTest {
     try ( DataInputStream stream = client.query( TEST_SQL_QUERY, MAX_ROWS ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
-    verify( log ).logError( any(), eq( expected ) );
+    verify( log ).logError( isNull(), eq( expected ) );
   }
 
   @Test
@@ -198,7 +199,7 @@ public class DataServiceClientTest extends BaseTest {
       WINDOW_MAX_SIZE ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
-    verify( log ).logError( any(), eq( expected ) );
+    verify( log ).logError( isNull(), eq( expected ) );
   }
 
   @Test
