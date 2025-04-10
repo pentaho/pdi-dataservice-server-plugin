@@ -183,6 +183,8 @@ public class DataServiceClientTest extends BaseTest {
     try ( DataInputStream stream = client.query( TEST_SQL_QUERY, MAX_ROWS ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
+    // Holding the main thread for 2 seconds to avoid  race condition between the main thread and executor service thread created in DataServiceClient#query()
+    Thread.sleep( 2000 );
     verify( log ).logError( isNull(), eq( expected ) );
   }
 
@@ -199,6 +201,8 @@ public class DataServiceClientTest extends BaseTest {
       WINDOW_MAX_SIZE ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
+    // Holding the main thread for 2 seconds to avoid  race condition between the main thread and executor service thread created in DataServiceClient#query()
+    Thread.sleep( 2000 );
     verify( log ).logError( isNull(), eq( expected ) );
   }
 
@@ -259,6 +263,8 @@ public class DataServiceClientTest extends BaseTest {
 
     // Assert no errors thrown or logged
     assertThat( Futures.getChecked( queryFinished, IOException.class ), is( true ) );
+    // Holding the main thread for 2 seconds to avoid  race condition between the main thread and executor service thread created in DataServiceClient#query()
+    Thread.sleep( 2000 );
     verify( log, never() ).logError( anyString(), any( Throwable.class ) );
   }
 
@@ -289,6 +295,8 @@ public class DataServiceClientTest extends BaseTest {
 
     // Assert no errors thrown or logged
     assertThat( Futures.getChecked( queryFinished, IOException.class ), is( true ) );
+    // Holding the main thread for 2 seconds to avoid  race condition between the main thread and executor service thread created in DataServiceClient#query()
+    Thread.sleep( 2000 );
     verify( log, never() ).logError( anyString(), any( Throwable.class ) );
   }
 
