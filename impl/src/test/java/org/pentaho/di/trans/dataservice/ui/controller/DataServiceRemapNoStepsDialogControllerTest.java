@@ -29,7 +29,7 @@ public class DataServiceRemapNoStepsDialogControllerTest {
     SwtDialog dialog = mock( SwtDialog.class );
 
     DataServiceRemapNoStepsDialogController controller = spy( new DataServiceRemapNoStepsDialogController() );
-    Assert.hasText( controller.getName(), "" );
+    Assert.hasText( controller.getName(), "Controller name must not be empty" );
     doReturn( dialog ).when( controller ).getElementById( anyString() );
     controller.close();
     verify( dialog ).dispose();
