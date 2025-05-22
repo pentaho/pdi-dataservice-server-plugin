@@ -20,7 +20,6 @@
   <modules>
     <module>impl</module>
     <module>assemblies</module>
-    <module>server-plugin</module>
   </modules>
 
   <licenses>

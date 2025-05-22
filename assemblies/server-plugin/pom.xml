@@ -12,6 +12,10 @@
         <version>10.3.0.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
+    <properties>
+        <cache-api.version>1.0.0</cache-api.version>
+        <net.sf.ehcache-core.version>2.8.3</net.sf.ehcache-core.version>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>pentaho</groupId>
@@ -69,6 +73,37 @@
             <groupId>org.reactivestreams</groupId>
             <artifactId>reactive-streams</artifactId>
             <version>${reactivestreams.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>${cache-api.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.ehcache.internal</groupId>
+            <artifactId>ehcache-core</artifactId>
+            <version>${net.sf.ehcache-core.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ehcache</groupId>
+            <artifactId>jcache</artifactId>
+            <version>1.0.0</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>pentaho</groupId>
+            <artifactId>pentaho-metaverse-api</artifactId>
+            <version>${metastore.version}</version>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

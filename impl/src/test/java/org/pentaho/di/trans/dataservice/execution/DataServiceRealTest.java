@@ -15,11 +15,10 @@ package org.pentaho.di.trans.dataservice.execution;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.pentaho.caching.api.PentahoCacheSystemConfiguration;
-import org.pentaho.caching.impl.PentahoCacheManagerImpl;
+import org.pentaho.caching.PentahoCacheManagerImpl;
 import org.pentaho.caching.ri.HeapCacheProvidingService;
 import org.pentaho.di.core.KettleClientEnvironment;
 import org.pentaho.di.core.Props;
-import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.core.sql.SQL;
@@ -28,14 +27,12 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.cache.ServiceCacheFactory;
-import org.pentaho.di.trans.dataservice.ui.UIFactory;
 import org.pentaho.di.trans.steps.delay.DelayMeta;
 
 import java.util.HashMap;
 import java.util.concurrent.Executors;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
 
 public class DataServiceRealTest {

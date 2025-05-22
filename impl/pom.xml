@@ -12,8 +12,31 @@
   <name>Pentaho Community Edition Project: ${project.artifactId}</name>
   <description>A server for PDI Data Services</description>
   <url>http://www.pentaho.com</url>
-
+  <properties>
+    <cache-api.version>1.0.0</cache-api.version>
+    <net.sf.ehcache-core.version>2.8.3</net.sf.ehcache-core.version>
+  </properties>
   <dependencies>
+    <dependency>
+      <groupId>javax.cache</groupId>
+      <artifactId>cache-api</artifactId>
+      <version>${cache-api.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.ehcache.internal</groupId>
+      <artifactId>ehcache-core</artifactId>
+      <version>${net.sf.ehcache-core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.ehcache</groupId>
+      <artifactId>jcache</artifactId>
+      <version>1.0.0</version>
+    </dependency>
     <dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-core</artifactId>
@@ -85,18 +108,6 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.pentaho</groupId>
-      <artifactId>pentaho-cache-manager-api</artifactId>
-      <version>${pentaho-cache-manager.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.pentaho</groupId>
-      <artifactId>guava-cache-provider</artifactId>
-      <version>${pentaho-cache-manager.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>

@@ -21,6 +21,7 @@ import com.google.common.cache.RemovalNotification;
 import org.pentaho.caching.api.PentahoCacheManager;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.service.PluginServiceLoader;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
 import org.pentaho.di.trans.dataservice.optimization.paramgen.*;
@@ -31,9 +32,10 @@ import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTran
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
-import org.pentaho.metaverse.client.LineageClient;
+import org.pentaho.metaverse.api.ILineageClient;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -90,7 +92,14 @@ public class DataServiceContext implements Context {
       TableInputParameterGenerationFactory tableInputParameterGenerationFactory = new TableInputParameterGenerationFactory();
       serviceFactoryList.add( mongodbInputParameterGenerationFactory );
       serviceFactoryList.add( tableInputParameterGenerationFactory );
-      AutoOptimizationService autoOptimizationService = new AutoParameterGenerationService( new LineageClient(), new ParameterGenerationFactory (serviceFactoryList ) );
+      ILineageClient lineageClient = null;
+      try {
+        Collection<ILineageClient> lineageClients = PluginServiceLoader.loadServices( ILineageClient.class );
+        lineageClient = lineageClients.stream().findFirst().get();
+      } catch ( Exception e ) {
+        e.printStackTrace();
+      }
+      AutoOptimizationService autoOptimizationService = new AutoParameterGenerationService( lineageClient, new ParameterGenerationFactory (serviceFactoryList ) );
       List<AutoOptimizationService> autoOptimizationServices = new ArrayList<>();
       autoOptimizationServices.add( autoOptimizationService );
       UIFactory uiFactory = new UIFactory();
