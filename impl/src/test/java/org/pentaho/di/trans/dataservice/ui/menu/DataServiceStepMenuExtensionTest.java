@@ -74,7 +74,7 @@ public class DataServiceStepMenuExtensionTest {
   @Before
   public void setUp() throws Exception {
     when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
-    dataServiceStepMenuExtension = new DataServiceStepMenuExtension( context );
+    dataServiceStepMenuExtension = new DataServiceStepMenuExtension(  );
   }
 
   @Test

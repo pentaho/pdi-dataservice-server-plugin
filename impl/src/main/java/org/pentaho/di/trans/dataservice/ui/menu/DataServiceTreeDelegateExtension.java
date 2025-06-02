@@ -37,8 +37,8 @@ public class DataServiceTreeDelegateExtension implements ExtensionPointInterface
 
   private DataServiceMetaStoreUtil metaStoreUtil;
 
-  public DataServiceTreeDelegateExtension( DataServiceContext context ) {
-    this.metaStoreUtil = context.getMetaStoreUtil();
+  public DataServiceTreeDelegateExtension(  ) {
+    this.metaStoreUtil = DataServiceContext.getInstance().getMetaStoreUtil();
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object extension ) throws KettleException {

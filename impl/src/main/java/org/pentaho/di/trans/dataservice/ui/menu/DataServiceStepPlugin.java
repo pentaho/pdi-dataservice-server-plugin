@@ -50,8 +50,8 @@ public class DataServiceStepPlugin implements SpoonPluginInterface {
   private final String STEP_ADD_DATA_SERVICE =
     "org/pentaho/di/trans/dataservice/ui/xul/dataservice-overlay.xul";
 
-  public DataServiceStepPlugin( DataServiceContext context ) {
-    handler = new DataServiceStepHandler( context );
+  public DataServiceStepPlugin(  ) {
+    handler = new DataServiceStepHandler( DataServiceContext.getInstance() );
   }
 
   @Override

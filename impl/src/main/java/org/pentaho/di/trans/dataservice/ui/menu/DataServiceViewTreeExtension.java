@@ -40,8 +40,8 @@ public class DataServiceViewTreeExtension implements ExtensionPointInterface {
   public static final String STRING_DATA_SERVICES =
     BaseMessages.getString( PKG, "DataServicePopupMenu.TITLE" );
 
-  public DataServiceViewTreeExtension( DataServiceContext context ) {
-    delegate = context.getDataServiceDelegate();
+  public DataServiceViewTreeExtension( ) {
+    delegate = DataServiceContext.getInstance().getDataServiceDelegate();
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {

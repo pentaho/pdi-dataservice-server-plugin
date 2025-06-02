@@ -44,7 +44,7 @@ public class TransImportExtensionPointPluginTest {
     when( transMeta.getRepository() ).thenReturn( transRepository );
     when( transMeta.getMetaStore() ).thenReturn( transMetaStore );
 
-    TransImportExtensionPointPlugin plugin = new TransImportExtensionPointPlugin( referenceSynchronizer );
+    TransImportExtensionPointPlugin plugin = new TransImportExtensionPointPlugin(  );
     LogChannelInterface log = mock( LogChannelInterface.class );
 
     plugin.callExtensionPoint( log, null );

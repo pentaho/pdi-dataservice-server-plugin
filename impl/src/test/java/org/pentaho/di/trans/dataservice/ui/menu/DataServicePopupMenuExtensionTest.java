@@ -90,7 +90,7 @@ public class DataServicePopupMenuExtensionTest {
     TreeSelection[] treeSelection = new TreeSelection[] { selection };
     when( spoon.getTreeObjects( any( Tree.class ) ) ).thenReturn( treeSelection );
 
-    dataServicePopupMenuExtension = new DataServicePopupMenuExtension( context );
+    dataServicePopupMenuExtension = new DataServicePopupMenuExtension(  );
   }
 
   @Test

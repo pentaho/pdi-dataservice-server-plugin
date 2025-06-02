@@ -26,9 +26,7 @@ import org.pentaho.caching.api.PentahoCacheProvidingService;
 import org.pentaho.caching.ehcache.EhcacheProvidingService;
 import org.pentaho.caching.ri.HeapCacheProvidingService;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,7 +37,7 @@ import java.util.logging.Logger;
 public class PentahoCacheManagerFactory {
 
     private final ListMultimap<String, SettableFuture<PentahoCacheProvidingService>> providerMap;
-
+    Map<String, String> properties = new HashMap<>();
     public PentahoCacheManagerFactory(  ) {
         providerMap = LinkedListMultimap.create();
     }
@@ -47,6 +45,7 @@ public class PentahoCacheManagerFactory {
     public void init() {
             PentahoCacheProvidingService ehcacheService = new EhcacheProvidingService();
             PentahoCacheProvidingService guavaService = new HeapCacheProvidingService();
+
             registerProvider(Constants.PENTAHO_CACHE_PROVIDER_EHCACHE, ehcacheService );
             registerProvider(Constants.PENTAHO_CACHE_PROVIDER_GUAVA, ehcacheService );
     }

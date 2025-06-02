@@ -80,8 +80,8 @@ public class DataServiceViewTreeExtensionTest {
   public void setUp() throws Exception {
     when( context.getDataServiceDelegate() ).thenReturn( delegate );
 
-    dataServiceViewTreeExtension = new DataServiceViewTreeExtension( context );
-    dataServiceViewTreeExtensionSpy = spy( new DataServiceViewTreeExtension( context ) );
+    dataServiceViewTreeExtension = new DataServiceViewTreeExtension(  );
+    dataServiceViewTreeExtensionSpy = spy( new DataServiceViewTreeExtension(  ) );
 
     dataServiceMetaList.add( dataServiceMeta );
   }

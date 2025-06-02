@@ -38,8 +38,8 @@ public class StepValidationExtensionPointPlugin implements ExtensionPointInterfa
   private List<StepValidation> stepValidations =
       new ArrayList<StepValidation>();
 
-  public StepValidationExtensionPointPlugin( DataServiceContext context ) {
-    this.metaStoreUtil = context.getMetaStoreUtil();
+  public StepValidationExtensionPointPlugin( ) {
+    this.metaStoreUtil = DataServiceContext.getInstance().getMetaStoreUtil();
   }
 
   @Override

@@ -46,7 +46,7 @@ public class TransOpenedExtensionPointPluginTest {
     when( context.getDataServiceDelegate() ).thenReturn( delegate );
     when( delegate.createSyncService() ).thenReturn( service );
 
-    extensionPointPlugin = new TransOpenedExtensionPointPlugin( context );
+    extensionPointPlugin = new TransOpenedExtensionPointPlugin(  );
   }
 
   @Test

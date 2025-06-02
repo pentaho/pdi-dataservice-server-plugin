@@ -61,7 +61,7 @@ public class DataServiceTreeDelegateExtensionTest {
   @Before public void setUp() throws Exception {
     when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
 
-    dataServiceTreeDelegateExtension = new DataServiceTreeDelegateExtension( context );
+    dataServiceTreeDelegateExtension = new DataServiceTreeDelegateExtension(  );
   }
 
   @Test public void testCallExtensionPoint() throws Exception {

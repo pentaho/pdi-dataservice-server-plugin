@@ -44,9 +44,9 @@ public class DataServicePopupMenuExtension implements ExtensionPointInterface {
 
   public DataServiceMeta selectedDataService;
 
-  public DataServicePopupMenuExtension( DataServiceContext context ) {
-    delegate = context.getDataServiceDelegate();
-    uiFactory = context.getUIFactory();
+  public DataServicePopupMenuExtension( ) {
+    delegate = DataServiceContext.getInstance().getDataServiceDelegate();
+    uiFactory = DataServiceContext.getInstance().getUIFactory();
   }
 
   @Override

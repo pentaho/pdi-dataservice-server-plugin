@@ -41,7 +41,7 @@ public class StepValidationExtensionPointPluginTest extends BaseStepValidationTe
 
     when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
     when( metaStoreUtil.getDataServiceByStepName( transMeta, null ) ).thenReturn( dataServiceMeta );
-    extensionPointPlugin = new StepValidationExtensionPointPlugin( context );
+    extensionPointPlugin = new StepValidationExtensionPointPlugin(  );
     extensionPointPlugin.setStepValidations( ImmutableList.of( stepValidation ) );
   }
 

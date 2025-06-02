@@ -90,7 +90,7 @@ public class DeleteRepositoryObjectExtensionPointPluginTest {
   @Before
   public void setUp() throws Exception {
     when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
-    plugin = new DeleteRepositoryObjectExtensionPointPlugin( context );
+    plugin = new DeleteRepositoryObjectExtensionPointPlugin(  );
     repoObjects = new UIRepositoryObjects( asList( repositoryObject ) );
     repoDirectories = new UIRepositoryDirectories();
     repoDirectories.add( repositorySubDirectory );

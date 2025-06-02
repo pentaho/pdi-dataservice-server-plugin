@@ -95,7 +95,7 @@ public class DataServiceContext implements Context {
       ILineageClient lineageClient = null;
       try {
         Collection<ILineageClient> lineageClients = PluginServiceLoader.loadServices( ILineageClient.class );
-        lineageClient = lineageClients.stream().findFirst().get();
+        lineageClient = ( lineageClients.stream().findFirst().isPresent() ) ? lineageClients.stream().findFirst().get(): null;
       } catch ( Exception e ) {
         e.printStackTrace();
       }

@@ -30,8 +30,8 @@ import org.pentaho.ui.xul.containers.XulMenupopup;
 public class DataServiceStepMenuExtension implements ExtensionPointInterface {
   private DataServiceMetaStoreUtil metaStoreUtil;
 
-  public DataServiceStepMenuExtension( DataServiceContext context ) {
-    this.metaStoreUtil = context.getMetaStoreUtil();
+  public DataServiceStepMenuExtension(  ) {
+    this.metaStoreUtil = DataServiceContext.getInstance().getMetaStoreUtil();
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {

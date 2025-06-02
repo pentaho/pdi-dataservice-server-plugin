@@ -73,7 +73,7 @@ public class TransPainterStepExtensionPointPluginTest {
   @Before
   public void setUp() throws Exception {
     when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
-    plugin = new TransPainterStepExtensionPointPlugin( context );
+    plugin = new TransPainterStepExtensionPointPlugin( );
   }
 
   @Test

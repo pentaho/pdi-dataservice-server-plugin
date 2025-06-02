@@ -31,8 +31,8 @@ import org.pentaho.di.trans.dataservice.DataServiceContext;
 public class TransOpenedExtensionPointPlugin implements ExtensionPointInterface {
   private final SynchronizationListener synchronizationListener;
 
-  public TransOpenedExtensionPointPlugin( DataServiceContext context ) {
-    this.synchronizationListener = context.getDataServiceDelegate().createSyncService();
+  public TransOpenedExtensionPointPlugin(  ) {
+    this.synchronizationListener = DataServiceContext.getInstance().getDataServiceDelegate().createSyncService();
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {

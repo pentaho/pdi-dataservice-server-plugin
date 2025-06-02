@@ -57,7 +57,7 @@ public class DataServiceStepDeleteExtensionPointPluginTest {
 
     StepMeta[] steps = new StepMeta[] { step1 };
 
-    DataServiceStepDeleteExtensionPointPlugin plugin = new DataServiceStepDeleteExtensionPointPlugin( context );
+    DataServiceStepDeleteExtensionPointPlugin plugin = new DataServiceStepDeleteExtensionPointPlugin( );
     try {
       plugin.callExtensionPoint( null, steps );
     } catch ( KettleException ke ) {

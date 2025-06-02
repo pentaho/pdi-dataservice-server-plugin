@@ -20,6 +20,7 @@ import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceContext;
 
 @ExtensionPoint(
     id = "TransImportExtensionPointPlugin",
@@ -30,8 +31,8 @@ public class TransImportExtensionPointPlugin implements ExtensionPointInterface 
   private Class<TransImportExtensionPointPlugin> PKG = TransImportExtensionPointPlugin.class;
   private DataServiceReferenceSynchronizer referenceSynchronizer;
 
-  public TransImportExtensionPointPlugin( DataServiceReferenceSynchronizer referenceSynchronizer ) {
-    this.referenceSynchronizer = referenceSynchronizer;
+  public TransImportExtensionPointPlugin(  ) {
+    this.referenceSynchronizer = new DataServiceReferenceSynchronizer(DataServiceContext.getInstance() );
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object o ) throws KettleException {

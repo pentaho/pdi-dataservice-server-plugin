@@ -33,12 +33,10 @@ import org.pentaho.di.trans.step.StepMeta;
   )
 
 public class DataServiceStepDeleteExtensionPointPlugin implements ExtensionPointInterface {
-  private DataServiceContext context;
   private DataServiceDelegate dataServiceDelegate;
 
-  public DataServiceStepDeleteExtensionPointPlugin( DataServiceContext context ) {
-    this.context = context;
-    this.dataServiceDelegate = context.getDataServiceDelegate();
+  public DataServiceStepDeleteExtensionPointPlugin(  ) {
+    this.dataServiceDelegate = DataServiceContext.getInstance().getDataServiceDelegate();
   }
 
   @Override public void callExtensionPoint( LogChannelInterface log, Object object ) throws KettleException {
@@ -75,8 +73,8 @@ public class DataServiceStepDeleteExtensionPointPlugin implements ExtensionPoint
 
               break;
             case DELETE:
-              context.removeServiceTransExecutor( dataService.getName() );
-              context.getDataServiceDelegate().removeDataService( dataService );
+              DataServiceContext.getInstance().removeServiceTransExecutor( dataService.getName() );
+              DataServiceContext.getInstance().getDataServiceDelegate().removeDataService( dataService );
               break;
           }
         }

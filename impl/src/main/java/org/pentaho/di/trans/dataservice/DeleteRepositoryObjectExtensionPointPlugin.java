@@ -34,8 +34,8 @@ import org.pentaho.di.ui.repository.repositoryexplorer.model.UIRepositoryObject;
 public class DeleteRepositoryObjectExtensionPointPlugin implements ExtensionPointInterface {
   private final DataServiceMetaStoreUtil metaStoreUtil;
 
-  public DeleteRepositoryObjectExtensionPointPlugin( DataServiceContext context ) {
-    this.metaStoreUtil = context.getMetaStoreUtil();
+  public DeleteRepositoryObjectExtensionPointPlugin(  ) {
+    this.metaStoreUtil = DataServiceContext.getInstance().getMetaStoreUtil();
   }
 
   @Override
