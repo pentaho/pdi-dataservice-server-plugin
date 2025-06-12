@@ -24,6 +24,8 @@ import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.tree.TreeNode;
 import org.pentaho.di.ui.spoon.tree.TreeFolderProvider;
 
+import java.util.Optional;
+
 /**
  * Created by bmorrise on 7/6/18.
  */
@@ -40,12 +42,14 @@ public class DataServiceFolderProvider extends TreeFolderProvider {
   }
 
   @Override
-  public void refresh( AbstractMeta meta, TreeNode treeNode, String filter ) {
-    for ( DataServiceMeta dataService : dataServiceDelegate.getDataServices( (TransMeta) meta ) ) {
-      if ( !filterMatch( dataService.getName(), filter ) ) {
-        continue;
+  public void refresh( Optional<AbstractMeta> meta, TreeNode treeNode, String filter ) {
+    if ( meta.isPresent() && meta.get() instanceof TransMeta ) {
+      for ( DataServiceMeta dataService : dataServiceDelegate.getDataServices( (TransMeta) meta.get() ) ) {
+        if ( !filterMatch( dataService.getName(), filter ) ) {
+          continue;
+        }
+        createTreeNode( treeNode, dataService.getName(), getDataServiceImage( GUIResource.getInstance(), dataService ) );
       }
-      createTreeNode( treeNode, dataService.getName(), getDataServiceImage( GUIResource.getInstance(), dataService ) );
     }
   }
 
@@ -62,4 +66,10 @@ public class DataServiceFolderProvider extends TreeFolderProvider {
   public String getTitle() {
     return STRING_DATA_SERVICES;
   }
+
+  @Override
+  public Class getType() {
+    return DataServiceMeta.class;
+  }
+
 }
