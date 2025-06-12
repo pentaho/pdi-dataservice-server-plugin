@@ -181,7 +181,7 @@ public class DataServiceDialogTest {
   public void testApplyOverlay() throws Exception {
     final DataServiceDialog.OptimizationOverlay overlay = mock( DataServiceDialog.OptimizationOverlay.class );
     final ResourceBundle resourceBundle = mock( ResourceBundle.class );
-    String xulOverlay = "/path/to/overlay.xul";
+    String xulOverlay = "/path/to/pushdown-overlay.xul";
 
     dialog = new DataServiceDialog( controller, model ) {
       // Intercept resource bundle creation
@@ -201,7 +201,7 @@ public class DataServiceDialogTest {
   public void testApplyOverlayException() throws Exception {
     final DataServiceDialog.OptimizationOverlay overlay = mock( DataServiceDialog.OptimizationOverlay.class );
     final ResourceBundle resourceBundle = mock( ResourceBundle.class );
-    String xulOverlay = "/path/to/overlay.xul";
+    String xulOverlay = "/path/to/pushdown-overlay.xul";
 
     dialog = new DataServiceDialog( controller, model ) {
       // Intercept resource bundle creation

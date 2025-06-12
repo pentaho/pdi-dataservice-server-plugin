@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 public class StreamingOverlayTest {
   private StreamingOverlay streamingOverlay;
   private String XUL_OVERLAY =
-    "/org/pentaho/di/trans/dataservice/streaming/ui/streaming-overlay.xul";
+    "org/pentaho/di/trans/dataservice/ui/xul/streaming-pushdown-overlay.xul";
 
   @Mock private DataServiceDialog dialog;
   @Mock private DataServiceModel model;

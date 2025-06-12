@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class ParameterPushdownFactory implements PushDownFactory {
   @VisibleForTesting
-  static final String XUL_SOURCE = "/org/pentaho/di/trans/dataservice/optimization/pushdown/ui/overlay.xul";
+  static final String XUL_SOURCE = "org/pentaho/di/trans/dataservice/ui/xul/pushdown-overlay.xul";
 
   @Override public String getName() {
     return ParameterPushdown.NAME;

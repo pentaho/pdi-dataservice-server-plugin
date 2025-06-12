@@ -21,7 +21,7 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
  */
 public class StreamingOverlay implements DataServiceDialog.OptimizationOverlay {
   private static final String XUL_OVERLAY =
-    "/org/pentaho/di/trans/dataservice/streaming/ui/streaming-overlay.xul";
+    "org/pentaho/di/trans/dataservice/ui/xul/streaming-overlay.xul";
 
   private StreamingController controller;
 
