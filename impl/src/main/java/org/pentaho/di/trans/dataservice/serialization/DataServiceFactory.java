@@ -14,7 +14,6 @@
 package org.pentaho.di.trans.dataservice.serialization;
 
 import com.google.common.base.Function;
-import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.sql.SQL;
 import org.pentaho.di.metastore.MetaStoreConst;
 import org.pentaho.di.repository.Repository;
@@ -34,8 +33,8 @@ public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
   private static final Class<?> PKG = DataServiceFactory.class;
   private static Supplier<IMetaStore> metastoreSupplier = MetaStoreConst.getDefaultMetastoreSupplier();
 
-  protected DataServiceFactory( DataServiceContext context ) {
-    super( context.getMetaStoreUtil() );
+  protected DataServiceFactory(  ) {
+    super(  );
   }
 
   public abstract Repository getRepository();
@@ -61,10 +60,10 @@ public abstract class DataServiceFactory extends DataServiceMetaStoreUtil {
     DataServiceMeta dataService = getDataService( sql.getServiceName() );
 
     if ( dataService.isStreaming() ) {
-      return new DataServiceExecutor.Builder( sql, dataService, context )
+      return new DataServiceExecutor.Builder( sql, dataService, DataServiceContext.getInstance() )
         .rowLimit( dataService.getRowLimit() ).timeLimit( dataService.getTimeLimit() );
     }
-    return new DataServiceExecutor.Builder( sql, dataService, context );
+    return new DataServiceExecutor.Builder( sql, dataService, DataServiceContext.getInstance() );
   }
 
   // public for testing only. 

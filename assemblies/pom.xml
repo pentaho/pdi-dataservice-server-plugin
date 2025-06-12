@@ -15,9 +15,7 @@
   <name>Pentaho Community Edition Project: ${project.artifactId}</name>
   <description>Assemblies for PDI Data Services server</description>
   <url>http://www.pentaho.com</url>
-
   <modules>
-    <module>dataservice</module>
-    <module>dataservice-legacy</module>
+    <module>server-plugin</module>
   </modules>
 </project>

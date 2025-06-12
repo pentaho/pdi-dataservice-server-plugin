@@ -61,7 +61,7 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
     when( sql.getServiceName() ).thenReturn( DATA_SERVICE_NAME );
     when( supplier.get() ).thenReturn( repository );
     when( context.getMetaStoreUtil() ).thenReturn( metaStoreUtil );
-    factory = new DataServiceFactory( context ) {
+    factory = new DataServiceFactory(  ) {
       @Override public Repository getRepository() {
         return supplier.get();
       }
@@ -90,11 +90,10 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
     when( repositoryLocator.getRepository() ).thenReturn( repository );
     DataServiceResolver dataServiceResolver = new MetaStoreResolver( repositoryLocator, context );
 
-    DataServiceClient client = new DataServiceClient( queryService, dataServiceResolver, Executors.newCachedThreadPool() );
     metaStoreUtil.save( dataService );
     metaStoreUtil.sync( transMeta, exceptionHandler );
 
-    assertThat( client.getServiceInformation(), contains( hasProperty( "name", equalTo( DATA_SERVICE_NAME ) ) ) );
+    assertThat( DataServiceClient.getInstance().getServiceInformation(), contains( hasProperty( "name", equalTo( DATA_SERVICE_NAME ) ) ) );
   }
 
   @Test
@@ -113,7 +112,7 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
   public void testCreateBuilderNonStreaming() throws Exception {
     when( dsMeta.isStreaming() ).thenReturn( false );
 
-    factory = new DataServiceFactory( context ) {
+    factory = new DataServiceFactory(  ) {
       @Override public Repository getRepository() {
         return supplier.get();
       }
@@ -133,7 +132,7 @@ public class DataServiceFactoryTest extends DataServiceMetaStoreUtilTest {
   public void testCreateBuilderStreaming() throws Exception {
     when( dsMeta.isStreaming() ).thenReturn( true );
 
-    factory = new DataServiceFactory( context ) {
+    factory = new DataServiceFactory(  ) {
       @Override public Repository getRepository() {
         return supplier.get();
       }

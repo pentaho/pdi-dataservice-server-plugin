@@ -20,6 +20,7 @@
   <modules>
     <module>impl</module>
     <module>assemblies</module>
+    <module>server-plugin</module>
   </modules>
 
   <licenses>
@@ -96,6 +97,8 @@
     <reactivestreams.version>1.0.2</reactivestreams.version>
     <jsr305.version>2.0.3</jsr305.version>
     <platform.version>10.3.0.0-SNAPSHOT</platform.version>
+    <metastore.version>10.3.0.0-SNAPSHOT</metastore.version>
+    <pentaho-cache-manager.version>10.3.0.0-SNAPSHOT</pentaho-cache-manager.version>
   </properties>
 
   <dependencyManagement>
@@ -213,9 +216,9 @@
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>pentaho</groupId>
+        <groupId>com.pentaho</groupId>
         <artifactId>pentaho-cache-manager-api</artifactId>
-        <version>${project.version}</version>
+        <version>10.3.0.0-SNAPSHOT</version>
         <scope>provided</scope>
         <exclusions>
           <exclusion>

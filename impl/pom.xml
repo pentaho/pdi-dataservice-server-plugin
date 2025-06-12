@@ -7,19 +7,13 @@
     <artifactId>pdi-dataservice-server-plugin-parent</artifactId>
     <version>10.3.0.0-SNAPSHOT</version>
   </parent>
-
-  <artifactId>pdi-dataservice-server-plugin</artifactId>
-  <packaging>bundle</packaging>
-
+  <groupId>pentaho</groupId>
+  <artifactId>pdi-dataservice-server-impl</artifactId>
   <name>Pentaho Community Edition Project: ${project.artifactId}</name>
   <description>A server for PDI Data Services</description>
   <url>http://www.pentaho.com</url>
 
   <dependencies>
-    <dependency>
-       <groupId>org.osgi</groupId>
-       <artifactId>osgi.core</artifactId>
-    </dependency>
     <dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-core</artifactId>
@@ -56,6 +50,12 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-metaverse-api</artifactId>
+      <version>${metastore.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-metaverse-core</artifactId>
+      <version>${metastore.version}</version>
     </dependency>
     <dependency>
       <groupId>org.pentaho.di.plugins</groupId>
@@ -87,8 +87,16 @@
       <artifactId>mockito-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>pentaho</groupId>
+      <groupId>org.pentaho</groupId>
       <artifactId>pentaho-cache-manager-api</artifactId>
+      <version>${pentaho-cache-manager.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.pentaho</groupId>
+      <artifactId>guava-cache-provider</artifactId>
+      <version>${pentaho-cache-manager.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
@@ -111,12 +119,6 @@
       <artifactId>reactive-streams</artifactId>
     </dependency>
     <dependency>
-      <groupId>pentaho</groupId>
-      <artifactId>guava-cache-provider</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>org.pentaho.di.plugins</groupId>
       <artifactId>pdi-core-plugins-impl</artifactId>
       <version>${pdi.version}</version>
@@ -130,30 +132,22 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
   <build>
-    <finalName>${project.artifactId}-${project.version}</finalName>
+    <sourceDirectory>src/main/java</sourceDirectory>
     <plugins>
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <instructions>
-            <Import-Package>
-              org.pentaho.di.osgi,
-              org.pentaho.di.core.plugins,
-              org.pentaho.di.core.extension,
-              org.pentaho.di.ui.xul,
-              org.pentaho.dictionary,
-              org.pentaho.metaverse.api,
-              org.pentaho.metaverse.api.*,
-              !javax.annotation,
-              *
-            </Import-Package>
-          </instructions>
+          <release>${maven.compiler.target}</release>
+          <forceJavacCompilerUse>true</forceJavacCompilerUse>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
       </plugin>
     </plugins>
   </build>
-
 </project>

@@ -116,7 +116,6 @@ public abstract class BaseServletTest extends BaseTest {
     lenient().when( transformationMap.getSlaveServerConfig() ).thenReturn( slaveServerConfig );
     lenient().when( slaveServerConfig.getRepository() ).thenReturn( repository );
 
-    lenient().when( factory.getContext() ).thenReturn( context );
     lenient().when( factory.getStepCache() ).thenReturn( cache );
     lenient().when( factory.getLogChannel() ).thenReturn( logChannel );
     when( client.getLogChannel() ).thenReturn( log );

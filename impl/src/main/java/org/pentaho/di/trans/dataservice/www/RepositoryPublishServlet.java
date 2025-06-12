@@ -13,7 +13,6 @@
 
 package org.pentaho.di.trans.dataservice.www;
 
-import org.osgi.framework.BundleContext;
 import org.pentaho.di.core.annotations.CarteServlet;
 import org.pentaho.di.core.service.PluginServiceLoader;
 import org.pentaho.di.www.BaseCartePlugin;
@@ -32,7 +31,7 @@ public class RepositoryPublishServlet extends BaseCartePlugin {
 
   public static final String CONTEXT_PATH = "/repositoryPublished";
 
-  public RepositoryPublishServlet( BundleContext bundleContext ) {
+  public RepositoryPublishServlet(  ) {
     PluginServiceLoader.registerService( this, KettleRepositoryProvider.class, new ServletRepositoryProvider( new ServletRepositoryAdapter( this ) ), 0 );
   }
 

@@ -113,12 +113,11 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     } );
     pushDownFactories.add( optimizationFactory );
 
-    metaStoreUtil = DataServiceMetaStoreUtil.create( context );
+    metaStoreUtil = DataServiceMetaStoreUtil.getInstance();
   }
 
   @Test
   public void testProperties() throws Exception {
-    assertThat( metaStoreUtil.getContext(), is( context ) );
     assertThat( metaStoreUtil.getStepCache(), is( cache ) );
     assertThat( metaStoreUtil.getLogChannel(), is( (LogChannelInterface) logChannel ) );
   }
@@ -178,7 +177,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
     final ServiceTrans published = mock( ServiceTrans.class );
     when( published.getName() ).thenReturn( "PUBLISHED_SERVICE" );
 
-    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ) {
+    metaStoreUtil = new DataServiceMetaStoreUtil( ) {
       @Override protected MetaStoreFactory<ServiceTrans> getServiceTransFactory( IMetaStore metaStore ) {
         return new MetaStoreFactory<ServiceTrans>( ServiceTrans.class, metaStore, NAMESPACE ) {
           @Override public List<ServiceTrans> getElements() throws MetaStoreException {
@@ -373,7 +372,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
   }
 
   @Test public void testStepCacheHit() throws Exception {
-    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ) {
+    metaStoreUtil = new DataServiceMetaStoreUtil( ) {
       @Override public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) {
         assertThat( serviceName, is( DATA_SERVICE_NAME ) );
         assertThat( serviceTrans, is( transMeta ) );
@@ -387,7 +386,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
   }
 
   @Test public void testStepCacheFalsePositive() throws Exception {
-    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ) {
+    metaStoreUtil = new DataServiceMetaStoreUtil( ) {
       @Override public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) {
         assertThat( serviceName, is( DATA_SERVICE_NAME ) );
         assertThat( serviceTrans, is( transMeta ) );
@@ -410,7 +409,7 @@ public class DataServiceMetaStoreUtilTest extends BaseTest {
   }
 
   @Test public void testStepCacheNegative() throws Exception {
-    metaStoreUtil = new DataServiceMetaStoreUtil( metaStoreUtil ) {
+    metaStoreUtil = new DataServiceMetaStoreUtil( ) {
       @Override public DataServiceMeta getDataService( String serviceName, TransMeta serviceTrans ) {
         throw new AssertionError( "No data services should be queried" );
       }

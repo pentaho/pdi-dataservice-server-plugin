@@ -144,7 +144,6 @@ public abstract class BaseTest {
       logChannel
     );
 
-    lenient().when( metaStoreUtil.getContext() ).thenReturn( context );
     lenient().when( metaStoreUtil.getStepCache() ).thenReturn( cache );
     lenient().when( metaStoreUtil.getLogChannel() ).thenReturn( logChannel );
     lenient().when( client.getLogChannel() ).thenReturn( logChannel );

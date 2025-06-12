@@ -90,7 +90,7 @@ public class DataServiceClientTest extends BaseTest {
     when( dataServiceResolver.getDataServices( any() ) ).thenReturn( ImmutableList.of( dataService,
       streamingDataService ) );
 
-    client = new DataServiceClient( queryServiceDelegate, dataServiceResolver, Executors.newCachedThreadPool() );
+    client = DataServiceClient.getInstance();
     client.setLogChannel( log );
   }
 

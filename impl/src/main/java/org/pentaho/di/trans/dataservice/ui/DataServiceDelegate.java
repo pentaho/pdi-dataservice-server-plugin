@@ -50,8 +50,8 @@ public class DataServiceDelegate extends DataServiceFactory {
     return new DataServiceDelegate( context, defaultSpoonSupplier );
   }
 
-  public DataServiceDelegate( DataServiceContext context ) {
-    super( context );
+  public DataServiceDelegate(  ) {
+    super(  );
     this.spoonSupplier = null;
   }
 
@@ -60,7 +60,7 @@ public class DataServiceDelegate extends DataServiceFactory {
   }
 
   public DataServiceDelegate( DataServiceContext context, Supplier<Spoon> spoonSupplier ) {
-    super( context );
+    super(  );
     this.spoonSupplier = spoonSupplier;
   }
 
@@ -149,11 +149,11 @@ public class DataServiceDelegate extends DataServiceFactory {
   }
 
   protected UIFactory getUiFactory() {
-    return getContext().getUIFactory();
+    return DataServiceContext.getInstance().getUIFactory();
   }
 
   public SynchronizationListener createSyncService() {
-    return new SynchronizationListener( this, new DataServiceReferenceSynchronizer( getContext() ) );
+    return new SynchronizationListener( this, new DataServiceReferenceSynchronizer( DataServiceContext.getInstance() ) );
   }
 
   public void showError( String title, String text ) {
@@ -204,7 +204,7 @@ public class DataServiceDelegate extends DataServiceFactory {
 
   public void showTestDataServiceDialog( DataServiceMeta dataService, Shell shell ) {
     try {
-      getUiFactory().getDataServiceTestDialog( shell, dataService, context ).open();
+      getUiFactory().getDataServiceTestDialog( shell, dataService, DataServiceContext.getInstance() ).open();
     } catch ( KettleException e ) {
       getLogChannel().logError( "Unable to create test data service dialog", e );
     }

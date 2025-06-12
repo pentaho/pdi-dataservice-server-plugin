@@ -57,7 +57,7 @@ public class MetaStoreResolver implements DataServiceResolver {
 
   private void initialize( KettleRepositoryLocator repositoryLocator, DataServiceContext context ) {
     if ( repositoryLocator != null ) {
-      this.delegate = new DataServiceDelegate( context ) {
+      this.delegate = new DataServiceDelegate(  ) {
         @Override public Repository getRepository() {
           return repositoryLocator.getRepository();
         }

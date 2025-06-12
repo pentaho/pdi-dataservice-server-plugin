@@ -19,9 +19,11 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import org.pentaho.caching.api.PentahoCacheManager;
+import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.trans.dataservice.optimization.AutoOptimizationService;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
+import org.pentaho.di.trans.dataservice.optimization.paramgen.*;
 import org.pentaho.di.trans.dataservice.serialization.DataServiceMetaStoreUtil;
 import org.pentaho.di.trans.dataservice.streaming.StreamServiceKey;
 import org.pentaho.di.trans.dataservice.streaming.execution.StreamingGeneratedTransExecution;
@@ -29,7 +31,9 @@ import org.pentaho.di.trans.dataservice.streaming.execution.StreamingServiceTran
 import org.pentaho.di.trans.dataservice.ui.DataServiceDelegate;
 import org.pentaho.di.trans.dataservice.ui.UIFactory;
 import org.pentaho.di.trans.dataservice.utils.DataServiceConstants;
+import org.pentaho.metaverse.client.LineageClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -41,8 +45,9 @@ public class DataServiceContext implements Context {
   private final List<PushDownFactory> pushDownFactories;
   private final LogChannelInterface logChannel;
   private final UIFactory uiFactory;
+  public static DataServiceContext instance;
 
-  //Cache for the generated tranformation executions, so that we can keep the same genTransExecution for multiple consumers
+  //Cache for the generated transformation executions, so that we can keep the same genTransExecution for multiple consumers
   private final Cache<String, StreamingGeneratedTransExecution> streamingGeneratedTransExecutionCache = CacheBuilder.newBuilder()
     .expireAfterAccess( 1, TimeUnit.DAYS )
     .removalListener( new RemovalListener<String, StreamingGeneratedTransExecution>() {
@@ -76,13 +81,32 @@ public class DataServiceContext implements Context {
     .softValues()
     .<StreamServiceKey, StreamingServiceTransExecutor>build();
 
-  public DataServiceContext( List<PushDownFactory> pushDownFactories,
+  public static DataServiceContext getInstance() {
+    if ( instance == null ) {
+      PentahoCacheManager cacheManager  = DataServiceCacheManagerService.getInstance();
+      List<PushDownFactory> pushDownFactories = new ArrayList<>();
+      List<ParameterGenerationServiceFactory> serviceFactoryList = new ArrayList<>();
+      MongodbInputParameterGenerationFactory mongodbInputParameterGenerationFactory = new MongodbInputParameterGenerationFactory();
+      TableInputParameterGenerationFactory tableInputParameterGenerationFactory = new TableInputParameterGenerationFactory();
+      serviceFactoryList.add( mongodbInputParameterGenerationFactory );
+      serviceFactoryList.add( tableInputParameterGenerationFactory );
+      AutoOptimizationService autoOptimizationService = new AutoParameterGenerationService( new LineageClient(), new ParameterGenerationFactory (serviceFactoryList ) );
+      List<AutoOptimizationService> autoOptimizationServices = new ArrayList<>();
+      autoOptimizationServices.add( autoOptimizationService );
+      UIFactory uiFactory = new UIFactory();
+      LogChannelInterface logChannel = new LogChannel("Data Services");
+      instance = new DataServiceContext(pushDownFactories, autoOptimizationServices, cacheManager, uiFactory,logChannel);
+    }
+    return instance;
+  }
+
+  private DataServiceContext( List<PushDownFactory> pushDownFactories,
                              List<AutoOptimizationService> autoOptimizationServices,
                              PentahoCacheManager cacheManager, UIFactory uiFactory, LogChannelInterface logChannel ) {
     this.pushDownFactories = pushDownFactories;
     this.autoOptimizationServices = autoOptimizationServices;
     this.cacheManager = cacheManager;
-    this.metaStoreUtil = DataServiceMetaStoreUtil.create( this );
+    this.metaStoreUtil = DataServiceMetaStoreUtil.getInstance();
     this.logChannel = logChannel;
     this.uiFactory = uiFactory;
   }

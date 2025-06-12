@@ -29,8 +29,8 @@ public class DataServiceLifecycleListener implements LifecycleListener {
 
   private DataServiceDelegate dataServiceDelegate;
 
-  public DataServiceLifecycleListener( DataServiceContext context ) {
-    dataServiceDelegate = context.getDataServiceDelegate();
+  public DataServiceLifecycleListener(  ) {
+    dataServiceDelegate = DataServiceContext.getInstance().getDataServiceDelegate();
   }
 
   @Override

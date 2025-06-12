@@ -68,10 +68,7 @@ public class DataServiceContextTest extends BaseTest {
 
   @Before
   public void setUp() throws Exception {
-    context = new DataServiceContext(
-      pushDownFactories, autoOptimizationServices,
-      cacheManager, uiFactory, logChannel
-    );
+    context = DataServiceContext.getInstance();
 
     mockStreamKeyParams = new HashMap();
     mockStreamKeyParams2 = new HashMap();

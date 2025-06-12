@@ -45,6 +45,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.dataservice.DataServiceCacheManagerService;
 import org.pentaho.di.trans.dataservice.DataServiceContext;
 import org.pentaho.di.trans.dataservice.DataServiceMeta;
 import org.pentaho.di.trans.dataservice.optimization.PushDownFactory;
@@ -62,19 +63,22 @@ public class DataServiceMetaStoreUtil {
   private static final Class<DataServiceMetaStoreUtil> PKG = DataServiceMetaStoreUtil.class;
   private static final HashFunction hashFunction = Hashing.goodFastHash( Integer.SIZE );
   private final Cache<Integer, String> stepCache;
-  protected final DataServiceContext context;
+  private static DataServiceMetaStoreUtil instance;
 
-  protected DataServiceMetaStoreUtil( DataServiceContext context, Cache<Integer, String> cache ) {
-    this.context = context;
+  public static DataServiceMetaStoreUtil getInstance() {
+    if ( instance == null ) {
+      instance = new DataServiceMetaStoreUtil();
+    }
+    return instance;
+  }
+
+
+  protected DataServiceMetaStoreUtil(  ) {
+    this ( initCache( DataServiceCacheManagerService.getInstance() ) );
+  }
+
+  protected DataServiceMetaStoreUtil( Cache<Integer, String> cache ) {
     this.stepCache = cache;
-  }
-
-  protected DataServiceMetaStoreUtil( DataServiceMetaStoreUtil metaStoreUtil ) {
-    this( metaStoreUtil.getContext(), metaStoreUtil.getStepCache() );
-  }
-
-  public static DataServiceMetaStoreUtil create( DataServiceContext context ) {
-    return new DataServiceMetaStoreUtil( context, initCache( context.getCacheManager() ) );
   }
 
   private static Cache<Integer, String> initCache( PentahoCacheManager cacheManager ) {
@@ -312,7 +316,7 @@ public class DataServiceMetaStoreUtil {
    */
   @Deprecated( )
   public void sync( TransMeta transMeta, Function<? super Exception, ?> exceptionHandler ) {
-    DataServiceReferenceSynchronizer syncronizer = new DataServiceReferenceSynchronizer( getContext() );
+    DataServiceReferenceSynchronizer syncronizer = new DataServiceReferenceSynchronizer( DataServiceContext.getInstance() );
     syncronizer.sync( transMeta, ( e ) -> exceptionHandler.apply( e ) );
   }
 
@@ -369,11 +373,11 @@ public class DataServiceMetaStoreUtil {
   }
 
   public LogChannelInterface getLogChannel() {
-    return context.getLogChannel();
+    return DataServiceContext.getInstance().getLogChannel();
   }
 
   public List<PushDownFactory> getPushDownFactories() {
-    return context.getPushDownFactories();
+    return DataServiceContext.getInstance().getPushDownFactories();
   }
 
   public Function<Exception, Void> logErrors( final String message ) {
@@ -383,9 +387,6 @@ public class DataServiceMetaStoreUtil {
     };
   }
 
-  public DataServiceContext getContext() {
-    return context;
-  }
 
   public Cache<Integer, String> getStepCache() {
     return stepCache;
