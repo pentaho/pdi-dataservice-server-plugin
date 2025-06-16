@@ -22,7 +22,7 @@ import org.pentaho.di.trans.dataservice.ui.DataServiceDialog;
  */
 public class ServiceCacheOverlay implements DataServiceDialog.OptimizationOverlay {
   private static final String XUL_OVERLAY =
-    "/org/pentaho/di/trans/dataservice/optimization/cache/ui/service-cache-overlay.xul";
+    "/org/pentaho/di/trans/dataservice/ui/xul/service-cache-overlay.xul";
 
   private ServiceCacheFactory factory;
 

@@ -29,7 +29,7 @@ import org.pentaho.di.trans.step.StepMeta;
  */
 public class ParameterGenerationOverlay implements DataServiceDialog.OptimizationOverlay {
   private static final String XUL_OVERLAY =
-    "org/pentaho/di/trans/dataservice/optimization/paramgen/ui/param-gen-overlay.xul";
+    "org/pentaho/di/trans/dataservice/ui/xul/param-gen-overlay.xul";
 
   private ParameterGenerationFactory factory;
 
