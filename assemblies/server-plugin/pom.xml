@@ -19,7 +19,19 @@
     <dependencies>
         <dependency>
             <groupId>pentaho</groupId>
-            <artifactId>pdi-dataservice-client-plugin</artifactId>
+            <artifactId>pdi-dataservice-client-api</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>pentaho</groupId>
+            <artifactId>pdi-dataservice-client-impl</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>

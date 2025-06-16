@@ -44,7 +44,6 @@ explicitly covering such access.
       <useTransitiveDependencies>false</useTransitiveDependencies>
       <useProjectArtifact>false</useProjectArtifact>
       <includes>
-        <include>pentaho:pdi-dataservice-client-plugin</include>
         <include>pentaho:pdi-dataservice-server-impl</include>
       </includes>
     </dependencySet>
@@ -59,6 +58,8 @@ explicitly covering such access.
         <include>net.sf.ehcache.internal:ehcache-core</include>
         <include>org.ehcache:jcache</include>
         <include>pentaho:pentaho-metaverse-api</include>
+        <include>pentaho:pdi-dataservice-client-api</include>
+        <include>pentaho:pdi-dataservice-client-impl</include>
       </includes>
       <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>
