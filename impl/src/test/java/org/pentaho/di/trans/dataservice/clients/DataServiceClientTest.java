@@ -59,6 +59,7 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 /**
  * @author bmorrise
@@ -180,11 +181,19 @@ public class DataServiceClientTest extends BaseTest {
     when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.of() ) )
       .thenReturn( mockQuery );
 
+    // Create a latch to wait for logError to be called
+    CountDownLatch logErrorLatch = new CountDownLatch( 1 );
+    // Holding the main thread for the log error to be called to avoid race condition between the main thread and executor service thread created in DataServiceClient#query()
+    lenient().doAnswer( invocation -> {
+      logErrorLatch.countDown();
+      return null;
+    }).when( log ).logError( isNull(), eq( expected ) );
+
     try ( DataInputStream stream = client.query( TEST_SQL_QUERY, MAX_ROWS ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
-    // Holding the main thread for 2 seconds to avoid  race condition between the main thread and executor service thread created in DataServiceClient#query()
-    Thread.sleep( 2000 );
+    // Wait for logError to be called (with a timeout to avoid hanging)
+    logErrorLatch.await( 2, java.util.concurrent.TimeUnit.SECONDS );
     verify( log ).logError( isNull(), eq( expected ) );
   }
 
@@ -196,13 +205,20 @@ public class DataServiceClientTest extends BaseTest {
     when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY,
       WINDOW_MAX_SIZE, ImmutableMap.of() ) )
       .thenReturn( mockQuery );
+    // Create a latch to wait for logError to be called
+    CountDownLatch logErrorLatch = new CountDownLatch( 1 );
+    // Holding the main thread for the log error to be called to avoid race condition between the main thread and executor service thread created in DataServiceClient#query()
+    lenient().doAnswer( invocation -> {
+      logErrorLatch.countDown();
+      return null;
+    }).when( log ).logError( isNull(), eq( expected ) );
 
     try ( DataInputStream stream = client.query( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY,
       WINDOW_MAX_SIZE ) ) {
       assertThat( stream.read(), is( -1 ) );
     }
-    // Holding the main thread for 2 seconds to avoid  race condition between the main thread and executor service thread created in DataServiceClient#query()
-    Thread.sleep( 2000 );
+    // Wait for logError to be called (with a timeout to avoid hanging)
+    logErrorLatch.await( 2, java.util.concurrent.TimeUnit.SECONDS );
     verify( log ).logError( isNull(), eq( expected ) );
   }
 
@@ -241,6 +257,13 @@ public class DataServiceClientTest extends BaseTest {
   public void testInputStreamClosed() throws Exception {
     CountDownLatch startQuery = new CountDownLatch( 1 );
     SettableFuture<Boolean> queryFinished = SettableFuture.create();
+    // Create a latch to wait for logError to be called
+    CountDownLatch logErrorLatch = new CountDownLatch( 1 );
+    // Holding the main thread for the log error to be called to avoid race condition between the main thread and executor service thread created in DataServiceClient#query()
+    lenient().doAnswer( invocation -> {
+      logErrorLatch.countDown();
+      return null;
+    }).when( log ).logError( anyString(), any( Throwable.class ) );
 
     // Create a query that blocks on the countdown latch
     when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, MAX_ROWS, ImmutableMap.of() ) )
@@ -263,8 +286,7 @@ public class DataServiceClientTest extends BaseTest {
 
     // Assert no errors thrown or logged
     assertThat( Futures.getChecked( queryFinished, IOException.class ), is( true ) );
-    // Holding the main thread for 2 seconds to avoid  race condition between the main thread and executor service thread created in DataServiceClient#query()
-    Thread.sleep( 2000 );
+    logErrorLatch.await( 2, java.util.concurrent.TimeUnit.SECONDS );
     verify( log, never() ).logError( anyString(), any( Throwable.class ) );
   }
 
@@ -272,7 +294,13 @@ public class DataServiceClientTest extends BaseTest {
   public void testWindowInputStreamClosed() throws Exception {
     CountDownLatch startQuery = new CountDownLatch( 1 );
     SettableFuture<Boolean> queryFinished = SettableFuture.create();
-
+    // Create a latch to wait for logError to be called
+    CountDownLatch logErrorLatch = new CountDownLatch( 1 );
+    // Holding the main thread for the log error to be called to avoid race condition between the main thread and executor service thread created in DataServiceClient#query()
+    lenient().doAnswer( invocation -> {
+      logErrorLatch.countDown();
+      return null;
+    }).when( log ).logError( anyString(), any( Throwable.class ) );
     // Create a query that blocks on the countdown latch
     when( queryServiceDelegate.prepareQuery( TEST_SQL_QUERY, WINDOW_MODE, WINDOW_SIZE, WINDOW_EVERY,
       WINDOW_MAX_SIZE, ImmutableMap.of() ) )
@@ -295,8 +323,7 @@ public class DataServiceClientTest extends BaseTest {
 
     // Assert no errors thrown or logged
     assertThat( Futures.getChecked( queryFinished, IOException.class ), is( true ) );
-    // Holding the main thread for 2 seconds to avoid  race condition between the main thread and executor service thread created in DataServiceClient#query()
-    Thread.sleep( 2000 );
+    logErrorLatch.await( 2, java.util.concurrent.TimeUnit.SECONDS );
     verify( log, never() ).logError( anyString(), any( Throwable.class ) );
   }
 
