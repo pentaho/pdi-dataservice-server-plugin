@@ -65,7 +65,9 @@ public class DriverDetailsDialogController extends AbstractController {
   @SuppressWarnings( "unused" ) // Bound via XUL
   public void showHelp() {
     String label = getString( PKG, "DriverDetailsDialog.ConnectionSetupLink.Label" );
-    String docUrl = Const.getDocUrl( getString( PKG, "DriverDetailsDialog.ConnectionSetupLink.Url" ) );
+    String docUrl = Const.getDocUrl( "advanced-topics-pentaho-data-integration-overview/" +
+            "pentaho-data-services/share-a-pentaho-data-service-with-others/" +
+            "connect-to-the-pentaho-data-service-from-a-non-pentaho-tool" );
     String header = "";
 
     HelpUtils.openHelpDialog( getDialog().getShell(), label, docUrl, header );
