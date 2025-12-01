@@ -118,7 +118,8 @@ public class DataServiceDialogController extends AbstractController {
   @SuppressWarnings( "unused" ) // Bound via XUL
   public void showHelp() {
     String title = BaseMessages.getString( PKG, "DataServiceDialog.Help.Title" );
-    String docUrl = Const.getDocUrl( BaseMessages.getString( PKG, "DataServiceDialog.Help.Url" ) );
+    String docUrl = Const.getDocUrl( "advanced-topics-pentaho-data-integration-overview/" +
+            "pentaho-data-services/creating-a-regular-or-streaming-pentaho-data-service" );
     String header = "";
 
     HelpUtils.openHelpDialog( getDialog().getShell(), title, docUrl, header );
