@@ -16,7 +16,7 @@ package org.pentaho.di.trans.dataservice.optimization.paramgen;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.pentaho.di.core.Condition;
 import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.core.sql.SQL;
